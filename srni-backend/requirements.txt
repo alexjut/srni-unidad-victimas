@@ -1,0 +1,52 @@
+# ============================================================
+# SRNI Backend — Requirements
+# Python 3.14 compatible
+# ============================================================
+
+# --- Core ---
+Django==5.2                         # LTS — soporta Python 3.13/3.14
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.4.0
+django-cors-headers==4.4.0
+django-filter==24.3
+
+# --- Base de datos ---
+# NOTA: psycopg2-binary no tiene wheels para Python 3.14.
+# Se usa psycopg (v3) con driver binario — API compatible con adaptaciones mínimas.
+psycopg[binary]==3.2.3
+
+# --- Cifrado campos PII ---
+# django-encrypted-model-fields 0.6.5 no tiene soporte declarado para Python 3.14.
+# Se usa cryptography directamente; campo personalizado en apps/victimas/fields.py
+cryptography==44.0.2
+# django-encrypted-model-fields==0.6.5  # OMITIDO — incompatible Python 3.14
+
+# --- Hash de contraseñas (Argon2) ---
+argon2-cffi==23.1.0                 # Requerido por Django para Argon2PasswordHasher
+
+# --- Seguridad ---
+django-ratelimit==4.1.0
+
+# --- Caché y tareas asíncronas ---
+redis==5.2.1
+celery==5.4.0
+django-redis==5.4.0
+
+# --- Almacenamiento de documentos (MinIO/S3) ---
+boto3==1.35.86
+django-storages==1.14.4
+
+# --- Utilidades ---
+python-decouple==3.8
+Pillow==11.1.0
+django-auditlog==3.0.0
+
+# --- Desarrollo y testing ---
+pytest==8.3.4
+pytest-django==4.9.0
+factory-boy==3.3.1
+coverage==7.6.10
+
+# --- Producción ---
+gunicorn==23.0.0
+whitenoise==6.8.2

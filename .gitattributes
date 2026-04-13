@@ -1,0 +1,14 @@
+# Normalizar saltos de línea en el repositorio (LF) sin importar el OS
+* text=auto eol=lf
+
+# Binarios — no tocar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.apk binary
+*.db  binary
+*.sqlite3 binary
+*.pdf binary
+*.zip binary

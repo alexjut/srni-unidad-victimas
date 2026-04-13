@@ -1,0 +1,55 @@
+# ─── Credenciales y configuración sensible — NUNCA al repositorio ────────────
+.env
+.env.*
+!.env.example
+infra/secrets/
+*.pem
+*.key
+*.crt
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+venv/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+
+# ─── Django ──────────────────────────────────────────────────────────────────
+srni-backend/staticfiles/
+srni-backend/media/
+srni-backend/db.sqlite3
+*.sqlite3
+
+# ─── Node / React Native / Expo ──────────────────────────────────────────────
+node_modules/
+srni-mobile/node_modules/
+srni-mobile/dist/
+srni-mobile/.expo/
+srni-mobile/android/
+srni-mobile/ios/
+srni-mobile/.env.local
+
+# ─── APK de análisis — no incluir en el repo ─────────────────────────────────
+apk_extracted/
+apk_work/
+*.apk
+*.db
+
+# ─── Claude Code (contexto local de sesión — no es código del proyecto) ──────
+.claude/
+
+# ─── IDEs ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
