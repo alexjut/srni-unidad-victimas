@@ -41,12 +41,15 @@ def api_root(request, format=None):
                 'me': reverse('auth-me', request=request, format=format),
                 'cambiar_password': reverse('auth-cambiar-password', request=request, format=format),
             },
-            # Se expanden en sprints posteriores:
-            # 'victimas': {...},
-            # 'formulario': {...},
+            'parametricas': request.build_absolute_uri('/api/parametricas/'),
+            'formulario': request.build_absolute_uri('/api/formulario/'),
+            'victimas': {
+                'buscar': request.build_absolute_uri('/api/victimas/buscar/'),
+                'detalle': request.build_absolute_uri('/api/victimas/{id}/'),
+            },
+            # Próximos sprints:
             # 'hogares': {...},
             # 'encuestas': {...},
-            # 'parametricas': {...},
             # 'reportes': {...},
         },
         'health': request.build_absolute_uri('/health/'),
@@ -63,12 +66,14 @@ urlpatterns = [
     # Autenticación JWT
     path('api/auth/', include('apps.autenticacion.urls')),
 
-    # Módulos de la API — se añaden en sprints posteriores
-    # path('api/victimas/', include('apps.victimas.urls')),
-    # path('api/formulario/', include('apps.formulario.urls')),
+    # Módulos Sprint 2
+    path('api/victimas/', include('apps.victimas.urls')),
+    path('api/formulario/', include('apps.formulario.urls')),
+    path('api/parametricas/', include('apps.parametricas.urls')),
+
+    # Módulos futuros
     # path('api/hogares/', include('apps.hogares.urls')),
     # path('api/encuestas/', include('apps.encuestas.urls')),
-    # path('api/parametricas/', include('apps.parametricas.urls')),
     # path('api/reportes/', include('apps.reportes.urls')),
 
     # Documentación OpenAPI / Swagger
