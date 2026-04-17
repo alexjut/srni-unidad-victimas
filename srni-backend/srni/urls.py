@@ -47,9 +47,9 @@ def api_root(request, format=None):
                 'buscar': request.build_absolute_uri('/api/victimas/buscar/'),
                 'detalle': request.build_absolute_uri('/api/victimas/{id}/'),
             },
+            'hogares': request.build_absolute_uri('/api/hogares/'),
+            'encuestas': request.build_absolute_uri('/api/encuestas/'),
             # Próximos sprints:
-            # 'hogares': {...},
-            # 'encuestas': {...},
             # 'reportes': {...},
         },
         'health': request.build_absolute_uri('/health/'),
@@ -71,9 +71,11 @@ urlpatterns = [
     path('api/formulario/', include('apps.formulario.urls')),
     path('api/parametricas/', include('apps.parametricas.urls')),
 
+    # Módulos Sprint 3
+    path('api/hogares/', include('apps.hogares.urls')),
+    path('api/encuestas/', include('apps.encuestas.urls')),
+
     # Módulos futuros
-    # path('api/hogares/', include('apps.hogares.urls')),
-    # path('api/encuestas/', include('apps.encuestas.urls')),
     # path('api/reportes/', include('apps.reportes.urls')),
 
     # Documentación OpenAPI / Swagger

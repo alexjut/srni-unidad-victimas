@@ -51,6 +51,22 @@ export default function MainLayout() {
           href: perfil?.puede_caracterizar ? undefined : null,
         }}
       />
+
+      <Tabs.Screen
+        name="hogares"
+        options={{
+          title: 'Hogares',
+          href: perfil?.puede_caracterizar ? undefined : null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="encuestas"
+        options={{
+          title: 'Encuestas',
+          href: perfil?.puede_caracterizar ? undefined : null,
+        }}
+      />
     </Tabs>
   );
 }

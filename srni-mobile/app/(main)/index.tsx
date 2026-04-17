@@ -33,12 +33,28 @@ export default function DashboardScreen() {
       )}
 
       {perfil?.puede_caracterizar && (
-        <Card style={styles.card} onPress={() => router.push('/(main)/formulario')}>
-          <Card.Title title="Formulario de Caracterización" subtitle="Nueva encuesta PAARI" />
-          <Card.Actions>
-            <Button onPress={() => router.push('/(main)/formulario')}>Ir</Button>
-          </Card.Actions>
-        </Card>
+        <>
+          <Card style={styles.card} onPress={() => router.push('/(main)/hogares')}>
+            <Card.Title title="Hogares" subtitle="Gestionar unidades familiares" />
+            <Card.Actions>
+              <Button onPress={() => router.push('/(main)/hogares')}>Ver hogares</Button>
+            </Card.Actions>
+          </Card>
+
+          <Card style={styles.card} onPress={() => router.push('/(main)/encuestas')}>
+            <Card.Title title="Encuestas" subtitle="Sesiones PAARI en curso" />
+            <Card.Actions>
+              <Button onPress={() => router.push('/(main)/encuestas')}>Ver sesiones</Button>
+            </Card.Actions>
+          </Card>
+
+          <Card style={styles.card} onPress={() => router.push('/(main)/formulario')}>
+            <Card.Title title="Formulario de Caracterización" subtitle="Nueva encuesta PAARI" />
+            <Card.Actions>
+              <Button onPress={() => router.push('/(main)/formulario')}>Ir</Button>
+            </Card.Actions>
+          </Card>
+        </>
       )}
 
       <Button
