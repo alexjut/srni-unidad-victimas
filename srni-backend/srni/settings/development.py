@@ -9,7 +9,7 @@ from .base import *
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['*']  # desarrollo — ngrok y red local sin restricción
 
 # --- SQLite para desarrollo ---
 DATABASES = {
@@ -38,6 +38,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # --- CORS abierto en desarrollo ---
 CORS_ALLOW_ALL_ORIGINS = True
+
+# --- ngrok: aceptar peticiones HTTPS desde el túnel ---
+# CSRF_TRUSTED_ORIGINS acepta cualquier subdominio *.ngrok-free.app y *.ngrok.io
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'https://*.ngrok.io',
+    'http://localhost:8001',
+    'http://127.0.0.1:8001',
+]
 
 # --- Email en consola ---
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

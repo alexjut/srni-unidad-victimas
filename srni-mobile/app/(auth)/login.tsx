@@ -43,7 +43,7 @@ export default function LoginScreen() {
           </Text>
 
           <TextInput
-            label="Código de usuario"
+            label="Usuario"
             value={codigo}
             onChangeText={setCodigo}
             autoCapitalize="characters"
