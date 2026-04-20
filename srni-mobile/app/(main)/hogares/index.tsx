@@ -1,17 +1,20 @@
 /**
- * Lista de hogares — combina hogares del servidor (online) con hogares
- * creados offline (SQLite local) que aún no se han sincronizado.
+ * Lista de hogares — GOV.CO design system.
+ * Combina hogares del servidor (online) con hogares offline (SQLite).
  */
 import { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import {
-  Text, Card, Chip, FAB, ActivityIndicator,
-  SegmentedButtons, Badge,
+  Text, Chip, FAB, ActivityIndicator, SegmentedButtons,
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
 import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
 import { useSyncStore } from '../../../src/stores/syncStore';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { EmptyState } from '../../../src/components/EmptyState';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { HogarResumen } from '../../../src/types';
 import type { HogarOfflineRow } from '../../../src/db/hogaresOfflineDao';
 
@@ -24,6 +27,70 @@ const ESTADOS = [
 type ItemLista =
   | { tipo: 'servidor'; data: HogarResumen }
   | { tipo: 'offline'; data: HogarOfflineRow };
+
+// ─── Tarjeta de hogar (servidor) ─────────────────────────────────────────────
+
+function HogarServidorCard({ data }: { data: HogarResumen }) {
+  const esActivo = data.estado === 'ACTIVO';
+  const estadoColor = esActivo ? GOV.verde : GOV.naranja;
+  const estadoBg    = esActivo ? GOV.verdeTenue : GOV.naranjaTenue;
+
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/(main)/hogares/[hogarId]', params: { hogarId: data.id } })}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Hogar ${data.id.slice(0, 8)}`}
+    >
+      <View style={styles.cardLeft} />
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardId} numberOfLines={1}>{data.id.slice(0, 8)}…</Text>
+          <View style={[styles.estadoChip, { backgroundColor: estadoBg }]}>
+            <Text style={[styles.estadoTxt, { color: estadoColor }]}>{data.estado_display}</Text>
+          </View>
+        </View>
+        <Text style={styles.municipio} numberOfLines={1}>
+          {data.municipio_nombre ?? 'Municipio no registrado'}
+        </Text>
+        <View style={styles.cardFooter}>
+          <View style={styles.metaDato}>
+            <MaterialCommunityIcons name="account-group" size={13} color={GOV.textoT} />
+            <Text style={styles.metaTxt}>{data.total_miembros} miembro{data.total_miembros !== 1 ? 's' : ''}</Text>
+          </View>
+          <Text style={styles.metaTxt}>{new Date(data.created_at).toLocaleDateString('es-CO')}</Text>
+        </View>
+      </View>
+      <View style={styles.chevron}>
+        <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── Tarjeta de hogar (offline pendiente) ────────────────────────────────────
+
+function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
+  return (
+    <View style={[styles.card, styles.cardOffline]}>
+      <View style={[styles.cardLeft, { backgroundColor: GOV.naranja }]} />
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardId} numberOfLines={1}>{data.id_local.slice(0, 8)}…</Text>
+          <View style={[styles.estadoChip, { backgroundColor: GOV.naranjaTenue }]}>
+            <Text style={[styles.estadoTxt, { color: GOV.naranja }]}>Pendiente sync</Text>
+          </View>
+        </View>
+        <Text style={styles.municipio} numberOfLines={1}>
+          {data.tipo_vivienda || 'Vivienda sin clasificar'} · {data.numero_personas} persona{data.numero_personas !== 1 ? 's' : ''}
+        </Text>
+        <Text style={styles.metaTxt}>{new Date(data.created_at).toLocaleDateString('es-CO')}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Pantalla ────────────────────────────────────────────────────────────────
 
 export default function HogaresIndexScreen() {
   const { estaOnline } = useSyncStore();
@@ -40,15 +107,13 @@ export default function HogaresIndexScreen() {
 
     const resultado: ItemLista[] = [];
 
-    // Hogares offline pendientes (siempre desde SQLite)
     try {
       const offline = await hogaresOfflineDao.listarPendientes();
       for (const h of offline) resultado.push({ tipo: 'offline', data: h });
     } catch {
-      // SQLite no disponible: ignorar hogares offline
+      // SQLite no disponible
     }
 
-    // Hogares del servidor (solo si hay red)
     if (estaOnline) {
       try {
         const res = await hogaresApi.listar(filtroEstado ? { estado: filtroEstado } : undefined);
@@ -67,29 +132,41 @@ export default function HogaresIndexScreen() {
 
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.hint}>Cargando hogares…</Text>
+      <View style={styles.root}>
+        <GovHeader title="Hogares" subtitle="Unidades familiares registradas" />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+          <Text style={styles.hint}>Cargando hogares…</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.root}>
+      <GovHeader title="Hogares" subtitle="Unidades familiares registradas" />
+
+      {/* Filtro de estado */}
       <SegmentedButtons
         value={filtroEstado}
         onValueChange={setFiltroEstado}
         buttons={ESTADOS}
         style={styles.filtro}
+        theme={{ colors: { secondaryContainer: GOV.azulTenue, onSecondaryContainer: GOV.azul } }}
       />
 
+      {/* Banner offline */}
       {!estaOnline && (
-        <Chip icon="wifi-off" mode="flat" style={styles.offlineBanner} textStyle={styles.offlineTxt}>
-          Sin conexión — mostrando datos locales
-        </Chip>
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons name="wifi-off" size={14} color={GOV.naranja} />
+          <Text style={styles.offlineTxt}>Sin conexión — datos locales</Text>
+        </View>
       )}
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {/* Error */}
+      {error ? (
+        <Text style={styles.errorTxt}>{error}</Text>
+      ) : null}
 
       <FlatList
         data={items}
@@ -97,12 +174,21 @@ export default function HogaresIndexScreen() {
           item.tipo === 'offline' ? `offline-${item.data.id_local}` : item.data.id
         }
         refreshControl={
-          <RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />
+          <RefreshControl
+            refreshing={refrescando}
+            onRefresh={() => cargar(true)}
+            colors={[GOV.azul]}
+            tintColor={GOV.azul}
+          />
         }
         ListEmptyComponent={
-          <View style={styles.centrado}>
-            <Text variant="bodyLarge" style={styles.hint}>No hay hogares registrados.</Text>
-          </View>
+          <EmptyState
+            icon="home-outline"
+            title="Sin hogares"
+            message="No hay hogares registrados aún. Crea el primero para comenzar la caracterización."
+            actionLabel="Nuevo hogar"
+            onAction={() => router.push('/(main)/hogares/nuevo')}
+          />
         }
         renderItem={({ item }) =>
           item.tipo === 'offline'
@@ -116,73 +202,136 @@ export default function HogaresIndexScreen() {
         icon="plus"
         label="Nuevo hogar"
         style={styles.fab}
+        color="#FFFFFF"
         onPress={() => router.push('/(main)/hogares/nuevo')}
       />
     </View>
   );
 }
 
-function HogarServidorCard({ data }: { data: HogarResumen }) {
-  const color = data.estado === 'ACTIVO' ? '#2E7D32' : data.estado === 'BORRADOR' ? '#E65100' : '#616161';
-  return (
-    <Card
-      style={styles.card}
-      onPress={() => router.push({ pathname: '/(main)/hogares/[hogarId]', params: { hogarId: data.id } })}
-    >
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <Text variant="bodyMedium" style={styles.idText} numberOfLines={1}>{data.id.slice(0, 8)}…</Text>
-          <Chip compact mode="flat" style={{ backgroundColor: color + '22' }} textStyle={{ color, fontSize: 11 }}>
-            {data.estado_display}
-          </Chip>
-        </View>
-        <Text variant="bodySmall" style={styles.municipio}>{data.municipio_nombre ?? 'Municipio no registrado'}</Text>
-        <View style={styles.cardFooter}>
-          <Text variant="labelSmall" style={styles.dato}>{data.total_miembros} miembro{data.total_miembros !== 1 ? 's' : ''}</Text>
-          <Text variant="labelSmall" style={styles.dato}>{new Date(data.created_at).toLocaleDateString('es-CO')}</Text>
-        </View>
-      </Card.Content>
-    </Card>
-  );
-}
-
-function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
-  return (
-    <Card style={[styles.card, styles.cardOffline]}>
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <Text variant="bodyMedium" style={styles.idText} numberOfLines={1}>{data.id_local.slice(0, 8)}…</Text>
-          <Chip compact mode="flat" style={{ backgroundColor: '#FFF3E0' }} textStyle={{ color: '#E65100', fontSize: 11 }}>
-            Pendiente sync
-          </Chip>
-        </View>
-        <Text variant="bodySmall" style={styles.municipio}>
-          {data.tipo_vivienda || 'Vivienda sin clasificar'} · {data.numero_personas} persona{data.numero_personas !== 1 ? 's' : ''}
-        </Text>
-        <Text variant="labelSmall" style={styles.dato}>
-          {new Date(data.created_at).toLocaleDateString('es-CO')}
-        </Text>
-      </Card.Content>
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  filtro: { margin: 12 },
-  offlineBanner: { marginHorizontal: 12, marginBottom: 8, backgroundColor: '#FFF3E0' },
-  offlineTxt: { color: '#E65100', fontSize: 12 },
-  lista: { padding: 12, paddingBottom: 88 },
-  listaVacia: { flexGrow: 1 },
-  card: { marginBottom: 8, backgroundColor: '#FFFFFF' },
-  cardOffline: { borderLeftWidth: 3, borderLeftColor: '#E65100' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  idText: { fontFamily: 'monospace', color: '#1565C0', fontWeight: '600', flex: 1 },
-  municipio: { color: '#424242', marginBottom: 8 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  dato: { color: '#9E9E9E' },
-  hint: { marginTop: 12, color: '#757575' },
-  error: { color: '#C62828', textAlign: 'center', margin: 16 },
-  fab: { position: 'absolute', right: 16, bottom: 16 },
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
+  },
+  centrado: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  hint: {
+    marginTop: SPACING.sm,
+    color: GOV.textoS,
+    ...FONT.small,
+  },
+  filtro: {
+    marginHorizontal: SPACING.md,
+    marginVertical: SPACING.sm,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: GOV.naranjaTenue,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
+  },
+  offlineTxt: {
+    ...FONT.caption,
+    color: GOV.naranja,
+    fontWeight: '600',
+  },
+  errorTxt: {
+    ...FONT.small,
+    color: GOV.rojo,
+    textAlign: 'center',
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  lista: {
+    padding: SPACING.md,
+    paddingBottom: 96,
+  },
+  listaVacia: {
+    flexGrow: 1,
+  },
+  // Tarjeta
+  card: {
+    flexDirection: 'row',
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.sm,
+    overflow: 'hidden',
+    ...SHADOW.card,
+  },
+  cardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
+  },
+  cardOffline: {
+    // sin onPress — solo visual
+  },
+  cardLeft: {
+    width: 4,
+    backgroundColor: GOV.azul,
+  },
+  cardBody: {
+    flex: 1,
+    padding: SPACING.md,
+  },
+  chevron: {
+    justifyContent: 'center',
+    paddingRight: SPACING.sm,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  cardId: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: '600',
+    color: GOV.azul,
+    flex: 1,
+  },
+  estadoChip: {
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  estadoTxt: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  municipio: {
+    ...FONT.small,
+    color: GOV.textoS,
+    marginBottom: 6,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metaDato: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  metaTxt: {
+    ...FONT.caption,
+    color: GOV.textoT,
+  },
+  fab: {
+    position: 'absolute',
+    right: SPACING.md,
+    bottom: SPACING.md,
+    backgroundColor: GOV.azul,
+  },
 });

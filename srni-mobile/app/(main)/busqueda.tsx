@@ -14,6 +14,8 @@ import {
   HelperText,
 } from 'react-native-paper';
 import apiClient from '../../src/api/client';
+import { GovHeader } from '../../src/components/GovHeader';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
 interface ResultadoBusqueda {
   id: string;
@@ -51,6 +53,8 @@ export default function BusquedaScreen() {
 
   return (
     <View style={styles.root}>
+      <GovHeader title="Búsqueda RNI" subtitle="Consultar víctimas registradas" />
+      <View style={styles.contenido}>
       <SegmentedButtons
         value={tipoDoc}
         onValueChange={setTipoDoc}
@@ -101,17 +105,19 @@ export default function BusquedaScreen() {
         )}
         contentContainerStyle={styles.lista}
       />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  segmented: { marginBottom: 12 },
-  buscador: { marginBottom: 8, backgroundColor: '#FFFFFF' },
-  spinner: { marginTop: 32 },
-  sinResultados: { textAlign: 'center', color: '#757575', marginTop: 32 },
-  lista: { paddingBottom: 32 },
-  resultado: { marginBottom: 8, backgroundColor: '#FFFFFF' },
-  subtexto: { color: '#757575', marginTop: 4 },
+  root: { flex: 1, backgroundColor: GOV.fondoApp },
+  contenido: { flex: 1, padding: SPACING.md },
+  segmented: { marginBottom: SPACING.sm },
+  buscador: { marginBottom: SPACING.xs, backgroundColor: GOV.superficie },
+  spinner: { marginTop: SPACING.xl },
+  sinResultados: { textAlign: 'center', color: GOV.textoS, marginTop: SPACING.xl, ...FONT.body },
+  lista: { paddingBottom: SPACING.xl },
+  resultado: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie, borderRadius: RADIUS.md, ...SHADOW.card },
+  subtexto: { color: GOV.textoS, marginTop: 4, ...FONT.caption },
 });

@@ -30,17 +30,21 @@ export default function MainLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,          // Cada pantalla usa GovHeader propio
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: '#9E9E9E',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E0E0E0',
-          height: Platform.OS === 'ios' ? 88 : 64,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 84 : 60,
           paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 4,
         },
-        headerStyle: { backgroundColor: theme.colors.primary },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '600' },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
       }}
     >
       <Tabs.Screen

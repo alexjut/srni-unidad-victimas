@@ -14,8 +14,9 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
-  Button, ActivityIndicator, Chip, IconButton,
+  ActivityIndicator, Chip, IconButton,
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentoDao from '../../../src/db/instrumentoDao';
 import * as borradoresDao from '../../../src/db/borradoresDao';
@@ -25,6 +26,9 @@ import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { GovButton } from '../../../src/components/GovButton';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, DerivadaRow } from '../../../src/db/instrumentoDao';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,54 +197,63 @@ export default function TemaScreen() {
   // ── Render ──────────────────────────────────────────────────────────────────
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
+      <View style={styles.root}>
+        <GovHeader title="Cargando módulo…" onBack={() => router.back()} />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+        </View>
       </View>
     );
   }
 
+  const totalVisible = preguntasVisibles.length;
+
   return (
     <View style={styles.root}>
-      <View style={styles.headerRow}>
-        <Text variant="titleMedium" style={styles.cabecera} numberOfLines={2}>
-          {temaNombre}
-        </Text>
-        <View style={styles.headerActions}>
-          {!estaOnline && (
-            <Chip compact icon="wifi-off" style={styles.offlineChip} textStyle={styles.offlineTxt}>
-              Offline
-            </Chip>
-          )}
-          {iaActivo ? (
-            <Chip
-              compact
-              icon="microphone"
-              style={styles.iaActivoChip}
-              textStyle={styles.iaActivoTxt}
-              onClose={() => useIAStore.getState().desactivar()}
-            >
-              IA activa
-            </Chip>
-          ) : (
-            <IconButton
-              icon="robot"
-              size={20}
-              iconColor="#1565C0"
-              onPress={() => router.push({
-                pathname: '/(main)/formulario/consentimiento-ia',
-                params: { sesionEncuestaId: borradorId ?? '' },
-              })}
-            />
-          )}
-        </View>
-      </View>
+      <GovHeader
+        title={temaNombre || 'Módulo'}
+        subtitle={`${totalVisible} pregunta${totalVisible !== 1 ? 's' : ''}`}
+        onBack={() => router.back()}
+        right={
+          <View style={styles.headerActions}>
+            {!estaOnline && (
+              <Chip compact icon="wifi-off" style={styles.offlineChip} textStyle={styles.offlineTxt}>
+                Offline
+              </Chip>
+            )}
+            {iaActivo ? (
+              <Chip
+                compact
+                icon="microphone"
+                style={styles.iaActivoChip}
+                textStyle={styles.iaActivoTxt}
+                onClose={() => useIAStore.getState().desactivar()}
+              >
+                IA
+              </Chip>
+            ) : (
+              <IconButton
+                icon="robot"
+                size={20}
+                iconColor="#FFFFFF"
+                onPress={() => router.push({
+                  pathname: '/(main)/formulario/consentimiento-ia',
+                  params: { sesionEncuestaId: borradorId ?? '' },
+                })}
+              />
+            )}
+          </View>
+        }
+      />
 
       <FlatList
         data={preguntasVisibles}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <PreguntaItem
             pregunta={item}
+            index={index}
+            total={totalVisible}
             opciones={opciones[item.id] ?? []}
             valor={respuestas[item.id] ?? ''}
             onChange={(v) => setRespuesta(item.id, v)}
@@ -261,9 +274,9 @@ export default function TemaScreen() {
         }
       />
 
-      <Button mode="contained" style={styles.siguiente} onPress={finalizarTema}>
-        Guardar y volver
-      </Button>
+      <View style={styles.footerBar}>
+        <GovButton label="Guardar y volver" icon="check" onPress={finalizarTema} />
+      </View>
     </View>
   );
 }
@@ -274,6 +287,8 @@ export default function TemaScreen() {
 
 function PreguntaItem({
   pregunta,
+  index,
+  total,
   opciones,
   valor,
   onChange,
@@ -284,6 +299,8 @@ function PreguntaItem({
   onRechazarIA,
 }: {
   pregunta: PreguntaRow;
+  index: number;
+  total: number;
   opciones: OpcionRow[];
   valor: string;
   onChange: (v: string) => void;
@@ -295,11 +312,23 @@ function PreguntaItem({
 }) {
   return (
     <View style={styles.preguntaCard}>
-      <Text variant="bodyMedium" style={styles.textoPregunta}>
-        {pregunta.requerida ? '* ' : ''}{pregunta.texto}
+      {/* Encabezado: número de pregunta */}
+      <View style={styles.preguntaHeader}>
+        <View style={styles.numBadge}>
+          <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {pregunta.requerida && (
+          <View style={styles.requeridoChip}>
+            <Text style={styles.requeridoTxt}>Requerida</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.textoPregunta}>
+        {pregunta.texto}
       </Text>
       {pregunta.texto_ayuda ? (
-        <Text variant="bodySmall" style={styles.ayuda}>{pregunta.texto_ayuda}</Text>
+        <Text style={styles.ayuda}>{pregunta.texto_ayuda}</Text>
       ) : null}
 
       {/* Asistente de voz — solo si IA activa */}
@@ -365,27 +394,107 @@ function PreguntaItem({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 16 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cabecera: { fontWeight: '600', color: '#1565C0', flex: 1, marginRight: 8 },
-  offlineChip: { backgroundColor: '#FFF3E0' },
-  offlineTxt: { color: '#E65100', fontSize: 10 },
-  iaActivoChip: { backgroundColor: '#E3F2FD' },
-  iaActivoTxt: { color: '#1565C0', fontSize: 10 },
-  lista: { padding: 12, paddingBottom: 80 },
-  sinPreguntas: { textAlign: 'center', color: '#9E9E9E', marginTop: 32 },
-  preguntaCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#1565C0',
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
   },
-  textoPregunta: { fontWeight: '600', marginBottom: 8 },
-  ayuda: { color: '#757575', marginBottom: 8 },
-  inputTexto: { backgroundColor: '#FAFAFA' },
-  siguiente: { margin: 16, borderRadius: 8 },
+  centrado: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  offlineChip: {
+    backgroundColor: GOV.naranjaTenue,
+  },
+  offlineTxt: {
+    color: GOV.naranja,
+    fontSize: 10,
+  },
+  iaActivoChip: {
+    backgroundColor: GOV.azulTenue,
+  },
+  iaActivoTxt: {
+    color: GOV.azul,
+    fontSize: 10,
+  },
+  lista: {
+    padding: SPACING.md,
+    paddingBottom: 96,
+  },
+  sinPreguntas: {
+    textAlign: 'center',
+    color: GOV.textoT,
+    marginTop: SPACING.xl,
+    ...FONT.body,
+  },
+  // Tarjeta de pregunta
+  preguntaCard: {
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.azul,
+    ...SHADOW.card,
+  },
+  preguntaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  numBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: GOV.azul,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  numBadgeTxt: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  numTotal: {
+    ...FONT.caption,
+    color: GOV.textoT,
+  },
+  requeridoChip: {
+    marginLeft: 'auto' as any,
+    backgroundColor: GOV.rojoTenue,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  requeridoTxt: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: GOV.rojo,
+  },
+  textoPregunta: {
+    ...FONT.body,
+    fontWeight: '600',
+    color: GOV.textoP,
+    marginBottom: SPACING.sm,
+  },
+  ayuda: {
+    ...FONT.small,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+  },
+  inputTexto: {
+    backgroundColor: GOV.fondoApp,
+  },
+  footerBar: {
+    backgroundColor: GOV.superficie,
+    padding: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: GOV.borde,
+  },
 });

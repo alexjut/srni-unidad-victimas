@@ -1,13 +1,16 @@
 /**
- * Lista de temas del formulario de caracterización PAARI.
- * Los temas se cargan desde la BD local SQLite (sincronizada con el servidor).
+ * Lista de temas del formulario PAARI — GOV.CO design system.
  */
 import { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { Card, Text, ProgressBar, Button, ActivityIndicator } from 'react-native-paper';
+import { View, FlatList, StyleSheet, Pressable } from 'react-native';
+import { Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
 import { DB_NAME } from '../../../src/db/schema';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { EmptyState } from '../../../src/components/EmptyState';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 
 interface Tema {
   id: number;
@@ -15,6 +18,34 @@ interface Tema {
   nombre: string;
   orden: number;
 }
+
+// ─── Tarjeta de tema ──────────────────────────────────────────────────────────
+
+function TemaCard({ tema, index }: { tema: Tema; index: number }) {
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: '/(main)/formulario/[temaId]', params: { temaId: tema.id } })}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Módulo ${index + 1}: ${tema.nombre}`}
+    >
+      {/* Número de módulo */}
+      <View style={styles.numCircle}>
+        <Text style={styles.numTxt}>{String(index + 1).padStart(2, '0')}</Text>
+      </View>
+
+      {/* Texto */}
+      <View style={styles.cardTexto}>
+        <Text style={styles.temaNombre} numberOfLines={2}>{tema.nombre}</Text>
+        <Text style={styles.temaCodigo}>{tema.codigo}</Text>
+      </View>
+
+      <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+    </Pressable>
+  );
+}
+
+// ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function FormularioIndexScreen() {
   const [temas, setTemas] = useState<Tema[]>([]);
@@ -34,61 +65,50 @@ export default function FormularioIndexScreen() {
 
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.cargandoTexto}>Cargando instrumento…</Text>
+      <View style={styles.root}>
+        <GovHeader title="Formulario PAARI" subtitle="Instrumento de caracterización" />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+          <Text style={styles.cargandoTxt}>Cargando instrumento…</Text>
+        </View>
       </View>
     );
   }
 
   if (temas.length === 0) {
     return (
-      <View style={styles.centrado}>
-        <Text variant="bodyLarge">No hay instrumento cargado.</Text>
-        <Text variant="bodyMedium" style={styles.hint}>
-          Sincronice con el servidor para descargar el formulario.
-        </Text>
+      <View style={styles.root}>
+        <GovHeader title="Formulario PAARI" subtitle="Instrumento de caracterización" />
+        <EmptyState
+          icon="clipboard-alert-outline"
+          title="Sin instrumento"
+          message="No hay instrumento cargado. Sincronice con el servidor para descargar el formulario PAARI."
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.root}>
-      <Text variant="titleMedium" style={styles.cabecera}>
-        {temas.length} módulos — PAARI v1.0
-      </Text>
-      <ProgressBar progress={0} style={styles.progreso} />
+      <GovHeader title="Formulario PAARI" subtitle={`${temas.length} módulos`} />
+
+      {/* Barra de progreso global */}
+      <View style={styles.progresoWrap}>
+        <View style={styles.progresoRow}>
+          <Text style={styles.progresoLabel}>{temas.length} módulos — PAARI v1.0</Text>
+          <Text style={styles.progresoLabel}>0% completado</Text>
+        </View>
+        <ProgressBar
+          progress={0}
+          style={styles.progressBar}
+          color={GOV.azul}
+        />
+      </View>
 
       <FlatList
         data={temas}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item, index }) => (
-          <Card
-            style={styles.card}
-            onPress={() =>
-              router.push({
-                pathname: '/(main)/formulario/[temaId]',
-                params: { temaId: item.id },
-              })
-            }
-          >
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.numeroBadge}>
-                <Text variant="labelLarge" style={styles.numero}>
-                  {String(index + 1).padStart(2, '0')}
-                </Text>
-              </View>
-              <View style={styles.cardTexto}>
-                <Text variant="bodyLarge" numberOfLines={2}>
-                  {item.nombre}
-                </Text>
-                <Text variant="bodySmall" style={styles.codigo}>
-                  {item.codigo}
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
-        )}
+        renderItem={({ item, index }) => <TemaCard tema={item} index={index} />}
         contentContainerStyle={styles.lista}
       />
     </View>
@@ -96,25 +116,88 @@ export default function FormularioIndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  cargandoTexto: { marginTop: 12, color: '#757575' },
-  hint: { textAlign: 'center', color: '#9E9E9E', marginTop: 8 },
-  cabecera: { margin: 16, fontWeight: '600', color: '#1565C0' },
-  progreso: { marginHorizontal: 16, marginBottom: 8, height: 6, borderRadius: 3 },
-  lista: { padding: 12, paddingBottom: 32 },
-  card: { marginBottom: 8, backgroundColor: '#FFFFFF' },
-  cardContent: { flexDirection: 'row', alignItems: 'center' },
-  numeroBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E3F2FD',
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
+  },
+  centrado: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    padding: SPACING.xl,
   },
-  numero: { color: '#1565C0', fontWeight: '700' },
-  cardTexto: { flex: 1 },
-  codigo: { color: '#9E9E9E', marginTop: 2 },
+  cargandoTxt: {
+    ...FONT.small,
+    color: GOV.textoS,
+    marginTop: SPACING.sm,
+  },
+  progresoWrap: {
+    backgroundColor: GOV.superficie,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  progresoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  progresoLabel: {
+    ...FONT.caption,
+    color: GOV.textoS,
+  },
+  progressBar: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: GOV.borde,
+  },
+  lista: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xl,
+  },
+  // Tarjeta de tema
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    ...SHADOW.card,
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  numCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+    borderWidth: 1,
+    borderColor: GOV.azul + '33',
+  },
+  numTxt: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: GOV.azul,
+  },
+  cardTexto: {
+    flex: 1,
+  },
+  temaNombre: {
+    ...FONT.body,
+    fontWeight: '600',
+    color: GOV.textoP,
+    marginBottom: 2,
+  },
+  temaCodigo: {
+    ...FONT.caption,
+    color: GOV.textoT,
+    fontFamily: 'monospace',
+  },
 });
