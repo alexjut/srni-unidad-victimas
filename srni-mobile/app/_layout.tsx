@@ -7,7 +7,7 @@
  *  4. Redirige al login si no hay sesión activa
  */
 import { useEffect, useRef } from 'react';
-import { Stack, router, useSegments } from 'expo-router';
+import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 
@@ -35,6 +35,9 @@ function AuthGuard() {
   const { usuario, cargarPerfil } = useAuthStore();
   const { inicializar } = useSyncStore();
   const segments = useSegments();
+  // navigationState.key es undefined hasta que el Stack esté completamente montado.
+  // Nunca navegar antes de que key exista — este es el origen del Render Error.
+  const navigationState = useRootNavigationState();
   const syncInitializado = useRef(false);
 
   useEffect(() => {
@@ -53,13 +56,16 @@ function AuthGuard() {
   }, [usuario]);
 
   useEffect(() => {
+    // Esperar a que el navegador esté montado antes de redirigir
+    if (!navigationState?.key) return;
+
     const inAuthGroup = segments[0] === '(auth)';
     if (!usuario && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (usuario && inAuthGroup) {
       router.replace('/(main)');
     }
-  }, [usuario, segments]);
+  }, [usuario, segments, navigationState?.key]);
 
   return null;
 }
