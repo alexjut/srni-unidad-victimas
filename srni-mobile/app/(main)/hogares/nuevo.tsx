@@ -1,15 +1,24 @@
 /**
  * Formulario para crear un nuevo hogar.
- * El encuestador proporciona el UUID del jefe de hogar (obtenido desde búsqueda RNI).
+ *
+ * Flujo:
+ *  - Con red  → POST /api/hogares/ directamente
+ *  - Sin red  → guarda en hogares_offline + encola CREAR_HOGAR
+ *
+ * SEGURIDAD: jefe_hogar_uuid es el UUID de la Victima (referencia opaca).
+ * No se almacena nombre ni documento.
  */
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import {
   Text, TextInput, Button, SegmentedButtons,
-  HelperText, Divider, ActivityIndicator,
+  HelperText, Divider, ActivityIndicator, Chip,
 } from 'react-native-paper';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
+import * as colaDao from '../../../src/db/colaDao';
+import { useSyncStore } from '../../../src/stores/syncStore';
 
 const TIPOS_VIVIENDA = [
   { value: 'CASA', label: 'Casa' },
@@ -29,6 +38,8 @@ const CONDICIONES = [
 ];
 
 export default function NuevoHogarScreen() {
+  const { estaOnline, refrescarContadores } = useSyncStore();
+
   const [jefeHogar, setJefeHogar] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [tipoVivienda, setTipoVivienda] = useState('CASA');
@@ -59,17 +70,47 @@ export default function NuevoHogarScreen() {
     if (!validar()) return;
     setGuardando(true);
     setErrorGeneral('');
+
+    const campos = {
+      jefe_hogar_uuid: jefeHogar.trim(),
+      municipio_id: municipio ? parseInt(municipio, 10) : undefined,
+      tipo_vivienda: tipoVivienda,
+      condicion_ocupacion: condicion,
+      estrato: estrato ? parseInt(estrato, 10) : 0,
+      numero_cuartos: cuartos ? parseInt(cuartos, 10) : 0,
+      numero_personas: parseInt(personas, 10),
+      observaciones,
+    };
+
     try {
-      await hogaresApi.crear({
-        jefe_hogar: jefeHogar.trim(),
-        municipio: municipio ? parseInt(municipio, 10) : undefined,
-        tipo_vivienda: tipoVivienda,
-        condicion_ocupacion: condicion,
-        estrato: estrato ? parseInt(estrato, 10) : 0,
-        numero_cuartos: cuartos ? parseInt(cuartos, 10) : 0,
-        numero_personas: parseInt(personas, 10),
-        observaciones,
-      });
+      if (estaOnline) {
+        // Camino feliz: crear directamente en servidor
+        await hogaresApi.crear({
+          jefe_hogar: campos.jefe_hogar_uuid,
+          municipio: campos.municipio_id,
+          tipo_vivienda: campos.tipo_vivienda,
+          condicion_ocupacion: campos.condicion_ocupacion,
+          estrato: campos.estrato,
+          numero_cuartos: campos.numero_cuartos,
+          numero_personas: campos.numero_personas,
+          observaciones: campos.observaciones,
+        });
+      } else {
+        // Sin red: guardar localmente y encolar
+        const hogarLocal = await hogaresOfflineDao.crearHogarOffline(campos);
+        await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
+          id_local: hogarLocal.id_local,
+          jefe_hogar: campos.jefe_hogar_uuid,
+          municipio: campos.municipio_id,
+          tipo_vivienda: campos.tipo_vivienda,
+          condicion_ocupacion: campos.condicion_ocupacion,
+          estrato: campos.estrato,
+          numero_cuartos: campos.numero_cuartos,
+          numero_personas: campos.numero_personas,
+          observaciones: campos.observaciones,
+        });
+        await refrescarContadores();
+      }
       router.back();
     } catch (err: any) {
       const detalle = err?.response?.data;
@@ -89,6 +130,18 @@ export default function NuevoHogarScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+      {!estaOnline && (
+        <Chip
+          icon="wifi-off"
+          mode="flat"
+          style={styles.offlineBanner}
+          textStyle={styles.offlineTxt}
+        >
+          Sin conexión — se guardará localmente y sincronizará al recuperar señal
+        </Chip>
+      )}
+
       <Text variant="titleMedium" style={styles.seccion}>Jefe de hogar</Text>
       <TextInput
         label="UUID del jefe de hogar *"
@@ -101,9 +154,7 @@ export default function NuevoHogarScreen() {
         error={!!errores.jefeHogar}
       />
       {errores.jefeHogar && <HelperText type="error">{errores.jefeHogar}</HelperText>}
-      <HelperText type="info">
-        Obtenga el UUID desde la pantalla de Búsqueda RNI.
-      </HelperText>
+      <HelperText type="info">Obtenga el UUID desde la pantalla de Búsqueda RNI.</HelperText>
 
       <Divider style={styles.divider} />
       <Text variant="titleMedium" style={styles.seccion}>Ubicación</Text>
@@ -180,9 +231,11 @@ export default function NuevoHogarScreen() {
         onPress={guardar}
         disabled={guardando}
         style={styles.boton}
-        icon={guardando ? undefined : 'home-plus'}
+        icon={guardando ? undefined : estaOnline ? 'home-plus' : 'home-clock'}
       >
-        {guardando ? <ActivityIndicator size="small" color="#FFF" /> : 'Guardar hogar'}
+        {guardando
+          ? <ActivityIndicator size="small" color="#FFF" />
+          : estaOnline ? 'Guardar hogar' : 'Guardar offline'}
       </Button>
 
       <Button mode="outlined" onPress={() => router.back()} style={styles.cancelar}>
@@ -195,6 +248,8 @@ export default function NuevoHogarScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F5F5F5' },
   content: { padding: 16, paddingBottom: 40 },
+  offlineBanner: { marginBottom: 16, backgroundColor: '#FFF3E0' },
+  offlineTxt: { color: '#E65100', fontSize: 12 },
   seccion: { fontWeight: '600', color: '#1565C0', marginBottom: 8 },
   divider: { marginVertical: 16 },
   segmented: { marginBottom: 4 },
