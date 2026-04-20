@@ -5,15 +5,15 @@
  */
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
-import { useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/authStore';
 
+type IconProps = { color: string; size: number };
+
 export default function MainLayout() {
-  const theme = useTheme();
   const { usuario, perfilCargado } = useAuthStore();
   const perfil = usuario?.perfil;
 
-  // Esperando a que SecureStore resuelva
   if (!perfilCargado) {
     return (
       <View style={styles.splash}>
@@ -22,7 +22,6 @@ export default function MainLayout() {
     );
   }
 
-  // Sin sesión → ir al login
   if (!usuario) {
     return <Redirect href="/(auth)/login" />;
   }
@@ -30,44 +29,43 @@ export default function MainLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,          // Cada pantalla usa GovHeader propio
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: '#9E9E9E',
+        headerShown: false,
+        tabBarActiveTintColor: '#1565C0',
+        tabBarInactiveTintColor: '#757575',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E0E0E0',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          height: Platform.OS === 'ios' ? 82 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 6,
           paddingTop: 4,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '500',
         },
       }}
     >
+      {/* ── Tabs visibles ──────────────────────────────────────────────────── */}
+
       <Tabs.Screen
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color, size }) => null, // iconos se configuran con expo-vector-icons
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="home" size={size} color={color} />
+          ),
         }}
       />
 
       <Tabs.Screen
         name="busqueda"
         options={{
-          title: 'Búsqueda RNI',
+          title: 'Buscar',
           href: perfil?.puede_buscar_rni ? undefined : null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="formulario"
-        options={{
-          title: 'Formulario',
-          href: perfil?.puede_caracterizar ? undefined : null,
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="magnify" size={size} color={color} />
+          ),
         }}
       />
 
@@ -76,6 +74,9 @@ export default function MainLayout() {
         options={{
           title: 'Hogares',
           href: perfil?.puede_caracterizar ? undefined : null,
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="home-group" size={size} color={color} />
+          ),
         }}
       />
 
@@ -84,7 +85,48 @@ export default function MainLayout() {
         options={{
           title: 'Encuestas',
           href: perfil?.puede_caracterizar ? undefined : null,
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />
+          ),
         }}
+      />
+
+      <Tabs.Screen
+        name="formulario"
+        options={{
+          title: 'Formulario',
+          href: perfil?.puede_caracterizar ? undefined : null,
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="file-document" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Rutas ocultas (subrutas — no deben aparecer como tabs) ─────────── */}
+
+      <Tabs.Screen
+        name="hogares/[hogarId]"
+        options={{ href: null }}
+      />
+
+      <Tabs.Screen
+        name="hogares/nuevo"
+        options={{ href: null }}
+      />
+
+      <Tabs.Screen
+        name="encuestas/[sesionId]"
+        options={{ href: null }}
+      />
+
+      <Tabs.Screen
+        name="formulario/[temaId]"
+        options={{ href: null }}
+      />
+
+      <Tabs.Screen
+        name="formulario/consentimiento-ia"
+        options={{ href: null }}
       />
     </Tabs>
   );
