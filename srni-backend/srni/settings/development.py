@@ -39,13 +39,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # --- CORS abierto en desarrollo ---
 CORS_ALLOW_ALL_ORIGINS = True
 
-# --- ngrok: aceptar peticiones HTTPS desde el túnel ---
-# CSRF_TRUSTED_ORIGINS acepta cualquier subdominio *.ngrok-free.app y *.ngrok.io
+# --- ngrok dominios permanentes (cuenta pago) ---
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
-    'https://*.ngrok.io',
-    'http://localhost:8001',
-    'http://127.0.0.1:8001',
+    'https://srniapk-dev.ngrok.app',
+    'https://srniapk.ngrok.app',
 ]
 
 # --- Email en consola ---

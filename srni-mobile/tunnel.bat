@@ -1,0 +1,3 @@
+@echo off
+echo Arrancando tunel ngrok para Expo Metro...
+ngrok http --domain=srniapk.ngrok.app 8082
