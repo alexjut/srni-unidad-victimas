@@ -44,6 +44,7 @@ LOCAL_APPS = [
     'apps.sincronizacion',
     'apps.auditoria',
     'apps.reportes',
+    'apps.ia',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -165,6 +166,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# --- IA — Gemini ---
+# La clave API NUNCA se envía a la app móvil. Solo el backend llama a Gemini.
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

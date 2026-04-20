@@ -49,6 +49,7 @@ def api_root(request, format=None):
             },
             'hogares': request.build_absolute_uri('/api/hogares/'),
             'encuestas': request.build_absolute_uri('/api/encuestas/'),
+            'ia': request.build_absolute_uri('/api/ia/'),
             # Próximos sprints:
             # 'reportes': {...},
         },
@@ -74,6 +75,9 @@ urlpatterns = [
     # Módulos Sprint 3
     path('api/hogares/', include('apps.hogares.urls')),
     path('api/encuestas/', include('apps.encuestas.urls')),
+
+    # Módulo Sprint 5 — IA Gemini
+    path('api/ia/', include('apps.ia.urls')),
 
     # Módulos futuros
     # path('api/reportes/', include('apps.reportes.urls')),

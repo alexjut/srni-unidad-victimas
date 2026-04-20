@@ -14,7 +14,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
-  Button, ActivityIndicator, Chip,
+  Button, ActivityIndicator, Chip, IconButton,
 } from 'react-native-paper';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentoDao from '../../../src/db/instrumentoDao';
@@ -22,6 +22,9 @@ import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import { calcularVisibles, construirPreguntasConCondiciones } from '../../../src/services/skipLogic';
 import { useSyncStore } from '../../../src/stores/syncStore';
+import { useIAStore } from '../../../src/stores/iaStore';
+import { AudioRecorder } from '../../../src/components/AudioRecorder';
+import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import type { PreguntaRow, OpcionRow, DerivadaRow } from '../../../src/db/instrumentoDao';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,6 +37,17 @@ export default function TemaScreen() {
   }>();
 
   const { estaOnline, refrescarContadores } = useSyncStore();
+  const {
+    activo: iaActivo,
+    estado: estadoIA,
+    sugerencia,
+    preguntaActivaId,
+    iniciarGrabacion,
+    enviarTexto,
+    aceptarSugerencia,
+    rechazarSugerencia,
+    resetear: resetearIA,
+  } = useIAStore();
 
   const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
   const [opciones, setOpciones] = useState<Record<number, OpcionRow[]>>({});
@@ -141,6 +155,27 @@ export default function TemaScreen() {
     }
   }, [borradorId, estaOnline]);
 
+  // ── Asistente IA ────────────────────────────────────────────────────────────
+  const handleTextoTranscrito = useCallback(async (preguntaId: number, texto: string) => {
+    if (!borradorId) return;
+    iniciarGrabacion(preguntaId);
+    const borrador = await borradoresDao.getBorrador(borradorId);
+    const sesionId = borrador?.sesion_id ?? '';
+    await enviarTexto(sesionId, preguntaId, texto);
+  }, [borradorId, iniciarGrabacion, enviarTexto]);
+
+  const handleAceptarSugerencia = useCallback((preguntaId: number) => {
+    const resultado = aceptarSugerencia();
+    if (resultado?.sugerencia) {
+      setRespuesta(preguntaId, resultado.sugerencia);
+    }
+  }, [aceptarSugerencia, setRespuesta]);
+
+  // Limpiar estado IA al salir de la pantalla
+  useEffect(() => {
+    return () => { resetearIA(); };
+  }, []);
+
   // ── Finalizar tema ──────────────────────────────────────────────────────────
   async function finalizarTema() {
     if (borradorId) {
@@ -170,11 +205,34 @@ export default function TemaScreen() {
         <Text variant="titleMedium" style={styles.cabecera} numberOfLines={2}>
           {temaNombre}
         </Text>
-        {!estaOnline && (
-          <Chip compact icon="wifi-off" style={styles.offlineChip} textStyle={styles.offlineTxt}>
-            Offline
-          </Chip>
-        )}
+        <View style={styles.headerActions}>
+          {!estaOnline && (
+            <Chip compact icon="wifi-off" style={styles.offlineChip} textStyle={styles.offlineTxt}>
+              Offline
+            </Chip>
+          )}
+          {iaActivo ? (
+            <Chip
+              compact
+              icon="microphone"
+              style={styles.iaActivoChip}
+              textStyle={styles.iaActivoTxt}
+              onClose={() => useIAStore.getState().desactivar()}
+            >
+              IA activa
+            </Chip>
+          ) : (
+            <IconButton
+              icon="robot"
+              size={20}
+              iconColor="#1565C0"
+              onPress={() => router.push({
+                pathname: '/(main)/formulario/consentimiento-ia',
+                params: { sesionEncuestaId: borradorId ?? '' },
+              })}
+            />
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -186,6 +244,15 @@ export default function TemaScreen() {
             opciones={opciones[item.id] ?? []}
             valor={respuestas[item.id] ?? ''}
             onChange={(v) => setRespuesta(item.id, v)}
+            iaActivo={iaActivo}
+            onTextoIA={(texto) => handleTextoTranscrito(item.id, texto)}
+            sugerenciaActiva={
+              sugerencia && preguntaActivaId === item.id && estadoIA === 'sugerida'
+                ? sugerencia
+                : null
+            }
+            onAceptarIA={() => handleAceptarSugerencia(item.id)}
+            onRechazarIA={rechazarSugerencia}
           />
         )}
         contentContainerStyle={styles.lista}
@@ -210,11 +277,21 @@ function PreguntaItem({
   opciones,
   valor,
   onChange,
+  iaActivo,
+  onTextoIA,
+  sugerenciaActiva,
+  onAceptarIA,
+  onRechazarIA,
 }: {
   pregunta: PreguntaRow;
   opciones: OpcionRow[];
   valor: string;
   onChange: (v: string) => void;
+  iaActivo?: boolean;
+  onTextoIA?: (texto: string) => void;
+  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
+  onAceptarIA?: () => void;
+  onRechazarIA?: () => void;
 }) {
   return (
     <View style={styles.preguntaCard}>
@@ -224,6 +301,22 @@ function PreguntaItem({
       {pregunta.texto_ayuda ? (
         <Text variant="bodySmall" style={styles.ayuda}>{pregunta.texto_ayuda}</Text>
       ) : null}
+
+      {/* Asistente de voz — solo si IA activa */}
+      {iaActivo && onTextoIA && (
+        <AudioRecorder
+          preguntaId={pregunta.id}
+          onTextoListo={onTextoIA}
+          disabled={!!sugerenciaActiva}
+        />
+      )}
+      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
+        <SugerenciaIA
+          sugerencia={sugerenciaActiva}
+          onAceptar={() => onAceptarIA()}
+          onRechazar={onRechazarIA}
+        />
+      )}
 
       {pregunta.tipo_respuesta === 'TEXTO' || pregunta.tipo_respuesta === 'NUMERICO' ? (
         <TextInput
@@ -275,9 +368,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F5F5F5' },
   centrado: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: 16 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cabecera: { fontWeight: '600', color: '#1565C0', flex: 1, marginRight: 8 },
   offlineChip: { backgroundColor: '#FFF3E0' },
   offlineTxt: { color: '#E65100', fontSize: 10 },
+  iaActivoChip: { backgroundColor: '#E3F2FD' },
+  iaActivoTxt: { color: '#1565C0', fontSize: 10 },
   lista: { padding: 12, paddingBottom: 80 },
   sinPreguntas: { textAlign: 'center', color: '#9E9E9E', marginTop: 32 },
   preguntaCard: {

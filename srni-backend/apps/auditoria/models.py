@@ -29,6 +29,8 @@ class LogAcceso(models.Model):
         ('CAMBIO_PASSWORD', 'Cambio de contraseña'),
         ('CAMBIO_USUARIO', 'Modificación de usuario'),
         ('ACCESO_DENEGADO', 'Acceso denegado'),
+        ('LLAMADA_GEMINI', 'Llamada al asistente IA Gemini'),
+        ('CONSENTIMIENTO_IA', 'Consentimiento de uso de IA'),
     ]
 
     RESULTADOS = [
