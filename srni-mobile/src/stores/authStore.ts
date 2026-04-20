@@ -10,6 +10,8 @@ import { authApi, type UsuarioMe } from '../api/auth';
 interface AuthState {
   usuario: UsuarioMe | null;
   cargando: boolean;
+  /** true una vez que cargarPerfil() terminó (con o sin sesión activa). */
+  perfilCargado: boolean;
   error: string | null;
 
   // Acciones
@@ -22,6 +24,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   usuario: null,
   cargando: false,
+  perfilCargado: false,
   error: null,
 
   login: async (codigo, password) => {
@@ -60,15 +63,18 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   cargarPerfil: async () => {
     const token = await SecureStore.getItemAsync('access_token');
-    if (!token) return;
+    if (!token) {
+      set({ perfilCargado: true });
+      return;
+    }
     try {
       const { data } = await authApi.me();
-      set({ usuario: data });
+      set({ usuario: data, perfilCargado: true });
     } catch {
       // Token expirado y refresh también falló → limpiar
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
-      set({ usuario: null });
+      set({ usuario: null, perfilCargado: true });
     }
   },
 

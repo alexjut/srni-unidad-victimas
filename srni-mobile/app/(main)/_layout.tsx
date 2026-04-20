@@ -1,16 +1,31 @@
 /**
  * Layout principal con bottom tabs (encuestador).
- * Solo muestra las pestañas permitidas según el perfil del usuario.
+ * Si no hay sesión activa → redirige al login.
+ * Mientras carga el perfil → splash para evitar flash.
  */
-import { Tabs } from 'expo-router';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { Tabs, Redirect } from 'expo-router';
 import { useTheme } from 'react-native-paper';
-import { Platform } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
 
 export default function MainLayout() {
   const theme = useTheme();
-  const { usuario } = useAuthStore();
+  const { usuario, perfilCargado } = useAuthStore();
   const perfil = usuario?.perfil;
+
+  // Esperando a que SecureStore resuelva
+  if (!perfilCargado) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color="#1565C0" />
+      </View>
+    );
+  }
+
+  // Sin sesión → ir al login
+  if (!usuario) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs
@@ -70,3 +85,7 @@ export default function MainLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F5F5' },
+});
