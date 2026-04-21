@@ -1,15 +1,16 @@
 /**
- * Detalle de un hogar: información general, lista de miembros y acceso a encuestas.
+ * Detalle de un hogar — GOV.CO design system.
  */
 import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
-import {
-  Text, Card, Chip, Button, Divider,
-  ActivityIndicator, List, FAB,
-} from 'react-native-paper';
-import { router, useLocalSearchParams, Stack } from 'expo-router';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { GovButton } from '../../../src/components/GovButton';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { HogarDetalle, MiembroHogarResumen } from '../../../src/types';
 
 const PARENTESCO_LABEL: Record<string, string> = {
@@ -18,6 +19,99 @@ const PARENTESCO_LABEL: Record<string, string> = {
   PADRE_MADRE: 'Padre/Madre', HERMANO_A: 'Hermano/a',
   OTRO_PARIENTE: 'Pariente', NO_PARIENTE: 'Sin parentesco',
 };
+
+// ─── Fila de información ──────────────────────────────────────────────────────
+
+function InfoFila({ label, valor }: { label: string; valor: string }) {
+  return (
+    <View style={filaStyles.root}>
+      <Text style={filaStyles.label}>{label}</Text>
+      <Text style={filaStyles.valor}>{valor || '—'}</Text>
+    </View>
+  );
+}
+
+const filaStyles = StyleSheet.create({
+  root: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  label: { ...FONT.small, color: GOV.textoT, flex: 1 },
+  valor: { ...FONT.small, color: GOV.textoP, flex: 2, textAlign: 'right', fontWeight: '500' },
+});
+
+// ─── Ítem de miembro ──────────────────────────────────────────────────────────
+
+function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
+  return (
+    <View style={miembroStyles.root}>
+      <View style={miembroStyles.iconWrap}>
+        <MaterialCommunityIcons name="account" size={16} color={GOV.azul} />
+      </View>
+      <View style={miembroStyles.info}>
+        <Text style={miembroStyles.parentesco}>
+          {PARENTESCO_LABEL[miembro.parentesco] ?? miembro.parentesco}
+        </Text>
+        <Text style={miembroStyles.dato}>
+          {miembro.genero} · {miembro.edad != null ? `${miembro.edad} años` : 'edad N/D'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const miembroStyles = StyleSheet.create({
+  root: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  iconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+  },
+  info: { flex: 1 },
+  parentesco: { ...FONT.small, color: GOV.azul, fontWeight: '600' },
+  dato: { ...FONT.caption, color: GOV.textoS },
+});
+
+// ─── Sección card ─────────────────────────────────────────────────────────────
+
+function SeccionCard({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <View style={seccionStyles.card}>
+      <Text style={seccionStyles.titulo}>{titulo}</Text>
+      {children}
+    </View>
+  );
+}
+
+const seccionStyles = StyleSheet.create({
+  card: {
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    ...SHADOW.card,
+  },
+  titulo: {
+    ...FONT.h3,
+    color: GOV.azulOscuro,
+    marginBottom: SPACING.sm,
+  },
+});
+
+// ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function HogarDetalleScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId: string }>();
@@ -36,189 +130,161 @@ export default function HogarDetalleScreen() {
 
   async function iniciarEncuesta() {
     if (!hogar) return;
-    // El instrumento 1 es el PAARI por defecto — en producción se selecciona dinámicamente
     const INSTRUMENTO_PAARI = 1;
     setIniciandoSesion(true);
     try {
-      const res = await encuestasApi.crear({
-        hogar: hogar.id,
-        instrumento: INSTRUMENTO_PAARI,
-      });
-      router.push({
-        pathname: '/(main)/encuestas/[sesionId]',
-        params: { sesionId: res.data.id },
-      });
+      const res = await encuestasApi.crear({ hogar: hogar.id, instrumento: INSTRUMENTO_PAARI });
+      router.push({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: res.data.id } });
     } catch (err: any) {
-      const msg = err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.';
-      Alert.alert('Error', msg);
+      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
     } finally {
       setIniciandoSesion(false);
     }
   }
 
+  // ── Estados de carga / error ─────────────────────────────────────────────────
+
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
+      <View style={styles.root}>
+        <GovHeader title="Detalle del hogar" onBack={() => router.back()} />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+        </View>
       </View>
     );
   }
 
   if (error || !hogar) {
     return (
-      <View style={styles.centrado}>
-        <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
-        <Button onPress={() => router.back()}>Volver</Button>
+      <View style={styles.root}>
+        <GovHeader title="Detalle del hogar" onBack={() => router.back()} />
+        <View style={styles.centrado}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
+          <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
+          <GovButton label="Volver" variant="secondary" onPress={() => router.back()} />
+        </View>
       </View>
     );
   }
 
-  return (
-    <>
-      <Stack.Screen options={{ title: `Hogar ${hogar.id.slice(0, 8)}…` }} />
-      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+  const esActivo = hogar.estado === 'ACTIVO';
+  const estadoColor = esActivo ? GOV.verde : GOV.naranja;
+  const estadoBg    = esActivo ? GOV.verdeTenue : GOV.naranjaTenue;
 
-        {/* Estado */}
+  return (
+    <View style={styles.root}>
+      <GovHeader
+        title={`Hogar ${hogar.id.slice(0, 8)}…`}
+        subtitle={hogar.municipio_nombre ?? undefined}
+        onBack={() => router.back()}
+      />
+
+      <ScrollView contentContainerStyle={styles.content}>
+
+        {/* Fila de estado */}
         <View style={styles.estadoRow}>
-          <Chip
-            mode="flat"
-            style={{ backgroundColor: hogar.estado === 'ACTIVO' ? '#E8F5E9' : '#FFF3E0' }}
-            textStyle={{ color: hogar.estado === 'ACTIVO' ? '#2E7D32' : '#E65100' }}
-          >
-            {hogar.estado_display}
-          </Chip>
-          <Text variant="labelSmall" style={styles.fecha}>
-            {new Date(hogar.created_at).toLocaleDateString('es-CO')}
-          </Text>
+          <View style={[styles.estadoChip, { backgroundColor: estadoBg }]}>
+            <Text style={[styles.estadoTxt, { color: estadoColor }]}>{hogar.estado_display}</Text>
+          </View>
+          <Text style={styles.fecha}>{new Date(hogar.created_at).toLocaleDateString('es-CO')}</Text>
         </View>
 
         {/* Datos de vivienda */}
-        <Card style={styles.card}>
-          <Card.Title title="Datos de vivienda" />
-          <Card.Content>
-            <Fila label="Tipo" valor={hogar.tipo_vivienda_display} />
-            <Fila label="Ocupación" valor={hogar.condicion_ocupacion_display} />
-            <Fila label="Estrato" valor={String(hogar.estrato)} />
-            <Fila label="Cuartos" valor={String(hogar.numero_cuartos)} />
-            <Fila label="Personas" valor={String(hogar.numero_personas)} />
-            {hogar.observaciones ? (
-              <Fila label="Obs." valor={hogar.observaciones} />
-            ) : null}
-          </Card.Content>
-        </Card>
+        <SeccionCard titulo="Datos de vivienda">
+          <InfoFila label="Tipo"      valor={hogar.tipo_vivienda_display} />
+          <InfoFila label="Ocupación" valor={hogar.condicion_ocupacion_display} />
+          <InfoFila label="Estrato"   valor={String(hogar.estrato)} />
+          <InfoFila label="Cuartos"   valor={String(hogar.numero_cuartos)} />
+          <InfoFila label="Personas"  valor={String(hogar.numero_personas)} />
+          {hogar.observaciones ? (
+            <InfoFila label="Observaciones" valor={hogar.observaciones} />
+          ) : null}
+        </SeccionCard>
 
         {/* Miembros */}
-        <Card style={styles.card}>
-          <Card.Title
-            title="Miembros del hogar"
-            subtitle={`${hogar.miembros.length} registrado${hogar.miembros.length !== 1 ? 's' : ''}`}
-          />
-          <Card.Content>
-            {hogar.miembros.length === 0 ? (
-              <Text variant="bodySmall" style={styles.sinMiembros}>
-                No se han registrado miembros aún.
-              </Text>
-            ) : (
-              hogar.miembros.map((m) => <MiembroItem key={m.id} miembro={m} />)
-            )}
-          </Card.Content>
-        </Card>
+        <SeccionCard titulo={`Miembros (${hogar.miembros.length})`}>
+          {hogar.miembros.length === 0 ? (
+            <Text style={styles.sinMiembros}>No se han registrado miembros aún.</Text>
+          ) : (
+            hogar.miembros.map((m) => <MiembroItem key={m.id} miembro={m} />)
+          )}
+        </SeccionCard>
 
-        {/* Sesiones */}
-        <Card style={styles.card}>
-          <Card.Title
-            title="Encuestas"
-            subtitle={`${hogar.total_sesiones} sesión${hogar.total_sesiones !== 1 ? 'es' : ''}`}
+        {/* Encuestas */}
+        <SeccionCard titulo={`Encuestas (${hogar.total_sesiones})`}>
+          <GovButton
+            label="Nueva sesión PAARI"
+            icon="clipboard-text-play"
+            loading={iniciandoSesion}
+            disabled={iniciandoSesion}
+            onPress={iniciarEncuesta}
           />
-          <Card.Content>
-            <Button
-              mode="contained"
-              icon="clipboard-text-play"
-              loading={iniciandoSesion}
-              disabled={iniciandoSesion}
-              onPress={iniciarEncuesta}
-            >
-              Nueva sesión PAARI
-            </Button>
-            {hogar.total_sesiones > 0 && (
-              <Button
-                mode="outlined"
+          {hogar.total_sesiones > 0 && (
+            <View style={styles.verSesionesWrap}>
+              <GovButton
+                label="Ver sesiones de este hogar"
+                variant="secondary"
                 icon="clipboard-list"
-                style={{ marginTop: 8 }}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(main)/encuestas',
-                    params: { hogar: hogar.id },
-                  })
-                }
-              >
-                Ver sesiones de este hogar
-              </Button>
-            )}
-          </Card.Content>
-        </Card>
+                onPress={() => router.push({ pathname: '/(main)/encuestas', params: { hogar: hogar.id } })}
+              />
+            </View>
+          )}
+        </SeccionCard>
 
-        <Button
-          mode="text"
-          icon="chevron-left"
-          onPress={() => router.back()}
-          style={styles.volver}
-        >
-          Volver a la lista
-        </Button>
       </ScrollView>
-    </>
-  );
-}
-
-function Fila({ label, valor }: { label: string; valor: string }) {
-  return (
-    <View style={filaStyles.root}>
-      <Text variant="labelSmall" style={filaStyles.label}>{label}</Text>
-      <Text variant="bodySmall" style={filaStyles.valor}>{valor || '—'}</Text>
     </View>
   );
 }
-
-const filaStyles = StyleSheet.create({
-  root: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  label: { color: '#9E9E9E', flex: 1 },
-  valor: { flex: 2, textAlign: 'right', color: '#212121' },
-});
-
-function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
-  return (
-    <View style={miembroStyles.root}>
-      <Text variant="bodySmall" style={miembroStyles.parentesco}>
-        {PARENTESCO_LABEL[miembro.parentesco] ?? miembro.parentesco}
-      </Text>
-      <Text variant="bodySmall" style={miembroStyles.dato}>
-        {miembro.genero} · {miembro.edad != null ? `${miembro.edad} años` : 'edad N/D'}
-      </Text>
-    </View>
-  );
-}
-
-const miembroStyles = StyleSheet.create({
-  root: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  parentesco: { color: '#1565C0', fontWeight: '600' },
-  dato: { color: '#616161' },
-});
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  content: { padding: 16, paddingBottom: 40 },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  estadoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  fecha: { color: '#9E9E9E' },
-  card: { marginBottom: 12, backgroundColor: '#FFFFFF' },
-  sinMiembros: { color: '#9E9E9E', fontStyle: 'italic' },
-  errorTxt: { color: '#C62828', marginBottom: 16 },
-  volver: { marginTop: 8 },
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
+  },
+  centrado: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.xl,
+    gap: SPACING.md,
+  },
+  content: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xxl,
+  },
+  estadoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  estadoChip: {
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  estadoTxt: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  fecha: {
+    ...FONT.caption,
+    color: GOV.textoT,
+  },
+  sinMiembros: {
+    ...FONT.small,
+    color: GOV.textoT,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: SPACING.sm,
+  },
+  errorTxt: {
+    ...FONT.body,
+    color: GOV.rojo,
+    textAlign: 'center',
+  },
+  verSesionesWrap: {
+    marginTop: SPACING.sm,
+  },
 });

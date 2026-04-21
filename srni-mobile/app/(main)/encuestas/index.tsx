@@ -3,13 +3,17 @@
  * Muestra el progreso de cada sesión y permite continuar o ver detalles.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import {
-  Text, Card, Chip, ProgressBar,
+  Text, Chip, ProgressBar,
   ActivityIndicator, SegmentedButtons,
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { EmptyState } from '../../../src/components/EmptyState';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { SesionResumen } from '../../../src/types';
 
 const ESTADOS = [
@@ -54,20 +58,26 @@ export default function EncuestasIndexScreen() {
 
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.hint}>Cargando encuestas…</Text>
+      <View style={styles.root}>
+        <GovHeader title="Encuestas" subtitle="Sesiones PAARI" />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+          <Text style={styles.hint}>Cargando encuestas…</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.root}>
+      <GovHeader title="Encuestas" subtitle="Sesiones PAARI" />
+
       <SegmentedButtons
         value={filtroEstado}
         onValueChange={setFiltroEstado}
         buttons={ESTADOS}
         style={styles.filtro}
+        theme={{ colors: { secondaryContainer: GOV.azulTenue, onSecondaryContainer: GOV.azul } }}
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -76,64 +86,57 @@ export default function EncuestasIndexScreen() {
         data={sesiones}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl refreshing={refrescando} onRefresh={() => cargar(true)} />
+          <RefreshControl
+            refreshing={refrescando}
+            onRefresh={() => cargar(true)}
+            colors={[GOV.azul]}
+            tintColor={GOV.azul}
+          />
         }
         ListEmptyComponent={
-          <View style={styles.centrado}>
-            <Text variant="bodyLarge" style={styles.hint}>
-              No hay sesiones registradas.
-            </Text>
-          </View>
+          <EmptyState
+            icon="clipboard-text-outline"
+            title="Sin sesiones"
+            message="No hay sesiones registradas para los filtros seleccionados."
+          />
         }
-        renderItem={({ item }) => (
-          <Card
-            style={styles.card}
-            onPress={() =>
-              router.push({
-                pathname: '/(main)/encuestas/[sesionId]',
-                params: { sesionId: item.id },
-              })
-            }
-          >
-            <Card.Content>
-              <View style={styles.cardHeader}>
-                <Text variant="bodyMedium" style={styles.instrumento} numberOfLines={1}>
-                  {item.instrumento_nombre}
-                </Text>
-                <Chip
-                  compact
-                  mode="flat"
-                  style={{ backgroundColor: (ESTADO_COLOR[item.estado] ?? '#616161') + '22' }}
-                  textStyle={{ color: ESTADO_COLOR[item.estado] ?? '#616161', fontSize: 10 }}
-                >
-                  {item.estado_display}
-                </Chip>
-              </View>
+        renderItem={({ item }) => {
+          const estadoColor = ESTADO_COLOR[item.estado] ?? '#616161';
+          return (
+            <Pressable
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+              onPress={() => router.push({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: item.id } })}
+              accessibilityRole="button"
+            >
+              <View style={[styles.cardAccent, { backgroundColor: estadoColor }]} />
+              <View style={styles.cardBody}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.instrumento} numberOfLines={1}>{item.instrumento_nombre}</Text>
+                  <View style={[styles.estadoChip, { backgroundColor: estadoColor + '22' }]}>
+                    <Text style={[styles.estadoTxt, { color: estadoColor }]}>{item.estado_display}</Text>
+                  </View>
+                </View>
 
-              <Text variant="bodySmall" style={styles.hogarId}>
-                Hogar: {item.hogar.slice(0, 8)}…
-              </Text>
+                <Text style={styles.hogarId}>Hogar: {item.hogar.slice(0, 8)}…</Text>
 
-              <View style={styles.progresoRow}>
-                <ProgressBar
-                  progress={item.porcentaje_completado / 100}
-                  style={styles.barra}
-                  color={ESTADO_COLOR[item.estado]}
-                />
-                <Text variant="labelSmall" style={styles.pct}>
-                  {item.porcentaje_completado}%
+                <View style={styles.progresoRow}>
+                  <ProgressBar
+                    progress={item.porcentaje_completado / 100}
+                    style={styles.barra}
+                    color={estadoColor}
+                  />
+                  <Text style={styles.pct}>{item.porcentaje_completado}%</Text>
+                </View>
+
+                <Text style={styles.fecha}>
+                  {new Date(item.fecha_inicio).toLocaleDateString('es-CO')}
+                  {item.fecha_fin ? ` — ${new Date(item.fecha_fin).toLocaleDateString('es-CO')}` : ''}
                 </Text>
               </View>
-
-              <Text variant="labelSmall" style={styles.fecha}>
-                {new Date(item.fecha_inicio).toLocaleDateString('es-CO')}
-                {item.fecha_fin
-                  ? ` — ${new Date(item.fecha_fin).toLocaleDateString('es-CO')}`
-                  : ''}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
+              <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} style={styles.chevron} />
+            </Pressable>
+          );
+        }}
         contentContainerStyle={[styles.lista, sesiones.length === 0 && styles.listaVacia]}
       />
     </View>
@@ -141,19 +144,33 @@ export default function EncuestasIndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  filtro: { margin: 12 },
-  lista: { padding: 12, paddingBottom: 32 },
+  root: { flex: 1, backgroundColor: GOV.fondoApp },
+  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
+  filtro: { marginHorizontal: SPACING.md, marginVertical: SPACING.sm },
+  lista: { padding: SPACING.md, paddingBottom: SPACING.xl },
   listaVacia: { flexGrow: 1 },
-  card: { marginBottom: 8, backgroundColor: '#FFFFFF' },
+  // Tarjeta
+  card: {
+    flexDirection: 'row',
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.sm,
+    overflow: 'hidden',
+    ...SHADOW.card,
+  },
+  cardPressed: { opacity: 0.92, transform: [{ scale: 0.99 }] },
+  cardAccent: { width: 4 },
+  cardBody: { flex: 1, padding: SPACING.md },
+  chevron: { alignSelf: 'center', marginRight: SPACING.xs },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  instrumento: { fontWeight: '600', color: '#212121', flex: 1 },
-  hogarId: { fontFamily: 'monospace', color: '#9E9E9E', marginBottom: 8 },
+  instrumento: { ...FONT.body, fontWeight: '600', color: GOV.textoP, flex: 1 },
+  estadoChip: { borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
+  estadoTxt: { fontSize: 10, fontWeight: '600' },
+  hogarId: { fontFamily: 'monospace', ...FONT.caption, color: GOV.textoT, marginBottom: SPACING.sm },
   progresoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  barra: { flex: 1, height: 6, borderRadius: 3, marginRight: 8 },
-  pct: { color: '#616161', minWidth: 32, textAlign: 'right' },
-  fecha: { color: '#BDBDBD' },
-  hint: { marginTop: 12, color: '#757575' },
-  error: { color: '#C62828', textAlign: 'center', margin: 16 },
+  barra: { flex: 1, height: 5, borderRadius: 2, marginRight: SPACING.sm },
+  pct: { ...FONT.caption, color: GOV.textoS, minWidth: 32, textAlign: 'right' },
+  fecha: { ...FONT.caption, color: GOV.textoT },
+  hint: { marginTop: SPACING.sm, color: GOV.textoS, ...FONT.small },
+  error: { ...FONT.small, color: GOV.rojo, textAlign: 'center', margin: SPACING.md },
 });

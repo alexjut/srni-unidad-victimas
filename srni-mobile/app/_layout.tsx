@@ -1,78 +1,41 @@
 /**
- * Root layout — inicializa la app:
- *  1. Abre la base de datos SQLite y aplica migraciones
- *  2. Carga perfil desde SecureStore (si hay token guardado)
- *  3. Tras login: inicializa motor de sync (descarga instrumento si no existe,
- *     libera bloqueados, registra listener AppState)
- *  4. Redirige al login si no hay sesión activa
+ * Root layout — solo inicializa servicios y renderiza el Stack.
+ *
+ * REGLA: este archivo NO navega. Toda lógica de redirección
+ * vive en los _layout de cada grupo ((auth) y (main)) mediante
+ * el componente <Redirect /> de expo-router, que se evalúa
+ * durante el render — nunca antes del mount del Stack.
  */
-import { useEffect, useRef } from 'react';
-import { Stack, router, useSegments } from 'expo-router';
-import { PaperProvider, MD3LightTheme } from 'react-native-paper';
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 
 import { useAuthStore } from '../src/stores/authStore';
 import { useSyncStore } from '../src/stores/syncStore';
 import { initDatabase } from '../src/db/schema';
+import { govTheme } from '../src/theme/govTheme';
 
-// Colores institucionales Unidad para las Víctimas
-const srniTheme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: '#1565C0',
-    primaryContainer: '#BBDEFB',
-    secondary: '#FFC107',
-    secondaryContainer: '#FFF8E1',
-    error: '#C62828',
-    background: '#F5F5F5',
-    surface: '#FFFFFF',
-    onPrimary: '#FFFFFF',
-  },
-};
-
-function AuthGuard() {
-  const { usuario, cargarPerfil } = useAuthStore();
+export default function RootLayout() {
+  const { cargarPerfil, usuario } = useAuthStore();
   const { inicializar } = useSyncStore();
-  const segments = useSegments();
-  const syncInitializado = useRef(false);
 
+  // 1. Inicializar DB y cargar perfil al arrancar
   useEffect(() => {
+    initDatabase().catch(console.error);
     cargarPerfil();
   }, []);
 
-  // Inicializar sync una sola vez cuando el usuario queda autenticado
+  // 2. Inicializar sync cuando el usuario quede autenticado
   useEffect(() => {
-    if (usuario && !syncInitializado.current) {
-      syncInitializado.current = true;
+    if (usuario) {
       inicializar();
     }
-    if (!usuario) {
-      syncInitializado.current = false;
-    }
-  }, [usuario]);
-
-  useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!usuario && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (usuario && inAuthGroup) {
-      router.replace('/(main)');
-    }
-  }, [usuario, segments]);
-
-  return null;
-}
-
-export default function RootLayout() {
-  useEffect(() => {
-    initDatabase().catch(console.error);
-  }, []);
+  }, [usuario?.id]);   // solo cuando cambia el ID (login / logout)
 
   return (
-    <PaperProvider theme={srniTheme}>
+    <PaperProvider theme={govTheme}>
       <StatusBar style="light" backgroundColor="#1565C0" />
-      <AuthGuard />
       <Stack screenOptions={{ headerShown: false }} />
     </PaperProvider>
   );

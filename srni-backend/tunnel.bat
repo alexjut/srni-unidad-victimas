@@ -1,0 +1,3 @@
+@echo off
+echo Arrancando tunel ngrok para backend Django...
+ngrok http --domain=srniapk-dev.ngrok.app 8001
