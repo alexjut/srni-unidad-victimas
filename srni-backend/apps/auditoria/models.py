@@ -29,6 +29,8 @@ class LogAcceso(models.Model):
         ('CAMBIO_PASSWORD', 'Cambio de contraseña'),
         ('CAMBIO_USUARIO', 'Modificación de usuario'),
         ('ACCESO_DENEGADO', 'Acceso denegado'),
+        ('LLAMADA_GEMINI', 'Llamada al asistente IA Gemini'),
+        ('CONSENTIMIENTO_IA', 'Consentimiento de uso de IA'),
     ]
 
     RESULTADOS = [
@@ -91,7 +93,9 @@ class LogAcceso(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        if self.pk:
+        # _state.adding=True solo en INSERT — la PK UUID se asigna antes de save()
+        # así que no podemos usar `if self.pk` (siempre es True para UUIDField con default).
+        if not self._state.adding:
             raise PermissionError(
                 'Los registros de auditoría son inmutables. No se puede modificar un LogAcceso existente.'
             )

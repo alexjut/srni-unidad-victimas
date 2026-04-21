@@ -1,199 +1,365 @@
 /**
- * Motor de renderizado de preguntas de un tema.
- * Implementa la misma lógica del APK original:
- *   - PREDEPENDE / RESHABILITA / RESFINALIZA → aquí como PreguntaDerivada
- *   - Las preguntas ocultas no se muestran hasta que la condición se cumple
+ * Motor de captura offline de un tema del formulario PAARI.
+ *
+ * Flujo completo:
+ *  1. Carga preguntas, opciones y condiciones desde SQLite local
+ *  2. Evalúa skip logic con el servicio puro (sin red)
+ *  3. Al cambiar una respuesta: guarda en borrador SQLite y encola para sync
+ *  4. Al pulsar "Guardar y continuar": encola FINALIZAR_SESION si es el último tema
+ *
+ * El borrador_id se pasa como parámetro de ruta junto con temaId.
+ * Si no se pasa borrador_id, se crea uno nuevo en este tema.
  */
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
-import { Text, TextInput, RadioButton, Checkbox, Button, ActivityIndicator } from 'react-native-paper';
+import {
+  Text, TextInput, RadioButton, Checkbox,
+  ActivityIndicator, Chip, IconButton,
+} from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
-import * as SQLite from 'expo-sqlite';
-import { DB_NAME } from '../../../src/db/schema';
+import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as borradoresDao from '../../../src/db/borradoresDao';
+import * as colaDao from '../../../src/db/colaDao';
+import { calcularVisibles, construirPreguntasConCondiciones } from '../../../src/services/skipLogic';
+import { useSyncStore } from '../../../src/stores/syncStore';
+import { useIAStore } from '../../../src/stores/iaStore';
+import { AudioRecorder } from '../../../src/components/AudioRecorder';
+import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
+import { GovHeader } from '../../../src/components/GovHeader';
+import { GovButton } from '../../../src/components/GovButton';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
+import type { PreguntaRow, OpcionRow, DerivadaRow } from '../../../src/db/instrumentoDao';
 
-interface Pregunta {
-  id: number;
-  codigo: string;
-  texto: string;
-  texto_ayuda: string;
-  tipo_respuesta: string;
-  orden: number;
-  requerida: number;
-}
-
-interface Opcion {
-  id: number;
-  pregunta_id: number;
-  codigo: string;
-  texto: string;
-  orden: number;
-}
-
-interface Derivada {
-  pregunta_padre_id: number;
-  pregunta_hija_id: number;
-  operador: string;
-  valor_condicion: string;
-}
-
-type Respuestas = Record<number, string>;
-
-function evaluarCondicion(
-  operador: string,
-  valorRespuesta: string,
-  valorCondicion: string,
-): boolean {
-  switch (operador) {
-    case 'EQ':
-      return valorRespuesta === valorCondicion;
-    case 'NEQ':
-      return valorRespuesta !== valorCondicion;
-    case 'NOTNULL':
-      return valorRespuesta.trim() !== '';
-    case 'GT':
-      return Number(valorRespuesta) > Number(valorCondicion);
-    case 'GTE':
-      return Number(valorRespuesta) >= Number(valorCondicion);
-    case 'LT':
-      return Number(valorRespuesta) < Number(valorCondicion);
-    case 'LTE':
-      return Number(valorRespuesta) <= Number(valorCondicion);
-    case 'IN':
-      return valorCondicion.split(',').includes(valorRespuesta);
-    default:
-      return false;
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function TemaScreen() {
-  const { temaId } = useLocalSearchParams<{ temaId: string }>();
-  const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
-  const [opciones, setOpciones] = useState<Record<number, Opcion[]>>({});
-  const [derivadas, setDerivadas] = useState<Derivada[]>([]);
-  const [respuestas, setRespuestas] = useState<Respuestas>({});
-  const [cargando, setCargando] = useState(true);
-  const [temaNombre, setTemaNombre] = useState('');
+  const { temaId, borradorId: borradorIdParam, hogarId } = useLocalSearchParams<{
+    temaId: string;
+    borradorId?: string;
+    hogarId?: string;
+  }>();
 
+  const { estaOnline, refrescarContadores } = useSyncStore();
+  const {
+    activo: iaActivo,
+    estado: estadoIA,
+    sugerencia,
+    preguntaActivaId,
+    iniciarGrabacion,
+    enviarTexto,
+    aceptarSugerencia,
+    rechazarSugerencia,
+    resetear: resetearIA,
+  } = useIAStore();
+
+  const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
+  const [opciones, setOpciones] = useState<Record<number, OpcionRow[]>>({});
+  const [derivadas, setDerivadas] = useState<DerivadaRow[]>([]);
+  const [respuestas, setRespuestas] = useState<Record<number, string>>({});
+  const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
+  const [temaNombre, setTemaNombre] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [guardandoRespuesta, setGuardandoRespuesta] = useState(false);
+
+  // ── Cargar datos del tema desde SQLite ──────────────────────────────────────
   useEffect(() => {
     if (!temaId) return;
-    SQLite.openDatabaseAsync(DB_NAME)
-      .then(async (db) => {
-        const tema = await db.getFirstAsync<{ nombre: string }>(
-          'SELECT nombre FROM temas WHERE id = ?',
-          [Number(temaId)],
-        );
-        setTemaNombre(tema?.nombre ?? '');
+    const tid = Number(temaId);
 
-        const pgs = await db.getAllAsync<Pregunta>(
-          'SELECT * FROM preguntas WHERE tema_id = ? AND activa = 1 ORDER BY orden',
-          [Number(temaId)],
-        );
-        setPreguntas(pgs);
+    (async () => {
+      // Datos del tema
+      const temas = await instrumentoDao.getTemas();
+      const tema = temas.find((t) => t.id === tid);
+      setTemaNombre(tema?.nombre ?? '');
 
-        if (pgs.length > 0) {
-          const ids = pgs.map((p) => p.id);
-          const placeholders = ids.map(() => '?').join(',');
-          const opts = await db.getAllAsync<Opcion>(
-            `SELECT * FROM opciones_respuesta WHERE pregunta_id IN (${placeholders}) ORDER BY orden`,
-            ids,
-          );
-          const grouped: Record<number, Opcion[]> = {};
-          opts.forEach((o) => {
-            if (!grouped[o.pregunta_id]) grouped[o.pregunta_id] = [];
-            grouped[o.pregunta_id].push(o);
+      // Preguntas del tema
+      const pgs = await instrumentoDao.getPreguntas(tid);
+      setPreguntas(pgs);
+
+      if (pgs.length > 0) {
+        const ids = pgs.map((p) => p.id);
+        const [opts, derivs] = await Promise.all([
+          instrumentoDao.getOpcionesBatch(ids),
+          instrumentoDao.getDerivadas(ids),
+        ]);
+        setOpciones(opts);
+        setDerivadas(derivs);
+      }
+
+      // Cargar respuestas existentes del borrador (si lo hay)
+      if (borradorIdParam) {
+        const mapa = await borradoresDao.getRespuestaMap(borradorIdParam);
+        setRespuestas(mapa);
+      } else {
+        // Crear nuevo borrador
+        const instrMeta = await instrumentoDao.getMeta();
+        const instrId = instrMeta?.instrumento_id ?? 1;
+        const borrador = await borradoresDao.crearBorrador(instrId, hogarId);
+        setBorradorId(borrador.id);
+
+        // Encolar creación de sesión en servidor
+        if (hogarId) {
+          await colaDao.encolar('CREAR_SESION', borrador.id, {
+            borrador_id: borrador.id,
+            hogar: hogarId,
+            instrumento: instrId,
           });
-          setOpciones(grouped);
-
-          const derivs = await db.getAllAsync<Derivada>(
-            `SELECT * FROM preguntas_derivadas WHERE pregunta_padre_id IN (${placeholders})`,
-            ids,
-          );
-          setDerivadas(derivs);
+          await refrescarContadores();
         }
-      })
-      .catch(console.error)
-      .finally(() => setCargando(false));
+      }
+
+      setCargando(false);
+    })().catch((e) => {
+      console.error('Error cargando tema:', e);
+      setCargando(false);
+    });
   }, [temaId]);
 
-  // Calcular qué preguntas son visibles según skip logic
-  const preguntasVisibles = useMemo(() => {
-    const hijasCondicionales = new Set(derivadas.map((d) => d.pregunta_hija_id));
+  // ── Skip logic — puro, sin I/O ──────────────────────────────────────────────
+  const preguntasConCondiciones = useMemo(
+    () => construirPreguntasConCondiciones(preguntas.map((p) => p.id), derivadas),
+    [preguntas, derivadas],
+  );
 
-    return preguntas.filter((p) => {
-      if (!hijasCondicionales.has(p.id)) return true;
-      // Mostrar solo si ALGUNA condición padre se cumple
-      return derivadas.some(
-        (d) =>
-          d.pregunta_hija_id === p.id &&
-          evaluarCondicion(d.operador, respuestas[d.pregunta_padre_id] ?? '', d.valor_condicion),
-      );
-    });
-  }, [preguntas, derivadas, respuestas]);
+  const visibles = useMemo(
+    () => calcularVisibles(preguntasConCondiciones, respuestas),
+    [preguntasConCondiciones, respuestas],
+  );
 
-  function setRespuesta(preguntaId: number, valor: string) {
+  const preguntasVisibles = useMemo(
+    () => preguntas.filter((p) => visibles.has(p.id)),
+    [preguntas, visibles],
+  );
+
+  // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
+  const setRespuesta = useCallback(async (preguntaId: number, valor: string) => {
     setRespuestas((prev) => ({ ...prev, [preguntaId]: valor }));
+
+    if (!borradorId) return;
+
+    // Persistir en SQLite (no bloquea el render)
+    borradoresDao.upsertRespuesta(borradorId, preguntaId, valor).catch(console.error);
+
+    // Encolar respuesta para sync con servidor
+    const borrador = await borradoresDao.getBorrador(borradorId);
+    if (borrador) {
+      await colaDao.encolar('RESPONDER_PREGUNTA', borradorId, {
+        borrador_id: borradorId,
+        sesion_id: borrador.sesion_id ?? null,  // se rellena al procesar CREAR_SESION
+        pregunta_id: preguntaId,
+        valor,
+      });
+      await refrescarContadores();
+    }
+
+    // Intentar sync inmediato si hay red
+    if (estaOnline) {
+      useSyncStore.getState().triggerSync();
+    }
+  }, [borradorId, estaOnline]);
+
+  // ── Asistente IA ────────────────────────────────────────────────────────────
+  const handleTextoTranscrito = useCallback(async (preguntaId: number, texto: string) => {
+    if (!borradorId) return;
+    iniciarGrabacion(preguntaId);
+    const borrador = await borradoresDao.getBorrador(borradorId);
+    const sesionId = borrador?.sesion_id ?? '';
+    await enviarTexto(sesionId, preguntaId, texto);
+  }, [borradorId, iniciarGrabacion, enviarTexto]);
+
+  const handleAceptarSugerencia = useCallback((preguntaId: number) => {
+    const resultado = aceptarSugerencia();
+    if (resultado?.sugerencia) {
+      setRespuesta(preguntaId, resultado.sugerencia);
+    }
+  }, [aceptarSugerencia, setRespuesta]);
+
+  // Limpiar estado IA al salir de la pantalla
+  useEffect(() => {
+    return () => { resetearIA(); };
+  }, []);
+
+  // ── Finalizar tema ──────────────────────────────────────────────────────────
+  async function finalizarTema() {
+    if (borradorId) {
+      // Encolar finalización
+      await colaDao.encolar('FINALIZAR_SESION', borradorId, {
+        borrador_id: borradorId,
+        sesion_id: null,  // se rellenará cuando CREAR_SESION se procese
+      });
+      await refrescarContadores();
+      if (estaOnline) useSyncStore.getState().triggerSync();
+    }
+    router.back();
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   if (cargando) {
     return (
-      <View style={styles.centrado}>
-        <ActivityIndicator size="large" />
+      <View style={styles.root}>
+        <GovHeader title="Cargando módulo…" onBack={() => router.back()} />
+        <View style={styles.centrado}>
+          <ActivityIndicator size="large" color={GOV.azul} />
+        </View>
       </View>
     );
   }
 
+  const totalVisible = preguntasVisibles.length;
+
   return (
     <View style={styles.root}>
-      <Text variant="titleMedium" style={styles.cabecera}>
-        {temaNombre}
-      </Text>
+      <GovHeader
+        title={temaNombre || 'Módulo'}
+        subtitle={`${totalVisible} pregunta${totalVisible !== 1 ? 's' : ''}`}
+        onBack={() => router.back()}
+        right={
+          <View style={styles.headerActions}>
+            {!estaOnline && (
+              <Chip compact icon="wifi-off" style={styles.offlineChip} textStyle={styles.offlineTxt}>
+                Offline
+              </Chip>
+            )}
+            {iaActivo ? (
+              <Chip
+                compact
+                icon="microphone"
+                style={styles.iaActivoChip}
+                textStyle={styles.iaActivoTxt}
+                onClose={() => useIAStore.getState().desactivar()}
+              >
+                IA
+              </Chip>
+            ) : (
+              <IconButton
+                icon="robot"
+                size={20}
+                iconColor="#FFFFFF"
+                onPress={() => router.push({
+                  pathname: '/(main)/formulario/consentimiento-ia',
+                  params: { sesionEncuestaId: borradorId ?? '' },
+                })}
+              />
+            )}
+          </View>
+        }
+      />
+
       <FlatList
         data={preguntasVisibles}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <PreguntaItem
             pregunta={item}
+            index={index}
+            total={totalVisible}
             opciones={opciones[item.id] ?? []}
             valor={respuestas[item.id] ?? ''}
             onChange={(v) => setRespuesta(item.id, v)}
+            iaActivo={iaActivo}
+            onTextoIA={(texto) => handleTextoTranscrito(item.id, texto)}
+            sugerenciaActiva={
+              sugerencia && preguntaActivaId === item.id && estadoIA === 'sugerida'
+                ? sugerencia
+                : null
+            }
+            onAceptarIA={() => handleAceptarSugerencia(item.id)}
+            onRechazarIA={rechazarSugerencia}
           />
         )}
         contentContainerStyle={styles.lista}
+        ListEmptyComponent={
+          <Text style={styles.sinPreguntas}>No hay preguntas en este módulo.</Text>
+        }
       />
-      <Button mode="contained" style={styles.siguiente} onPress={() => router.back()}>
-        Guardar y volver
-      </Button>
+
+      <View style={styles.footerBar}>
+        <GovButton label="Guardar y volver" icon="check" onPress={finalizarTema} />
+      </View>
     </View>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente de pregunta individual
+// ─────────────────────────────────────────────────────────────────────────────
+
 function PreguntaItem({
   pregunta,
+  index,
+  total,
   opciones,
   valor,
   onChange,
+  iaActivo,
+  onTextoIA,
+  sugerenciaActiva,
+  onAceptarIA,
+  onRechazarIA,
 }: {
-  pregunta: Pregunta;
-  opciones: Opcion[];
+  pregunta: PreguntaRow;
+  index: number;
+  total: number;
+  opciones: OpcionRow[];
   valor: string;
   onChange: (v: string) => void;
+  iaActivo?: boolean;
+  onTextoIA?: (texto: string) => void;
+  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
+  onAceptarIA?: () => void;
+  onRechazarIA?: () => void;
 }) {
   return (
     <View style={styles.preguntaCard}>
-      <Text variant="bodyMedium" style={styles.textoPregunta}>
-        {pregunta.requerida ? '* ' : ''}{pregunta.texto}
+      {/* Encabezado: número de pregunta */}
+      <View style={styles.preguntaHeader}>
+        <View style={styles.numBadge}>
+          <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {pregunta.requerida && (
+          <View style={styles.requeridoChip}>
+            <Text style={styles.requeridoTxt}>Requerida</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.textoPregunta}>
+        {pregunta.texto}
       </Text>
       {pregunta.texto_ayuda ? (
-        <Text variant="bodySmall" style={styles.ayuda}>
-          {pregunta.texto_ayuda}
-        </Text>
+        <Text style={styles.ayuda}>{pregunta.texto_ayuda}</Text>
       ) : null}
+
+      {/* Asistente de voz — solo si IA activa */}
+      {iaActivo && onTextoIA && (
+        <AudioRecorder
+          preguntaId={pregunta.id}
+          onTextoListo={onTextoIA}
+          disabled={!!sugerenciaActiva}
+        />
+      )}
+      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
+        <SugerenciaIA
+          sugerencia={sugerenciaActiva}
+          onAceptar={() => onAceptarIA()}
+          onRechazar={onRechazarIA}
+        />
+      )}
 
       {pregunta.tipo_respuesta === 'TEXTO' || pregunta.tipo_respuesta === 'NUMERICO' ? (
         <TextInput
           value={valor}
           onChangeText={onChange}
           keyboardType={pregunta.tipo_respuesta === 'NUMERICO' ? 'numeric' : 'default'}
+          style={styles.inputTexto}
+          dense
+        />
+      ) : pregunta.tipo_respuesta === 'FECHA' ? (
+        <TextInput
+          value={valor}
+          onChangeText={onChange}
+          placeholder="YYYY-MM-DD"
           style={styles.inputTexto}
           dense
         />
@@ -211,11 +377,11 @@ function PreguntaItem({
               label={o.texto}
               status={valor.split(',').includes(o.codigo) ? 'checked' : 'unchecked'}
               onPress={() => {
-                const sel = valor ? valor.split(',') : [];
+                const sel = valor ? valor.split(',').filter(Boolean) : [];
                 const idx = sel.indexOf(o.codigo);
                 if (idx >= 0) sel.splice(idx, 1);
                 else sel.push(o.codigo);
-                onChange(sel.filter(Boolean).join(','));
+                onChange(sel.join(','));
               }}
             />
           ))}
@@ -228,20 +394,107 @@ function PreguntaItem({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  cabecera: { margin: 16, fontWeight: '600', color: '#1565C0' },
-  lista: { padding: 12, paddingBottom: 80 },
-  preguntaCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#1565C0',
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
   },
-  textoPregunta: { fontWeight: '600', marginBottom: 8 },
-  ayuda: { color: '#757575', marginBottom: 8 },
-  inputTexto: { backgroundColor: '#FAFAFA' },
-  siguiente: { margin: 16, borderRadius: 8 },
+  centrado: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  offlineChip: {
+    backgroundColor: GOV.naranjaTenue,
+  },
+  offlineTxt: {
+    color: GOV.naranja,
+    fontSize: 10,
+  },
+  iaActivoChip: {
+    backgroundColor: GOV.azulTenue,
+  },
+  iaActivoTxt: {
+    color: GOV.azul,
+    fontSize: 10,
+  },
+  lista: {
+    padding: SPACING.md,
+    paddingBottom: 96,
+  },
+  sinPreguntas: {
+    textAlign: 'center',
+    color: GOV.textoT,
+    marginTop: SPACING.xl,
+    ...FONT.body,
+  },
+  // Tarjeta de pregunta
+  preguntaCard: {
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.azul,
+    ...SHADOW.card,
+  },
+  preguntaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  numBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: GOV.azul,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  numBadgeTxt: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  numTotal: {
+    ...FONT.caption,
+    color: GOV.textoT,
+  },
+  requeridoChip: {
+    marginLeft: 'auto' as any,
+    backgroundColor: GOV.rojoTenue,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  requeridoTxt: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: GOV.rojo,
+  },
+  textoPregunta: {
+    ...FONT.body,
+    fontWeight: '600',
+    color: GOV.textoP,
+    marginBottom: SPACING.sm,
+  },
+  ayuda: {
+    ...FONT.small,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+  },
+  inputTexto: {
+    backgroundColor: GOV.fondoApp,
+  },
+  footerBar: {
+    backgroundColor: GOV.superficie,
+    padding: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: GOV.borde,
+  },
 });

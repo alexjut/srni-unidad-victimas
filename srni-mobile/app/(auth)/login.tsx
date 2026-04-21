@@ -1,20 +1,24 @@
+/**
+ * Pantalla de inicio de sesión — estilo GOV.CO institucional.
+ */
 import { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import {
-  TextInput,
-  Button,
-  Text,
-  HelperText,
-  Surface,
-  ActivityIndicator,
-} from 'react-native-paper';
+  View, StyleSheet, KeyboardAvoidingView,
+  Platform, ScrollView, StatusBar,
+} from 'react-native';
+import { Text, TextInput, HelperText } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
+import { GovButton } from '../../src/components/GovButton';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
 export default function LoginScreen() {
   const { login, cargando, error, limpiarError } = useAuthStore();
   const [codigo, setCodigo] = useState('');
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
+  const insets = useSafeAreaInsets();
 
   async function handleLogin() {
     if (!codigo.trim() || !password) return;
@@ -23,89 +27,209 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.titulo}>
-            SRNI
-          </Text>
-          <Text variant="bodyMedium" style={styles.subtitulo}>
-            Sistema de Caracterización de Víctimas{'\n'}Unidad para las Víctimas
-          </Text>
+    <>
+      <StatusBar backgroundColor={GOV.amarillo} barStyle="dark-content" />
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Franja GOV.CO amarilla */}
+        <View style={[styles.govStripe, { paddingTop: insets.top }]}>
+          <Text style={styles.govText}>GOV.CO</Text>
         </View>
 
-        <Surface style={styles.card} elevation={2}>
-          <Text variant="titleMedium" style={styles.cardTitulo}>
-            Iniciar sesión
-          </Text>
-
-          <TextInput
-            label="Código de usuario"
-            value={codigo}
-            onChangeText={setCodigo}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            returnKeyType="next"
-            left={<TextInput.Icon icon="account" />}
-            style={styles.input}
-          />
-
-          <TextInput
-            label="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!verPassword}
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-            left={<TextInput.Icon icon="lock" />}
-            right={
-              <TextInput.Icon
-                icon={verPassword ? 'eye-off' : 'eye'}
-                onPress={() => setVerPassword((v) => !v)}
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo institucional */}
+          <View style={styles.logoWrap}>
+            <View style={styles.logoCircle}>
+              <MaterialCommunityIcons
+                name="shield-account"
+                size={48}
+                color={GOV.azul}
               />
-            }
-            style={styles.input}
-          />
+            </View>
+            <Text style={styles.appTitle}>SRNI</Text>
+            <Text style={styles.appSubtitle}>
+              Sistema de Caracterización de Víctimas
+            </Text>
+            <Text style={styles.entidad}>
+              Unidad para las Víctimas
+            </Text>
+          </View>
 
-          {error ? (
-            <HelperText type="error" visible style={styles.error}>
-              {error}
-            </HelperText>
-          ) : null}
+          {/* Card de login */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Iniciar sesión</Text>
+            <Text style={styles.cardSubtitle}>Ingresa tus credenciales institucionales</Text>
 
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            disabled={cargando || !codigo.trim() || !password}
-            style={styles.boton}
-            contentStyle={styles.botonContent}
-          >
-            {cargando ? <ActivityIndicator color="#fff" size={20} /> : 'Ingresar'}
-          </Button>
-        </Surface>
+            <TextInput
+              label="Usuario"
+              value={codigo}
+              onChangeText={setCodigo}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              returnKeyType="next"
+              left={<TextInput.Icon icon="account-circle-outline" color={GOV.azul} />}
+              style={styles.input}
+              outlineStyle={{ borderRadius: RADIUS.sm }}
+              mode="outlined"
+              activeOutlineColor={GOV.azul}
+              accessibilityLabel="Código de usuario"
+            />
 
-        <Text variant="bodySmall" style={styles.version}>
-          SRNI v1.0.0 — Uso exclusivo institucional
-        </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TextInput
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!verPassword}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+              left={<TextInput.Icon icon="lock-outline" color={GOV.azul} />}
+              right={
+                <TextInput.Icon
+                  icon={verPassword ? 'eye-off-outline' : 'eye-outline'}
+                  color={GOV.textoS}
+                  onPress={() => setVerPassword((v) => !v)}
+                />
+              }
+              style={styles.input}
+              outlineStyle={{ borderRadius: RADIUS.sm }}
+              mode="outlined"
+              activeOutlineColor={GOV.azul}
+              accessibilityLabel="Contraseña"
+            />
+
+            {error ? (
+              <HelperText type="error" visible style={styles.errorText}>
+                {error}
+              </HelperText>
+            ) : null}
+
+            <View style={styles.btnWrap}>
+              <GovButton
+                label="Ingresar"
+                onPress={handleLogin}
+                loading={cargando}
+                disabled={!codigo.trim() || !password}
+                icon="login"
+              />
+            </View>
+          </View>
+
+          {/* Pie de página */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Unidad para la Atención y Reparación Integral a las Víctimas
+            </Text>
+            <Text style={styles.footerVersion}>SRNI v1.0.0 — Uso exclusivo institucional</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#1565C0' },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { alignItems: 'center', marginBottom: 32 },
-  titulo: { color: '#FFFFFF', fontWeight: '700', fontSize: 36 },
-  subtitulo: { color: '#BBDEFB', textAlign: 'center', marginTop: 8 },
-  card: { borderRadius: 12, padding: 24, backgroundColor: '#FFFFFF' },
-  cardTitulo: { marginBottom: 16, fontWeight: '600', color: '#1565C0' },
-  input: { marginBottom: 12, backgroundColor: '#FAFAFA' },
-  error: { marginBottom: 8 },
-  boton: { marginTop: 8, borderRadius: 8 },
-  botonContent: { paddingVertical: 6 },
-  version: { textAlign: 'center', color: '#90CAF9', marginTop: 32 },
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  govStripe: {
+    backgroundColor: GOV.amarillo,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 8,
+    justifyContent: 'flex-end',
+    minHeight: 36,
+  },
+  govText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: GOV.azulOscuro,
+    letterSpacing: 1.5,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.xl,
+  },
+  logoWrap: {
+    alignItems: 'center',
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.lg,
+  },
+  logoCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    borderWidth: 2,
+    borderColor: GOV.azul,
+  },
+  appTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: GOV.azulOscuro,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  appSubtitle: {
+    ...FONT.body,
+    color: GOV.textoS,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  entidad: {
+    ...FONT.small,
+    color: GOV.azul,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    ...SHADOW.card,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+  },
+  cardTitle: {
+    ...FONT.h2,
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    ...FONT.small,
+    color: GOV.textoS,
+    marginBottom: SPACING.md,
+  },
+  input: {
+    marginBottom: SPACING.sm,
+    backgroundColor: '#FFFFFF',
+  },
+  errorText: {
+    marginBottom: SPACING.xs,
+  },
+  btnWrap: {
+    marginTop: SPACING.xs,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingTop: SPACING.xl,
+    gap: 4,
+  },
+  footerText: {
+    ...FONT.caption,
+    color: GOV.textoT,
+    textAlign: 'center',
+  },
+  footerVersion: {
+    ...FONT.caption,
+    color: GOV.borde,
+    textAlign: 'center',
+  },
 });

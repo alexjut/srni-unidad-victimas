@@ -9,7 +9,7 @@ from .base import *
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['*']  # desarrollo — ngrok y red local sin restricción
 
 # --- SQLite para desarrollo ---
 DATABASES = {
@@ -38,6 +38,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # --- CORS abierto en desarrollo ---
 CORS_ALLOW_ALL_ORIGINS = True
+
+# --- ngrok dominios permanentes (cuenta pago) ---
+CSRF_TRUSTED_ORIGINS = [
+    'https://srniapk-dev.ngrok.app',
+    'https://srniapk.ngrok.app',
+]
 
 # --- Email en consola ---
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

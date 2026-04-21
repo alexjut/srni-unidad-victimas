@@ -41,12 +41,16 @@ def api_root(request, format=None):
                 'me': reverse('auth-me', request=request, format=format),
                 'cambiar_password': reverse('auth-cambiar-password', request=request, format=format),
             },
-            # Se expanden en sprints posteriores:
-            # 'victimas': {...},
-            # 'formulario': {...},
-            # 'hogares': {...},
-            # 'encuestas': {...},
-            # 'parametricas': {...},
+            'parametricas': request.build_absolute_uri('/api/parametricas/'),
+            'formulario': request.build_absolute_uri('/api/formulario/'),
+            'victimas': {
+                'buscar': request.build_absolute_uri('/api/victimas/buscar/'),
+                'detalle': request.build_absolute_uri('/api/victimas/{id}/'),
+            },
+            'hogares': request.build_absolute_uri('/api/hogares/'),
+            'encuestas': request.build_absolute_uri('/api/encuestas/'),
+            'ia': request.build_absolute_uri('/api/ia/'),
+            # Próximos sprints:
             # 'reportes': {...},
         },
         'health': request.build_absolute_uri('/health/'),
@@ -63,12 +67,19 @@ urlpatterns = [
     # Autenticación JWT
     path('api/auth/', include('apps.autenticacion.urls')),
 
-    # Módulos de la API — se añaden en sprints posteriores
-    # path('api/victimas/', include('apps.victimas.urls')),
-    # path('api/formulario/', include('apps.formulario.urls')),
-    # path('api/hogares/', include('apps.hogares.urls')),
-    # path('api/encuestas/', include('apps.encuestas.urls')),
-    # path('api/parametricas/', include('apps.parametricas.urls')),
+    # Módulos Sprint 2
+    path('api/victimas/', include('apps.victimas.urls')),
+    path('api/formulario/', include('apps.formulario.urls')),
+    path('api/parametricas/', include('apps.parametricas.urls')),
+
+    # Módulos Sprint 3
+    path('api/hogares/', include('apps.hogares.urls')),
+    path('api/encuestas/', include('apps.encuestas.urls')),
+
+    # Módulo Sprint 5 — IA Gemini
+    path('api/ia/', include('apps.ia.urls')),
+
+    # Módulos futuros
     # path('api/reportes/', include('apps.reportes.urls')),
 
     # Documentación OpenAPI / Swagger

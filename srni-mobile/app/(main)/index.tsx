@@ -1,66 +1,219 @@
 /**
- * Dashboard del encuestador — pantalla de inicio tras login.
+ * Dashboard del encuestador — estilo GOV.CO institucional.
  */
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { Text, Card, Button, Divider, Chip } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { Text, Chip, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useSyncStore, getEstadoSync } from '../../src/stores/syncStore';
+import { GovHeader } from '../../src/components/GovHeader';
+import { GovButton } from '../../src/components/GovButton';
+import { NextStepCard } from '../../src/components/NextStepCard';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
+
+// ─── Chip de sincronización ────────────────────────────────────────────────────
+
+const SYNC_CFG = {
+  sincronizando: { label: 'Sincronizando…', color: GOV.azul,     bg: GOV.azulTenue },
+  pendientes:    { label: (n: number) => `${n} pendiente${n !== 1 ? 's' : ''}`, color: GOV.naranja, bg: GOV.naranjaTenue },
+  sin_conexion:  { label: 'Sin conexión',  color: '#616161',      bg: '#F5F5F5' },
+  error:         { label: (n: number) => `${n} error${n !== 1 ? 'es' : ''}`, color: GOV.rojo, bg: GOV.rojoTenue },
+  sincronizado:  { label: '✓ Al día',      color: GOV.verde,      bg: GOV.verdeTenue },
+} as const;
+
+function SyncChip() {
+  const syncState = useSyncStore();
+  const estado = getEstadoSync(syncState);
+  const { triggerSync, sincronizando, pendientesCola, erroresCola } = syncState;
+
+  const cfg = SYNC_CFG[estado];
+  const label =
+    estado === 'sincronizando' ? cfg.label :
+    estado === 'pendientes'    ? cfg.label(pendientesCola) :
+    estado === 'error'         ? cfg.label(erroresCola) :
+    (cfg as { label: string }).label;
+
+  return (
+    <Chip
+      mode="flat"
+      style={{ backgroundColor: cfg.bg, borderRadius: RADIUS.pill }}
+      textStyle={{ color: cfg.color, fontSize: 11, fontWeight: '600' }}
+      onPress={estado !== 'sincronizando' ? triggerSync : undefined}
+      icon={sincronizando ? undefined : estado === 'sin_conexion' ? 'wifi-off' : estado === 'error' ? 'alert-circle' : 'cloud-check'}
+    >
+      {sincronizando ? 'Sincronizando…' : label}
+    </Chip>
+  );
+}
+
+// ─── Fila de acción ─────────────────────────────────────────────────────────────
+
+function AccionRow({
+  icon, label, subtitle, onPress,
+}: { icon: string; label: string; subtitle?: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.accionRow, pressed && styles.accionPressed]}
+      accessibilityRole="button"
+    >
+      <View style={styles.accionIcon}>
+        <MaterialCommunityIcons name={icon as any} size={22} color={GOV.azul} />
+      </View>
+      <View style={styles.accionTexto}>
+        <Text style={styles.accionLabel}>{label}</Text>
+        {subtitle ? <Text style={styles.accionSub}>{subtitle}</Text> : null}
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+    </Pressable>
+  );
+}
+
+// ─── Pantalla ────────────────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
   const { usuario, logout } = useAuthStore();
   const perfil = usuario?.perfil;
+  const nombre = usuario?.nombre_completo ?? '—';
+  const primerNombre = nombre.split(' ')[0];
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <View style={styles.bienvenida}>
-        <Text variant="headlineSmall" style={styles.nombre}>
-          {usuario?.nombre_completo ?? '—'}
-        </Text>
-        <Chip mode="flat" style={styles.perfilChip}>
-          {perfil?.nombre ?? 'Sin perfil'}
-        </Chip>
-      </View>
+    <View style={styles.root}>
+      <GovHeader
+        title={`Hola, ${primerNombre}`}
+        subtitle={perfil?.nombre ?? 'Sin perfil asignado'}
+        right={<SyncChip />}
+      />
 
-      <Divider style={styles.divider} />
+      <ScrollView contentContainerStyle={styles.content}>
 
-      {perfil?.puede_buscar_rni && (
-        <Card style={styles.card} onPress={() => router.push('/(main)/busqueda')}>
-          <Card.Title title="Búsqueda en el RNI" subtitle="Consultar víctimas registradas" />
-          <Card.Actions>
-            <Button onPress={() => router.push('/(main)/busqueda')}>Ir</Button>
-          </Card.Actions>
-        </Card>
-      )}
+        {/* Siguiente paso */}
+        {perfil?.puede_caracterizar && (
+          <NextStepCard
+            title="Registrar nuevo hogar"
+            description="Inicia el proceso de caracterización creando la unidad familiar."
+            icon="home-plus"
+            onPress={() => router.push('/(main)/hogares/nuevo')}
+          />
+        )}
 
-      {perfil?.puede_caracterizar && (
-        <Card style={styles.card} onPress={() => router.push('/(main)/formulario')}>
-          <Card.Title title="Formulario de Caracterización" subtitle="Nueva encuesta PAARI" />
-          <Card.Actions>
-            <Button onPress={() => router.push('/(main)/formulario')}>Ir</Button>
-          </Card.Actions>
-        </Card>
-      )}
+        {/* Acciones principales */}
+        <Text style={styles.seccionTitulo}>Acciones</Text>
 
-      <Button
-        mode="outlined"
-        onPress={logout}
-        style={styles.logout}
-        icon="logout"
-        textColor="#C62828"
-      >
-        Cerrar sesión
-      </Button>
-    </ScrollView>
+        <View style={styles.accionesCard}>
+          {perfil?.puede_buscar_rni && (
+            <AccionRow
+              icon="magnify"
+              label="Búsqueda RNI"
+              subtitle="Consultar víctimas registradas"
+              onPress={() => router.push('/(main)/busqueda')}
+            />
+          )}
+
+          {perfil?.puede_caracterizar && (
+            <>
+              <View style={styles.separador} />
+              <AccionRow
+                icon="home-group"
+                label="Hogares"
+                subtitle="Gestionar unidades familiares"
+                onPress={() => router.push('/(main)/hogares')}
+              />
+              <View style={styles.separador} />
+              <AccionRow
+                icon="clipboard-list"
+                label="Encuestas"
+                subtitle="Sesiones PAARI en curso"
+                onPress={() => router.push('/(main)/encuestas')}
+              />
+              <View style={styles.separador} />
+              <AccionRow
+                icon="form-select"
+                label="Formulario PAARI"
+                subtitle="Nueva sesión de caracterización"
+                onPress={() => router.push('/(main)/formulario')}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Cerrar sesión */}
+        <View style={styles.logoutWrap}>
+          <GovButton
+            label="Cerrar sesión"
+            variant="danger"
+            icon="logout"
+            onPress={logout}
+          />
+        </View>
+
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F5F5' },
-  content: { padding: 16, paddingBottom: 32 },
-  bienvenida: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  nombre: { fontWeight: '700', flex: 1, flexShrink: 1 },
-  perfilChip: { marginLeft: 8 },
-  divider: { marginVertical: 12 },
-  card: { marginBottom: 12, backgroundColor: '#FFFFFF' },
-  logout: { marginTop: 24, borderColor: '#C62828' },
+  root: {
+    flex: 1,
+    backgroundColor: GOV.fondoApp,
+  },
+  content: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xxl,
+  },
+  seccionTitulo: {
+    ...FONT.label,
+    color: GOV.textoT,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  accionesCard: {
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    ...SHADOW.card,
+    overflow: 'hidden',
+  },
+  accionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 14,
+    minHeight: 56,
+  },
+  accionPressed: {
+    backgroundColor: GOV.fondoApp,
+  },
+  accionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  accionTexto: {
+    flex: 1,
+  },
+  accionLabel: {
+    ...FONT.body,
+    fontWeight: '600',
+    color: GOV.textoP,
+  },
+  accionSub: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginTop: 1,
+  },
+  separador: {
+    height: 1,
+    backgroundColor: GOV.borde,
+    marginLeft: SPACING.md + 36 + SPACING.md,
+  },
+  logoutWrap: {
+    marginTop: SPACING.xl,
+  },
 });
