@@ -1,104 +1,129 @@
 """
-Serializers del motor de formularios dinámico SRNI.
-Replica la estructura vivanto.db del APK: Instrumento → Tema → Pregunta → Opción.
-La lógica de derivación (skip logic) se expone en PreguntaDerivadaSerializer
-para que el frontend evalúe visibilidad de preguntas localmente.
+Serializers del motor de formularios dinámico SRNI — alineados con Diccionario V8.
+
+Jerarquía de lectura:
+  Perfil → InstrumentoVersion → Capitulo → Pregunta → OpcionRespuesta
+                                         ↘ ReglaSkipLogic
 """
 from rest_framework import serializers
-from .models import Instrumento, Tema, Pregunta, OpcionRespuesta, PreguntaDerivada
+from .models import (
+    Perfil, InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
+)
 
 
 class OpcionRespuestaSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcionRespuesta
-        fields = ['id', 'codigo', 'texto', 'orden', 'activa']
+        fields = ["id", "valor", "etiqueta", "id_resp_vivanto", "orden", "finaliza_capitulo"]
 
 
-class PreguntaDerivadaSerializer(serializers.ModelSerializer):
-    """
-    Expone la regla de skip logic para que el frontend evalúe
-    qué preguntas mostrar u ocultar según las respuestas actuales.
-    """
-    pregunta_padre_codigo = serializers.CharField(
-        source='pregunta_padre.codigo', read_only=True
+class ReglaSkipLogicSerializer(serializers.ModelSerializer):
+    pregunta_origen_codigo = serializers.CharField(
+        source="pregunta_origen.codigo_externo", read_only=True
     )
-    pregunta_hija_codigo = serializers.CharField(
-        source='pregunta_hija.codigo', read_only=True
+    pregunta_afectada_codigo = serializers.CharField(
+        source="pregunta_afectada.codigo_externo", read_only=True
+    )
+    capitulo_afectado_codigo = serializers.CharField(
+        source="capitulo_afectado.codigo", read_only=True
     )
 
     class Meta:
-        model = PreguntaDerivada
+        model = ReglaSkipLogic
         fields = [
-            'id',
-            'pregunta_padre', 'pregunta_padre_codigo',
-            'pregunta_hija', 'pregunta_hija_codigo',
-            'operador', 'valor_condicion',
+            "id",
+            "pregunta_origen", "pregunta_origen_codigo",
+            "expresion_origen", "valor_trigger",
+            "pregunta_afectada", "pregunta_afectada_codigo",
+            "capitulo_afectado", "capitulo_afectado_codigo",
+            "accion", "descripcion",
         ]
 
 
 class PreguntaSerializer(serializers.ModelSerializer):
-    """
-    Serializer completo de pregunta: incluye opciones y reglas de derivación
-    donde esta pregunta es la hija (condiciones que la habilitan).
-    """
     opciones = OpcionRespuestaSerializer(many=True, read_only=True)
-    condiciones_habilitacion = PreguntaDerivadaSerializer(
-        source='derivaciones_como_hija', many=True, read_only=True
-    )
+    reglas_entrantes = ReglaSkipLogicSerializer(many=True, read_only=True)
 
     class Meta:
         model = Pregunta
         fields = [
-            'id', 'codigo', 'texto', 'texto_ayuda',
-            'tipo_respuesta', 'orden', 'requerida', 'activa',
-            'columna_padre', 'validacion',
-            'opciones', 'condiciones_habilitacion',
+            "id", "codigo_externo", "codigo_diagrama", "variable_bd",
+            "texto", "descripcion_ayuda", "tipo", "nivel",
+            "orden", "obligatoria", "activa", "validaciones",
+            "opciones", "reglas_entrantes",
         ]
 
 
-class TemaListSerializer(serializers.ModelSerializer):
-    """Lista de temas — sin preguntas, para renderizar el índice de los 54 módulos."""
-    total_preguntas = serializers.IntegerField(
-        source='preguntas.count', read_only=True
-    )
+class CapituloListSerializer(serializers.ModelSerializer):
+    total_preguntas = serializers.IntegerField(source="preguntas.count", read_only=True)
 
     class Meta:
-        model = Tema
-        fields = ['id', 'codigo', 'nombre', 'orden', 'activo', 'total_preguntas']
+        model = Capitulo
+        fields = [
+            "id", "codigo", "nombre", "orden",
+            "poblacion_objetivo", "aplicabilidad", "total_preguntas",
+        ]
 
 
-class TemaDetalleSerializer(serializers.ModelSerializer):
-    """Detalle de un tema con todas sus preguntas."""
+class CapituloDetalleSerializer(serializers.ModelSerializer):
     preguntas = PreguntaSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Tema
-        fields = ['id', 'codigo', 'nombre', 'orden', 'activo', 'preguntas']
+        model = Capitulo
+        fields = [
+            "id", "codigo", "nombre", "orden",
+            "objetivo", "poblacion_objetivo", "aplicabilidad",
+            "preguntas",
+        ]
 
 
-class InstrumentoSerializer(serializers.ModelSerializer):
-    temas = TemaListSerializer(many=True, read_only=True)
-    total_temas = serializers.IntegerField(source='temas.count', read_only=True)
+class InstrumentoVersionSerializer(serializers.ModelSerializer):
+    perfil_codigo = serializers.CharField(source="perfil.codigo", read_only=True)
+    capitulos = CapituloListSerializer(many=True, read_only=True)
+    total_capitulos = serializers.IntegerField(source="capitulos.count", read_only=True)
+    vigente = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = Instrumento
-        fields = ['id', 'codigo', 'nombre', 'version', 'vigente', 'total_temas', 'temas']
+        model = InstrumentoVersion
+        fields = [
+            "id", "perfil", "perfil_codigo", "numero",
+            "vigente_desde", "vigente_hasta", "vigente",
+            "fuente_documental", "total_capitulos", "capitulos",
+        ]
+
+
+class PerfilSerializer(serializers.ModelSerializer):
+    versiones = InstrumentoVersionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Perfil
+        fields = ["id", "codigo", "nombre", "activo", "versiones"]
 
 
 # ---------------------------------------------------------------------------
-# Serializer para el motor de evaluación de skip logic (endpoint POST)
+# Serializers para el motor de evaluación de skip logic (endpoint POST)
 # ---------------------------------------------------------------------------
 
 class RespuestaActualSerializer(serializers.Serializer):
-    """Par (pregunta_id, valor) que representa una respuesta actual del usuario."""
-    pregunta_id = serializers.IntegerField()
+    """Par (codigo_externo, valor) que representa una respuesta actual del usuario."""
+    codigo_externo = serializers.CharField()
     valor = serializers.CharField(allow_blank=True)
+
+
+class ContextoPersonaSerializer(serializers.Serializer):
+    """Contexto de la persona/hogar para evaluar reglas de expresión (edad, sexo, RUV)."""
+    edad = serializers.IntegerField(required=False, default=0)
+    sexo = serializers.CharField(required=False, default="")
+    incluido_ruv = serializers.BooleanField(required=False, default=False)
+    tipo_persona = serializers.CharField(required=False, default="")
 
 
 class EvaluarSkipLogicSerializer(serializers.Serializer):
     """
     Input para POST /api/formulario/evaluar-skip-logic/
-    Recibe el tema y las respuestas actuales; devuelve IDs visibles.
+    Recibe el capítulo, respuestas actuales y contexto de persona/hogar.
+    Devuelve códigos de preguntas visibles.
     """
-    tema_id = serializers.IntegerField()
+    capitulo_id = serializers.UUIDField()
     respuestas = RespuestaActualSerializer(many=True)
+    contexto = ContextoPersonaSerializer(required=False, default=dict)

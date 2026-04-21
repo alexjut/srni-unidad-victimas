@@ -1,143 +1,320 @@
 """
-Motor de formularios SRNI.
-Replica la estructura de vivanto.db del APK original:
-  vivanto_instrumentos → Instrumento
-  vivanto_temas        → Tema
-  vivanto_preguntas    → Pregunta
-  vivanto_opciones     → OpcionRespuesta
-  vivanto_derivadas    → PreguntaDerivada
+Motor de formularios SRNI — Rediseño Sprint 6, alineado con Diccionario V8.
+
+Decisiones de diseño (para revisión UARIV):
+
+1. Perfil como modelo relacional (no enum): permite agregar ATENCION, REPARACION,
+   BUENAVENTURA sin tocar el código — solo insertar un registro.
+
+2. InstrumentoVersion separado de Perfil: las respuestas quedan ancladas a la
+   versión en que fueron capturadas, garantizando trazabilidad documental cuando
+   UARIV actualice el instrumento (Ley 1581 — auditoría).
+
+3. codigo_externo con sufijo _tel: es el identificador del Diccionario V8 oficial
+   (ej. C1_tel, B9_tel). Se almacena como campo de integración, no como PK,
+   para no acoplar la integridad referencial a nombres externos.
+
+4. id_resp_vivanto en OpcionRespuesta: los ID numéricos del diccionario V8 permiten
+   exportar respuestas al sistema legado VIVANTO sin transformación adicional.
+
+5. aplicabilidad JSON en Capitulo: regla declarativa que el motor evalúa antes de
+   presentar el capítulo (ej. solo víctimas RUV de ≥3 años). Evita hardcodear
+   condiciones en el frontend.
+
+6. ReglaSkipLogic unificada: reemplaza PreguntaDerivada con un modelo que soporta
+   expresiones de contexto (edad, sexo, RUV) además de respuestas directas,
+   y acciones tipadas (HABILITAR/DESHABILITAR/OBLIGAR/FINALIZAR).
 """
 from django.db import models
+import uuid
 
 
-class Instrumento(models.Model):
-    """Versión del instrumento de caracterización (p.ej. PAARI 4.1)."""
-    codigo = models.CharField(max_length=20, unique=True)
-    nombre = models.CharField(max_length=200)
-    version = models.CharField(max_length=20, default='1.0')
-    vigente = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Instrumento'
-        verbose_name_plural = 'Instrumentos'
-
-    def __str__(self):
-        return f'{self.nombre} v{self.version}'
+class TipoPreguntaChoices(models.TextChoices):
+    TEXTO = "TEXTO", "Texto libre"
+    TEXTO_LARGO = "TEXTO_LARGO", "Texto largo (observaciones)"
+    NUMERICO = "NUMERICO", "Numérico"
+    FECHA = "FECHA", "Fecha"
+    BOOLEAN = "BOOLEAN", "Sí / No"
+    RADIO = "RADIO", "Selección única (radio)"
+    LISTA = "LISTA", "Lista desplegable"
+    LISTA_MULTIPLE = "LISTA_MULTIPLE", "Selección múltiple"
+    COMBO_DINAMICO = "COMBO_DINAMICO", "Combo dinámico (DIVIPOLA, etc.)"
 
 
-class Tema(models.Model):
+class NivelPreguntaChoices(models.TextChoices):
+    HOGAR = "HOGAR", "Aplica al hogar"
+    PERSONA = "PERSONA", "Aplica a cada miembro"
+
+
+class PoblacionObjetivoChoices(models.TextChoices):
+    AUTORIZADO = "AUTORIZADO", "Solo autorizado"
+    AUTORIZADO_TUTOR_CUIDADOR = "AUTORIZADO_TUTOR_CUIDADOR", "Autorizado/Tutor/Cuidador"
+    TODOS_MIEMBROS = "TODOS_MIEMBROS", "Todos los miembros del hogar"
+    VICTIMAS_RUV = "VICTIMAS_RUV", "Solo víctimas incluidas en RUV"
+    VICTIMAS_RUV_3_ANOS_MAS = "VICTIMAS_RUV_3_ANOS_MAS", "Víctimas RUV de 3 años o más"
+
+
+class AccionSkipChoices(models.TextChoices):
+    HABILITAR = "HABILITAR", "Habilitar pregunta/capítulo"
+    DESHABILITAR = "DESHABILITAR", "Deshabilitar pregunta/capítulo"
+    OBLIGAR = "OBLIGAR", "Hacer obligatoria"
+    FINALIZAR = "FINALIZAR", "Finalizar capítulo"
+
+
+class Perfil(models.Model):
     """
-    Módulo / sección del formulario.
-    El campo 'orden' preserva el mismo orden del APK original.
+    Perfil del instrumento de caracterización.
+    Ejemplos: ASISTENCIA, ATENCION, REPARACION, BUENAVENTURA.
+    Modelo relacional para no requerir cambios de código al agregar perfiles.
     """
-    instrumento = models.ForeignKey(
-        Instrumento, on_delete=models.CASCADE, related_name='temas'
-    )
-    codigo = models.CharField(max_length=20, db_index=True)
-    nombre = models.CharField(max_length=300)
-    orden = models.PositiveSmallIntegerField(default=0)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    codigo = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=150)
     activo = models.BooleanField(default=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['orden']
-        unique_together = [('instrumento', 'codigo')]
-        verbose_name = 'Tema'
-        verbose_name_plural = 'Temas'
+        verbose_name = "Perfil"
+        verbose_name_plural = "Perfiles"
 
     def __str__(self):
-        return f'{self.orden:02d}. {self.nombre}'
+        return f"{self.codigo} — {self.nombre}"
+
+
+class InstrumentoVersion(models.Model):
+    """
+    Versión del instrumento de caracterización.
+    Cuando UARIV actualiza preguntas, se crea una nueva versión y las respuestas
+    históricas quedan ancladas a la versión en que fueron capturadas.
+    Garantiza trazabilidad documental (Ley 1581, auditoría).
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    perfil = models.ForeignKey(Perfil, on_delete=models.PROTECT, related_name="versiones")
+    numero = models.CharField(max_length=20, help_text="Ej: V8, V8.1, V9")
+    vigente_desde = models.DateField()
+    vigente_hasta = models.DateField(null=True, blank=True)
+    # Referencia documental para trazabilidad ante UARIV (código del manual PDF)
+    fuente_documental = models.CharField(
+        max_length=300, blank=True,
+        help_text="Ej: Manual UARIV 520.06.06-1 v01, 07/10/2021",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("perfil", "numero")]
+        ordering = ["-vigente_desde"]
+        verbose_name = "Versión del Instrumento"
+        verbose_name_plural = "Versiones del Instrumento"
+
+    def __str__(self):
+        return f"{self.perfil.codigo}-{self.numero}"
+
+    @property
+    def vigente(self) -> bool:
+        from datetime import date
+        hoy = date.today()
+        if self.vigente_desde > hoy:
+            return False
+        if self.vigente_hasta and self.vigente_hasta < hoy:
+            return False
+        return True
+
+
+class Capitulo(models.Model):
+    """
+    Capítulo (sección) del instrumento. Equivale a los módulos del APK original.
+    'aplicabilidad' es una regla declarativa evaluada antes de mostrar el capítulo:
+      {'ruv_incluido': True, 'edad_min': 3}  → solo víctimas RUV de ≥3 años
+      {'tipo_persona': ['AUTORIZADO','TUTOR','CUIDADOR']}  → solo esos roles
+    Esto evita hardcodear condiciones de negocio en el frontend.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    instrumento = models.ForeignKey(
+        InstrumentoVersion, on_delete=models.CASCADE, related_name="capitulos"
+    )
+    codigo = models.CharField(max_length=5, help_text="A, B, C, D, E, F, G")
+    nombre = models.CharField(max_length=200)
+    orden = models.PositiveSmallIntegerField()
+    objetivo = models.TextField(blank=True)
+    poblacion_objetivo = models.CharField(
+        max_length=50,
+        choices=PoblacionObjetivoChoices.choices,
+        default=PoblacionObjetivoChoices.TODOS_MIEMBROS,
+    )
+    aplicabilidad = models.JSONField(
+        default=dict, blank=True,
+        help_text="Reglas declarativas: {'ruv_incluido': True, 'edad_min': 3}",
+    )
+
+    class Meta:
+        unique_together = [("instrumento", "codigo")]
+        ordering = ["orden"]
+        verbose_name = "Capítulo"
+        verbose_name_plural = "Capítulos"
+
+    def __str__(self):
+        return f"[{self.codigo}] {self.nombre}"
 
 
 class Pregunta(models.Model):
     """
-    Pregunta del formulario con metadatos para el motor de renderizado.
-    tipo_respuesta controla qué componente Angular renderiza el encuestador.
-    """
-    TIPO_RESPUESTA = [
-        ('TEXTO', 'Texto libre'),
-        ('NUMERICO', 'Numérico'),
-        ('FECHA', 'Fecha'),
-        ('OPCION_UNICA', 'Selección única'),
-        ('OPCION_MULTIPLE', 'Selección múltiple'),
-        ('SINO', 'Sí / No'),
-        ('TABLA', 'Tabla dinámica'),
-        ('CALCULO', 'Campo calculado'),
-    ]
+    Pregunta del formulario alineada con el Diccionario V8.
 
-    tema = models.ForeignKey(Tema, on_delete=models.CASCADE, related_name='preguntas')
-    codigo = models.CharField(max_length=30, db_index=True)
-    texto = models.TextField()
-    texto_ayuda = models.TextField(blank=True)
-    tipo_respuesta = models.CharField(max_length=20, choices=TIPO_RESPUESTA, default='OPCION_UNICA')
-    orden = models.PositiveSmallIntegerField(default=0)
-    requerida = models.BooleanField(default=True)
+    codigo_externo: identificador del Diccionario V8 (ej. C1_tel, B9_tel).
+      Se almacena como campo de integración — no como PK — para no acoplar
+      la integridad referencial a nombres externos que UARIV puede cambiar.
+
+    variable_bd: nombre de columna para reportes y exportación a VIVANTO.
+
+    nivel: HOGAR (se responde una vez por hogar) o PERSONA (una vez por miembro).
+      Controla cómo el motor itera al rellenar las respuestas.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    capitulo = models.ForeignKey(Capitulo, on_delete=models.CASCADE, related_name="preguntas")
+    codigo_externo = models.CharField(
+        max_length=30, db_index=True,
+        help_text="Código del Diccionario V8, ej: C1_tel, B9_tel",
+    )
+    # codigo_diagrama se deriva automáticamente quitando el sufijo _tel
+    codigo_diagrama = models.CharField(
+        max_length=10, blank=True,
+        help_text="Código en el diagrama de flujo del manual PDF, ej: C1, B9",
+    )
+    variable_bd = models.CharField(
+        max_length=50,
+        help_text="Nombre de columna en reportes/VIVANTO export",
+    )
+    texto = models.TextField(help_text="Pregunta literal mostrada al entrevistado")
+    descripcion_ayuda = models.TextField(
+        blank=True,
+        help_text="Conceptos y notas del manual PDF para el encuestador",
+    )
+    tipo = models.CharField(max_length=20, choices=TipoPreguntaChoices.choices)
+    nivel = models.CharField(max_length=10, choices=NivelPreguntaChoices.choices)
+    obligatoria = models.BooleanField(default=True)
+    orden = models.PositiveSmallIntegerField()
+    validaciones = models.JSONField(
+        default=dict, blank=True,
+        help_text="{'min':0,'max':7} | {'regex':'^[0-9]{10}$'} | {'max_length':500}",
+    )
     activa = models.BooleanField(default=True)
-    # Para preguntas de tabla: nombre de la columna padre
-    columna_padre = models.CharField(max_length=50, blank=True)
-    # Validación extra en JSON: {"min": 0, "max": 100, "regex": "..."}
-    validacion = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        ordering = ['orden']
-        unique_together = [('tema', 'codigo')]
-        verbose_name = 'Pregunta'
-        verbose_name_plural = 'Preguntas'
+        unique_together = [("capitulo", "codigo_externo")]
+        ordering = ["orden"]
+        indexes = [
+            models.Index(fields=["codigo_externo"]),
+            models.Index(fields=["capitulo", "orden"]),
+        ]
+        verbose_name = "Pregunta"
+        verbose_name_plural = "Preguntas"
 
     def __str__(self):
-        return f'[{self.codigo}] {self.texto[:80]}'
+        return f"{self.codigo_externo}: {self.texto[:60]}"
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_diagrama and self.codigo_externo:
+            self.codigo_diagrama = self.codigo_externo.replace("_tel", "")
+        super().save(*args, **kwargs)
 
 
 class OpcionRespuesta(models.Model):
-    """Opción de respuesta para preguntas de selección (única o múltiple)."""
-    pregunta = models.ForeignKey(Pregunta, on_delete=models.CASCADE, related_name='opciones')
-    codigo = models.CharField(max_length=20)
-    texto = models.CharField(max_length=500)
-    orden = models.PositiveSmallIntegerField(default=0)
-    activa = models.BooleanField(default=True)
+    """
+    Opción de respuesta para preguntas RADIO, LISTA, LISTA_MULTIPLE.
+
+    id_resp_vivanto: ID numérico del Diccionario V8 (columna ID_RESP del Excel).
+      Opcional — solo presente en opciones que necesitan exportarse al sistema
+      legado VIVANTO. Permite la exportación directa sin transformación adicional.
+
+    finaliza_capitulo: equivale a RESFINALIZA del APK original — al seleccionar
+      esta opción el motor cierra el capítulo actual sin mostrar más preguntas.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pregunta = models.ForeignKey(Pregunta, on_delete=models.CASCADE, related_name="opciones")
+    valor = models.CharField(max_length=100, help_text="Valor almacenado en la respuesta")
+    etiqueta = models.CharField(max_length=500, help_text="Texto visible al usuario")
+    id_resp_vivanto = models.IntegerField(
+        null=True, blank=True, db_index=True,
+        help_text="ID_RESP del Diccionario V8 para export a VIVANTO legacy",
+    )
+    orden = models.PositiveSmallIntegerField()
+    finaliza_capitulo = models.BooleanField(
+        default=False,
+        help_text="Equivale a RESFINALIZA del APK: cierra el capítulo al seleccionar",
+    )
 
     class Meta:
-        ordering = ['orden']
-        unique_together = [('pregunta', 'codigo')]
-        verbose_name = 'Opción de Respuesta'
-        verbose_name_plural = 'Opciones de Respuesta'
+        unique_together = [("pregunta", "valor")]
+        ordering = ["orden"]
+        verbose_name = "Opción de Respuesta"
+        verbose_name_plural = "Opciones de Respuesta"
 
     def __str__(self):
-        return f'{self.codigo}: {self.texto}'
+        return f"{self.pregunta.codigo_externo} = {self.valor} ({self.etiqueta[:40]})"
 
 
-class PreguntaDerivada(models.Model):
+class ReglaSkipLogic(models.Model):
     """
-    Lógica de derivación (skip logic):
-    si 'pregunta_padre' tiene el valor 'valor_condicion'
-    entonces 'pregunta_hija' se muestra / activa.
-    """
-    OPERADOR = [
-        ('EQ', 'Igual a'),
-        ('NEQ', 'Diferente de'),
-        ('GT', 'Mayor que'),
-        ('GTE', 'Mayor o igual'),
-        ('LT', 'Menor que'),
-        ('LTE', 'Menor o igual'),
-        ('IN', 'Está en'),
-        ('NOTNULL', 'Tiene respuesta'),
-    ]
+    Regla declarativa de skip logic.
 
-    pregunta_padre = models.ForeignKey(
-        Pregunta, on_delete=models.CASCADE, related_name='derivaciones_como_padre'
+    Reemplaza PreguntaDerivada con un modelo más expresivo que soporta:
+    - Reglas basadas en respuesta directa (pregunta_origen + valor_trigger)
+    - Reglas basadas en contexto del hogar/persona (expresion_origen: edad, sexo, RUV)
+    - Acciones tipadas: HABILITAR, DESHABILITAR, OBLIGAR, FINALIZAR
+    - Afectación a pregunta individual o a capítulo completo
+
+    El motor de formulario evalúa estas reglas en orden para calcular
+    qué preguntas/capítulos son visibles en cada momento de la entrevista.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    instrumento = models.ForeignKey(
+        InstrumentoVersion, on_delete=models.CASCADE, related_name="reglas"
     )
-    pregunta_hija = models.ForeignKey(
-        Pregunta, on_delete=models.CASCADE, related_name='derivaciones_como_hija'
+    pregunta_origen = models.ForeignKey(
+        Pregunta, on_delete=models.CASCADE, related_name="reglas_salientes",
+        null=True, blank=True,
+        help_text="Pregunta cuya respuesta dispara la regla. Null si la regla "
+                  "depende de expresión de contexto (ej. edad, inclusión RUV)",
     )
-    operador = models.CharField(max_length=10, choices=OPERADOR, default='EQ')
-    # El valor de comparación se serializa como string; el front lo convierte
-    valor_condicion = models.CharField(max_length=200, blank=True)
+    expresion_origen = models.TextField(
+        blank=True,
+        help_text="Expresión evaluada contra contexto del hogar/persona. "
+                  "Ej: 'sexo == \"Hombre\" and 18 <= edad <= 49'",
+    )
+    valor_trigger = models.CharField(
+        max_length=100, blank=True,
+        help_text="Valor que debe tomar pregunta_origen para activar la regla",
+    )
+    pregunta_afectada = models.ForeignKey(
+        Pregunta, on_delete=models.CASCADE, related_name="reglas_entrantes",
+        null=True, blank=True,
+    )
+    capitulo_afectado = models.ForeignKey(
+        Capitulo, on_delete=models.CASCADE, related_name="reglas_aplicables",
+        null=True, blank=True,
+        help_text="Si la regla afecta a un capítulo completo (ej. habilitar cap D/E)",
+    )
+    accion = models.CharField(max_length=20, choices=AccionSkipChoices.choices)
+    descripcion = models.CharField(
+        max_length=300, blank=True,
+        help_text="Referencia al manual PDF, ej: 'Manual §6.1 — Cap D solo RUV ≥3 años'",
+    )
 
     class Meta:
-        verbose_name = 'Pregunta Derivada'
-        verbose_name_plural = 'Preguntas Derivadas'
-        unique_together = [('pregunta_padre', 'pregunta_hija', 'valor_condicion')]
+        ordering = ["id"]
+        verbose_name = "Regla Skip Logic"
+        verbose_name_plural = "Reglas Skip Logic"
 
     def __str__(self):
-        return f'{self.pregunta_padre.codigo} {self.operador} "{self.valor_condicion}" → {self.pregunta_hija.codigo}'
+        origen = (
+            f"{self.pregunta_origen.codigo_externo}={self.valor_trigger}"
+            if self.pregunta_origen
+            else f"expr:{self.expresion_origen[:30]}"
+        )
+        afectado = (
+            self.pregunta_afectada.codigo_externo
+            if self.pregunta_afectada
+            else f"cap:{self.capitulo_afectado.codigo if self.capitulo_afectado else '?'}"
+        )
+        return f"{origen} → {self.accion} {afectado}"

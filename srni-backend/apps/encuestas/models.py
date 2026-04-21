@@ -1,11 +1,13 @@
 """
 Modelos de Encuestas SRNI.
 
-SesionEncuesta: sesión de diligenciamiento del formulario PAARI para un hogar.
+SesionEncuesta: sesión de diligenciamiento del formulario para un hogar.
 RespuestaEncuesta: respuesta individual a una pregunta del instrumento.
 
 Diseño:
-- Una sesión está vinculada a un Hogar + Instrumento (versión del formulario).
+- Una sesión está vinculada a un Hogar + InstrumentoVersion (versión exacta del formulario).
+- Las respuestas quedan ancladas a la versión del instrumento vigente al capturarlas
+  (trazabilidad documental — Ley 1581, auditoría UARIV).
 - Las respuestas se guardan de a una (upsert por sesión+pregunta).
 - El porcentaje_completado se recalcula al guardar cada respuesta.
 - Una sesión COMPLETADA no admite más cambios de respuesta.
@@ -16,7 +18,7 @@ from django.conf import settings
 
 
 class SesionEncuesta(models.Model):
-    """Sesión de caracterización de un hogar con un instrumento específico."""
+    """Sesión de caracterización de un hogar con una versión específica del instrumento."""
 
     ESTADO = [
         ('INICIADA',     'Iniciada'),
@@ -32,8 +34,10 @@ class SesionEncuesta(models.Model):
         on_delete=models.PROTECT,
         related_name='sesiones',
     )
+    # FK a InstrumentoVersion (no a Instrumento): garantiza que las respuestas
+    # queden ancladas a la versión exacta vigente al momento de la captura.
     instrumento = models.ForeignKey(
-        'formulario.Instrumento',
+        'formulario.InstrumentoVersion',
         on_delete=models.PROTECT,
         related_name='sesiones',
     )
@@ -72,14 +76,14 @@ class SesionEncuesta(models.Model):
 
     def recalcular_porcentaje(self) -> int:
         """
-        Calcula el porcentaje de preguntas requeridas respondidas.
-        Solo cuenta preguntas activas y requeridas del instrumento.
+        Calcula el porcentaje de preguntas obligatorias respondidas.
+        Solo cuenta preguntas activas y obligatorias del instrumento vigente.
         """
         from apps.formulario.models import Pregunta
 
         total = Pregunta.objects.filter(
-            tema__instrumento=self.instrumento,
-            requerida=True,
+            capitulo__instrumento=self.instrumento,
+            obligatoria=True,
             activa=True,
         ).count()
 
@@ -87,7 +91,7 @@ class SesionEncuesta(models.Model):
             return 0
 
         respondidas = self.respuestas.filter(
-            pregunta__requerida=True,
+            pregunta__obligatoria=True,
             pregunta__activa=True,
         ).exclude(valor='').count()
 

@@ -130,6 +130,14 @@ class MiembroHogar(models.Model):
         ('ND', 'No declara'),
     ]
 
+    # Tipo de persona según Manual §5.1.2 — determina qué capítulos aplican
+    TIPO_PERSONA = [
+        ('AUTORIZADO',  'Autorizado — víctima ≥18 años incluida en RUV'),
+        ('TUTOR',       'Tutor — responsable de víctima menor de edad'),
+        ('CUIDADOR',    'Cuidador permanente — responsable de adulto dependiente'),
+        ('OTRO',        'Otro integrante del hogar'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     hogar = models.ForeignKey(
@@ -160,11 +168,27 @@ class MiembroHogar(models.Model):
 
     parentesco = models.CharField(max_length=20, choices=PARENTESCO)
     genero = models.CharField(max_length=2, choices=GENERO, blank=True)
-    edad = models.PositiveSmallIntegerField(
+    # fecha_nacimiento reemplaza 'edad' int para permitir cálculo exacto en validators
+    fecha_nacimiento = models.DateField(
         null=True, blank=True,
-        help_text='Edad en años al momento de la caracterización.',
+        help_text='Fecha de nacimiento del miembro (PII — no se indexa).',
     )
-    discapacidad = models.BooleanField(default=False)
+    tipo_persona = models.CharField(
+        max_length=15, choices=TIPO_PERSONA, default='OTRO',
+        help_text='Rol del miembro según §5.1.2 del manual UARIV.',
+    )
+    incluido_ruv = models.BooleanField(
+        default=False,
+        help_text='True si el miembro está incluido en el RUV (Registro Único de Víctimas).',
+    )
+    tiene_discapacidad = models.BooleanField(
+        default=False,
+        help_text='El miembro tiene algún tipo de discapacidad.',
+    )
+    tiene_enfermedad_ruinosa = models.BooleanField(
+        default=False,
+        help_text='El miembro tiene enfermedad ruinosa o catastrófica (Manual §5.1.2).',
+    )
     tipo_discapacidad = models.CharField(max_length=100, blank=True)
 
     creado_por = models.ForeignKey(
