@@ -5,10 +5,14 @@
 | Campo | Valor |
 |-------|-------|
 | Proyecto | Sistema de Caracterización de Víctimas — Unidad para las Víctimas (SRNI) |
-| Desarrollador | Javier Alexander Aguilar Castro |
+| Contrato | 2226-2026 |
+| Contratista | Javier Alexander Aguilar Castro |
 | C.C. | 1.030.547.250 |
 | Email | ingaguilarsistemas@gmail.com |
-| Repositorio | D:/desarrollo/unidad-victima |
+| Supervisor | Oscar Andrés Manosalva García (SRNI) |
+| Repositorio local | D:/desarrollo/unidad-victima |
+| Repo oficial (Azure DevOps) | https://tfsunidad.visualstudio.com/RNI%20-%20VIVANTO%20-%20ENCUESTA%20IGED-MOVIL/_git/RNI%20-%20VIVANTO%20-%20ENCUESTA%20IGED%20MOVIL%202026-04 |
+| Repo backup (GitHub) | https://github.com/alexjut/srni-unidad-victimas |
 
 ---
 
@@ -39,23 +43,48 @@
 
 ---
 
+## Estado actual del desarrollo — Sprints completados
+
+| Sprint | Rama | Estado | Contenido principal |
+|--------|------|--------|-------------------|
+| Sprint 1 | `main` (base) | ✅ Completo | Backend Django inicial + scaffold mobile |
+| Sprint 2 | `feature/sprint2-parametricas-formulario` | ✅ Completo | Paramétricas (geo, municipios, veredas), motor formulario 54 módulos, victimas con PII cifrado |
+| Sprint 3 | `feature/sprint3-hogares-encuestas-mobile` | ✅ Completo | Hogares, miembros, sesiones de encuesta, pantallas móviles |
+| Sprint 4 | `feature/sprint4-motor-offline` | ✅ Completo | Motor offline expo-sqlite, cola de sincronización, skip logic |
+| Sprint 5 | `feature/sprint5-ia-gemini` | ✅ Completo | Integración IA Gemini, asistente de voz, UI GOV.CO institucional |
+
+### Rama activa de trabajo
+- `feature/sprint5-ia-gemini` — rama de desarrollo activa para Sprint 5 y siguientes
+- `develop` — integra Sprints 1-5 completos
+- `main` — producción, contiene todo el historial (18 commits, 188 archivos)
+
+### Git remotes configurados
+| Remote | URL | Uso |
+|--------|-----|-----|
+| `origin` | `github.com/alexjut/srni-unidad-victimas` | Backup personal privado |
+| `azure` | `tfsunidad.visualstudio.com/.../RNI - VIVANTO - ENCUESTA IGED MOVIL 2026-04` | **Repo oficial UARIV** |
+
+> **Regla de push:** `origin` = backup (push libre). `azure` = repo oficial (requiere PR o autorización del supervisor).
+
+---
+
 ## Fases del proyecto
 
-### Fase 1 — Backend + App Móvil (~2 meses)
-- Backend Django REST Framework completo
-- App móvil React Native + Expo (Android primero)
-- Motor de formularios dinámico (54 módulos, ~1416 preguntas)
-- Autenticación JWT con refresh tokens
-- Módulo de búsqueda en el RNI (servidor, nunca en cliente)
-- Roles y permisos por perfil de encuestador
-- Auditoría de accesos y cambios (LogAcceso inmutable)
-- Docker Compose para desarrollo y producción
+### Fase 1 — Backend + App Móvil (Sprints 1-5 — COMPLETADA)
+- ✅ Backend Django REST Framework completo (autenticación, formulario, hogares, encuestas, victimas, paramétricas, IA)
+- ✅ App móvil React Native + Expo SDK 54 con UI GOV.CO
+- ✅ Motor de formularios dinámico (54 módulos, skip logic PREDEPENDE/RESHABILITA/RESFINALIZA)
+- ✅ Autenticación JWT con refresh tokens (access 15 min, refresh 8 h)
+- ✅ Módulo de búsqueda en el RNI (server-side only)
+- ✅ Motor offline con expo-sqlite y cola de sincronización automática
+- ✅ Integración IA Gemini con consentimiento y asistente de voz
+- ✅ Docker Compose para desarrollo y producción
 
-### Fase 2 — Aplicación Móvil (~4 meses)
-- Angular + Capacitor o React Native
-- PWA offline-first con sincronización
-- Sin datos PII almacenados localmente
-- Sin APK con datos embebidos (error crítico del sistema anterior)
+### Fase 2 — Próximos sprints
+- Reportes de producción por encuestador
+- Panel de supervisión (web Angular o Django Admin extendido)
+- Sincronización masiva optimizada
+- Pruebas de carga y hardening de seguridad para producción
 
 ---
 
@@ -65,6 +94,7 @@
 - **Estilo:** Dar un **plan detallado por fases** antes de ejecutar cualquier tarea no trivial
 - **Subagentes:** Usar subagentes paralelos cuando las tareas sean independientes entre sí
 - **Confirmación:** En operaciones destructivas o irreversibles, confirmar antes de ejecutar
+- **Bash:** El desarrollador ha aprobado ejecución automática de comandos bash sin pedir confirmación
 
 ---
 
@@ -161,12 +191,13 @@ unidad-victima/
 │   │   ├── wsgi.py
 │   │   └── celery.py
 │   ├── apps/
-│   │   ├── autenticacion/        ← JWT, roles, perfiles
-│   │   ├── victimas/             ← RNI — búsqueda y detalle
-│   │   ├── formulario/           ← Motor dinámico 54 módulos
+│   │   ├── autenticacion/        ← JWT, roles, perfiles (comando crear_usuario_prueba)
+│   │   ├── victimas/             ← RNI — búsqueda y detalle (PII cifrado + hash SHA-256)
+│   │   ├── formulario/           ← Motor dinámico 54 módulos + skip logic
 │   │   ├── hogares/              ← Hogares y miembros
 │   │   ├── encuestas/            ← Sesiones y respuestas
-│   │   ├── parametricas/         ← Geo, comunidades étnicas
+│   │   ├── parametricas/         ← Geo, comunidades étnicas (comandos carga municipios/documentos)
+│   │   ├── ia/                   ← Proxy Gemini, ConsentimientoIA, logs de uso ← Sprint 5
 │   │   ├── sincronizacion/       ← Import/export seguro
 │   │   ├── auditoria/            ← LogAcceso inmutable
 │   │   └── reportes/             ← Producción por encuestador
@@ -175,20 +206,33 @@ unidad-victima/
 ├── srni-mobile/                  ← React Native + Expo SDK 54
 │   ├── app/                      ← Expo Router (file-based routing)
 │   │   ├── _layout.tsx           ← Root layout + PaperProvider + auth guard
+│   │   ├── index.tsx             ← Entry point con Redirect
 │   │   ├── (auth)/
+│   │   │   ├── _layout.tsx
 │   │   │   └── login.tsx
 │   │   └── (main)/
-│   │       ├── _layout.tsx       ← Bottom tabs
+│   │       ├── _layout.tsx       ← Bottom tabs (estilo GOV.CO)
 │   │       ├── index.tsx         ← Dashboard
 │   │       ├── busqueda.tsx      ← Búsqueda RNI (server-side only)
+│   │       ├── hogares/
+│   │       │   ├── index.tsx     ← Lista hogares
+│   │       │   ├── nuevo.tsx     ← Crear hogar
+│   │       │   └── [hogarId].tsx ← Detalle hogar + miembros
+│   │       ├── encuestas/
+│   │       │   ├── index.tsx     ← Lista sesiones
+│   │       │   └── [sesionId].tsx← Detalle sesión
 │   │       └── formulario/
 │   │           ├── index.tsx     ← Lista de 54 temas
-│   │           └── [temaId].tsx  ← Motor de preguntas + skip logic
+│   │           ├── [temaId].tsx  ← Motor de preguntas + skip logic
+│   │           └── consentimiento-ia.tsx ← Consentimiento IA Gemini
 │   └── src/
-│       ├── api/                  ← axios client + interceptores JWT
-│       ├── stores/               ← Zustand (authStore)
-│       ├── db/                   ← expo-sqlite schema offline
-│       └── components/           ← Componentes compartidos
+│       ├── api/                  ← axios client + interceptores JWT (auth, hogares, encuestas, ia)
+│       ├── stores/               ← Zustand (authStore, iaStore, syncStore)
+│       ├── db/                   ← expo-sqlite: schema, borradoresDao, colaDao, hogaresOfflineDao, instrumentoDao
+│       ├── services/             ← skipLogic.ts, sincronizacion.ts + tests
+│       ├── components/           ← GovButton, GovCard, GovHeader, SugerenciaIA, AudioRecorder, EmptyState...
+│       ├── theme/                ← govTheme.ts (paleta GOV.CO institucional)
+│       └── types/                ← index.ts (tipos compartidos)
 │
 └── infra/
     ├── nginx/                    ← Configuración proxy + TLS
