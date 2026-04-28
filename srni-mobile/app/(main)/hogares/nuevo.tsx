@@ -1,13 +1,4 @@
-/**
- * Formulario para crear un nuevo hogar.
- *
- * Flujo:
- *  - Con red  → POST /api/hogares/ directamente
- *  - Sin red  → guarda en hogares_offline + encola CREAR_HOGAR
- *
- * SEGURIDAD: jefe_hogar_uuid es el UUID de la Victima (referencia opaca).
- * No se almacena nombre ni documento.
- */
+// Crear nuevo hogar — online (POST directo) u offline (cola de sync).
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import {

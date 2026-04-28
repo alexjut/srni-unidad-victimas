@@ -1,11 +1,4 @@
-/**
- * Root layout — solo inicializa servicios y renderiza el Stack.
- *
- * REGLA: este archivo NO navega. Toda lógica de redirección
- * vive en los _layout de cada grupo ((auth) y (main)) mediante
- * el componente <Redirect /> de expo-router, que se evalúa
- * durante el render — nunca antes del mount del Stack.
- */
+// Root layout — inicializa DB, perfil y sync. La navegación vive en los _layout de grupo.
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
@@ -20,18 +13,14 @@ export default function RootLayout() {
   const { cargarPerfil, usuario } = useAuthStore();
   const { inicializar } = useSyncStore();
 
-  // 1. Inicializar DB y cargar perfil al arrancar
   useEffect(() => {
-    initDatabase().catch(console.error);
+    initDatabase().catch(() => {});
     cargarPerfil();
   }, []);
 
-  // 2. Inicializar sync cuando el usuario quede autenticado
   useEffect(() => {
-    if (usuario) {
-      inicializar();
-    }
-  }, [usuario?.id]);   // solo cuando cambia el ID (login / logout)
+    if (usuario) inicializar();
+  }, [usuario?.id]);
 
   return (
     <PaperProvider theme={govTheme}>

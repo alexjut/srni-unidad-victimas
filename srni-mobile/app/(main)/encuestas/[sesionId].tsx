@@ -1,12 +1,4 @@
-/**
- * Detalle de una sesión de encuesta — GOV.CO design system.
- *
- * Corregido:
- *  - Usa GovHeader en lugar de Stack.Screen nativo (consistencia GOV.CO)
- *  - Pasa sesionServerId + hogarId al formulario para que las respuestas queden
- *    vinculadas a la sesión correcta (sin crear una nueva vía cola)
- *  - Miga de pan: Hogares › Hogar XXXX › Sesión
- */
+// Detalle de una sesión de encuesta — GOV.CO design system.
 import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {

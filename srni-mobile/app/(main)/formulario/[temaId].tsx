@@ -1,15 +1,4 @@
-/**
- * Motor de captura offline de un tema del formulario PAARI.
- *
- * Flujo completo:
- *  1. Carga preguntas, opciones y condiciones desde SQLite local
- *  2. Evalúa skip logic con el servicio puro (sin red)
- *  3. Al cambiar una respuesta: guarda en borrador SQLite y encola para sync
- *  4. Al pulsar "Guardar y continuar": encola FINALIZAR_SESION si es el último tema
- *
- * El borrador_id se pasa como parámetro de ruta junto con temaId.
- * Si no se pasa borrador_id, se crea uno nuevo en este tema.
- */
+// Motor de captura offline de un tema del formulario PAARI.
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import {
@@ -115,10 +104,7 @@ export default function TemaScreen() {
       }
 
       setCargando(false);
-    })().catch((e) => {
-      console.error('Error cargando tema:', e);
-      setCargando(false);
-    });
+    })().catch(() => setCargando(false));
   }, [temaId]);
 
   // ── Skip logic — puro, sin I/O ──────────────────────────────────────────────
@@ -143,15 +129,14 @@ export default function TemaScreen() {
 
     if (!borradorId) return;
 
-    // Persistir en SQLite (no bloquea el render)
-    borradoresDao.upsertRespuesta(borradorId, preguntaId, valor).catch(console.error);
+    borradoresDao.upsertRespuesta(borradorId, preguntaId, valor).catch(() => {});
 
     // Encolar respuesta para sync con servidor
     const borrador = await borradoresDao.getBorrador(borradorId);
     if (borrador) {
       await colaDao.encolar('RESPONDER_PREGUNTA', borradorId, {
         borrador_id: borradorId,
-        sesion_id: borrador.sesion_id ?? null,  // se rellena al procesar CREAR_SESION
+        sesion_id: borrador.sesion_id ?? null,
         pregunta_id: preguntaId,
         valor,
       });

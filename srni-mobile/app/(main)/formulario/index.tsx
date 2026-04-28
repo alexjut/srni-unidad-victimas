@@ -1,6 +1,4 @@
-/**
- * Lista de temas del formulario PAARI — GOV.CO design system.
- */
+// Lista de módulos del formulario PAARI.
 import { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, Pressable } from 'react-native';
 import { Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
@@ -81,7 +79,7 @@ export default function FormularioIndexScreen() {
         );
         setTemas(rows);
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setCargando(false));
   }, []);
 

@@ -1,18 +1,4 @@
-/**
- * Servicio de sincronización offline → servidor.
- *
- * Flujo completo:
- *   1. descargarInstrumento()  — primer login con red
- *   2. intentarSincronizar()   — procesa cola_sincronizacion en orden
- *
- * Estrategia de conflictos:
- *   - 4xx (400, 404, 409…) → error permanente (no reintentar, datos inválidos)
- *   - 429, 5xx, timeout   → reintento (hasta MAX_INTENTOS en colaDao)
- *   - Éxito               → actualizar IDs locales, marcar enviado
- *
- * Detección de red: intento liviano a GET /health/
- * sin depender de librerías externas de network info.
- */
+// Sincronización offline → servidor: cola de operaciones con reintentos y resolución de conflictos.
 import apiClient from '../api/client';
 import { hogaresApi } from '../api/hogares';
 import { encuestasApi } from '../api/encuestas';

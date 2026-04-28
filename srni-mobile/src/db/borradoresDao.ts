@@ -110,11 +110,6 @@ export async function marcarCompletado(borradorId: string): Promise<void> {
   );
 }
 
-/**
- * Vincula un borrador a una sesión ya existente en el servidor.
- * Se usa cuando la sesión fue creada desde [hogarId].tsx antes de entrar al formulario,
- * evitando duplicar el evento CREAR_SESION en la cola de sincronización.
- */
 export async function vincularSesionServidor(borradorId: string, sesionId: string): Promise<void> {
   const db = await openDb();
   await db.runAsync(
