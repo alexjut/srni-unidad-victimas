@@ -34,10 +34,11 @@ import type { PreguntaRow, OpcionRow, DerivadaRow } from '../../../src/db/instru
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function TemaScreen() {
-  const { temaId, borradorId: borradorIdParam, hogarId } = useLocalSearchParams<{
+  const { temaId, borradorId: borradorIdParam, hogarId, sesionServerId } = useLocalSearchParams<{
     temaId: string;
     borradorId?: string;
     hogarId?: string;
+    sesionServerId?: string;   // UUID de sesión ya creada en servidor (viene desde [sesionId].tsx)
   }>();
 
   const { estaOnline, refrescarContadores } = useSyncStore();
@@ -98,8 +99,12 @@ export default function TemaScreen() {
         const borrador = await borradoresDao.crearBorrador(instrId, hogarId);
         setBorradorId(borrador.id);
 
-        // Encolar creación de sesión en servidor
-        if (hogarId) {
+        if (sesionServerId) {
+          // La sesión ya existe en el servidor (viene de [hogarId] → [sesionId] → formulario).
+          // La vinculamos directamente para que las respuestas usen el sesion_id correcto.
+          await borradoresDao.vincularSesionServidor(borrador.id, sesionServerId);
+        } else if (hogarId) {
+          // Sin sesión previa — crear en servidor vía cola de sincronización.
           await colaDao.encolar('CREAR_SESION', borrador.id, {
             borrador_id: borrador.id,
             hogar: hogarId,
@@ -207,6 +212,9 @@ export default function TemaScreen() {
   }
 
   const totalVisible = preguntasVisibles.length;
+  const migaContexto = hogarId
+    ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${temaNombre || 'Módulo'}`
+    : temaNombre || 'Módulo';
 
   return (
     <View style={styles.root}>
@@ -245,6 +253,13 @@ export default function TemaScreen() {
           </View>
         }
       />
+
+      {/* Miga de pan */}
+      <View style={styles.miga}>
+        <Text style={styles.migaTxt}>
+          Formulario PAARI  ›  {migaContexto}
+        </Text>
+      </View>
 
       <FlatList
         data={preguntasVisibles}
@@ -496,5 +511,16 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: GOV.borde,
+  },
+  miga: {
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  migaTxt: {
+    ...FONT.caption,
+    color: GOV.azulOscuro,
   },
 });

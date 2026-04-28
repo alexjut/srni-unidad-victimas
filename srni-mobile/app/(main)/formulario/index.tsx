@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, Pressable } from 'react-native';
 import { Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
 import { DB_NAME } from '../../../src/db/schema';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -21,10 +21,27 @@ interface Tema {
 
 // ─── Tarjeta de tema ──────────────────────────────────────────────────────────
 
-function TemaCard({ tema, index }: { tema: Tema; index: number }) {
+function TemaCard({
+  tema,
+  index,
+  sesionServerId,
+  hogarId,
+}: {
+  tema: Tema;
+  index: number;
+  sesionServerId?: string;
+  hogarId?: string;
+}) {
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/(main)/formulario/[temaId]', params: { temaId: tema.id } })}
+      onPress={() => router.push({
+        pathname: '/(main)/formulario/[temaId]',
+        params: {
+          temaId: tema.id,
+          ...(sesionServerId ? { sesionServerId } : {}),
+          ...(hogarId ? { hogarId } : {}),
+        },
+      })}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       accessibilityRole="button"
       accessibilityLabel={`Módulo ${index + 1}: ${tema.nombre}`}
@@ -48,6 +65,11 @@ function TemaCard({ tema, index }: { tema: Tema; index: number }) {
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function FormularioIndexScreen() {
+  const { sesionServerId, hogarId } = useLocalSearchParams<{
+    sesionServerId?: string;
+    hogarId?: string;
+  }>();
+
   const [temas, setTemas] = useState<Tema[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -62,6 +84,10 @@ export default function FormularioIndexScreen() {
       .catch(console.error)
       .finally(() => setCargando(false));
   }, []);
+
+  const subtituloHeader = hogarId
+    ? `Hogar ${hogarId.slice(0, 8)}… · ${temas.length} módulos`
+    : `${temas.length} módulos`;
 
   if (cargando) {
     return (
@@ -90,13 +116,22 @@ export default function FormularioIndexScreen() {
 
   return (
     <View style={styles.root}>
-      <GovHeader title="Formulario PAARI" subtitle={`${temas.length} módulos`} />
+      <GovHeader title="Formulario PAARI" subtitle={subtituloHeader} />
+
+      {/* Miga de pan */}
+      {hogarId && (
+        <View style={styles.miga}>
+          <Text style={styles.migaTxt}>
+            Hogares  ›  Hogar {hogarId.slice(0, 8)}…  ›  Formulario PAARI
+          </Text>
+        </View>
+      )}
 
       {/* Barra de progreso global */}
       <View style={styles.progresoWrap}>
         <View style={styles.progresoRow}>
           <Text style={styles.progresoLabel}>{temas.length} módulos — PAARI v1.0</Text>
-          <Text style={styles.progresoLabel}>0% completado</Text>
+          <Text style={styles.progresoLabel}>Seleccione un módulo</Text>
         </View>
         <ProgressBar
           progress={0}
@@ -108,7 +143,14 @@ export default function FormularioIndexScreen() {
       <FlatList
         data={temas}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item, index }) => <TemaCard tema={item} index={index} />}
+        renderItem={({ item, index }) => (
+          <TemaCard
+            tema={item}
+            index={index}
+            sesionServerId={sesionServerId}
+            hogarId={hogarId}
+          />
+        )}
         contentContainerStyle={styles.lista}
       />
     </View>
@@ -119,6 +161,17 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: GOV.fondoApp,
+  },
+  miga: {
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  migaTxt: {
+    ...FONT.caption,
+    color: GOV.azulOscuro,
   },
   centrado: {
     flex: 1,
