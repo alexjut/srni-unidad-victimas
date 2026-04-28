@@ -12,9 +12,9 @@
 | 1 | TERRITORIAL | Perfil Territorial | V7 | 14 | `cargar_territorial_v7.py` | ✅ Listo |
 | 2 | BUENAVENTURA | Perfil Buenaventura | V7 | 17 | `cargar_buenaventura_v7.py` | ✅ Listo |
 | 3 | SAN_ANDRES | Perfil San Andrés / SAI | V7 | 14 | `cargar_san_andres_v7.py` | ✅ Listo |
-| 4 | TELEFONICO | Perfil Telefónico SAAH | V8 | TBD | `cargar_telefonico_v8.py` | 🔲 Pendiente |
-| 5 | URBANO_ETNICO | Perfil Urbano Étnico | V1 | TBD | `cargar_urbano_etnico_v1.py` | 🔲 Pendiente |
-| 6 | RURAL_ETNICO | Perfil Rural Étnico | V1 | TBD | `cargar_rural_etnico_v1.py` | 🔲 Pendiente |
+| 4 | TELEFONICO | Perfil Telefónico SAAH | V8 | 7 | `cargar_telefonico_v8.py` | ✅ Listo |
+| 5 | URBANO_ETNICO | Perfil Urbano Étnico | V1 | 12 | `cargar_urbano_etnico_v1.py` | ✅ Listo |
+| 6 | RURAL_ETNICO | Perfil Rural Étnico | V1 | 14 | `cargar_rural_etnico_v1.py` | ✅ Listo |
 
 ---
 

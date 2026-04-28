@@ -1,9 +1,9 @@
 # Sprint 6 — Diccionario V8 + Loaders de Perfiles
 
 **Branch:** `feature/sprint6-diccionario-v8`  
-**Estado:** 🟡 En curso  
+**Estado:** ✅ Completado  
 **Inicio:** 2026-04-10  
-**Cierre estimado:** 2026-05-05
+**Cierre:** 2026-04-28
 
 ---
 
@@ -23,20 +23,23 @@
 | Alinear modelo + validadores hogar | `5f38078` | 2026-04-10 |
 | `cargar_territorial_v7.py` — 14 caps, 248 preguntas | `0fa48ed` | 2026-04-27 |
 | `cargar_buenaventura_v7.py` — 17 caps, ~300 preguntas | `dd91ee6` | 2026-04-28 |
-| `cargar_san_andres_v7.py` — 14 caps, ~290 preguntas | pendiente commit | 2026-04-28 |
+| `cargar_san_andres_v7.py` — 14 caps, ~290 preguntas | `0453bf4` | 2026-04-28 |
+| `cargar_telefonico_v8.py` — 7 caps, entrevista telefónica SAAH | `8bace02` | 2026-04-28 |
+| `cargar_urbano_etnico_v1.py` — 12 caps, ~120 preguntas | `046b356` | 2026-04-28 |
+| `cargar_rural_etnico_v1.py` — 14 caps, ~160 preguntas, offline-first | `046b356` | 2026-04-28 |
 | `cargar_diccionario_v8.py` — Asistencia V8 (JSON) | incluido en `5f38078` | 2026-04-10 |
+| Docs: structure + index + sprint + mobile + instruments + API | `8bace02` | 2026-04-28 |
 
 ---
 
-## Tareas pendientes
+## Tareas pendientes → Sprint 7
 
-| Tarea | Perfil | Prioridad |
-|-------|--------|-----------|
-| `cargar_telefonico_v8.py` | Telefónico SAAH | Alta |
-| `cargar_urbano_etnico_v1.py` | Urbano Étnico | Media |
-| `cargar_rural_etnico_v1.py` | Rural Étnico — Comunidades | Media |
-| Fixture `perfil_asistencia_v8.json` — completar opciones de respuesta | Asistencia V8 | Alta |
-| Tests de carga idempotente | Todos | Media |
+| Tarea | Prioridad |
+|-------|-----------|
+| Fixture `perfil_asistencia_v8.json` — completar opciones de respuesta | Alta |
+| Skip logic (PREDEPENDE / RESHABILITA / RESFINALIZA) en todos los perfiles | Alta |
+| Tests de carga idempotente | Media |
+| Endpoint API `/formulario/instrumento/{perfilCodigo}/` | Alta |
 
 ---
 
@@ -45,7 +48,9 @@
 ### Loader vs Fixture JSON
 - Perfiles **V7** (Territorial, Buenaventura, San Andrés): management commands Python
   - Razón: mayor legibilidad, más fácil de mantener con cambios puntuales
-- Perfil **V8** (Asistencia/Telefónico): fixture JSON + comando cargador genérico
+- Perfiles **V1** (Urbano Étnico, Rural Étnico): management commands Python
+  - Razón: misma convención que V7, capítulos claros y delimitados
+- Perfil **V8** (Asistencia/Telefónico SAAH): Python loader + fixture JSON para opciones complejas
   - Razón: el V8 tiene skip logic complejo → mejor representado en JSON estructurado
 
 ### Idempotencia
@@ -77,6 +82,23 @@ Se pueden ejecutar múltiples veces sin duplicar datos.
 - Total: 17 capítulos vs 14 de Territorial
 - Cap. O: ST1–ST13, derechos territoriales específicos de comunidades Afro
 
+### Telefónico SAAH vs Territorial V7
+- Solo 7 capítulos (sin Vivienda, Territorio, Fuerza Pública, Sociolaboral)
+- Variables con sufijo `_tel` (e.g. `Z5A_tel`, `B9_tel`)
+- Modalidad remota — sin desplazamiento presencial
+
+### Urbano Étnico vs Territorial V7
+- Sin capítulo M (Territorio/Vivienda rural — contexto urbano)
+- 12 capítulos en lugar de 14
+- Cap. B: "DATOS BÁSICOS E IDENTIDAD ÉTNICA" — cabildo urbano, consejo comunitario urbano
+- Usa "barrio o sector" (sin vereda)
+
+### Rural Étnico vs Territorial V7
+- Cap. M extendido con gobernanza étnica: AT9A, AT10A, AT11A (Plan de Vida)
+- Cap. B con máximo detalle étnico: B21–B40 (territorio colectivo, resguardo, cabildo, consejo, Vitsa, Kumpania, autoridad propia, idioma propio)
+- Diseñado offline-first (app móvil sin conectividad)
+- Incluye capítulo L (Fuerza Pública) — igual que Territorial V7
+
 ---
 
 ## Cómo ejecutar los loaders
@@ -89,6 +111,9 @@ python manage.py loaddata perfiles_iniciales
 python manage.py cargar_territorial_v7
 python manage.py cargar_buenaventura_v7
 python manage.py cargar_san_andres_v7
+python manage.py cargar_telefonico_v8
+python manage.py cargar_urbano_etnico_v1
+python manage.py cargar_rural_etnico_v1
 
 # Cargar Asistencia V8 desde JSON
 python manage.py cargar_diccionario_v8
