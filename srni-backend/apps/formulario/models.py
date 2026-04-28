@@ -124,6 +124,12 @@ class InstrumentoVersion(models.Model):
 class Capitulo(models.Model):
     """
     Capítulo (sección) del instrumento. Equivale a los módulos del APK original.
+
+    nivel: indica si el capítulo entero se responde una vez por HOGAR o una
+      vez por cada PERSONA del hogar. Determina cómo el motor itera respuestas.
+      Territorial V7 — HOGAR: A, C, D, E, J(Alim), M, T
+      Territorial V7 — PERSONA: B, F(Educ), G, H, J(FT), K, L
+
     'aplicabilidad' es una regla declarativa evaluada antes de mostrar el capítulo:
       {'ruv_incluido': True, 'edad_min': 3}  → solo víctimas RUV de ≥3 años
       {'tipo_persona': ['AUTORIZADO','TUTOR','CUIDADOR']}  → solo esos roles
@@ -133,9 +139,15 @@ class Capitulo(models.Model):
     instrumento = models.ForeignKey(
         InstrumentoVersion, on_delete=models.CASCADE, related_name="capitulos"
     )
-    codigo = models.CharField(max_length=5, help_text="A, B, C, D, E, F, G")
+    codigo = models.CharField(max_length=10, help_text="A, B, C, D, E, F, G, M, T")
     nombre = models.CharField(max_length=200)
     orden = models.PositiveSmallIntegerField()
+    nivel = models.CharField(
+        max_length=10,
+        choices=NivelPreguntaChoices.choices,
+        default=NivelPreguntaChoices.HOGAR,
+        help_text="HOGAR: se responde una vez por hogar. PERSONA: una vez por cada miembro.",
+    )
     objetivo = models.TextField(blank=True)
     poblacion_objetivo = models.CharField(
         max_length=50,
@@ -173,17 +185,20 @@ class Pregunta(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     capitulo = models.ForeignKey(Capitulo, on_delete=models.CASCADE, related_name="preguntas")
     codigo_externo = models.CharField(
-        max_length=30, db_index=True,
-        help_text="Código del Diccionario V8, ej: C1_tel, B9_tel",
+        max_length=40, db_index=True,
+        help_text="Variable BD del diccionario oficial: DT_ATENCION, C1_tel, Z3, PL1...",
     )
-    # codigo_diagrama se deriva automáticamente quitando el sufijo _tel
-    codigo_diagrama = models.CharField(
-        max_length=10, blank=True,
-        help_text="Código en el diagrama de flujo del manual PDF, ej: C1, B9",
+    no_pregunta = models.CharField(
+        max_length=10, blank=True, db_index=True,
+        help_text="Número en diagrama de flujo: A1, A2, B1, C1, J1... (columna 'No. PREGUNTA VARIABLE')",
+    )
+    id_preg = models.IntegerField(
+        null=True, blank=True, db_index=True,
+        help_text="ID_PREG del diccionario UARIV — para export a sistema VIVANTO",
     )
     variable_bd = models.CharField(
         max_length=50,
-        help_text="Nombre de columna en reportes/VIVANTO export",
+        help_text="Nombre de columna en reportes/VIVANTO export (mismo que codigo_externo sin sufijo _tel)",
     )
     texto = models.TextField(help_text="Pregunta literal mostrada al entrevistado")
     descripcion_ayuda = models.TextField(
@@ -191,9 +206,20 @@ class Pregunta(models.Model):
         help_text="Conceptos y notas del manual PDF para el encuestador",
     )
     tipo = models.CharField(max_length=20, choices=TipoPreguntaChoices.choices)
-    nivel = models.CharField(max_length=10, choices=NivelPreguntaChoices.choices)
+    nivel = models.CharField(
+        max_length=10, choices=NivelPreguntaChoices.choices,
+        help_text="Heredado del capítulo. Se guarda aquí para queries directas sin JOIN.",
+    )
     obligatoria = models.BooleanField(default=True)
     orden = models.PositiveSmallIntegerField()
+    es_precargada = models.BooleanField(
+        default=False,
+        help_text="True si el dato viene precargado del RUV — no editable por el encuestador",
+    )
+    fuente_precarga = models.CharField(
+        max_length=60, blank=True,
+        help_text="RUV | DIVIPOLA | TABLA_USUARIOS | TABLA_CONFORMACION_HOGAR",
+    )
     validaciones = models.JSONField(
         default=dict, blank=True,
         help_text="{'min':0,'max':7} | {'regex':'^[0-9]{10}$'} | {'max_length':500}",
@@ -205,17 +231,20 @@ class Pregunta(models.Model):
         ordering = ["orden"]
         indexes = [
             models.Index(fields=["codigo_externo"]),
+            models.Index(fields=["no_pregunta"]),
+            models.Index(fields=["id_preg"]),
             models.Index(fields=["capitulo", "orden"]),
         ]
         verbose_name = "Pregunta"
         verbose_name_plural = "Preguntas"
 
     def __str__(self):
-        return f"{self.codigo_externo}: {self.texto[:60]}"
+        ref = self.no_pregunta or self.codigo_externo
+        return f"[{ref}] {self.texto[:60]}"
 
     def save(self, *args, **kwargs):
-        if not self.codigo_diagrama and self.codigo_externo:
-            self.codigo_diagrama = self.codigo_externo.replace("_tel", "")
+        if not self.variable_bd and self.codigo_externo:
+            self.variable_bd = self.codigo_externo.replace("_tel", "")
         super().save(*args, **kwargs)
 
 
