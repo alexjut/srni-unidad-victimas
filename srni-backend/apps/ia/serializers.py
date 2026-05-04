@@ -16,7 +16,7 @@ class ConsentimientoIAInputSerializer(serializers.Serializer):
 
 class MapearAudioInputSerializer(serializers.Serializer):
     sesion_encuesta_id = serializers.UUIDField()
-    pregunta_id = serializers.IntegerField()
+    pregunta_id = serializers.UUIDField()
     texto_transcrito = serializers.CharField(
         max_length=2000,
         help_text='Texto ya transcrito del audio del encuestado.',

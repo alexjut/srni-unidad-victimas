@@ -106,7 +106,7 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         try:
             pregunta = Pregunta.objects.get(
                 pk=pregunta_id,
-                tema__instrumento=sesion.instrumento,
+                capitulo__instrumento=sesion.instrumento,
             )
         except Pregunta.DoesNotExist:
             return Response(
@@ -138,7 +138,7 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             resultado='EXITO',
             detalle={
                 'sesion_id': str(sesion.id),
-                'pregunta_codigo': pregunta.codigo,
+                'pregunta_codigo': pregunta.codigo_externo,
                 'creada': created,
             },
         )

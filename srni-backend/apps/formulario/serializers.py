@@ -47,9 +47,10 @@ class PreguntaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pregunta
         fields = [
-            "id", "codigo_externo", "codigo_diagrama", "variable_bd",
+            "id", "codigo_externo", "no_pregunta", "variable_bd",
             "texto", "descripcion_ayuda", "tipo", "nivel",
-            "orden", "obligatoria", "activa", "validaciones",
+            "orden", "obligatoria", "activa", "es_precargada",
+            "fuente_precarga", "validaciones",
             "opciones", "reglas_entrantes",
         ]
 
@@ -98,6 +99,43 @@ class PerfilSerializer(serializers.ModelSerializer):
     class Meta:
         model = Perfil
         fields = ["id", "codigo", "nombre", "activo", "versiones"]
+
+
+# ---------------------------------------------------------------------------
+# Serializer para descarga completa del instrumento (offline-first)
+# ---------------------------------------------------------------------------
+
+class CapituloConPreguntasSerializer(serializers.ModelSerializer):
+    """Capítulo con preguntas + skip logic incluidos — para descarga offline."""
+    preguntas = PreguntaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Capitulo
+        fields = [
+            "id", "codigo", "nombre", "orden", "nivel",
+            "objetivo", "poblacion_objetivo", "aplicabilidad",
+            "preguntas",
+        ]
+
+
+class InstrumentoCompletoSerializer(serializers.ModelSerializer):
+    """
+    Instrumento completo listo para descarga offline.
+    Una sola llamada devuelve: perfil + versión + capítulos + preguntas + opciones + skip logic.
+    """
+    perfil_codigo = serializers.CharField(source="perfil.codigo", read_only=True)
+    perfil_nombre = serializers.CharField(source="perfil.nombre", read_only=True)
+    vigente = serializers.BooleanField(read_only=True)
+    capitulos = CapituloConPreguntasSerializer(many=True, read_only=True)
+    reglas = ReglaSkipLogicSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = InstrumentoVersion
+        fields = [
+            "id", "perfil", "perfil_codigo", "perfil_nombre",
+            "numero", "vigente_desde", "vigente",
+            "fuente_documental", "capitulos", "reglas",
+        ]
 
 
 # ---------------------------------------------------------------------------

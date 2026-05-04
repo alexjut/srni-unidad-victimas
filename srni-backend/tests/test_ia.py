@@ -9,14 +9,20 @@ Cubre:
 - Autenticación requerida (401)
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from datetime import date
+from unittest.mock import patch
 from rest_framework.test import APIClient
 
 from apps.autenticacion.models import Perfil, Usuario
 from apps.parametricas.models import TipoDocumento, Departamento, Municipio
 from apps.victimas.models import Victima
 from apps.hogares.models import Hogar
-from apps.formulario.models import Instrumento, Tema, Pregunta
+from apps.formulario.models import (
+    Perfil as PerfilInstrumento,
+    InstrumentoVersion,
+    Capitulo,
+    Pregunta,
+)
 from apps.encuestas.models import SesionEncuesta
 from apps.ia.models import ConsentimientoIA, SesionIA
 
@@ -97,21 +103,27 @@ def hogar(victima, municipio, encuestador):
 
 @pytest.fixture
 def instrumento():
-    return Instrumento.objects.create(
-        codigo='PAARI-IA', nombre='Instrumento IA Test',
-        version='1.0', vigente=True,
+    perfil_inst = PerfilInstrumento.objects.create(
+        codigo='PAARI-IA', nombre='Instrumento IA Test', activo=True,
+    )
+    return InstrumentoVersion.objects.create(
+        perfil=perfil_inst,
+        numero='V7',
+        vigente_desde=date(2021, 1, 1),
+        fuente_documental='Test IA',
     )
 
 
 @pytest.fixture
 def pregunta_lista(instrumento):
-    tema = Tema.objects.create(
+    capitulo = Capitulo.objects.create(
         instrumento=instrumento, codigo='T01', nombre='Tema IA',
-        orden=1, activo=True,
+        orden=1, nivel='PERSONA',
     )
     return Pregunta.objects.create(
-        tema=tema, codigo='P01', texto='¿Tipo de vivienda?',
-        tipo_respuesta='OPCION_UNICA', orden=1, requerida=True, activa=True,
+        capitulo=capitulo, codigo_externo='P01', no_pregunta='P01',
+        variable_bd='P01', texto='¿Tipo de vivienda?',
+        tipo='LISTA', nivel='PERSONA', orden=1, obligatoria=True,
     )
 
 

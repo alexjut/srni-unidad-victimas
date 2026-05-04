@@ -32,7 +32,8 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
             'nombre_completo', 'tipo_documento', 'numero_documento',
             'parentesco', 'parentesco_display',
             'genero', 'genero_display',
-            'edad', 'discapacidad', 'tipo_discapacidad',
+            'fecha_nacimiento', 'tipo_persona', 'incluido_ruv',
+            'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
             'created_at',
         ]
         read_only_fields = ['id', 'created_at', 'parentesco_display', 'genero_display', 'victima_hash']
@@ -56,7 +57,8 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
         model = MiembroHogar
         fields = [
             'id', 'parentesco', 'parentesco_display',
-            'genero', 'edad', 'discapacidad',
+            'genero', 'fecha_nacimiento', 'tipo_persona',
+            'incluido_ruv', 'tiene_discapacidad',
             'victima', 'victima_hash',
         ]
 
@@ -130,5 +132,6 @@ class AgregarMiembroSerializer(serializers.ModelSerializer):
         model = MiembroHogar
         fields = [
             'victima', 'nombre_completo', 'tipo_documento', 'numero_documento',
-            'parentesco', 'genero', 'edad', 'discapacidad', 'tipo_discapacidad',
+            'parentesco', 'genero', 'fecha_nacimiento', 'tipo_persona',
+            'incluido_ruv', 'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
         ]

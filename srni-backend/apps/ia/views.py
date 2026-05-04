@@ -199,16 +199,16 @@ class MapearAudioView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        opciones = list(pregunta.opciones.values_list('codigo', flat=True))
+        opciones = list(pregunta.opciones.values_list('valor', flat=True))
 
         # 4. Llamar a Gemini via servicio
         resultado_log = 'EXITO'
-        detalle_log: dict = {'pregunta_id': pregunta_id, 'tipo': pregunta.tipo_respuesta}
+        detalle_log: dict = {'pregunta_id': str(pregunta_id), 'tipo': pregunta.tipo}
 
         try:
             resultado = mapear_texto_a_campo(
                 texto_transcrito=texto,
-                tipo_campo=pregunta.tipo_respuesta,
+                tipo_campo=pregunta.tipo,
                 enunciado_pregunta=pregunta.texto,
                 opciones=opciones if opciones else None,
             )

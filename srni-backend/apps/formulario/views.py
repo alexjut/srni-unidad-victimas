@@ -13,10 +13,11 @@ from rest_framework.filters import SearchFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import Perfil, InstrumentoVersion, Capitulo, Pregunta, ReglaSkipLogic, AccionSkipChoices
+from django.shortcuts import get_object_or_404
 from .serializers import (
     PerfilSerializer, InstrumentoVersionSerializer,
     CapituloListSerializer, CapituloDetalleSerializer,
-    PreguntaSerializer, EvaluarSkipLogicSerializer,
+    PreguntaSerializer, InstrumentoCompletoSerializer, EvaluarSkipLogicSerializer,
 )
 
 
@@ -86,6 +87,52 @@ class PreguntaViewSet(ReadOnlyViewSet):
 
 
 @extend_schema(
+    summary="Instrumento completo para descarga offline",
+    description=(
+        "Devuelve el instrumento vigente de un perfil con todos sus capítulos, "
+        "preguntas, opciones de respuesta y reglas de skip logic en una sola llamada. "
+        "Diseñado para descarga y almacenamiento en SQLite local (modo offline-first)."
+    ),
+    tags=["Formulario"],
+    responses={200: InstrumentoCompletoSerializer},
+)
+class InstrumentoCompletoView(APIView):
+    """
+    GET /api/formulario/instrumento/{perfil_codigo}/
+
+    Retorna la versión vigente del instrumento para el perfil dado.
+    Si hay varias versiones, devuelve la más reciente con vigente=True.
+    404 si el perfil no existe o no tiene versión vigente.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, perfil_codigo: str):
+        perfil = get_object_or_404(Perfil, codigo=perfil_codigo.upper(), activo=True)
+
+        version = (
+            InstrumentoVersion.objects
+            .filter(perfil=perfil)
+            .prefetch_related(
+                "capitulos__preguntas__opciones",
+                "capitulos__preguntas__reglas_entrantes__pregunta_origen",
+                "capitulos__preguntas__reglas_entrantes__capitulo_afectado",
+                "reglas__pregunta_origen",
+                "reglas__pregunta_afectada",
+                "reglas__capitulo_afectado",
+            )
+            .order_by("-vigente_desde")
+            .first()
+        )
+
+        if version is None or not version.vigente:
+            from rest_framework.exceptions import NotFound
+            raise NotFound(f"No hay versión vigente para el perfil '{perfil_codigo}'.")
+
+        serializer = InstrumentoCompletoSerializer(version)
+        return Response(serializer.data)
+
+
+@extend_schema(
     summary="Evaluar skip logic del formulario",
     description=(
         "Recibe el ID de un capítulo, las respuestas actuales del encuestador "
@@ -147,21 +194,26 @@ class EvaluarSkipLogicView(APIView):
                     obligatorias.add(pregunta.codigo_externo)
                 continue
 
-            deshabilitada = False
+            # HABILITAR: pregunta oculta por defecto, visible solo si la condición se cumple.
+            # DESHABILITAR: pregunta visible por defecto, oculta si la condición se cumple.
+            tiene_habilitar = any(
+                r.accion == AccionSkipChoices.HABILITAR for r in reglas_entrantes
+            )
+            visible = not tiene_habilitar
+
             for regla in reglas_entrantes:
                 if self._regla_activa(regla, respuestas, contexto):
-                    if regla.accion == AccionSkipChoices.DESHABILITAR:
-                        deshabilitada = True
-                    elif regla.accion == AccionSkipChoices.HABILITAR:
-                        deshabilitada = False
-                        visibles.add(pregunta.codigo_externo)
+                    if regla.accion == AccionSkipChoices.HABILITAR:
+                        visible = True
+                    elif regla.accion == AccionSkipChoices.DESHABILITAR:
+                        visible = False
                     elif regla.accion == AccionSkipChoices.OBLIGAR:
-                        visibles.add(pregunta.codigo_externo)
+                        visible = True
                         obligatorias.add(pregunta.codigo_externo)
                     elif regla.accion == AccionSkipChoices.FINALIZAR:
                         finalizar = True
 
-            if not deshabilitada:
+            if visible:
                 visibles.add(pregunta.codigo_externo)
                 if pregunta.obligatoria:
                     obligatorias.add(pregunta.codigo_externo)
