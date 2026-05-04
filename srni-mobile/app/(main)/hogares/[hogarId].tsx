@@ -2,12 +2,11 @@
  * Detalle de un hogar — GOV.CO design system.
  */
 import { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
-import { encuestasApi } from '../../../src/api/encuestas';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
@@ -117,7 +116,6 @@ export default function HogarDetalleScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId: string }>();
   const [hogar, setHogar] = useState<HogarDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [iniciandoSesion, setIniciandoSesion] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -128,18 +126,9 @@ export default function HogarDetalleScreen() {
       .finally(() => setCargando(false));
   }, [hogarId]);
 
-  async function iniciarEncuesta() {
+  function aplicarInstrumento() {
     if (!hogar) return;
-    const INSTRUMENTO_PAARI = 1;
-    setIniciandoSesion(true);
-    try {
-      const res = await encuestasApi.crear({ hogar: hogar.id, instrumento: INSTRUMENTO_PAARI });
-      router.push({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: res.data.id } });
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
-    } finally {
-      setIniciandoSesion(false);
-    }
+    router.push({ pathname: '/(main)/caracterizar/index', params: { hogarId: hogar.id } });
   }
 
   // ── Estados de carga / error ─────────────────────────────────────────────────
@@ -214,11 +203,9 @@ export default function HogarDetalleScreen() {
         {/* Encuestas */}
         <SeccionCard titulo={`Encuestas (${hogar.total_sesiones})`}>
           <GovButton
-            label="Nueva sesión PAARI"
+            label="Aplicar instrumento"
             icon="clipboard-text-play"
-            loading={iniciandoSesion}
-            disabled={iniciandoSesion}
-            onPress={iniciarEncuesta}
+            onPress={aplicarInstrumento}
           />
           {hogar.total_sesiones > 0 && (
             <View style={styles.verSesionesWrap}>

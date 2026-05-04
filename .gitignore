@@ -40,8 +40,9 @@ apk_work/
 *.apk
 *.db
 
-# ─── Claude Code (contexto local de sesión — no es código del proyecto) ──────
+# ─── Claude Code (contexto local — nunca al repositorio) ────────────────────
 .claude/
+CLAUDE.md
 
 # ─── IDEs ────────────────────────────────────────────────────────────────────
 .vscode/

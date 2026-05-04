@@ -70,7 +70,7 @@ export default function MainLayout() {
       />
 
       <Tabs.Screen
-        name="hogares"
+        name="hogares/index"
         options={{
           title: 'Hogares',
           href: perfil?.puede_caracterizar ? undefined : null,
@@ -81,7 +81,7 @@ export default function MainLayout() {
       />
 
       <Tabs.Screen
-        name="encuestas"
+        name="encuestas/index"
         options={{
           title: 'Encuestas',
           href: perfil?.puede_caracterizar ? undefined : null,
@@ -92,42 +92,24 @@ export default function MainLayout() {
       />
 
       <Tabs.Screen
-        name="formulario"
+        name="caracterizar/index"
         options={{
-          title: 'Formulario',
+          title: 'Caracterizar',
           href: perfil?.puede_caracterizar ? undefined : null,
           tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialCommunityIcons name="file-document" size={size} color={color} />
+            <MaterialCommunityIcons name="clipboard-text-play" size={size} color={color} />
           ),
         }}
       />
 
-      {/* ── Rutas ocultas (subrutas — no deben aparecer como tabs) ─────────── */}
+      {/* ── Rutas ocultas ──────────────────────────────────────────────────── */}
 
-      <Tabs.Screen
-        name="hogares/[hogarId]"
-        options={{ href: null }}
-      />
-
-      <Tabs.Screen
-        name="hogares/nuevo"
-        options={{ href: null }}
-      />
-
-      <Tabs.Screen
-        name="encuestas/[sesionId]"
-        options={{ href: null }}
-      />
-
-      <Tabs.Screen
-        name="formulario/[temaId]"
-        options={{ href: null }}
-      />
-
-      <Tabs.Screen
-        name="formulario/consentimiento-ia"
-        options={{ href: null }}
-      />
+      <Tabs.Screen name="hogares/[hogarId]"           options={{ href: null }} />
+      <Tabs.Screen name="hogares/nuevo"               options={{ href: null }} />
+      <Tabs.Screen name="encuestas/[sesionId]"        options={{ href: null }} />
+      <Tabs.Screen name="formulario/index"            options={{ href: null }} />
+      <Tabs.Screen name="formulario/[temaId]"         options={{ href: null }} />
+      <Tabs.Screen name="formulario/consentimiento-ia" options={{ href: null }} />
     </Tabs>
   );
 }

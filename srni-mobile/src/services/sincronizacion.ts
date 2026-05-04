@@ -111,7 +111,7 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     borrador_id: string;
     hogar: string;
-    instrumento: number;
+    instrumento: string;
   };
 
   const { data } = await encuestasApi.crear({

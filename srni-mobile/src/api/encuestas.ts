@@ -6,7 +6,7 @@ import type {
 
 export interface CrearSesionPayload {
   hogar: string;        // UUID del Hogar
-  instrumento: number;  // ID del Instrumento
+  instrumento: string;  // UUID del InstrumentoVersion
 }
 
 export interface ResponderPayload {
