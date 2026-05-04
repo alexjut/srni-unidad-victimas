@@ -1,4 +1,4 @@
-// Motor de captura offline de un tema del formulario PAARI.
+// Motor de captura offline de un capítulo del formulario — Sprint 7, Diccionario V8.
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import {
@@ -10,7 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentoDao from '../../../src/db/instrumentoDao';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
-import { calcularVisibles, construirPreguntasConCondiciones } from '../../../src/services/skipLogic';
+import { calcularVisibles } from '../../../src/services/skipLogic';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
@@ -18,16 +18,23 @@ import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
-import type { PreguntaRow, OpcionRow, DerivadaRow } from '../../../src/db/instrumentoDao';
+import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function TemaScreen() {
-  const { temaId, borradorId: borradorIdParam, hogarId, sesionServerId } = useLocalSearchParams<{
+export default function CapituloScreen() {
+  const {
+    temaId,          // UUID del Capitulo
+    borradorId: borradorIdParam,
+    hogarId,
+    sesionServerId,  // UUID de sesión en servidor (viene de [sesionId].tsx)
+    instrumentoId,   // UUID de InstrumentoVersion (para reglas skip logic)
+  } = useLocalSearchParams<{
     temaId: string;
     borradorId?: string;
     hogarId?: string;
-    sesionServerId?: string;   // UUID de sesión ya creada en servidor (viene desde [sesionId].tsx)
+    sesionServerId?: string;
+    instrumentoId?: string;
   }>();
 
   const { estaOnline, refrescarContadores } = useSyncStore();
@@ -44,56 +51,55 @@ export default function TemaScreen() {
   } = useIAStore();
 
   const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
-  const [opciones, setOpciones] = useState<Record<number, OpcionRow[]>>({});
-  const [derivadas, setDerivadas] = useState<DerivadaRow[]>([]);
-  const [respuestas, setRespuestas] = useState<Record<number, string>>({});
+  const [opciones, setOpciones] = useState<Record<string, OpcionRow[]>>({});
+  const [reglas, setReglas] = useState<ReglaSkipLogicRow[]>([]);
+  // respuestas keyed by pregunta UUID
+  const [respuestas, setRespuestasState] = useState<Record<string, string>>({});
   const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
-  const [temaNombre, setTemaNombre] = useState('');
+  const [capituloNombre, setCapituloNombre] = useState('');
   const [cargando, setCargando] = useState(true);
-  const [guardandoRespuesta, setGuardandoRespuesta] = useState(false);
 
-  // ── Cargar datos del tema desde SQLite ──────────────────────────────────────
+  // ── Cargar datos del capítulo desde SQLite ──────────────────────────────────
   useEffect(() => {
     if (!temaId) return;
-    const tid = Number(temaId);
 
     (async () => {
-      // Datos del tema
-      const temas = await instrumentoDao.getTemas();
-      const tema = temas.find((t) => t.id === tid);
-      setTemaNombre(tema?.nombre ?? '');
+      // Nombre del capítulo
+      const caps = await instrumentoDao.getCapitulos();
+      const cap = caps.find((c) => c.id === temaId);
+      setCapituloNombre(cap?.nombre ?? '');
 
-      // Preguntas del tema
-      const pgs = await instrumentoDao.getPreguntas(tid);
+      // Preguntas
+      const pgs = await instrumentoDao.getPreguntas(temaId);
       setPreguntas(pgs);
 
       if (pgs.length > 0) {
         const ids = pgs.map((p) => p.id);
-        const [opts, derivs] = await Promise.all([
-          instrumentoDao.getOpcionesBatch(ids),
-          instrumentoDao.getDerivadas(ids),
-        ]);
+        const opts = await instrumentoDao.getOpcionesBatch(ids);
         setOpciones(opts);
-        setDerivadas(derivs);
       }
 
-      // Cargar respuestas existentes del borrador (si lo hay)
+      // Reglas de skip logic del capítulo
+      if (instrumentoId) {
+        const rs = await instrumentoDao.getReglasPorCapitulo(temaId, instrumentoId);
+        setReglas(rs);
+      }
+
+      // Manejar borrador
       if (borradorIdParam) {
-        const mapa = await borradoresDao.getRespuestaMap(borradorIdParam);
-        setRespuestas(mapa);
+        // Recargar respuestas existentes
+        const mapaRaw = await borradoresDao.getRespuestaMap(borradorIdParam);
+        setRespuestasState(mapaRaw);
       } else {
         // Crear nuevo borrador
-        const instrMeta = await instrumentoDao.getMeta();
-        const instrId = instrMeta?.instrumento_id ?? 1;
+        const meta = await instrumentoDao.getMeta();
+        const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
         const borrador = await borradoresDao.crearBorrador(instrId, hogarId);
         setBorradorId(borrador.id);
 
         if (sesionServerId) {
-          // La sesión ya existe en el servidor (viene de [hogarId] → [sesionId] → formulario).
-          // La vinculamos directamente para que las respuestas usen el sesion_id correcto.
           await borradoresDao.vincularSesionServidor(borrador.id, sesionServerId);
-        } else if (hogarId) {
-          // Sin sesión previa — crear en servidor vía cola de sincronización.
+        } else if (hogarId && instrId) {
           await colaDao.encolar('CREAR_SESION', borrador.id, {
             borrador_id: borrador.id,
             hogar: hogarId,
@@ -107,35 +113,38 @@ export default function TemaScreen() {
     })().catch(() => setCargando(false));
   }, [temaId]);
 
-  // ── Skip logic — puro, sin I/O ──────────────────────────────────────────────
-  const preguntasConCondiciones = useMemo(
-    () => construirPreguntasConCondiciones(preguntas.map((p) => p.id), derivadas),
-    [preguntas, derivadas],
-  );
+  // ── Skip logic — derivar mapa codigo_externo→valor para evaluación ──────────
+  const respuestasParaSkip = useMemo<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    for (const p of preguntas) {
+      m[p.codigo_externo] = respuestas[p.id] ?? '';
+    }
+    return m;
+  }, [preguntas, respuestas]);
 
-  const visibles = useMemo(
-    () => calcularVisibles(preguntasConCondiciones, respuestas),
-    [preguntasConCondiciones, respuestas],
+  const { visibles } = useMemo(
+    () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
+    [preguntas, reglas, respuestasParaSkip],
   );
 
   const preguntasVisibles = useMemo(
-    () => preguntas.filter((p) => visibles.has(p.id)),
+    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
     [preguntas, visibles],
   );
 
   // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
-  const setRespuesta = useCallback(async (preguntaId: number, valor: string) => {
-    setRespuestas((prev) => ({ ...prev, [preguntaId]: valor }));
+  const setRespuesta = useCallback(async (preguntaId: string, valor: string) => {
+    setRespuestasState((prev) => ({ ...prev, [preguntaId]: valor }));
 
-    if (!borradorId) return;
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid) return;
 
-    borradoresDao.upsertRespuesta(borradorId, preguntaId, valor).catch(() => {});
+    borradoresDao.upsertRespuesta(bid, preguntaId, valor).catch(() => {});
 
-    // Encolar respuesta para sync con servidor
-    const borrador = await borradoresDao.getBorrador(borradorId);
+    const borrador = await borradoresDao.getBorrador(bid);
     if (borrador) {
-      await colaDao.encolar('RESPONDER_PREGUNTA', borradorId, {
-        borrador_id: borradorId,
+      await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+        borrador_id: bid,
         sesion_id: borrador.sesion_id ?? null,
         pregunta_id: preguntaId,
         valor,
@@ -143,40 +152,37 @@ export default function TemaScreen() {
       await refrescarContadores();
     }
 
-    // Intentar sync inmediato si hay red
     if (estaOnline) {
       useSyncStore.getState().triggerSync();
     }
-  }, [borradorId, estaOnline]);
+  }, [borradorId, borradorIdParam, estaOnline]);
 
   // ── Asistente IA ────────────────────────────────────────────────────────────
-  const handleTextoTranscrito = useCallback(async (preguntaId: number, texto: string) => {
-    if (!borradorId) return;
+  const handleTextoTranscrito = useCallback(async (preguntaId: string, texto: string) => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid) return;
     iniciarGrabacion(preguntaId);
-    const borrador = await borradoresDao.getBorrador(borradorId);
+    const borrador = await borradoresDao.getBorrador(bid);
     const sesionId = borrador?.sesion_id ?? '';
     await enviarTexto(sesionId, preguntaId, texto);
-  }, [borradorId, iniciarGrabacion, enviarTexto]);
+  }, [borradorId, borradorIdParam, iniciarGrabacion, enviarTexto]);
 
-  const handleAceptarSugerencia = useCallback((preguntaId: number) => {
+  const handleAceptarSugerencia = useCallback((preguntaId: string) => {
     const resultado = aceptarSugerencia();
     if (resultado?.sugerencia) {
       setRespuesta(preguntaId, resultado.sugerencia);
     }
   }, [aceptarSugerencia, setRespuesta]);
 
-  // Limpiar estado IA al salir de la pantalla
-  useEffect(() => {
-    return () => { resetearIA(); };
-  }, []);
+  useEffect(() => { return () => { resetearIA(); }; }, []);
 
-  // ── Finalizar tema ──────────────────────────────────────────────────────────
-  async function finalizarTema() {
-    if (borradorId) {
-      // Encolar finalización
-      await colaDao.encolar('FINALIZAR_SESION', borradorId, {
-        borrador_id: borradorId,
-        sesion_id: null,  // se rellenará cuando CREAR_SESION se procese
+  // ── Finalizar capítulo ──────────────────────────────────────────────────────
+  async function finalizarCapitulo() {
+    const bid = borradorId ?? borradorIdParam;
+    if (bid) {
+      await colaDao.encolar('FINALIZAR_SESION', bid, {
+        borrador_id: bid,
+        sesion_id: null,
       });
       await refrescarContadores();
       if (estaOnline) useSyncStore.getState().triggerSync();
@@ -188,7 +194,7 @@ export default function TemaScreen() {
   if (cargando) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Cargando módulo…" onBack={() => router.back()} />
+        <GovHeader title="Cargando…" onBack={() => router.back()} />
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
         </View>
@@ -198,13 +204,13 @@ export default function TemaScreen() {
 
   const totalVisible = preguntasVisibles.length;
   const migaContexto = hogarId
-    ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${temaNombre || 'Módulo'}`
-    : temaNombre || 'Módulo';
+    ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${capituloNombre || 'Capítulo'}`
+    : capituloNombre || 'Capítulo';
 
   return (
     <View style={styles.root}>
       <GovHeader
-        title={temaNombre || 'Módulo'}
+        title={capituloNombre || 'Capítulo'}
         subtitle={`${totalVisible} pregunta${totalVisible !== 1 ? 's' : ''}`}
         onBack={() => router.back()}
         right={
@@ -231,7 +237,7 @@ export default function TemaScreen() {
                 iconColor="#FFFFFF"
                 onPress={() => router.push({
                   pathname: '/(main)/formulario/consentimiento-ia',
-                  params: { sesionEncuestaId: borradorId ?? '' },
+                  params: { sesionEncuestaId: borradorId ?? borradorIdParam ?? '' },
                 })}
               />
             )}
@@ -239,16 +245,13 @@ export default function TemaScreen() {
         }
       />
 
-      {/* Miga de pan */}
       <View style={styles.miga}>
-        <Text style={styles.migaTxt}>
-          Formulario PAARI  ›  {migaContexto}
-        </Text>
+        <Text style={styles.migaTxt}>Formulario  ›  {migaContexto}</Text>
       </View>
 
       <FlatList
         data={preguntasVisibles}
-        keyExtractor={(item) => String(item.id)}
+        keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
           <PreguntaItem
             pregunta={item}
@@ -270,20 +273,25 @@ export default function TemaScreen() {
         )}
         contentContainerStyle={styles.lista}
         ListEmptyComponent={
-          <Text style={styles.sinPreguntas}>No hay preguntas en este módulo.</Text>
+          <Text style={styles.sinPreguntas}>No hay preguntas en este capítulo.</Text>
         }
       />
 
       <View style={styles.footerBar}>
-        <GovButton label="Guardar y volver" icon="check" onPress={finalizarTema} />
+        <GovButton label="Guardar y volver" icon="check" onPress={finalizarCapitulo} />
       </View>
     </View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente de pregunta individual
+// Componente de pregunta individual — soporte tipos Diccionario V8
 // ─────────────────────────────────────────────────────────────────────────────
+
+const BOOLEAN_OPCIONES = [
+  { valor: '1', etiqueta: 'Sí' },
+  { valor: '0', etiqueta: 'No' },
+];
 
 function PreguntaItem({
   pregunta,
@@ -310,28 +318,40 @@ function PreguntaItem({
   onAceptarIA?: () => void;
   onRechazarIA?: () => void;
 }) {
+  const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
+  const esNumerico = pregunta.tipo === 'NUMERICO';
+  const esFecha    = pregunta.tipo === 'FECHA';
+  const esRadio    = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA' || pregunta.tipo === 'COMBO_DINAMICO';
+  const esMultiple = pregunta.tipo === 'LISTA_MULTIPLE';
+  const esBoolean  = pregunta.tipo === 'BOOLEAN';
+
+  const opcionesBoolean = esBoolean ? BOOLEAN_OPCIONES : [];
+  const opcionesRadio   = esRadio   ? opciones : [];
+
   return (
     <View style={styles.preguntaCard}>
-      {/* Encabezado: número de pregunta */}
       <View style={styles.preguntaHeader}>
         <View style={styles.numBadge}>
           <Text style={styles.numBadgeTxt}>{index + 1}</Text>
         </View>
         <Text style={styles.numTotal}>de {total}</Text>
-        {pregunta.requerida && (
+        {!!pregunta.obligatoria && (
           <View style={styles.requeridoChip}>
             <Text style={styles.requeridoTxt}>Requerida</Text>
           </View>
         )}
+        {pregunta.no_pregunta ? (
+          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+        ) : null}
       </View>
-      <Text style={styles.textoPregunta}>
-        {pregunta.texto}
-      </Text>
-      {pregunta.texto_ayuda ? (
-        <Text style={styles.ayuda}>{pregunta.texto_ayuda}</Text>
+
+      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+
+      {pregunta.descripcion_ayuda ? (
+        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
       ) : null}
 
-      {/* Asistente de voz — solo si IA activa */}
+      {/* Asistente de voz */}
       {iaActivo && onTextoIA && (
         <AudioRecorder
           preguntaId={pregunta.id}
@@ -347,92 +367,83 @@ function PreguntaItem({
         />
       )}
 
-      {pregunta.tipo_respuesta === 'TEXTO' || pregunta.tipo_respuesta === 'NUMERICO' ? (
+      {/* Controles por tipo */}
+      {(esTexto || esNumerico) && (
         <TextInput
           value={valor}
           onChangeText={onChange}
-          keyboardType={pregunta.tipo_respuesta === 'NUMERICO' ? 'numeric' : 'default'}
+          keyboardType={esNumerico ? 'numeric' : 'default'}
+          multiline={pregunta.tipo === 'TEXTO_LARGO'}
+          numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 3 : 1}
           style={styles.inputTexto}
           dense
         />
-      ) : pregunta.tipo_respuesta === 'FECHA' ? (
+      )}
+
+      {esFecha && (
         <TextInput
           value={valor}
           onChangeText={onChange}
-          placeholder="YYYY-MM-DD"
+          placeholder="AAAA-MM-DD"
+          keyboardType="numeric"
           style={styles.inputTexto}
           dense
         />
-      ) : pregunta.tipo_respuesta === 'OPCION_UNICA' || pregunta.tipo_respuesta === 'SINO' ? (
+      )}
+
+      {esBoolean && (
         <RadioButton.Group value={valor} onValueChange={onChange}>
-          {opciones.map((o) => (
-            <RadioButton.Item key={o.id} label={o.texto} value={o.codigo} />
+          {opcionesBoolean.map((o) => (
+            <RadioButton.Item key={o.valor} label={o.etiqueta} value={o.valor} />
           ))}
         </RadioButton.Group>
-      ) : pregunta.tipo_respuesta === 'OPCION_MULTIPLE' ? (
-        <View>
-          {opciones.map((o) => (
-            <Checkbox.Item
-              key={o.id}
-              label={o.texto}
-              status={valor.split(',').includes(o.codigo) ? 'checked' : 'unchecked'}
-              onPress={() => {
-                const sel = valor ? valor.split(',').filter(Boolean) : [];
-                const idx = sel.indexOf(o.codigo);
-                if (idx >= 0) sel.splice(idx, 1);
-                else sel.push(o.codigo);
-                onChange(sel.join(','));
-              }}
-            />
+      )}
+
+      {esRadio && (
+        <RadioButton.Group value={valor} onValueChange={onChange}>
+          {opcionesRadio.map((o) => (
+            <RadioButton.Item key={o.id} label={o.etiqueta} value={o.valor} />
           ))}
+        </RadioButton.Group>
+      )}
+
+      {esMultiple && (
+        <View>
+          {opciones.map((o) => {
+            const seleccionados = valor ? valor.split(',').filter(Boolean) : [];
+            return (
+              <Checkbox.Item
+                key={o.id}
+                label={o.etiqueta}
+                status={seleccionados.includes(o.valor) ? 'checked' : 'unchecked'}
+                onPress={() => {
+                  const sel = [...seleccionados];
+                  const idx = sel.indexOf(o.valor);
+                  if (idx >= 0) sel.splice(idx, 1);
+                  else sel.push(o.valor);
+                  onChange(sel.join(','));
+                }}
+              />
+            );
+          })}
         </View>
-      ) : (
-        <TextInput value={valor} onChangeText={onChange} style={styles.inputTexto} dense />
       )}
     </View>
   );
 }
 
+// ─── Estilos ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: GOV.fondoApp,
-  },
-  centrado: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  offlineChip: {
-    backgroundColor: GOV.naranjaTenue,
-  },
-  offlineTxt: {
-    color: GOV.naranja,
-    fontSize: 10,
-  },
-  iaActivoChip: {
-    backgroundColor: GOV.azulTenue,
-  },
-  iaActivoTxt: {
-    color: GOV.azul,
-    fontSize: 10,
-  },
-  lista: {
-    padding: SPACING.md,
-    paddingBottom: 96,
-  },
-  sinPreguntas: {
-    textAlign: 'center',
-    color: GOV.textoT,
-    marginTop: SPACING.xl,
-    ...FONT.body,
-  },
-  // Tarjeta de pregunta
+  root: { flex: 1, backgroundColor: GOV.fondoApp },
+  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  offlineChip: { backgroundColor: GOV.naranjaTenue },
+  offlineTxt:  { color: GOV.naranja, fontSize: 10 },
+  iaActivoChip: { backgroundColor: GOV.azulTenue },
+  iaActivoTxt:  { color: GOV.azul, fontSize: 10 },
+  lista: { padding: SPACING.md, paddingBottom: 96 },
+  sinPreguntas: { textAlign: 'center', color: GOV.textoT, marginTop: SPACING.xl, ...FONT.body },
   preguntaCard: {
     backgroundColor: GOV.superficie,
     borderRadius: RADIUS.md,
@@ -456,15 +467,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  numBadgeTxt: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  numTotal: {
-    ...FONT.caption,
-    color: GOV.textoT,
-  },
+  numBadgeTxt: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
+  numTotal: { ...FONT.caption, color: GOV.textoT },
   requeridoChip: {
     marginLeft: 'auto' as any,
     backgroundColor: GOV.rojoTenue,
@@ -472,25 +476,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  requeridoTxt: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: GOV.rojo,
-  },
-  textoPregunta: {
-    ...FONT.body,
-    fontWeight: '600',
-    color: GOV.textoP,
-    marginBottom: SPACING.sm,
-  },
-  ayuda: {
-    ...FONT.small,
-    color: GOV.textoS,
-    marginBottom: SPACING.sm,
-  },
-  inputTexto: {
-    backgroundColor: GOV.fondoApp,
-  },
+  requeridoTxt: { fontSize: 10, fontWeight: '600', color: GOV.rojo },
+  codigoTxt: { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace' },
+  textoPregunta: { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: SPACING.sm },
+  ayuda: { ...FONT.small, color: GOV.textoS, marginBottom: SPACING.sm },
+  inputTexto: { backgroundColor: GOV.fondoApp },
   footerBar: {
     backgroundColor: GOV.superficie,
     padding: SPACING.md,
@@ -504,8 +494,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: GOV.borde,
   },
-  migaTxt: {
-    ...FONT.caption,
-    color: GOV.azulOscuro,
-  },
+  migaTxt: { ...FONT.caption, color: GOV.azulOscuro },
 });

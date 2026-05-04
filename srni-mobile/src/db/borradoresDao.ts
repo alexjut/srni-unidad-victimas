@@ -4,6 +4,8 @@
  * Un borrador es una sesión de encuesta aún no finalizada / no sincronizada.
  * Cuando se sincroniza con el servidor, se actualiza sesion_id con el UUID
  * devuelto por el backend.
+ *
+ * Sprint 7: instrumento_id y pregunta_id son ahora UUID strings.
  */
 import { openDb } from './schema';
 import { uuidv4 } from '../utils/uuid';
@@ -12,7 +14,7 @@ export interface BorradorRow {
   id: string;
   hogar_id: string | null;
   sesion_id: string | null;
-  instrumento_id: number | null;
+  instrumento_id: string | null;  // UUID de InstrumentoVersion
   estado: string;
   created_at: string;
   updated_at: string;
@@ -21,7 +23,7 @@ export interface BorradorRow {
 export interface RespuestaRow {
   id: number;
   borrador_id: string;
-  pregunta_id: number;
+  pregunta_id: string;  // UUID de Pregunta
   valor: string;
   updated_at: string;
 }
@@ -29,7 +31,7 @@ export interface RespuestaRow {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function crearBorrador(
-  instrumentoId: number,
+  instrumentoId: string,  // UUID de InstrumentoVersion
   hogarId?: string,
 ): Promise<BorradorRow> {
   const db = await openDb();
@@ -57,11 +59,11 @@ export async function listarBorradores(): Promise<BorradorRow[]> {
 
 /**
  * Guarda o actualiza una respuesta (upsert).
- * Si la sesión ya está sincronizada la respuesta se marca para envío individual.
+ * pregunta_id es UUID de Pregunta.
  */
 export async function upsertRespuesta(
   borradorId: string,
-  preguntaId: number,
+  preguntaId: string,  // UUID
   valor: string,
 ): Promise<void> {
   const db = await openDb();
@@ -72,7 +74,6 @@ export async function upsertRespuesta(
      ON CONFLICT(borrador_id, pregunta_id) DO UPDATE SET valor = excluded.valor, updated_at = excluded.updated_at`,
     [borradorId, preguntaId, valor, now],
   );
-  // Actualizar timestamp del borrador
   await db.runAsync('UPDATE borradores SET updated_at = ? WHERE id = ?', [now, borradorId]);
 }
 
@@ -84,9 +85,10 @@ export async function getRespuestas(borradorId: string): Promise<RespuestaRow[]>
   );
 }
 
-export async function getRespuestaMap(borradorId: string): Promise<Record<number, string>> {
+/** Devuelve mapa pregunta_id (UUID) → valor. */
+export async function getRespuestaMap(borradorId: string): Promise<Record<string, string>> {
   const rows = await getRespuestas(borradorId);
-  const map: Record<number, string> = {};
+  const map: Record<string, string> = {};
   for (const r of rows) map[r.pregunta_id] = r.valor;
   return map;
 }

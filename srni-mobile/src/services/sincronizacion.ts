@@ -22,31 +22,27 @@ export async function estaOnline(): Promise<boolean> {
 }
 
 /**
- * Descarga el instrumento activo y lo guarda en SQLite.
- * Si ya existe una versión local, solo descarga si la versión del servidor
- * es diferente.
+ * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
+ * Usa el endpoint offline-first: GET /api/formulario/instrumento/{perfil_codigo}/
+ * Si ya tenemos la misma versión no hace nada.
  */
-export async function descargarInstrumento(): Promise<boolean> {
+export async function descargarInstrumento(perfilCodigo = 'TERRITORIAL'): Promise<boolean> {
   try {
-    // Obtener lista de instrumentos vigentes
-    const { data } = await apiClient.get<{
-      results: Array<{ id: number; version: string; vigente: boolean; codigo: string }>;
-    }>('/api/formulario/instrumentos/', { params: { vigente: true } });
-
-    const activo = data.results.find((i) => i.vigente) ?? data.results[0];
-    if (!activo) return false;
-
-    // Comprobar si ya tenemos esa versión
     const meta = await instrumentoDao.getMeta();
-    if (meta?.instrumento_id === activo.id && meta?.version === activo.version) {
-      return false; // Nada que descargar
+
+    const { data } = await apiClient.get(
+      `/api/formulario/instrumento/${perfilCodigo}/`,
+    );
+
+    // Mismo instrumento y versión → nada que hacer
+    if (
+      meta?.instrumento_id === data.id &&
+      meta?.version === data.numero
+    ) {
+      return false;
     }
 
-    // Descargar instrumento completo con temas y preguntas
-    const { data: instrumento } = await apiClient.get(
-      `/api/formulario/instrumentos/${activo.id}/`,
-    );
-    await instrumentoDao.guardarInstrumento(instrumento);
+    await instrumentoDao.guardarInstrumentoCompleto(data);
     return true;
   } catch {
     return false;
@@ -156,7 +152,7 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
 async function procesarResponder(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     sesion_id: string;
-    pregunta_id: number;
+    pregunta_id: string;  // UUID
     valor: string;
   };
 

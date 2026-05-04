@@ -10,7 +10,7 @@ export interface CrearSesionPayload {
 }
 
 export interface ResponderPayload {
-  pregunta_id: number;
+  pregunta_id: string;  // UUID de Pregunta (Sprint 7: cambio de number a string)
   valor: string;
 }
 

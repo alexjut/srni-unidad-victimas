@@ -171,7 +171,7 @@ export type EstadoSesion = 'INICIADA' | 'EN_PROGRESO' | 'COMPLETADA' | 'SUSPENDI
 export interface RespuestaEncuesta {
   id: number;
   sesion: string;
-  pregunta: number;
+  pregunta: string;       // UUID (Sprint 7)
   pregunta_codigo: string;
   pregunta_texto: string;
   valor: string;
@@ -181,8 +181,9 @@ export interface RespuestaEncuesta {
 export interface SesionResumen {
   id: string;
   hogar: string;
-  instrumento: number;
+  instrumento: string;         // UUID de InstrumentoVersion (Sprint 7)
   instrumento_nombre: string;
+  instrumento_numero: string;  // p.ej. "V8"
   encuestador: string | null;
   encuestador_nombre: string | null;
   estado: EstadoSesion;

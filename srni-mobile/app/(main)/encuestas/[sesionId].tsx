@@ -170,6 +170,7 @@ export default function SesionDetalleScreen() {
                   pathname: '/(main)/formulario',
                   params: {
                     sesionServerId: sesion.id,
+                    instrumentoId: sesion.instrumento,
                     hogarId: sesion.hogar,
                   },
                 })
