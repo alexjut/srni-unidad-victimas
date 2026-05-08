@@ -75,6 +75,7 @@ class Perfil(models.Model):
     actualizado = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["codigo"]
         verbose_name = "Perfil"
         verbose_name_plural = "Perfiles"
 

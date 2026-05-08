@@ -1,0 +1,347 @@
+{
+  "version": "V7-V8",
+  "descripcion": "Catálogo de opciones de respuesta compartidas entre los instrumentos SRNI (Territorial V7 y Asistencia V8)",
+  "listas": {
+    "Z4_AUTORECONOCIMIENTO": [
+      {"valor": "1", "etiqueta": "Indígena", "id_resp_vivanto": 4565, "orden": 1},
+      {"valor": "2", "etiqueta": "Gitano(a), Rrom", "id_resp_vivanto": 4566, "orden": 2},
+      {"valor": "3", "etiqueta": "Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina", "id_resp_vivanto": 4567, "orden": 3},
+      {"valor": "4", "etiqueta": "Palenquero(a)", "id_resp_vivanto": 4568, "orden": 4},
+      {"valor": "5", "etiqueta": "Negro(a), afrocolombiano(a)", "id_resp_vivanto": 4569, "orden": 5},
+      {"valor": "6", "etiqueta": "Ninguna", "id_resp_vivanto": 4570, "orden": 6}
+    ],
+    "Z6_ZONA": [
+      {"valor": "1", "etiqueta": "Cabecera municipal (donde está la alcaldía)", "id_resp_vivanto": 4572, "orden": 1},
+      {"valor": "2", "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío", "id_resp_vivanto": 4573, "orden": 2},
+      {"valor": "3", "etiqueta": "Rural disperso (vereda)", "id_resp_vivanto": 4574, "orden": 3}
+    ],
+    "A8_SEXO": [
+      {"valor": "1", "etiqueta": "Hombre", "id_resp_vivanto": 4598, "orden": 1},
+      {"valor": "2", "etiqueta": "Mujer", "id_resp_vivanto": 4599, "orden": 2},
+      {"valor": "3", "etiqueta": "Intersexual", "id_resp_vivanto": 4600, "orden": 3},
+      {"valor": "4", "etiqueta": "Indeterminado", "id_resp_vivanto": 4601, "orden": 4}
+    ],
+    "A8A_ORIENTACION_SEXUAL": [
+      {"valor": "1", "etiqueta": "Heterosexual", "id_resp_vivanto": 4602, "orden": 1},
+      {"valor": "2", "etiqueta": "Homosexual", "id_resp_vivanto": 4603, "orden": 2},
+      {"valor": "3", "etiqueta": "Bisexual", "id_resp_vivanto": 4604, "orden": 3},
+      {"valor": "5", "etiqueta": "Asexual", "id_resp_vivanto": 4605, "orden": 4},
+      {"valor": "4", "etiqueta": "Ninguno", "id_resp_vivanto": 4606, "orden": 5},
+      {"valor": "99", "etiqueta": "No sabe, No responde", "id_resp_vivanto": 4607, "orden": 6}
+    ],
+    "A9_PARENTESCO": [
+      {"valor": "1", "etiqueta": "Jefe(a)", "id_resp_vivanto": 4647, "orden": 1},
+      {"valor": "2", "etiqueta": "Cónyuge o Compañera(o)", "id_resp_vivanto": 4648, "orden": 2},
+      {"valor": "3", "etiqueta": "Hijo(a) - Hijastro(a)", "id_resp_vivanto": 4649, "orden": 3},
+      {"valor": "5", "etiqueta": "Padre o madre - padrastro o madrastra", "id_resp_vivanto": 4650, "orden": 4},
+      {"valor": "6", "etiqueta": "Hermano(a) - Hermanastro(a)", "id_resp_vivanto": 4651, "orden": 5},
+      {"valor": "12", "etiqueta": "Otro pariente del jefe", "id_resp_vivanto": 4652, "orden": 6}
+    ],
+    "B5_IDENTIDAD_GENERO": [
+      {"valor": "1", "etiqueta": "Femenino", "id_resp_vivanto": 4608, "orden": 1},
+      {"valor": "2", "etiqueta": "Masculino", "id_resp_vivanto": 4609, "orden": 2},
+      {"valor": "3", "etiqueta": "Transgénero", "id_resp_vivanto": 4610, "orden": 3},
+      {"valor": "5", "etiqueta": "No sabe / No responde", "id_resp_vivanto": 4611, "orden": 4}
+    ],
+    "B6_SITUACION_MILITAR": [
+      {"valor": "1", "etiqueta": "Sí", "id_resp_vivanto": 4612, "orden": 1},
+      {"valor": "3", "etiqueta": "No", "id_resp_vivanto": 4613, "orden": 2},
+      {"valor": "98", "etiqueta": "No sabe / No responde", "id_resp_vivanto": 4614, "orden": 3}
+    ],
+    "B10_GRUPO_ETARIO": [
+      {"valor": "1", "etiqueta": "0 - 5 años: Primera Infancia", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "6 - 11 años: Niñez", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "12 - 17 años: Adolescencia", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "18 - 28 años: Jóvenes", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "29 - 59 años: Adulto", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "60 años en adelante: Persona mayor", "id_resp_vivanto": 0, "orden": 6}
+    ],
+    "B17_TIPO_TERRITORIO": [
+      {"valor": "1", "etiqueta": "Resguardo indígena", "id_resp_vivanto": 4655, "orden": 1},
+      {"valor": "2", "etiqueta": "Territorio colectivo de Comunidades Negras", "id_resp_vivanto": 4656, "orden": 2},
+      {"valor": "3", "etiqueta": "Territorio ancestral habitado", "id_resp_vivanto": 4657, "orden": 3},
+      {"valor": "4", "etiqueta": "Zonas de reserva campesina", "id_resp_vivanto": 4658, "orden": 4},
+      {"valor": "5", "etiqueta": "Otro", "id_resp_vivanto": 4659, "orden": 5}
+    ],
+    "A3_TIPO_DOCUMENTO": [
+      {"valor": "1", "etiqueta": "Cédula de Ciudadanía/Contraseña", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Cédula de Extranjería", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Tarjeta de Identidad", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Registro Civil/NUIP", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "9", "etiqueta": "Permiso especial de permanencia", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "10", "etiqueta": "Permiso temporal de permanencia", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "11", "etiqueta": "Pasaporte", "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "12", "etiqueta": "Adulto sin identificar", "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "13", "etiqueta": "Menor sin identificar", "id_resp_vivanto": 0, "orden": 9},
+      {"valor": "14", "etiqueta": "Recién nacido", "id_resp_vivanto": 0, "orden": 10},
+      {"valor": "15", "etiqueta": "Certificado de pertenencia étnica", "id_resp_vivanto": 0, "orden": 11}
+    ],
+    "C1_TIPO_VIVIENDA": [
+      {"valor": "1", "etiqueta": "Casa", "id_resp_vivanto": 4689, "orden": 1},
+      {"valor": "2", "etiqueta": "Apartamento", "id_resp_vivanto": 4690, "orden": 2},
+      {"valor": "3", "etiqueta": "Cuarto(s) en inquilinato u otro tipo de estructura", "id_resp_vivanto": 4691, "orden": 3},
+      {"valor": "4", "etiqueta": "Albergue", "id_resp_vivanto": 4692, "orden": 4},
+      {"valor": "9", "etiqueta": "Vivienda Indígena", "id_resp_vivanto": 4693, "orden": 5},
+      {"valor": "5", "etiqueta": "Vivienda Étnica - Maloka, bohío, deadaré", "id_resp_vivanto": 4694, "orden": 6},
+      {"valor": "6", "etiqueta": "Vivienda Étnica - Vivienda tradicional familiar", "id_resp_vivanto": 4695, "orden": 7},
+      {"valor": "7", "etiqueta": "Vivienda étnica tradicional familiar palafito/palafitico", "id_resp_vivanto": 4696, "orden": 8},
+      {"valor": "8", "etiqueta": "Vivienda Étnica - Carpa", "id_resp_vivanto": 4697, "orden": 9},
+      {"valor": "10", "etiqueta": "Casa Comunitaria", "id_resp_vivanto": 4698, "orden": 10},
+      {"valor": "11", "etiqueta": "Habitante de Calle", "id_resp_vivanto": 4699, "orden": 11},
+      {"valor": "12", "etiqueta": "Ocupación Ilegal", "id_resp_vivanto": 4700, "orden": 12},
+      {"valor": "98", "etiqueta": "Otra vivienda (carpa, vagón, cueva, refugio natural, albergue, embarcación, campamento, asentamiento fluvial, rancho, etc.)", "id_resp_vivanto": 4701, "orden": 13}
+    ],
+    "D5_TENENCIA_VIVIENDA": [
+      {"valor": "1", "etiqueta": "Propia", "id_resp_vivanto": 4702, "orden": 1},
+      {"valor": "7", "etiqueta": "Posesión sin título (ocupante de hecho) o propiedad colectiva", "id_resp_vivanto": 4703, "orden": 2},
+      {"valor": "3", "etiqueta": "En Usufructo", "id_resp_vivanto": 4704, "orden": 3},
+      {"valor": "2", "etiqueta": "En arriendo o subarriendo", "id_resp_vivanto": 4705, "orden": 4},
+      {"valor": "4", "etiqueta": "Comunitaria en territorio colectivo", "id_resp_vivanto": 4706, "orden": 5},
+      {"valor": "5", "etiqueta": "Comunitario en propiedad privada", "id_resp_vivanto": 4707, "orden": 6},
+      {"valor": "6", "etiqueta": "Familiar en territorio colectivo", "id_resp_vivanto": 4708, "orden": 7},
+      {"valor": "8", "etiqueta": "Posada (acoger a una persona familiar o no familiar sin pagar arriendo)", "id_resp_vivanto": 4709, "orden": 8},
+      {"valor": "10", "etiqueta": "Comunitaria fuera del territorio colectivo", "id_resp_vivanto": 4710, "orden": 9},
+      {"valor": "98", "etiqueta": "Otra ¿Cuál?", "id_resp_vivanto": 4711, "orden": 10}
+    ],
+    "C2_MATERIAL_PAREDES": [
+      {"valor": "1", "etiqueta": "Ladrillo, Bloque, material prefabricado, piedra", "id_resp_vivanto": 4718, "orden": 1},
+      {"valor": "2", "etiqueta": "Madera pulida", "id_resp_vivanto": 4719, "orden": 2},
+      {"valor": "3", "etiqueta": "Adobe o tapia pisada", "id_resp_vivanto": 4720, "orden": 3},
+      {"valor": "4", "etiqueta": "Bahareque y/o muro tendinoso", "id_resp_vivanto": 4721, "orden": 4},
+      {"valor": "5", "etiqueta": "Madera burda, tabla, tablón", "id_resp_vivanto": 4722, "orden": 5},
+      {"valor": "6", "etiqueta": "Guadua", "id_resp_vivanto": 4723, "orden": 6},
+      {"valor": "7", "etiqueta": "Caña, esterilla, otro tipo de material vegetal", "id_resp_vivanto": 4724, "orden": 7},
+      {"valor": "8", "etiqueta": "Zinc, tela, cartón, latas, desechos, plástico", "id_resp_vivanto": 4725, "orden": 8},
+      {"valor": "9", "etiqueta": "Sin paredes", "id_resp_vivanto": 4726, "orden": 9}
+    ],
+    "C3_MATERIAL_PISOS": [
+      {"valor": "1", "etiqueta": "Tierra, arena", "id_resp_vivanto": 4727, "orden": 1},
+      {"valor": "2", "etiqueta": "Cemento, gravilla", "id_resp_vivanto": 4728, "orden": 2},
+      {"valor": "3", "etiqueta": "Madera burda, tabla, tablón, otro vegetal", "id_resp_vivanto": 4729, "orden": 3},
+      {"valor": "4", "etiqueta": "Baldosín, ladrillo, vinisol, otros materiales sintéticos", "id_resp_vivanto": 4730, "orden": 4},
+      {"valor": "5", "etiqueta": "Mármol", "id_resp_vivanto": 4731, "orden": 5},
+      {"valor": "6", "etiqueta": "Madera pulida", "id_resp_vivanto": 4732, "orden": 6},
+      {"valor": "7", "etiqueta": "Alfombra o tapete de pared a pared", "id_resp_vivanto": 4733, "orden": 7}
+    ],
+    "D7_DOCUMENTO_TENENCIA": [
+      {"valor": "1", "etiqueta": "Escritura, resolución o sentencia registrada", "id_resp_vivanto": 4712, "orden": 1},
+      {"valor": "2", "etiqueta": "Escritura, resolución o sentencia SIN registrar", "id_resp_vivanto": 4713, "orden": 2},
+      {"valor": "3", "etiqueta": "Certificado de sana posesión", "id_resp_vivanto": 4714, "orden": 3},
+      {"valor": "4", "etiqueta": "Acta de adjudicación / contrato de usufructo", "id_resp_vivanto": 4715, "orden": 4},
+      {"valor": "5", "etiqueta": "Contrato de compra venta", "id_resp_vivanto": 4716, "orden": 5},
+      {"valor": "6", "etiqueta": "Ninguno", "id_resp_vivanto": 4717, "orden": 6}
+    ],
+    "D10_FUENTE_AGUA": [
+      {"valor": "2", "etiqueta": "De otra fuente por tubería (Redes comunitarias)", "id_resp_vivanto": 4744, "orden": 1},
+      {"valor": "10", "etiqueta": "Agua embotellada o en bolsa", "id_resp_vivanto": 4745, "orden": 2},
+      {"valor": "8", "etiqueta": "Agua de carro tanques", "id_resp_vivanto": 4746, "orden": 3},
+      {"valor": "5", "etiqueta": "Aguas lluvias", "id_resp_vivanto": 4747, "orden": 4},
+      {"valor": "1", "etiqueta": "Acueducto por tubería", "id_resp_vivanto": 4748, "orden": 5},
+      {"valor": "3", "etiqueta": "De pozo con bomba", "id_resp_vivanto": 4749, "orden": 6},
+      {"valor": "4", "etiqueta": "De pozo sin bomba, aljibe, jagüey o barreno", "id_resp_vivanto": 4750, "orden": 7},
+      {"valor": "6", "etiqueta": "Río, quebrada, yacimiento o manantial", "id_resp_vivanto": 4751, "orden": 8},
+      {"valor": "7", "etiqueta": "De pila pública", "id_resp_vivanto": 4752, "orden": 9},
+      {"valor": "9", "etiqueta": "Aguatero", "id_resp_vivanto": 4753, "orden": 10}
+    ],
+    "D14_SERVICIO_SANITARIO": [
+      {"valor": "1", "etiqueta": "Inodoro conectado a alcantarillado", "id_resp_vivanto": 4761, "orden": 1},
+      {"valor": "2", "etiqueta": "Inodoro conectado a pozo séptico", "id_resp_vivanto": 4762, "orden": 2},
+      {"valor": "3", "etiqueta": "Inodoro sin conexión", "id_resp_vivanto": 4763, "orden": 3},
+      {"valor": "4", "etiqueta": "Letrina sin conexión", "id_resp_vivanto": 4764, "orden": 4},
+      {"valor": "5", "etiqueta": "Letrina con salida a un afluente o bajamar", "id_resp_vivanto": 4765, "orden": 5},
+      {"valor": "6", "etiqueta": "Usa el servicio sanitario a través de los vecinos", "id_resp_vivanto": 4766, "orden": 6},
+      {"valor": "7", "etiqueta": "No tiene servicio sanitario", "id_resp_vivanto": 4767, "orden": 7}
+    ],
+    "C5_ZONA_RIESGO": [
+      {"valor": "1", "etiqueta": "Sí ¿Cuál?", "id_resp_vivanto": 4771, "orden": 1},
+      {"valor": "2", "etiqueta": "No", "id_resp_vivanto": 4772, "orden": 2},
+      {"valor": "98", "etiqueta": "No sabe/No responde", "id_resp_vivanto": 4773, "orden": 3}
+    ],
+    "D8A_SN": [
+      {"valor": "1", "etiqueta": "Sí", "id_resp_vivanto": 4734, "orden": 1},
+      {"valor": "2", "etiqueta": "No", "id_resp_vivanto": 4735, "orden": 2}
+    ],
+    "D8B_SN": [
+      {"valor": "1", "etiqueta": "Sí", "id_resp_vivanto": 4736, "orden": 1},
+      {"valor": "2", "etiqueta": "No", "id_resp_vivanto": 4737, "orden": 2}
+    ],
+    "D8C_SN": [
+      {"valor": "1", "etiqueta": "Sí", "id_resp_vivanto": 4738, "orden": 1},
+      {"valor": "2", "etiqueta": "No", "id_resp_vivanto": 4739, "orden": 2}
+    ],
+    "A13C_VITSA": [
+      {"valor": "1", "etiqueta": "Bolochoc", "id_resp_vivanto": 4666, "orden": 1},
+      {"valor": "2", "etiqueta": "Bimbay", "id_resp_vivanto": 4667, "orden": 2},
+      {"valor": "3", "etiqueta": "Mijhaís", "id_resp_vivanto": 4668, "orden": 3},
+      {"valor": "4", "etiqueta": "Ghoso", "id_resp_vivanto": 4669, "orden": 4},
+      {"valor": "5", "etiqueta": "Churon", "id_resp_vivanto": 4670, "orden": 5},
+      {"valor": "6", "etiqueta": "Rruso", "id_resp_vivanto": 4671, "orden": 6},
+      {"valor": "7", "etiqueta": "Eskelleichi", "id_resp_vivanto": 4672, "orden": 7},
+      {"valor": "98", "etiqueta": "Otro", "id_resp_vivanto": 4673, "orden": 8}
+    ],
+    "A13E_KUMPANIA": [
+      {"valor": "1", "etiqueta": "Sabana Larga (Atlántico)", "id_resp_vivanto": 4674, "orden": 1},
+      {"valor": "2", "etiqueta": "Sampués (Sucre)", "id_resp_vivanto": 4675, "orden": 2},
+      {"valor": "3", "etiqueta": "Sahagún (Córdoba)", "id_resp_vivanto": 4676, "orden": 3},
+      {"valor": "4", "etiqueta": "San Pelayo (Córdoba)", "id_resp_vivanto": 4677, "orden": 4},
+      {"valor": "5", "etiqueta": "Cúcuta (Norte de Santander)", "id_resp_vivanto": 4678, "orden": 5},
+      {"valor": "6", "etiqueta": "Girón (Santander)", "id_resp_vivanto": 4679, "orden": 6},
+      {"valor": "7", "etiqueta": "Envigado (Antioquia)", "id_resp_vivanto": 4680, "orden": 7},
+      {"valor": "8", "etiqueta": "Ataco (Tolima)", "id_resp_vivanto": 4681, "orden": 8},
+      {"valor": "11", "etiqueta": "Bogotá - ProRrom", "id_resp_vivanto": 4682, "orden": 9},
+      {"valor": "9", "etiqueta": "Bogotá - Unión Romaní", "id_resp_vivanto": 4683, "orden": 10},
+      {"valor": "10", "etiqueta": "Pasto", "id_resp_vivanto": 4684, "orden": 11}
+    ],
+    "Z3_METODO_RECOLECCION": [
+      {"valor": "1", "etiqueta": "Cara a cara", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Telefónica", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Autodiligenciada", "id_resp_vivanto": 0, "orden": 3}
+    ],
+    "A20_ESTADO_RUV": [
+      {"valor": "1", "etiqueta": "Incluido", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Excluido", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "No incluido", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "En trámite", "id_resp_vivanto": 0, "orden": 4}
+    ],
+    "A21_HECHO_VICTIMIZANTE": [
+      {"valor": "1", "etiqueta": "Homicidio", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Desaparición forzada", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Secuestro", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Abandono o despojo de tierras", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Desplazamiento forzado", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Acto terrorista / atentado", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Amenaza", "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Delitos contra la integridad sexual", "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "9", "etiqueta": "Minas antipersona / munición sin explotar", "id_resp_vivanto": 0, "orden": 9},
+      {"valor": "10", "etiqueta": "Tortura", "id_resp_vivanto": 0, "orden": 10},
+      {"valor": "11", "etiqueta": "Pérdida de bienes muebles e inmuebles", "id_resp_vivanto": 0, "orden": 11},
+      {"valor": "12", "etiqueta": "Vinculación de niños, niñas y adolescentes", "id_resp_vivanto": 0, "orden": 12},
+      {"valor": "13", "etiqueta": "Confinamiento", "id_resp_vivanto": 0, "orden": 13}
+    ],
+    "H8_REGIMEN_SALUD": [
+      {"valor": "1", "etiqueta": "Contributivo", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Subsidiado", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Especial o de excepción", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "No asegurado", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "No sabe/No responde", "id_resp_vivanto": 0, "orden": 5}
+    ],
+    "G4_RAZON_NO_ESTUDIA": [
+      {"valor": "1", "etiqueta": "No tiene edad", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Terminó sus estudios", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Falta de dinero/recursos", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Debe trabajar", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Conflicto armado / desplazamiento", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Quehaceres del hogar", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Discapacidad", "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "No existe establecimiento educativo cercano", "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "9", "etiqueta": "Falta de cupos", "id_resp_vivanto": 0, "orden": 9},
+      {"valor": "10", "etiqueta": "Embarazo", "id_resp_vivanto": 0, "orden": 10},
+      {"valor": "98", "etiqueta": "Otra razón", "id_resp_vivanto": 0, "orden": 11}
+    ],
+    "G7B_GRADO_EDUCACION": [
+      {"valor": "0", "etiqueta": "Ninguno", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "1", "etiqueta": "Preescolar", "id_resp_vivanto": 4790, "orden": 2},
+      {"valor": "2", "etiqueta": "Primaria", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "3", "etiqueta": "Básica secundaria", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "4", "etiqueta": "Media", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "5", "etiqueta": "Técnico/Tecnológico", "id_resp_vivanto": 4794, "orden": 6},
+      {"valor": "6", "etiqueta": "Universitario", "id_resp_vivanto": 4796, "orden": 7},
+      {"valor": "7", "etiqueta": "Especialización", "id_resp_vivanto": 4797, "orden": 8},
+      {"valor": "8", "etiqueta": "Maestría", "id_resp_vivanto": 4800, "orden": 9},
+      {"valor": "9", "etiqueta": "Doctorado", "id_resp_vivanto": 4801, "orden": 10}
+    ],
+    "L1_ACTIVIDAD_LABORAL": [
+      {"valor": "1", "etiqueta": "Trabajando", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "No trabajó pero tenía trabajo", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Buscó trabajo activamente", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "No buscó pero quiere trabajar", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Realiza oficios del hogar", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Estudiante", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Incapacitado permanente para trabajar", "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Rentista o jubilado", "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "9", "etiqueta": "Otro", "id_resp_vivanto": 0, "orden": 9}
+    ],
+    "L14_ACTIVIDAD_ECONOMICA": [
+      {"valor": "1", "etiqueta": "Agricultura / ganadería / silvicultura / pesca", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Minas y canteras", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Industria manufacturera", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Suministros", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Construcción", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Comercio", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Transporte", "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Alojamiento y servicios de comida", "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "9", "etiqueta": "Información y comunicaciones", "id_resp_vivanto": 0, "orden": 9},
+      {"valor": "10", "etiqueta": "Actividades financieras", "id_resp_vivanto": 0, "orden": 10},
+      {"valor": "11", "etiqueta": "Actividades inmobiliarias", "id_resp_vivanto": 0, "orden": 11},
+      {"valor": "12", "etiqueta": "Actividades profesionales / técnicas", "id_resp_vivanto": 0, "orden": 12},
+      {"valor": "13", "etiqueta": "Administración pública", "id_resp_vivanto": 0, "orden": 13},
+      {"valor": "14", "etiqueta": "Educación", "id_resp_vivanto": 0, "orden": 14},
+      {"valor": "15", "etiqueta": "Salud", "id_resp_vivanto": 0, "orden": 15},
+      {"valor": "16", "etiqueta": "Arte y entretenimiento", "id_resp_vivanto": 0, "orden": 16},
+      {"valor": "17", "etiqueta": "Empleado/a doméstico", "id_resp_vivanto": 0, "orden": 17},
+      {"valor": "98", "etiqueta": "Otro", "id_resp_vivanto": 0, "orden": 18}
+    ],
+    "L16_TIPO_CONTRATO": [
+      {"valor": "1", "etiqueta": "Escrito a término fijo", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Escrito a término indefinido", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Oral", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Sin contrato", "id_resp_vivanto": 0, "orden": 4}
+    ],
+    "E1_ACUERDO_RETORNO": [
+      {"valor": "1", "etiqueta": "Sí, está de acuerdo", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "No está de acuerdo", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "No aplica", "id_resp_vivanto": 0, "orden": 3}
+    ],
+    "E1A_ESTADO_RETORNO": [
+      {"valor": "1", "etiqueta": "Retornado", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Reubicado", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Integrado localmente", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "En proceso de retorno", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "En proceso de reubicación", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "No ha iniciado proceso", "id_resp_vivanto": 0, "orden": 6}
+    ],
+    "E1B_DECISION_RETORNO": [
+      {"valor": "1", "etiqueta": "Desea retornar", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Desea reubicarse", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Desea integración local", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Aún no ha decidido", "id_resp_vivanto": 0, "orden": 4}
+    ],
+    "F6_INTERES_REUNIFICACION": [
+      {"valor": "1", "etiqueta": "Sí", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "No", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Ya está en proceso de reunificación", "id_resp_vivanto": 0, "orden": 3}
+    ],
+    "AT4_TENENCIA_TIERRA": [
+      {"valor": "1", "etiqueta": "Propia", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Arriendo o aparcería", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Resguardo o territorio colectivo", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Comunal", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Invasión sin título", "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Usufructo", "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "98", "etiqueta": "Otra", "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "AT6A_DESTINO_PRODUCCION": [
+      {"valor": "1", "etiqueta": "Autoconsumo", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Venta mercado local", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Venta a intermediario", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Trueque", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "98", "etiqueta": "Otro", "id_resp_vivanto": 0, "orden": 5}
+    ],
+    "D13_ELIMINACION_BASURA": [
+      {"valor": "1", "etiqueta": "Recogida por empresa/servicio", "id_resp_vivanto": 4754, "orden": 1},
+      {"valor": "2", "etiqueta": "La tiran a río, mar, quebrada, caño o laguna", "id_resp_vivanto": 4756, "orden": 2},
+      {"valor": "3", "etiqueta": "La tiran a un patio, lote, zanja o baldío", "id_resp_vivanto": 4757, "orden": 3},
+      {"valor": "4", "etiqueta": "La queman o entierran", "id_resp_vivanto": 4758, "orden": 4},
+      {"valor": "5", "etiqueta": "La reciclan (producir energía, alimentar animales, abono)", "id_resp_vivanto": 4755, "orden": 5},
+      {"valor": "6", "etiqueta": "Disposición a campo abierto", "id_resp_vivanto": 4760, "orden": 6},
+      {"valor": "98", "etiqueta": "Otra forma", "id_resp_vivanto": 4759, "orden": 7}
+    ],
+    "H10_ACCION_SALUD": [
+      {"valor": "1", "etiqueta": "Consultó médico / profesional de salud", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Se automedicó", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Usó remedios caseros", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "No hizo nada", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "98", "etiqueta": "Otro", "id_resp_vivanto": 0, "orden": 5}
+    ]
+  }
+}
