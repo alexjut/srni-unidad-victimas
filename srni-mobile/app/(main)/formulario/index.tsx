@@ -1,12 +1,14 @@
 // Lista de capítulos del instrumento de caracterización.
 import { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Pressable } from 'react-native';
-import { Text, ProgressBar, ActivityIndicator } from 'react-native-paper';
+import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as instrumentoDao from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
+import { encuestasApi } from '../../../src/api/encuestas';
 import { GovHeader } from '../../../src/components/GovHeader';
+import { GovButton } from '../../../src/components/GovButton';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 
@@ -96,6 +98,11 @@ export default function FormularioIndexScreen() {
   // null = no elegido todavía | false = manual | true = asistido por IA
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
+  // Finalizar sesión
+  const [modalFinalizar, setModalFinalizar] = useState(false);
+  const [observaciones, setObservaciones] = useState('');
+  const [finalizando, setFinalizando] = useState(false);
+
   useEffect(() => {
     Promise.all([instrumentoDao.getCapitulos(), instrumentoDao.getMeta()])
       .then(([caps, m]) => {
@@ -105,6 +112,24 @@ export default function FormularioIndexScreen() {
       .catch(() => {})
       .finally(() => setCargando(false));
   }, []);
+
+  async function handleFinalizar() {
+    if (!sesionServerId) return;
+    setFinalizando(true);
+    try {
+      await encuestasApi.finalizar(sesionServerId, { observaciones: observaciones.trim() || undefined });
+      setModalFinalizar(false);
+      Alert.alert(
+        'Sesión finalizada',
+        'La sesión ha sido cerrada exitosamente.',
+        [{ text: 'Aceptar', onPress: () => router.back() }],
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión. Verifique la conexión.');
+    } finally {
+      setFinalizando(false);
+    }
+  }
 
   const subtitulo = hogarId
     ? `Hogar ${hogarId.slice(0, 8)}… · ${capitulos.length} capítulos`
@@ -248,7 +273,71 @@ export default function FormularioIndexScreen() {
           />
         )}
         contentContainerStyle={styles.lista}
+        ListFooterComponent={
+          sesionServerId ? (
+            <View style={styles.footerFinalizar}>
+              <GovButton
+                label="Finalizar sesión"
+                variant="secondary"
+                icon="check-circle-outline"
+                onPress={() => setModalFinalizar(true)}
+              />
+            </View>
+          ) : null
+        }
       />
+
+      {/* Modal de confirmación de finalización */}
+      <Modal
+        visible={modalFinalizar}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalFinalizar(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>Finalizar sesión</Text>
+            <Text style={styles.modalCuerpo}>
+              Al finalizar, la sesión quedará en estado{' '}
+              <Text style={styles.modalDestacado}>COMPLETADA</Text> y no podrá
+              modificarse. {capitulos.length} capítulos en este formulario.
+            </Text>
+
+            <Text style={styles.modalLabel}>Observaciones (opcional)</Text>
+            <TextInput
+              value={observaciones}
+              onChangeText={setObservaciones}
+              placeholder="Notas adicionales sobre la entrevista…"
+              multiline
+              numberOfLines={3}
+              style={styles.modalTextArea}
+              editable={!finalizando}
+            />
+
+            <View style={styles.modalBotones}>
+              <GovButton
+                label="Cancelar"
+                variant="secondary"
+                fullWidth={false}
+                onPress={() => setModalFinalizar(false)}
+                disabled={finalizando}
+              />
+              <GovButton
+                label="Finalizar"
+                variant="primary"
+                icon="check"
+                fullWidth={false}
+                onPress={handleFinalizar}
+                loading={finalizando}
+                disabled={finalizando}
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -323,7 +412,39 @@ const styles = StyleSheet.create({
   progresoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   progresoLabel: { ...FONT.caption, color: GOV.textoS },
   progressBar: { height: 4, borderRadius: 2, backgroundColor: GOV.borde },
-  lista: { padding: SPACING.md, paddingBottom: SPACING.xl },
+  lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
+  footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
+
+  // ── Modal de finalización ─────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: GOV.superficie,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  modalTitulo: { ...FONT.h2, color: GOV.azulOscuro },
+  modalCuerpo: { ...FONT.body, color: GOV.textoS, lineHeight: 22 },
+  modalDestacado: { fontWeight: '700', color: GOV.azulOscuro },
+  modalLabel: { ...FONT.label, color: GOV.textoT, marginTop: SPACING.xs },
+  modalTextArea: {
+    backgroundColor: GOV.fondoApp,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontSize: 14,
+  },
+  modalBotones: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
