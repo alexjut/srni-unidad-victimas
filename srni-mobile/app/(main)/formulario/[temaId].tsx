@@ -176,17 +176,10 @@ export default function CapituloScreen() {
 
   useEffect(() => { return () => { resetearIA(); }; }, []);
 
-  // ── Finalizar capítulo ──────────────────────────────────────────────────────
+  // ── Guardar y volver (sin finalizar sesión) ─────────────────────────────────
   async function finalizarCapitulo() {
-    const bid = borradorId ?? borradorIdParam;
-    if (bid) {
-      await colaDao.encolar('FINALIZAR_SESION', bid, {
-        borrador_id: bid,
-        sesion_id: null,
-      });
-      await refrescarContadores();
-      if (estaOnline) useSyncStore.getState().triggerSync();
-    }
+    await refrescarContadores();
+    if (estaOnline) useSyncStore.getState().triggerSync();
     router.back();
   }
 
