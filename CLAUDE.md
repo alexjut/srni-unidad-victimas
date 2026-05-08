@@ -163,10 +163,17 @@ unidad-victima/
 │   ├── apps/
 │   │   ├── autenticacion/        ← JWT, roles, perfiles
 │   │   ├── victimas/             ← RNI — búsqueda y detalle
-│   │   ├── formulario/           ← Motor dinámico 54 módulos
+│   │   ├── formulario/           ← Motor dinámico — 7 perfiles, 85 caps, 1319 preguntas
+│   │   │   ├── fixtures/
+│   │   │   │   ├── opciones_compartidas.json  ← Catálogo 40 listas UARIV
+│   │   │   │   ├── perfil_asistencia_v8.json  ← ASISTENCIA V8 completo
+│   │   │   │   └── perfil_territorial_v7.json ← TERRITORIAL V7 (Sprint 7)
+│   │   │   └── management/commands/
+│   │   │       └── cargar_perfil.py           ← Loader genérico (--perfil, $ref, --dry-run)
 │   │   ├── hogares/              ← Hogares y miembros
 │   │   ├── encuestas/            ← Sesiones y respuestas
 │   │   ├── parametricas/         ← Geo, comunidades étnicas
+│   │   ├── ia/                   ← Proxy Gemini — asistente + batch
 │   │   ├── sincronizacion/       ← Import/export seguro
 │   │   ├── auditoria/            ← LogAcceso inmutable
 │   │   └── reportes/             ← Producción por encuestador
@@ -181,14 +188,29 @@ unidad-victima/
 │   │       ├── _layout.tsx       ← Bottom tabs
 │   │       ├── index.tsx         ← Dashboard
 │   │       ├── busqueda.tsx      ← Búsqueda RNI (server-side only)
-│   │       └── formulario/
-│   │           ├── index.tsx     ← Lista de 54 temas
-│   │           └── [temaId].tsx  ← Motor de preguntas + skip logic
+│   │       ├── caracterizar/
+│   │       │   └── index.tsx     ← Flujo: instrumento → hogar → crear sesión
+│   │       ├── formulario/
+│   │       │   ├── index.tsx     ← Lista de capítulos del instrumento
+│   │       │   ├── [temaId].tsx  ← Motor de preguntas + skip logic offline
+│   │       │   ├── consentimiento-ia.tsx
+│   │       │   ├── grabacion-entrevista.tsx  ← (pendiente) modo Gemini
+│   │       │   └── revision-ia.tsx           ← (pendiente) revisión batch IA
+│   │       └── encuestas/
+│   │           ├── index.tsx     ← Lista de sesiones
+│   │           └── [sesionId].tsx← Detalle sesión + nav al formulario
 │   └── src/
 │       ├── api/                  ← axios client + interceptores JWT
-│       ├── stores/               ← Zustand (authStore)
-│       ├── db/                   ← expo-sqlite schema offline
-│       └── components/           ← Componentes compartidos
+│       ├── stores/               ← Zustand (authStore, syncStore, iaStore)
+│       ├── db/                   ← expo-sqlite schema V2 (UUID PKs)
+│       │   ├── schema.ts         ← Migration V2: tablas con UUID
+│       │   ├── instrumentoDao.ts ← Acceso a capítulos/preguntas/opciones
+│       │   ├── borradoresDao.ts  ← Sesiones y respuestas offline
+│       │   └── colaDao.ts        ← Cola de sincronización
+│       ├── services/
+│       │   ├── sincronizacion.ts ← Cola offline → servidor
+│       │   └── skipLogic.ts      ← Motor de reglas HABILITAR/DESHABILITAR
+│       └── components/           ← Componentes compartidos GOV.CO
 │
 └── infra/
     ├── nginx/                    ← Configuración proxy + TLS
