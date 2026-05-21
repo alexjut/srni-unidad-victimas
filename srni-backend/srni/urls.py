@@ -50,8 +50,11 @@ def api_root(request, format=None):
             'hogares': request.build_absolute_uri('/api/hogares/'),
             'encuestas': request.build_absolute_uri('/api/encuestas/'),
             'ia': request.build_absolute_uri('/api/ia/'),
-            # Próximos sprints:
-            # 'reportes': {...},
+            'reportes': {
+                'produccion':        request.build_absolute_uri('/api/reportes/produccion/'),
+                'produccion_detalle': request.build_absolute_uri('/api/reportes/produccion/detalle/'),
+                'produccion_export':  request.build_absolute_uri('/api/reportes/produccion/export/'),
+            },
         },
         'health': request.build_absolute_uri('/health/'),
     })
@@ -79,8 +82,8 @@ urlpatterns = [
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),
 
-    # Módulos futuros
-    # path('api/reportes/', include('apps.reportes.urls')),
+    # Módulo Sprint 10 — Reportes de producción
+    path('api/reportes/', include('apps.reportes.urls')),
 
     # Documentación OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -139,9 +139,16 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Sincronización */}
+        {/* Sincronización y reportes */}
         <Text style={styles.seccionTitulo}>Sistema</Text>
         <View style={styles.accionesCard}>
+          <AccionRow
+            icon="chart-bar"
+            label="Mis reportes"
+            subtitle="Producción, sesiones y estadísticas"
+            onPress={() => router.push('/(main)/reportes')}
+          />
+          <View style={styles.separador} />
           <AccionRow
             icon="cloud-sync"
             label="Estado de sincronización"
