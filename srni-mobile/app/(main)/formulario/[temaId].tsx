@@ -199,20 +199,29 @@ export default function CapituloScreen() {
 
   useEffect(() => { return () => { resetearIA(); }; }, []);
 
-  // ── Guardar capítulo: validar → bulk sync → volver ──────────────────────────
+  // ── Guardar capítulo: bulk sync (online) o encolar (offline) → volver ─────────
   async function guardarYVolver() {
     const bid = borradorId ?? borradorIdParam;
 
-    // Bulk sync si hay conexión y sesión en servidor
-    if (estaOnline && sesionServerId && bid) {
+    if (bid && sesionServerId) {
       setSincronizando(true);
       try {
         const mapa = await borradoresDao.getRespuestaMap(bid);
         const arr = Object.entries(mapa)
           .filter(([, v]) => v.trim() !== '')
           .map(([pregunta_id, valor]) => ({ pregunta_id, valor }));
+
         if (arr.length > 0) {
-          await encuestasApi.responderBulk(sesionServerId, arr);
+          if (estaOnline) {
+            await encuestasApi.responderBulk(sesionServerId, arr);
+          } else {
+            // Sin red: encolar para sincronizar cuando vuelva la conexión
+            await colaDao.encolar('RESPONDER_BULK', bid, {
+              sesion_id: sesionServerId,
+              borrador_id: bid,
+              respuestas: arr,
+            });
+          }
         }
       } catch { /* silencioso — la cola lo reintentará */ }
       finally { setSincronizando(false); }

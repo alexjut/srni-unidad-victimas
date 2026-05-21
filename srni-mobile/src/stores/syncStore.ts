@@ -6,6 +6,8 @@
  *   ↻ N pendientes   — estaOnline && pendientesCola > 0
  *   ✗ Sin conexión   — !estaOnline
  *   ⚠ N errores      — erroresCola > 0
+ *
+ * Sprint 9: polling de conectividad cada 60 s + backoff exponencial en la cola.
  */
 import { create } from 'zustand';
 import { AppState, type AppStateStatus } from 'react-native';
@@ -33,9 +35,12 @@ interface SyncState {
   triggerSync: () => Promise<void>;
   checkConnectivity: () => Promise<void>;
   refrescarContadores: () => Promise<void>;
+  reintentarErrores: () => Promise<void>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
 export const useSyncStore = create<SyncState>((set, get) => ({
   estaOnline: false,
@@ -47,38 +52,46 @@ export const useSyncStore = create<SyncState>((set, get) => ({
 
   /** Llamar una vez al inicio de la app (en RootLayout). */
   inicializar: async () => {
-    // Liberar items bloqueados de una sesión anterior crasheada
     await colaDao.resetearBloqueados();
 
-    // Verificar si ya hay instrumento descargado
     const meta = await instrumentoDao.getMeta();
     set({ instrumentoDescargado: !!meta });
 
     await get().refrescarContadores();
     await get().checkConnectivity();
 
-    // Listener de AppState: triggerear sync al volver al primer plano
+    // Listener de AppState: disparar check al volver al primer plano
     AppState.addEventListener('change', (estado: AppStateStatus) => {
       if (estado === 'active') {
         get().checkConnectivity();
       }
     });
+
+    // Polling cada 60 s para detectar cuando vuelve la red
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(() => {
+      get().checkConnectivity();
+    }, 60_000);
   },
 
   checkConnectivity: async () => {
     const online = await sincronizacionService.estaOnline();
+    const eraOffline = !get().estaOnline;
     set({ estaOnline: online });
 
     if (online) {
-      // Descargar instrumento si no lo tenemos
+      // Descargar instrumento si no lo tenemos (usa perfil_codigo del meta local)
       if (!get().instrumentoDescargado) {
         const descargado = await sincronizacionService.descargarInstrumento();
         if (descargado) {
           set({ instrumentoDescargado: true });
         }
       }
-      // Intentar sync automático si hay pendientes
-      if (get().pendientesCola > 0 && !get().sincronizando) {
+
+      // Si acaba de recuperar conexión o hay pendientes, intentar sync
+      await get().refrescarContadores();
+      const { pendientesCola, sincronizando } = get();
+      if ((eraOffline || pendientesCola > 0) && !sincronizando) {
         get().triggerSync();
       }
     }
@@ -89,11 +102,11 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     set({ sincronizando: true });
 
     try {
-      const resultado = await sincronizacionService.intentarSincronizar();
+      await sincronizacionService.intentarSincronizar();
       set({ ultimaSincronizacion: new Date().toISOString() });
-      await get().refrescarContadores();
     } finally {
       set({ sincronizando: false });
+      await get().refrescarContadores();
     }
   },
 
@@ -103,6 +116,14 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       colaDao.contarErrores(),
     ]);
     set({ pendientesCola: pendientes, erroresCola: errores });
+  },
+
+  reintentarErrores: async () => {
+    await colaDao.reintentarErrores();
+    await get().refrescarContadores();
+    if (get().estaOnline && !get().sincronizando) {
+      get().triggerSync();
+    }
   },
 }));
 

@@ -9,11 +9,12 @@
  *  1 → Sprint 4: instrumento_meta, hogares_offline, cola_sincronizacion + índices
  *  2 → Sprint 7: tablas de instrumento migradas a UUID (capitulos, reglas_skip_logic)
  *               borradores.instrumento_id TEXT, respuestas.pregunta_id TEXT
+ *  3 → Sprint 9: cola_sincronizacion.retry_after TEXT (backoff exponencial)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 const DDL_V0 = `
@@ -241,6 +242,12 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
 
   if (currentVersion < 2) {
     await db.execAsync(MIGRATION_V2);
+  }
+
+  if (currentVersion < 3) {
+    await db.execAsync(
+      'ALTER TABLE cola_sincronizacion ADD COLUMN retry_after TEXT',
+    );
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
 

@@ -28,11 +28,11 @@ function SyncChip() {
   const { triggerSync, sincronizando, pendientesCola, erroresCola } = syncState;
 
   const cfg = SYNC_CFG[estado];
+  const labelFn = cfg.label as string | ((n: number) => string);
   const label =
-    estado === 'sincronizando' ? cfg.label :
-    estado === 'pendientes'    ? cfg.label(pendientesCola) :
-    estado === 'error'         ? cfg.label(erroresCola) :
-    (cfg as { label: string }).label;
+    estado === 'pendientes' ? (labelFn as (n: number) => string)(pendientesCola) :
+    estado === 'error'      ? (labelFn as (n: number) => string)(erroresCola) :
+    labelFn as string;
 
   return (
     <Chip
@@ -74,6 +74,7 @@ function AccionRow({
 
 export default function DashboardScreen() {
   const { usuario, logout } = useAuthStore();
+  const syncState = useSyncStore();
   const perfil = usuario?.perfil;
   const nombre = usuario?.nombre_completo ?? '—';
   const primerNombre = nombre.split(' ')[0];
@@ -136,6 +137,21 @@ export default function DashboardScreen() {
               />
             </>
           )}
+        </View>
+
+        {/* Sincronización */}
+        <Text style={styles.seccionTitulo}>Sistema</Text>
+        <View style={styles.accionesCard}>
+          <AccionRow
+            icon="cloud-sync"
+            label="Estado de sincronización"
+            subtitle={syncState.pendientesCola > 0
+              ? `${syncState.pendientesCola} pendiente(s) en cola`
+              : syncState.erroresCola > 0
+                ? `${syncState.erroresCola} error(es) en cola`
+                : 'Todo al día'}
+            onPress={() => router.push('/(main)/sync-status')}
+          />
         </View>
 
         {/* Cerrar sesión */}
