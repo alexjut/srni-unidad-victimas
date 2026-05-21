@@ -1,9 +1,9 @@
-// Motor de captura offline de un capítulo del formulario — Sprint 7, Diccionario V8.
+// Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
-  ActivityIndicator, Chip, IconButton,
+  ActivityIndicator, Chip, IconButton, ProgressBar,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -13,6 +13,7 @@ import * as colaDao from '../../../src/db/colaDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
+import { encuestasApi } from '../../../src/api/encuestas';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -24,11 +25,11 @@ import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/
 
 export default function CapituloScreen() {
   const {
-    temaId,          // UUID del Capitulo
+    temaId,
     borradorId: borradorIdParam,
     hogarId,
-    sesionServerId,  // UUID de sesión en servidor (viene de [sesionId].tsx)
-    instrumentoId,   // UUID de InstrumentoVersion (para reglas skip logic)
+    sesionServerId,
+    instrumentoId,
   } = useLocalSearchParams<{
     temaId: string;
     borradorId?: string;
@@ -53,13 +54,13 @@ export default function CapituloScreen() {
   const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
   const [opciones, setOpciones] = useState<Record<string, OpcionRow[]>>({});
   const [reglas, setReglas] = useState<ReglaSkipLogicRow[]>([]);
-  // respuestas keyed by pregunta UUID
   const [respuestas, setRespuestasState] = useState<Record<string, string>>({});
   const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
   const [capituloNombre, setCapituloNombre] = useState('');
   const [cargando, setCargando] = useState(true);
+  const [sincronizando, setSincronizando] = useState(false);
 
-  // ── Cargar datos del capítulo desde SQLite ──────────────────────────────────
+  // ── Cargar datos del capítulo + borradores previos ──────────────────────────
   useEffect(() => {
     if (!temaId) return;
 
@@ -69,39 +70,59 @@ export default function CapituloScreen() {
       const cap = caps.find((c) => c.id === temaId);
       setCapituloNombre(cap?.nombre ?? '');
 
-      // Preguntas
+      // Preguntas y opciones
       const pgs = await instrumentoDao.getPreguntas(temaId);
       setPreguntas(pgs);
-
       if (pgs.length > 0) {
-        const ids = pgs.map((p) => p.id);
-        const opts = await instrumentoDao.getOpcionesBatch(ids);
-        setOpciones(opts);
+        setOpciones(await instrumentoDao.getOpcionesBatch(pgs.map((p) => p.id)));
       }
 
-      // Reglas de skip logic del capítulo
+      // Reglas de skip logic
       if (instrumentoId) {
-        const rs = await instrumentoDao.getReglasPorCapitulo(temaId, instrumentoId);
-        setReglas(rs);
+        setReglas(await instrumentoDao.getReglasPorCapitulo(temaId, instrumentoId));
       }
 
-      // Manejar borrador
-      if (borradorIdParam) {
-        // Recargar respuestas existentes
-        const mapaRaw = await borradoresDao.getRespuestaMap(borradorIdParam);
-        setRespuestasState(mapaRaw);
-      } else {
-        // Crear nuevo borrador
-        const meta = await instrumentoDao.getMeta();
-        const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
-        const borrador = await borradoresDao.crearBorrador(instrId, hogarId);
-        setBorradorId(borrador.id);
+      // ── Resolver borrador ─────────────────────────────────────────────────
+      const meta = await instrumentoDao.getMeta();
+      const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
 
-        if (sesionServerId) {
-          await borradoresDao.vincularSesionServidor(borrador.id, sesionServerId);
-        } else if (hogarId && instrId) {
-          await colaDao.encolar('CREAR_SESION', borrador.id, {
-            borrador_id: borrador.id,
+      if (borradorIdParam) {
+        // Ya tenemos un borrador local — cargar sus respuestas
+        setRespuestasState(await borradoresDao.getRespuestaMap(borradorIdParam));
+        setBorradorId(borradorIdParam);
+
+      } else if (sesionServerId) {
+        // Buscar si ya existe un borrador vinculado a esta sesión
+        const existente = await borradoresDao.findBySesionId(sesionServerId);
+
+        if (existente) {
+          setBorradorId(existente.id);
+          setRespuestasState(await borradoresDao.getRespuestaMap(existente.id));
+        } else {
+          // Crear nuevo borrador y vincularlo
+          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+          await borradoresDao.vincularSesionServidor(nuevo.id, sesionServerId);
+          setBorradorId(nuevo.id);
+
+          // Si hay conexión, descargar respuestas previas del servidor
+          if (estaOnline) {
+            try {
+              const { data: previas } = await encuestasApi.getRespuestas(sesionServerId);
+              for (const r of previas) {
+                if (r.valor) await borradoresDao.upsertRespuesta(nuevo.id, r.pregunta, r.valor);
+              }
+              setRespuestasState(await borradoresDao.getRespuestaMap(nuevo.id));
+            } catch { /* sin red — empieza en blanco */ }
+          }
+        }
+
+      } else {
+        // Sesión sin id de servidor — borrador completamente nuevo
+        const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+        setBorradorId(nuevo.id);
+        if (hogarId && instrId) {
+          await colaDao.encolar('CREAR_SESION', nuevo.id, {
+            borrador_id: nuevo.id,
             hogar: hogarId,
             instrumento: instrId,
           });
@@ -113,12 +134,10 @@ export default function CapituloScreen() {
     })().catch(() => setCargando(false));
   }, [temaId]);
 
-  // ── Skip logic — derivar mapa codigo_externo→valor para evaluación ──────────
+  // ── Skip logic ──────────────────────────────────────────────────────────────
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
     const m: Record<string, string> = {};
-    for (const p of preguntas) {
-      m[p.codigo_externo] = respuestas[p.id] ?? '';
-    }
+    for (const p of preguntas) m[p.codigo_externo] = respuestas[p.id] ?? '';
     return m;
   }, [preguntas, respuestas]);
 
@@ -131,6 +150,17 @@ export default function CapituloScreen() {
     () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
     [preguntas, visibles],
   );
+
+  // ── Progreso del capítulo ───────────────────────────────────────────────────
+  const { totalOblig, respondidoOblig } = useMemo(() => {
+    const visiblesOblig = preguntasVisibles.filter((p) => p.obligatoria === 1);
+    return {
+      totalOblig: visiblesOblig.length,
+      respondidoOblig: visiblesOblig.filter((p) => !!respuestas[p.id]?.trim()).length,
+    };
+  }, [preguntasVisibles, respuestas]);
+
+  const progresoCap = totalOblig > 0 ? respondidoOblig / totalOblig : 0;
 
   // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
   const setRespuesta = useCallback(async (preguntaId: string, valor: string) => {
@@ -151,11 +181,7 @@ export default function CapituloScreen() {
       });
       await refrescarContadores();
     }
-
-    if (estaOnline) {
-      useSyncStore.getState().triggerSync();
-    }
-  }, [borradorId, borradorIdParam, estaOnline]);
+  }, [borradorId, borradorIdParam]);
 
   // ── Asistente IA ────────────────────────────────────────────────────────────
   const handleTextoTranscrito = useCallback(async (preguntaId: string, texto: string) => {
@@ -163,24 +189,57 @@ export default function CapituloScreen() {
     if (!bid) return;
     iniciarGrabacion(preguntaId);
     const borrador = await borradoresDao.getBorrador(bid);
-    const sesionId = borrador?.sesion_id ?? '';
-    await enviarTexto(sesionId, preguntaId, texto);
+    await enviarTexto(borrador?.sesion_id ?? '', preguntaId, texto);
   }, [borradorId, borradorIdParam, iniciarGrabacion, enviarTexto]);
 
   const handleAceptarSugerencia = useCallback((preguntaId: string) => {
     const resultado = aceptarSugerencia();
-    if (resultado?.sugerencia) {
-      setRespuesta(preguntaId, resultado.sugerencia);
-    }
+    if (resultado?.sugerencia) setRespuesta(preguntaId, resultado.sugerencia);
   }, [aceptarSugerencia, setRespuesta]);
 
   useEffect(() => { return () => { resetearIA(); }; }, []);
 
-  // ── Guardar y volver (sin finalizar sesión) ─────────────────────────────────
-  async function finalizarCapitulo() {
+  // ── Guardar capítulo: validar → bulk sync → volver ──────────────────────────
+  async function guardarYVolver() {
+    const bid = borradorId ?? borradorIdParam;
+
+    // Bulk sync si hay conexión y sesión en servidor
+    if (estaOnline && sesionServerId && bid) {
+      setSincronizando(true);
+      try {
+        const mapa = await borradoresDao.getRespuestaMap(bid);
+        const arr = Object.entries(mapa)
+          .filter(([, v]) => v.trim() !== '')
+          .map(([pregunta_id, valor]) => ({ pregunta_id, valor }));
+        if (arr.length > 0) {
+          await encuestasApi.responderBulk(sesionServerId, arr);
+        }
+      } catch { /* silencioso — la cola lo reintentará */ }
+      finally { setSincronizando(false); }
+    }
+
     await refrescarContadores();
-    if (estaOnline) useSyncStore.getState().triggerSync();
     router.back();
+  }
+
+  async function finalizarCapitulo() {
+    // Preguntas obligatorias visibles sin respuesta
+    const faltantes = preguntasVisibles.filter(
+      (p) => p.obligatoria === 1 && !respuestas[p.id]?.trim(),
+    );
+
+    if (faltantes.length > 0) {
+      Alert.alert(
+        'Preguntas requeridas',
+        `Hay ${faltantes.length} pregunta${faltantes.length > 1 ? 's' : ''} obligatoria${faltantes.length > 1 ? 's' : ''} sin responder.\n\n¿Desea guardar de todas formas?`,
+        [
+          { text: 'Revisar', style: 'cancel' },
+          { text: 'Guardar igual', onPress: guardarYVolver },
+        ],
+      );
+      return;
+    }
+    await guardarYVolver();
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -238,8 +297,26 @@ export default function CapituloScreen() {
         }
       />
 
+      {/* Miga de pan */}
       <View style={styles.miga}>
         <Text style={styles.migaTxt}>Formulario  ›  {migaContexto}</Text>
+      </View>
+
+      {/* Barra de progreso del capítulo */}
+      <View style={styles.progresoWrap}>
+        <View style={styles.progresoRow}>
+          <Text style={styles.progresoLabel}>
+            {respondidoOblig} / {totalOblig} obligatoria{totalOblig !== 1 ? 's' : ''} respondida{totalOblig !== 1 ? 's' : ''}
+          </Text>
+          <Text style={[styles.progresoLabel, { color: progresoCap === 1 ? GOV.verde : GOV.azul, fontWeight: '700' }]}>
+            {Math.round(progresoCap * 100)}%
+          </Text>
+        </View>
+        <ProgressBar
+          progress={progresoCap}
+          style={styles.progressBar}
+          color={progresoCap === 1 ? GOV.verde : GOV.azul}
+        />
       </View>
 
       <FlatList
@@ -271,14 +348,20 @@ export default function CapituloScreen() {
       />
 
       <View style={styles.footerBar}>
-        <GovButton label="Guardar y volver" icon="check" onPress={finalizarCapitulo} />
+        <GovButton
+          label={sincronizando ? 'Sincronizando…' : 'Guardar y volver'}
+          icon={sincronizando ? undefined : 'check'}
+          loading={sincronizando}
+          disabled={sincronizando}
+          onPress={finalizarCapitulo}
+        />
       </View>
     </View>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente de pregunta individual — soporte tipos Diccionario V8
+// Componente de pregunta individual
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BOOLEAN_OPCIONES = [
@@ -318,19 +401,28 @@ function PreguntaItem({
   const esMultiple = pregunta.tipo === 'LISTA_MULTIPLE';
   const esBoolean  = pregunta.tipo === 'BOOLEAN';
 
-  const opcionesBoolean = esBoolean ? BOOLEAN_OPCIONES : [];
-  const opcionesRadio   = esRadio   ? opciones : [];
+  const tieneRespuesta = !!valor?.trim();
+  const esObligatoria  = pregunta.obligatoria === 1;
 
   return (
-    <View style={styles.preguntaCard}>
+    <View style={[
+      styles.preguntaCard,
+      esObligatoria && !tieneRespuesta && styles.preguntaCardPendiente,
+      tieneRespuesta && styles.preguntaCardRespondida,
+    ]}>
       <View style={styles.preguntaHeader}>
-        <View style={styles.numBadge}>
-          <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+        <View style={[styles.numBadge, tieneRespuesta && styles.numBadgeOk]}>
+          {tieneRespuesta
+            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
+            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+          }
         </View>
         <Text style={styles.numTotal}>de {total}</Text>
-        {!!pregunta.obligatoria && (
-          <View style={styles.requeridoChip}>
-            <Text style={styles.requeridoTxt}>Requerida</Text>
+        {esObligatoria && (
+          <View style={[styles.requeridoChip, tieneRespuesta && styles.requeridoChipOk]}>
+            <Text style={[styles.requeridoTxt, tieneRespuesta && styles.requeridoTxtOk]}>
+              {tieneRespuesta ? 'Respondida' : 'Requerida'}
+            </Text>
           </View>
         )}
         {pregunta.no_pregunta ? (
@@ -386,7 +478,7 @@ function PreguntaItem({
 
       {esBoolean && (
         <RadioButton.Group value={valor} onValueChange={onChange}>
-          {opcionesBoolean.map((o) => (
+          {BOOLEAN_OPCIONES.map((o) => (
             <RadioButton.Item key={o.valor} label={o.etiqueta} value={o.valor} />
           ))}
         </RadioButton.Group>
@@ -394,7 +486,7 @@ function PreguntaItem({
 
       {esRadio && (
         <RadioButton.Group value={valor} onValueChange={onChange}>
-          {opcionesRadio.map((o) => (
+          {opciones.map((o) => (
             <RadioButton.Item key={o.id} label={o.etiqueta} value={o.valor} />
           ))}
         </RadioButton.Group>
@@ -435,16 +527,49 @@ const styles = StyleSheet.create({
   offlineTxt:  { color: GOV.naranja, fontSize: 10 },
   iaActivoChip: { backgroundColor: GOV.azulTenue },
   iaActivoTxt:  { color: GOV.azul, fontSize: 10 },
+  miga: {
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  migaTxt: { ...FONT.caption, color: GOV.azulOscuro },
+
+  // Progreso del capítulo
+  progresoWrap: {
+    backgroundColor: GOV.superficie,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  progresoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  progresoLabel: { ...FONT.caption, color: GOV.textoS },
+  progressBar: { height: 6, borderRadius: 3, backgroundColor: GOV.borde },
+
   lista: { padding: SPACING.md, paddingBottom: 96 },
   sinPreguntas: { textAlign: 'center', color: GOV.textoT, marginTop: SPACING.xl, ...FONT.body },
+
+  // Tarjeta de pregunta
   preguntaCard: {
     backgroundColor: GOV.superficie,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderLeftWidth: 4,
-    borderLeftColor: GOV.azul,
+    borderLeftColor: GOV.borde,
     ...SHADOW.card,
+  },
+  preguntaCardPendiente: {
+    borderLeftColor: GOV.naranja,
+  },
+  preguntaCardRespondida: {
+    borderLeftColor: GOV.verde,
   },
   preguntaHeader: {
     flexDirection: 'row',
@@ -460,6 +585,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  numBadgeOk: { backgroundColor: GOV.verde },
   numBadgeTxt: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
   numTotal: { ...FONT.caption, color: GOV.textoT },
   requeridoChip: {
@@ -469,7 +595,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  requeridoTxt: { fontSize: 10, fontWeight: '600', color: GOV.rojo },
+  requeridoChipOk: { backgroundColor: GOV.verdeTenue },
+  requeridoTxt:    { fontSize: 10, fontWeight: '600', color: GOV.rojo },
+  requeridoTxtOk:  { color: GOV.verde },
   codigoTxt: { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace' },
   textoPregunta: { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: SPACING.sm },
   ayuda: { ...FONT.small, color: GOV.textoS, marginBottom: SPACING.sm },
@@ -480,12 +608,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: GOV.borde,
   },
-  miga: {
-    backgroundColor: GOV.azulTenue,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: GOV.borde,
-  },
-  migaTxt: { ...FONT.caption, color: GOV.azulOscuro },
 });

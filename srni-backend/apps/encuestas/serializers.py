@@ -91,6 +91,25 @@ class ResponderPreguntaSerializer(serializers.Serializer):
         return value.strip()
 
 
+class BulkItemSerializer(serializers.Serializer):
+    """Un ítem dentro del bulk — pregunta_id + valor."""
+    pregunta_id = serializers.UUIDField()
+    valor = serializers.CharField(allow_blank=True)
+
+    def validate_valor(self, value):
+        return value.strip()
+
+
+class ResponderBulkSerializer(serializers.Serializer):
+    """Input para POST /api/encuestas/{id}/responder-bulk/"""
+    respuestas = BulkItemSerializer(many=True)
+
+    def validate_respuestas(self, value):
+        if not value:
+            raise serializers.ValidationError('Se requiere al menos una respuesta.')
+        return value
+
+
 class FinalizarSesionSerializer(serializers.Serializer):
     """Input opcional para POST /api/encuestas/{id}/finalizar/"""
     observaciones = serializers.CharField(allow_blank=True, required=False, default='')

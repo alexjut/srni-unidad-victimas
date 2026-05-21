@@ -251,6 +251,31 @@ export async function getReglasPorInstrumento(instrumentoId: string): Promise<Re
   );
 }
 
+/**
+ * Devuelve conteo de preguntas activas por capítulo: total y sólo obligatorias.
+ * Usado para calcular progreso real en la lista de capítulos.
+ */
+export async function contarPreguntasPorCapitulo(): Promise<
+  Record<string, { total: number; obligatorias: number }>
+> {
+  const db = await openDb();
+  const rows = await db.getAllAsync<{
+    capitulo_id: string;
+    total: number;
+    obligatorias: number;
+  }>(
+    `SELECT capitulo_id,
+            COUNT(*) AS total,
+            SUM(CASE WHEN obligatoria = 1 THEN 1 ELSE 0 END) AS obligatorias
+     FROM preguntas
+     WHERE activa = 1
+     GROUP BY capitulo_id`,
+  );
+  const map: Record<string, { total: number; obligatorias: number }> = {};
+  for (const r of rows) map[r.capitulo_id] = { total: r.total, obligatorias: r.obligatorias };
+  return map;
+}
+
 export async function getReglasPorCapitulo(
   capituloId: string,
   instrumentoId: string,

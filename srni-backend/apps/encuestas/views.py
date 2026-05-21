@@ -8,6 +8,7 @@ Flujo de uso:
   4. POST /api/encuestas/{id}/finalizar/   → cierra la sesión (COMPLETADA)
 """
 from django.utils import timezone
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -23,7 +24,7 @@ from .models import SesionEncuesta, RespuestaEncuesta
 from .serializers import (
     SesionEncuestaListSerializer, SesionEncuestaDetalleSerializer,
     RespuestaEncuestaSerializer,
-    ResponderPreguntaSerializer, FinalizarSesionSerializer,
+    ResponderPreguntaSerializer, ResponderBulkSerializer, FinalizarSesionSerializer,
 )
 
 
@@ -191,3 +192,94 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         )
 
         return Response(SesionEncuestaDetalleSerializer(sesion).data)
+
+    @extend_schema(
+        summary='Guardar múltiples respuestas en una sola transacción',
+        description=(
+            'Recibe una lista de {pregunta_id, valor} y hace upsert de todas en una '
+            'transacción atómica. Recalcula el porcentaje una sola vez al final. '
+            'Más eficiente que llamar /responder/ N veces desde el móvil.'
+        ),
+        tags=['Encuestas'],
+        request=ResponderBulkSerializer,
+    )
+    @action(detail=True, methods=['post'], url_path='responder-bulk')
+    def responder_bulk(self, request, pk=None):
+        sesion = self.get_object()
+
+        if sesion.estado == 'COMPLETADA':
+            return Response(
+                {'detail': 'La sesión ya está completada. No se pueden modificar respuestas.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ResponderBulkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        items = serializer.validated_data['respuestas']
+
+        ids = [str(i['pregunta_id']) for i in items]
+        preguntas_qs = Pregunta.objects.filter(
+            pk__in=ids,
+            capitulo__instrumento=sesion.instrumento,
+        )
+        pregunta_map = {str(p.pk): p for p in preguntas_qs}
+
+        invalidas = [pid for pid in ids if pid not in pregunta_map]
+        if invalidas:
+            return Response(
+                {'detail': f'Preguntas no pertenecen al instrumento de esta sesión: {invalidas[:3]}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        creadas, actualizadas = 0, 0
+        with transaction.atomic():
+            for item in items:
+                pid = str(item['pregunta_id'])
+                _, created = RespuestaEncuesta.objects.update_or_create(
+                    sesion=sesion,
+                    pregunta=pregunta_map[pid],
+                    defaults={'valor': item['valor']},
+                )
+                if created:
+                    creadas += 1
+                else:
+                    actualizadas += 1
+
+            nuevo_pct = sesion.recalcular_porcentaje()
+            SesionEncuesta.objects.filter(pk=sesion.pk).update(
+                porcentaje_completado=nuevo_pct,
+                estado='EN_PROGRESO',
+            )
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='RESPONDER_PREGUNTA',
+            recurso='SesionEncuesta',
+            recurso_id=str(sesion.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'accion': 'BULK', 'creadas': creadas, 'actualizadas': actualizadas, 'porcentaje': nuevo_pct},
+        )
+
+        return Response({
+            'porcentaje_completado': nuevo_pct,
+            'creadas': creadas,
+            'actualizadas': actualizadas,
+        })
+
+    @extend_schema(
+        summary='Listar todas las respuestas guardadas de la sesión',
+        description='Devuelve {pregunta (UUID), valor} para restaurar borradores en el cliente.',
+        tags=['Encuestas'],
+        responses={200: RespuestaEncuestaSerializer(many=True)},
+    )
+    @action(detail=True, methods=['get'], url_path='respuestas')
+    def listar_respuestas(self, request, pk=None):
+        sesion = self.get_object()
+        respuestas = (
+            sesion.respuestas
+            .select_related('pregunta')
+            .order_by('pregunta__orden')
+        )
+        return Response(RespuestaEncuestaSerializer(respuestas, many=True).data)
