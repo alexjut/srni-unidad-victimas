@@ -11,12 +11,27 @@ export interface CrearSesionPayload {
 }
 
 export interface ResponderPayload {
-  pregunta_id: string;  // UUID de Pregunta (Sprint 7: cambio de number a string)
+  pregunta_id: string;
   valor: string;
 }
 
 export interface FinalizarPayload {
   observaciones?: string;
+}
+
+export interface RespuestaServidor {
+  id: string;
+  pregunta: string;       // UUID de Pregunta
+  pregunta_codigo: string;
+  pregunta_texto: string;
+  valor: string;
+  updated_at: string;
+}
+
+export interface BulkRespuestaResult {
+  porcentaje_completado: number;
+  creadas: number;
+  actualizadas: number;
 }
 
 export const encuestasApi = {
@@ -34,6 +49,17 @@ export const encuestasApi = {
       `/api/encuestas/${sesionId}/responder/`,
       payload,
     ),
+
+  /** Envía N respuestas en una sola transacción — mucho más eficiente que N llamadas individuales. */
+  responderBulk: (sesionId: string, respuestas: ResponderPayload[]) =>
+    apiClient.post<BulkRespuestaResult>(
+      `/api/encuestas/${sesionId}/responder-bulk/`,
+      { respuestas },
+    ),
+
+  /** Descarga todas las respuestas guardadas para restaurar borradores al abrir un capítulo. */
+  getRespuestas: (sesionId: string) =>
+    apiClient.get<RespuestaServidor[]>(`/api/encuestas/${sesionId}/respuestas/`),
 
   finalizar: (sesionId: string, payload?: FinalizarPayload) =>
     apiClient.post<SesionDetalle>(

@@ -1,10 +1,11 @@
-// Lista de capítulos del instrumento de caracterización.
-import { useEffect, useState } from 'react';
+// Lista de capítulos — Sprint 8: progreso real por capítulo + estado visual.
+import { useEffect, useState, useMemo } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as borradoresDao from '../../../src/db/borradoresDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -12,11 +13,34 @@ import { GovButton } from '../../../src/components/GovButton';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+type EstadoCap = 'pendiente' | 'en_progreso' | 'completado';
+
+interface CapProgress {
+  estado: EstadoCap;
+  respondidas: number;
+  obligatorias: number;
+}
+
+const ESTADO_ICONO: Record<EstadoCap, string> = {
+  pendiente:    'circle-outline',
+  en_progreso:  'progress-clock',
+  completado:   'check-circle',
+};
+
+const ESTADO_COLOR: Record<EstadoCap, string> = {
+  pendiente:   GOV.borde,
+  en_progreso: GOV.naranja,
+  completado:  GOV.verde,
+};
+
 // ─── Tarjeta de capítulo ──────────────────────────────────────────────────────
 
 function CapituloCard({
   capitulo,
   index,
+  progress,
   sesionServerId,
   instrumentoId,
   hogarId,
@@ -24,14 +48,17 @@ function CapituloCard({
 }: {
   capitulo: instrumentoDao.CapituloRow;
   index: number;
+  progress: CapProgress;
   sesionServerId?: string;
   instrumentoId?: string;
   hogarId?: string;
   modoIA: boolean;
 }) {
+  const colorEstado = ESTADO_COLOR[progress.estado];
+  const iconoEstado = ESTADO_ICONO[progress.estado];
+
   function handlePress() {
     if (modoIA) {
-      // Modo asistido por IA: ir a la pantalla de grabación de entrevista
       router.push({
         pathname: '/(main)/formulario/grabacion-entrevista' as any,
         params: {
@@ -42,7 +69,6 @@ function CapituloCard({
         },
       });
     } else {
-      // Modo manual: ir directamente al motor de preguntas
       router.push({
         pathname: '/(main)/formulario/[temaId]',
         params: {
@@ -58,23 +84,52 @@ function CapituloCard({
   return (
     <Pressable
       onPress={handlePress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+        progress.estado === 'completado' && styles.cardCompletado,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={`Capítulo ${index + 1}: ${capitulo.nombre}`}
     >
-      <View style={styles.numCircle}>
-        <Text style={styles.numTxt}>{String(index + 1).padStart(2, '0')}</Text>
+      {/* Número / estado */}
+      <View style={[styles.numCircle, { borderColor: colorEstado + '88' }]}>
+        {progress.estado === 'pendiente' ? (
+          <Text style={[styles.numTxt, { color: GOV.textoT }]}>{String(index + 1).padStart(2, '0')}</Text>
+        ) : (
+          <MaterialCommunityIcons
+            name={iconoEstado as any}
+            size={20}
+            color={colorEstado}
+          />
+        )}
       </View>
 
       <View style={styles.cardTexto}>
-        <Text style={styles.capNombre} numberOfLines={2}>{capitulo.nombre}</Text>
-        <Text style={styles.capCodigo}>
-          [{capitulo.codigo}] · {capitulo.nivel === 'PERSONA' ? 'Por persona' : 'Por hogar'}
+        <Text style={[styles.capNombre, progress.estado === 'completado' && styles.capNombreOk]} numberOfLines={2}>
+          {capitulo.nombre}
         </Text>
+        <Text style={styles.capCodigo}>
+          [{capitulo.codigo}]  ·  {capitulo.nivel === 'PERSONA' ? 'Por persona' : 'Por hogar'}
+        </Text>
+
+        {/* Mini barra de progreso por capítulo */}
+        {progress.obligatorias > 0 && (
+          <View style={styles.capProgresoWrap}>
+            <ProgressBar
+              progress={progress.respondidas / progress.obligatorias}
+              style={styles.capProgressBar}
+              color={colorEstado}
+            />
+            <Text style={[styles.capProgresoPct, { color: colorEstado }]}>
+              {progress.respondidas}/{progress.obligatorias}
+            </Text>
+          </View>
+        )}
       </View>
 
       {modoIA ? (
-        <MaterialCommunityIcons name="robot" size={18} color={GOV.azul} style={{ marginRight: 4 }} />
+        <MaterialCommunityIcons name="robot" size={16} color={GOV.azul} style={{ marginRight: 4 }} />
       ) : null}
       <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
     </Pressable>
@@ -95,8 +150,13 @@ export default function FormularioIndexScreen() {
   const [capitulos, setCapitulos] = useState<instrumentoDao.CapituloRow[]>([]);
   const [meta, setMeta] = useState<instrumentoDao.InstrumentoMeta | null>(null);
   const [cargando, setCargando] = useState(true);
-  // null = no elegido todavía | false = manual | true = asistido por IA
   const [modoIA, setModoIA] = useState<boolean | null>(null);
+
+  // Progreso por capítulo
+  const [conteoPreguntas, setConteoPreguntas] = useState<
+    Record<string, { total: number; obligatorias: number }>
+  >({});
+  const [conteoRespondidas, setConteoRespondidas] = useState<Record<string, number>>({});
 
   // Finalizar sesión
   const [modalFinalizar, setModalFinalizar] = useState(false);
@@ -104,14 +164,66 @@ export default function FormularioIndexScreen() {
   const [finalizando, setFinalizando] = useState(false);
 
   useEffect(() => {
-    Promise.all([instrumentoDao.getCapitulos(), instrumentoDao.getMeta()])
-      .then(([caps, m]) => {
-        setCapitulos(caps);
-        setMeta(m);
-      })
+    (async () => {
+      const [caps, m, conteo] = await Promise.all([
+        instrumentoDao.getCapitulos(),
+        instrumentoDao.getMeta(),
+        instrumentoDao.contarPreguntasPorCapitulo(),
+      ]);
+      setCapitulos(caps);
+      setMeta(m);
+      setConteoPreguntas(conteo);
+
+      // Cargar respuestas del borrador vinculado a esta sesión
+      if (sesionServerId) {
+        const borrador = await borradoresDao.findBySesionId(sesionServerId);
+        if (borrador) {
+          setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
+        }
+      }
+    })()
       .catch(() => {})
       .finally(() => setCargando(false));
-  }, []);
+  }, [sesionServerId]);
+
+  // Recalcular progreso al volver de un capítulo
+  useEffect(() => {
+    if (!sesionServerId) return;
+    const refrescar = async () => {
+      const borrador = await borradoresDao.findBySesionId(sesionServerId);
+      if (borrador) {
+        setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
+      }
+    };
+    // Expo Router no tiene un onFocus nativo fácil aquí; usamos un pequeño delay
+    const t = setTimeout(refrescar, 300);
+    return () => clearTimeout(t);
+  }, [sesionServerId]);
+
+  // ── Progreso global ─────────────────────────────────────────────────────────
+  const { totalObligGlobal, respondidoGlobal, capsCompletados } = useMemo(() => {
+    let total = 0, respondido = 0, completados = 0;
+    for (const cap of capitulos) {
+      const cp = conteoPreguntas[cap.id];
+      const cr = conteoRespondidas[cap.id] ?? 0;
+      if (!cp) continue;
+      total      += cp.obligatorias;
+      respondido += Math.min(cr, cp.obligatorias);
+      if (cp.obligatorias > 0 && cr >= cp.obligatorias) completados++;
+    }
+    return { totalObligGlobal: total, respondidoGlobal: respondido, capsCompletados: completados };
+  }, [capitulos, conteoPreguntas, conteoRespondidas]);
+
+  const progresoGlobal = totalObligGlobal > 0 ? respondidoGlobal / totalObligGlobal : 0;
+
+  function getCapProgress(capId: string): CapProgress {
+    const cp = conteoPreguntas[capId];
+    const cr = conteoRespondidas[capId] ?? 0;
+    if (!cp || cp.obligatorias === 0) return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
+    if (cr >= cp.obligatorias) return { estado: 'completado', respondidas: cr, obligatorias: cp.obligatorias };
+    if (cr > 0)                return { estado: 'en_progreso', respondidas: cr, obligatorias: cp.obligatorias };
+    return { estado: 'pendiente', respondidas: 0, obligatorias: cp.obligatorias };
+  }
 
   async function handleFinalizar() {
     if (!sesionServerId) return;
@@ -125,7 +237,7 @@ export default function FormularioIndexScreen() {
         [{ text: 'Aceptar', onPress: () => router.back() }],
       );
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión. Verifique la conexión.');
+      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión.');
     } finally {
       setFinalizando(false);
     }
@@ -160,7 +272,6 @@ export default function FormularioIndexScreen() {
     );
   }
 
-  // ── Selector de modo (solo si hay sesión en servidor y no se ha elegido aún) ──
   const mostrarSelectorModo = modoIA === null && !!sesionServerId;
 
   return (
@@ -179,23 +290,19 @@ export default function FormularioIndexScreen() {
         </View>
       )}
 
-      {/* ── Selector de modo de captura ─────────────────────────────────────── */}
+      {/* ── Selector de modo ────────────────────────────────────────────────── */}
       {mostrarSelectorModo && (
         <View style={styles.selectorModo}>
           <Text style={styles.selectorTitulo}>Seleccione el modo de captura</Text>
-
           <View style={styles.selectorBotones}>
             <Pressable
               style={({ pressed }) => [styles.modoCard, pressed && styles.modoCardPressed]}
               onPress={() => setModoIA(false)}
               accessibilityRole="button"
-              accessibilityLabel="Modo manual"
             >
               <MaterialCommunityIcons name="pencil" size={28} color={GOV.azulOscuro} />
               <Text style={styles.modoCardTitulo}>Manual</Text>
-              <Text style={styles.modoCardDesc}>
-                Responda cada pregunta directamente en el formulario.
-              </Text>
+              <Text style={styles.modoCardDesc}>Responda cada pregunta directamente.</Text>
             </Pressable>
 
             {iaActivo ? (
@@ -203,13 +310,10 @@ export default function FormularioIndexScreen() {
                 style={({ pressed }) => [styles.modoCard, styles.modoCardIA, pressed && styles.modoCardPressed]}
                 onPress={() => setModoIA(true)}
                 accessibilityRole="button"
-                accessibilityLabel="Modo asistido por IA"
               >
                 <MaterialCommunityIcons name="robot" size={28} color={GOV.azul} />
                 <Text style={[styles.modoCardTitulo, { color: GOV.azul }]}>Asistido por IA</Text>
-                <Text style={styles.modoCardDesc}>
-                  Transcriba la entrevista y el asistente sugerirá las respuestas.
-                </Text>
+                <Text style={styles.modoCardDesc}>Transcriba la entrevista.</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -221,20 +325,17 @@ export default function FormularioIndexScreen() {
                   })
                 }
                 accessibilityRole="button"
-                accessibilityLabel="Activar IA"
               >
                 <MaterialCommunityIcons name="robot-off" size={28} color={GOV.textoT} />
                 <Text style={[styles.modoCardTitulo, { color: GOV.textoS }]}>Asistido por IA</Text>
-                <Text style={styles.modoCardDesc}>
-                  Requiere activar el consentimiento IA. Toque para activar.
-                </Text>
+                <Text style={styles.modoCardDesc}>Toque para activar el consentimiento IA.</Text>
               </Pressable>
             )}
           </View>
         </View>
       )}
 
-      {/* ── Indicador de modo activo ────────────────────────────────────────── */}
+      {/* ── Banner de modo activo ────────────────────────────────────────────── */}
       {modoIA !== null && (
         <View style={[styles.modoActivoBanner, modoIA ? styles.modoActivoIA : styles.modoActivoManual]}>
           <MaterialCommunityIcons
@@ -251,12 +352,24 @@ export default function FormularioIndexScreen() {
         </View>
       )}
 
+      {/* ── Progreso global ──────────────────────────────────────────────────── */}
       <View style={styles.progresoWrap}>
         <View style={styles.progresoRow}>
-          <Text style={styles.progresoLabel}>{capitulos.length} capítulos</Text>
-          <Text style={styles.progresoLabel}>Seleccione un capítulo</Text>
+          <Text style={styles.progresoLabel}>
+            {capsCompletados} de {capitulos.length} capítulos completados
+          </Text>
+          <Text style={[styles.progresoLabel, {
+            fontWeight: '700',
+            color: progresoGlobal === 1 ? GOV.verde : GOV.azul,
+          }]}>
+            {Math.round(progresoGlobal * 100)}%
+          </Text>
         </View>
-        <ProgressBar progress={0} style={styles.progressBar} color={GOV.azul} />
+        <ProgressBar
+          progress={progresoGlobal}
+          style={styles.progressBar}
+          color={progresoGlobal === 1 ? GOV.verde : GOV.azul}
+        />
       </View>
 
       <FlatList
@@ -266,6 +379,7 @@ export default function FormularioIndexScreen() {
           <CapituloCard
             capitulo={item}
             index={index}
+            progress={getCapProgress(item.id)}
             sesionServerId={sesionServerId}
             instrumentoId={instrumentoId}
             hogarId={hogarId}
@@ -287,7 +401,7 @@ export default function FormularioIndexScreen() {
         }
       />
 
-      {/* Modal de confirmación de finalización */}
+      {/* Modal de finalización */}
       <Modal
         visible={modalFinalizar}
         transparent
@@ -303,7 +417,9 @@ export default function FormularioIndexScreen() {
             <Text style={styles.modalCuerpo}>
               Al finalizar, la sesión quedará en estado{' '}
               <Text style={styles.modalDestacado}>COMPLETADA</Text> y no podrá
-              modificarse. {capitulos.length} capítulos en este formulario.
+              modificarse.{'\n\n'}
+              Progreso actual: <Text style={styles.modalDestacado}>{Math.round(progresoGlobal * 100)}%</Text>
+              {' '}({capsCompletados}/{capitulos.length} capítulos).
             </Text>
 
             <Text style={styles.modalLabel}>Observaciones (opcional)</Text>
@@ -342,6 +458,8 @@ export default function FormularioIndexScreen() {
   );
 }
 
+// ─── Estilos ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: GOV.fondoApp },
   miga: {
@@ -352,12 +470,9 @@ const styles = StyleSheet.create({
     borderBottomColor: GOV.borde,
   },
   migaTxt: { ...FONT.caption, color: GOV.azulOscuro },
-  centrado: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl,
-  },
+  centrado: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
   cargandoTxt: { ...FONT.small, color: GOV.textoS, marginTop: SPACING.sm },
 
-  // ── Selector de modo ──────────────────────────────────────────────────────
   selectorModo: {
     backgroundColor: GOV.superficie,
     padding: SPACING.md,
@@ -377,30 +492,18 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
     ...SHADOW.card,
   },
-  modoCardIA: {
-    borderColor: GOV.azul + '66',
-    backgroundColor: GOV.azulTenue,
-  },
-  modoCardIADesactivado: {
-    opacity: 0.6,
-  },
-  modoCardPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  modoCardTitulo: { ...FONT.h3, color: GOV.azulOscuro, textAlign: 'center' },
-  modoCardDesc: { ...FONT.caption, color: GOV.textoS, textAlign: 'center' },
+  modoCardIA:           { borderColor: GOV.azul + '66', backgroundColor: GOV.azulTenue },
+  modoCardIADesactivado:{ opacity: 0.6 },
+  modoCardPressed:      { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  modoCardTitulo:       { ...FONT.h3, color: GOV.azulOscuro, textAlign: 'center' },
+  modoCardDesc:         { ...FONT.caption, color: GOV.textoS, textAlign: 'center' },
 
-  // ── Banner de modo activo ─────────────────────────────────────────────────
-  modoActivoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    gap: SPACING.xs,
-  },
-  modoActivoIA:     { backgroundColor: GOV.azulTenue },
-  modoActivoManual: { backgroundColor: GOV.fondoApp, borderBottomWidth: 1, borderBottomColor: GOV.borde },
-  modoActivoTxt:    { ...FONT.caption, flex: 1 },
-  cambiarModo:      { paddingHorizontal: SPACING.sm },
-  cambiarModoTxt:   { ...FONT.caption, color: GOV.azul, fontWeight: '600' },
+  modoActivoBanner:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: 6, gap: SPACING.xs },
+  modoActivoIA:      { backgroundColor: GOV.azulTenue },
+  modoActivoManual:  { backgroundColor: GOV.fondoApp, borderBottomWidth: 1, borderBottomColor: GOV.borde },
+  modoActivoTxt:     { ...FONT.caption, flex: 1 },
+  cambiarModo:       { paddingHorizontal: SPACING.sm },
+  cambiarModoTxt:    { ...FONT.caption, color: GOV.azul, fontWeight: '600' },
 
   progresoWrap: {
     backgroundColor: GOV.superficie,
@@ -409,42 +512,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: GOV.borde,
   },
-  progresoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  progresoRow:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   progresoLabel: { ...FONT.caption, color: GOV.textoS },
-  progressBar: { height: 4, borderRadius: 2, backgroundColor: GOV.borde },
+  progressBar:   { height: 6, borderRadius: 3, backgroundColor: GOV.borde },
+
   lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
   footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
 
-  // ── Modal de finalización ─────────────────────────────────────────────────
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalCard: {
-    backgroundColor: GOV.superficie,
-    borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    paddingBottom: SPACING.xl,
-    gap: SPACING.sm,
-  },
-  modalTitulo: { ...FONT.h2, color: GOV.azulOscuro },
-  modalCuerpo: { ...FONT.body, color: GOV.textoS, lineHeight: 22 },
-  modalDestacado: { fontWeight: '700', color: GOV.azulOscuro },
-  modalLabel: { ...FONT.label, color: GOV.textoT, marginTop: SPACING.xs },
-  modalTextArea: {
-    backgroundColor: GOV.fondoApp,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    fontSize: 14,
-  },
-  modalBotones: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: SPACING.sm,
-    marginTop: SPACING.sm,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,8 +527,12 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     ...SHADOW.card,
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
   },
-  cardPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
+  cardCompletado: { borderLeftColor: GOV.verde },
+  cardPressed:    { opacity: 0.9, transform: [{ scale: 0.99 }] },
+
   numCircle: {
     width: 40,
     height: 40,
@@ -463,11 +541,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
-    borderWidth: 1,
-    borderColor: GOV.azul + '33',
+    borderWidth: 1.5,
+    borderColor: GOV.borde,
   },
   numTxt: { fontSize: 13, fontWeight: '800', color: GOV.azul },
+
   cardTexto: { flex: 1 },
-  capNombre: { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: 2 },
-  capCodigo: { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace' },
+  capNombre:   { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: 2 },
+  capNombreOk: { color: GOV.verde },
+  capCodigo:   { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace', marginBottom: 4 },
+
+  capProgresoWrap: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 2 },
+  capProgressBar:  { flex: 1, height: 4, borderRadius: 2 },
+  capProgresoPct:  { fontSize: 10, fontWeight: '700', minWidth: 28, textAlign: 'right' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalCard: {
+    backgroundColor: GOV.superficie,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  modalTitulo:    { ...FONT.h2, color: GOV.azulOscuro },
+  modalCuerpo:    { ...FONT.body, color: GOV.textoS, lineHeight: 22 },
+  modalDestacado: { fontWeight: '700', color: GOV.azulOscuro },
+  modalLabel:     { ...FONT.label, color: GOV.textoT, marginTop: SPACING.xs },
+  modalTextArea:  { backgroundColor: GOV.fondoApp, minHeight: 80, textAlignVertical: 'top', fontSize: 14 },
+  modalBotones:   { flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: SPACING.sm },
 });

@@ -119,3 +119,33 @@ export async function vincularSesionServidor(borradorId: string, sesionId: strin
     [sesionId, new Date().toISOString(), borradorId],
   );
 }
+
+/** Busca un borrador local vinculado a una sesión del servidor. */
+export async function findBySesionId(sesionId: string): Promise<BorradorRow | null> {
+  const db = await openDb();
+  return db.getFirstAsync<BorradorRow>(
+    'SELECT * FROM borradores WHERE sesion_id = ?',
+    [sesionId],
+  );
+}
+
+/**
+ * Cuenta respuestas no vacías por capítulo para un borrador dado.
+ * Útil para calcular progreso por capítulo en la lista de capítulos.
+ */
+export async function contarRespuestasPorCapitulo(
+  borradorId: string,
+): Promise<Record<string, number>> {
+  const db = await openDb();
+  const rows = await db.getAllAsync<{ capitulo_id: string; cnt: number }>(
+    `SELECT p.capitulo_id, COUNT(*) AS cnt
+     FROM respuestas r
+     JOIN preguntas p ON p.id = r.pregunta_id
+     WHERE r.borrador_id = ? AND r.valor != ''
+     GROUP BY p.capitulo_id`,
+    [borradorId],
+  );
+  const map: Record<string, number> = {};
+  for (const r of rows) map[r.capitulo_id] = r.cnt;
+  return map;
+}

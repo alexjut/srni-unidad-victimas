@@ -163,7 +163,7 @@ export default function SesionDetalleScreen() {
             <Text style={styles.seccionTitulo}>Continuar</Text>
 
             <GovButton
-              label="Continuar formulario PAARI"
+              label={`Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`}
               icon="clipboard-text"
               onPress={() =>
                 router.push({
