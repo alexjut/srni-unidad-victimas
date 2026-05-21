@@ -118,6 +118,9 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '20/hour',
         'user': '1000/hour',
+        'login':        '5/minute',    # 5 intentos de login por minuto por IP
+        'busqueda_rni': '30/hour',     # 30 búsquedas RNI por hora por usuario
+        'ia_consulta':  '20/hour',     # 20 consultas IA por hora
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }

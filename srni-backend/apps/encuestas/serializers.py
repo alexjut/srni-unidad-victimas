@@ -85,7 +85,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
 class ResponderPreguntaSerializer(serializers.Serializer):
     """Input para POST /api/encuestas/{id}/responder/"""
     pregunta_id = serializers.UUIDField()
-    valor = serializers.CharField(allow_blank=True)
+    valor = serializers.CharField(allow_blank=True, max_length=50_000)
 
     def validate_valor(self, value):
         return value.strip()
@@ -94,7 +94,7 @@ class ResponderPreguntaSerializer(serializers.Serializer):
 class BulkItemSerializer(serializers.Serializer):
     """Un ítem dentro del bulk — pregunta_id + valor."""
     pregunta_id = serializers.UUIDField()
-    valor = serializers.CharField(allow_blank=True)
+    valor = serializers.CharField(allow_blank=True, max_length=50_000)
 
     def validate_valor(self, value):
         return value.strip()
@@ -107,9 +107,13 @@ class ResponderBulkSerializer(serializers.Serializer):
     def validate_respuestas(self, value):
         if not value:
             raise serializers.ValidationError('Se requiere al menos una respuesta.')
+        if len(value) > 2_000:
+            raise serializers.ValidationError('Máximo 2000 respuestas por lote.')
         return value
 
 
 class FinalizarSesionSerializer(serializers.Serializer):
     """Input opcional para POST /api/encuestas/{id}/finalizar/"""
-    observaciones = serializers.CharField(allow_blank=True, required=False, default='')
+    observaciones = serializers.CharField(
+        allow_blank=True, required=False, default='', max_length=2_000,
+    )

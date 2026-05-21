@@ -9,6 +9,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .serializers import LoginSerializer, UsuarioMeSerializer, CambiarPasswordSerializer
+from .throttles import LoginRateThrottle
 
 
 class LoginView(TokenObtainPairView):
@@ -19,6 +20,7 @@ class LoginView(TokenObtainPairView):
     """
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]   # 5 intentos/min por IP
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
