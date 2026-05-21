@@ -3,7 +3,7 @@
 **Tecnología:** React Native + Expo SDK 54  
 **Enrutamiento:** Expo Router (file-based routing)  
 **Estado:** En desarrollo activo  
-**Última actualización:** 2026-05-06
+**Última actualización:** 2026-05-21
 
 ---
 
@@ -41,13 +41,15 @@ srni-mobile/app/
     │   └── index.tsx                    ✅ Flujo instrumento → hogar → crear sesión
     ├── formulario/
     │   ├── index.tsx                    ✅ Lista de capítulos del instrumento
-    │   ├── [temaId].tsx                ✅ Motor de preguntas + skip logic offline
+    │   ├── [temaId].tsx                ✅ Motor preguntas + skip logic + carga previa + bulk sync (S8)
     │   ├── consentimiento-ia.tsx       ✅ Consentimiento para asistente IA
-    │   ├── grabacion-entrevista.tsx    ❌ Pendiente (modo Gemini)
-    │   └── revision-ia.tsx            ❌ Pendiente (modo Gemini)
-    └── encuestas/
-        ├── index.tsx                    ✅ Lista de sesiones de encuesta
-        └── [sesionId].tsx              ✅ Detalle de sesión + navegación al formulario
+    │   ├── grabacion-entrevista.tsx    ✅ Modo Gemini — grabación batch por capítulo (S7)
+    │   └── revision-ia.tsx            ✅ Revisión y confirmación de sugerencias IA (S7)
+    ├── encuestas/
+    │   ├── index.tsx                    ✅ Lista de sesiones de encuesta
+    │   └── [sesionId].tsx              ✅ Detalle de sesión + nombre dinámico instrumento (S8)
+    ├── sync-status.tsx                 ✅ Estado de la cola de sincronización (S9)
+    └── reportes.tsx                    ✅ Reportes de producción con métricas y export CSV (S10)
 ```
 
 ---
@@ -66,7 +68,7 @@ Tab Caracterizar
   → Cola de sincronización → servidor cuando haya conexión
 ```
 
-### Modo Asistido Gemini (pendiente Sprint 7)
+### Modo Asistido Gemini (implementado Sprint 7)
 
 ```
 Tab Caracterizar → Seleccionar instrumento → Seleccionar hogar → Crear sesión
@@ -77,6 +79,8 @@ Tab Caracterizar → Seleccionar instrumento → Seleccionar hogar → Crear ses
   → Guardar respuestas confirmadas
 ```
 
+Degrada silenciosamente a modo manual cuando no hay conexión.
+
 ---
 
 ## Stack técnico
@@ -86,16 +90,16 @@ Tab Caracterizar → Seleccionar instrumento → Seleccionar hogar → Crear ses
 | Framework | React Native + Expo SDK 54 |
 | Routing | Expo Router (file-based) |
 | UI | React Native Paper (estilo GOV.CO) |
-| Estado global | Zustand (`authStore`, `syncStore`, `iaStore`) |
+| Estado global | Zustand (`authStore`, `syncStore`, `iaStore`, `caracterizacionStore`) |
 | HTTP | Axios + interceptores JWT |
-| Almacenamiento local | expo-sqlite (schema offline, Migration V2) |
+| Almacenamiento local | expo-sqlite (schema offline, Migration V3) |
 | IA asistente | Proxy Gemini vía backend Django |
 
 ---
 
-## SQLite local — Schema V2 (Sprint 7)
+## SQLite local — Schema V3 (Sprint 9)
 
-Las tablas fueron recreadas con TEXT PKs (UUID) para alinear con los IDs del servidor.
+Las tablas usan TEXT PKs (UUID) alineados con IDs del servidor. Migration V3 agrega columna `retry_after` a la cola.
 
 ```sql
 -- Tablas principales
@@ -110,15 +114,18 @@ hogares_offline   -- hogares creados sin conexión
 borradores        -- sesiones pendientes de sincronizar
 borradores_resp   -- respuestas en borrador por sesión
 
--- Cola de sincronización
-cola_sincronizacion -- operaciones pendientes con reintentos
+-- Cola de sincronización (V3)
+cola_sincronizacion -- operaciones con backoff exponencial (retry_after)
 ```
 
 **Tipos de operaciones en la cola:**
 - `CREAR_HOGAR` — hogar creado offline
 - `CREAR_SESION` — sesión creada offline
 - `RESPONDER_PREGUNTA` — respuesta individual
+- `RESPONDER_BULK` — N respuestas de un capítulo en un ítem (Sprint 8/9)
 - `FINALIZAR_SESION` — cierre de sesión
+
+**Backoff exponencial:** intento 1 → espera 30s · intento 2 → espera 120s · intento 3 → estado `error` definitivo.
 
 ---
 
@@ -137,25 +144,42 @@ Las reglas se descargan junto con el instrumento en `GET /api/formulario/instrum
 
 ## Seguridad implementada
 
-- Tokens JWT en memoria (Zustand) — nunca en AsyncStorage persistente
-- Logout limpia Zustand + expo-sqlite
+- Tokens JWT en `expo-secure-store` (keychain del SO) — nunca en AsyncStorage
+- Auto-login biométrico (huella/Face ID) con `expo-local-authentication`
+- Logout limpia Zustand + expo-sqlite + expo-secure-store
 - Búsqueda RNI solo server-side, el cliente recibe resúmenes paginados
 - Sin datos PII almacenados localmente en SQLite
 - Interceptor Axios que añade `Authorization: Bearer` en cada request
-- `allowBackup: false` en configuración de la app
+- Refresh automático de token al recibir 401
+- `allowBackup: false` en configuración de la app (Android)
 
 ---
 
-## Pendientes de la app móvil
+## Estado actual — todo implementado (Sprint 11)
 
-| Pendiente | Sprint | Prioridad |
-|-----------|--------|-----------|
-| Modo Gemini: grabación + revisión batch | Sprint 7 | Alta |
-| Opciones en preguntas LISTA/RADIO de instrumentos V7 | Sprint 7 | Alta |
-| Pantalla finalizar sesión desde formulario | Sprint 7 | Media |
-| Pantalla de perfil del encuestador | Sprint 7 | Baja |
-| Push notifications para asignaciones | Sprint 8 | Baja |
-| Firma digital al cerrar encuesta | Sprint 8 | Media |
+| Funcionalidad | Sprint | Estado |
+|--------------|--------|--------|
+| Login JWT + biometría + UI GOV.CO | S5/S7 | ✅ |
+| Búsqueda RNI server-side | S3 | ✅ |
+| Gestión de hogares y miembros | S3 | ✅ |
+| Flujo de caracterización (instrumento → hogar → sesión) | S7 | ✅ |
+| Motor de formulario con skip logic offline | S4/S8 | ✅ |
+| Carga de respuestas previas al abrir capítulo | S8 | ✅ |
+| Bulk sync al guardar capítulo | S8 | ✅ |
+| Modo Gemini: grabación + revisión batch | S7 | ✅ |
+| Cola robusta con backoff exponencial | S9 | ✅ |
+| Path offline al guardar capítulo | S9 | ✅ |
+| Pantalla sync-status con estado de la cola | S9 | ✅ |
+| Reportes de producción con métricas y export CSV | S10 | ✅ |
+
+## Pendientes (backlog Fase 2)
+
+| Pendiente | Prioridad |
+|-----------|-----------|
+| Push notifications para asignaciones nuevas | Baja |
+| Firma digital del encuestador al cerrar sesión | Media |
+| Dashboard web de supervisores (Angular — Fase 2) | Alta |
+| Panel de gestión (Django Admin extendido) | Media |
 
 ---
 

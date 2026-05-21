@@ -4,7 +4,7 @@
 **Base URL dev:** `http://localhost:8001/api/`  
 **Base URL prod:** `https://srniapk-dev.ngrok.app/api/` (tunnel ngrok)  
 **Autenticación:** JWT Bearer Token  
-**Última actualización:** 2026-05-06
+**Última actualización:** 2026-05-21
 
 ---
 
@@ -63,7 +63,7 @@
 
 **Importante:** Nunca se devuelven datos PII completos al cliente.
 La búsqueda se ejecuta en el servidor con índice SHA-256 sobre campos cifrados.
-Rate limit: 100 búsquedas / hora por usuario.
+Rate limit: **30 búsquedas / hora por usuario** (`BusquedaRNIThrottle` — Sprint 11).
 
 ---
 
@@ -182,6 +182,7 @@ Respuesta:
 | POST | `/encuestas/` | Iniciar nueva sesión | Sí |
 | GET | `/encuestas/{id}/` | Detalle de sesión | Sí |
 | POST | `/encuestas/{id}/responder/` | Guardar respuesta individual | Sí |
+| POST | `/encuestas/{id}/responder-bulk/` | Guardar N respuestas en una sola llamada (Sprint 8) | Sí |
 | POST | `/encuestas/{id}/finalizar/` | Cerrar sesión (estado COMPLETADA) | Sí |
 
 ### Crear sesión
@@ -201,6 +202,21 @@ Respuesta:
 
 Estados posibles: `INICIADA` → `EN_PROGRESO` → `COMPLETADA` | `CANCELADA`
 
+### `POST /encuestas/{id}/responder-bulk/` (Sprint 8)
+
+Envía todas las respuestas de un capítulo en una sola llamada. Máximo 2,000 ítems por lote.
+
+```json
+{
+  "respuestas": [
+    { "pregunta_id": "uuid", "valor": "1" },
+    { "pregunta_id": "uuid", "valor": "texto libre" }
+  ]
+}
+```
+
+Límites (Sprint 11): `valor` máx 50,000 chars · `observaciones` máx 2,000 chars · máx 2,000 ítems por bulk.
+
 ---
 
 ## IA Gemini (Asistente)
@@ -208,12 +224,13 @@ Estados posibles: `INICIADA` → `EN_PROGRESO` → `COMPLETADA` | `CANCELADA`
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
 | POST | `/ia/mapear-audio/` | Sugerencia de respuesta para una pregunta (audio/texto) | Sí |
-| POST | `/ia/procesar-entrevista/` | Batch: extrae respuestas de toda la entrevista de un capítulo | Sí ⚠️ Pendiente |
+| POST | `/ia/procesar-entrevista/` | Batch: extrae respuestas de toda la entrevista de un capítulo | Sí |
 
 **Nota:** El cliente nunca llama directamente a la API de Google.
 Todo pasa por el proxy Django que valida consentimiento IA y aplica rate limiting.
+Rate limit: **20 consultas / hora por usuario** (`IAConsultaThrottle` — Sprint 11).
 
-### `POST /ia/procesar-entrevista/` (pendiente Sprint 7)
+### `POST /ia/procesar-entrevista/` (implementado Sprint 7)
 ```json
 {
   "sesion_encuesta_id": "uuid",
@@ -251,12 +268,43 @@ Respuesta:
 
 ---
 
+## Reportes de Producción (Sprint 10)
+
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| GET | `/reportes/produccion/` | Resumen del encuestador autenticado | Sí |
+| GET | `/reportes/produccion/detalle/` | Sesiones paginadas (`?page=1&estado=completada`) | Sí |
+| GET | `/reportes/produccion/export/` | Descarga CSV streaming (`?desde=&hasta=`) | Sí |
+
+**Scoping automático:** cada encuestador solo ve sus propias sesiones. El filtro `encuestador=request.user` se aplica en el servidor.
+
+### `GET /reportes/produccion/`
+
+Parámetros opcionales: `desde=YYYY-MM-DD`, `hasta=YYYY-MM-DD`
+
+```json
+{
+  "total": 42,
+  "completadas": 28,
+  "en_progreso": 10,
+  "sin_iniciar": 4,
+  "hogares_caracterizados": 31,
+  "respuestas_total": 4820,
+  "promedio_completado": 78.3,
+  "por_instrumento": [
+    { "instrumento": "TERRITORIAL V7", "total": 18, "completadas": 14 }
+  ],
+  "sesiones_recientes": []
+}
+```
+
+---
+
 ## Auditoría
 
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
 | GET | `/auditoria/accesos/` | Log de accesos (inmutable) | Supervisor+ |
-| GET | `/reportes/produccion/` | Producción por encuestador | Supervisor+ |
 
 **LogAcceso es inmutable:** la tabla no tiene permisos UPDATE/DELETE desde la app.
 
