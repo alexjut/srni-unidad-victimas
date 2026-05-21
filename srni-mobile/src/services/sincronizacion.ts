@@ -1,7 +1,8 @@
-// Sincronización offline → servidor: cola de operaciones con reintentos y resolución de conflictos.
+// Sincronización offline → servidor: cola con backoff exponencial y bulk de respuestas.
 import apiClient from '../api/client';
 import { hogaresApi } from '../api/hogares';
 import { encuestasApi } from '../api/encuestas';
+import type { ResponderPayload } from '../api/encuestas';
 import * as instrumentoDao from '../db/instrumentoDao';
 import * as borradoresDao from '../db/borradoresDao';
 import { openDb } from '../db/schema';
@@ -23,18 +24,18 @@ export async function estaOnline(): Promise<boolean> {
 
 /**
  * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
- * Usa el endpoint offline-first: GET /api/formulario/instrumento/{perfil_codigo}/
  * Si ya tenemos la misma versión no hace nada.
+ * Usa el perfil_codigo del meta local cuando no se pasa parámetro.
  */
-export async function descargarInstrumento(perfilCodigo = 'TERRITORIAL'): Promise<boolean> {
+export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
   try {
     const meta = await instrumentoDao.getMeta();
+    const perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
 
     const { data } = await apiClient.get(
-      `/api/formulario/instrumento/${perfilCodigo}/`,
+      `/api/formulario/instrumento/${perfil}/`,
     );
 
-    // Mismo instrumento y versión → nada que hacer
     if (
       meta?.instrumento_id === data.id &&
       meta?.version === data.numero
@@ -77,17 +78,15 @@ async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
     observaciones: payload.observaciones,
   });
 
-  // Actualizar el UUID local con el del servidor en hogares_offline y borradores
   await hogaresOfflineDao.marcarSincronizado(payload.id_local, data.id);
 
-  // Actualizar todos los borradores que referencian este hogar local
   const db = await openDb();
   await db.runAsync(
     'UPDATE borradores SET hogar_id = ? WHERE hogar_id = ?',
     [data.id, payload.id_local],
   );
 
-  // Actualizar el payload de los items CREAR_SESION que usen el id_local
+  // Actualizar referencias en CREAR_SESION pendientes
   const itemsSesion = await db.getAllAsync<{ id: number; payload: string }>(
     "SELECT id, payload FROM cola_sincronizacion WHERE tipo = 'CREAR_SESION' AND estado = 'pendiente'",
   );
@@ -117,42 +116,48 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
 
   await borradoresDao.marcarSincronizado(payload.borrador_id, data.id);
 
-  // Actualizar items de respuestas que referencien este borrador
   const db = await openDb();
-  const itemsResp = await db.getAllAsync<{ id: number; payload: string }>(
-    "SELECT id, payload FROM cola_sincronizacion WHERE tipo = 'RESPONDER_PREGUNTA' AND estado = 'pendiente'",
-  );
-  for (const r of itemsResp) {
-    const p = JSON.parse(r.payload);
-    if (p.borrador_id === payload.borrador_id) {
-      p.sesion_id = data.id;
-      await db.runAsync(
-        'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
-        [JSON.stringify(p), r.id],
-      );
+
+  // Inyectar sesion_id en RESPONDER_BULK/RESPONDER_PREGUNTA pendientes de este borrador
+  for (const tipo of ['RESPONDER_BULK', 'RESPONDER_PREGUNTA', 'FINALIZAR_SESION']) {
+    const items = await db.getAllAsync<{ id: number; payload: string }>(
+      `SELECT id, payload FROM cola_sincronizacion WHERE tipo = ? AND estado = 'pendiente'`,
+      [tipo],
+    );
+    for (const r of items) {
+      const p = JSON.parse(r.payload);
+      if (p.borrador_id === payload.borrador_id) {
+        p.sesion_id = data.id;
+        await db.runAsync(
+          'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
+          [JSON.stringify(p), r.id],
+        );
+      }
     }
+  }
+}
+
+async function procesarResponderBulk(item: colaDao.ColaItem): Promise<void> {
+  const payload = JSON.parse(item.payload) as {
+    sesion_id: string;
+    borrador_id: string;
+    respuestas: ResponderPayload[];
+  };
+
+  if (!payload.sesion_id) {
+    throw new Error('sesion_id no disponible aún — esperando CREAR_SESION');
   }
 
-  // Lo mismo para FINALIZAR_SESION
-  const itemsFin = await db.getAllAsync<{ id: number; payload: string }>(
-    "SELECT id, payload FROM cola_sincronizacion WHERE tipo = 'FINALIZAR_SESION' AND estado = 'pendiente'",
-  );
-  for (const f of itemsFin) {
-    const p = JSON.parse(f.payload);
-    if (p.borrador_id === payload.borrador_id) {
-      p.sesion_id = data.id;
-      await db.runAsync(
-        'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
-        [JSON.stringify(p), f.id],
-      );
-    }
-  }
+  const respuestas = payload.respuestas.filter(r => r.valor?.trim());
+  if (respuestas.length === 0) return;
+
+  await encuestasApi.responderBulk(payload.sesion_id, respuestas);
 }
 
 async function procesarResponder(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     sesion_id: string;
-    pregunta_id: string;  // UUID
+    pregunta_id: string;
     valor: string;
   };
 
@@ -185,10 +190,11 @@ async function procesarFinalizar(item: colaDao.ColaItem): Promise<void> {
 }
 
 const PROCESADORES: Record<TipoOperacion, (item: colaDao.ColaItem) => Promise<void>> = {
-  CREAR_HOGAR: procesarCrearHogar,
-  CREAR_SESION: procesarCrearSesion,
+  CREAR_HOGAR:        procesarCrearHogar,
+  CREAR_SESION:       procesarCrearSesion,
+  RESPONDER_BULK:     procesarResponderBulk,
   RESPONDER_PREGUNTA: procesarResponder,
-  FINALIZAR_SESION: procesarFinalizar,
+  FINALIZAR_SESION:   procesarFinalizar,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -202,11 +208,11 @@ export interface ResultadoSync {
 }
 
 /**
- * Intenta sincronizar todos los items pendientes de la cola.
+ * Intenta sincronizar todos los items pendientes de la cola cuyo retry_after ya venció.
  * Se detiene si detecta que el servidor no es alcanzable.
+ * Al terminar con éxito, limpia los items ya enviados.
  */
 export async function intentarSincronizar(): Promise<ResultadoSync> {
-  // Liberar items bloqueados de sesiones anteriores
   await colaDao.resetearBloqueados();
 
   const pendientes = await colaDao.obtenerPendientes();
@@ -239,21 +245,25 @@ export async function intentarSincronizar(): Promise<ResultadoSync> {
       const mensaje = err?.message ?? 'Error desconocido';
 
       if (status === undefined || status === 0) {
-        // Sin conexión — no tiene sentido seguir
         await colaDao.marcarError(item.id, 'Sin conexión');
         sinRed = true;
         errores++;
       } else if (status >= 400 && status < 500 && status !== 429) {
-        // Error del cliente — no reintentar (datos inválidos)
+        // Error de cliente — no reintentable (datos inválidos)
         const detalle = JSON.stringify(err?.response?.data ?? mensaje).slice(0, 300);
         await colaDao.marcarError(item.id, `${status}: ${detalle}`);
         errores++;
       } else {
-        // 5xx o 429 — reintentable
+        // 5xx o 429 — reintentable con backoff
         await colaDao.marcarError(item.id, `${status ?? 'red'}: ${mensaje}`);
         errores++;
       }
     }
+  }
+
+  // Limpiar enviados para no acumular basura
+  if (procesados > 0) {
+    await colaDao.limpiarEnviados();
   }
 
   const pendientesRestantes = await colaDao.contarPendientes();

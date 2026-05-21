@@ -63,6 +63,7 @@ function crearItem(overrides: Partial<colaDao.ColaItem> = {}): colaDao.ColaItem 
     estado: 'pendiente',
     intentos: 0,
     ultimo_error: '',
+    retry_after: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
