@@ -52,11 +52,16 @@
 | Sprint 3 | `feature/sprint3-hogares-encuestas-mobile` | ✅ Completo | Hogares, miembros, sesiones de encuesta, pantallas móviles |
 | Sprint 4 | `feature/sprint4-motor-offline` | ✅ Completo | Motor offline expo-sqlite, cola de sincronización, skip logic |
 | Sprint 5 | `feature/sprint5-ia-gemini` | ✅ Completo | Integración IA Gemini, asistente de voz, UI GOV.CO institucional |
+| Sprint 6 | `feature/sprint6-diccionario-v8` | ✅ Completo | Diccionario V8, 7 perfiles (ASISTENCIA, TERRITORIAL, BUENAVENTURA, SAN ANDRÉS, URBANO ÉTNICO, RURAL ÉTNICO), loader genérico |
+| Sprint 7 | `feature/sprint7-caracterizar-flujo` | ✅ Completo | UX GOV.CO rediseño, flujo víctima habilitada/no incluida, lista instrumentos, biometría, modo Gemini batch |
+| Sprint 8 | `feature/sprint8-motor-formulario` | ✅ Completo | Motor end-to-end: carga respuestas previas, validación obligatorias, bulk sync, progreso real por capítulo |
+| Sprint 9 | `feature/sprint9-sincronizacion-masiva` | ✅ Completo | Cola robusta: backoff exponencial, RESPONDER_BULK, polling 60 s, path offline, pantalla sync-status |
+| Sprint 10 | `feature/sprint10-reportes-produccion` | ✅ Completo | Reportes encuestador: resumen, detalle paginado, export CSV, pantalla móvil con métricas |
+| Sprint 11 | `feature/sprint11-security-hardening` | ✅ Completo | Hardening: throttle login/RNI, eval→AST seguro, max_length serializers, DATABASES producción, CSP/Nginx, infra/secrets |
 
 ### Rama activa de trabajo
-- `feature/sprint5-ia-gemini` — rama de desarrollo activa para Sprint 5 y siguientes
-- `develop` — integra Sprints 1-5 completos
-- `main` — producción, contiene todo el historial (18 commits, 188 archivos)
+- `main` — rama principal de producción (todos los sprints integrados)
+- `develop` — integra Sprints 1-5 históricos
 
 ### Git remotes configurados
 | Remote | URL | Uso |

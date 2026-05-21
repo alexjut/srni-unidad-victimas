@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.autenticacion.permissions import PuedeBuscarRNI, PuedeCaracterizar
+from apps.autenticacion.throttles import BusquedaRNIThrottle
 from apps.auditoria.models import LogAcceso
 from .models import Victima
 from .serializers import (
@@ -92,6 +93,7 @@ class BuscarVictimaView(APIView):
     Requiere permiso puede_buscar_rni.
     """
     permission_classes = [IsAuthenticated, PuedeBuscarRNI]
+    throttle_classes = [BusquedaRNIThrottle]   # 30 búsquedas/hora por usuario
 
     def post(self, request):
         serializer = BusquedaDocumentoSerializer(data=request.data)

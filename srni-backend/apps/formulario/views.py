@@ -4,6 +4,9 @@ Views del motor de formularios dinámico SRNI — alineadas con Diccionario V8.
 Endpoints de solo lectura para estructura del instrumento +
 endpoint POST de evaluación de skip logic (reglas HABILITAR/DESHABILITAR/OBLIGAR/FINALIZAR).
 """
+import ast
+import operator as _op
+
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,6 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from apps.autenticacion.permissions import PuedeCaracterizar
 from .models import Instrumento, Capitulo, Pregunta, ReglaSkipLogic, AccionSkipChoices
 from django.shortcuts import get_object_or_404
 from .serializers import (
@@ -20,13 +24,74 @@ from .serializers import (
     PreguntaSerializer, InstrumentoCompletoSerializer, EvaluarSkipLogicSerializer,
 )
 
+# ─── Evaluador AST seguro para expresiones de skip logic ─────────────────────
+# Reemplaza eval() — solo permite comparaciones, operadores booleanos y literales.
+# Las expresiones provienen de la BD (no de usuarios), pero usar eval() con datos
+# externos es mala práctica incluso si la fuente es "confiable".
+
+_CMP_OPS = {
+    ast.Eq:    _op.eq,
+    ast.NotEq: _op.ne,
+    ast.Lt:    _op.lt,
+    ast.LtE:   _op.le,
+    ast.Gt:    _op.gt,
+    ast.GtE:   _op.ge,
+    ast.In:    lambda a, b: a in b,
+    ast.NotIn: lambda a, b: a not in b,
+}
+
+_BOOL_OPS = {
+    ast.And: all,
+    ast.Or:  any,
+}
+
+
+def _safe_eval(node: ast.AST, ctx: dict):
+    """Evalúa un nodo AST restringido a comparaciones y literales."""
+    if isinstance(node, ast.Expression):
+        return _safe_eval(node.body, ctx)
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        return ctx.get(node.id, '')
+    if isinstance(node, ast.List):
+        return [_safe_eval(el, ctx) for el in node.elts]
+    if isinstance(node, ast.Compare):
+        left = _safe_eval(node.left, ctx)
+        for cmp_op, comparator in zip(node.ops, node.comparators):
+            fn = _CMP_OPS.get(type(cmp_op))
+            if fn is None:
+                raise ValueError(f'Operador no permitido: {cmp_op}')
+            if not fn(left, _safe_eval(comparator, ctx)):
+                return False
+            left = _safe_eval(comparator, ctx)
+        return True
+    if isinstance(node, ast.BoolOp):
+        fn = _BOOL_OPS.get(type(node.op))
+        if fn is None:
+            raise ValueError(f'Operador booleano no permitido: {node.op}')
+        values = [_safe_eval(v, ctx) for v in node.values]
+        return fn(values)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        return not _safe_eval(node.operand, ctx)
+    raise ValueError(f'Nodo AST no permitido: {type(node).__name__}')
+
+
+def evaluar_expresion_segura(expresion: str, contexto: dict) -> bool:
+    """Evalúa una expresión de skip logic de forma segura usando AST."""
+    try:
+        tree = ast.parse(expresion, mode='eval')
+        return bool(_safe_eval(tree, contexto))
+    except Exception:
+        return False
+
 
 class ReadOnlyViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
     filter_backends = [DjangoFilterBackend, SearchFilter]
 
 
@@ -225,9 +290,6 @@ class EvaluarSkipLogicView(APIView):
             return valor_actual == trigger
 
         if regla.expresion_origen:
-            try:
-                return bool(eval(regla.expresion_origen, {}, contexto))  # noqa: S307
-            except Exception:
-                return False
+            return evaluar_expresion_segura(regla.expresion_origen, contexto)
 
         return False
