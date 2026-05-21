@@ -5,7 +5,10 @@
  */
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { authApi, type UsuarioMe } from '../api/auth';
+
+const KEY_BIOMETRICO = 'biometrico_habilitado';
 
 interface AuthState {
   usuario: UsuarioMe | null;
@@ -16,6 +19,7 @@ interface AuthState {
 
   // Acciones
   login: (codigo: string, password: string) => Promise<void>;
+  loginBiometrico: () => Promise<void>;
   logout: () => Promise<void>;
   cargarPerfil: () => Promise<void>;
   limpiarError: () => void;
@@ -38,7 +42,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.setItemAsync('access_token', data.access);
       await SecureStore.setItemAsync('refresh_token', data.refresh);
 
-      // Cargar perfil inmediatamente tras login
+      // Auto-habilitar biometría si el dispositivo la tiene
+      try {
+        const hw = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hw && enrolled) {
+          await SecureStore.setItemAsync(KEY_BIOMETRICO, 'true');
+        }
+      } catch { /* silencioso — la biometría es opcional */ }
+
       const { data: me } = await authApi.me();
       set({ usuario: me, cargando: false });
     } catch (err: unknown) {
@@ -50,6 +62,44 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  loginBiometrico: async () => {
+    set({ cargando: true, error: null });
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Accede al SRNI con tu huella digital',
+        cancelLabel: 'Cancelar',
+        fallbackLabel: 'Usar contraseña',
+        disableDeviceFallback: false,
+      });
+
+      if (!result.success) {
+        set({ cargando: false });
+        return; // usuario canceló, no es error
+      }
+
+      const refresh = await SecureStore.getItemAsync('refresh_token');
+      if (!refresh) {
+        set({
+          error: 'No hay sesión guardada. Ingresa primero con tu contraseña.',
+          cargando: false,
+        });
+        throw new Error('SIN_TOKEN');
+      }
+
+      const { data } = await authApi.refresh(refresh);
+      await SecureStore.setItemAsync('access_token', data.access);
+      await SecureStore.setItemAsync('refresh_token', data.refresh);
+
+      const { data: me } = await authApi.me();
+      set({ usuario: me, cargando: false });
+    } catch (err: unknown) {
+      if ((err as Error).message !== 'SIN_TOKEN') {
+        set({ error: 'No se pudo autenticar. Intenta de nuevo.', cargando: false });
+      }
+      throw err;
+    }
+  },
+
   logout: async () => {
     try {
       const refresh = await SecureStore.getItemAsync('refresh_token');
@@ -57,6 +107,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
+      await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
       set({ usuario: null, error: null });
     }
   },

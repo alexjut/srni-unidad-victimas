@@ -16,7 +16,7 @@ class ConsentimientoIAInputSerializer(serializers.Serializer):
 
 class MapearAudioInputSerializer(serializers.Serializer):
     sesion_encuesta_id = serializers.UUIDField()
-    pregunta_id = serializers.IntegerField()
+    pregunta_id = serializers.UUIDField()
     texto_transcrito = serializers.CharField(
         max_length=2000,
         help_text='Texto ya transcrito del audio del encuestado.',
@@ -41,3 +41,35 @@ class SesionIASerializer(serializers.ModelSerializer):
         model = SesionIA
         fields = ['id', 'sesion_encuesta', 'inicio', 'fin', 'total_llamadas']
         read_only_fields = ['id', 'inicio', 'total_llamadas']
+
+
+# ─── Batch: procesar entrevista completa ─────────────────────────────────────
+
+class PreguntaBatchSerializer(serializers.Serializer):
+    pregunta_id = serializers.UUIDField()
+    codigo_externo = serializers.CharField()
+    texto = serializers.CharField()
+    tipo = serializers.CharField()
+    opciones = serializers.ListField(child=serializers.CharField(), default=list)
+
+
+class ProcesarEntrevistaInputSerializer(serializers.Serializer):
+    sesion_encuesta_id = serializers.UUIDField()
+    capitulo_id = serializers.UUIDField()
+    transcripcion_completa = serializers.CharField(max_length=50000)
+    preguntas = PreguntaBatchSerializer(many=True)
+
+
+class ResultadoBatchSerializer(serializers.Serializer):
+    pregunta_id = serializers.UUIDField()
+    codigo_externo = serializers.CharField()
+    sugerencia = serializers.CharField(allow_null=True)
+    confianza = serializers.FloatField()
+    razonamiento = serializers.CharField()
+
+
+class ProcesarEntrevistaOutputSerializer(serializers.Serializer):
+    resultados = ResultadoBatchSerializer(many=True)
+    total_preguntas = serializers.IntegerField()
+    con_sugerencia = serializers.IntegerField()
+    sin_sugerencia = serializers.IntegerField()

@@ -2,12 +2,20 @@
 Tests de Encuestas: crear sesión, responder preguntas, finalizar, porcentaje.
 """
 import pytest
+from datetime import date
 from rest_framework.test import APIClient
+
 from apps.autenticacion.models import Perfil, Usuario
 from apps.parametricas.models import TipoDocumento, Departamento, Municipio
 from apps.victimas.models import Victima
 from apps.hogares.models import Hogar
-from apps.formulario.models import Instrumento, Tema, Pregunta, OpcionRespuesta
+from apps.formulario.models import (
+    Perfil as PerfilInstrumento,
+    InstrumentoVersion,
+    Capitulo,
+    Pregunta,
+    OpcionRespuesta,
+)
 from apps.encuestas.models import SesionEncuesta, RespuestaEncuesta
 
 
@@ -70,30 +78,39 @@ def hogar(victima, municipio, encuestador):
 
 @pytest.fixture
 def instrumento():
-    inst = Instrumento.objects.create(
-        codigo='PAARI-TEST', nombre='PAARI Test', version='1.0', vigente=True,
+    perfil_inst = PerfilInstrumento.objects.create(
+        codigo='PAARI-TEST', nombre='PAARI Test', activo=True,
     )
-    tema = Tema.objects.create(
-        instrumento=inst, codigo='T01', nombre='Identificación', orden=1, activo=True,
+    version = InstrumentoVersion.objects.create(
+        perfil=perfil_inst, numero='V7',
+        vigente_desde=date(2021, 1, 1),
+        fuente_documental='Test Encuestas',
     )
-    # 3 preguntas requeridas
+    capitulo = Capitulo.objects.create(
+        instrumento=version, codigo='T01', nombre='Identificación',
+        orden=1, nivel='PERSONA',
+    )
+    # 3 preguntas obligatorias
     p1 = Pregunta.objects.create(
-        tema=tema, codigo='P01', texto='¿Género?',
-        tipo_respuesta='OPCION_UNICA', orden=1, requerida=True, activa=True,
+        capitulo=capitulo, codigo_externo='P01', no_pregunta='P01',
+        variable_bd='P01', texto='¿Género?',
+        tipo='RADIO', nivel='PERSONA', orden=1, obligatoria=True,
     )
     OpcionRespuesta.objects.bulk_create([
-        OpcionRespuesta(pregunta=p1, codigo='M', texto='Masculino', orden=1),
-        OpcionRespuesta(pregunta=p1, codigo='F', texto='Femenino', orden=2),
+        OpcionRespuesta(pregunta=p1, valor='M', etiqueta='Masculino', orden=1),
+        OpcionRespuesta(pregunta=p1, valor='F', etiqueta='Femenino', orden=2),
     ])
     Pregunta.objects.create(
-        tema=tema, codigo='P02', texto='¿Edad?',
-        tipo_respuesta='NUMERICO', orden=2, requerida=True, activa=True,
+        capitulo=capitulo, codigo_externo='P02', no_pregunta='P02',
+        variable_bd='P02', texto='¿Edad?',
+        tipo='NUMERICO', nivel='PERSONA', orden=2, obligatoria=True,
     )
     Pregunta.objects.create(
-        tema=tema, codigo='P03', texto='¿Estrato?',
-        tipo_respuesta='NUMERICO', orden=3, requerida=True, activa=True,
+        capitulo=capitulo, codigo_externo='P03', no_pregunta='P03',
+        variable_bd='P03', texto='¿Estrato?',
+        tipo='NUMERICO', nivel='PERSONA', orden=3, obligatoria=True,
     )
-    return inst
+    return version
 
 
 @pytest.fixture
@@ -120,7 +137,7 @@ class TestCrearSesion:
     def test_crear_sesion_exitosa(self, client_enc, hogar, instrumento):
         r = client_enc.post('/api/encuestas/', {
             'hogar': str(hogar.id),
-            'instrumento': instrumento.id,
+            'instrumento': str(instrumento.id),
         }, format='json')
         assert r.status_code == 201, r.data
         assert r.data['estado'] == 'INICIADA'
@@ -151,67 +168,81 @@ class TestCrearSesion:
 class TestResponderPreguntas:
     def test_responder_pregunta(self, client_enc, sesion, instrumento):
         pregunta = Pregunta.objects.get(
-            tema__instrumento=instrumento, codigo='P01'
+            capitulo__instrumento=instrumento, codigo_externo='P01'
         )
         r = client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta.id,
+            'pregunta_id': str(pregunta.id),
             'valor': 'M',
         }, format='json')
         assert r.status_code == 201
         assert r.data['valor'] == 'M'
 
     def test_responder_actualiza_estado_a_en_progreso(self, client_enc, sesion, instrumento):
-        pregunta = Pregunta.objects.get(tema__instrumento=instrumento, codigo='P01')
+        pregunta = Pregunta.objects.get(
+            capitulo__instrumento=instrumento, codigo_externo='P01'
+        )
         client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta.id, 'valor': 'F',
+            'pregunta_id': str(pregunta.id), 'valor': 'F',
         }, format='json')
         sesion.refresh_from_db()
         assert sesion.estado == 'EN_PROGRESO'
 
     def test_responder_actualiza_porcentaje(self, client_enc, sesion, instrumento):
-        preguntas = list(Pregunta.objects.filter(tema__instrumento=instrumento).order_by('orden'))
-        # Responder 1 de 3 preguntas requeridas → ~33%
+        preguntas = list(
+            Pregunta.objects.filter(capitulo__instrumento=instrumento).order_by('orden')
+        )
+        # Responder 1 de 3 preguntas obligatorias → ~33%
         client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': preguntas[0].id, 'valor': 'M',
+            'pregunta_id': str(preguntas[0].id), 'valor': 'M',
         }, format='json')
         sesion.refresh_from_db()
         assert sesion.porcentaje_completado == 33
 
     def test_upsert_respuesta_existente(self, client_enc, sesion, instrumento):
-        pregunta = Pregunta.objects.get(tema__instrumento=instrumento, codigo='P01')
+        pregunta = Pregunta.objects.get(
+            capitulo__instrumento=instrumento, codigo_externo='P01'
+        )
         client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta.id, 'valor': 'M',
+            'pregunta_id': str(pregunta.id), 'valor': 'M',
         }, format='json')
         # Actualizar la misma respuesta
         r = client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta.id, 'valor': 'F',
+            'pregunta_id': str(pregunta.id), 'valor': 'F',
         }, format='json')
         assert r.status_code == 200  # Update, no create
         assert r.data['valor'] == 'F'
         assert RespuestaEncuesta.objects.filter(sesion=sesion, pregunta=pregunta).count() == 1
 
     def test_pregunta_de_otro_instrumento_retorna_400(self, client_enc, sesion):
-        otro_inst = Instrumento.objects.create(
-            codigo='OTRO', nombre='Otro', version='1.0', vigente=True,
+        otro_perfil = PerfilInstrumento.objects.create(
+            codigo='OTRO-PERF', nombre='Otro Perfil', activo=True,
         )
-        otro_tema = Tema.objects.create(
-            instrumento=otro_inst, codigo='OT1', nombre='Otro', orden=1, activo=True,
+        otra_version = InstrumentoVersion.objects.create(
+            perfil=otro_perfil, numero='V1',
+            vigente_desde=date(2021, 1, 1),
+        )
+        otro_cap = Capitulo.objects.create(
+            instrumento=otra_version, codigo='OT1', nombre='Otro',
+            orden=1, nivel='HOGAR',
         )
         pregunta_ajena = Pregunta.objects.create(
-            tema=otro_tema, codigo='OX1', texto='Ajena', tipo_respuesta='TEXTO',
-            orden=1, requerida=True, activa=True,
+            capitulo=otro_cap, codigo_externo='OX1', no_pregunta='OX1',
+            variable_bd='OX1', texto='Ajena',
+            tipo='TEXTO', nivel='HOGAR', orden=1, obligatoria=True,
         )
         r = client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta_ajena.id, 'valor': 'x',
+            'pregunta_id': str(pregunta_ajena.id), 'valor': 'x',
         }, format='json')
         assert r.status_code == 400
 
     def test_sesion_completada_rechaza_respuestas(self, client_enc, sesion, instrumento):
         sesion.estado = 'COMPLETADA'
         sesion.save(update_fields=['estado'])
-        pregunta = Pregunta.objects.get(tema__instrumento=instrumento, codigo='P01')
+        pregunta = Pregunta.objects.get(
+            capitulo__instrumento=instrumento, codigo_externo='P01'
+        )
         r = client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-            'pregunta_id': pregunta.id, 'valor': 'M',
+            'pregunta_id': str(pregunta.id), 'valor': 'M',
         }, format='json')
         assert r.status_code == 400
 
@@ -220,9 +251,9 @@ class TestResponderPreguntas:
 class TestFinalizarSesion:
     def test_finalizar_sesion(self, client_enc, sesion, instrumento):
         # Responder todas las preguntas
-        for p in Pregunta.objects.filter(tema__instrumento=instrumento):
+        for p in Pregunta.objects.filter(capitulo__instrumento=instrumento):
             client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-                'pregunta_id': p.id, 'valor': 'X',
+                'pregunta_id': str(p.id), 'valor': 'X',
             }, format='json')
 
         r = client_enc.post(f'/api/encuestas/{sesion.id}/finalizar/', {
@@ -242,11 +273,11 @@ class TestFinalizarSesion:
     def test_porcentaje_parcial(self, client_enc, sesion, instrumento):
         """Con 2 de 3 preguntas respondidas, el porcentaje debe ser 66."""
         preguntas = list(Pregunta.objects.filter(
-            tema__instrumento=instrumento, requerida=True
+            capitulo__instrumento=instrumento, obligatoria=True
         ).order_by('orden'))
         for p in preguntas[:2]:
             client_enc.post(f'/api/encuestas/{sesion.id}/responder/', {
-                'pregunta_id': p.id, 'valor': 'X',
+                'pregunta_id': str(p.id), 'valor': 'X',
             }, format='json')
 
         r = client_enc.post(f'/api/encuestas/{sesion.id}/finalizar/', {}, format='json')

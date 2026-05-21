@@ -1,18 +1,4 @@
-/**
- * Servicio de sincronización offline → servidor.
- *
- * Flujo completo:
- *   1. descargarInstrumento()  — primer login con red
- *   2. intentarSincronizar()   — procesa cola_sincronizacion en orden
- *
- * Estrategia de conflictos:
- *   - 4xx (400, 404, 409…) → error permanente (no reintentar, datos inválidos)
- *   - 429, 5xx, timeout   → reintento (hasta MAX_INTENTOS en colaDao)
- *   - Éxito               → actualizar IDs locales, marcar enviado
- *
- * Detección de red: intento liviano a GET /health/
- * sin depender de librerías externas de network info.
- */
+// Sincronización offline → servidor: cola de operaciones con reintentos y resolución de conflictos.
 import apiClient from '../api/client';
 import { hogaresApi } from '../api/hogares';
 import { encuestasApi } from '../api/encuestas';
@@ -36,31 +22,27 @@ export async function estaOnline(): Promise<boolean> {
 }
 
 /**
- * Descarga el instrumento activo y lo guarda en SQLite.
- * Si ya existe una versión local, solo descarga si la versión del servidor
- * es diferente.
+ * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
+ * Usa el endpoint offline-first: GET /api/formulario/instrumento/{perfil_codigo}/
+ * Si ya tenemos la misma versión no hace nada.
  */
-export async function descargarInstrumento(): Promise<boolean> {
+export async function descargarInstrumento(perfilCodigo = 'TERRITORIAL'): Promise<boolean> {
   try {
-    // Obtener lista de instrumentos vigentes
-    const { data } = await apiClient.get<{
-      results: Array<{ id: number; version: string; vigente: boolean; codigo: string }>;
-    }>('/api/formulario/instrumentos/', { params: { vigente: true } });
-
-    const activo = data.results.find((i) => i.vigente) ?? data.results[0];
-    if (!activo) return false;
-
-    // Comprobar si ya tenemos esa versión
     const meta = await instrumentoDao.getMeta();
-    if (meta?.instrumento_id === activo.id && meta?.version === activo.version) {
-      return false; // Nada que descargar
+
+    const { data } = await apiClient.get(
+      `/api/formulario/instrumento/${perfilCodigo}/`,
+    );
+
+    // Mismo instrumento y versión → nada que hacer
+    if (
+      meta?.instrumento_id === data.id &&
+      meta?.version === data.numero
+    ) {
+      return false;
     }
 
-    // Descargar instrumento completo con temas y preguntas
-    const { data: instrumento } = await apiClient.get(
-      `/api/formulario/instrumentos/${activo.id}/`,
-    );
-    await instrumentoDao.guardarInstrumento(instrumento);
+    await instrumentoDao.guardarInstrumentoCompleto(data);
     return true;
   } catch {
     return false;
@@ -125,7 +107,7 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     borrador_id: string;
     hogar: string;
-    instrumento: number;
+    instrumento: string;
   };
 
   const { data } = await encuestasApi.crear({
@@ -170,7 +152,7 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
 async function procesarResponder(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     sesion_id: string;
-    pregunta_id: number;
+    pregunta_id: string;  // UUID
     valor: string;
   };
 

@@ -15,8 +15,8 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { IconButton, Text, ActivityIndicator } from 'react-native-paper';
 
 interface AudioRecorderProps {
-  /** ID de la pregunta activa — para etiquetar el log. */
-  preguntaId: number;
+  /** UUID de la pregunta activa — para etiquetar el log. */
+  preguntaId: string;
   /** Callback cuando el texto ya está listo para enviar al backend. */
   onTextoListo: (texto: string) => void;
   /** Deshabilitar mientras hay sugerencia pendiente o procesando. */

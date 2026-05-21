@@ -1,117 +1,92 @@
 /**
- * Motor de skip logic — evaluador puro sin I/O.
+ * Motor de skip logic offline — evaluador puro sin I/O.
  *
- * Replica la lógica PREDEPENDE/RESHABILITA del APK original.
- * Una pregunta es visible si:
- *   - No tiene condiciones → siempre visible
- *   - Tiene condiciones → al menos UNA condición padre se cumple
- *     (condiciones del mismo padre se evalúan individualmente;
- *      si hay múltiples padres, basta con que uno habilite)
+ * Replica exactamente la lógica del backend (EvaluarSkipLogicView):
+ *   - HABILITAR: pregunta oculta por defecto; visible solo si la condición se cumple.
+ *   - DESHABILITAR: pregunta visible por defecto; oculta si la condición se cumple.
+ *   - OBLIGAR: hace la pregunta obligatoria (y visible).
+ *   - FINALIZAR: cierra el capítulo cuando se cumple.
  *
- * Operadores soportados (espejo del backend Django):
- *   EQ | NEQ | GT | GTE | LT | LTE | IN | NOTNULL
+ * Identificadores: código_externo (strings del diccionario V8).
  */
 
-export interface Condicion {
-  pregunta_padre_id: number;
-  pregunta_hija_id: number;
-  operador: 'EQ' | 'NEQ' | 'GT' | 'GTE' | 'LT' | 'LTE' | 'IN' | 'NOTNULL';
-  valor_condicion: string;
+import type { ReglaSkipLogicRow, PreguntaRow } from '../db/instrumentoDao';
+
+// ─── Tipos públicos ───────────────────────────────────────────────────────────
+
+/** Mapa de respuestas: codigo_externo → valor actual ('' si sin respuesta) */
+export type RespuestasMap = Record<string, string>;
+
+export interface ResultadoSkipLogic {
+  visibles: Set<string>;      // Set de codigo_externo visibles
+  obligatorias: Set<string>;  // Set de codigo_externo ahora obligatorias
+  finalizar: boolean;
 }
 
-export interface PreguntaConCondiciones {
-  id: number;
-  condiciones: Condicion[];   // condiciones donde esta pregunta es la HIJA
-}
-
-/** Respuestas actuales: pregunta_id → valor (string vacío = no respondida) */
-export type RespuestasMap = Record<number, string>;
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Evalúa un operador concreto.
- * @param valorRespuesta - Valor respondido por el usuario (puede ser vacío)
- * @param operador
- * @param valorCondicion - Valor de referencia definido en la condición
- */
-export function evaluarOperador(
-  valorRespuesta: string,
-  operador: Condicion['operador'],
-  valorCondicion: string,
-): boolean {
-  switch (operador) {
-    case 'EQ':
-      return valorRespuesta === valorCondicion;
-    case 'NEQ':
-      return valorRespuesta !== valorCondicion;
-    case 'NOTNULL':
-      return valorRespuesta.trim() !== '';
-    case 'GT':
-      return Number(valorRespuesta) > Number(valorCondicion);
-    case 'GTE':
-      return Number(valorRespuesta) >= Number(valorCondicion);
-    case 'LT':
-      return Number(valorRespuesta) < Number(valorCondicion);
-    case 'LTE':
-      return Number(valorRespuesta) <= Number(valorCondicion);
-    case 'IN': {
-      // valor_condicion puede ser CSV ("A,B,C") o JSON array ('["A","B"]')
-      let opciones: string[];
-      try {
-        opciones = JSON.parse(valorCondicion);
-      } catch {
-        opciones = valorCondicion.split(',').map((s) => s.trim());
-      }
-      return opciones.includes(valorRespuesta);
-    }
-    default:
-      return false;
-  }
-}
+// ─── Motor ────────────────────────────────────────────────────────────────────
 
 /**
  * Determina qué preguntas son visibles dado el estado actual de respuestas.
- *
- * @param preguntas - Lista de preguntas con sus condiciones de habilitación
- * @param respuestas - Mapa pregunta_id → valor actual
- * @returns Set de IDs de preguntas que deben mostrarse
+ * Espejo exacto de EvaluarSkipLogicView.post() del backend.
  */
 export function calcularVisibles(
-  preguntas: PreguntaConCondiciones[],
+  preguntas: Pick<PreguntaRow, 'id' | 'codigo_externo' | 'obligatoria'>[],
+  reglas: ReglaSkipLogicRow[],
   respuestas: RespuestasMap,
-): Set<number> {
-  const visibles = new Set<number>();
+): ResultadoSkipLogic {
+  const visibles = new Set<string>();
+  const obligatorias = new Set<string>();
+  let finalizar = false;
 
   for (const pregunta of preguntas) {
-    if (pregunta.condiciones.length === 0) {
-      // Sin condiciones → siempre visible
-      visibles.add(pregunta.id);
+    const reglasEntrantes = reglas.filter(
+      (r) => r.pregunta_afectada_codigo === pregunta.codigo_externo,
+    );
+
+    if (reglasEntrantes.length === 0) {
+      visibles.add(pregunta.codigo_externo);
+      if (pregunta.obligatoria) obligatorias.add(pregunta.codigo_externo);
       continue;
     }
 
-    // Visible si AL MENOS UNA condición se cumple
-    const alguna = pregunta.condiciones.some((c) => {
-      const valorPadre = respuestas[c.pregunta_padre_id] ?? '';
-      return evaluarOperador(valorPadre, c.operador, c.valor_condicion);
-    });
+    const tieneHabilitar = reglasEntrantes.some((r) => r.accion === 'HABILITAR');
+    let visible = !tieneHabilitar;
 
-    if (alguna) visibles.add(pregunta.id);
+    for (const regla of reglasEntrantes) {
+      if (_reglaActiva(regla, respuestas)) {
+        if (regla.accion === 'HABILITAR') {
+          visible = true;
+        } else if (regla.accion === 'DESHABILITAR') {
+          visible = false;
+        } else if (regla.accion === 'OBLIGAR') {
+          visible = true;
+          obligatorias.add(pregunta.codigo_externo);
+        } else if (regla.accion === 'FINALIZAR') {
+          finalizar = true;
+        }
+      }
+    }
+
+    if (visible) {
+      visibles.add(pregunta.codigo_externo);
+      if (pregunta.obligatoria) obligatorias.add(pregunta.codigo_externo);
+    }
   }
 
-  return visibles;
+  return { visibles, obligatorias, finalizar };
 }
 
-/**
- * Construye la estructura PreguntaConCondiciones a partir de las filas crudas
- * de los DAOs (preguntas + derivadas).
- */
-export function construirPreguntasConCondiciones(
-  preguntaIds: number[],
-  derivadas: Condicion[],
-): PreguntaConCondiciones[] {
-  return preguntaIds.map((id) => ({
-    id,
-    condiciones: derivadas.filter((d) => d.pregunta_hija_id === id),
-  }));
+/** Evalúa si una regla debe dispararse. Espejo de _regla_activa() del backend. */
+function _reglaActiva(regla: ReglaSkipLogicRow, respuestas: RespuestasMap): boolean {
+  if (regla.pregunta_origen_codigo) {
+    const valorActual = respuestas[regla.pregunta_origen_codigo] ?? '';
+    if (!regla.valor_trigger) return !!valorActual;
+    const trigger = regla.valor_trigger;
+    if (trigger.includes(',')) {
+      return trigger.split(',').map((v) => v.trim()).includes(valorActual);
+    }
+    return valorActual === trigger;
+  }
+  // expresion_origen — no evaluable offline sin contexto de edad/RUV
+  return false;
 }

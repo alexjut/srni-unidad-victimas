@@ -1,11 +1,16 @@
 """
 Modelos de Encuestas SRNI.
 
-SesionEncuesta: sesión de diligenciamiento del formulario PAARI para un hogar.
+SesionEncuesta: sesión de diligenciamiento del formulario para un hogar.
 RespuestaEncuesta: respuesta individual a una pregunta del instrumento.
 
 Diseño:
-- Una sesión está vinculada a un Hogar + Instrumento (versión del formulario).
+- Una sesión está vinculada a un Hogar + Instrumento (versión exacta del formulario).
+- Las respuestas quedan ancladas al Instrumento vigente al momento de la captura
+  (trazabilidad documental — Ley 1581, auditoría UARIV).
+- instrumento y ruta_entrevista son dos ejes INDEPENDIENTES:
+    · instrumento: TERRITORIAL, ASISTENCIA, BUENAVENTURA, etc. (el caracterizador lo elige)
+    · ruta_entrevista: GENERAL, ACCIONES_CONSTITUCIONALES, etc. (condición de la entrevista)
 - Las respuestas se guardan de a una (upsert por sesión+pregunta).
 - El porcentaje_completado se recalcula al guardar cada respuesta.
 - Una sesión COMPLETADA no admite más cambios de respuesta.
@@ -19,10 +24,18 @@ class SesionEncuesta(models.Model):
     """Sesión de caracterización de un hogar con un instrumento específico."""
 
     ESTADO = [
-        ('INICIADA',     'Iniciada'),
-        ('EN_PROGRESO',  'En progreso'),
-        ('COMPLETADA',   'Completada'),
-        ('SUSPENDIDA',   'Suspendida — sin finalizar'),
+        ('INICIADA',    'Iniciada'),
+        ('EN_PROGRESO', 'En progreso'),
+        ('COMPLETADA',  'Completada'),
+        ('SUSPENDIDA',  'Suspendida — sin finalizar'),
+    ]
+
+    # Rutas de entrevista — eje independiente del instrumento (Manual UARIV §4)
+    RUTA_ENTREVISTA = [
+        ('GENERAL',                   'General — caracterización ordinaria'),
+        ('ACCIONES_CONSTITUCIONALES', 'Acciones constitucionales'),
+        ('MODIFICACION_NUCLEO',       'Modificación de núcleo familiar'),
+        ('ESPECIAL',                  'Ruta especial — población diferencial'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -32,10 +45,16 @@ class SesionEncuesta(models.Model):
         on_delete=models.PROTECT,
         related_name='sesiones',
     )
+    # FK a Instrumento (codigo + version): garantiza que las respuestas
+    # queden ancladas al instrumento exacto vigente al momento de la captura.
     instrumento = models.ForeignKey(
         'formulario.Instrumento',
         on_delete=models.PROTECT,
         related_name='sesiones',
+    )
+    ruta_entrevista = models.CharField(
+        max_length=30, choices=RUTA_ENTREVISTA, default='GENERAL', db_index=True,
+        help_text='Ruta de entrevista — independiente del instrumento (Manual UARIV §4).',
     )
     encuestador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -65,6 +84,7 @@ class SesionEncuesta(models.Model):
         indexes = [
             models.Index(fields=['hogar', 'estado']),
             models.Index(fields=['encuestador', 'estado']),
+            models.Index(fields=['instrumento', 'ruta_entrevista']),
         ]
 
     def __str__(self):
@@ -72,14 +92,14 @@ class SesionEncuesta(models.Model):
 
     def recalcular_porcentaje(self) -> int:
         """
-        Calcula el porcentaje de preguntas requeridas respondidas.
-        Solo cuenta preguntas activas y requeridas del instrumento.
+        Calcula el porcentaje de preguntas obligatorias respondidas.
+        Solo cuenta preguntas activas y obligatorias del instrumento vigente.
         """
         from apps.formulario.models import Pregunta
 
         total = Pregunta.objects.filter(
-            tema__instrumento=self.instrumento,
-            requerida=True,
+            capitulo__instrumento=self.instrumento,
+            obligatoria=True,
             activa=True,
         ).count()
 
@@ -87,7 +107,7 @@ class SesionEncuesta(models.Model):
             return 0
 
         respondidas = self.respuestas.filter(
-            pregunta__requerida=True,
+            pregunta__obligatoria=True,
             pregunta__activa=True,
         ).exclude(valor='').count()
 
@@ -119,4 +139,4 @@ class RespuestaEncuesta(models.Model):
         ordering = ['pregunta__orden']
 
     def __str__(self):
-        return f'[{self.pregunta.codigo}] → "{self.valor[:40]}"'
+        return f'[{self.pregunta.codigo_externo}] → "{self.valor[:40]}"'

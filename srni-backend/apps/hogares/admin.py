@@ -5,7 +5,10 @@ from .models import Hogar, MiembroHogar
 class MiembroHogarInline(admin.TabularInline):
     model = MiembroHogar
     extra = 0
-    fields = ('parentesco', 'genero', 'edad', 'discapacidad', 'victima', 'tipo_documento')
+    fields = (
+        'parentesco', 'tipo_persona', 'genero', 'fecha_nacimiento',
+        'tiene_discapacidad', 'incluido_ruv', 'victima', 'tipo_documento',
+    )
     raw_id_fields = ('victima', 'tipo_documento')
     readonly_fields = ('created_at',)
 
@@ -27,7 +30,7 @@ class HogarAdmin(admin.ModelAdmin):
 
 @admin.register(MiembroHogar)
 class MiembroHogarAdmin(admin.ModelAdmin):
-    list_display = ('id', 'hogar', 'parentesco', 'genero', 'edad', 'discapacidad')
-    list_filter = ('parentesco', 'genero', 'discapacidad')
+    list_display = ('id', 'hogar', 'parentesco', 'tipo_persona', 'genero', 'tiene_discapacidad', 'incluido_ruv')
+    list_filter = ('parentesco', 'tipo_persona', 'genero', 'tiene_discapacidad', 'incluido_ruv')
     raw_id_fields = ('hogar', 'victima', 'tipo_documento', 'creado_por')
     readonly_fields = ('id', 'created_at')

@@ -1,0 +1,156 @@
+[
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 1,
+    "fields": {
+      "codigo": "HV01",
+      "nombre": "Desplazamiento forzado",
+      "descripcion": "TODO: confirmar texto oficial Ley 1448 Art. 60 — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 1
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 2,
+    "fields": {
+      "codigo": "HV02",
+      "nombre": "Acto terrorista / Atentado / Combate / Hostigamiento",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 2
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 3,
+    "fields": {
+      "codigo": "HV03",
+      "nombre": "Amenaza",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 3
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 4,
+    "fields": {
+      "codigo": "HV04",
+      "nombre": "Delitos contra la libertad e integridad sexual",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 4
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 5,
+    "fields": {
+      "codigo": "HV05",
+      "nombre": "Desaparición forzada",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 5
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 6,
+    "fields": {
+      "codigo": "HV06",
+      "nombre": "Homicidio",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 6
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 7,
+    "fields": {
+      "codigo": "HV07",
+      "nombre": "Minas antipersonal, munición sin explotar y artefacto explosivo improvisado",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 7
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 8,
+    "fields": {
+      "codigo": "HV08",
+      "nombre": "Secuestro",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 8
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 9,
+    "fields": {
+      "codigo": "HV09",
+      "nombre": "Tortura",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 9
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 10,
+    "fields": {
+      "codigo": "HV10",
+      "nombre": "Vinculación de niños, niñas y adolescentes a actividades de grupos armados",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 10
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 11,
+    "fields": {
+      "codigo": "HV11",
+      "nombre": "Abandono o despojo forzado de tierras",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 11
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 12,
+    "fields": {
+      "codigo": "HV12",
+      "nombre": "Pérdida de bienes muebles o inmuebles",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 12
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 13,
+    "fields": {
+      "codigo": "HV13",
+      "nombre": "Confinamiento",
+      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 13
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 14,
+    "fields": {
+      "codigo": "HV14",
+      "nombre": "Sin información",
+      "descripcion": "TODO: confirmar si aplica como hecho victimizante en el nuevo sistema — tabla Oracle GIC_TIPO_HECHO",
+      "activo": true,
+      "orden": 14
+    }
+  }
+]

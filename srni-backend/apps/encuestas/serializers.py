@@ -8,7 +8,7 @@ from .models import SesionEncuesta, RespuestaEncuesta
 
 class RespuestaEncuestaSerializer(serializers.ModelSerializer):
     pregunta_codigo = serializers.CharField(
-        source='pregunta.codigo', read_only=True
+        source='pregunta.codigo_externo', read_only=True
     )
     pregunta_texto = serializers.CharField(
         source='pregunta.texto', read_only=True
@@ -27,7 +27,10 @@ class RespuestaEncuestaSerializer(serializers.ModelSerializer):
 class SesionEncuestaListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     instrumento_nombre = serializers.CharField(
-        source='instrumento.nombre', read_only=True
+        source='instrumento.perfil.nombre', read_only=True, default=None
+    )
+    instrumento_numero = serializers.CharField(
+        source='instrumento.numero', read_only=True, default=None
     )
     encuestador_nombre = serializers.CharField(
         source='encuestador.nombre_completo', read_only=True, default=None
@@ -37,7 +40,7 @@ class SesionEncuestaListSerializer(serializers.ModelSerializer):
         model = SesionEncuesta
         fields = [
             'id', 'hogar',
-            'instrumento', 'instrumento_nombre',
+            'instrumento', 'instrumento_nombre', 'instrumento_numero',
             'encuestador', 'encuestador_nombre',
             'estado', 'estado_display',
             'porcentaje_completado',
@@ -49,7 +52,10 @@ class SesionEncuestaListSerializer(serializers.ModelSerializer):
 class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     instrumento_nombre = serializers.CharField(
-        source='instrumento.nombre', read_only=True
+        source='instrumento.perfil.nombre', read_only=True, default=None
+    )
+    instrumento_numero = serializers.CharField(
+        source='instrumento.numero', read_only=True, default=None
     )
     respuestas = RespuestaEncuestaSerializer(many=True, read_only=True)
     total_respuestas = serializers.IntegerField(source='respuestas.count', read_only=True)
@@ -58,7 +64,8 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
         model = SesionEncuesta
         fields = [
             'id', 'hogar',
-            'instrumento', 'instrumento_nombre',
+            'instrumento', 'instrumento_nombre', 'instrumento_numero',
+            'ruta_entrevista',
             'encuestador',
             'estado', 'estado_display',
             'porcentaje_completado',
@@ -69,7 +76,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 'porcentaje_completado', 'fecha_inicio',
-            'estado_display', 'instrumento_nombre',
+            'estado_display', 'instrumento_nombre', 'instrumento_numero',
             'respuestas', 'total_respuestas',
             'created_at', 'updated_at',
         ]
@@ -77,7 +84,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
 
 class ResponderPreguntaSerializer(serializers.Serializer):
     """Input para POST /api/encuestas/{id}/responder/"""
-    pregunta_id = serializers.IntegerField()
+    pregunta_id = serializers.UUIDField()
     valor = serializers.CharField(allow_blank=True)
 
     def validate_valor(self, value):

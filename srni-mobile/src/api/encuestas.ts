@@ -5,12 +5,13 @@ import type {
 } from '../types';
 
 export interface CrearSesionPayload {
-  hogar: string;        // UUID del Hogar
-  instrumento: number;  // ID del Instrumento
+  hogar: string;
+  instrumento: string;
+  ruta_entrevista?: string;
 }
 
 export interface ResponderPayload {
-  pregunta_id: number;
+  pregunta_id: string;  // UUID de Pregunta (Sprint 7: cambio de number a string)
   valor: string;
 }
 

@@ -1,65 +1,60 @@
 from django.contrib import admin
-from .models import Instrumento, Tema, Pregunta, OpcionRespuesta, PreguntaDerivada
+from .models import Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic
 
 
-class TemaInline(admin.TabularInline):
-    model = Tema
-    fields = ('codigo', 'nombre', 'orden', 'activo')
+class CapituloInline(admin.TabularInline):
+    model = Capitulo
+    fields = ("codigo", "nombre", "orden", "poblacion_objetivo", "aplicabilidad")
     extra = 0
-    ordering = ('orden',)
+    ordering = ("orden",)
 
 
 @admin.register(Instrumento)
 class InstrumentoAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'nombre', 'version', 'vigente', 'created_at')
-    list_filter = ('vigente',)
-    search_fields = ('codigo', 'nombre')
-    inlines = [TemaInline]
+    list_display = ("codigo", "version", "nombre", "activo", "vigente_desde", "vigente_hasta")
+    list_filter = ("activo", "codigo")
+    search_fields = ("codigo", "nombre", "fuente_documental")
+    inlines = [CapituloInline]
 
 
-class OpcionRespuestaInline(admin.TabularInline):
+@admin.register(Capitulo)
+class CapituloAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "nombre", "instrumento", "orden", "poblacion_objetivo")
+    list_filter = ("instrumento", "poblacion_objetivo")
+    search_fields = ("codigo", "nombre")
+    ordering = ("instrumento", "orden")
+
+
+class OpcionInline(admin.TabularInline):
     model = OpcionRespuesta
-    fields = ('codigo', 'texto', 'orden', 'activa')
     extra = 0
-    ordering = ('orden',)
-
-
-class PreguntaDerivadaHijaInline(admin.TabularInline):
-    model = PreguntaDerivada
-    fk_name = 'pregunta_padre'
-    fields = ('pregunta_hija', 'operador', 'valor_condicion')
-    extra = 0
-    verbose_name = 'Derivación (habilita pregunta hija)'
-    verbose_name_plural = 'Derivaciones (skip logic)'
-    raw_id_fields = ('pregunta_hija',)
-
-
-@admin.register(Tema)
-class TemaAdmin(admin.ModelAdmin):
-    list_display = ('orden', 'codigo', 'nombre', 'instrumento', 'activo')
-    list_filter = ('instrumento', 'activo')
-    search_fields = ('codigo', 'nombre')
-    ordering = ('instrumento', 'orden')
-    raw_id_fields = ('instrumento',)
+    fields = ("orden", "valor", "etiqueta", "id_resp_vivanto", "finaliza_capitulo")
 
 
 @admin.register(Pregunta)
 class PreguntaAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'texto_corto', 'tema', 'tipo_respuesta', 'requerida', 'activa')
-    list_filter = ('tema__instrumento', 'tipo_respuesta', 'requerida', 'activa')
-    search_fields = ('codigo', 'texto')
-    ordering = ('tema__orden', 'orden')
-    raw_id_fields = ('tema',)
-    inlines = [OpcionRespuestaInline, PreguntaDerivadaHijaInline]
+    list_display = (
+        "codigo_externo", "capitulo", "texto_corto", "tipo", "nivel", "obligatoria", "activa"
+    )
+    list_filter = ("capitulo__instrumento", "capitulo", "tipo", "nivel", "obligatoria", "activa")
+    search_fields = ("codigo_externo", "variable_bd", "texto")
+    ordering = ("capitulo", "orden")
+    inlines = [OpcionInline]
 
-    @admin.display(description='Texto')
+    @admin.display(description="Texto")
     def texto_corto(self, obj):
         return obj.texto[:80]
 
 
-@admin.register(PreguntaDerivada)
-class PreguntaDerivadaAdmin(admin.ModelAdmin):
-    list_display = ('pregunta_padre', 'operador', 'valor_condicion', 'pregunta_hija')
-    list_filter = ('operador',)
-    raw_id_fields = ('pregunta_padre', 'pregunta_hija')
-    search_fields = ('pregunta_padre__codigo', 'pregunta_hija__codigo')
+@admin.register(ReglaSkipLogic)
+class ReglaSkipLogicAdmin(admin.ModelAdmin):
+    list_display = (
+        "pregunta_origen", "valor_trigger", "accion",
+        "pregunta_afectada", "capitulo_afectado", "descripcion",
+    )
+    list_filter = ("accion", "instrumento")
+    search_fields = (
+        "descripcion",
+        "pregunta_origen__codigo_externo",
+        "pregunta_afectada__codigo_externo",
+    )

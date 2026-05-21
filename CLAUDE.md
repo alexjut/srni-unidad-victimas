@@ -149,6 +149,30 @@ Estos errores fueron identificados en el análisis del APK `co.com.rni.encuestad
 
 ---
 
+## Diseño y UX — decisiones tomadas (Sprint 7)
+
+### Login
+- Fondo con `LinearGradient` azul oscuro (`#00234E → #003A80 → #1565C0`) + franja GOV.CO amarilla
+- Tiles decorativos de regiones colombianas (Pacífico, Caribe, Andes, Amazonia, Orinoquía, Insular)
+- Botón de **biometría** (huella/Face ID) — círculo azul prominente estilo banca moderna
+- Auto-habilitación biométrica en primer login si el dispositivo la soporta (`expo-local-authentication`)
+- Tokens guardados en `expo-secure-store` (nunca en localStorage)
+
+### Pantalla de Entrevista (busqueda.tsx)
+- Primera pantalla visible tras el login (`initialRouteName="busqueda"`)
+- Imagen auténtica de comunidad indígena Emberá — fuente: unidadvictimas.gov.co
+- Gradiente oscuro sobre la imagen para legibilidad del formulario
+- Formulario como **tarjeta flotante** sobre la imagen (estilo card elevada)
+- Selector de tipo de documento: **dropdown profesional** con Modal bottom-sheet
+- Selección de instrumento de caracterización **inline** (no pantalla separada)
+- Flujo: buscar → instrumento → conformar hogar → crear sesión → encuesta
+
+### Paquetes adicionales instalados (Expo SDK 54 compatible)
+- `expo-local-authentication` — biometría nativa Android/iOS
+- `expo-linear-gradient` — gradientes de fondo
+
+---
+
 ## Cumplimiento normativo
 
 | Norma | Descripción |
@@ -193,11 +217,21 @@ unidad-victima/
 │   ├── apps/
 │   │   ├── autenticacion/        ← JWT, roles, perfiles (comando crear_usuario_prueba)
 │   │   ├── victimas/             ← RNI — búsqueda y detalle (PII cifrado + hash SHA-256)
-│   │   ├── formulario/           ← Motor dinámico 54 módulos + skip logic
+│   │   ├── formulario/           ← Motor dinámico — 7 perfiles, 85 caps, 1319 preguntas
+│   │   │   ├── fixtures/
+│   │   │   │   ├── opciones_compartidas.json      ← Catálogo 40 listas UARIV
+│   │   │   │   ├── perfil_asistencia_v8.json      ← ASISTENCIA V8 completo
+│   │   │   │   ├── perfil_territorial_v7.json     ← TERRITORIAL V7
+│   │   │   │   ├── perfil_buenaventura_v7.json    ← BUENAVENTURA V7
+│   │   │   │   ├── perfil_san_andres_v7.json      ← SAN ANDRÉS V7
+│   │   │   │   ├── perfil_urbano_etnico_v1.json   ← URBANO ÉTNICO V1
+│   │   │   │   └── perfil_rural_etnico_v1.json    ← RURAL ÉTNICO V1
+│   │   │   └── management/commands/
+│   │   │       └── cargar_perfil.py               ← Loader genérico (--perfil, $ref, --dry-run)
 │   │   ├── hogares/              ← Hogares y miembros
-│   │   ├── encuestas/            ← Sesiones y respuestas
+│   │   ├── encuestas/            ← Sesiones y respuestas (campo ruta_entrevista)
 │   │   ├── parametricas/         ← Geo, comunidades étnicas (comandos carga municipios/documentos)
-│   │   ├── ia/                   ← Proxy Gemini, ConsentimientoIA, logs de uso ← Sprint 5
+│   │   ├── ia/                   ← Proxy Gemini — asistente + batch (ConsentimientoIA, logs)
 │   │   ├── sincronizacion/       ← Import/export seguro
 │   │   ├── auditoria/            ← LogAcceso inmutable
 │   │   └── reportes/             ← Producción por encuestador
@@ -208,29 +242,37 @@ unidad-victima/
 │   │   ├── _layout.tsx           ← Root layout + PaperProvider + auth guard
 │   │   ├── index.tsx             ← Entry point con Redirect
 │   │   ├── (auth)/
-│   │   │   ├── _layout.tsx
-│   │   │   └── login.tsx
+│   │   │   └── login.tsx         ← Gradiente azul + biometría (huella/Face ID) + regiones decorativas
 │   │   └── (main)/
-│   │       ├── _layout.tsx       ← Bottom tabs (estilo GOV.CO)
-│   │       ├── index.tsx         ← Dashboard
-│   │       ├── busqueda.tsx      ← Búsqueda RNI (server-side only)
+│   │       ├── _layout.tsx       ← Bottom tabs — initialRouteName="busqueda", safe area dinámica
+│   │       ├── index.tsx         ← Dashboard (tab Menú)
+│   │       ├── busqueda.tsx      ← ENTREVISTA DE CARACTERIZACIÓN — imagen indígena + instrumento inline
+│   │       ├── caracterizar/
+│   │       │   └── index.tsx     ← Flujo: instrumento → hogar → crear sesión
 │   │       ├── hogares/
 │   │       │   ├── index.tsx     ← Lista hogares
-│   │       │   ├── nuevo.tsx     ← Crear hogar
+│   │       │   ├── nuevo.tsx     ← Crear hogar (auto-crea sesión si viene con instrumentoId)
 │   │       │   └── [hogarId].tsx ← Detalle hogar + miembros
 │   │       ├── encuestas/
 │   │       │   ├── index.tsx     ← Lista sesiones
-│   │       │   └── [sesionId].tsx← Detalle sesión
+│   │       │   └── [sesionId].tsx← Detalle sesión + nav al formulario
 │   │       └── formulario/
-│   │           ├── index.tsx     ← Lista de 54 temas
-│   │           ├── [temaId].tsx  ← Motor de preguntas + skip logic
-│   │           └── consentimiento-ia.tsx ← Consentimiento IA Gemini
+│   │           ├── index.tsx     ← Lista de capítulos del instrumento
+│   │           ├── [temaId].tsx  ← Motor de preguntas + skip logic offline
+│   │           ├── consentimiento-ia.tsx
+│   │           ├── grabacion-entrevista.tsx  ← modo Gemini (batch)
+│   │           └── revision-ia.tsx           ← revisión batch IA
 │   └── src/
-│       ├── api/                  ← axios client + interceptores JWT (auth, hogares, encuestas, ia)
-│       ├── stores/               ← Zustand (authStore, iaStore, syncStore)
-│       ├── db/                   ← expo-sqlite: schema, borradoresDao, colaDao, hogaresOfflineDao, instrumentoDao
+│       ├── api/                  ← axios client + interceptores JWT (auth, hogares, encuestas, victimas, ia)
+│       ├── stores/               ← Zustand (authStore, syncStore, iaStore, caracterizacionStore)
+│       ├── db/                   ← expo-sqlite schema V2 (UUID PKs)
+│       │   ├── schema.ts         ← Migration V2: tablas con UUID
+│       │   ├── instrumentoDao.ts ← Acceso a capítulos/preguntas/opciones
+│       │   ├── borradoresDao.ts  ← Sesiones y respuestas offline
+│       │   ├── hogaresOfflineDao.ts
+│       │   └── colaDao.ts        ← Cola de sincronización
 │       ├── services/             ← skipLogic.ts, sincronizacion.ts + tests
-│       ├── components/           ← GovButton, GovCard, GovHeader, SugerenciaIA, AudioRecorder, EmptyState...
+│       ├── components/           ← GovButton, GovCard, GovHeader, SugerenciaIA, AudioRecorder, EmptyState…
 │       ├── theme/                ← govTheme.ts (paleta GOV.CO institucional)
 │       └── types/                ← index.ts (tipos compartidos)
 │

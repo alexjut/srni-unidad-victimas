@@ -163,7 +163,8 @@ class TestMiembrosHogar:
     def test_listar_miembros(self, client_enc, hogar, victima):
         MiembroHogar.objects.create(
             hogar=hogar, parentesco='HIJO_A',
-            genero='M', edad=10, creado_por=client_enc.handler._force_user,
+            genero='M', fecha_nacimiento='2014-03-15',
+            creado_por=client_enc.handler._force_user,
         )
         r = client_enc.get(f'/api/hogares/{hogar.id}/miembros/')
         assert r.status_code == 200
@@ -172,7 +173,8 @@ class TestMiembrosHogar:
     def test_detalle_incluye_miembros(self, client_enc, hogar):
         MiembroHogar.objects.create(
             hogar=hogar, parentesco='JEFE',
-            genero='F', edad=42, creado_por=client_enc.handler._force_user,
+            genero='F', fecha_nacimiento='1982-07-20',
+            creado_por=client_enc.handler._force_user,
         )
         r = client_enc.get(f'/api/hogares/{hogar.id}/')
         assert r.status_code == 200

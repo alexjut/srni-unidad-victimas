@@ -1,0 +1,140 @@
+[
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0001-0001-0001-000000000001",
+    "fields": {
+      "codigo": "TERRITORIAL",
+      "nombre": "Perfil Territorial (web y offline)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0002-0002-0002-000000000002",
+    "fields": {
+      "codigo": "BUENAVENTURA",
+      "nombre": "Perfil Buenaventura (web y offline)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0003-0003-0003-000000000003",
+    "fields": {
+      "codigo": "SAN_ANDRES",
+      "nombre": "Perfil San Andrés / SAI (web y offline)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0004-0004-0004-000000000004",
+    "fields": {
+      "codigo": "TELEFONICO",
+      "nombre": "Perfil Telefónico SAAH (web)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0005-0005-0005-000000000005",
+    "fields": {
+      "codigo": "URBANO_ETNICO",
+      "nombre": "Perfil Urbano Étnico (web y offline)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.perfil",
+    "pk": "11111111-0006-0006-0006-000000000006",
+    "fields": {
+      "codigo": "RURAL_ETNICO",
+      "nombre": "Perfil Rural Étnico — Comunidades (offline)",
+      "activo": true,
+      "creado": "2023-07-15T00:00:00Z",
+      "actualizado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0001-0001-0001-000000000001",
+    "fields": {
+      "perfil": "11111111-0001-0001-0001-000000000001",
+      "numero": "V7",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0002-0002-0002-000000000002",
+    "fields": {
+      "perfil": "11111111-0002-0002-0002-000000000002",
+      "numero": "V7",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos__Entrevista de Caracterización_V7_perfilBuenaventura.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0003-0003-0003-000000000003",
+    "fields": {
+      "perfil": "11111111-0003-0003-0003-000000000003",
+      "numero": "V7",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil San Andrés.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0004-0004-0004-000000000004",
+    "fields": {
+      "perfil": "11111111-0004-0004-0004-000000000004",
+      "numero": "V8",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos__Entrevista de Caracterización_V8_Perfil Telefónico.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0005-0005-0005-000000000005",
+    "fields": {
+      "perfil": "11111111-0005-0005-0005-000000000005",
+      "numero": "V1",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos__Entrevista de Caracterización_Perfil Urbano EtnicoV1.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  },
+  {
+    "model": "formulario.instrumentoversion",
+    "pk": "22222222-0006-0006-0006-000000000006",
+    "fields": {
+      "perfil": "11111111-0006-0006-0006-000000000006",
+      "numero": "V1",
+      "vigente_desde": "2023-07-15",
+      "vigente_hasta": null,
+      "fuente_documental": "Diccionario_de_datos_Entrevista de Caracterización_Perfil Rural ÉtnicoV1.xlsx",
+      "creado": "2023-07-15T00:00:00Z"
+    }
+  }
+]

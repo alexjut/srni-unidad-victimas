@@ -30,8 +30,10 @@ from .serializers import (
     MapearAudioInputSerializer,
     MapearAudioOutputSerializer,
     EstadoIASerializer,
+    ProcesarEntrevistaInputSerializer,
+    ProcesarEntrevistaOutputSerializer,
 )
-from .services import mapear_texto_a_campo, hash_texto, GeminiError
+from .services import mapear_texto_a_campo, hash_texto, procesar_entrevista_batch, GeminiError
 
 
 def _ip(request) -> str:
@@ -199,16 +201,16 @@ class MapearAudioView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        opciones = list(pregunta.opciones.values_list('codigo', flat=True))
+        opciones = list(pregunta.opciones.values_list('valor', flat=True))
 
         # 4. Llamar a Gemini via servicio
         resultado_log = 'EXITO'
-        detalle_log: dict = {'pregunta_id': pregunta_id, 'tipo': pregunta.tipo_respuesta}
+        detalle_log: dict = {'pregunta_id': str(pregunta_id), 'tipo': pregunta.tipo}
 
         try:
             resultado = mapear_texto_a_campo(
                 texto_transcrito=texto,
-                tipo_campo=pregunta.tipo_respuesta,
+                tipo_campo=pregunta.tipo,
                 enunciado_pregunta=pregunta.texto,
                 opciones=opciones if opciones else None,
             )
@@ -250,3 +252,127 @@ class MapearAudioView(APIView):
         )
 
         return Response(MapearAudioOutputSerializer(resultado).data)
+
+
+class ProcesarEntrevistaView(APIView):
+    """
+    POST /api/ia/procesar-entrevista/
+
+    Recibe la transcripción completa de una entrevista y la lista de preguntas
+    de un capítulo. Llama a Gemini en modo batch y devuelve sugerencias para
+    todas las preguntas en una sola llamada.
+
+    Requiere consentimiento activo para esa sesión.
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    @extend_schema(
+        request=ProcesarEntrevistaInputSerializer,
+        responses={200: ProcesarEntrevistaOutputSerializer},
+        summary='Procesar entrevista completa con IA (batch)',
+        tags=['IA'],
+    )
+    def post(self, request):
+        ser = ProcesarEntrevistaInputSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        sesion_id = ser.validated_data['sesion_encuesta_id']
+        capitulo_id = ser.validated_data['capitulo_id']
+        transcripcion = ser.validated_data['transcripcion_completa']
+        preguntas_raw = ser.validated_data['preguntas']
+
+        # 1. Verificar consentimiento activo
+        consentimiento_activo = ConsentimientoIA.objects.filter(
+            sesion_encuesta_id=sesion_id,
+            encuestador=request.user,
+            acepto=True,
+        ).exists()
+
+        if not consentimiento_activo:
+            return Response(
+                {'detail': 'Se requiere consentimiento activo para usar la IA.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # 2. Verificar que la sesión pertenece al encuestador
+        try:
+            SesionEncuesta.objects.get(pk=sesion_id, encuestador=request.user)
+        except SesionEncuesta.DoesNotExist:
+            return Response(
+                {'detail': 'Sesión no encontrada o no autorizada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # 3. Convertir preguntas a formato que espera el servicio
+        preguntas_para_servicio = [
+            {
+                'pregunta_id': str(p['pregunta_id']),
+                'codigo_externo': p['codigo_externo'],
+                'texto': p['texto'],
+                'tipo': p['tipo'],
+                'opciones': p.get('opciones', []),
+            }
+            for p in preguntas_raw
+        ]
+
+        # 4. Llamar a Gemini batch
+        resultado_log = 'EXITO'
+        detalle_log: dict = {
+            'capitulo_id': str(capitulo_id),
+            'total_preguntas': len(preguntas_para_servicio),
+            'modo': 'batch',
+        }
+
+        try:
+            resultados = procesar_entrevista_batch(transcripcion, preguntas_para_servicio)
+        except GeminiError as exc:
+            resultado_log = 'ERROR'
+            detalle_log['error'] = str(exc)
+            LogAcceso.registrar(
+                accion='LLAMADA_GEMINI',
+                ip=_ip(request),
+                usuario=request.user,
+                recurso='Capitulo',
+                recurso_id=str(capitulo_id),
+                resultado=resultado_log,
+                detalle=detalle_log,
+            )
+            return Response(
+                {'detail': 'El servicio de IA no está disponible. Continúa de forma manual.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # 5. Calcular estadísticas
+        con_sugerencia = sum(1 for r in resultados if r.get('sugerencia') is not None)
+        sin_sugerencia = len(resultados) - con_sugerencia
+
+        # 6. Actualizar SesionIA y registrar en LogAcceso
+        sesion_ia, _ = SesionIA.objects.get_or_create(sesion_encuesta_id=sesion_id)
+        SesionIA.objects.filter(pk=sesion_ia.pk).update(
+            total_llamadas=sesion_ia.total_llamadas + 1,
+            transcripcion_hash=hash_texto(
+                (sesion_ia.transcripcion_hash or '') + transcripcion
+            ),
+        )
+
+        detalle_log.update({
+            'con_sugerencia': con_sugerencia,
+            'sin_sugerencia': sin_sugerencia,
+        })
+        LogAcceso.registrar(
+            accion='LLAMADA_GEMINI',
+            ip=_ip(request),
+            usuario=request.user,
+            recurso='Capitulo',
+            recurso_id=str(capitulo_id),
+            resultado=resultado_log,
+            detalle=detalle_log,
+        )
+
+        payload = {
+            'resultados': resultados,
+            'total_preguntas': len(resultados),
+            'con_sugerencia': con_sugerencia,
+            'sin_sugerencia': sin_sugerencia,
+        }
+        return Response(ProcesarEntrevistaOutputSerializer(payload).data)

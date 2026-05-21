@@ -53,13 +53,13 @@ describe('iaApi', () => {
 
     const resultado = await iaApi.mapearAudio({
       sesion_encuesta_id: 's-1',
-      pregunta_id: 42,
+      pregunta_id: 'pregunta-uuid-1',
       texto_transcrito: 'Vivimos en una casa propia',
     });
 
     expect(mockPost).toHaveBeenCalledWith('/api/ia/mapear-audio/', {
       sesion_encuesta_id: 's-1',
-      pregunta_id: 42,
+      pregunta_id: 'pregunta-uuid-1',
       texto_transcrito: 'Vivimos en una casa propia',
     });
     expect(resultado.data.sugerencia).toBe('CASA');
@@ -119,10 +119,10 @@ describe('iaStore', () => {
   });
 
   it('iniciarGrabacion — cambia estado a grabando', () => {
-    useIAStore.getState().iniciarGrabacion(42);
+    useIAStore.getState().iniciarGrabacion('pregunta-uuid-1');
     const { estado, preguntaActivaId } = useIAStore.getState();
     expect(estado).toBe('grabando');
-    expect(preguntaActivaId).toBe(42);
+    expect(preguntaActivaId).toBe('pregunta-uuid-1');
   });
 
   it('enviarTexto — éxito → estado sugerida con datos', async () => {
@@ -130,7 +130,7 @@ describe('iaStore', () => {
       data: { sugerencia: 'CASA', confianza: 1.0, modelo: 'gemini-1.5-flash' },
     } as any);
 
-    await useIAStore.getState().enviarTexto('sesion-1', 5, 'casa propia');
+    await useIAStore.getState().enviarTexto('sesion-1', 'pregunta-uuid-5', 'casa propia');
 
     const { estado, sugerencia } = useIAStore.getState();
     expect(estado).toBe('sugerida');
@@ -141,7 +141,7 @@ describe('iaStore', () => {
   it('enviarTexto — error de red → estado error', async () => {
     mockPost.mockRejectedValueOnce(new Error('503'));
 
-    await useIAStore.getState().enviarTexto('sesion-1', 5, 'casa');
+    await useIAStore.getState().enviarTexto('sesion-1', 'pregunta-uuid-5', 'casa');
 
     const { estado, errorMensaje } = useIAStore.getState();
     expect(estado).toBe('error');
@@ -153,7 +153,7 @@ describe('iaStore', () => {
       data: { sugerencia: 'APARTAMENTO', confianza: 0.9, modelo: 'gemini-1.5-flash' },
     } as any);
 
-    await useIAStore.getState().enviarTexto('s-1', 3, 'apartamento');
+    await useIAStore.getState().enviarTexto('s-1', 'pregunta-uuid-3', 'apartamento');
     const resultado = useIAStore.getState().aceptarSugerencia();
 
     expect(resultado?.sugerencia).toBe('APARTAMENTO');
@@ -167,7 +167,7 @@ describe('iaStore', () => {
       data: { sugerencia: 'X', confianza: 0.5, modelo: 'gemini-1.5-flash' },
     } as any);
 
-    await useIAStore.getState().enviarTexto('s-1', 3, 'algo');
+    await useIAStore.getState().enviarTexto('s-1', 'pregunta-uuid-3', 'algo');
     useIAStore.getState().rechazarSugerencia();
 
     const { estado, sugerencia } = useIAStore.getState();
