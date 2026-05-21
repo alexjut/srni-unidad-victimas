@@ -5,9 +5,12 @@ SesionEncuesta: sesión de diligenciamiento del formulario para un hogar.
 RespuestaEncuesta: respuesta individual a una pregunta del instrumento.
 
 Diseño:
-- Una sesión está vinculada a un Hogar + InstrumentoVersion (versión exacta del formulario).
-- Las respuestas quedan ancladas a la versión del instrumento vigente al capturarlas
+- Una sesión está vinculada a un Hogar + Instrumento (versión exacta del formulario).
+- Las respuestas quedan ancladas al Instrumento vigente al momento de la captura
   (trazabilidad documental — Ley 1581, auditoría UARIV).
+- instrumento y ruta_entrevista son dos ejes INDEPENDIENTES:
+    · instrumento: TERRITORIAL, ASISTENCIA, BUENAVENTURA, etc. (el caracterizador lo elige)
+    · ruta_entrevista: GENERAL, ACCIONES_CONSTITUCIONALES, etc. (condición de la entrevista)
 - Las respuestas se guardan de a una (upsert por sesión+pregunta).
 - El porcentaje_completado se recalcula al guardar cada respuesta.
 - Una sesión COMPLETADA no admite más cambios de respuesta.
@@ -18,13 +21,21 @@ from django.conf import settings
 
 
 class SesionEncuesta(models.Model):
-    """Sesión de caracterización de un hogar con una versión específica del instrumento."""
+    """Sesión de caracterización de un hogar con un instrumento específico."""
 
     ESTADO = [
-        ('INICIADA',     'Iniciada'),
-        ('EN_PROGRESO',  'En progreso'),
-        ('COMPLETADA',   'Completada'),
-        ('SUSPENDIDA',   'Suspendida — sin finalizar'),
+        ('INICIADA',    'Iniciada'),
+        ('EN_PROGRESO', 'En progreso'),
+        ('COMPLETADA',  'Completada'),
+        ('SUSPENDIDA',  'Suspendida — sin finalizar'),
+    ]
+
+    # Rutas de entrevista — eje independiente del instrumento (Manual UARIV §4)
+    RUTA_ENTREVISTA = [
+        ('GENERAL',                   'General — caracterización ordinaria'),
+        ('ACCIONES_CONSTITUCIONALES', 'Acciones constitucionales'),
+        ('MODIFICACION_NUCLEO',       'Modificación de núcleo familiar'),
+        ('ESPECIAL',                  'Ruta especial — población diferencial'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -34,12 +45,16 @@ class SesionEncuesta(models.Model):
         on_delete=models.PROTECT,
         related_name='sesiones',
     )
-    # FK a InstrumentoVersion (no a Instrumento): garantiza que las respuestas
-    # queden ancladas a la versión exacta vigente al momento de la captura.
+    # FK a Instrumento (codigo + version): garantiza que las respuestas
+    # queden ancladas al instrumento exacto vigente al momento de la captura.
     instrumento = models.ForeignKey(
-        'formulario.InstrumentoVersion',
+        'formulario.Instrumento',
         on_delete=models.PROTECT,
         related_name='sesiones',
+    )
+    ruta_entrevista = models.CharField(
+        max_length=30, choices=RUTA_ENTREVISTA, default='GENERAL', db_index=True,
+        help_text='Ruta de entrevista — independiente del instrumento (Manual UARIV §4).',
     )
     encuestador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -69,6 +84,7 @@ class SesionEncuesta(models.Model):
         indexes = [
             models.Index(fields=['hogar', 'estado']),
             models.Index(fields=['encuestador', 'estado']),
+            models.Index(fields=['instrumento', 'ruta_entrevista']),
         ]
 
     def __str__(self):
@@ -123,4 +139,4 @@ class RespuestaEncuesta(models.Model):
         ordering = ['pregunta__orden']
 
     def __str__(self):
-        return f'[{self.pregunta.codigo}] → "{self.valor[:40]}"'
+        return f'[{self.pregunta.codigo_externo}] → "{self.valor[:40]}"'

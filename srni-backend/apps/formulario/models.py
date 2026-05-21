@@ -1,29 +1,32 @@
 """
-Motor de formularios SRNI — Rediseño Sprint 6, alineado con Diccionario V8.
+Motor de formularios SRNI — Rediseño Sprint 7, alineado con Diccionario V8.
 
-Decisiones de diseño (para revisión UARIV):
+Decisiones de diseño:
 
-1. Perfil como modelo relacional (no enum): permite agregar ATENCION, REPARACION,
-   BUENAVENTURA sin tocar el código — solo insertar un registro.
+1. Instrumento como modelo relacional (no enum): cada instrumento
+   (TERRITORIAL, BUENAVENTURA, SAN_ANDRES, etc.) tiene su propio conjunto
+   de capítulos y preguntas — NO son perfiles ni rutas de entrevista.
+   El caracterizador elige el instrumento al crear la caracterización.
 
-2. InstrumentoVersion separado de Perfil: las respuestas quedan ancladas a la
-   versión en que fueron capturadas, garantizando trazabilidad documental cuando
-   UARIV actualice el instrumento (Ley 1581 — auditoría).
+2. Instrumento unificado (sin InstrumentoVersion separado): el campo
+   'version' vive en Instrumento. Las respuestas en SesionEncuesta quedan
+   ancladas al Instrumento exacto (codigo + version) vigente al capturarlas,
+   garantizando trazabilidad documental (Ley 1581 — auditoría).
 
-3. codigo_externo con sufijo _tel: es el identificador del Diccionario V8 oficial
-   (ej. C1_tel, B9_tel). Se almacena como campo de integración, no como PK,
-   para no acoplar la integridad referencial a nombres externos.
+3. codigo_externo con sufijo _tel: identificador del Diccionario V8 oficial
+   (ej. C1_tel, B9_tel). Campo de integración, no PK, para no acoplar la
+   integridad referencial a nombres externos que UARIV puede cambiar.
 
-4. id_resp_vivanto en OpcionRespuesta: los ID numéricos del diccionario V8 permiten
+4. id_resp_vivanto en OpcionRespuesta: ID numéricos del Diccionario V8 para
    exportar respuestas al sistema legado VIVANTO sin transformación adicional.
 
-5. aplicabilidad JSON en Capitulo: regla declarativa que el motor evalúa antes de
-   presentar el capítulo (ej. solo víctimas RUV de ≥3 años). Evita hardcodear
-   condiciones en el frontend.
+5. aplicabilidad JSON en Capitulo: regla declarativa evaluada antes de
+   presentar el capítulo. Evita hardcodear condiciones en el frontend.
 
-6. ReglaSkipLogic unificada: reemplaza PreguntaDerivada con un modelo que soporta
-   expresiones de contexto (edad, sexo, RUV) además de respuestas directas,
-   y acciones tipadas (HABILITAR/DESHABILITAR/OBLIGAR/FINALIZAR).
+6. ReglaSkipLogic unificada: soporta expresiones de contexto (edad, sexo,
+   RUV) además de respuestas directas. Acciones tipadas: HABILITAR /
+   DESHABILITAR / OBLIGAR / FINALIZAR. Motor genérico — sin lógica
+   hardcodeada por instrumento.
 """
 from django.db import models
 import uuid
@@ -61,55 +64,39 @@ class AccionSkipChoices(models.TextChoices):
     FINALIZAR = "FINALIZAR", "Finalizar capítulo"
 
 
-class Perfil(models.Model):
+class Instrumento(models.Model):
     """
-    Perfil del instrumento de caracterización.
-    Ejemplos: ASISTENCIA, ATENCION, REPARACION, BUENAVENTURA.
-    Modelo relacional para no requerir cambios de código al agregar perfiles.
+    Instrumento de caracterización SRNI.
+
+    Cada instrumento representa un cuestionario completo con sus propios
+    capítulos y preguntas. El caracterizador lo elige al crear la caracterización.
+
+    # TODO: confirmar lista oficial de instrumentos y códigos exactos
+    #       con área funcional / tablas Oracle (GIC_TIPO_INSTRUMENTO o equivalente).
+    #       Los 7 valores actuales son semilla inicial, no definitiva.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    codigo = models.CharField(max_length=30, unique=True)
+    codigo = models.CharField(max_length=30, db_index=True)
     nombre = models.CharField(max_length=150)
-    activo = models.BooleanField(default=True)
-    creado = models.DateTimeField(auto_now_add=True)
-    actualizado = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["codigo"]
-        verbose_name = "Perfil"
-        verbose_name_plural = "Perfiles"
-
-    def __str__(self):
-        return f"{self.codigo} — {self.nombre}"
-
-
-class InstrumentoVersion(models.Model):
-    """
-    Versión del instrumento de caracterización.
-    Cuando UARIV actualiza preguntas, se crea una nueva versión y las respuestas
-    históricas quedan ancladas a la versión en que fueron capturadas.
-    Garantiza trazabilidad documental (Ley 1581, auditoría).
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    perfil = models.ForeignKey(Perfil, on_delete=models.PROTECT, related_name="versiones")
-    numero = models.CharField(max_length=20, help_text="Ej: V8, V8.1, V9")
+    version = models.CharField(max_length=20, help_text="Ej: V7, V8, V8.1, V9")
+    activo = models.BooleanField(default=True, db_index=True)
     vigente_desde = models.DateField()
     vigente_hasta = models.DateField(null=True, blank=True)
-    # Referencia documental para trazabilidad ante UARIV (código del manual PDF)
     fuente_documental = models.CharField(
         max_length=300, blank=True,
         help_text="Ej: Manual UARIV 520.06.06-1 v01, 07/10/2021",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [("perfil", "numero")]
-        ordering = ["-vigente_desde"]
-        verbose_name = "Versión del Instrumento"
-        verbose_name_plural = "Versiones del Instrumento"
+        unique_together = [("codigo", "version")]
+        ordering = ["codigo", "-vigente_desde"]
+        verbose_name = "Instrumento"
+        verbose_name_plural = "Instrumentos"
 
     def __str__(self):
-        return f"{self.perfil.codigo}-{self.numero}"
+        return f"{self.codigo}-{self.version}"
 
     @property
     def vigente(self) -> bool:
@@ -133,12 +120,12 @@ class Capitulo(models.Model):
 
     'aplicabilidad' es una regla declarativa evaluada antes de mostrar el capítulo:
       {'ruv_incluido': True, 'edad_min': 3}  → solo víctimas RUV de ≥3 años
-      {'tipo_persona': ['AUTORIZADO','TUTOR','CUIDADOR']}  → solo esos roles
+      {'tipo_persona': ['5001','5002','5003']}  → solo esos roles
     Esto evita hardcodear condiciones de negocio en el frontend.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     instrumento = models.ForeignKey(
-        InstrumentoVersion, on_delete=models.CASCADE, related_name="capitulos"
+        Instrumento, on_delete=models.CASCADE, related_name="capitulos"
     )
     codigo = models.CharField(max_length=10, help_text="A, B, C, D, E, F, G, M, T")
     nombre = models.CharField(max_length=200)
@@ -286,20 +273,18 @@ class OpcionRespuesta(models.Model):
 
 class ReglaSkipLogic(models.Model):
     """
-    Regla declarativa de skip logic.
+    Regla declarativa de skip logic. Motor genérico — sin lógica hardcodeada
+    por instrumento. Evalúa las reglas del instrumento que corresponda.
 
-    Reemplaza PreguntaDerivada con un modelo más expresivo que soporta:
+    Soporta:
     - Reglas basadas en respuesta directa (pregunta_origen + valor_trigger)
     - Reglas basadas en contexto del hogar/persona (expresion_origen: edad, sexo, RUV)
     - Acciones tipadas: HABILITAR, DESHABILITAR, OBLIGAR, FINALIZAR
     - Afectación a pregunta individual o a capítulo completo
-
-    El motor de formulario evalúa estas reglas en orden para calcular
-    qué preguntas/capítulos son visibles en cada momento de la entrevista.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     instrumento = models.ForeignKey(
-        InstrumentoVersion, on_delete=models.CASCADE, related_name="reglas"
+        Instrumento, on_delete=models.CASCADE, related_name="reglas"
     )
     pregunta_origen = models.ForeignKey(
         Pregunta, on_delete=models.CASCADE, related_name="reglas_salientes",

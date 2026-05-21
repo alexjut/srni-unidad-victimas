@@ -131,8 +131,10 @@ export interface MiembroHogarResumen {
   parentesco: Parentesco;
   parentesco_display: string;
   genero: 'M' | 'F' | 'NB' | 'ND';
-  edad: number | null;
-  discapacidad: boolean;
+  fecha_nacimiento: string | null;   // ISO date — NO indexado en backend
+  tipo_persona: string;              // '5001' | '5002' | '5003' | '5004'
+  incluido_ruv: boolean;
+  tiene_discapacidad: boolean;
   victima: string | null;
   victima_hash: string | null;
 }
@@ -208,4 +210,43 @@ export interface PaginatedResponse<T> {
   next: string | null;
   previous: string | null;
   results: T[];
+}
+
+// ── Repositorio externo (VictimaRepository DTOs) ─────────────────────────────
+
+export interface HechoResumenFuente {
+  codigo: string;
+  nombre: string;
+  fecha_hecho: string | null;     // ISO date 'YYYY-MM-DD'
+  municipio_hecho: string | null;
+}
+
+export interface VictimaResumenFuente {
+  cons_persona: number | null;
+  tipo_documento: string;         // 'CC', 'CE', 'TI', 'RC', 'PA'
+  numero_documento: string;
+  primer_nombre: string;
+  segundo_nombre: string;
+  primer_apellido: string;
+  segundo_apellido: string;
+  fecha_nacimiento: string;       // ISO date 'YYYY-MM-DD'
+  genero: 'M' | 'F' | 'NB' | 'ND';
+  estado_ruv: 'INCLUIDO' | 'NO_INCLUIDO' | 'EN_PROCESO' | 'EXCLUIDO';
+  habilitado_para_caracterizacion: boolean;
+  fecha_ult_caracterizacion: string | null;  // ISO datetime
+  pertenencia_etnica: string;
+  pueblo_indigena: string;
+  discapacidad: boolean;
+  tipo_discapacidad: string;
+  hechos_victimizantes: HechoResumenFuente[];
+  municipio_residencia_codigo: string | null;
+  municipio_residencia_nombre: string | null;
+  fuente_origen: string;
+}
+
+export interface ResultadoBusquedaFuente {
+  encontrado: boolean;
+  victima: VictimaResumenFuente | null;
+  fuente: string;
+  mensaje: string;
 }

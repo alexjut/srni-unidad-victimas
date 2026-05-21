@@ -19,8 +19,11 @@ from apps.auditoria.models import LogAcceso
 from .models import Victima
 from .serializers import (
     VictimaListSerializer, VictimaDetalleSerializer, BusquedaDocumentoSerializer,
+    ConsultarFuenteInputSerializer, ResultadoBusquedaSerializer,
+    RegistrarDesdeFuenteSerializer,
 )
 from .fields import sha256_hash
+from .repository import get_repository
 
 
 def _ip_de_request(request) -> str:
@@ -136,3 +139,199 @@ class BuscarVictimaView(APIView):
             detalle={'encontrado': True, 'tipo_documento': tipo_codigo},
         )
         return Response(VictimaListSerializer(victima).data)
+
+
+@extend_schema(
+    summary='Consultar víctima en fuente externa (RUV / Oracle)',
+    description=(
+        'Busca a la persona en el repositorio externo (RUV, Oracle SNARIV o Mock). '
+        'Retorna habilitado_para_caracterizacion y, si corresponde, los hechos victimizantes '
+        'y datos para conformar el hogar. '
+        'Este endpoint NO consulta la DB local SRNI — usa el VictimaRepository configurado '
+        'en settings.VICTIMA_REPOSITORY.'
+    ),
+    tags=['Víctimas'],
+    request=ConsultarFuenteInputSerializer,
+    responses={200: ResultadoBusquedaSerializer},
+)
+class ConsultarFuenteView(APIView):
+    """
+    POST /api/victimas/consultar-fuente/
+
+    Requiere permiso puede_buscar_rni.
+    Toda consulta queda registrada en LogAcceso.
+    """
+    permission_classes = [IsAuthenticated, PuedeBuscarRNI]
+
+    def post(self, request):
+        serializer = ConsultarFuenteInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tipo = serializer.validated_data['tipo_documento']
+        numero = serializer.validated_data['numero_documento']
+        ip = _ip_de_request(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+
+        repo = get_repository()
+        resultado = repo.buscar_por_documento(tipo, numero)
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='CONSULTA_FUENTE_EXTERNA',
+            recurso='VictimaRepository',
+            recurso_id=None,
+            ip=ip,
+            user_agent=ua,
+            resultado='EXITO',
+            detalle={
+                'encontrado': resultado.encontrado,
+                'fuente': resultado.fuente,
+                'tipo_documento': tipo,
+                'habilitado': (
+                    resultado.victima.habilitado_para_caracterizacion
+                    if resultado.victima else None
+                ),
+            },
+        )
+
+        return Response(ResultadoBusquedaSerializer(resultado).data)
+
+
+@extend_schema(
+    summary='Obtener grupo familiar desde fuente externa',
+    description=(
+        'Retorna los integrantes del grupo familiar registrados en el RUV/Oracle '
+        'para el consecutivo Oracle indicado (cons_persona). '
+        'Requiere que la búsqueda previa haya retornado cons_persona.'
+    ),
+    tags=['Víctimas'],
+    responses={200: ResultadoBusquedaSerializer(many=True)},
+)
+class GrupoFamiliarView(APIView):
+    """
+    GET /api/victimas/grupo-familiar/{cons_persona}/
+
+    Requiere permiso puede_caracterizar.
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    def get(self, request, cons_persona: int):
+        repo = get_repository()
+        miembros = repo.obtener_grupo_familiar(cons_persona)
+
+        from .serializers import VictimaResumenSerializer
+        return Response(VictimaResumenSerializer(miembros, many=True).data)
+
+
+@extend_schema(
+    summary='Registrar o actualizar víctima desde fuente externa',
+    description=(
+        'Recibe los datos de una VictimaResumen DTO proveniente del repositorio externo '
+        '(RUV / Oracle / Mock) y realiza un upsert en la tabla local Victima. '
+        'Busca por hash SHA-256 del número de documento + tipo de documento. '
+        'Retorna el UUID local del registro y si fue creado (created=true) o actualizado.'
+    ),
+    tags=['Víctimas'],
+    request=RegistrarDesdeFuenteSerializer,
+    responses={
+        200: {'type': 'object', 'properties': {
+            'victima_id': {'type': 'string', 'format': 'uuid'},
+            'created': {'type': 'boolean'},
+        }},
+    },
+)
+class RegistrarDesdeFuenteView(APIView):
+    """
+    POST /api/victimas/registrar-desde-fuente/
+
+    Hace upsert de Victima usando (numero_documento_hash, tipo_documento) como clave.
+    Requiere permiso puede_buscar_rni.
+    Toda operación queda registrada en LogAcceso.
+    """
+    permission_classes = [IsAuthenticated, PuedeBuscarRNI]
+
+    def post(self, request):
+        serializer = RegistrarDesdeFuenteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        ip = _ip_de_request(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+
+        # 1. Resolver TipoDocumento
+        from apps.parametricas.models import TipoDocumento, Municipio
+        try:
+            tipo_doc = TipoDocumento.objects.get(codigo=data['tipo_documento'])
+        except TipoDocumento.DoesNotExist:
+            return Response(
+                {'detail': f"Tipo de documento '{data['tipo_documento']}' no existe en el catálogo."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 2. Calcular hash del número de documento
+        hash_doc = sha256_hash(data['numero_documento'])
+
+        # 3. Buscar registro existente o preparar uno nuevo
+        try:
+            victima = Victima.objects.get(
+                numero_documento_hash=hash_doc,
+                tipo_documento=tipo_doc,
+            )
+            created = False
+        except Victima.DoesNotExist:
+            victima = Victima(
+                tipo_documento=tipo_doc,
+                numero_documento=data['numero_documento'],
+                creado_por=request.user,
+            )
+            created = True
+
+        # 4. Actualizar campos (tanto en creación como en actualización)
+        victima.cons_persona = data.get('cons_persona')
+        victima.primer_nombre = data['primer_nombre']
+        victima.segundo_nombre = data.get('segundo_nombre', '')
+        victima.primer_apellido = data['primer_apellido']
+        victima.segundo_apellido = data.get('segundo_apellido', '')
+        # fecha_nacimiento viene como objeto date; EncryptedField almacena texto
+        victima.fecha_nacimiento = str(data['fecha_nacimiento'])
+        victima.genero = data['genero']
+        victima.estado_ruv = data['estado_ruv']
+        victima.habilitado_para_caracterizacion = data['habilitado_para_caracterizacion']
+        victima.pertenencia_etnica = data.get('pertenencia_etnica', 'NINGUNA')
+        victima.pueblo_indigena = data.get('pueblo_indigena', '')
+        victima.discapacidad = data.get('discapacidad', False)
+        victima.tipo_discapacidad = data.get('tipo_discapacidad', '')
+        victima.fuente_origen = data.get('fuente_origen', 'RUV')
+
+        # 5. Resolver municipio de residencia (no es error si no existe)
+        codigo_mun = data.get('municipio_residencia_codigo')
+        if codigo_mun:
+            try:
+                victima.municipio_residencia = Municipio.objects.get(codigo_dane=codigo_mun)
+            except Municipio.DoesNotExist:
+                victima.municipio_residencia = None
+        else:
+            victima.municipio_residencia = None
+
+        victima.save()
+
+        # 6. Auditoría
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='REGISTRAR_VICTIMA_FUENTE_EXTERNA',
+            recurso='Victima',
+            recurso_id=str(victima.id),
+            ip=ip,
+            user_agent=ua,
+            resultado='EXITO',
+            detalle={
+                'created': created,
+                'tipo_documento': data['tipo_documento'],
+                'fuente_origen': victima.fuente_origen,
+            },
+        )
+
+        return Response(
+            {'victima_id': str(victima.id), 'created': created},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )

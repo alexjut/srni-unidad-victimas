@@ -17,6 +17,7 @@ from .models import Hogar, MiembroHogar
 from .serializers import (
     HogarListSerializer, HogarDetalleSerializer,
     AgregarMiembroSerializer, MiembroHogarSerializer,
+    CambiarJefeSerializer,
 )
 
 
@@ -109,3 +110,49 @@ class HogarViewSet(viewsets.ModelViewSet):
         hogar = self.get_object()
         miembros = hogar.miembros.select_related('victima', 'tipo_documento').all()
         return Response(MiembroHogarSerializer(miembros, many=True).data)
+
+    @extend_schema(
+        summary='Cambiar jefe de hogar',
+        description=(
+            'Reemplaza el jefe_hogar del hogar con otra Victima registrada en el sistema. '
+            'El miembro anterior sigue en el hogar; solo cambia el jefe.'
+        ),
+        tags=['Hogares'],
+        request=CambiarJefeSerializer,
+        responses={200: HogarDetalleSerializer},
+    )
+    @action(detail=True, methods=['patch'], url_path='cambiar-jefe')
+    def cambiar_jefe(self, request, pk=None):
+        from apps.victimas.models import Victima
+        hogar = self.get_object()
+        serializer = CambiarJefeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        victima_id = serializer.validated_data['victima_id']
+        try:
+            nueva_jefa = Victima.objects.get(pk=victima_id)
+        except Victima.DoesNotExist:
+            return Response(
+                {'detail': 'Víctima no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        jefe_anterior_id = str(hogar.jefe_hogar_id)
+        hogar.jefe_hogar = nueva_jefa
+        hogar.save(update_fields=['jefe_hogar', 'updated_at'])
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='CAMBIAR_JEFE_HOGAR',
+            recurso='Hogar',
+            recurso_id=str(hogar.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={
+                'jefe_anterior': jefe_anterior_id,
+                'jefe_nuevo': str(victima_id),
+            },
+        )
+
+        return Response(HogarDetalleSerializer(hogar).data)

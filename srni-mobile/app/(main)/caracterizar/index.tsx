@@ -10,28 +10,22 @@ import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme'
 import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
+import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
-interface VersionResumen {
+interface InstrumentoResumen {
   id: string;
-  numero: string;
+  codigo: string;
+  nombre: string;
+  version: string;
+  activo: boolean;
   vigente: boolean;
   total_capitulos: number;
 }
 
-interface PerfilInstrumento {
-  id: string;
-  codigo: string;
-  nombre: string;
-  activo: boolean;
-  versiones: VersionResumen[];
-}
-
-type ItemPerfil = { perfil: PerfilInstrumento; version: VersionResumen };
-
-// ── Iconos por código de perfil ────────────────────────────────────────────
+// ── Iconos por código de instrumento ──────────────────────────────────────
 
 const ICONO: Record<string, string> = {
   TERRITORIAL:   'map-marker-multiple',
@@ -50,28 +44,28 @@ function TarjetaInstrumento({
   activo,
   onPress,
 }: {
-  item: ItemPerfil;
+  item: InstrumentoResumen;
   activo: boolean;
   onPress: () => void;
 }) {
-  const icono = (ICONO[item.perfil.codigo] ?? 'clipboard-outline') as any;
+  const icono = (ICONO[item.codigo] ?? 'clipboard-outline') as any;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, activo && styles.cardActivo, pressed && { opacity: 0.88 }]}
       accessibilityRole="radio"
       accessibilityState={{ selected: activo }}
-      accessibilityLabel={item.perfil.nombre}
+      accessibilityLabel={item.nombre}
     >
       <View style={[styles.iconoCirculo, activo && styles.iconoCirculoActivo]}>
         <MaterialCommunityIcons name={icono} size={26} color={activo ? '#FFF' : GOV.azul} />
       </View>
       <View style={styles.cardTexto}>
         <Text style={[styles.cardNombre, activo && styles.cardNombreActivo]} numberOfLines={2}>
-          {item.perfil.nombre}
+          {item.nombre}
         </Text>
         <Text style={styles.cardMeta}>
-          {item.version.numero}  ·  {item.version.total_capitulos} capítulos
+          {item.version}  ·  {item.total_capitulos} capítulos
         </Text>
       </View>
       <MaterialCommunityIcons
@@ -111,26 +105,22 @@ function TarjetaHogar({ hogar, onPress }: { hogar: HogarResumen; onPress: () => 
 
 export default function CaracterizarScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId?: string }>();
+  const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
 
   const [paso, setPaso] = useState<'instrumento' | 'hogar'>('instrumento');
-  const [perfiles, setPerfiles] = useState<ItemPerfil[]>([]);
+  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
   const [hogares, setHogares] = useState<HogarResumen[]>([]);
   const [cargandoPerfiles, setCargandoPerfiles] = useState(true);
   const [cargandoHogares, setCargandoHogares] = useState(false);
-  const [seleccionado, setSeleccionado] = useState<ItemPerfil | null>(null);
+  const [seleccionado, setSeleccionado] = useState<InstrumentoResumen | null>(null);
   const [creando, setCreando] = useState(false);
 
   useEffect(() => {
     apiClient
-      .get<{ results: PerfilInstrumento[] }>('/api/formulario/perfiles/')
+      .get<{ results: InstrumentoResumen[] }>('/api/formulario/instrumentos/')
       .then((r) => {
-        const items: ItemPerfil[] = [];
-        for (const p of r.data.results) {
-          if (!p.activo) continue;
-          const vigente = p.versiones.find((v) => v.vigente);
-          if (vigente) items.push({ perfil: p, version: vigente });
-        }
-        setPerfiles(items);
+        const activos = r.data.results.filter((i) => i.activo && i.vigente);
+        setInstrumentos(activos);
       })
       .catch(() => {})
       .finally(() => setCargandoPerfiles(false));
@@ -154,7 +144,8 @@ export default function CaracterizarScreen() {
     try {
       const { data } = await encuestasApi.crear({
         hogar: hId,
-        instrumento: seleccionado.version.id,
+        instrumento: seleccionado.id,
+        ruta_entrevista: rutaEntrevista,
       });
       router.replace({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: data.id } });
     } catch (err: any) {
@@ -212,7 +203,7 @@ export default function CaracterizarScreen() {
           )}
         </View>
 
-        {perfiles.length === 0 ? (
+        {instrumentos.length === 0 ? (
           <EmptyState
             icon="clipboard-alert-outline"
             title="Sin instrumentos"
@@ -220,13 +211,13 @@ export default function CaracterizarScreen() {
           />
         ) : (
           <FlatList
-            data={perfiles}
-            keyExtractor={(item) => item.version.id}
+            data={instrumentos}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={styles.lista}
             renderItem={({ item }) => (
               <TarjetaInstrumento
                 item={item}
-                activo={seleccionado?.version.id === item.version.id}
+                activo={seleccionado?.id === item.id}
                 onPress={() => setSeleccionado(item)}
               />
             )}
@@ -261,12 +252,12 @@ export default function CaracterizarScreen() {
     <View style={styles.root}>
       <GovHeader
         title="Seleccionar hogar"
-        subtitle={`${seleccionado?.perfil.codigo}  ·  ${seleccionado?.version.numero}`}
+        subtitle={`${seleccionado?.codigo}  ·  ${seleccionado?.version}`}
         onBack={() => setPaso('instrumento')}
       />
       <View style={styles.miga}>
         <Text style={styles.migaTxt}>
-          Caracterizar  ›  {seleccionado?.perfil.codigo}  ›  Hogar
+          Caracterizar  ›  {seleccionado?.codigo}  ›  Hogar
         </Text>
       </View>
 
@@ -278,7 +269,7 @@ export default function CaracterizarScreen() {
           </View>
           <View style={[styles.pasoLinea, styles.pasoLineaCompletada]} />
           <View style={styles.pasoBurbuja}><Text style={styles.pasoBurbujaActivo}>2</Text></View>
-          <Text style={styles.pasoLabel}>{seleccionado?.perfil.nombre}  →  Hogar</Text>
+          <Text style={styles.pasoLabel}>{seleccionado?.nombre}  →  Hogar</Text>
         </View>
       </View>
 

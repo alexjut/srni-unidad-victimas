@@ -119,6 +119,30 @@ Estos errores fueron identificados en el análisis del APK `co.com.rni.encuestad
 
 ---
 
+## Diseño y UX — decisiones tomadas (Sprint 7)
+
+### Login
+- Fondo con `LinearGradient` azul oscuro (`#00234E → #003A80 → #1565C0`) + franja GOV.CO amarilla
+- Tiles decorativos de regiones colombianas (Pacífico, Caribe, Andes, Amazonia, Orinoquía, Insular)
+- Botón de **biometría** (huella/Face ID) — círculo azul prominente estilo banca moderna
+- Auto-habilitación biométrica en primer login si el dispositivo la soporta (`expo-local-authentication`)
+- Tokens guardados en `expo-secure-store` (nunca en localStorage)
+
+### Pantalla de Entrevista (busqueda.tsx)
+- Primera pantalla visible tras el login (`initialRouteName="busqueda"`)
+- Imagen auténtica de comunidad indígena Emberá — fuente: unidadvictimas.gov.co
+- Gradiente oscuro sobre la imagen para legibilidad del formulario
+- Formulario como **tarjeta flotante** sobre la imagen (estilo card elevada)
+- Selector de tipo de documento: **dropdown profesional** con Modal bottom-sheet
+- Selección de instrumento de caracterización **inline** (no pantalla separada)
+- Flujo: buscar → instrumento → conformar hogar → crear sesión → encuesta
+
+### Paquetes adicionales instalados (Expo SDK 54 compatible)
+- `expo-local-authentication` — biometría nativa Android/iOS
+- `expo-linear-gradient` — gradientes de fondo
+
+---
+
 ## Cumplimiento normativo
 
 | Norma | Descripción |
@@ -183,25 +207,25 @@ unidad-victima/
 │   ├── app/                      ← Expo Router (file-based routing)
 │   │   ├── _layout.tsx           ← Root layout + PaperProvider + auth guard
 │   │   ├── (auth)/
-│   │   │   └── login.tsx
+│   │   │   └── login.tsx         ← Gradiente azul + biometría (huella/Face ID) + regiones decorativas
 │   │   └── (main)/
-│   │       ├── _layout.tsx       ← Bottom tabs
-│   │       ├── index.tsx         ← Dashboard
-│   │       ├── busqueda.tsx      ← Búsqueda RNI (server-side only)
+│   │       ├── _layout.tsx       ← Bottom tabs — initialRouteName="busqueda"
+│   │       ├── index.tsx         ← Dashboard (tab Inicio)
+│   │       ├── busqueda.tsx      ← ENTREVISTA DE CARACTERIZACIÓN — imagen indígena fondo + instrumento inline
 │   │       ├── caracterizar/
 │   │       │   └── index.tsx     ← Flujo: instrumento → hogar → crear sesión
 │   │       ├── formulario/
 │   │       │   ├── index.tsx     ← Lista de capítulos del instrumento
 │   │       │   ├── [temaId].tsx  ← Motor de preguntas + skip logic offline
 │   │       │   ├── consentimiento-ia.tsx
-│   │       │   ├── grabacion-entrevista.tsx  ← (pendiente) modo Gemini
-│   │       │   └── revision-ia.tsx           ← (pendiente) revisión batch IA
+│   │       │   ├── grabacion-entrevista.tsx  ← modo Gemini (batch)
+│   │       │   └── revision-ia.tsx           ← revisión batch IA
 │   │       └── encuestas/
 │   │           ├── index.tsx     ← Lista de sesiones
 │   │           └── [sesionId].tsx← Detalle sesión + nav al formulario
 │   └── src/
 │       ├── api/                  ← axios client + interceptores JWT
-│       ├── stores/               ← Zustand (authStore, syncStore, iaStore)
+│       ├── stores/               ← Zustand (authStore, syncStore, iaStore, caracterizacionStore)
 │       ├── db/                   ← expo-sqlite schema V2 (UUID PKs)
 │       │   ├── schema.ts         ← Migration V2: tablas con UUID
 │       │   ├── instrumentoDao.ts ← Acceso a capítulos/preguntas/opciones

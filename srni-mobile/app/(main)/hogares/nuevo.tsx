@@ -3,13 +3,16 @@ import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import {
   Text, TextInput, Button, SegmentedButtons,
-  HelperText, Divider, ActivityIndicator, Chip,
+  HelperText, Divider, ActivityIndicator, Chip, Surface,
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import { encuestasApi } from '../../../src/api/encuestas';
 import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
 import * as colaDao from '../../../src/db/colaDao';
 import { useSyncStore } from '../../../src/stores/syncStore';
+import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 
 const TIPOS_VIVIENDA = [
   { value: 'CASA', label: 'Casa' },
@@ -30,8 +33,10 @@ const CONDICIONES = [
 
 export default function NuevoHogarScreen() {
   const { estaOnline, refrescarContadores } = useSyncStore();
+  const { victimaFuente, victimaLocalId, limpiar, setHogarId, instrumentoId, rutaEntrevista } = useCaracterizacionStore();
+  const tieneJefePrecargado = !!victimaLocalId;
 
-  const [jefeHogar, setJefeHogar] = useState('');
+  const [jefeHogar, setJefeHogar] = useState(victimaLocalId ?? '');
   const [municipio, setMunicipio] = useState('');
   const [tipoVivienda, setTipoVivienda] = useState('CASA');
   const [condicion, setCondicion] = useState('ARRIENDO');
@@ -46,10 +51,12 @@ export default function NuevoHogarScreen() {
 
   function validar(): boolean {
     const e: Record<string, string> = {};
-    if (!jefeHogar.trim()) e.jefeHogar = 'Ingrese el UUID del jefe de hogar.';
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (jefeHogar.trim() && !uuidRegex.test(jefeHogar.trim())) {
-      e.jefeHogar = 'Formato de UUID inválido (ej: a1b2c3d4-…).';
+    if (!tieneJefePrecargado) {
+      if (!jefeHogar.trim()) e.jefeHogar = 'Ingrese el UUID del jefe de hogar.';
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (jefeHogar.trim() && !uuidRegex.test(jefeHogar.trim())) {
+        e.jefeHogar = 'Formato de UUID inválido (ej: a1b2c3d4-…).';
+      }
     }
     const pers = parseInt(personas, 10);
     if (!personas || isNaN(pers) || pers < 1) e.personas = 'Ingrese al menos 1 persona.';
@@ -75,8 +82,8 @@ export default function NuevoHogarScreen() {
 
     try {
       if (estaOnline) {
-        // Camino feliz: crear directamente en servidor
-        await hogaresApi.crear({
+        // Camino feliz: crear hogar directamente en servidor
+        const { data: hogarCreado } = await hogaresApi.crear({
           jefe_hogar: campos.jefe_hogar_uuid,
           municipio: campos.municipio_id,
           tipo_vivienda: campos.tipo_vivienda,
@@ -86,6 +93,23 @@ export default function NuevoHogarScreen() {
           numero_personas: campos.numero_personas,
           observaciones: campos.observaciones,
         });
+        setHogarId(hogarCreado.id);
+
+        // Si viene del flujo búsqueda con instrumento pre-seleccionado: crear sesión y arrancar
+        if (instrumentoId) {
+          const { data: sesion } = await encuestasApi.crear({
+            hogar: hogarCreado.id,
+            instrumento: instrumentoId,
+            ruta_entrevista: rutaEntrevista,
+          });
+          limpiar();
+          router.replace({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: sesion.id } });
+          return;
+        }
+
+        // Sin instrumento pre-seleccionado: ir al detalle del hogar (flujo normal)
+        router.replace({ pathname: '/(main)/hogares/[hogarId]', params: { hogarId: hogarCreado.id } });
+        return;
       } else {
         // Sin red: guardar localmente y encolar
         const hogarLocal = await hogaresOfflineDao.crearHogarOffline(campos);
@@ -101,8 +125,9 @@ export default function NuevoHogarScreen() {
           observaciones: campos.observaciones,
         });
         await refrescarContadores();
+        limpiar();
+        router.back();
       }
-      router.back();
     } catch (err: any) {
       const detalle = err?.response?.data;
       if (typeof detalle === 'object') {
@@ -134,18 +159,45 @@ export default function NuevoHogarScreen() {
       )}
 
       <Text variant="titleMedium" style={styles.seccion}>Jefe de hogar</Text>
-      <TextInput
-        label="UUID del jefe de hogar *"
-        value={jefeHogar}
-        onChangeText={setJefeHogar}
-        mode="outlined"
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        error={!!errores.jefeHogar}
-      />
-      {errores.jefeHogar && <HelperText type="error">{errores.jefeHogar}</HelperText>}
-      <HelperText type="info">Obtenga el UUID desde la pantalla de Búsqueda RNI.</HelperText>
+      {tieneJefePrecargado && victimaFuente ? (
+        <Surface style={styles.jefeCard} elevation={2}>
+          <View style={styles.jefeCardRow}>
+            <MaterialCommunityIcons name="account-check" size={28} color="#2E7D32" style={styles.jefeCardIcon} />
+            <View style={styles.jefeCardTextos}>
+              <Text style={styles.jefeCardTitulo}>Jefe de hogar confirmado</Text>
+              <Text style={styles.jefeCardNombre}>
+                {[
+                  victimaFuente.primer_nombre,
+                  victimaFuente.segundo_nombre,
+                  victimaFuente.primer_apellido,
+                  victimaFuente.segundo_apellido,
+                ].filter(Boolean).join(' ')}
+              </Text>
+              <Text style={styles.jefeCardDoc}>
+                {victimaFuente.tipo_documento} — *** (datos protegidos)
+              </Text>
+              <Text style={styles.jefeCardUuid}>
+                UUID: {victimaLocalId?.slice(0, 8)}…
+              </Text>
+            </View>
+          </View>
+        </Surface>
+      ) : (
+        <>
+          <TextInput
+            label="UUID del jefe de hogar *"
+            value={jefeHogar}
+            onChangeText={setJefeHogar}
+            mode="outlined"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            error={!!errores.jefeHogar}
+          />
+          {errores.jefeHogar && <HelperText type="error">{errores.jefeHogar}</HelperText>}
+          <HelperText type="info">Obtenga el UUID desde la pantalla de Búsqueda RNI.</HelperText>
+        </>
+      )}
 
       <Divider style={styles.divider} />
       <Text variant="titleMedium" style={styles.seccion}>Ubicación</Text>
@@ -229,7 +281,7 @@ export default function NuevoHogarScreen() {
           : estaOnline ? 'Guardar hogar' : 'Guardar offline'}
       </Button>
 
-      <Button mode="outlined" onPress={() => router.back()} style={styles.cancelar}>
+      <Button mode="outlined" onPress={() => { limpiar(); router.back(); }} style={styles.cancelar}>
         Cancelar
       </Button>
     </ScrollView>
@@ -249,4 +301,23 @@ const styles = StyleSheet.create({
   boton: { marginTop: 24 },
   cancelar: { marginTop: 8 },
   error: { color: '#C62828', marginTop: 12, textAlign: 'center' },
+  // Jefe de hogar precargado
+  jefeCard: {
+    borderRadius: 12,
+    padding: 16,
+    backgroundColor: '#E8F5E9',
+    marginBottom: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  jefeCardRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  jefeCardIcon: { marginRight: 12, marginTop: 2 },
+  jefeCardTextos: { flex: 1 },
+  jefeCardTitulo: { fontWeight: '700', color: '#2E7D32', fontSize: 14, marginBottom: 4 },
+  jefeCardNombre: { fontSize: 15, color: '#212121', marginBottom: 2 },
+  jefeCardDoc: { fontSize: 13, color: '#616161', marginBottom: 2 },
+  jefeCardUuid: { fontSize: 12, color: '#1565C0' },
 });

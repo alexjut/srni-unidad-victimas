@@ -2,15 +2,17 @@
  * Detalle de un hogar — GOV.CO design system.
  */
 import { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import { victimasApi } from '../../../src/api/victimas';
+import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
-import type { HogarDetalle, MiembroHogarResumen } from '../../../src/types';
+import type { HogarDetalle, MiembroHogarResumen, VictimaResumenFuente } from '../../../src/types';
 
 const PARENTESCO_LABEL: Record<string, string> = {
   JEFE: 'Jefe/a', CONYUGE: 'Cónyuge', HIJO_A: 'Hijo/a',
@@ -45,6 +47,9 @@ const filaStyles = StyleSheet.create({
 // ─── Ítem de miembro ──────────────────────────────────────────────────────────
 
 function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
+  const edadDisplay = miembro.fecha_nacimiento
+    ? `n. ${miembro.fecha_nacimiento}`
+    : 'fecha N/D';
   return (
     <View style={miembroStyles.root}>
       <View style={miembroStyles.iconWrap}>
@@ -55,7 +60,7 @@ function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
           {PARENTESCO_LABEL[miembro.parentesco] ?? miembro.parentesco}
         </Text>
         <Text style={miembroStyles.dato}>
-          {miembro.genero} · {miembro.edad != null ? `${miembro.edad} años` : 'edad N/D'}
+          {miembro.genero} · {edadDisplay}
         </Text>
       </View>
     </View>
@@ -118,6 +123,16 @@ export default function HogarDetalleScreen() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
+  // ── Store del flujo de caracterización ────────────────────────────────────
+  const { victimaFuente, hogarId: hogarIdStore, limpiar } = useCaracterizacionStore();
+  const esteHogarEnFlujo = hogarIdStore === hogarId;
+  const consPersona = victimaFuente?.cons_persona ?? null;
+
+  // ── Estado grupo familiar ─────────────────────────────────────────────────
+  const [grupoFamiliar, setGrupoFamiliar] = useState<VictimaResumenFuente[]>([]);
+  const [cargandoGrupo, setCargandoGrupo] = useState(false);
+  const [miembrosAgregados, setMiembrosAgregados] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (!hogarId) return;
     hogaresApi.detalle(hogarId)
@@ -126,9 +141,61 @@ export default function HogarDetalleScreen() {
       .finally(() => setCargando(false));
   }, [hogarId]);
 
+  useEffect(() => {
+    if (!esteHogarEnFlujo || consPersona == null) return;
+    setCargandoGrupo(true);
+    victimasApi.grupoFamiliar(consPersona)
+      .then((res) => setGrupoFamiliar(res.data))
+      .catch(() => {}) // silencioso — el grupo es opcional
+      .finally(() => setCargandoGrupo(false));
+  }, [esteHogarEnFlujo, consPersona]);
+
   function aplicarInstrumento() {
     if (!hogar) return;
     router.push({ pathname: '/(main)/caracterizar/index', params: { hogarId: hogar.id } });
+  }
+
+  // ── Agregar miembro desde la fuente ──────────────────────────────────────
+
+  async function agregarDesdeFuente(miembro: VictimaResumenFuente, parentesco: string) {
+    if (!hogarId) return;
+    try {
+      // Primero registra la víctima en la DB local si no está
+      const { data: reg } = await victimasApi.registrarDesdeFuente(miembro);
+      // Luego la agrega al hogar
+      await hogaresApi.agregarMiembro(hogarId, {
+        victima: reg.victima_id,
+        parentesco,
+        genero: miembro.genero,
+        incluido_ruv: miembro.estado_ruv === 'INCLUIDO',
+        tipo_persona: '5001',
+      });
+      // Marca como agregado
+      const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;
+      setMiembrosAgregados((prev) => new Set(prev).add(clave));
+      // Refresca el hogar
+      const refreshed = await hogaresApi.detalle(hogarId);
+      setHogar(refreshed.data);
+    } catch {
+      Alert.alert('Error', 'No se pudo agregar el miembro. Intente nuevamente.');
+    }
+  }
+
+  function seleccionarParentesco(miembro: VictimaResumenFuente) {
+    const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;
+    if (miembrosAgregados.has(clave)) return; // ya fue agregado
+    Alert.alert(
+      'Parentesco con el jefe',
+      `¿Qué relación tiene ${miembro.primer_nombre} ${miembro.primer_apellido} con el jefe de hogar?`,
+      [
+        { text: 'Cónyuge',     onPress: () => agregarDesdeFuente(miembro, 'CONYUGE') },
+        { text: 'Hijo/a',      onPress: () => agregarDesdeFuente(miembro, 'HIJO_A') },
+        { text: 'Padre/Madre', onPress: () => agregarDesdeFuente(miembro, 'PADRE_MADRE') },
+        { text: 'Hermano/a',   onPress: () => agregarDesdeFuente(miembro, 'HERMANO_A') },
+        { text: 'Otro',        onPress: () => agregarDesdeFuente(miembro, 'OTRO_PARIENTE') },
+        { text: 'Cancelar',    style: 'cancel' },
+      ]
+    );
   }
 
   // ── Estados de carga / error ─────────────────────────────────────────────────
@@ -200,6 +267,46 @@ export default function HogarDetalleScreen() {
           )}
         </SeccionCard>
 
+        {/* Grupo familiar RUV — solo visible cuando el hogar está en el flujo activo */}
+        {esteHogarEnFlujo && (cargandoGrupo || grupoFamiliar.length > 0) && (
+          <SeccionCard titulo="Grupo familiar RUV">
+            {cargandoGrupo ? (
+              <ActivityIndicator size="small" color={GOV.azul} style={{ marginVertical: 8 }} />
+            ) : (
+              grupoFamiliar.map((miembro) => {
+                const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;
+                const yaAgregado = miembrosAgregados.has(clave);
+                const nombre = [miembro.primer_nombre, miembro.segundo_nombre, miembro.primer_apellido, miembro.segundo_apellido]
+                  .filter(Boolean).join(' ');
+                return (
+                  <View key={clave} style={grupoStyles.fila}>
+                    <View style={grupoStyles.info}>
+                      <Text style={grupoStyles.nombre}>{nombre}</Text>
+                      <Text style={grupoStyles.meta}>
+                        {miembro.tipo_documento} · {miembro.estado_ruv.replace('_', ' ')}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => seleccionarParentesco(miembro)}
+                      disabled={yaAgregado}
+                      style={[grupoStyles.btn, yaAgregado && grupoStyles.btnAgregado]}
+                    >
+                      <MaterialCommunityIcons
+                        name={yaAgregado ? 'check' : 'account-plus'}
+                        size={16}
+                        color={yaAgregado ? GOV.verde : GOV.azul}
+                      />
+                      <Text style={[grupoStyles.btnTxt, yaAgregado && grupoStyles.btnTxtAgregado]}>
+                        {yaAgregado ? 'Agregado' : 'Agregar'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              })
+            )}
+          </SeccionCard>
+        )}
+
         {/* Encuestas */}
         <SeccionCard titulo={`Encuestas (${hogar.total_sesiones})`}>
           <GovButton
@@ -218,6 +325,19 @@ export default function HogarDetalleScreen() {
             </View>
           )}
         </SeccionCard>
+
+        {/* Botón finalizar conformación — solo en flujo activo */}
+        {esteHogarEnFlujo && (
+          <GovButton
+            label="Finalizar conformación"
+            icon="check-circle"
+            variant="secondary"
+            onPress={() => {
+              limpiar();
+              // No navegar — el usuario puede seguir viendo el hogar
+            }}
+          />
+        )}
 
       </ScrollView>
     </View>
@@ -274,4 +394,29 @@ const styles = StyleSheet.create({
   verSesionesWrap: {
     marginTop: SPACING.sm,
   },
+});
+
+const grupoStyles = StyleSheet.create({
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  info: { flex: 1 },
+  nombre: { ...FONT.small, fontWeight: '600', color: GOV.textoP },
+  meta: { ...FONT.caption, color: GOV.textoT, marginTop: 2 },
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
+  },
+  btnAgregado: { backgroundColor: GOV.verdeTenue },
+  btnTxt: { ...FONT.label, color: GOV.azul },
+  btnTxtAgregado: { color: GOV.verde },
 });

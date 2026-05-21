@@ -65,6 +65,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'hogar',
             'instrumento', 'instrumento_nombre', 'instrumento_numero',
+            'ruta_entrevista',
             'encuestador',
             'estado', 'estado_display',
             'porcentaje_completado',

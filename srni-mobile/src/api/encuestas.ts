@@ -5,8 +5,9 @@ import type {
 } from '../types';
 
 export interface CrearSesionPayload {
-  hogar: string;        // UUID del Hogar
-  instrumento: string;  // UUID del InstrumentoVersion
+  hogar: string;
+  instrumento: string;
+  ruta_entrevista?: string;
 }
 
 export interface ResponderPayload {

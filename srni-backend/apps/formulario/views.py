@@ -12,10 +12,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from .models import Perfil, InstrumentoVersion, Capitulo, Pregunta, ReglaSkipLogic, AccionSkipChoices
+from .models import Instrumento, Capitulo, Pregunta, ReglaSkipLogic, AccionSkipChoices
 from django.shortcuts import get_object_or_404
 from .serializers import (
-    PerfilSerializer, InstrumentoVersionSerializer,
+    InstrumentoSerializer,
     CapituloListSerializer, CapituloDetalleSerializer,
     PreguntaSerializer, InstrumentoCompletoSerializer, EvaluarSkipLogicSerializer,
 )
@@ -31,27 +31,18 @@ class ReadOnlyViewSet(
 
 
 @extend_schema_view(
-    list=extend_schema(summary="Listar perfiles de instrumento", tags=["Formulario"]),
-    retrieve=extend_schema(summary="Detalle de perfil con versiones", tags=["Formulario"]),
+    list=extend_schema(summary="Listar instrumentos activos", tags=["Formulario"]),
+    retrieve=extend_schema(summary="Detalle de instrumento con capítulos", tags=["Formulario"]),
 )
-class PerfilViewSet(ReadOnlyViewSet):
-    queryset = Perfil.objects.prefetch_related("versiones__capitulos").filter(activo=True)
-    serializer_class = PerfilSerializer
-    search_fields = ["codigo", "nombre"]
+class InstrumentoViewSet(ReadOnlyViewSet):
+    queryset = Instrumento.objects.prefetch_related("capitulos").filter(activo=True)
+    serializer_class = InstrumentoSerializer
+    search_fields = ["codigo", "nombre", "version"]
+    filterset_fields = ["codigo", "activo"]
 
 
 @extend_schema_view(
-    list=extend_schema(summary="Listar versiones del instrumento", tags=["Formulario"]),
-    retrieve=extend_schema(summary="Detalle de versión con capítulos", tags=["Formulario"]),
-)
-class InstrumentoVersionViewSet(ReadOnlyViewSet):
-    queryset = InstrumentoVersion.objects.select_related("perfil").prefetch_related("capitulos")
-    serializer_class = InstrumentoVersionSerializer
-    filterset_fields = ["perfil"]
-
-
-@extend_schema_view(
-    list=extend_schema(summary="Listar capítulos de una versión", tags=["Formulario"]),
+    list=extend_schema(summary="Listar capítulos de un instrumento", tags=["Formulario"]),
     retrieve=extend_schema(summary="Detalle de capítulo con preguntas completas", tags=["Formulario"]),
 )
 class CapituloViewSet(ReadOnlyViewSet):
@@ -89,8 +80,8 @@ class PreguntaViewSet(ReadOnlyViewSet):
 @extend_schema(
     summary="Instrumento completo para descarga offline",
     description=(
-        "Devuelve el instrumento vigente de un perfil con todos sus capítulos, "
-        "preguntas, opciones de respuesta y reglas de skip logic en una sola llamada. "
+        "Devuelve el instrumento vigente con todos sus capítulos, preguntas, "
+        "opciones de respuesta y reglas de skip logic en una sola llamada. "
         "Diseñado para descarga y almacenamiento en SQLite local (modo offline-first)."
     ),
     tags=["Formulario"],
@@ -98,20 +89,18 @@ class PreguntaViewSet(ReadOnlyViewSet):
 )
 class InstrumentoCompletoView(APIView):
     """
-    GET /api/formulario/instrumento/{perfil_codigo}/
+    GET /api/formulario/instrumento/{codigo}/
 
-    Retorna la versión vigente del instrumento para el perfil dado.
+    Retorna el instrumento vigente con el código dado.
     Si hay varias versiones, devuelve la más reciente con vigente=True.
-    404 si el perfil no existe o no tiene versión vigente.
+    404 si el instrumento no existe o no tiene versión vigente.
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, perfil_codigo: str):
-        perfil = get_object_or_404(Perfil, codigo=perfil_codigo.upper(), activo=True)
-
-        version = (
-            InstrumentoVersion.objects
-            .filter(perfil=perfil)
+    def get(self, request, codigo: str):
+        instrumento = (
+            Instrumento.objects
+            .filter(codigo=codigo.upper(), activo=True)
             .prefetch_related(
                 "capitulos__preguntas__opciones",
                 "capitulos__preguntas__reglas_entrantes__pregunta_origen",
@@ -124,11 +113,11 @@ class InstrumentoCompletoView(APIView):
             .first()
         )
 
-        if version is None or not version.vigente:
+        if instrumento is None or not instrumento.vigente:
             from rest_framework.exceptions import NotFound
-            raise NotFound(f"No hay versión vigente para el perfil '{perfil_codigo}'.")
+            raise NotFound(f"No hay instrumento vigente con código '{codigo}'.")
 
-        serializer = InstrumentoCompletoSerializer(version)
+        serializer = InstrumentoCompletoSerializer(instrumento)
         return Response(serializer.data)
 
 
@@ -194,8 +183,6 @@ class EvaluarSkipLogicView(APIView):
                     obligatorias.add(pregunta.codigo_externo)
                 continue
 
-            # HABILITAR: pregunta oculta por defecto, visible solo si la condición se cumple.
-            # DESHABILITAR: pregunta visible por defecto, oculta si la condición se cumple.
             tiene_habilitar = any(
                 r.accion == AccionSkipChoices.HABILITAR for r in reglas_entrantes
             )

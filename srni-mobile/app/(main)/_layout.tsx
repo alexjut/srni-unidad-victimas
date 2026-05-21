@@ -1,18 +1,14 @@
-/**
- * Layout principal con bottom tabs (encuestador).
- * Si no hay sesión activa → redirige al login.
- * Mientras carga el perfil → splash para evitar flash.
- */
-import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Tabs, Redirect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 
 type IconProps = { color: string; size: number };
 
 export default function MainLayout() {
   const { usuario, perfilCargado } = useAuthStore();
-  const perfil = usuario?.perfil;
+  const insets = useSafeAreaInsets();
 
   if (!perfilCargado) {
     return (
@@ -26,90 +22,96 @@ export default function MainLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  // Altura del tab bar: 58 px visibles + inset del sistema operativo
+  const TAB_HEIGHT = 58 + insets.bottom;
+
   return (
     <Tabs
+      initialRouteName="busqueda"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#1565C0',
-        tabBarInactiveTintColor: '#757575',
+        tabBarInactiveTintColor: '#9E9E9E',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#E0E0E0',
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 82 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 6,
-          paddingTop: 4,
+          // Esquinas superiores redondeadas — estilo moderno tipo banca
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          borderTopWidth: 0,
+          height: TAB_HEIGHT,
+          paddingBottom: insets.bottom + 4,
+          paddingTop: 6,
+          // Sombra pronunciada para que flote sobre el contenido
+          shadowColor: '#1565C0',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+          elevation: 14,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+          fontSize: 10,
+          fontWeight: '600',
+          marginTop: 1,
+        },
+        tabBarIconStyle: {
+          marginBottom: -2,
         },
       }}
     >
-      {/* ── Tabs visibles ──────────────────────────────────────────────────── */}
-
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Inicio',
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialCommunityIcons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-
+      {/* ── Tab 1: Buscar Víctima — pantalla inicial ── */}
       <Tabs.Screen
         name="busqueda"
         options={{
-          title: 'Buscar',
-          href: perfil?.puede_buscar_rni ? undefined : null,
+          title: 'Víctimas',
           tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialCommunityIcons name="magnify" size={size} color={color} />
+            <MaterialCommunityIcons name="account-search" size={size} color={color} />
           ),
         }}
       />
 
+      {/* ── Tab 2: Hogares ── */}
       <Tabs.Screen
         name="hogares/index"
         options={{
           title: 'Hogares',
-          href: perfil?.puede_caracterizar ? undefined : null,
           tabBarIcon: ({ color, size }: IconProps) => (
             <MaterialCommunityIcons name="home-group" size={size} color={color} />
           ),
         }}
       />
 
+      {/* ── Tab 3: Encuestas ── */}
       <Tabs.Screen
         name="encuestas/index"
         options={{
           title: 'Encuestas',
-          href: perfil?.puede_caracterizar ? undefined : null,
           tabBarIcon: ({ color, size }: IconProps) => (
             <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />
           ),
         }}
       />
 
+      {/* ── Tab 4: Menú / perfil / dashboard ── */}
       <Tabs.Screen
-        name="caracterizar/index"
+        name="index"
         options={{
-          title: 'Caracterizar',
-          href: perfil?.puede_caracterizar ? undefined : null,
+          title: 'Menú',
           tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialCommunityIcons name="clipboard-text-play" size={size} color={color} />
+            <MaterialCommunityIcons name="dots-grid" size={size} color={color} />
           ),
         }}
       />
 
-      {/* ── Rutas ocultas ──────────────────────────────────────────────────── */}
-
-      <Tabs.Screen name="hogares/[hogarId]"           options={{ href: null }} />
-      <Tabs.Screen name="hogares/nuevo"               options={{ href: null }} />
-      <Tabs.Screen name="encuestas/[sesionId]"        options={{ href: null }} />
-      <Tabs.Screen name="formulario/index"            options={{ href: null }} />
-      <Tabs.Screen name="formulario/[temaId]"         options={{ href: null }} />
-      <Tabs.Screen name="formulario/consentimiento-ia" options={{ href: null }} />
+      {/* ── Rutas ocultas (no aparecen en el tab bar) ── */}
+      <Tabs.Screen name="hogares/[hogarId]"               options={{ href: null }} />
+      <Tabs.Screen name="hogares/nuevo"                   options={{ href: null }} />
+      <Tabs.Screen name="encuestas/[sesionId]"            options={{ href: null }} />
+      <Tabs.Screen name="caracterizar/index"              options={{ href: null }} />
+      <Tabs.Screen name="formulario/index"                options={{ href: null }} />
+      <Tabs.Screen name="formulario/[temaId]"             options={{ href: null }} />
+      <Tabs.Screen name="formulario/consentimiento-ia"    options={{ href: null }} />
+      <Tabs.Screen name="formulario/grabacion-entrevista" options={{ href: null }} />
+      <Tabs.Screen name="formulario/revision-ia"         options={{ href: null }} />
     </Tabs>
   );
 }

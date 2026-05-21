@@ -2,13 +2,11 @@
 Serializers del motor de formularios dinámico SRNI — alineados con Diccionario V8.
 
 Jerarquía de lectura:
-  Perfil → InstrumentoVersion → Capitulo → Pregunta → OpcionRespuesta
-                                         ↘ ReglaSkipLogic
+  Instrumento → Capitulo → Pregunta → OpcionRespuesta
+                         ↘ ReglaSkipLogic
 """
 from rest_framework import serializers
-from .models import (
-    Perfil, InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
-)
+from .models import Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic
 
 
 class OpcionRespuestaSerializer(serializers.ModelSerializer):
@@ -78,27 +76,18 @@ class CapituloDetalleSerializer(serializers.ModelSerializer):
         ]
 
 
-class InstrumentoVersionSerializer(serializers.ModelSerializer):
-    perfil_codigo = serializers.CharField(source="perfil.codigo", read_only=True)
+class InstrumentoSerializer(serializers.ModelSerializer):
     capitulos = CapituloListSerializer(many=True, read_only=True)
     total_capitulos = serializers.IntegerField(source="capitulos.count", read_only=True)
     vigente = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = InstrumentoVersion
+        model = Instrumento
         fields = [
-            "id", "perfil", "perfil_codigo", "numero",
-            "vigente_desde", "vigente_hasta", "vigente",
+            "id", "codigo", "nombre", "version",
+            "activo", "vigente_desde", "vigente_hasta", "vigente",
             "fuente_documental", "total_capitulos", "capitulos",
         ]
-
-
-class PerfilSerializer(serializers.ModelSerializer):
-    versiones = InstrumentoVersionSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Perfil
-        fields = ["id", "codigo", "nombre", "activo", "versiones"]
 
 
 # ---------------------------------------------------------------------------
@@ -121,19 +110,17 @@ class CapituloConPreguntasSerializer(serializers.ModelSerializer):
 class InstrumentoCompletoSerializer(serializers.ModelSerializer):
     """
     Instrumento completo listo para descarga offline.
-    Una sola llamada devuelve: perfil + versión + capítulos + preguntas + opciones + skip logic.
+    Una sola llamada devuelve: instrumento + capítulos + preguntas + opciones + skip logic.
     """
-    perfil_codigo = serializers.CharField(source="perfil.codigo", read_only=True)
-    perfil_nombre = serializers.CharField(source="perfil.nombre", read_only=True)
     vigente = serializers.BooleanField(read_only=True)
     capitulos = CapituloConPreguntasSerializer(many=True, read_only=True)
     reglas = ReglaSkipLogicSerializer(many=True, read_only=True)
 
     class Meta:
-        model = InstrumentoVersion
+        model = Instrumento
         fields = [
-            "id", "perfil", "perfil_codigo", "perfil_nombre",
-            "numero", "vigente_desde", "vigente",
+            "id", "codigo", "nombre", "version",
+            "vigente_desde", "vigente",
             "fuente_documental", "capitulos", "reglas",
         ]
 

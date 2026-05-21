@@ -1,7 +1,5 @@
 from django.contrib import admin
-from .models import (
-    Perfil, InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
-)
+from .models import Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic
 
 
 class CapituloInline(admin.TabularInline):
@@ -11,25 +9,18 @@ class CapituloInline(admin.TabularInline):
     ordering = ("orden",)
 
 
-@admin.register(Perfil)
-class PerfilAdmin(admin.ModelAdmin):
-    list_display = ("codigo", "nombre", "activo", "creado")
-    list_filter = ("activo",)
-    search_fields = ("codigo", "nombre")
-
-
-@admin.register(InstrumentoVersion)
-class InstrumentoVersionAdmin(admin.ModelAdmin):
-    list_display = ("perfil", "numero", "vigente_desde", "vigente_hasta", "vigente")
-    list_filter = ("perfil",)
-    search_fields = ("numero", "fuente_documental")
+@admin.register(Instrumento)
+class InstrumentoAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "version", "nombre", "activo", "vigente_desde", "vigente_hasta")
+    list_filter = ("activo", "codigo")
+    search_fields = ("codigo", "nombre", "fuente_documental")
     inlines = [CapituloInline]
 
 
 @admin.register(Capitulo)
 class CapituloAdmin(admin.ModelAdmin):
     list_display = ("codigo", "nombre", "instrumento", "orden", "poblacion_objetivo")
-    list_filter = ("instrumento__perfil", "poblacion_objetivo")
+    list_filter = ("instrumento", "poblacion_objetivo")
     search_fields = ("codigo", "nombre")
     ordering = ("instrumento", "orden")
 

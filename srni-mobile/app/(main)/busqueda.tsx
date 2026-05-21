@@ -1,123 +1,1039 @@
 /**
- * Pantalla de búsqueda en el RNI.
- * La búsqueda se ejecuta SIEMPRE en el servidor — NUNCA en el cliente.
- * No se cachea ningún resultado de búsqueda en el dispositivo.
+ * Búsqueda en el RNI — Registro Único de Víctimas.
+ *
+ * Flujo:
+ * 1. Encuestador ingresa tipo documento + número + ruta de entrevista → Consultar RNI
+ * 2a. Encontrado y habilitado → Seleccionar instrumento → Conformar hogar
+ * 2b. Encontrado pero no habilitado → Mostrar estado RUV
+ * 2c. No encontrado → Ofrecer registrar como Víctima No Incluida
+ *
+ * La consulta va SIEMPRE al servidor. No se cachea PII localmente.
  */
 import { useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable, Modal, ImageBackground } from 'react-native';
 import {
-  Searchbar,
-  Card,
-  Text,
-  SegmentedButtons,
-  ActivityIndicator,
-  HelperText,
+  Text, TextInput, Button, SegmentedButtons,
+  ActivityIndicator, HelperText, Chip, Divider, Surface, Menu,
 } from 'react-native-paper';
-import apiClient from '../../src/api/client';
-import { GovHeader } from '../../src/components/GovHeader';
-import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 
-interface ResultadoBusqueda {
-  id: string;
-  tipo_documento: string;
-  estado_ruv: string;
-  genero: string;
-  pertenencia_etnica: string;
+import { GovHeader } from '../../src/components/GovHeader';
+
+// Imagen auténtica de comunidad indígena Emberá — Unidad para las Víctimas
+const IMAGEN_FONDO = {
+  uri: 'https://www.unidadvictimas.gov.co/wp-content/uploads/2024/11/UnidadVictimasRechazaDiscursosDiscriminatoriosContraMingaEmbera-V1-e1732827844334-1024x577.jpeg',
+};
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
+import { victimasApi } from '../../src/api/victimas';
+import apiClient from '../../src/api/client';
+import { useCaracterizacionStore } from '../../src/stores/caracterizacionStore';
+import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
+
+// ── Tipos de documento ───────────────────────────────────────────────────────
+
+type TipoDoc = 'CC' | 'TI' | 'RC' | 'CE' | 'PA';
+
+const TIPOS_DOC: Record<TipoDoc, { nombre: string; icono: string }> = {
+  CC: { nombre: 'Cédula de Ciudadanía',   icono: 'card-account-details' },
+  TI: { nombre: 'Tarjeta de Identidad',    icono: 'card-account-details-outline' },
+  RC: { nombre: 'Registro Civil',          icono: 'file-document-outline' },
+  CE: { nombre: 'Cédula de Extranjería',   icono: 'earth' },
+  PA: { nombre: 'Pasaporte',               icono: 'passport' },
+};
+
+interface SelectTipoDocProps {
+  valor: TipoDoc;
+  onChange: (v: TipoDoc) => void;
 }
 
+function SelectTipoDoc({ valor, onChange }: SelectTipoDocProps) {
+  const [visible, setVisible] = useState(false);
+  const seleccionado = TIPOS_DOC[valor];
+
+  return (
+    <>
+      {/* Trigger — se ve como un campo de formulario */}
+      <Pressable
+        onPress={() => setVisible(true)}
+        style={({ pressed }) => [styles.selectTrigger, pressed && { opacity: 0.85 }]}
+        accessibilityRole="combobox"
+        accessibilityLabel={`Tipo de documento: ${seleccionado.nombre}`}
+      >
+        <View style={styles.selectIconoWrap}>
+          <MaterialCommunityIcons
+            name={seleccionado.icono as any}
+            size={20}
+            color={GOV.azul}
+          />
+        </View>
+        <View style={styles.selectTextos}>
+          <Text style={styles.selectLabel}>Tipo de documento</Text>
+          <Text style={styles.selectValor} numberOfLines={1}>{seleccionado.nombre}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-down" size={22} color={GOV.textoT} />
+      </Pressable>
+
+      {/* Modal de selección */}
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setVisible(false)}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitulo}>Tipo de documento</Text>
+
+            {(Object.entries(TIPOS_DOC) as [TipoDoc, typeof TIPOS_DOC[TipoDoc]][]).map(([code, info]) => (
+              <Pressable
+                key={code}
+                onPress={() => { onChange(code); setVisible(false); }}
+                style={({ pressed }) => [
+                  styles.modalOpcion,
+                  valor === code && styles.modalOpcionActiva,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <View style={[styles.modalOpcionIcono, valor === code && styles.modalOpcionIconoActivo]}>
+                  <MaterialCommunityIcons
+                    name={info.icono as any}
+                    size={20}
+                    color={valor === code ? '#FFF' : GOV.azul}
+                  />
+                </View>
+                <View style={styles.modalOpcionTextos}>
+                  <Text style={[styles.modalOpcionCodigo, valor === code && styles.modalOpcionCodigoActivo]}>
+                    {code}
+                  </Text>
+                  <Text style={[styles.modalOpcionNombre, valor === code && styles.modalOpcionNombreActivo]}>
+                    {info.nombre}
+                  </Text>
+                </View>
+                {valor === code && (
+                  <MaterialCommunityIcons name="check-circle" size={22} color={GOV.azul} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+// ── Rutas de entrevista ───────────────────────────────────────────────────────
+
+const RUTAS = [
+  { value: 'GENERAL',                   label: 'General' },
+  { value: 'ACCIONES_CONSTITUCIONALES', label: 'Acc. Constitucionales' },
+  { value: 'MODIFICACION_NUCLEO',       label: 'Mod. Núcleo Familiar' },
+  { value: 'ESPECIAL',                  label: 'Ruta Especial' },
+];
+
+// ── Instrumentos ──────────────────────────────────────────────────────────────
+
+interface InstrumentoResumen {
+  id: string;
+  codigo: string;
+  nombre: string;
+  version: string;
+  activo: boolean;
+  vigente: boolean;
+  total_capitulos: number;
+}
+
+const ICONO_INSTRUMENTO: Record<string, string> = {
+  TERRITORIAL:   'map-marker-multiple',
+  BUENAVENTURA:  'city-variant',
+  SAN_ANDRES:    'island',
+  TELEFONICO:    'phone-in-talk',
+  URBANO_ETNICO: 'home-city',
+  RURAL_ETNICO:  'tree',
+  ASISTENCIA:    'hand-heart',
+};
+
+function TarjetaInstrumentoItem({
+  item,
+  activo,
+  onPress,
+}: {
+  item: InstrumentoResumen;
+  activo: boolean;
+  onPress: () => void;
+}) {
+  const icono = (ICONO_INSTRUMENTO[item.codigo] ?? 'clipboard-outline') as any;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.instrCard,
+        activo && styles.instrCardActivo,
+        pressed && { opacity: 0.88 },
+      ]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: activo }}
+      accessibilityLabel={item.nombre}
+    >
+      <View style={[styles.instrIcono, activo && styles.instrIconoActivo]}>
+        <MaterialCommunityIcons name={icono} size={22} color={activo ? '#FFF' : GOV.azul} />
+      </View>
+      <View style={styles.instrTexto}>
+        <Text style={[styles.instrNombre, activo && styles.instrNombreActivo]} numberOfLines={2}>
+          {item.nombre}
+        </Text>
+        <Text style={styles.instrMeta}>{item.version}  ·  {item.total_capitulos} capítulos</Text>
+      </View>
+      <MaterialCommunityIcons
+        name={activo ? 'check-circle' : 'chevron-right'}
+        size={20}
+        color={activo ? GOV.azul : GOV.borde}
+      />
+    </Pressable>
+  );
+}
+
+interface SeccionInstrumentosProps {
+  instrumentos: InstrumentoResumen[];
+  cargando: boolean;
+  seleccionado: InstrumentoResumen | null;
+  onSelect: (i: InstrumentoResumen) => void;
+}
+
+function SeccionInstrumentos({ instrumentos, cargando, seleccionado, onSelect }: SeccionInstrumentosProps) {
+  return (
+    <View style={styles.seccionInstr}>
+      <Text style={styles.seccionInstrTitulo}>Selecciona el tipo de caracterización</Text>
+      {cargando ? (
+        <ActivityIndicator animating color={GOV.azul} style={{ marginVertical: SPACING.md }} />
+      ) : instrumentos.length === 0 ? (
+        <Text style={styles.sinInstrTxt}>
+          No hay instrumentos disponibles. Verifique la conexión con el servidor.
+        </Text>
+      ) : (
+        instrumentos.map((item) => (
+          <TarjetaInstrumentoItem
+            key={item.id}
+            item={item}
+            activo={seleccionado?.id === item.id}
+            onPress={() => onSelect(item)}
+          />
+        ))
+      )}
+    </View>
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+type EstadoRuv = VictimaResumenFuente['estado_ruv'];
+
+function colorEstadoRuv(estado: EstadoRuv): string {
+  switch (estado) {
+    case 'INCLUIDO':    return GOV.verde;
+    case 'EXCLUIDO':    return GOV.rojo;
+    case 'NO_INCLUIDO': return GOV.naranja;
+    case 'EN_PROCESO':  return GOV.azul;
+    default:            return GOV.textoS;
+  }
+}
+
+function fondoEstadoRuv(estado: EstadoRuv): string {
+  switch (estado) {
+    case 'INCLUIDO':    return GOV.verdeTenue;
+    case 'EXCLUIDO':    return GOV.rojoTenue;
+    case 'NO_INCLUIDO': return GOV.naranjaTenue;
+    case 'EN_PROCESO':  return GOV.azulTenue;
+    default:            return GOV.fondoApp;
+  }
+}
+
+function nombreCompleto(v: VictimaResumenFuente): string {
+  return [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
+    .filter(Boolean).join(' ').trim();
+}
+
+// ── Tarjeta: no habilitado ────────────────────────────────────────────────────
+
+function TarjetaNoHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }) {
+  const v = resultado.victima!;
+  return (
+    <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
+      <View style={styles.tarjetaEncabezado}>
+        <MaterialCommunityIcons name="account-cancel" size={32} color={GOV.naranja} style={styles.icono} />
+        <Text style={[styles.tarjetaTitulo, { color: GOV.naranja }]}>
+          No habilitado para caracterización
+        </Text>
+      </View>
+      <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
+      <View style={styles.chipsFila}>
+        <Chip
+          style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
+          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+        >
+          {v.estado_ruv.replace('_', ' ')}
+        </Chip>
+      </View>
+      <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
+    </Surface>
+  );
+}
+
+// ── Tarjeta: habilitado (solo info — el CTA está en el nivel de pantalla) ─────
+
+function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }) {
+  const v = resultado.victima!;
+  const etnia = v.pertenencia_etnica?.toUpperCase();
+  const mostrarEtnia = etnia && etnia !== 'NINGUNA' && etnia !== '' && etnia !== 'ND';
+
+  return (
+    <Surface style={[styles.tarjeta, styles.tarjetaVerde]}>
+      <View style={styles.tarjetaEncabezado}>
+        <MaterialCommunityIcons name="account-check" size={32} color={GOV.verde} style={styles.icono} />
+        <Text style={[styles.tarjetaTitulo, { color: GOV.verde }]}>
+          Persona habilitada para caracterización
+        </Text>
+      </View>
+
+      <Text style={styles.nombreCompleto}>{nombreCompleto(v)}</Text>
+
+      <View style={styles.chipsFila}>
+        <Chip
+          style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
+          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+        >
+          {v.estado_ruv.replace('_', ' ')}
+        </Chip>
+        {v.discapacidad && (
+          <Chip
+            style={[styles.chip, { backgroundColor: GOV.rojoTenue }]}
+            textStyle={{ color: GOV.rojo, ...FONT.label }}
+            icon="wheelchair-accessibility"
+          >
+            Discapacidad
+          </Chip>
+        )}
+        {mostrarEtnia && (
+          <Chip
+            style={[styles.chip, { backgroundColor: GOV.azulTenue }]}
+            textStyle={{ color: GOV.azul, ...FONT.label }}
+          >
+            {v.pertenencia_etnica}
+          </Chip>
+        )}
+      </View>
+
+      <Text style={styles.datoSecundario}>
+        {v.municipio_residencia_nombre ?? 'Municipio no registrado'}
+      </Text>
+      <Text style={styles.datoSecundario}>
+        {v.hechos_victimizantes.length} hecho(s) victimizante(s) registrado(s)
+      </Text>
+    </Surface>
+  );
+}
+
+// ── Tarjeta: no encontrado + formulario no incluida ───────────────────────────
+
+interface TarjetaNoEncontradoProps {
+  resultado: ResultadoBusquedaFuente;
+  tipoDoc: string;
+  documento: string;
+  cargandoRegistro: boolean;
+  onRegistrarNoIncluida: (datos: DatosNoIncluida) => void;
+}
+
+interface DatosNoIncluida {
+  primerNombre: string;
+  segundoNombre: string;
+  primerApellido: string;
+  segundoApellido: string;
+  fechaNacimiento: string;
+  genero: 'M' | 'F' | 'NB' | 'ND';
+}
+
+function TarjetaNoEncontrado({
+  resultado, tipoDoc, documento, cargandoRegistro, onRegistrarNoIncluida,
+}: TarjetaNoEncontradoProps) {
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [primerNombre, setPrimerNombre] = useState('');
+  const [segundoNombre, setSegundoNombre] = useState('');
+  const [primerApellido, setPrimerApellido] = useState('');
+  const [segundoApellido, setSegundoApellido] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [genero, setGenero] = useState<'M' | 'F' | 'NB' | 'ND'>('ND');
+
+  function puedeAgregar() {
+    return primerNombre.trim() && primerApellido.trim() && fechaNacimiento.match(/^\d{4}-\d{2}-\d{2}$/);
+  }
+
+  return (
+    <Surface style={[styles.tarjeta, styles.tarjetaGris]}>
+      <View style={styles.tarjetaEncabezado}>
+        <MaterialCommunityIcons name="account-search-outline" size={32} color={GOV.textoS} style={styles.icono} />
+        <Text style={styles.tarjetaTitulo}>No encontrado en el RUV</Text>
+      </View>
+      <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
+      <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
+
+      <Divider style={styles.divider} />
+
+      {!mostrarForm ? (
+        <Button
+          mode="outlined"
+          icon="account-plus-outline"
+          onPress={() => setMostrarForm(true)}
+          style={styles.botonAccion}
+          textColor={GOV.naranja}
+        >
+          Agregar como víctima no incluida
+        </Button>
+      ) : (
+        <View>
+          <Text style={styles.formTitulo}>Víctima No Incluida</Text>
+          <Text style={styles.formSubtitulo}>
+            {tipoDoc}  ·  {documento}
+          </Text>
+
+          <TextInput
+            mode="outlined" label="Primer nombre *"
+            value={primerNombre} onChangeText={(t) => setPrimerNombre(t.toUpperCase())}
+            autoCapitalize="characters" style={styles.formInput}
+            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
+          />
+          <TextInput
+            mode="outlined" label="Segundo nombre"
+            value={segundoNombre} onChangeText={(t) => setSegundoNombre(t.toUpperCase())}
+            autoCapitalize="characters" style={styles.formInput}
+            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
+          />
+          <TextInput
+            mode="outlined" label="Primer apellido *"
+            value={primerApellido} onChangeText={(t) => setPrimerApellido(t.toUpperCase())}
+            autoCapitalize="characters" style={styles.formInput}
+            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
+          />
+          <TextInput
+            mode="outlined" label="Segundo apellido"
+            value={segundoApellido} onChangeText={(t) => setSegundoApellido(t.toUpperCase())}
+            autoCapitalize="characters" style={styles.formInput}
+            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
+          />
+          <TextInput
+            mode="outlined" label="Fecha nacimiento * (AAAA-MM-DD)"
+            value={fechaNacimiento} onChangeText={setFechaNacimiento}
+            keyboardType="numeric" placeholder="Ej: 1985-03-15"
+            style={styles.formInput}
+            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
+          />
+
+          <Text style={styles.formLabel}>Género</Text>
+          <SegmentedButtons
+            value={genero}
+            onValueChange={(v) => setGenero(v as typeof genero)}
+            buttons={[
+              { value: 'M',  label: 'Masc.' },
+              { value: 'F',  label: 'Fem.' },
+              { value: 'NB', label: 'NB' },
+              { value: 'ND', label: 'N/D' },
+            ]}
+            style={styles.segmentedGenero}
+          />
+
+          <View style={styles.formBotones}>
+            <Button
+              mode="outlined"
+              onPress={() => setMostrarForm(false)}
+              style={{ flex: 1, marginRight: SPACING.xs }}
+              textColor={GOV.textoS}
+            >
+              Cancelar
+            </Button>
+            <Button
+              mode="contained"
+              icon="account-plus"
+              onPress={() => onRegistrarNoIncluida({ primerNombre, segundoNombre, primerApellido, segundoApellido, fechaNacimiento, genero })}
+              disabled={!puedeAgregar() || cargandoRegistro}
+              loading={cargandoRegistro}
+              buttonColor={GOV.naranja}
+              textColor="#FFF"
+              style={{ flex: 2 }}
+            >
+              Agregar víctima
+            </Button>
+          </View>
+        </View>
+      )}
+    </Surface>
+  );
+}
+
+// ── Pantalla principal ────────────────────────────────────────────────────────
+
 export default function BusquedaScreen() {
-  const [tipoDoc, setTipoDoc] = useState('CC');
+  const [tipoDoc, setTipoDoc] = useState<TipoDoc>('CC');
   const [documento, setDocumento] = useState('');
-  const [resultados, setResultados] = useState<ResultadoBusqueda[]>([]);
+  const [menuRutaVisible, setMenuRutaVisible] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [buscado, setBuscado] = useState(false);
+  const [cargandoRegistro, setCargandoRegistro] = useState(false);
+  const [resultado, setResultado] = useState<ResultadoBusquedaFuente | null>(null);
+  const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
+
+  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
+  const [cargandoInstrumentos, setCargandoInstrumentos] = useState(false);
+  const [instrumentoSeleccionado, setInstrumentoSeleccionado] = useState<InstrumentoResumen | null>(null);
+
+  const { rutaEntrevista, setRutaEntrevista, victimaFuente } = useCaracterizacionStore();
+  const rutaLabel = RUTAS.find((r) => r.value === rutaEntrevista)?.label ?? 'General';
+
+  const [noIncluidaRegistrada, setNoIncluidaRegistrada] = useState(false);
+
+  async function cargarInstrumentos() {
+    if (instrumentos.length > 0) return; // Ya cargados
+    setCargandoInstrumentos(true);
+    try {
+      const { data } = await apiClient.get<{ results: InstrumentoResumen[] }>('/api/formulario/instrumentos/');
+      setInstrumentos(data.results.filter((i) => i.activo && i.vigente));
+    } catch {
+      setInstrumentos([]);
+    } finally {
+      setCargandoInstrumentos(false);
+    }
+  }
 
   async function buscar() {
     if (!documento.trim()) return;
     setCargando(true);
-    setError(null);
-    setBuscado(true);
+    setResultado(null);
+    setErrorBusqueda(null);
+    setInstrumentoSeleccionado(null);
+    setNoIncluidaRegistrada(false);
     try {
-      const { data } = await apiClient.get('/api/victimas/buscar/', {
-        params: { tipo_doc: tipoDoc, documento: documento.trim() },
-      });
-      setResultados(data.results ?? []);
+      const { data } = await victimasApi.consultarFuente(tipoDoc, documento.trim());
+      setResultado(data);
+      if (data.encontrado && data.victima?.habilitado_para_caracterizacion) {
+        cargarInstrumentos();
+      }
     } catch {
-      setError('Error al consultar el RNI. Verifique la conexión.');
-      setResultados([]);
+      setErrorBusqueda('Error al consultar el RNI. Verifique la conexión.');
     } finally {
       setCargando(false);
     }
   }
 
+  async function conformarHogar() {
+    const v = resultado?.victima;
+    if (!v || !instrumentoSeleccionado) return;
+    setCargandoRegistro(true);
+    try {
+      const { data } = await victimasApi.registrarDesdeFuente(v);
+      useCaracterizacionStore.getState().setVictimaFuente(v);
+      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
+      router.push('/(main)/hogares/nuevo');
+    } catch {
+      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } finally {
+      setCargandoRegistro(false);
+    }
+  }
+
+  // Víctima ya registrada (no incluida) — solo falta seleccionar instrumento y navegar
+  function conformarHogarNoIncluida() {
+    if (!instrumentoSeleccionado) return;
+    useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
+    router.push('/(main)/hogares/nuevo');
+  }
+
+  async function registrarNoIncluida(datos: DatosNoIncluida) {
+    setCargandoRegistro(true);
+    try {
+      const payload: VictimaResumenFuente = {
+        cons_persona: null,
+        tipo_documento: tipoDoc,
+        numero_documento: documento.trim(),
+        primer_nombre: datos.primerNombre,
+        segundo_nombre: datos.segundoNombre,
+        primer_apellido: datos.primerApellido,
+        segundo_apellido: datos.segundoApellido,
+        fecha_nacimiento: datos.fechaNacimiento,
+        genero: datos.genero,
+        estado_ruv: 'NO_INCLUIDO',
+        habilitado_para_caracterizacion: true,
+        fecha_ult_caracterizacion: null,
+        pertenencia_etnica: 'NINGUNA',
+        pueblo_indigena: '',
+        discapacidad: false,
+        tipo_discapacidad: '',
+        hechos_victimizantes: [],
+        municipio_residencia_codigo: null,
+        municipio_residencia_nombre: null,
+        fuente_origen: 'NO_INCLUIDA',
+      };
+      const { data } = await victimasApi.registrarDesdeFuente(payload);
+      useCaracterizacionStore.getState().setVictimaFuente(payload);
+      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      setNoIncluidaRegistrada(true);
+      cargarInstrumentos();
+    } catch {
+      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } finally {
+      setCargandoRegistro(false);
+    }
+  }
+
+  function renderTarjeta() {
+    if (!resultado) return null;
+
+    if (!resultado.encontrado) {
+      // Si ya se registró como No Incluida → mostrar resumen + selección de instrumento
+      if (noIncluidaRegistrada) {
+        const nombre = [
+          victimaFuente?.primer_nombre,
+          victimaFuente?.segundo_nombre,
+          victimaFuente?.primer_apellido,
+          victimaFuente?.segundo_apellido,
+        ].filter(Boolean).join(' ');
+
+        return (
+          <>
+            <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
+              <View style={styles.tarjetaEncabezado}>
+                <MaterialCommunityIcons name="account-plus-outline" size={32} color={GOV.naranja} style={styles.icono} />
+                <Text style={[styles.tarjetaTitulo, { color: GOV.naranja }]}>
+                  Registrada como Víctima No Incluida
+                </Text>
+              </View>
+              {nombre ? <Text style={styles.nombreCompleto}>{nombre}</Text> : null}
+              <Text style={styles.tarjetaMensaje}>{tipoDoc}  ·  {documento}</Text>
+              <Text style={styles.tarjetaFuente}>Pendiente de inclusión en el RUV</Text>
+            </Surface>
+
+            <SeccionInstrumentos
+              instrumentos={instrumentos}
+              cargando={cargandoInstrumentos}
+              seleccionado={instrumentoSeleccionado}
+              onSelect={setInstrumentoSeleccionado}
+            />
+
+            {(instrumentos.length > 0 || !cargandoInstrumentos) && (
+              <Button
+                mode="contained"
+                icon="home-plus"
+                onPress={conformarHogarNoIncluida}
+                disabled={!instrumentoSeleccionado}
+                buttonColor={GOV.naranja}
+                textColor="#FFFFFF"
+                style={[styles.botonAccion, styles.botonConformar]}
+                contentStyle={styles.botonAccionContent}
+              >
+                Conformar hogar
+              </Button>
+            )}
+          </>
+        );
+      }
+
+      return (
+        <TarjetaNoEncontrado
+          resultado={resultado}
+          tipoDoc={tipoDoc}
+          documento={documento}
+          cargandoRegistro={cargandoRegistro}
+          onRegistrarNoIncluida={registrarNoIncluida}
+        />
+      );
+    }
+
+    if (!resultado.victima?.habilitado_para_caracterizacion) {
+      return <TarjetaNoHabilitado resultado={resultado} />;
+    }
+
+    // Habilitado: mostrar info víctima + selección de instrumento + CTA
+    return (
+      <>
+        <TarjetaHabilitado resultado={resultado} />
+
+        <SeccionInstrumentos
+          instrumentos={instrumentos}
+          cargando={cargandoInstrumentos}
+          seleccionado={instrumentoSeleccionado}
+          onSelect={setInstrumentoSeleccionado}
+        />
+
+        {(instrumentos.length > 0 || !cargandoInstrumentos) && (
+          <Button
+            mode="contained"
+            icon="home-plus"
+            onPress={conformarHogar}
+            disabled={cargandoRegistro || !instrumentoSeleccionado}
+            loading={cargandoRegistro}
+            buttonColor={GOV.azul}
+            textColor="#FFFFFF"
+            style={[styles.botonAccion, styles.botonConformar]}
+            contentStyle={styles.botonAccionContent}
+          >
+            {cargandoRegistro ? 'Registrando…' : 'Conformar hogar'}
+          </Button>
+        )}
+      </>
+    );
+  }
+
   return (
     <View style={styles.root}>
-      <GovHeader title="Búsqueda RNI" subtitle="Consultar víctimas registradas" />
-      <View style={styles.contenido}>
-      <SegmentedButtons
-        value={tipoDoc}
-        onValueChange={setTipoDoc}
-        buttons={[
-          { value: 'CC', label: 'C.C.' },
-          { value: 'TI', label: 'T.I.' },
-          { value: 'RC', label: 'R.C.' },
-          { value: 'CE', label: 'C.E.' },
-        ]}
-        style={styles.segmented}
-      />
+      <GovHeader title="ENTREVISTA DE CARACTERIZACIÓN" subtitle="Conformación del hogar" />
 
-      <Searchbar
-        placeholder="Número de documento"
-        value={documento}
-        onChangeText={setDocumento}
-        onSubmitEditing={buscar}
-        keyboardType="numeric"
-        style={styles.buscador}
-        loading={cargando}
-      />
+      <ImageBackground source={IMAGEN_FONDO} style={styles.imagenFondo} resizeMode="cover">
+        {/* Gradiente sobre la imagen — oscurece hacia abajo para legibilidad */}
+        <LinearGradient
+          colors={['rgba(0,35,78,0.08)', 'rgba(0,35,78,0.55)', 'rgba(0,35,78,0.92)']}
+          locations={[0, 0.45, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
 
-      {error && (
-        <HelperText type="error" visible>
-          {error}
-        </HelperText>
-      )}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.contenido}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Texto hero sobre la imagen */}
+          <View style={styles.heroTexto}>
+            <Text style={styles.heroTitulo}>Caracterización de Víctimas</Text>
+            <Text style={styles.heroSubtitulo}>
+              Ingresa el documento de la persona a caracterizar para iniciar el proceso
+            </Text>
+          </View>
 
-      {cargando && <ActivityIndicator style={styles.spinner} />}
+          {/* Tarjeta flotante con el formulario */}
+          <View style={styles.cardBusqueda}>
+            {/* Tipo de documento */}
+            <SelectTipoDoc valor={tipoDoc} onChange={setTipoDoc} />
 
-      {!cargando && buscado && resultados.length === 0 && !error && (
-        <Text style={styles.sinResultados}>No se encontraron registros en el RNI.</Text>
-      )}
+            {/* Número de documento */}
+            <TextInput
+              mode="outlined"
+              label="Número de documento"
+              value={documento}
+              onChangeText={setDocumento}
+              keyboardType="numeric"
+              onSubmitEditing={buscar}
+              returnKeyType="search"
+              style={styles.input}
+              outlineColor={GOV.borde}
+              activeOutlineColor={GOV.azul}
+              right={documento ? <TextInput.Icon icon="close" onPress={() => setDocumento('')} /> : undefined}
+            />
 
-      <FlatList
-        data={resultados}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Card style={styles.resultado}>
-            <Card.Content>
-              <Text variant="bodyMedium">Tipo doc: {item.tipo_documento}</Text>
-              <Text variant="bodyMedium">Estado RUV: {item.estado_ruv}</Text>
-              <Text variant="bodySmall" style={styles.subtexto}>
-                Género: {item.genero} — Etnia: {item.pertenencia_etnica}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-        contentContainerStyle={styles.lista}
-      />
-      </View>
+            {/* Ruta de entrevista */}
+            <Menu
+              visible={menuRutaVisible}
+              onDismiss={() => setMenuRutaVisible(false)}
+              anchor={
+                <Button
+                  mode="outlined"
+                  icon="routes"
+                  onPress={() => setMenuRutaVisible(true)}
+                  style={styles.botonRuta}
+                  contentStyle={styles.botonRutaContent}
+                  textColor={GOV.textoP}
+                >
+                  Ruta: {rutaLabel}
+                </Button>
+              }
+            >
+              {RUTAS.map((r) => (
+                <Menu.Item
+                  key={r.value}
+                  title={r.label}
+                  leadingIcon={rutaEntrevista === r.value ? 'check' : undefined}
+                  onPress={() => { setRutaEntrevista(r.value); setMenuRutaVisible(false); }}
+                />
+              ))}
+            </Menu>
+
+            {/* Error */}
+            {errorBusqueda && (
+              <HelperText type="error" visible style={styles.helperError}>
+                {errorBusqueda}
+              </HelperText>
+            )}
+
+            {/* Botón consultar */}
+            <Button
+              mode="contained"
+              icon="magnify"
+              onPress={buscar}
+              disabled={cargando || !documento.trim()}
+              loading={cargando}
+              buttonColor={GOV.azul}
+              textColor="#FFFFFF"
+              style={styles.botonConsultar}
+              contentStyle={styles.botonConsultarContent}
+            >
+              {cargando ? 'Consultando…' : 'Consultar RNI'}
+            </Button>
+          </View>
+
+          {cargando && (
+            <ActivityIndicator animating color="#FFFFFF" size="large" style={styles.spinner} />
+          )}
+
+          {!cargando && renderTarjeta()}
+        </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
 
+// ── Estilos ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: GOV.fondoApp },
-  contenido: { flex: 1, padding: SPACING.md },
-  segmented: { marginBottom: SPACING.sm },
-  buscador: { marginBottom: SPACING.xs, backgroundColor: GOV.superficie },
+  root: { flex: 1, backgroundColor: '#00234E' },
+  imagenFondo: { flex: 1 },
+  scroll: { flex: 1 },
+  contenido: { padding: SPACING.md, paddingBottom: SPACING.xl },
+
+  // Hero sobre la imagen
+  heroTexto: {
+    alignItems: 'center',
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+  },
+  heroTitulo: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    marginBottom: SPACING.xs,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  heroSubtitulo: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.88)',
+    textAlign: 'center',
+    lineHeight: 19,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+
+  // Tarjeta flotante del formulario
+  cardBusqueda: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOW.fab,
+    marginBottom: SPACING.md,
+  },
+
+  input: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie },
+
+  botonRuta: {
+    marginBottom: SPACING.sm,
+    borderColor: GOV.borde,
+    borderRadius: RADIUS.sm,
+    justifyContent: 'flex-start',
+  },
+  botonRutaContent: { justifyContent: 'flex-start' },
+
+  helperError: { marginBottom: SPACING.xs },
+  botonConsultar: { marginTop: SPACING.xs, borderRadius: RADIUS.sm },
+  botonConsultarContent: { paddingVertical: SPACING.xs },
   spinner: { marginTop: SPACING.xl },
-  sinResultados: { textAlign: 'center', color: GOV.textoS, marginTop: SPACING.xl, ...FONT.body },
-  lista: { paddingBottom: SPACING.xl },
-  resultado: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie, borderRadius: RADIUS.md, ...SHADOW.card },
-  subtexto: { color: GOV.textoS, marginTop: 4, ...FONT.caption },
+
+  // Tarjetas resultado
+  tarjeta: { marginTop: SPACING.lg, padding: SPACING.md, borderRadius: RADIUS.md, ...SHADOW.card },
+  tarjetaGris:   { borderLeftWidth: 4, borderLeftColor: GOV.textoS },
+  tarjetaNaranja:{ borderLeftWidth: 4, borderLeftColor: GOV.naranja },
+  tarjetaVerde:  { borderLeftWidth: 4, borderLeftColor: GOV.verde },
+
+  tarjetaEncabezado: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm, gap: SPACING.sm },
+  icono: { marginRight: SPACING.xs },
+  tarjetaTitulo: { ...FONT.h3, flex: 1, flexWrap: 'wrap' },
+  tarjetaMensaje:{ ...FONT.small, marginBottom: SPACING.xs },
+  tarjetaFuente: { ...FONT.caption, marginTop: SPACING.xs },
+
+  nombreCompleto: { ...FONT.h3, marginBottom: SPACING.sm },
+  chipsFila: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.sm },
+  chip: { height: 28 },
+  datoSecundario:{ ...FONT.small, marginBottom: SPACING.xs },
+  divider: { marginVertical: SPACING.md, backgroundColor: GOV.borde },
+
+  botonAccion: { borderRadius: RADIUS.sm },
+  botonAccionContent: { paddingVertical: SPACING.xs },
+
+  // Sección instrumento
+  seccionInstr: {
+    marginTop: SPACING.lg,
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    ...SHADOW.card,
+  },
+  seccionInstrTitulo: {
+    ...FONT.h3,
+    color: GOV.azulOscuro,
+    marginBottom: SPACING.md,
+  },
+  sinInstrTxt: {
+    ...FONT.small,
+    color: GOV.textoT,
+    textAlign: 'center',
+    paddingVertical: SPACING.md,
+    fontStyle: 'italic',
+  },
+
+  // Tarjeta instrumento item
+  instrCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GOV.fondoApp,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginBottom: SPACING.xs,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  instrCardActivo: {
+    borderColor: GOV.azul,
+    backgroundColor: GOV.azulTenue,
+  },
+  instrIcono: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    borderWidth: 1,
+    borderColor: `${GOV.azul}33`,
+  },
+  instrIconoActivo: {
+    backgroundColor: GOV.azul,
+    borderColor: GOV.azul,
+  },
+  instrTexto: { flex: 1 },
+  instrNombre: { ...FONT.small, fontWeight: '600', color: GOV.textoP, marginBottom: 2 },
+  instrNombreActivo: { color: GOV.azulOscuro, fontWeight: '700' },
+  instrMeta: { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace' },
+
+  // Botón conformar hogar
+  botonConformar: { marginTop: SPACING.md },
+
+  // Select tipo documento
+  selectTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 10,
+    marginBottom: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  selectIconoWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectTextos: { flex: 1 },
+  selectLabel: {
+    fontSize: 11,
+    color: GOV.textoT,
+    fontWeight: '500',
+    marginBottom: 1,
+  },
+  selectValor: {
+    fontSize: 15,
+    color: GOV.textoP,
+    fontWeight: '600',
+  },
+
+  // Modal selección
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.xl,
+    paddingTop: SPACING.sm,
+    ...SHADOW.fab,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: GOV.borde,
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
+  },
+  modalTitulo: {
+    ...FONT.h3,
+    color: GOV.azulOscuro,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+  },
+  modalOpcion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.xs,
+    borderRadius: RADIUS.sm,
+    gap: SPACING.sm,
+    marginBottom: 2,
+  },
+  modalOpcionActiva: {
+    backgroundColor: GOV.azulTenue,
+  },
+  modalOpcionIcono: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: GOV.azulTenue,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOpcionIconoActivo: {
+    backgroundColor: GOV.azul,
+  },
+  modalOpcionTextos: { flex: 1 },
+  modalOpcionCodigo: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: GOV.textoT,
+    letterSpacing: 0.5,
+  },
+  modalOpcionCodigoActivo: { color: GOV.azulOscuro },
+  modalOpcionNombre: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: GOV.textoP,
+  },
+  modalOpcionNombreActivo: { color: GOV.azulOscuro, fontWeight: '600' },
+
+  // Formulario no incluida
+  formTitulo: { ...FONT.h3, color: GOV.naranja, marginBottom: 2 },
+  formSubtitulo: { ...FONT.caption, color: GOV.textoS, marginBottom: SPACING.sm, fontFamily: 'monospace' },
+  formInput: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie },
+  formLabel: { ...FONT.label, color: GOV.textoS, marginBottom: SPACING.xs },
+  segmentedGenero: { marginBottom: SPACING.md },
+  formBotones: { flexDirection: 'row', gap: SPACING.xs },
 });

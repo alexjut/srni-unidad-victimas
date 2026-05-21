@@ -135,3 +135,10 @@ class AgregarMiembroSerializer(serializers.ModelSerializer):
             'parentesco', 'genero', 'fecha_nacimiento', 'tipo_persona',
             'incluido_ruv', 'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
         ]
+
+
+class CambiarJefeSerializer(serializers.Serializer):
+    """Serializer de entrada para PATCH /hogares/{id}/cambiar-jefe/"""
+    victima_id = serializers.UUIDField(
+        help_text='UUID de la Victima que pasará a ser jefe de hogar.'
+    )

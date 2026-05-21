@@ -36,15 +36,21 @@ class Hogar(models.Model):
     ]
 
     CONDICION_OCUPACION = [
-        ('PROPIA',    'Propia — pagada'),
+        ('PROPIA',         'Propia — pagada'),
         ('PROPIA_PAGANDO', 'Propia — en proceso de pago'),
-        ('ARRIENDO',  'Arriendo'),
-        ('FAMILIAR',  'Familiar / cedida'),
-        ('INVASION',  'Invasión / sin título'),
-        ('OTRO',      'Otro'),
+        ('ARRIENDO',       'Arriendo'),
+        ('FAMILIAR',       'Familiar / cedida'),
+        ('INVASION',       'Invasión / sin título'),
+        ('OTRO',           'Otro'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # TODO: implementar generación automática del código de hogar (prefijo municipio + año + consecutivo)
+    codigo_hogar = models.CharField(
+        max_length=30, blank=True, default='',
+        help_text='Código único de identificación del hogar (generado al confirmar).',
+    )
 
     # Jefe de hogar — debe ser una víctima registrada en el sistema
     jefe_hogar = models.ForeignKey(
@@ -112,15 +118,15 @@ class MiembroHogar(models.Model):
     """
 
     PARENTESCO = [
-        ('JEFE',        'Jefe/a de hogar'),
-        ('CONYUGE',     'Cónyuge / compañero/a'),
-        ('HIJO_A',      'Hijo/a'),
-        ('YERNO_NUERA', 'Yerno / nuera'),
-        ('NIETO_A',     'Nieto/a'),
-        ('PADRE_MADRE', 'Padre / madre'),
-        ('HERMANO_A',   'Hermano/a'),
+        ('JEFE',          'Jefe/a de hogar'),
+        ('CONYUGE',       'Cónyuge / compañero/a'),
+        ('HIJO_A',        'Hijo/a'),
+        ('YERNO_NUERA',   'Yerno / nuera'),
+        ('NIETO_A',       'Nieto/a'),
+        ('PADRE_MADRE',   'Padre / madre'),
+        ('HERMANO_A',     'Hermano/a'),
         ('OTRO_PARIENTE', 'Otro pariente'),
-        ('NO_PARIENTE', 'Sin parentesco'),
+        ('NO_PARIENTE',   'Sin parentesco'),
     ]
 
     GENERO = [
@@ -130,12 +136,26 @@ class MiembroHogar(models.Model):
         ('ND', 'No declara'),
     ]
 
-    # Tipo de persona según Manual §5.1.2 — determina qué capítulos aplican
+    # Tipo de persona según Manual §5.1.2 — códigos compatibles con sistema legado Oracle
+    # 5001=Autorizado, 5002=Tutor, 5003=Cuidador permanente, 5004=Otro miembro
     TIPO_PERSONA = [
-        ('AUTORIZADO',  'Autorizado — víctima ≥18 años incluida en RUV'),
-        ('TUTOR',       'Tutor — responsable de víctima menor de edad'),
-        ('CUIDADOR',    'Cuidador permanente — responsable de adulto dependiente'),
-        ('OTRO',        'Otro integrante del hogar'),
+        ('5001', 'Autorizado — víctima ≥18 años incluida en RUV'),
+        ('5002', 'Tutor — responsable legal de víctima menor de edad'),
+        ('5003', 'Cuidador permanente — responsable de adulto dependiente'),
+        ('5004', 'Otro miembro del hogar'),
+    ]
+
+    # Cómo fue incluido el miembro en este hogar
+    TIPO_INCLUSION = [
+        ('RUV_CONFIRMADO',        'Confirmado en RUV — coincidencia documento'),
+        ('NO_INCLUIDO',           'No incluido en RUV — registrado manualmente'),
+        ('PENDIENTE_VERIFICACION','Pendiente de verificación en fuentes oficiales'),
+    ]
+
+    FUENTE_ORIGEN = [
+        ('ENCUESTADOR', 'Registrado por encuestador en campo'),
+        ('RUV',         'Cargado desde RUV'),
+        ('LEGADO',      'Migrado del sistema legado (IgedEncuesta)'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -174,8 +194,16 @@ class MiembroHogar(models.Model):
         help_text='Fecha de nacimiento del miembro (PII — no se indexa).',
     )
     tipo_persona = models.CharField(
-        max_length=15, choices=TIPO_PERSONA, default='OTRO',
-        help_text='Rol del miembro según §5.1.2 del manual UARIV.',
+        max_length=4, choices=TIPO_PERSONA, default='5004',
+        help_text='Rol del miembro según §5.1.2 del manual UARIV (compatible con códigos Oracle).',
+    )
+    tipo_inclusion = models.CharField(
+        max_length=25, choices=TIPO_INCLUSION, default='PENDIENTE_VERIFICACION',
+        help_text='Cómo fue incorporado este miembro al hogar.',
+    )
+    fuente_origen = models.CharField(
+        max_length=15, choices=FUENTE_ORIGEN, default='ENCUESTADOR',
+        help_text='Origen del registro de este miembro.',
     )
     incluido_ruv = models.BooleanField(
         default=False,
@@ -203,6 +231,10 @@ class MiembroHogar(models.Model):
         verbose_name = 'Miembro del Hogar'
         verbose_name_plural = 'Miembros del Hogar'
         ordering = ['parentesco', 'created_at']
+        indexes = [
+            models.Index(fields=['hogar', 'tipo_persona']),
+            models.Index(fields=['tipo_inclusion']),
+        ]
 
     def __str__(self):
         return f'{self.get_parentesco_display()} — Hogar {self.hogar_id}'

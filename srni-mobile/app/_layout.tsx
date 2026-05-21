@@ -15,11 +15,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     initDatabase().catch(() => {});
-    cargarPerfil();
+    cargarPerfil().catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (usuario) inicializar();
+    if (usuario) inicializar().catch(() => {});
   }, [usuario?.id]);
 
   return (

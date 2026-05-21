@@ -9,7 +9,7 @@
  *   │   [subtítulo]                   │
  *   └─────────────────────────────────┘
  */
-import { View, StyleSheet, StatusBar, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOV } from '../theme/govTheme';
@@ -23,13 +23,9 @@ interface GovHeaderProps {
 
 export function GovHeader({ title, subtitle, onBack, right }: GovHeaderProps) {
   const insets = useSafeAreaInsets();
-  // En Android el StatusBar ocupa espacio; en iOS usamos el inset real
-  const topPad = Platform.OS === 'android'
-    ? (StatusBar.currentHeight ?? 24)
-    : insets.top;
 
   return (
-    <View style={[styles.wrapper, { paddingTop: topPad }]}>
+    <View style={[styles.wrapper, { paddingTop: insets.top }]}>
       {/* Franja amarilla GOV.CO */}
       <View style={styles.govStripe}>
         <Text style={styles.govText}>GOV.CO</Text>

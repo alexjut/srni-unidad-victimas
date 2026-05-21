@@ -9,6 +9,26 @@ from django.conf import settings
 from .fields import EncryptedField, sha256_hash
 
 
+class CatalogoHechoVictimizante(models.Model):
+    """
+    Catálogo oficial de hechos victimizantes según Ley 1448/2011.
+    # TODO: confirmar códigos y nombres exactos con área funcional (tablas Oracle EMC_VARIABLES / GIC_TIPO_HECHO).
+    """
+    codigo = models.CharField(max_length=10, unique=True, db_index=True)
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True)
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Catálogo Hecho Victimizante'
+        verbose_name_plural = 'Catálogo Hechos Victimizantes'
+        ordering = ['orden', 'codigo']
+
+    def __str__(self):
+        return f'[{self.codigo}] {self.nombre}'
+
+
 class Victima(models.Model):
     """
     Registro de víctima del conflicto armado.
@@ -17,39 +37,59 @@ class Victima(models.Model):
     sin descifrar el registro completo.
     """
     ESTADO_RUV = [
-        ('INCLUIDO', 'Incluido en RUV'),
+        ('INCLUIDO',    'Incluido en RUV'),
         ('NO_INCLUIDO', 'No incluido en RUV'),
-        ('EN_PROCESO', 'En proceso de valoración'),
-        ('EXCLUIDO', 'Excluido del RUV'),
+        ('EN_PROCESO',  'En proceso de valoración'),
+        ('EXCLUIDO',    'Excluido del RUV'),
     ]
 
     ESTADO_CIVIL = [
-        ('SOLTERO', 'Soltero/a'),
-        ('CASADO', 'Casado/a'),
+        ('SOLTERO',     'Soltero/a'),
+        ('CASADO',      'Casado/a'),
         ('UNION_LIBRE', 'Unión libre'),
-        ('SEPARADO', 'Separado/a'),
-        ('DIVORCIADO', 'Divorciado/a'),
-        ('VIUDO', 'Viudo/a'),
+        ('SEPARADO',    'Separado/a'),
+        ('DIVORCIADO',  'Divorciado/a'),
+        ('VIUDO',       'Viudo/a'),
     ]
 
     GENERO = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
+        ('M',  'Masculino'),
+        ('F',  'Femenino'),
         ('NB', 'No binario'),
         ('ND', 'No declara'),
     ]
 
     PERTENENCIA_ETNICA = [
-        ('NINGUNA', 'Ninguna'),
-        ('INDIGENA', 'Indígena'),
-        ('AFROCOLOMBIANO', 'Afrocolombiano / Afrodescendiente'),
-        ('ROM', 'Pueblo Rom / Gitano'),
-        ('RAIZAL', 'Raizal del Archipiélago'),
-        ('PALENQUERO', 'Palenquero de San Basilio'),
+        ('NINGUNA',       'Ninguna'),
+        ('INDIGENA',      'Indígena'),
+        ('AFROCOLOMBIANO','Afrocolombiano / Afrodescendiente'),
+        ('ROM',           'Pueblo Rom / Gitano'),
+        ('RAIZAL',        'Raizal del Archipiélago'),
+        ('PALENQUERO',    'Palenquero de San Basilio'),
+    ]
+
+    FUENTE_ORIGEN = [
+        ('RUV',     'Registro Único de Víctimas'),
+        ('SNARIV',  'SNARIV — sistema interinstitucional'),
+        ('LEGADO',  'Migración del sistema legado (IgedEncuesta)'),
+        ('MANUAL',  'Registro manual por funcionario'),
+    ]
+
+    ESTADO_VALORACION = [
+        ('PENDIENTE',    'Pendiente de valoración'),
+        ('EN_REVISION',  'En revisión'),
+        ('VALORADO',     'Valorado — incluido'),
+        ('RECHAZADO',    'Valoración rechazada'),
     ]
 
     # Identificador interno (no expuesto en respuestas de búsqueda)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Consecutivo del sistema legado Oracle — facilita trazabilidad en migración
+    cons_persona = models.IntegerField(
+        null=True, blank=True, db_index=True,
+        help_text='CONSUSUARIOID del sistema Oracle legado (IgedEncuesta).',
+    )
 
     # --- Documento: cifrado para almacenamiento, hash para búsqueda ---
     tipo_documento = models.ForeignKey(
@@ -84,8 +124,21 @@ class Victima(models.Model):
         max_length=15, choices=ESTADO_RUV, default='EN_PROCESO', db_index=True
     )
 
-    # --- Hechos victimizantes: JSON libre ---
-    hechos_victimizantes = models.JSONField(default=list, blank=True)
+    # --- Control de caracterización ---
+    habilitado_para_caracterizacion = models.BooleanField(
+        default=True, db_index=True,
+        help_text='False si la víctima está excluida, fallecida o con restricción administrativa.',
+    )
+    fecha_ult_caracterizacion = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Fecha/hora de la última sesión de caracterización completada.',
+    )
+    fuente_origen = models.CharField(
+        max_length=10, choices=FUENTE_ORIGEN, default='RUV', db_index=True,
+    )
+    estado_valoracion = models.CharField(
+        max_length=15, choices=ESTADO_VALORACION, default='PENDIENTE', db_index=True,
+    )
 
     # --- Municipio de residencia actual ---
     municipio_residencia = models.ForeignKey(
@@ -112,6 +165,7 @@ class Victima(models.Model):
         indexes = [
             models.Index(fields=['numero_documento_hash', 'tipo_documento']),
             models.Index(fields=['estado_ruv', 'pertenencia_etnica']),
+            models.Index(fields=['habilitado_para_caracterizacion', 'estado_ruv']),
         ]
 
     def save(self, *args, **kwargs):
@@ -126,3 +180,55 @@ class Victima(models.Model):
 
     def __str__(self):
         return f'Víctima {self.numero_documento_hash[:8]}… ({self.tipo_documento_id})'
+
+
+class HechoVictima(models.Model):
+    """
+    Relación entre una víctima y los hechos victimizantes que sufrió.
+    Permite reportes agregados por tipo de hecho (Ley 1448 Art. 3).
+    """
+    FUENTE_REGISTRO = [
+        ('RUV',         'Registro Único de Víctimas'),
+        ('DECLARACION', 'Declaración ante Ministerio Público'),
+        ('SNARIV',      'Reporte SNARIV'),
+        ('MANUAL',      'Registro manual por funcionario'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    victima = models.ForeignKey(
+        Victima,
+        on_delete=models.CASCADE,
+        related_name='hechos_victimizantes',
+    )
+    hecho = models.ForeignKey(
+        CatalogoHechoVictimizante,
+        on_delete=models.PROTECT,
+        related_name='victimas_afectadas',
+    )
+    fecha_hecho = models.DateField(
+        null=True, blank=True,
+        help_text='Fecha en que ocurrió el hecho victimizante.',
+    )
+    lugar_hecho = models.ForeignKey(
+        'parametricas.Municipio',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='hechos_ocurridos',
+    )
+    fuente = models.CharField(max_length=15, choices=FUENTE_REGISTRO, default='RUV')
+    observaciones = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Hecho Victimizante'
+        verbose_name_plural = 'Hechos Victimizantes'
+        # Una víctima puede tener el mismo tipo de hecho más de una vez
+        # (e.g., desplazado dos veces), así que no se pone unique_together.
+        indexes = [
+            models.Index(fields=['victima', 'hecho']),
+        ]
+        ordering = ['fecha_hecho', 'hecho']
+
+    def __str__(self):
+        return f'{self.victima} — {self.hecho}'

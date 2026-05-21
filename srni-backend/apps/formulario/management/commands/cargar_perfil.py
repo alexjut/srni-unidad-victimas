@@ -1,36 +1,35 @@
 """
-Comando idempotente genérico para cargar cualquier perfil de caracterización SRNI.
+Comando idempotente genérico para cargar cualquier instrumento de caracterización SRNI.
 
 Uso:
-    python manage.py cargar_perfil --perfil TERRITORIAL
-    python manage.py cargar_perfil --fixture apps/formulario/fixtures/perfil_territorial_v7.json
-    python manage.py cargar_perfil --perfil ASISTENCIA --dry-run
+    python manage.py cargar_perfil --instrumento TERRITORIAL
+    python manage.py cargar_perfil --fixture apps/formulario/fixtures/instrumento_territorial_v7.json
+    python manage.py cargar_perfil --instrumento ASISTENCIA --dry-run
 
-Diferencias con cargar_diccionario_v8 (mejorado):
-  1. Argumento --perfil: deriva la ruta del fixture automáticamente.
-     --fixture tiene precedencia sobre --perfil.
-  2. Resolución de $ref: si el campo "opciones" de una pregunta es el string
-     "$ref:CLAVE", lo reemplaza con la lista del catálogo opciones_compartidas.json.
-  3. Bug fix: usa p_data.get("no_pregunta", "") en lugar de codigo_diagrama.
+Nota: el argumento --perfil se acepta como alias de --instrumento para compatibilidad
+con fixtures con nombre antiguo (perfil_*.json). --fixture tiene precedencia sobre ambos.
 
 El comando puede ejecutarse múltiples veces sin duplicar registros.
-En cada ejecución, actualiza los registros existentes (upsert por código/externo).
+En cada ejecución, actualiza los registros existentes (upsert por código/versión).
 Las reglas de skip logic se regeneran completas en cada ejecución.
 """
 import json
 from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from apps.formulario.models import (
-    Perfil, InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
-)
+from apps.formulario.models import Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic
 
-# Ruta al catálogo compartido (relativa al directorio srni-backend)
 OPCIONES_COMPARTIDAS_PATH = Path("apps/formulario/fixtures/opciones_compartidas.json")
+
+# TODO: crear fixtures instrumento_<codigo>_v*.json para instrumentos sin contenido completo:
+#       BUENAVENTURA (stub V7), SAN_ANDRES (stub V7), TELEFONICO (V8),
+#       URBANO_ETNICO (stub V1), RURAL_ETNICO (stub V1).
+#       Pendiente acceso a Oracle / confirmación de contenido con área funcional UARIV.
+#       Todos deben cargarse exclusivamente via este comando — NO via loaddata paralelo.
 
 
 class Command(BaseCommand):
-    help = "Carga un perfil de caracterización SRNI desde fixture JSON (idempotente)"
+    help = "Carga un instrumento de caracterización SRNI desde fixture JSON (idempotente)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -38,17 +37,23 @@ class Command(BaseCommand):
             default="",
             help=(
                 "Ruta al fixture JSON relativa al directorio srni-backend. "
-                "Tiene precedencia sobre --perfil."
+                "Tiene precedencia sobre --instrumento."
             ),
         )
         parser.add_argument(
-            "--perfil",
+            "--instrumento",
             default="",
             help=(
-                "Nombre del perfil (ej: TERRITORIAL, ASISTENCIA). "
-                "Deriva el fixture como apps/formulario/fixtures/perfil_<nombre_lower>_v?.json. "
-                "Ignorado si --fixture está presente."
+                "Código del instrumento (ej: TERRITORIAL, ASISTENCIA). "
+                "Busca fixtures con nombre instrumento_<codigo_lower>_v*.json "
+                "o el nombre legacy perfil_<codigo_lower>_v*.json."
             ),
+        )
+        # Alias de --instrumento para compatibilidad con fixtures legacy
+        parser.add_argument(
+            "--perfil",
+            default="",
+            help="Alias de --instrumento (compatibilidad con nombre legacy).",
         )
         parser.add_argument(
             "--dry-run",
@@ -57,36 +62,33 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **opts):
-        # ── Resolución de ruta del fixture ────────────────────────────────────
         fixture_arg = opts.get("fixture", "").strip()
-        perfil_arg = opts.get("perfil", "").strip()
+        instrumento_arg = (opts.get("instrumento") or opts.get("perfil", "")).strip()
 
         if fixture_arg:
             fixture_path = Path(fixture_arg)
-        elif perfil_arg:
-            # Convención: perfil_<nombre_en_minúsculas>_v?.json
-            nombre_lower = perfil_arg.lower()
-            # Busca el primer archivo que coincida con el patrón
-            patron = f"perfil_{nombre_lower}_v*.json"
+        elif instrumento_arg:
+            nombre_lower = instrumento_arg.lower()
             fixtures_dir = Path("apps/formulario/fixtures")
-            candidatos = sorted(fixtures_dir.glob(patron))
+            # Busca nuevo nombre primero, luego legacy
+            candidatos = sorted(fixtures_dir.glob(f"instrumento_{nombre_lower}_v*.json"))
+            if not candidatos:
+                candidatos = sorted(fixtures_dir.glob(f"perfil_{nombre_lower}_v*.json"))
             if not candidatos:
                 raise CommandError(
-                    f"No se encontró ningún fixture con patrón '{patron}' en {fixtures_dir}. "
+                    f"No se encontró fixture para instrumento '{instrumento_arg}' en {fixtures_dir}. "
                     f"Use --fixture para especificar la ruta exacta."
                 )
-            fixture_path = candidatos[-1]  # la versión más reciente (orden lexicográfico)
+            fixture_path = candidatos[-1]
             self.stdout.write(f"  Usando fixture: {fixture_path}")
         else:
-            raise CommandError("Debe especificar --fixture o --perfil.")
+            raise CommandError("Debe especificar --fixture o --instrumento.")
 
         if not fixture_path.exists():
             raise CommandError(f"Fixture no encontrado: {fixture_path}")
 
-        # ── Carga del catálogo compartido ($ref) ──────────────────────────────
         catalogo = self._cargar_catalogo()
 
-        # ── Carga del fixture principal ───────────────────────────────────────
         try:
             data = json.loads(fixture_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
@@ -95,12 +97,11 @@ class Command(BaseCommand):
         self._validar_estructura(data)
 
         with transaction.atomic():
-            perfil = self._upsert_perfil(data["perfil"])
-            version = self._upsert_version(perfil, data["instrumento_version"])
-            capitulos_map = self._upsert_capitulos(version, data["capitulos"])
+            instrumento = self._upsert_instrumento(data)
+            capitulos_map = self._upsert_capitulos(instrumento, data["capitulos"])
             preguntas_map = self._upsert_preguntas(capitulos_map, data["preguntas"], catalogo)
             n_reglas = self._upsert_reglas(
-                version, preguntas_map, capitulos_map, data.get("reglas_skip_logic", [])
+                instrumento, preguntas_map, capitulos_map, data.get("reglas_skip_logic", [])
             )
 
             if opts["dry_run"]:
@@ -113,15 +114,12 @@ class Command(BaseCommand):
                 return
 
         self.stdout.write(self.style.SUCCESS(
-            f"OK Cargado: perfil={perfil.codigo} version={version.numero} | "
+            f"OK Cargado: instrumento={instrumento} | "
             f"capitulos={len(capitulos_map)} | preguntas={len(preguntas_map)} | "
             f"reglas={n_reglas}"
         ))
 
-    # ── Catálogo compartido ───────────────────────────────────────────────────
-
     def _cargar_catalogo(self):
-        """Carga opciones_compartidas.json. Devuelve dict clave→lista de opciones."""
         if not OPCIONES_COMPARTIDAS_PATH.exists():
             self.stderr.write(
                 f"  Aviso: catálogo compartido no encontrado en {OPCIONES_COMPARTIDAS_PATH}. "
@@ -136,52 +134,65 @@ class Command(BaseCommand):
         except json.JSONDecodeError as e:
             raise CommandError(f"Catálogo opciones_compartidas.json inválido: {e}")
 
-    # ── Validación de estructura ──────────────────────────────────────────────
-
     def _validar_estructura(self, data):
-        requeridos = ["perfil", "instrumento_version", "capitulos", "preguntas"]
-        faltantes = [k for k in requeridos if k not in data]
-        if faltantes:
-            raise CommandError(f"Fixture incompleto — faltan secciones: {faltantes}")
+        """Acepta formato nuevo (instrumento) y legado (perfil + instrumento_version)."""
+        tiene_nuevo = "instrumento" in data
+        tiene_legacy = "perfil" in data and "instrumento_version" in data
+        if not tiene_nuevo and not tiene_legacy:
+            raise CommandError(
+                "Fixture incompleto — debe tener sección 'instrumento' "
+                "o las secciones legado 'perfil' + 'instrumento_version'."
+            )
+        for clave in ("capitulos", "preguntas"):
+            if clave not in data:
+                raise CommandError(f"Fixture incompleto — falta sección '{clave}'.")
 
-    # ── Upserts ───────────────────────────────────────────────────────────────
-
-    def _upsert_perfil(self, data):
-        perfil, created = Perfil.objects.update_or_create(
-            codigo=data["codigo"],
-            defaults={"nombre": data["nombre"], "activo": True},
-        )
+    def _upsert_instrumento(self, data) -> Instrumento:
+        """Soporta formato nuevo y formato legado (perfil + instrumento_version)."""
+        if "instrumento" in data:
+            d = data["instrumento"]
+            instrumento, created = Instrumento.objects.update_or_create(
+                codigo=d["codigo"],
+                version=d["version"],
+                defaults={
+                    "nombre": d["nombre"],
+                    "activo": d.get("activo", True),
+                    "vigente_desde": d["vigente_desde"],
+                    "vigente_hasta": d.get("vigente_hasta"),
+                    "fuente_documental": d.get("fuente_documental", ""),
+                },
+            )
+        else:
+            # Formato legado: combina secciones perfil + instrumento_version
+            p = data["perfil"]
+            v = data["instrumento_version"]
+            instrumento, created = Instrumento.objects.update_or_create(
+                codigo=p["codigo"],
+                version=v["numero"],
+                defaults={
+                    "nombre": p["nombre"],
+                    "activo": True,
+                    "vigente_desde": v["vigente_desde"],
+                    "vigente_hasta": v.get("vigente_hasta"),
+                    "fuente_documental": v.get("fuente_documental", ""),
+                },
+            )
         accion = "Creado" if created else "Actualizado"
-        self.stdout.write(f"  {accion} perfil: {perfil}")
-        return perfil
+        self.stdout.write(f"  {accion} instrumento: {instrumento}")
+        return instrumento
 
-    def _upsert_version(self, perfil, data):
-        version, created = InstrumentoVersion.objects.update_or_create(
-            perfil=perfil,
-            numero=data["numero"],
-            defaults={
-                "vigente_desde": data["vigente_desde"],
-                "vigente_hasta": data.get("vigente_hasta"),
-                "fuente_documental": data.get("fuente_documental", ""),
-            },
-        )
-        accion = "Creada" if created else "Actualizada"
-        self.stdout.write(f"  {accion} versión: {version}")
-        return version
-
-    def _upsert_capitulos(self, version, capitulos_data):
+    def _upsert_capitulos(self, instrumento: Instrumento, capitulos_data: list) -> dict:
         result = {}
         for cap_data in capitulos_data:
-            cap, created = Capitulo.objects.update_or_create(
-                instrumento=version,
+            cap, _ = Capitulo.objects.update_or_create(
+                instrumento=instrumento,
                 codigo=cap_data["codigo"],
                 defaults={
                     "nombre": cap_data["nombre"],
                     "orden": cap_data["orden"],
+                    "nivel": cap_data.get("nivel", "HOGAR"),
                     "objetivo": cap_data.get("objetivo", ""),
-                    "poblacion_objetivo": cap_data.get(
-                        "poblacion_objetivo", "TODOS_MIEMBROS"
-                    ),
+                    "poblacion_objetivo": cap_data.get("poblacion_objetivo", "TODOS_MIEMBROS"),
                     "aplicabilidad": cap_data.get("aplicabilidad", {}),
                 },
             )
@@ -189,7 +200,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Capítulos procesados: {len(result)}")
         return result
 
-    def _upsert_preguntas(self, capitulos, preguntas_data, catalogo):
+    def _upsert_preguntas(self, capitulos: dict, preguntas_data: list, catalogo: dict) -> dict:
         result = {}
         errores = []
         for p_data in preguntas_data:
@@ -200,7 +211,6 @@ class Command(BaseCommand):
                 )
                 continue
 
-            # ── Resolución de $ref ────────────────────────────────────────────
             opciones_raw = p_data.get("opciones", [])
             if isinstance(opciones_raw, str) and opciones_raw.startswith("$ref:"):
                 clave_ref = opciones_raw[len("$ref:"):]
@@ -229,7 +239,6 @@ class Command(BaseCommand):
                     "obligatoria": p_data.get("obligatoria", True),
                     "validaciones": p_data.get("validaciones", {}),
                     "descripcion_ayuda": p_data.get("descripcion_ayuda", ""),
-                    # Bug fix: se usa no_pregunta, NO codigo_diagrama
                     "no_pregunta": p_data.get("no_pregunta", ""),
                     "id_preg": p_data.get("id_preg"),
                     "es_precargada": p_data.get("es_precargada", False),
@@ -256,47 +265,45 @@ class Command(BaseCommand):
         self.stdout.write(f"  Preguntas procesadas: {len(result)} ({len(errores)} errores)")
         return result
 
-    def _upsert_reglas(self, version, preguntas, capitulos, reglas_data):
-        # Las reglas son declarativas — se regeneran en cada carga
-        ReglaSkipLogic.objects.filter(instrumento=version).delete()
+    def _upsert_reglas(
+        self,
+        instrumento: Instrumento,
+        preguntas: dict,
+        capitulos: dict,
+        reglas_data: list,
+    ) -> int:
+        ReglaSkipLogic.objects.filter(instrumento=instrumento).delete()
         creadas = 0
 
         for r in reglas_data:
-            pregunta_origen = (
-                preguntas.get(r.get("origen")) if r.get("origen") else None
-            )
-            accion = r["accion"]
+            pregunta_origen = preguntas.get(r.get("origen")) if r.get("origen") else None
             base = {
-                "instrumento": version,
+                "instrumento": instrumento,
                 "pregunta_origen": pregunta_origen,
                 "valor_trigger": r.get("valor_trigger", ""),
-                "accion": accion,
+                "accion": r["accion"],
                 "descripcion": r.get("descripcion", ""),
                 "expresion_origen": r.get("origen_expr", ""),
             }
 
-            # Afecta una sola pregunta
             if "afecta" in r:
                 p = preguntas.get(r["afecta"])
                 if p:
                     ReglaSkipLogic.objects.create(**base, pregunta_afectada=p)
                     creadas += 1
 
-            # Afecta múltiples preguntas
             for cod in r.get("afecta_multiple", []):
                 p = preguntas.get(cod)
                 if p:
                     ReglaSkipLogic.objects.create(**base, pregunta_afectada=p)
                     creadas += 1
 
-            # Afecta un capítulo completo
             if "afecta_capitulo" in r:
                 cap = capitulos.get(r["afecta_capitulo"])
                 if cap:
                     ReglaSkipLogic.objects.create(**base, capitulo_afectado=cap)
                     creadas += 1
 
-            # Afecta múltiples capítulos
             for cod in r.get("afecta_capitulos_multiple", []):
                 cap = capitulos.get(cod)
                 if cap:

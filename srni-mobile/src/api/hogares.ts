@@ -22,8 +22,8 @@ export interface AgregarMiembroPayload {
   numero_documento?: string;
   parentesco: string;
   genero?: string;
-  edad?: number;
-  discapacidad?: boolean;
+  incluido_ruv?: boolean;
+  tipo_persona?: string;      // '5001' | '5002' | '5003' | '5004'
   tipo_discapacidad?: string;
 }
 
