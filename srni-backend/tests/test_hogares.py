@@ -1,5 +1,5 @@
 """
-Tests de Hogares: creación, miembros, permisos y auditoría.
+Tests de Hogares: creación, miembros, autorizado, estado_inclusion, permisos y auditoría.
 """
 import pytest
 from rest_framework.test import APIClient
@@ -60,9 +60,26 @@ def victima(tipo_doc, municipio, encuestador):
 
 
 @pytest.fixture
+def victima2(tipo_doc, municipio, encuestador):
+    """Segunda víctima para tests de integrantes adicionales."""
+    return Victima.objects.create(
+        tipo_documento=tipo_doc,
+        numero_documento='9876543210',
+        primer_nombre='Carlos', segundo_nombre='',
+        primer_apellido='Pérez', segundo_apellido='',
+        fecha_nacimiento='1975-06-20',
+        genero='M', estado_civil='CASADO',
+        pertenencia_etnica='NINGUNA', estado_ruv='NO_INCLUIDO',
+        municipio_residencia=municipio,
+        creado_por=encuestador,
+    )
+
+
+@pytest.fixture
 def hogar(victima, municipio, encuestador):
+    """Hogar creado directamente (sin API) — NO auto-inserta el autorizado."""
     return Hogar.objects.create(
-        jefe_hogar=victima,
+        autorizado=victima,
         municipio=municipio,
         tipo_vivienda='CASA',
         condicion_ocupacion='ARRIENDO',
@@ -93,7 +110,7 @@ class TestCrearHogar:
 
     def test_crear_hogar_exitoso(self, client_enc, victima, municipio):
         r = client_enc.post('/api/hogares/', {
-            'jefe_hogar': str(victima.id),
+            'autorizado': str(victima.id),
             'municipio': municipio.id,
             'tipo_vivienda': 'CASA',
             'condicion_ocupacion': 'ARRIENDO',
@@ -103,10 +120,35 @@ class TestCrearHogar:
         }, format='json')
         assert r.status_code == 201, r.data
         assert r.data['estado'] == 'BORRADOR'
+        # La API devuelve el UUID como objeto; comparamos con str() en ambos lados
+        assert str(r.data['autorizado']) == str(victima.id)
 
-    def test_hogar_creado_asigna_encuestador(self, client_enc, victima, municipio, encuestador):
+    def test_crear_hogar_auto_inserta_autorizado_como_miembro(self, client_enc, victima, municipio):
+        """
+        Al crear el hogar vía API, el autorizado debe quedar automáticamente
+        como primer MiembroHogar: rol='MIEMBRO', es_autorizado=True, estado_inclusion='INCLUIDO'.
+        """
         r = client_enc.post('/api/hogares/', {
-            'jefe_hogar': str(victima.id),
+            'autorizado': str(victima.id),
+            'numero_personas': 1,
+        }, format='json')
+        assert r.status_code == 201, r.data
+        hogar_id = r.data['id']
+
+        miembros = MiembroHogar.objects.filter(hogar_id=hogar_id)
+        assert miembros.count() == 1, 'El autorizado debe ser el primer miembro'
+
+        autorizado = miembros.get()
+        assert autorizado.es_autorizado is True
+        assert autorizado.rol == 'MIEMBRO'
+        assert autorizado.estado_inclusion == 'INCLUIDO'
+        assert autorizado.incluido_ruv is True      # sincronizado en save()
+        assert autorizado.tipo_persona == '5001'    # código Oracle sincronizado en save()
+        assert autorizado.victima == victima
+
+    def test_crear_hogar_asigna_encuestador(self, client_enc, victima, municipio, encuestador):
+        r = client_enc.post('/api/hogares/', {
+            'autorizado': str(victima.id),
             'municipio': municipio.id,
             'numero_personas': 2,
         }, format='json')
@@ -115,7 +157,6 @@ class TestCrearHogar:
         assert hogar.creado_por == encuestador
 
     def test_encuestador_solo_ve_sus_hogares(self, client_enc, hogar, victima, municipio):
-        # Crear otro encuestador con otro hogar
         perfil2 = Perfil.objects.create(
             codigo='ENC2', nombre='Otro Enc', puede_caracterizar=True, activo=True,
         )
@@ -126,16 +167,19 @@ class TestCrearHogar:
         )
         enc2 = Usuario.objects.select_related('perfil').get(pk=enc2_user.pk)
         Hogar.objects.create(
-            jefe_hogar=victima, municipio=municipio,
+            autorizado=victima, municipio=municipio,
             numero_personas=1, creado_por=enc2,
         )
         r = client_enc.get('/api/hogares/')
         assert r.status_code == 200
-        # Solo debe ver el hogar de encuestador, no el de enc2
         ids = [h['id'] for h in r.data['results']]
         assert str(hogar.id) in ids
         assert len(ids) == 1
 
+
+# ---------------------------------------------------------------------------
+# Tests de integrantes del hogar
+# ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestMiembrosHogar:
@@ -143,26 +187,75 @@ class TestMiembrosHogar:
         r = client_enc.post(f'/api/hogares/{hogar.id}/agregar-miembro/', {
             'nombre_completo': 'Miembro Sin RNI',
             'parentesco': 'HIJO_A',
+            'rol': 'MIEMBRO',
+            'estado_inclusion': 'NO_INCLUIDO',
             'genero': 'M',
-            'edad': 12,
-            'discapacidad': False,
         }, format='json')
         assert r.status_code == 201
         assert MiembroHogar.objects.filter(hogar=hogar).count() == 1
 
-    def test_agregar_miembro_con_rni(self, client_enc, hogar, victima):
+    def test_agregar_miembro_con_rni(self, client_enc, hogar, victima2):
         r = client_enc.post(f'/api/hogares/{hogar.id}/agregar-miembro/', {
-            'victima': str(victima.id),
+            'victima': str(victima2.id),
             'parentesco': 'CONYUGE',
-            'genero': 'F',
+            'rol': 'MIEMBRO',
+            'estado_inclusion': 'NO_INCLUIDO',
+            'genero': 'M',
         }, format='json')
         assert r.status_code == 201
         miembro = MiembroHogar.objects.get(pk=r.data['id'])
-        assert miembro.victima == victima
+        assert miembro.victima == victima2
+        assert miembro.es_autorizado is False
+
+    def test_nuevo_miembro_nunca_es_autorizado(self, client_enc, hogar, victima2):
+        """
+        La action agregar_miembro siempre fuerza es_autorizado=False.
+        El autorizado solo se asigna al crear el hogar.
+        """
+        r = client_enc.post(f'/api/hogares/{hogar.id}/agregar-miembro/', {
+            'victima': str(victima2.id),
+            'parentesco': 'HIJO_A',
+            'rol': 'TUTOR',
+            'estado_inclusion': 'INCLUIDO',
+        }, format='json')
+        assert r.status_code == 201
+        miembro = MiembroHogar.objects.get(pk=r.data['id'])
+        assert miembro.es_autorizado is False
+
+    def test_estado_inclusion_chip_incluido(self, client_enc, hogar, victima):
+        """El campo estado_inclusion se sincroniza con incluido_ruv via save()."""
+        m = MiembroHogar.objects.create(
+            hogar=hogar, victima=victima,
+            rol='MIEMBRO', es_autorizado=False,
+            estado_inclusion='INCLUIDO',
+            creado_por=hogar.creado_por,
+        )
+        assert m.incluido_ruv is True
+        assert m.tipo_persona == '5004'  # Miembro ordinario aunque esté incluido
+
+    def test_tipo_persona_oracle_sincronizado(self):
+        """save() calcula tipo_persona y incluido_ruv a partir de rol/es_autorizado."""
+        from unittest.mock import patch
+        from django.db import models as django_models
+
+        casos = [
+            ({'rol': 'MIEMBRO', 'es_autorizado': True,  'estado_inclusion': 'INCLUIDO'},    '5001', True),
+            ({'rol': 'TUTOR',   'es_autorizado': False, 'estado_inclusion': 'NO_INCLUIDO'}, '5002', False),
+            ({'rol': 'CUIDADOR_PERMANENTE', 'es_autorizado': False, 'estado_inclusion': 'NO_INCLUIDO'}, '5003', False),
+            ({'rol': 'MIEMBRO', 'es_autorizado': False, 'estado_inclusion': 'NO_INCLUIDO'}, '5004', False),
+        ]
+        for attrs, tipo_esperado, incluido_esperado in casos:
+            m = MiembroHogar(**attrs)
+            # Patch super().save() para no tocar la BD
+            with patch.object(django_models.Model, 'save'):
+                m.save()
+            assert m.tipo_persona == tipo_esperado, f'Para {attrs}: tipo_persona {m.tipo_persona!r} ≠ {tipo_esperado!r}'
+            assert m.incluido_ruv == incluido_esperado, f'Para {attrs}: incluido_ruv {m.incluido_ruv!r} ≠ {incluido_esperado!r}'
 
     def test_listar_miembros(self, client_enc, hogar, victima):
         MiembroHogar.objects.create(
-            hogar=hogar, parentesco='HIJO_A',
+            hogar=hogar, parentesco='HIJO_A', rol='MIEMBRO',
+            estado_inclusion='NO_INCLUIDO',
             genero='M', fecha_nacimiento='2014-03-15',
             creado_por=client_enc.handler._force_user,
         )
@@ -170,9 +263,11 @@ class TestMiembrosHogar:
         assert r.status_code == 200
         assert len(r.data) == 1
 
-    def test_detalle_incluye_miembros(self, client_enc, hogar):
+    def test_detalle_incluye_miembros_con_nuevos_campos(self, client_enc, hogar, victima):
         MiembroHogar.objects.create(
-            hogar=hogar, parentesco='JEFE',
+            hogar=hogar, victima=victima,
+            parentesco='CONYUGE', rol='MIEMBRO',
+            estado_inclusion='INCLUIDO',
             genero='F', fecha_nacimiento='1982-07-20',
             creado_por=client_enc.handler._force_user,
         )
@@ -180,7 +275,42 @@ class TestMiembrosHogar:
         assert r.status_code == 200
         assert len(r.data['miembros']) == 1
         assert r.data['total_miembros'] == 1
+        miembro = r.data['miembros'][0]
+        assert 'rol' in miembro
+        assert 'es_autorizado' in miembro
+        assert 'estado_inclusion' in miembro
 
+    def test_constraint_unico_autorizado_por_hogar(self, hogar, victima, victima2, encuestador):
+        """Solo puede haber un es_autorizado=True por hogar."""
+        import django.db
+        MiembroHogar.objects.create(
+            hogar=hogar, victima=victima,
+            rol='MIEMBRO', es_autorizado=True,
+            estado_inclusion='INCLUIDO',
+            creado_por=encuestador,
+        )
+        with pytest.raises(django.db.IntegrityError):
+            MiembroHogar.objects.create(
+                hogar=hogar, victima=victima2,
+                rol='MIEMBRO', es_autorizado=True,
+                estado_inclusion='INCLUIDO',
+                creado_por=encuestador,
+            )
+
+    def test_respuesta_incluye_campo_rol_display(self, client_enc, hogar):
+        MiembroHogar.objects.create(
+            hogar=hogar, rol='TUTOR',
+            estado_inclusion='NO_INCLUIDO',
+            creado_por=client_enc.handler._force_user,
+        )
+        r = client_enc.get(f'/api/hogares/{hogar.id}/miembros/')
+        assert r.status_code == 200
+        assert r.data[0]['rol_display'] == 'Tutor — responsable legal de menor'
+
+
+# ---------------------------------------------------------------------------
+# Tests de permisos
+# ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestPermisosHogar:
@@ -198,6 +328,6 @@ class TestPermisosHogar:
         c = APIClient()
         c.force_authenticate(user=user)
         r = c.post('/api/hogares/', {
-            'jefe_hogar': str(victima.id), 'numero_personas': 1,
+            'autorizado': str(victima.id), 'numero_personas': 1,
         }, format='json')
         assert r.status_code == 403

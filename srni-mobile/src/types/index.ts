@@ -122,17 +122,34 @@ export interface Instrumento {
 export type EstadoHogar = 'BORRADOR' | 'ACTIVO' | 'ARCHIVADO';
 export type TipoVivienda = 'CASA' | 'APARTAMENTO' | 'CUARTO' | 'CAMBUCHE' | 'CONTENEDOR' | 'OTRO';
 export type CondicionOcupacion = 'PROPIA' | 'PROPIA_PAGANDO' | 'ARRIENDO' | 'FAMILIAR' | 'INVASION' | 'OTRO';
+
+/** Parentesco familiar (sin JEFE — el jefe de hogar se captura dentro de la entrevista) */
 export type Parentesco =
-  | 'JEFE' | 'CONYUGE' | 'HIJO_A' | 'YERNO_NUERA'
+  | 'CONYUGE' | 'HIJO_A' | 'YERNO_NUERA'
   | 'NIETO_A' | 'PADRE_MADRE' | 'HERMANO_A' | 'OTRO_PARIENTE' | 'NO_PARIENTE';
+
+/** Rol funcional del integrante en el hogar */
+export type RolMiembro = 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE';
+
+/** Estado de inclusión según verificación en el RUV */
+export type EstadoInclusion = 'INCLUIDO' | 'NO_INCLUIDO';
 
 export interface MiembroHogarResumen {
   id: string;
-  parentesco: Parentesco;
+  parentesco: Parentesco | '';
   parentesco_display: string;
   genero: 'M' | 'F' | 'NB' | 'ND';
   fecha_nacimiento: string | null;   // ISO date — NO indexado en backend
-  tipo_persona: string;              // '5001' | '5002' | '5003' | '5004'
+  /** Rol funcional en el hogar */
+  rol: RolMiembro;
+  rol_display: string;
+  /** Marca del titular que autoriza la entrevista — solo uno por hogar */
+  es_autorizado: boolean;
+  /** Estado de inclusión en el RUV */
+  estado_inclusion: EstadoInclusion;
+  estado_inclusion_display: string;
+  /** Código Oracle legacy (calculado en backend) */
+  tipo_persona: string;
   incluido_ruv: boolean;
   tiene_discapacidad: boolean;
   victima: string | null;
@@ -143,8 +160,9 @@ export interface HogarResumen {
   id: string;
   estado: EstadoHogar;
   estado_display: string;
-  jefe_hogar: string;
-  jefe_hogar_hash: string;
+  /** UUID de la Victima autorizada (titular de la entrevista) */
+  autorizado: string;
+  autorizado_hash: string;
   municipio: number | null;
   municipio_nombre: string | null;
   total_miembros: number;

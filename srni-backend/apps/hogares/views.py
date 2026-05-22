@@ -2,7 +2,6 @@
 Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
-from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,7 +16,7 @@ from .models import Hogar, MiembroHogar
 from .serializers import (
     HogarListSerializer, HogarDetalleSerializer,
     AgregarMiembroSerializer, MiembroHogarSerializer,
-    CambiarJefeSerializer,
+    CambiarAutorizadoSerializer,
 )
 
 
@@ -36,6 +35,8 @@ def _ip(request) -> str:
 class HogarViewSet(viewsets.ModelViewSet):
     """
     CRUD de hogares.
+    Al crear un hogar, el autorizado queda registrado automáticamente
+    como primer MiembroHogar (rol='MIEMBRO', es_autorizado=True, estado_inclusion='INCLUIDO').
     El listado muestra solo los hogares creados por el encuestador autenticado
     (o todos, si tiene perfil administrador).
     """
@@ -48,7 +49,7 @@ class HogarViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Hogar.objects.select_related(
-            'jefe_hogar', 'municipio__departamento', 'creado_por'
+            'autorizado', 'municipio__departamento', 'creado_por'
         ).prefetch_related('miembros')
 
         if not (user.puede('administrar')):
@@ -62,6 +63,20 @@ class HogarViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         hogar = serializer.save(creado_por=self.request.user)
+
+        # ── Auto-insertar el autorizado como primer MiembroHogar ──────────────
+        # El autorizado siempre es víctima registrada (estado_inclusion='INCLUIDO').
+        # Es el primer integrante: rol='MIEMBRO' + es_autorizado=True.
+        MiembroHogar.objects.create(
+            hogar=hogar,
+            victima=hogar.autorizado,
+            rol='MIEMBRO',
+            es_autorizado=True,
+            estado_inclusion='INCLUIDO',
+            parentesco='',          # el autorizado no tiene parentesco relativo a sí mismo
+            creado_por=self.request.user,
+        )
+
         LogAcceso.registrar(
             usuario=self.request.user,
             accion='CREAR_HOGAR',
@@ -83,7 +98,8 @@ class HogarViewSet(viewsets.ModelViewSet):
         hogar = self.get_object()
         serializer = AgregarMiembroSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        miembro = serializer.save(hogar=hogar, creado_por=request.user)
+        # Los integrantes adicionales nunca son el autorizado (es_autorizado=False por defecto)
+        miembro = serializer.save(hogar=hogar, creado_por=request.user, es_autorizado=False)
 
         LogAcceso.registrar(
             usuario=request.user,
@@ -112,46 +128,67 @@ class HogarViewSet(viewsets.ModelViewSet):
         return Response(MiembroHogarSerializer(miembros, many=True).data)
 
     @extend_schema(
-        summary='Cambiar jefe de hogar',
+        summary='Cambiar autorizado del hogar',
         description=(
-            'Reemplaza el jefe_hogar del hogar con otra Victima registrada en el sistema. '
-            'El miembro anterior sigue en el hogar; solo cambia el jefe.'
+            'Reemplaza el autorizado del hogar con otra Victima registrada en el sistema. '
+            'Actualiza también la marca es_autorizado en la tabla MiembroHogar. '
+            'El miembro anterior conserva su registro en el hogar (es_autorizado pasa a False).'
         ),
         tags=['Hogares'],
-        request=CambiarJefeSerializer,
+        request=CambiarAutorizadoSerializer,
         responses={200: HogarDetalleSerializer},
     )
-    @action(detail=True, methods=['patch'], url_path='cambiar-jefe')
-    def cambiar_jefe(self, request, pk=None):
+    @action(detail=True, methods=['patch'], url_path='cambiar-autorizado')
+    def cambiar_autorizado(self, request, pk=None):
         from apps.victimas.models import Victima
         hogar = self.get_object()
-        serializer = CambiarJefeSerializer(data=request.data)
+        serializer = CambiarAutorizadoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         victima_id = serializer.validated_data['victima_id']
         try:
-            nueva_jefa = Victima.objects.get(pk=victima_id)
+            nueva_autorizada = Victima.objects.get(pk=victima_id)
         except Victima.DoesNotExist:
             return Response(
                 {'detail': 'Víctima no encontrada.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        jefe_anterior_id = str(hogar.jefe_hogar_id)
-        hogar.jefe_hogar = nueva_jefa
-        hogar.save(update_fields=['jefe_hogar', 'updated_at'])
+        autorizado_anterior_id = str(hogar.autorizado_id)
+
+        # Desmarcar autorizado anterior en MiembroHogar
+        hogar.miembros.filter(es_autorizado=True).update(es_autorizado=False)
+
+        # Actualizar el FK en Hogar
+        hogar.autorizado = nueva_autorizada
+        hogar.save(update_fields=['autorizado', 'updated_at'])
+
+        # Marcar (o crear) el nuevo autorizado en MiembroHogar
+        miembro, created = MiembroHogar.objects.get_or_create(
+            hogar=hogar,
+            victima=nueva_autorizada,
+            defaults={
+                'rol': 'MIEMBRO',
+                'es_autorizado': True,
+                'estado_inclusion': 'INCLUIDO',
+                'creado_por': request.user,
+            },
+        )
+        if not created:
+            miembro.es_autorizado = True
+            miembro.save(update_fields=['es_autorizado'])
 
         LogAcceso.registrar(
             usuario=request.user,
-            accion='CAMBIAR_JEFE_HOGAR',
+            accion='CAMBIAR_AUTORIZADO',
             recurso='Hogar',
             recurso_id=str(hogar.id),
             ip=_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             resultado='EXITO',
             detalle={
-                'jefe_anterior': jefe_anterior_id,
-                'jefe_nuevo': str(victima_id),
+                'autorizado_anterior': autorizado_anterior_id,
+                'autorizado_nuevo': str(victima_id),
             },
         )
 

@@ -2,10 +2,12 @@ import apiClient from './client';
 import type {
   HogarResumen, HogarDetalle,
   MiembroHogarResumen, PaginatedResponse,
+  RolMiembro, EstadoInclusion,
 } from '../types';
 
 export interface CrearHogarPayload {
-  jefe_hogar: string;         // UUID de la Victima
+  /** UUID de la Victima autorizada (titular de la entrevista) */
+  autorizado: string;
   municipio?: number;
   tipo_vivienda?: string;
   condicion_ocupacion?: string;
@@ -20,11 +22,14 @@ export interface AgregarMiembroPayload {
   nombre_completo?: string;   // Si NO está en el RNI
   tipo_documento?: number;
   numero_documento?: string;
-  parentesco: string;
+  parentesco?: string;
   genero?: string;
-  incluido_ruv?: boolean;
-  tipo_persona?: string;      // '5001' | '5002' | '5003' | '5004'
+  fecha_nacimiento?: string;
+  rol?: RolMiembro;
+  estado_inclusion?: EstadoInclusion;
+  tiene_discapacidad?: boolean;
   tipo_discapacidad?: string;
+  tiene_enfermedad_ruinosa?: boolean;
 }
 
 export const hogaresApi = {

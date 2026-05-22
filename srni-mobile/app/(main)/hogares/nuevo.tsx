@@ -34,9 +34,9 @@ const CONDICIONES = [
 export default function NuevoHogarScreen() {
   const { estaOnline, refrescarContadores } = useSyncStore();
   const { victimaFuente, victimaLocalId, limpiar, setHogarId, instrumentoId, rutaEntrevista } = useCaracterizacionStore();
-  const tieneJefePrecargado = !!victimaLocalId;
+  const tieneAutorizadoPrecargado = !!victimaLocalId;
 
-  const [jefeHogar, setJefeHogar] = useState(victimaLocalId ?? '');
+  const [autorizadoUuid, setAutorizadoUuid] = useState(victimaLocalId ?? '');
   const [municipio, setMunicipio] = useState('');
   const [tipoVivienda, setTipoVivienda] = useState('CASA');
   const [condicion, setCondicion] = useState('ARRIENDO');
@@ -51,11 +51,11 @@ export default function NuevoHogarScreen() {
 
   function validar(): boolean {
     const e: Record<string, string> = {};
-    if (!tieneJefePrecargado) {
-      if (!jefeHogar.trim()) e.jefeHogar = 'Ingrese el UUID del jefe de hogar.';
+    if (!tieneAutorizadoPrecargado) {
+      if (!autorizadoUuid.trim()) e.autorizado = 'Ingrese el UUID del autorizado/titular.';
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (jefeHogar.trim() && !uuidRegex.test(jefeHogar.trim())) {
-        e.jefeHogar = 'Formato de UUID inválido (ej: a1b2c3d4-…).';
+      if (autorizadoUuid.trim() && !uuidRegex.test(autorizadoUuid.trim())) {
+        e.autorizado = 'Formato de UUID inválido (ej: a1b2c3d4-…).';
       }
     }
     const pers = parseInt(personas, 10);
@@ -70,7 +70,7 @@ export default function NuevoHogarScreen() {
     setErrorGeneral('');
 
     const campos = {
-      jefe_hogar_uuid: jefeHogar.trim(),
+      autorizado_uuid: autorizadoUuid.trim(),
       municipio_id: municipio ? parseInt(municipio, 10) : undefined,
       tipo_vivienda: tipoVivienda,
       condicion_ocupacion: condicion,
@@ -82,9 +82,10 @@ export default function NuevoHogarScreen() {
 
     try {
       if (estaOnline) {
-        // Camino feliz: crear hogar directamente en servidor
+        // Camino feliz: crear hogar directamente en servidor.
+        // El backend auto-inserta al autorizado como primer MiembroHogar.
         const { data: hogarCreado } = await hogaresApi.crear({
-          jefe_hogar: campos.jefe_hogar_uuid,
+          autorizado: campos.autorizado_uuid,
           municipio: campos.municipio_id,
           tipo_vivienda: campos.tipo_vivienda,
           condicion_ocupacion: campos.condicion_ocupacion,
@@ -115,7 +116,7 @@ export default function NuevoHogarScreen() {
         const hogarLocal = await hogaresOfflineDao.crearHogarOffline(campos);
         await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
           id_local: hogarLocal.id_local,
-          jefe_hogar: campos.jefe_hogar_uuid,
+          autorizado: campos.autorizado_uuid,
           municipio: campos.municipio_id,
           tipo_vivienda: campos.tipo_vivienda,
           condicion_ocupacion: campos.condicion_ocupacion,
@@ -158,13 +159,13 @@ export default function NuevoHogarScreen() {
         </Chip>
       )}
 
-      <Text variant="titleMedium" style={styles.seccion}>Jefe de hogar</Text>
-      {tieneJefePrecargado && victimaFuente ? (
+      <Text variant="titleMedium" style={styles.seccion}>Autorizado / Titular</Text>
+      {tieneAutorizadoPrecargado && victimaFuente ? (
         <Surface style={styles.jefeCard} elevation={2}>
           <View style={styles.jefeCardRow}>
             <MaterialCommunityIcons name="account-check" size={28} color="#2E7D32" style={styles.jefeCardIcon} />
             <View style={styles.jefeCardTextos}>
-              <Text style={styles.jefeCardTitulo}>Jefe de hogar confirmado</Text>
+              <Text style={styles.jefeCardTitulo}>Autorizado / Titular confirmado</Text>
               <Text style={styles.jefeCardNombre}>
                 {[
                   victimaFuente.primer_nombre,
@@ -185,16 +186,16 @@ export default function NuevoHogarScreen() {
       ) : (
         <>
           <TextInput
-            label="UUID del jefe de hogar *"
-            value={jefeHogar}
-            onChangeText={setJefeHogar}
+            label="UUID del autorizado / titular *"
+            value={autorizadoUuid}
+            onChangeText={setAutorizadoUuid}
             mode="outlined"
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            error={!!errores.jefeHogar}
+            error={!!errores.autorizado}
           />
-          {errores.jefeHogar && <HelperText type="error">{errores.jefeHogar}</HelperText>}
+          {errores.autorizado && <HelperText type="error">{errores.autorizado}</HelperText>}
           <HelperText type="info">Obtenga el UUID desde la pantalla de Búsqueda RNI.</HelperText>
         </>
       )}

@@ -6,11 +6,12 @@ class MiembroHogarInline(admin.TabularInline):
     model = MiembroHogar
     extra = 0
     fields = (
-        'parentesco', 'tipo_persona', 'genero', 'fecha_nacimiento',
+        'rol', 'es_autorizado', 'estado_inclusion',
+        'parentesco', 'genero', 'fecha_nacimiento',
         'tiene_discapacidad', 'incluido_ruv', 'victima', 'tipo_documento',
     )
     raw_id_fields = ('victima', 'tipo_documento')
-    readonly_fields = ('created_at',)
+    readonly_fields = ('created_at', 'tipo_persona', 'incluido_ruv')
 
 
 @admin.register(Hogar)
@@ -20,7 +21,7 @@ class HogarAdmin(admin.ModelAdmin):
     search_fields = ('id',)
     ordering = ('-created_at',)
     readonly_fields = ('id', 'created_at', 'updated_at')
-    raw_id_fields = ('jefe_hogar', 'municipio', 'creado_por')
+    raw_id_fields = ('autorizado', 'municipio', 'creado_por')
     inlines = [MiembroHogarInline]
 
     @admin.display(description='ID (corto)')
@@ -30,7 +31,7 @@ class HogarAdmin(admin.ModelAdmin):
 
 @admin.register(MiembroHogar)
 class MiembroHogarAdmin(admin.ModelAdmin):
-    list_display = ('id', 'hogar', 'parentesco', 'tipo_persona', 'genero', 'tiene_discapacidad', 'incluido_ruv')
-    list_filter = ('parentesco', 'tipo_persona', 'genero', 'tiene_discapacidad', 'incluido_ruv')
+    list_display = ('id', 'hogar', 'rol', 'es_autorizado', 'estado_inclusion', 'genero', 'tiene_discapacidad')
+    list_filter = ('rol', 'es_autorizado', 'estado_inclusion', 'genero', 'tiene_discapacidad')
     raw_id_fields = ('hogar', 'victima', 'tipo_documento', 'creado_por')
-    readonly_fields = ('id', 'created_at')
+    readonly_fields = ('id', 'created_at', 'tipo_persona', 'incluido_ruv')

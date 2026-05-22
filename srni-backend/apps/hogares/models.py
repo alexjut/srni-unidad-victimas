@@ -5,6 +5,12 @@ Hogar representa la unidad familiar caracterizada por el encuestador.
 MiembroHogar lista a cada integrante del hogar, con referencia opcional
 a su registro en la tabla Victima (si ya está en el RNI).
 
+Conceptos clave:
+- El AUTORIZADO es la víctima titular que autoriza y realiza la entrevista.
+  Es el primer miembro del hogar: rol='MIEMBRO' + es_autorizado=True.
+- El "jefe de hogar" se captura DENTRO de la entrevista, no aquí.
+- estado_inclusion refleja si la persona está registrada como víctima en el RUV.
+
 Seguridad:
 - Ningún campo PII se almacena aquí en texto plano.
 - Los nombres de miembros que NO están en el RNI se cifran con EncryptedField.
@@ -12,6 +18,7 @@ Seguridad:
 """
 import uuid
 from django.db import models
+from django.db.models import Q, UniqueConstraint
 from django.conf import settings
 
 from apps.victimas.fields import EncryptedField
@@ -52,12 +59,13 @@ class Hogar(models.Model):
         help_text='Código único de identificación del hogar (generado al confirmar).',
     )
 
-    # Jefe de hogar — debe ser una víctima registrada en el sistema
-    jefe_hogar = models.ForeignKey(
+    # Autorizado — víctima titular que autoriza la entrevista de caracterización.
+    # El "jefe de hogar" se captura dentro de la entrevista, no aquí.
+    autorizado = models.ForeignKey(
         'victimas.Victima',
         on_delete=models.PROTECT,
-        related_name='hogares_como_jefe',
-        help_text='Víctima que encabeza el hogar.',
+        related_name='hogares_como_autorizado',
+        help_text='Víctima titular que autoriza y realiza la entrevista de caracterización.',
     )
     municipio = models.ForeignKey(
         'parametricas.Municipio',
@@ -103,7 +111,7 @@ class Hogar(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['estado', 'creado_por']),
-            models.Index(fields=['jefe_hogar', 'estado']),
+            models.Index(fields=['autorizado', 'estado']),
         ]
 
     def __str__(self):
@@ -115,10 +123,15 @@ class MiembroHogar(models.Model):
     Integrante de un hogar.
     Si el miembro está registrado en el RNI, se enlaza via FK a Victima.
     Si NO está en el RNI, sus datos básicos se almacenan cifrados aquí.
+
+    Modelo conceptual:
+    - rol: función del integrante (Miembro / Tutor / Cuidador permanente)
+    - es_autorizado: marca única — el titular que creó el hogar y hace la entrevista
+    - estado_inclusion: si es víctima registrada (INCLUIDO) o no (NO_INCLUIDO)
     """
 
+    # Parentesco familiar — SIN 'JEFE' (el jefe de hogar se captura en la entrevista)
     PARENTESCO = [
-        ('JEFE',          'Jefe/a de hogar'),
         ('CONYUGE',       'Cónyuge / compañero/a'),
         ('HIJO_A',        'Hijo/a'),
         ('YERNO_NUERA',   'Yerno / nuera'),
@@ -127,6 +140,13 @@ class MiembroHogar(models.Model):
         ('HERMANO_A',     'Hermano/a'),
         ('OTRO_PARIENTE', 'Otro pariente'),
         ('NO_PARIENTE',   'Sin parentesco'),
+    ]
+
+    # Rol funcional en el hogar
+    ROL = [
+        ('MIEMBRO',             'Miembro del hogar'),
+        ('TUTOR',               'Tutor — responsable legal de menor'),
+        ('CUIDADOR_PERMANENTE', 'Cuidador permanente — responsable de adulto dependiente'),
     ]
 
     GENERO = [
@@ -145,11 +165,10 @@ class MiembroHogar(models.Model):
         ('5004', 'Otro miembro del hogar'),
     ]
 
-    # Cómo fue incluido el miembro en este hogar
-    TIPO_INCLUSION = [
-        ('RUV_CONFIRMADO',        'Confirmado en RUV — coincidencia documento'),
-        ('NO_INCLUIDO',           'No incluido en RUV — registrado manualmente'),
-        ('PENDIENTE_VERIFICACION','Pendiente de verificación en fuentes oficiales'),
+    # Estado de inclusión según verificación contra el RUV
+    ESTADO_INCLUSION = [
+        ('INCLUIDO',    'Incluido — víctima registrada en el RUV'),
+        ('NO_INCLUIDO', 'No incluido — no registrado en el RUV'),
     ]
 
     FUENTE_ORIGEN = [
@@ -168,7 +187,7 @@ class MiembroHogar(models.Model):
         'victimas.Victima',
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='membresías_hogar',
+        related_name='membresias_hogar',
     )
 
     # Datos básicos cifrados para miembros NO en el RNI
@@ -186,28 +205,48 @@ class MiembroHogar(models.Model):
         help_text='Documento del miembro si no está en el RNI (cifrado).',
     )
 
-    parentesco = models.CharField(max_length=20, choices=PARENTESCO)
+    parentesco = models.CharField(
+        max_length=20, choices=PARENTESCO, blank=True, default='',
+        help_text='Relación familiar con el autorizado. Vacío para el propio autorizado.',
+    )
     genero = models.CharField(max_length=2, choices=GENERO, blank=True)
     # fecha_nacimiento reemplaza 'edad' int para permitir cálculo exacto en validators
     fecha_nacimiento = models.DateField(
         null=True, blank=True,
         help_text='Fecha de nacimiento del miembro (PII — no se indexa).',
     )
+
+    # Rol funcional (nuevo campo principal)
+    rol = models.CharField(
+        max_length=20, choices=ROL, default='MIEMBRO',
+        help_text='Función del integrante en el hogar.',
+    )
+
+    # Marca del titular que autoriza la entrevista — solo uno por hogar
+    es_autorizado = models.BooleanField(
+        default=False,
+        help_text='True para el titular que autoriza y realiza la entrevista. Solo uno por hogar.',
+    )
+
+    # Estado de inclusión en el RUV
+    estado_inclusion = models.CharField(
+        max_length=15, choices=ESTADO_INCLUSION, default='NO_INCLUIDO',
+        help_text='Indica si la persona está registrada como víctima en el RUV.',
+    )
+
+    # Código Oracle para compatibilidad con sistema legado (calculado / opcional)
     tipo_persona = models.CharField(
         max_length=4, choices=TIPO_PERSONA, default='5004',
-        help_text='Rol del miembro según §5.1.2 del manual UARIV (compatible con códigos Oracle).',
+        help_text='Código Oracle §5.1.2 (compatibilidad legado). Se sincroniza con rol/es_autorizado.',
     )
-    tipo_inclusion = models.CharField(
-        max_length=25, choices=TIPO_INCLUSION, default='PENDIENTE_VERIFICACION',
-        help_text='Cómo fue incorporado este miembro al hogar.',
-    )
+
     fuente_origen = models.CharField(
         max_length=15, choices=FUENTE_ORIGEN, default='ENCUESTADOR',
         help_text='Origen del registro de este miembro.',
     )
     incluido_ruv = models.BooleanField(
         default=False,
-        help_text='True si el miembro está incluido en el RUV (Registro Único de Víctimas).',
+        help_text='True si el miembro está incluido en el RUV. Sincronizado con estado_inclusion.',
     )
     tiene_discapacidad = models.BooleanField(
         default=False,
@@ -230,11 +269,35 @@ class MiembroHogar(models.Model):
     class Meta:
         verbose_name = 'Miembro del Hogar'
         verbose_name_plural = 'Miembros del Hogar'
-        ordering = ['parentesco', 'created_at']
+        ordering = ['-es_autorizado', 'rol', 'created_at']
         indexes = [
-            models.Index(fields=['hogar', 'tipo_persona']),
-            models.Index(fields=['tipo_inclusion']),
+            models.Index(fields=['hogar', 'es_autorizado']),
+            models.Index(fields=['hogar', 'rol']),
+            models.Index(fields=['estado_inclusion']),
+        ]
+        constraints = [
+            UniqueConstraint(
+                fields=['hogar'],
+                condition=Q(es_autorizado=True),
+                name='unique_autorizado_por_hogar',
+            )
         ]
 
+    def save(self, *args, **kwargs):
+        """Sincroniza incluido_ruv y tipo_persona con los campos principales."""
+        # incluido_ruv refleja estado_inclusion
+        self.incluido_ruv = (self.estado_inclusion == 'INCLUIDO')
+        # tipo_persona Oracle: Autorizado=5001, Tutor=5002, Cuidador=5003, Miembro=5004
+        if self.es_autorizado:
+            self.tipo_persona = '5001'
+        elif self.rol == 'TUTOR':
+            self.tipo_persona = '5002'
+        elif self.rol == 'CUIDADOR_PERMANENTE':
+            self.tipo_persona = '5003'
+        else:
+            self.tipo_persona = '5004'
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f'{self.get_parentesco_display()} — Hogar {self.hogar_id}'
+        rol_display = '★ AUTORIZADO' if self.es_autorizado else self.get_rol_display()
+        return f'{rol_display} — Hogar {self.hogar_id}'

@@ -1,5 +1,11 @@
 /**
  * Detalle de un hogar — GOV.CO design system.
+ *
+ * Muestra:
+ *  - Badge ★ AUTORIZADO para el titular de la entrevista
+ *  - Chips INCLUIDO (verde) / NO INCLUIDO (gris) por cada integrante
+ *  - Selector de ROL (Miembro / Tutor / Cuidador permanente) al agregar
+ *  - Botón "Crear entrevista" solo activo cuando el hogar tiene su autorizado
  */
 import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
@@ -12,13 +18,16 @@ import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStor
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
-import type { HogarDetalle, MiembroHogarResumen, VictimaResumenFuente } from '../../../src/types';
+import type {
+  HogarDetalle, MiembroHogarResumen, VictimaResumenFuente, RolMiembro,
+} from '../../../src/types';
 
-const PARENTESCO_LABEL: Record<string, string> = {
-  JEFE: 'Jefe/a', CONYUGE: 'Cónyuge', HIJO_A: 'Hijo/a',
-  YERNO_NUERA: 'Yerno/Nuera', NIETO_A: 'Nieto/a',
-  PADRE_MADRE: 'Padre/Madre', HERMANO_A: 'Hermano/a',
-  OTRO_PARIENTE: 'Pariente', NO_PARIENTE: 'Sin parentesco',
+// ─── Labels de rol ────────────────────────────────────────────────────────────
+
+const ROL_LABEL: Record<RolMiembro, string> = {
+  MIEMBRO:             'Miembro',
+  TUTOR:               'Tutor',
+  CUIDADOR_PERMANENTE: 'Cuidador permanente',
 };
 
 // ─── Fila de información ──────────────────────────────────────────────────────
@@ -47,21 +56,55 @@ const filaStyles = StyleSheet.create({
 // ─── Ítem de miembro ──────────────────────────────────────────────────────────
 
 function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
-  const edadDisplay = miembro.fecha_nacimiento
-    ? `n. ${miembro.fecha_nacimiento}`
-    : 'fecha N/D';
+  const esAutorizado = miembro.es_autorizado;
+  const incluido = miembro.estado_inclusion === 'INCLUIDO';
+
   return (
     <View style={miembroStyles.root}>
-      <View style={miembroStyles.iconWrap}>
-        <MaterialCommunityIcons name="account" size={16} color={GOV.azul} />
+      {/* Ícono con fondo según autorizado */}
+      <View style={[miembroStyles.iconWrap, esAutorizado && miembroStyles.iconWrapAutorizado]}>
+        <MaterialCommunityIcons
+          name={esAutorizado ? 'account-star' : 'account'}
+          size={16}
+          color={esAutorizado ? '#FFFFFF' : GOV.azul}
+        />
       </View>
+
+      {/* Datos del integrante */}
       <View style={miembroStyles.info}>
-        <Text style={miembroStyles.parentesco}>
-          {PARENTESCO_LABEL[miembro.parentesco] ?? miembro.parentesco}
-        </Text>
-        <Text style={miembroStyles.dato}>
-          {miembro.genero} · {edadDisplay}
-        </Text>
+        <View style={miembroStyles.fila}>
+          {esAutorizado && (
+            <View style={miembroStyles.badgeAutorizado}>
+              <MaterialCommunityIcons name="star" size={9} color={GOV.amarillo} />
+              <Text style={miembroStyles.badgeAutorizadoTxt}>AUTORIZADO</Text>
+            </View>
+          )}
+          <Text style={[miembroStyles.rol, esAutorizado && miembroStyles.rolAutorizado]}>
+            {ROL_LABEL[miembro.rol] ?? miembro.rol_display}
+          </Text>
+        </View>
+        <View style={miembroStyles.fila}>
+          {/* Chip estado de inclusión */}
+          <View style={[
+            miembroStyles.chipInclusion,
+            incluido ? miembroStyles.chipIncluido : miembroStyles.chipNoIncluido,
+          ]}>
+            <MaterialCommunityIcons
+              name={incluido ? 'check-circle' : 'minus-circle-outline'}
+              size={10}
+              color={incluido ? GOV.verde : GOV.textoT}
+            />
+            <Text style={[
+              miembroStyles.chipTxt,
+              incluido ? miembroStyles.chipTxtIncluido : miembroStyles.chipTxtNoIncluido,
+            ]}>
+              {incluido ? 'Incluido' : 'No incluido'}
+            </Text>
+          </View>
+          {miembro.fecha_nacimiento && (
+            <Text style={miembroStyles.dato}>n. {miembro.fecha_nacimiento}</Text>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -70,23 +113,63 @@ function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
 const miembroStyles = StyleSheet.create({
   root: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
+    alignItems: 'flex-start',
+    paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: GOV.borde,
+    gap: SPACING.sm,
   },
   iconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: GOV.azulTenue,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.sm,
+    marginTop: 2,
   },
-  info: { flex: 1 },
-  parentesco: { ...FONT.small, color: GOV.azul, fontWeight: '600' },
+  iconWrapAutorizado: {
+    backgroundColor: GOV.azul,
+  },
+  info: { flex: 1, gap: 4 },
+  fila: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  rol: { ...FONT.small, color: GOV.azulOscuro, fontWeight: '600' },
+  rolAutorizado: { color: GOV.azul },
   dato: { ...FONT.caption, color: GOV.textoS },
+  // Badge AUTORIZADO
+  badgeAutorizado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: GOV.azulOscuro,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeAutorizadoTxt: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  // Chip INCLUIDO / NO INCLUIDO
+  chipInclusion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  chipIncluido: {
+    backgroundColor: GOV.verdeTenue ?? '#E8F5E9',
+  },
+  chipNoIncluido: {
+    backgroundColor: GOV.fondoApp ?? '#F5F5F5',
+  },
+  chipTxt: { fontSize: 10, fontWeight: '600' },
+  chipTxtIncluido: { color: GOV.verde },
+  chipTxtNoIncluido: { color: GOV.textoT },
 });
 
 // ─── Sección card ─────────────────────────────────────────────────────────────
@@ -150,55 +233,53 @@ export default function HogarDetalleScreen() {
       .finally(() => setCargandoGrupo(false));
   }, [esteHogarEnFlujo, consPersona]);
 
-  function aplicarInstrumento() {
+  // ── El hogar tiene autorizado cuando hay al menos un miembro con es_autorizado=true
+  const tieneAutorizado = (hogar?.miembros ?? []).some((m) => m.es_autorizado);
+
+  function crearEntrevista() {
     if (!hogar) return;
     router.push({ pathname: '/(main)/caracterizar/index', params: { hogarId: hogar.id } });
   }
 
-  // ── Agregar miembro desde la fuente ──────────────────────────────────────
+  // ── Agregar miembro desde grupo familiar RUV ──────────────────────────────
 
-  async function agregarDesdeFuente(miembro: VictimaResumenFuente, parentesco: string) {
+  async function agregarDesdeFuente(miembro: VictimaResumenFuente, rol: RolMiembro) {
     if (!hogarId) return;
     try {
-      // Primero registra la víctima en la DB local si no está
       const { data: reg } = await victimasApi.registrarDesdeFuente(miembro);
-      // Luego la agrega al hogar
+      const incluido = miembro.estado_ruv === 'INCLUIDO';
       await hogaresApi.agregarMiembro(hogarId, {
         victima: reg.victima_id,
-        parentesco,
+        rol,
+        estado_inclusion: incluido ? 'INCLUIDO' : 'NO_INCLUIDO',
         genero: miembro.genero,
-        incluido_ruv: miembro.estado_ruv === 'INCLUIDO',
-        tipo_persona: '5001',
       });
-      // Marca como agregado
       const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;
       setMiembrosAgregados((prev) => new Set(prev).add(clave));
-      // Refresca el hogar
       const refreshed = await hogaresApi.detalle(hogarId);
       setHogar(refreshed.data);
     } catch {
-      Alert.alert('Error', 'No se pudo agregar el miembro. Intente nuevamente.');
+      Alert.alert('Error', 'No se pudo agregar el integrante. Intente nuevamente.');
     }
   }
 
-  function seleccionarParentesco(miembro: VictimaResumenFuente) {
+  function seleccionarRol(miembro: VictimaResumenFuente) {
     const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;
-    if (miembrosAgregados.has(clave)) return; // ya fue agregado
+    if (miembrosAgregados.has(clave)) return;
+    const nombre = [miembro.primer_nombre, miembro.primer_apellido].filter(Boolean).join(' ');
     Alert.alert(
-      'Parentesco con el jefe',
-      `¿Qué relación tiene ${miembro.primer_nombre} ${miembro.primer_apellido} con el jefe de hogar?`,
+      'Rol en el hogar',
+      `¿Cuál es el rol de ${nombre} en este hogar?`,
       [
-        { text: 'Cónyuge',     onPress: () => agregarDesdeFuente(miembro, 'CONYUGE') },
-        { text: 'Hijo/a',      onPress: () => agregarDesdeFuente(miembro, 'HIJO_A') },
-        { text: 'Padre/Madre', onPress: () => agregarDesdeFuente(miembro, 'PADRE_MADRE') },
-        { text: 'Hermano/a',   onPress: () => agregarDesdeFuente(miembro, 'HERMANO_A') },
-        { text: 'Otro',        onPress: () => agregarDesdeFuente(miembro, 'OTRO_PARIENTE') },
-        { text: 'Cancelar',    style: 'cancel' },
+        { text: 'Miembro',              onPress: () => agregarDesdeFuente(miembro, 'MIEMBRO') },
+        { text: 'Tutor (de un menor)',  onPress: () => agregarDesdeFuente(miembro, 'TUTOR') },
+        { text: 'Cuidador permanente',  onPress: () => agregarDesdeFuente(miembro, 'CUIDADOR_PERMANENTE') },
+        { text: 'Cancelar',            style: 'cancel' },
       ]
     );
   }
 
-  // ── Estados de carga / error ─────────────────────────────────────────────────
+  // ── Estados de carga / error ──────────────────────────────────────────────
 
   if (cargando) {
     return (
@@ -258,10 +339,10 @@ export default function HogarDetalleScreen() {
           ) : null}
         </SeccionCard>
 
-        {/* Miembros */}
-        <SeccionCard titulo={`Miembros (${hogar.miembros.length})`}>
+        {/* Integrantes del hogar */}
+        <SeccionCard titulo={`Integrantes del hogar (${hogar.miembros.length})`}>
           {hogar.miembros.length === 0 ? (
-            <Text style={styles.sinMiembros}>No se han registrado miembros aún.</Text>
+            <Text style={styles.sinMiembros}>No se han registrado integrantes aún.</Text>
           ) : (
             hogar.miembros.map((m) => <MiembroItem key={m.id} miembro={m} />)
           )}
@@ -269,7 +350,10 @@ export default function HogarDetalleScreen() {
 
         {/* Grupo familiar RUV — solo visible cuando el hogar está en el flujo activo */}
         {esteHogarEnFlujo && (cargandoGrupo || grupoFamiliar.length > 0) && (
-          <SeccionCard titulo="Grupo familiar RUV">
+          <SeccionCard titulo="Agregar del grupo familiar RUV">
+            <Text style={styles.grupoAyuda}>
+              Personas registradas junto al autorizado en la fuente RUV. Selecciona su rol en el hogar.
+            </Text>
             {cargandoGrupo ? (
               <ActivityIndicator size="small" color={GOV.azul} style={{ marginVertical: 8 }} />
             ) : (
@@ -278,16 +362,28 @@ export default function HogarDetalleScreen() {
                 const yaAgregado = miembrosAgregados.has(clave);
                 const nombre = [miembro.primer_nombre, miembro.segundo_nombre, miembro.primer_apellido, miembro.segundo_apellido]
                   .filter(Boolean).join(' ');
+                const incluido = miembro.estado_ruv === 'INCLUIDO';
                 return (
                   <View key={clave} style={grupoStyles.fila}>
                     <View style={grupoStyles.info}>
                       <Text style={grupoStyles.nombre}>{nombre}</Text>
-                      <Text style={grupoStyles.meta}>
-                        {miembro.tipo_documento} · {miembro.estado_ruv.replace('_', ' ')}
-                      </Text>
+                      <View style={grupoStyles.metaFila}>
+                        <View style={[
+                          grupoStyles.chipInclusion,
+                          incluido ? grupoStyles.chipIncluido : grupoStyles.chipNoIncluido,
+                        ]}>
+                          <Text style={[
+                            grupoStyles.chipTxt,
+                            incluido ? grupoStyles.chipTxtIncluido : grupoStyles.chipTxtNoIncluido,
+                          ]}>
+                            {incluido ? 'Incluido' : 'No incluido'}
+                          </Text>
+                        </View>
+                        <Text style={grupoStyles.meta}>{miembro.tipo_documento}</Text>
+                      </View>
                     </View>
                     <Pressable
-                      onPress={() => seleccionarParentesco(miembro)}
+                      onPress={() => seleccionarRol(miembro)}
                       disabled={yaAgregado}
                       style={[grupoStyles.btn, yaAgregado && grupoStyles.btnAgregado]}
                     >
@@ -307,13 +403,20 @@ export default function HogarDetalleScreen() {
           </SeccionCard>
         )}
 
-        {/* Encuestas */}
-        <SeccionCard titulo={`Encuestas (${hogar.total_sesiones})`}>
+        {/* Entrevista */}
+        <SeccionCard titulo={`Entrevista de caracterización (${hogar.total_sesiones})`}>
+          {/* Botón principal — solo activo cuando hay autorizado */}
           <GovButton
-            label="Aplicar instrumento"
+            label="Crear entrevista"
             icon="clipboard-text-play"
-            onPress={aplicarInstrumento}
+            onPress={crearEntrevista}
+            disabled={!tieneAutorizado}
           />
+          {!tieneAutorizado && (
+            <Text style={styles.ayudaEntrevista}>
+              Primero confirma el autorizado del hogar para crear la entrevista.
+            </Text>
+          )}
           {hogar.total_sesiones > 0 && (
             <View style={styles.verSesionesWrap}>
               <GovButton
@@ -329,12 +432,11 @@ export default function HogarDetalleScreen() {
         {/* Botón finalizar conformación — solo en flujo activo */}
         {esteHogarEnFlujo && (
           <GovButton
-            label="Finalizar conformación"
+            label="Finalizar conformación del hogar"
             icon="check-circle"
             variant="secondary"
             onPress={() => {
               limpiar();
-              // No navegar — el usuario puede seguir viendo el hogar
             }}
           />
         )}
@@ -343,6 +445,8 @@ export default function HogarDetalleScreen() {
     </View>
   );
 }
+
+// ─── Estilos ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: {
@@ -386,6 +490,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: SPACING.sm,
   },
+  grupoAyuda: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+    lineHeight: 16,
+  },
+  ayudaEntrevista: {
+    ...FONT.caption,
+    color: GOV.textoT,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+    fontStyle: 'italic',
+  },
   errorTxt: {
     ...FONT.body,
     color: GOV.rojo,
@@ -403,10 +520,22 @@ const grupoStyles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: GOV.borde,
+    gap: SPACING.sm,
   },
-  info: { flex: 1 },
+  info: { flex: 1, gap: 4 },
   nombre: { ...FONT.small, fontWeight: '600', color: GOV.textoP },
-  meta: { ...FONT.caption, color: GOV.textoT, marginTop: 2 },
+  metaFila: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  meta: { ...FONT.caption, color: GOV.textoT },
+  chipInclusion: {
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  chipIncluido: { backgroundColor: GOV.verdeTenue ?? '#E8F5E9' },
+  chipNoIncluido: { backgroundColor: GOV.fondoApp ?? '#F5F5F5' },
+  chipTxt: { fontSize: 10, fontWeight: '600' },
+  chipTxtIncluido: { color: GOV.verde },
+  chipTxtNoIncluido: { color: GOV.textoT },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -416,7 +545,7 @@ const grupoStyles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: RADIUS.sm,
   },
-  btnAgregado: { backgroundColor: GOV.verdeTenue },
+  btnAgregado: { backgroundColor: GOV.verdeTenue ?? '#E8F5E9' },
   btnTxt: { ...FONT.label, color: GOV.azul },
   btnTxtAgregado: { color: GOV.verde },
 });

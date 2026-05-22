@@ -1,11 +1,13 @@
 /**
  * Pantalla de inicio de sesión — diseño profesional GOV.CO + biometría.
- * Inspirado en apps bancarias institucionales.
+ * Carrusel de regiones colombianas con gradientes representativos.
+ * Para usar fotos reales: reemplazar <LinearGradient> por <ImageBackground source={require(...)} />
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, StyleSheet, KeyboardAvoidingView,
   Platform, ScrollView, StatusBar, Pressable,
+  FlatList, Dimensions,
 } from 'react-native';
 import { Text, TextInput, HelperText } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,18 +19,90 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
-// ── Regiones decorativas ──────────────────────────────────────────────────────
+const { width: SW } = Dimensions.get('window');
+const CAROUSEL_H = 170;
+const INTERVALO_MS = 3200;
+
+// ── Regiones colombianas — gradientes representativos ────────────────────────
+// Para fotos reales: agregar campo `imagen: require('../../assets/regiones/pacifico.jpg')`
+// y en RegionSlide usar <ImageBackground source={r.imagen}> en lugar del <LinearGradient>
 
 const REGIONES = [
-  { nombre: 'Pacífico',  icono: 'waves',          color: '#01579B', bg: '#003A6B' },
-  { nombre: 'Caribe',    icono: 'palm-tree',       color: '#E8F5E9', bg: '#00695C' },
-  { nombre: 'Andes',     icono: 'mountain',        color: '#FFF8E1', bg: '#4E342E' },
-  { nombre: 'Amazonia',  icono: 'leaf',            color: '#F1F8E9', bg: '#2E7D32' },
-  { nombre: 'Orinoquía', icono: 'nature',          color: '#FFF3E0', bg: '#827717' },
-  { nombre: 'Insular',   icono: 'island',          color: '#E1F5FE', bg: '#0277BD' },
+  {
+    nombre: 'Pacífico',
+    subtitulo: 'Costa, selva y biodiversidad',
+    icono: 'waves' as const,
+    gradiente: ['#003B5C', '#006994', '#00B4D8'] as const,
+    acento: '#48CAE4',
+  },
+  {
+    nombre: 'Caribe',
+    subtitulo: 'Mar, playas y cultura vallenata',
+    icono: 'palm-tree' as const,
+    gradiente: ['#7B2D00', '#C1440E', '#F4A261'] as const,
+    acento: '#FFD166',
+  },
+  {
+    nombre: 'Andes',
+    subtitulo: 'Montañas, café y páramos',
+    icono: 'image-filter-hdr' as const,
+    gradiente: ['#1A3A1A', '#2D6A4F', '#74C69D'] as const,
+    acento: '#B7E4C7',
+  },
+  {
+    nombre: 'Amazonia',
+    subtitulo: 'Selva tropical y grandes ríos',
+    icono: 'leaf' as const,
+    gradiente: ['#0A2E0A', '#1B4332', '#52B788'] as const,
+    acento: '#95D5B2',
+  },
+  {
+    nombre: 'Orinoquía',
+    subtitulo: 'Llanos orientales y sabanas',
+    icono: 'grass' as const,
+    gradiente: ['#4A2800', '#8B5E00', '#DAA520'] as const,
+    acento: '#F2D06B',
+  },
+  {
+    nombre: 'Insular',
+    subtitulo: 'San Andrés, Providencia y Santa Catalina',
+    icono: 'island' as const,
+    gradiente: ['#001F5B', '#023E8A', '#48CAE4'] as const,
+    acento: '#90E0EF',
+  },
 ];
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+// ── Slide individual del carrusel ─────────────────────────────────────────────
+
+function RegionSlide({ region }: { region: typeof REGIONES[0] }) {
+  return (
+    <LinearGradient
+      colors={region.gradiente}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.slide}
+    >
+      {/* Patrón de puntos decorativos */}
+      <View style={styles.slidePatron} />
+
+      <View style={styles.slideContenido}>
+        <View style={[styles.slideIconoCirculo, { borderColor: region.acento + '60' }]}>
+          <MaterialCommunityIcons name={region.icono} size={32} color={region.acento} />
+        </View>
+        <Text style={styles.slideNombre}>{region.nombre}</Text>
+        <Text style={styles.slideSubtitulo}>{region.subtitulo}</Text>
+      </View>
+
+      {/* Etiqueta Colombia */}
+      <View style={styles.slideBadge}>
+        <MaterialCommunityIcons name="map-marker" size={10} color={region.acento} />
+        <Text style={[styles.slideBadgeTxt, { color: region.acento }]}>Colombia</Text>
+      </View>
+    </LinearGradient>
+  );
+}
+
+// ── Pantalla principal ────────────────────────────────────────────────────────
 
 export default function LoginScreen() {
   const { login, loginBiometrico, cargando, error, limpiarError } = useAuthStore();
@@ -36,8 +110,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
   const [biometricoListo, setBiometricoListo] = useState(false);
+  const [regionActiva, setRegionActiva] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
+  // Verificar biometría disponible
   useEffect(() => {
     async function verificar() {
       try {
@@ -51,6 +128,18 @@ export default function LoginScreen() {
       } catch { /* silencioso */ }
     }
     verificar();
+  }, []);
+
+  // Auto-scroll del carrusel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRegionActiva((prev) => {
+        const next = (prev + 1) % REGIONES.length;
+        flatListRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, INTERVALO_MS);
+    return () => clearInterval(timer);
   }, []);
 
   async function handleLogin() {
@@ -75,40 +164,59 @@ export default function LoginScreen() {
         style={styles.root}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Hero con gradiente ── */}
+        {/* ── Hero con gradiente de fondo ── */}
         <LinearGradient
           colors={['#00234E', '#003A80', '#1565C0']}
-          style={[styles.hero, { paddingTop: insets.top + 8 }]}
+          style={[styles.hero, { paddingTop: insets.top }]}
         >
           {/* Franja GOV.CO */}
           <View style={styles.govStripe}>
             <Text style={styles.govText}>GOV.CO</Text>
           </View>
 
-          {/* Regiones decorativas */}
-          <ScrollView
+          {/* Carrusel de regiones */}
+          <FlatList
+            ref={flatListRef}
+            data={REGIONES}
+            keyExtractor={(r) => r.nombre}
             horizontal
+            pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.regionesFila}
-            style={styles.regionesScroll}
-          >
-            {REGIONES.map((r) => (
-              <View key={r.nombre} style={[styles.regionTile, { backgroundColor: r.bg }]}>
-                <MaterialCommunityIcons name={r.icono as any} size={16} color="#FFFFFF" />
-                <Text style={styles.regionNombre}>{r.nombre}</Text>
-              </View>
+            scrollEnabled={true}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(e.nativeEvent.contentOffset.x / SW);
+              setRegionActiva(idx);
+            }}
+            renderItem={({ item }) => <RegionSlide region={item} />}
+            style={styles.flatList}
+            getItemLayout={(_, index) => ({
+              length: SW, offset: SW * index, index,
+            })}
+          />
+
+          {/* Dots de paginación */}
+          <View style={styles.dots}>
+            {REGIONES.map((_, i) => (
+              <Pressable
+                key={i}
+                onPress={() => {
+                  flatListRef.current?.scrollToIndex({ index: i, animated: true });
+                  setRegionActiva(i);
+                }}
+                style={[styles.dot, i === regionActiva && styles.dotActivo]}
+              />
             ))}
-          </ScrollView>
+          </View>
 
           {/* Logo institucional */}
           <View style={styles.logoWrap}>
             <View style={styles.escudoCirculo}>
-              <MaterialCommunityIcons name="shield-account" size={44} color="#FFFFFF" />
+              <MaterialCommunityIcons name="shield-account" size={36} color="#FFFFFF" />
             </View>
             <Text style={styles.appTitle}>SRNI</Text>
             <Text style={styles.appSubtitulo}>Sistema de Caracterización de Víctimas</Text>
             <View style={styles.entidadBadge}>
-              <MaterialCommunityIcons name="domain" size={12} color={GOV.amarillo} />
+              <MaterialCommunityIcons name="domain" size={11} color={GOV.amarillo} />
               <Text style={styles.entidadTxt}>Unidad para las Víctimas — Colombia</Text>
             </View>
           </View>
@@ -125,7 +233,6 @@ export default function LoginScreen() {
             <Text style={styles.cardTitulo}>Bienvenido/a</Text>
             <Text style={styles.cardSubtitulo}>Ingresa tus credenciales institucionales</Text>
 
-            {/* Usuario */}
             <TextInput
               label="Código de usuario"
               value={codigo}
@@ -141,7 +248,6 @@ export default function LoginScreen() {
               accessibilityLabel="Código de usuario"
             />
 
-            {/* Contraseña */}
             <TextInput
               label="Contraseña"
               value={password}
@@ -170,7 +276,6 @@ export default function LoginScreen() {
               </HelperText>
             ) : null}
 
-            {/* Botón principal */}
             <View style={styles.btnWrap}>
               <GovButton
                 label="Ingresar"
@@ -181,7 +286,6 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* Separador biometría */}
             {biometricoListo && (
               <>
                 <View style={styles.separador}>
@@ -190,14 +294,10 @@ export default function LoginScreen() {
                   <View style={styles.separadorLinea} />
                 </View>
 
-                {/* Botón huella — círculo prominente estilo banca moderna */}
                 <Pressable
                   onPress={handleBiometrico}
                   disabled={cargando}
-                  style={({ pressed }) => [
-                    styles.btnBio,
-                    cargando && styles.btnBioDeshabilitado,
-                  ]}
+                  style={[styles.btnBio, cargando && styles.btnBioDeshabilitado]}
                   accessibilityLabel="Acceder con huella digital"
                   accessibilityRole="button"
                 >
@@ -214,7 +314,6 @@ export default function LoginScreen() {
             )}
           </View>
 
-          {/* Pie institucional */}
           <Text style={styles.pie}>
             Sistema protegido — Ley 1581 de 2012 · Datos de víctimas confidenciales
           </Text>
@@ -234,10 +333,10 @@ const styles = StyleSheet.create({
 
   // Hero
   hero: {
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   govStripe: {
-    height: 28,
+    height: 26,
     backgroundColor: GOV.amarillo,
     justifyContent: 'center',
     paddingHorizontal: SPACING.md,
@@ -249,64 +348,120 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
 
-  // Regiones decorativas
-  regionesScroll: {
-    marginTop: SPACING.md,
-    marginBottom: SPACING.sm,
+  // Carrusel
+  flatList: {
+    height: CAROUSEL_H,
   },
-  regionesFila: {
-    paddingHorizontal: SPACING.md,
+  slide: {
+    width: SW,
+    height: CAROUSEL_H,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  slidePatron: {
+    position: 'absolute',
+    inset: 0,
+    opacity: 0.06,
+    backgroundColor: 'transparent',
+    // Patrón visual sutil — se puede cambiar por ImageBackground con foto real
+  },
+  slideContenido: {
+    alignItems: 'center',
     gap: SPACING.xs,
   },
-  regionTile: {
-    flexDirection: 'column',
-    alignItems: 'center',
+  slideIconoCirculo: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1.5,
     justifyContent: 'center',
-    width: 68,
-    height: 56,
-    borderRadius: RADIUS.sm,
-    gap: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
   },
-  regionNombre: {
-    fontSize: 9,
+  slideNombre: {
+    fontSize: 26,
+    fontWeight: '800',
     color: '#FFFFFF',
-    fontWeight: '600',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  slideSubtitulo: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.80)',
+    textAlign: 'center',
     letterSpacing: 0.3,
+  },
+  slideBadge: {
+    position: 'absolute',
+    bottom: SPACING.sm,
+    right: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(0,0,0,0.30)',
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+  },
+  slideBadgeTxt: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+
+  // Dots
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: SPACING.xs,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  dotActivo: {
+    width: 18,
+    backgroundColor: '#FFFFFF',
   },
 
   // Logo
   logoWrap: {
     alignItems: 'center',
-    paddingTop: SPACING.md,
+    paddingTop: SPACING.xs,
     paddingBottom: SPACING.sm,
   },
   escudoCirculo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.4)',
   },
   appTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 4,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   appSubtitulo: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.sm,
-    lineHeight: 18,
+    marginBottom: SPACING.xs,
   },
   entidadBadge: {
     flexDirection: 'row',
@@ -314,11 +469,11 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: 'rgba(0,0,0,0.25)',
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: RADIUS.pill,
   },
   entidadTxt: {
-    fontSize: 11,
+    fontSize: 10,
     color: GOV.amarillo,
     fontWeight: '600',
     letterSpacing: 0.3,
@@ -328,8 +483,8 @@ const styles = StyleSheet.create({
   cardScroll: {
     flex: 1,
     backgroundColor: GOV.fondoApp,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     marginTop: -2,
   },
   cardContenido: {
@@ -346,7 +501,7 @@ const styles = StyleSheet.create({
     borderColor: GOV.borde,
   },
   cardTitulo: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     color: GOV.azulOscuro,
     marginBottom: 4,
@@ -367,7 +522,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Separador
+  // Separador biometría
   separador: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -385,7 +540,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Botón huella — Bancolombia style: círculo grande con ícono prominent
+  // Botón huella
   btnBio: {
     alignItems: 'center',
     justifyContent: 'center',

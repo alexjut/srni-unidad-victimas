@@ -1,9 +1,9 @@
 """
 Serializers de Hogares SRNI.
 
-HogarListSerializer   — listado sin PII de miembros.
-HogarDetalleSerializer — hogar completo con miembros anidados.
-MiembroHogarSerializer — miembro con campos PII opcionales (cifrados en modelo).
+HogarListSerializer     — listado sin PII de miembros.
+HogarDetalleSerializer  — hogar completo con miembros anidados.
+MiembroHogarSerializer  — miembro con campos PII opcionales (cifrados en modelo).
 """
 from rest_framework import serializers
 from apps.parametricas.serializers import MunicipioSerializer, TipoDocumentoSerializer
@@ -12,11 +12,17 @@ from .models import Hogar, MiembroHogar
 
 
 class MiembroHogarSerializer(serializers.ModelSerializer):
+    rol_display = serializers.CharField(
+        source='get_rol_display', read_only=True
+    )
     parentesco_display = serializers.CharField(
         source='get_parentesco_display', read_only=True
     )
     genero_display = serializers.CharField(
         source='get_genero_display', read_only=True
+    )
+    estado_inclusion_display = serializers.CharField(
+        source='get_estado_inclusion_display', read_only=True
     )
     victima_hash = serializers.CharField(
         source='victima.numero_documento_hash', read_only=True, default=None
@@ -27,18 +33,29 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'hogar',
             'victima', 'victima_hash',
-            # Datos cifrados — solo se exponen al crear/editar; en lectura solo para
-            # usuarios con puede_caracterizar (validado en el ViewSet).
+            # Datos cifrados — solo se exponen al crear/editar
             'nombre_completo', 'tipo_documento', 'numero_documento',
             'parentesco', 'parentesco_display',
             'genero', 'genero_display',
-            'fecha_nacimiento', 'tipo_persona', 'incluido_ruv',
+            'fecha_nacimiento',
+            # Campos principales del nuevo modelo
+            'rol', 'rol_display',
+            'es_autorizado',
+            'estado_inclusion', 'estado_inclusion_display',
+            # Compatibilidad Oracle (calculado en save())
+            'tipo_persona',
+            # Auxiliares
+            'incluido_ruv',
             'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
             'created_at',
         ]
-        read_only_fields = ['id', 'created_at', 'parentesco_display', 'genero_display', 'victima_hash']
+        read_only_fields = [
+            'id', 'created_at',
+            'rol_display', 'parentesco_display', 'genero_display',
+            'estado_inclusion_display', 'victima_hash',
+            'tipo_persona', 'incluido_ruv',  # calculados en save()
+        ]
         extra_kwargs = {
-            # numero_documento es write-only en la API: no se devuelve en lectura
             'numero_documento': {'write_only': True},
             'hogar': {'required': False},
         }
@@ -46,8 +63,14 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
 
 class MiembroHogarListSerializer(serializers.ModelSerializer):
     """Versión reducida para listados — sin datos PII directos."""
+    rol_display = serializers.CharField(
+        source='get_rol_display', read_only=True
+    )
     parentesco_display = serializers.CharField(
         source='get_parentesco_display', read_only=True
+    )
+    estado_inclusion_display = serializers.CharField(
+        source='get_estado_inclusion_display', read_only=True
     )
     victima_hash = serializers.CharField(
         source='victima.numero_documento_hash', read_only=True, default=None
@@ -56,8 +79,13 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MiembroHogar
         fields = [
-            'id', 'parentesco', 'parentesco_display',
-            'genero', 'fecha_nacimiento', 'tipo_persona',
+            'id',
+            'parentesco', 'parentesco_display',
+            'genero', 'fecha_nacimiento',
+            'rol', 'rol_display',
+            'es_autorizado',
+            'estado_inclusion', 'estado_inclusion_display',
+            'tipo_persona',
             'incluido_ruv', 'tiene_discapacidad',
             'victima', 'victima_hash',
         ]
@@ -70,8 +98,8 @@ class HogarListSerializer(serializers.ModelSerializer):
         source='municipio.nombre', read_only=True, default=None
     )
     total_miembros = serializers.IntegerField(source='miembros.count', read_only=True)
-    jefe_hogar_hash = serializers.CharField(
-        source='jefe_hogar.numero_documento_hash', read_only=True
+    autorizado_hash = serializers.CharField(
+        source='autorizado.numero_documento_hash', read_only=True
     )
     encuestador_nombre = serializers.CharField(
         source='creado_por.nombre_completo', read_only=True, default=None
@@ -81,7 +109,7 @@ class HogarListSerializer(serializers.ModelSerializer):
         model = Hogar
         fields = [
             'id', 'estado', 'estado_display',
-            'jefe_hogar', 'jefe_hogar_hash',
+            'autorizado', 'autorizado_hash',
             'municipio', 'municipio_nombre',
             'total_miembros', 'numero_personas',
             'encuestador_nombre',
@@ -98,17 +126,23 @@ class HogarDetalleSerializer(serializers.ModelSerializer):
     condicion_ocupacion_display = serializers.CharField(
         source='get_condicion_ocupacion_display', read_only=True
     )
+    municipio_nombre = serializers.CharField(
+        source='municipio.nombre', read_only=True, default=None
+    )
     municipio_detalle = MunicipioSerializer(source='municipio', read_only=True)
     miembros = MiembroHogarListSerializer(many=True, read_only=True)
     total_miembros = serializers.IntegerField(source='miembros.count', read_only=True)
     total_sesiones = serializers.IntegerField(source='sesiones.count', read_only=True)
+    autorizado_hash = serializers.CharField(
+        source='autorizado.numero_documento_hash', read_only=True
+    )
 
     class Meta:
         model = Hogar
         fields = [
             'id',
-            'jefe_hogar',
-            'municipio', 'municipio_detalle',
+            'autorizado', 'autorizado_hash',
+            'municipio', 'municipio_nombre', 'municipio_detalle',
             'tipo_vivienda', 'tipo_vivienda_display',
             'condicion_ocupacion', 'condicion_ocupacion_display',
             'estrato', 'numero_cuartos', 'numero_personas',
@@ -121,24 +155,32 @@ class HogarDetalleSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'created_at', 'updated_at',
             'estado_display', 'tipo_vivienda_display',
-            'condicion_ocupacion_display', 'municipio_detalle',
+            'condicion_ocupacion_display', 'municipio_nombre', 'municipio_detalle',
             'miembros', 'total_miembros', 'total_sesiones',
+            'autorizado_hash',
         ]
 
 
 class AgregarMiembroSerializer(serializers.ModelSerializer):
     """Serializer de entrada para la action agregar_miembro."""
+
     class Meta:
         model = MiembroHogar
         fields = [
             'victima', 'nombre_completo', 'tipo_documento', 'numero_documento',
-            'parentesco', 'genero', 'fecha_nacimiento', 'tipo_persona',
-            'incluido_ruv', 'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
+            'parentesco', 'genero', 'fecha_nacimiento',
+            'rol', 'estado_inclusion',
+            'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
         ]
 
+    def validate(self, attrs):
+        # es_autorizado solo lo asigna el backend en perform_create del hogar
+        attrs.pop('es_autorizado', None)
+        return attrs
 
-class CambiarJefeSerializer(serializers.Serializer):
-    """Serializer de entrada para PATCH /hogares/{id}/cambiar-jefe/"""
+
+class CambiarAutorizadoSerializer(serializers.Serializer):
+    """Serializer de entrada para PATCH /hogares/{id}/cambiar-autorizado/"""
     victima_id = serializers.UUIDField(
-        help_text='UUID de la Victima que pasará a ser jefe de hogar.'
+        help_text='UUID de la Victima que pasará a ser el nuevo autorizado del hogar.'
     )
