@@ -63,6 +63,12 @@ const RUTAS = [
   { value: 'ESPECIAL',                  label: 'Ruta Especial' },
 ];
 
+const ROLES_MIEMBRO = [
+  { value: 'MIEMBRO',             label: 'Miembro del hogar' },
+  { value: 'TUTOR',               label: 'Tutor — responsable legal de menor' },
+  { value: 'CUIDADOR_PERMANENTE', label: 'Cuidador permanente — adulto dependiente' },
+];
+
 // ── Tipo local para un integrante ya agregado ─────────────────────────────────
 
 interface IntegranteAgregado {
@@ -72,6 +78,7 @@ interface IntegranteAgregado {
   tipo_documento: string;        // código p.ej. "CC"
   numero_documento: string;
   parentesco_display: string;
+  rol_display: string;
   genero: string;
   fecha_nacimiento: string;
 }
@@ -166,7 +173,8 @@ function IntegranteCard({ item }: { item: IntegranteAgregado }) {
         <Text style={styles.integranteMeta}>
           {item.tipo_documento} {item.numero_documento}
           {item.parentesco_display ? `  ·  ${item.parentesco_display}` : ''}
-          {item.fecha_nacimiento ? `  ·  ${item.fecha_nacimiento}` : ''}
+          {item.rol_display ? `  ·  ${item.rol_display}` : ''}
+          {item.fecha_nacimiento ? `  ·  Nac. ${item.fecha_nacimiento}` : ''}
         </Text>
       </View>
     </View>
@@ -204,6 +212,7 @@ export default function ConformarHogarScreen() {
   const [fechaNac,     setFechaNac]     = useState('');
   const [parentesco,   setParentesco]   = useState('');
   const [genero,       setGenero]       = useState('');
+  const [rolMiembro,   setRolMiembro]   = useState('MIEMBRO');
   const [erroresForm,  setErroresForm]  = useState<Record<string, string>>({});
   const [agregando,    setAgregando]    = useState(false);
 
@@ -211,6 +220,7 @@ export default function ConformarHogarScreen() {
   const [modalTipoDoc,    setModalTipoDoc]    = useState(false);
   const [modalParentesco, setModalParentesco] = useState(false);
   const [modalGenero,     setModalGenero]     = useState(false);
+  const [modalRol,        setModalRol]        = useState(false);
   const [modalRuta,       setModalRuta]       = useState(false);
 
   // Iniciar entrevista
@@ -290,12 +300,13 @@ export default function ConformarHogarScreen() {
         nombre_completo: nombreCompleto,
         parentesco,
         genero,
-        rol: 'MIEMBRO',
+        rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
         estado_inclusion: 'NO_INCLUIDO',
         fecha_nacimiento: fechaNac || undefined,
       });
 
       const parentescoLabel = PARENTESCOS.find(p => p.value === parentesco)?.label ?? parentesco;
+      const rolLabel        = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
       setIntegrantes(prev => [
         ...prev,
         {
@@ -305,6 +316,7 @@ export default function ConformarHogarScreen() {
           tipo_documento: tipoDoc,
           numero_documento: numDoc,
           parentesco_display: parentescoLabel,
+          rol_display: rolLabel,
           genero,
           fecha_nacimiento: fechaNac,
         },
@@ -313,7 +325,7 @@ export default function ConformarHogarScreen() {
       // Limpiar formulario para el siguiente
       setTipoDoc('CC'); setNumDoc(''); setPrimerNombre(''); setSegNombre('');
       setPrimerApell(''); setSegApell(''); setFechaNac('');
-      setParentesco(''); setGenero(''); setErroresForm({});
+      setParentesco(''); setGenero(''); setRolMiembro('MIEMBRO'); setErroresForm({});
     } catch (err: any) {
       Alert.alert(
         'Error al agregar',
@@ -542,6 +554,14 @@ export default function ConformarHogarScreen() {
             </View>
           </View>
 
+          {/* Rol en el hogar */}
+          <CampoSelector
+            label="Rol en el hogar"
+            valor={ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro}
+            placeholder="Seleccionar rol"
+            onPress={() => setModalRol(true)}
+          />
+
           {/* Botón Agregar */}
           <Button
             mode="outlined"
@@ -617,6 +637,14 @@ export default function ConformarHogarScreen() {
         valorActual={genero}
         onSeleccionar={setGenero}
         onCerrar={() => setModalGenero(false)}
+      />
+      <SelectorModal
+        visible={modalRol}
+        titulo="Rol en el hogar"
+        opciones={ROLES_MIEMBRO}
+        valorActual={rolMiembro}
+        onSeleccionar={setRolMiembro}
+        onCerrar={() => setModalRol(false)}
       />
     </View>
   );
