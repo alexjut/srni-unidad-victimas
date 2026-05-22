@@ -1,13 +1,20 @@
 /**
- * Pantalla de inicio de sesión — diseño profesional GOV.CO + biometría.
- * Carrusel de regiones colombianas con gradientes representativos.
- * Para usar fotos reales: reemplazar <LinearGradient> por <ImageBackground source={require(...)} />
+ * Pantalla de inicio de sesión — GOV.CO institucional.
+ *
+ * Fondo: 5 fotos reales de regiones colombianas que ciclan automáticamente
+ * cada 30 s usando crossfade + efecto Ken Burns (zoom suave). Sin controles
+ * manuales de carrusel (sin dots, sin swipe, sin botones de navegación).
+ *
+ * Rendimiento:
+ *   - Imágenes empaquetadas como assets locales (bundled, sin prefetch necesario).
+ *   - Ken Burns se pausa cuando la app pasa a background (AppState listener).
+ *   - Todos los timers se limpian al desmontar la pantalla.
  */
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, StatusBar, Pressable,
-  FlatList, Dimensions,
+  View, StyleSheet, KeyboardAvoidingView, Platform,
+  ScrollView, StatusBar, Pressable,
+  Animated, ImageBackground, AppState, Dimensions,
 } from 'react-native';
 import { Text, TextInput, HelperText } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,102 +26,161 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
-const { width: SW } = Dimensions.get('window');
-const CAROUSEL_H = 170;
-const INTERVALO_MS = 3200;
+// ── Constantes de animación ───────────────────────────────────────────────────
+const DURACION_MS  = 30_000;   // tiempo visible de cada foto
+const FADE_MS      =  2_000;   // duración del crossfade entre fotos
+const KB_MITAD_MS  = 40_000;   // Ken Burns: 1.0→1.08 en 40 s, luego 1.08→1.0
 
-// ── Regiones colombianas — gradientes representativos ────────────────────────
-// Para fotos reales: agregar campo `imagen: require('../../assets/regiones/pacifico.jpg')`
-// y en RegionSlide usar <ImageBackground source={r.imagen}> en lugar del <LinearGradient>
+const { height: SH } = Dimensions.get('window');
 
+// ── Regiones con foto real disponible ────────────────────────────────────────
+// Orden de ciclo: Caribe → Andes → Amazonia → Orinoquía → Insular
+// (Pacífico pendiente de foto: agregar 'pacifico.png' cuando esté disponible)
 const REGIONES = [
-  {
-    nombre: 'Pacífico',
-    subtitulo: 'Costa, selva y biodiversidad',
-    icono: 'waves' as const,
-    gradiente: ['#003B5C', '#006994', '#00B4D8'] as const,
-    acento: '#48CAE4',
-  },
   {
     nombre: 'Caribe',
     subtitulo: 'Mar, playas y cultura vallenata',
     icono: 'palm-tree' as const,
-    gradiente: ['#7B2D00', '#C1440E', '#F4A261'] as const,
-    acento: '#FFD166',
+    imagen: require('../../assets/regiones/caribe.png'),
   },
   {
     nombre: 'Andes',
-    subtitulo: 'Montañas, café y páramos',
+    subtitulo: 'Montañas, café y memoria',
     icono: 'image-filter-hdr' as const,
-    gradiente: ['#1A3A1A', '#2D6A4F', '#74C69D'] as const,
-    acento: '#B7E4C7',
+    imagen: require('../../assets/regiones/andina.png'),
   },
   {
     nombre: 'Amazonia',
     subtitulo: 'Selva tropical y grandes ríos',
     icono: 'leaf' as const,
-    gradiente: ['#0A2E0A', '#1B4332', '#52B788'] as const,
-    acento: '#95D5B2',
+    imagen: require('../../assets/regiones/amazonia.png'),
   },
   {
     nombre: 'Orinoquía',
     subtitulo: 'Llanos orientales y sabanas',
     icono: 'grass' as const,
-    gradiente: ['#4A2800', '#8B5E00', '#DAA520'] as const,
-    acento: '#F2D06B',
+    imagen: require('../../assets/regiones/orinoca.png'),
   },
   {
     nombre: 'Insular',
     subtitulo: 'San Andrés, Providencia y Santa Catalina',
     icono: 'island' as const,
-    gradiente: ['#001F5B', '#023E8A', '#48CAE4'] as const,
-    acento: '#90E0EF',
+    imagen: require('../../assets/regiones/insular.png'),
   },
 ];
 
-// ── Slide individual del carrusel ─────────────────────────────────────────────
+const N = REGIONES.length;
 
-function RegionSlide({ region }: { region: typeof REGIONES[0] }) {
-  return (
-    <LinearGradient
-      colors={region.gradiente}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.slide}
-    >
-      {/* Patrón de puntos decorativos */}
-      <View style={styles.slidePatron} />
-
-      <View style={styles.slideContenido}>
-        <View style={[styles.slideIconoCirculo, { borderColor: region.acento + '60' }]}>
-          <MaterialCommunityIcons name={region.icono} size={32} color={region.acento} />
-        </View>
-        <Text style={styles.slideNombre}>{region.nombre}</Text>
-        <Text style={styles.slideSubtitulo}>{region.subtitulo}</Text>
-      </View>
-
-      {/* Etiqueta Colombia */}
-      <View style={styles.slideBadge}>
-        <MaterialCommunityIcons name="map-marker" size={10} color={region.acento} />
-        <Text style={[styles.slideBadgeTxt, { color: region.acento }]}>Colombia</Text>
-      </View>
-    </LinearGradient>
-  );
-}
-
-// ── Pantalla principal ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function LoginScreen() {
   const { login, loginBiometrico, cargando, error, limpiarError } = useAuthStore();
-  const [codigo, setCodigo] = useState('');
-  const [password, setPassword] = useState('');
+  const [codigo, setCodigo]       = useState('');
+  const [password, setPassword]   = useState('');
   const [verPassword, setVerPassword] = useState(false);
   const [biometricoListo, setBiometricoListo] = useState(false);
-  const [regionActiva, setRegionActiva] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const [idxActivo, setIdxActivo] = useState(0);
   const insets = useSafeAreaInsets();
 
-  // Verificar biometría disponible
+  // ── Animated values (un par por región) ─────────────────────────────────────
+  // opacidades[i]: 1 cuando la foto i es visible, 0 cuando está oculta
+  // escalas[i]:    Ken Burns — loop 1.0 ↔ 1.08
+  const opacidades = useRef(
+    REGIONES.map((_, i) => new Animated.Value(i === 0 ? 1 : 0)),
+  ).current;
+  const escalas = useRef(
+    REGIONES.map(() => new Animated.Value(1)),
+  ).current;
+  // Fade del indicador de región (icono + nombre sobre el fondo)
+  const opLabel = useRef(new Animated.Value(1)).current;
+
+  // Refs internas (no causan re-render)
+  const kbAnims      = useRef<(Animated.CompositeAnimation | null)[]>(Array(N).fill(null));
+  const enTransicion = useRef(false);
+  const idxRef       = useRef(0);   // espejo de idxActivo sin cierre de estado
+
+  // ── Ciclo de animaciones + AppState ─────────────────────────────────────────
+  useEffect(() => {
+    // ── Ken Burns helpers ────────────────────────────────────────────────────
+    function iniciarKB(idx: number) {
+      kbAnims.current[idx]?.stop();
+      escalas[idx].setValue(1.0);
+      const anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(escalas[idx], {
+            toValue: 1.08, duration: KB_MITAD_MS, useNativeDriver: true,
+          }),
+          Animated.timing(escalas[idx], {
+            toValue: 1.0,  duration: KB_MITAD_MS, useNativeDriver: true,
+          }),
+        ]),
+      );
+      kbAnims.current[idx] = anim;
+      anim.start();
+    }
+
+    function detenerKB(idx: number) {
+      kbAnims.current[idx]?.stop();
+      kbAnims.current[idx] = null;
+    }
+
+    // ── Crossfade ────────────────────────────────────────────────────────────
+    function transicionarA(next: number) {
+      if (enTransicion.current) return;
+      enTransicion.current = true;
+
+      const prev = idxRef.current;
+      idxRef.current = next;
+
+      // Fade out del indicador de región → cambiar texto → fade in
+      Animated.timing(opLabel, { toValue: 0, duration: 350, useNativeDriver: true })
+        .start(() => {
+          setIdxActivo(next);
+          Animated.timing(opLabel, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+        });
+
+      // Iniciar Ken Burns del slide entrante
+      iniciarKB(next);
+
+      // Crossfade entre fotos
+      Animated.parallel([
+        Animated.timing(opacidades[prev], {
+          toValue: 0, duration: FADE_MS, useNativeDriver: true,
+        }),
+        Animated.timing(opacidades[next], {
+          toValue: 1, duration: FADE_MS, useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Liberar recursos del slide saliente
+        detenerKB(prev);
+        enTransicion.current = false;
+      });
+    }
+
+    // ── Arranque ─────────────────────────────────────────────────────────────
+    iniciarKB(0);
+
+    const timer = setInterval(() => {
+      transicionarA((idxRef.current + 1) % N);
+    }, DURACION_MS);
+
+    // Pausa KB cuando la app va a background para ahorrar batería
+    const appSub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        kbAnims.current.forEach((a) => a?.stop());
+      } else {
+        iniciarKB(idxRef.current);
+      }
+    });
+
+    return () => {
+      clearInterval(timer);
+      kbAnims.current.forEach((a) => a?.stop());
+      appSub.remove();
+    };
+  }, []); // solo al montar — todas las dependencias son refs estables
+
+  // ── Biometría ──────────────────────────────────────────────────────────────
   useEffect(() => {
     async function verificar() {
       try {
@@ -130,108 +196,111 @@ export default function LoginScreen() {
     verificar();
   }, []);
 
-  // Auto-scroll del carrusel
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRegionActiva((prev) => {
-        const next = (prev + 1) % REGIONES.length;
-        flatListRef.current?.scrollToIndex({ index: next, animated: true });
-        return next;
-      });
-    }, INTERVALO_MS);
-    return () => clearInterval(timer);
-  }, []);
-
   async function handleLogin() {
     if (!codigo.trim() || !password) return;
     limpiarError();
-    try {
-      await login(codigo, password);
-    } catch { /* error ya en store */ }
+    try { await login(codigo, password); } catch { /* error ya en store */ }
   }
 
   async function handleBiometrico() {
     limpiarError();
-    try {
-      await loginBiometrico();
-    } catch { /* error ya en store */ }
+    try { await loginBiometrico(); } catch { /* error ya en store */ }
   }
 
+  const region = REGIONES[idxActivo];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
       <StatusBar backgroundColor="transparent" translucent barStyle="light-content" />
+
+      {/* ── Capas de fondo (absolute, detrás de todo) ── */}
+      <View style={[StyleSheet.absoluteFill, styles.fondoContenedor]} pointerEvents="none">
+        {REGIONES.map((r, i) => (
+          <Animated.View
+            key={r.nombre}
+            style={[
+              StyleSheet.absoluteFill,
+              { opacity: opacidades[i], transform: [{ scale: escalas[i] }] },
+            ]}
+          >
+            <ImageBackground
+              source={r.imagen}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          </Animated.View>
+        ))}
+
+        {/* Gradiente oscuro: sutil arriba, más denso abajo para legibilidad del card */}
+        <LinearGradient
+          colors={[
+            'rgba(0,0,0,0.08)',
+            'rgba(0,0,0,0.42)',
+            'rgba(0,0,0,0.78)',
+          ]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+      </View>
+
+      {/* ── UI sobre el fondo ── */}
       <KeyboardAvoidingView
         style={styles.root}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Hero con gradiente de fondo ── */}
-        <LinearGradient
-          colors={['#00234E', '#003A80', '#1565C0']}
-          style={[styles.hero, { paddingTop: insets.top }]}
-        >
-          {/* Franja GOV.CO */}
-          <View style={styles.govStripe}>
-            <Text style={styles.govText}>GOV.CO</Text>
-          </View>
+        {/* Franja GOV.CO — siempre visible en la parte superior */}
+        <View style={[styles.govStripe, { paddingTop: insets.top, height: 26 + insets.top }]}>
+          <Text style={styles.govText}>GOV.CO</Text>
+        </View>
 
-          {/* Carrusel de regiones */}
-          <FlatList
-            ref={flatListRef}
-            data={REGIONES}
-            keyExtractor={(r) => r.nombre}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={true}
-            onMomentumScrollEnd={(e) => {
-              const idx = Math.round(e.nativeEvent.contentOffset.x / SW);
-              setRegionActiva(idx);
-            }}
-            renderItem={({ item }) => <RegionSlide region={item} />}
-            style={styles.flatList}
-            getItemLayout={(_, index) => ({
-              length: SW, offset: SW * index, index,
-            })}
-          />
-
-          {/* Dots de paginación */}
-          <View style={styles.dots}>
-            {REGIONES.map((_, i) => (
-              <Pressable
-                key={i}
-                onPress={() => {
-                  flatListRef.current?.scrollToIndex({ index: i, animated: true });
-                  setRegionActiva(i);
-                }}
-                style={[styles.dot, i === regionActiva && styles.dotActivo]}
-              />
-            ))}
-          </View>
-
-          {/* Logo institucional */}
-          <View style={styles.logoWrap}>
-            <View style={styles.escudoCirculo}>
-              <MaterialCommunityIcons name="shield-account" size={36} color="#FFFFFF" />
-            </View>
-            <Text style={styles.appTitle}>SRNI</Text>
-            <Text style={styles.appSubtitulo}>Sistema de Caracterización de Víctimas</Text>
-            <View style={styles.entidadBadge}>
-              <MaterialCommunityIcons name="domain" size={11} color={GOV.amarillo} />
-              <Text style={styles.entidadTxt}>Unidad para las Víctimas — Colombia</Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* ── Card de formulario ── */}
         <ScrollView
-          style={styles.cardScroll}
-          contentContainerStyle={styles.cardContenido}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { minHeight: SH - 26 - insets.top },
+          ]}
           keyboardShouldPersistTaps="handled"
           bounces={false}
+          showsVerticalScrollIndicator={false}
         >
+          {/* Área superior: indicador de región + logo SRNI — crece para empujar card abajo */}
+          <View style={styles.areaTop}>
+
+            {/* Indicador de región (cambia con fade sincronizado al crossfade de fondo) */}
+            <Animated.View style={[styles.regionPill, { opacity: opLabel }]}>
+              <View style={styles.regionIconCirculo}>
+                <MaterialCommunityIcons name={region.icono} size={14} color="#FFFFFF" />
+              </View>
+              <View style={{ marginLeft: 8 }}>
+                <Text style={styles.regionNombre}>{region.nombre}</Text>
+                <Text style={styles.regionSubtitulo}>{region.subtitulo}</Text>
+              </View>
+            </Animated.View>
+
+            {/* Logo institucional SRNI */}
+            <View style={styles.logoWrap}>
+              <View style={styles.escudoCirculo}>
+                <MaterialCommunityIcons name="shield-account" size={38} color="#FFFFFF" />
+              </View>
+              <Text style={styles.appTitle}>SRNI</Text>
+              <Text style={styles.appSubtitulo}>
+                Sistema de Caracterización de Víctimas
+              </Text>
+              <View style={styles.entidadBadge}>
+                <MaterialCommunityIcons name="domain" size={11} color={GOV.amarillo} />
+                <Text style={styles.entidadTxt}>Unidad para las Víctimas — Colombia</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* ── Card de login ── */}
           <View style={styles.card}>
             <Text style={styles.cardTitulo}>Bienvenido/a</Text>
-            <Text style={styles.cardSubtitulo}>Ingresa tus credenciales institucionales</Text>
+            <Text style={styles.cardSubtitulo}>
+              Ingresa tus credenciales institucionales
+            </Text>
 
             <TextInput
               label="Código de usuario"
@@ -253,6 +322,8 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!verPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
               left={<TextInput.Icon icon="lock-outline" color={GOV.azul} />}
@@ -297,13 +368,16 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={handleBiometrico}
                   disabled={cargando}
-                  style={[styles.btnBio, cargando && styles.btnBioDeshabilitado]}
+                  style={[styles.btnBio, cargando && { opacity: 0.4 }]}
                   accessibilityLabel="Acceder con huella digital"
                   accessibilityRole="button"
                 >
                   {({ pressed }) => (
                     <>
-                      <View style={[styles.btnBioCirculo, pressed && styles.btnBioCirculoPresionado]}>
+                      <View style={[
+                        styles.btnBioCirculo,
+                        pressed && { backgroundColor: GOV.azulOscuro, elevation: 4 },
+                      ]}>
                         <MaterialCommunityIcons name="fingerprint" size={38} color="#FFFFFF" />
                       </View>
                       <Text style={styles.btnBioTxt}>Huella digital</Text>
@@ -314,6 +388,7 @@ export default function LoginScreen() {
             )}
           </View>
 
+          {/* Pie de página */}
           <Text style={styles.pie}>
             Sistema protegido — Ley 1581 de 2012 · Datos de víctimas confidenciales
           </Text>
@@ -326,20 +401,22 @@ export default function LoginScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#1565C0',
+  // Contenedor raíz de las imágenes de fondo — overflow hidden para recortar
+  // el desborde del efecto Ken Burns (scale 1.08)
+  fondoContenedor: {
+    overflow: 'hidden',
   },
 
-  // Hero
-  hero: {
-    paddingBottom: SPACING.sm,
+  root: {
+    flex: 1,
   },
+
+  // Franja GOV.CO amarilla
   govStripe: {
-    height: 26,
     backgroundColor: GOV.amarillo,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     paddingHorizontal: SPACING.md,
+    paddingBottom: 5,
   },
   govText: {
     fontSize: 11,
@@ -348,129 +425,96 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
 
-  // Carrusel
-  flatList: {
-    height: CAROUSEL_H,
+  // ScrollView content
+  scrollContent: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.xl,
+    flexGrow: 1,
   },
-  slide: {
-    width: SW,
-    height: CAROUSEL_H,
+
+  // Área superior — flex:1 para empujar el card hacia abajo
+  areaTop: {
+    flex: 1,
+    paddingTop: SPACING.md,
+    alignItems: 'flex-start',
+    gap: SPACING.lg,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
   },
-  slidePatron: {
-    position: 'absolute',
-    inset: 0,
-    opacity: 0.06,
-    backgroundColor: 'transparent',
-    // Patrón visual sutil — se puede cambiar por ImageBackground con foto real
-  },
-  slideContenido: {
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  slideIconoCirculo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-  },
-  slideNombre: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  slideSubtitulo: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.80)',
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  slideBadge: {
-    position: 'absolute',
-    bottom: SPACING.sm,
-    right: SPACING.md,
+
+  // Indicador de región
+  regionPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.30)',
-    paddingHorizontal: SPACING.xs,
-    paddingVertical: 3,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 7,
     borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
-  slideBadgeTxt: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-
-  // Dots
-  dots: {
-    flexDirection: 'row',
+  regionIconCirculo: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: SPACING.xs,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.35)',
+  regionNombre: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
   },
-  dotActivo: {
-    width: 18,
-    backgroundColor: '#FFFFFF',
+  regionSubtitulo: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.72)',
+    letterSpacing: 0.2,
   },
 
-  // Logo
+  // Logo SRNI
   logoWrap: {
     alignItems: 'center',
-    paddingTop: SPACING.xs,
-    paddingBottom: SPACING.sm,
+    width: '100%',
+    paddingVertical: SPACING.md,
+    gap: 4,
   },
   escudoCirculo: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 74,
+    height: 74,
+    borderRadius: 37,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(255,255,255,0.42)',
+    marginBottom: SPACING.xs,
   },
   appTitle: {
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 4,
-    marginBottom: 2,
+    letterSpacing: 7,
+    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   appSubtitulo: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    lineHeight: 17,
   },
   entidadBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.32)',
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: RADIUS.pill,
+    marginTop: SPACING.xs,
   },
   entidadTxt: {
     fontSize: 10,
@@ -479,24 +523,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Card formulario
-  cardScroll: {
-    flex: 1,
-    backgroundColor: GOV.fondoApp,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    marginTop: -2,
-  },
-  cardContenido: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
+  // Card de login
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     ...SHADOW.card,
-    marginTop: SPACING.md,
+    marginTop: SPACING.lg,
     borderWidth: 1,
     borderColor: GOV.borde,
   },
@@ -522,7 +555,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Separador biometría
+  // Separador
   separador: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -561,13 +594,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  btnBioCirculoPresionado: {
-    backgroundColor: GOV.azulOscuro,
-    elevation: 4,
-  },
-  btnBioDeshabilitado: {
-    opacity: 0.4,
-  },
   btnBioTxt: {
     fontSize: 13,
     fontWeight: '600',
@@ -578,9 +604,9 @@ const styles = StyleSheet.create({
   // Pie
   pie: {
     ...FONT.caption,
-    color: GOV.textoT,
+    color: 'rgba(255,255,255,0.68)',
     textAlign: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     lineHeight: 16,
   },

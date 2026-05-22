@@ -235,6 +235,20 @@ _CASO10 = _v(
 )
 _VICTIMAS[('CC', '9990100010')] = _CASO10
 
+# ── Caso 11: Usuario de prueba del contratista — CC 1030547250 ───────────────
+_CASO11 = _v(
+    cons=10011,
+    tdoc='CC', ndoc='1030547250',
+    p1='JAVIER', p2='ALEXANDER', a1='AGUILAR', a2='CASTRO',
+    fn=date(1990, 1, 1), gen='M',
+    estado_ruv='INCLUIDO', habilitado=True,
+    hechos=[
+        _h('HV01', _HECHOS_NOMBRE['HV01'], date(2010, 4, 15), 'Bogotá D.C.'),
+    ],
+    mpio_cod='11001', mpio_nom='Bogotá D.C.',
+)
+_VICTIMAS[('CC', '1030547250')] = _CASO11
+
 
 # ---------------------------------------------------------------------------
 # Grupos familiares: cons_persona → miembros adicionales (sin repetir al jefe)

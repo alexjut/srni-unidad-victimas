@@ -532,7 +532,7 @@ export default function BusquedaScreen() {
       useCaracterizacionStore.getState().setVictimaFuente(v);
       useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
       useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
-      router.push('/(main)/hogares/nuevo');
+      router.push('/(main)/hogares/conformar');
     } catch {
       setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
     } finally {
@@ -544,7 +544,7 @@ export default function BusquedaScreen() {
   function conformarHogarNoIncluida() {
     if (!instrumentoSeleccionado) return;
     useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
-    router.push('/(main)/hogares/nuevo');
+    router.push('/(main)/hogares/conformar');
   }
 
   async function registrarNoIncluida(datos: DatosNoIncluida) {
