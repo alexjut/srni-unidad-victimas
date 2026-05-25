@@ -1,0 +1,3977 @@
+{
+  "perfil": {
+    "codigo": "VICTIMAS_EXTERIOR",
+    "nombre": "Perfil Víctimas en el Exterior UARIV"
+  },
+  "instrumento_version": {
+    "numero": "V1",
+    "vigente_desde": "2024-01-01",
+    "vigente_hasta": null,
+    "fuente_documental": "Historias de Usuario - Perfil Víctimas en el Exterior"
+  },
+  "capitulos": [
+    {
+      "codigo": "A",
+      "nombre": "Datos Demográficos",
+      "orden": 1,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "B",
+      "nombre": "Datos de Ubicación",
+      "orden": 2,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "C",
+      "nombre": "Victimización y Derechos",
+      "orden": 3,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "D",
+      "nombre": "Dinámica Migratoria",
+      "orden": 4,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "E",
+      "nombre": "Estatus Migratorio",
+      "orden": 5,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "F",
+      "nombre": "Integración Local y Calidad de Vida",
+      "orden": 6,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "G",
+      "nombre": "Restitución de Tierras",
+      "orden": 7,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    },
+    {
+      "codigo": "H",
+      "nombre": "Intención de Retorno",
+      "orden": 8,
+      "objetivo": "",
+      "poblacion_objetivo": "AUTORIZADO",
+      "aplicabilidad": {}
+    }
+  ],
+  "preguntas": [
+    {
+      "no_pregunta": "A1",
+      "codigo_externo": "A1_vex",
+      "capitulo_codigo": "A",
+      "texto": "Lugar de Entrevista",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Ciudad",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "País"
+    },
+    {
+      "no_pregunta": "A2",
+      "codigo_externo": "A2_vex",
+      "capitulo_codigo": "A",
+      "texto": "Nombres y Apellidos",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A3",
+      "codigo_externo": "A3_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Qué tipo de documento de identificación tiene ...?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cédula de Extranjería",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Tarjeta de Identidad",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Registro Civil/NUIP",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Permiso especial de permanencia",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Permiso temporal de permanencia",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Pasaporte",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Adulto sin identificar",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Menor sin identificar",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Recién nacido",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Certificado de pertenencia étnica",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        }
+      ],
+      "descripcion_ayuda": "Cédula de Ciudadanía/Contraseña"
+    },
+    {
+      "no_pregunta": "A4",
+      "codigo_externo": "A4_vex",
+      "capitulo_codigo": "A",
+      "texto": "No. Documento de Identificación",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A5",
+      "codigo_externo": "A5_vex",
+      "capitulo_codigo": "A",
+      "texto": "El parentesco … frente al jefe del hogar es: NO acepte como jefe de hogar a persona menor a 14 años",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cónyuge o Compañera(o)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Hijo(a) - Hijastro(a)",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Padre o madre - padrastro o madrastra",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Hermano(a) - Hermanastro(a)",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otro pariente del jefe",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Jefe(a)"
+    },
+    {
+      "no_pregunta": "A6",
+      "codigo_externo": "A6_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es la fecha de nacimiento de … ?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A7",
+      "codigo_externo": "A7_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿… es víctima del conflicto armado?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "A8",
+      "codigo_externo": "A8_vex",
+      "capitulo_codigo": "A",
+      "texto": "Esa persona vive en*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "En Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Este país"
+    },
+    {
+      "no_pregunta": "A9",
+      "codigo_externo": "A9_vex",
+      "capitulo_codigo": "A",
+      "texto": "Esa persona nació en*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "En Colombia"
+    },
+    {
+      "no_pregunta": "A10",
+      "codigo_externo": "A10_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Es usted de origen colombiano?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No, ¿Cuál es su origen?",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "A11",
+      "codigo_externo": "A11_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuenta con otra nacionalidad?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si, ¿de qué otro país o países cuenta con la nacionalidad?"
+    },
+    {
+      "no_pregunta": "A12",
+      "codigo_externo": "A12_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿En dónde Nació?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Departamento",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Municipio",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Pais"
+    },
+    {
+      "no_pregunta": "A13",
+      "codigo_externo": "A13_vex",
+      "capitulo_codigo": "A",
+      "texto": "Sexo: (No asumir el sexo a partir del nombre, es necesario preguntar)",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 13,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Mujer",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Intersexual",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Indeterminado",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Hombre"
+    },
+    {
+      "no_pregunta": "A14",
+      "codigo_externo": "A14_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es su orientación sexual?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 14,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Homosexual",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Bisexual",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Asexual",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Ninguno",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Heterosexual"
+    },
+    {
+      "no_pregunta": "A15",
+      "codigo_externo": "A15_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es su identidad de género?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 15,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Masculino",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Trangénero",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Femenino"
+    },
+    {
+      "no_pregunta": "A16",
+      "codigo_externo": "A16_vex",
+      "capitulo_codigo": "A",
+      "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... se autoreconoce como:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 16,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Gitano(a), Rrom",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Palenquero(a)",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Negro(a), afrocolombiano(a) o afrodescendiente",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Indígena"
+    },
+    {
+      "no_pregunta": "A17",
+      "codigo_externo": "A17_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿… A qué pueblo indígena pertenece?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 17,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A18",
+      "codigo_externo": "A18_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿… A qué comunidad indígena pertenece?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 18,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A19",
+      "codigo_externo": "A19_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿… A qué cabildo indígena pertenece?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 19,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A20",
+      "codigo_externo": "A20_vex",
+      "capitulo_codigo": "A",
+      "texto": "Pertenece a un Consejo Comunitario",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 20,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A21",
+      "codigo_externo": "A21_vex",
+      "capitulo_codigo": "A",
+      "texto": "A qué consejo comunitario pertenece?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 21,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "A22",
+      "codigo_externo": "A22_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Presenta alguna discapacidad?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 22,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A23",
+      "codigo_externo": "A23_vex",
+      "capitulo_codigo": "A",
+      "texto": "Qué tipo de discapacidad presenta?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 23,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Física",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Visual",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Auditiva",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Intelectual",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Mental",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Sordo ceguera",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A24",
+      "codigo_externo": "A24_vex",
+      "capitulo_codigo": "A",
+      "texto": "Presenta diagnóstico de enfermedades ruinosas, catastróficas y de alto costo?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 24,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A25",
+      "codigo_externo": "A25_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál enfermedad?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 25,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Trasplante renal",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Trasplante renal, corazón, hígado, médula ósea y córnea",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Diálisis peritoneal y hemodiálisis",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo quirúrgico para enfermedades del corazón",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo quirúrgico para enfermedades del sistema nervioso central",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Reemplazos articulares",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo médico quirúrgico del paciente gran quemado",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo del trauma mayor",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Quimioterapia y radioterapia para el cáncer",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo de pacientes en Unidad de Cuidados Intensivos",
+          "id_resp_vivanto": 0,
+          "orden": 11
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Manejo quirúrgico de enfermedades congénitas",
+          "id_resp_vivanto": 0,
+          "orden": 12
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Corrección quirúrgica de la hernia de núcleo pulposo",
+          "id_resp_vivanto": 0,
+          "orden": 13
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Otra (EPOC, anemia falciforme, etc)",
+          "id_resp_vivanto": 0,
+          "orden": 14
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A26",
+      "codigo_externo": "A26_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es el nivel educativo más alto alcanzado ... ? y\n¿Cuál es el último año o grado aprobado en este nivel?\nNOTA: Para el caso de comunidades etnicas, aclarar que es Educación formal.",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 26,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Preescolar",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Básica_primaria_1°_a_5°",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Básica_Secundaria_6°_a_9°",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Media_10°_a_13°",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Técnica",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Tecnológica",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Profesional",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Especialización técnica",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Especialización tecnológica",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Especialización profesional",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Maestría",
+          "id_resp_vivanto": 0,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Doctorado",
+          "id_resp_vivanto": 0,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Posdoctorado",
+          "id_resp_vivanto": 0,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 0,
+          "orden": 14
+        },
+        {
+          "valor": "99",
+          "etiqueta": "No sabe/No responde",
+          "id_resp_vivanto": 0,
+          "orden": 15
+        }
+      ]
+    },
+    {
+      "no_pregunta": "A27",
+      "codigo_externo": "A27_vex",
+      "capitulo_codigo": "A",
+      "texto": "¿Cuenta con el certificado del nivel educativo más alto alcanzado?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 27,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "B1",
+      "codigo_externo": "B1_vex",
+      "capitulo_codigo": "B",
+      "texto": "Zona de Residencia",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Rural",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Urbano",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "B2",
+      "codigo_externo": "B2_vex",
+      "capitulo_codigo": "B",
+      "texto": "Código Postal",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "B3",
+      "codigo_externo": "B3_vex",
+      "capitulo_codigo": "B",
+      "texto": "Teléfono fijo",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "B4",
+      "codigo_externo": "B4_vex",
+      "capitulo_codigo": "B",
+      "texto": "Otro teléfono de contacto",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "B5",
+      "codigo_externo": "B5_vex",
+      "capitulo_codigo": "B",
+      "texto": "Celular",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "B6",
+      "codigo_externo": "B6_vex",
+      "capitulo_codigo": "B",
+      "texto": "Correo Electrónico",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "C1",
+      "codigo_externo": "C1_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Usted ha declarado ante la Defensoría, Procuraduría, Personería,Unidad de restitución de tierras  o Consulado colombiano sobre los hechos de los cuales fue víctima, con el fin de ser reconocido como víctima por el Estado colombiano? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ]
+    },
+    {
+      "no_pregunta": "C2",
+      "codigo_externo": "C2_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Usted esta incluido en en el Registro Único de Victimas?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No sabe/No Responde",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "C3",
+      "codigo_externo": "C3_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Por qué no ha declarado ante la Defensoría, Procuraduría, Personería, Unidad de restitución de tierras o Consulado colombiano sobre los hechos de los cuales fue víctima?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "El lugar donde sabe que puede hacerlo le queda muy lejos",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No desea hacerlo",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No sabía que podía declarar los hechos que le ocurrieron ni los trámites necesarios para hacerlo",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Tiene miedo de declarar los hechos ocurridos",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No confía en el Estado colombiano",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "No conoce el lugar donde puede hacerlo"
+    },
+    {
+      "no_pregunta": "C4",
+      "codigo_externo": "C4_vex",
+      "capitulo_codigo": "C",
+      "texto": "A causa del conflicto armado tuvo que abandonar  un predio rural o urbano o este le fue despojado?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "C5",
+      "codigo_externo": "C5_vex",
+      "capitulo_codigo": "C",
+      "texto": "Los hechos victimizantes por los cuales usted es víctima, ¿en qué año o años ocurrieron?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "descripcion_ayuda": "Campo Abierto"
+    },
+    {
+      "no_pregunta": "C6",
+      "codigo_externo": "C6_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Cuáles fueron los hechos victimizantes que usted sufrio?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Amenaza",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Delitos contra la libertad y la integridad sexual en desarrollo del conflicto armado",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Desaparición forzada",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Desplazamiento forzado",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Homicidio",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Minas antipersonal, munición sin explotar y artefacto explosivo improvisado",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Secuestro",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Tortura",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Vinculación de niños niñas y adolescentes a actividades relacionadas con grupos armados",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Abandono o despojo forzado de tierras",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Eventos masivos",
+          "id_resp_vivanto": 0,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Perdida de bienes muebles o inmuebles",
+          "id_resp_vivanto": 0,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Lesiones personales físicas",
+          "id_resp_vivanto": 0,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Lesiones personales psicológicas",
+          "id_resp_vivanto": 0,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Confinamiento",
+          "id_resp_vivanto": 0,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 16
+        }
+      ],
+      "descripcion_ayuda": "Acto terrorista / atentados / combates /enfrentamientos / hostigamientos"
+    },
+    {
+      "no_pregunta": "C7",
+      "codigo_externo": "C7_vex",
+      "capitulo_codigo": "C",
+      "texto": "A partir de los hechos victimizantes sufridos por usted, los daños que estos le causaron fueron:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "La situación le ocasionó gastos que no había contemplado (daño emergente)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Sus vínculos familiares y sociales se vieron afectados",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Afectaciones físicas",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Afectaciones psicológicas",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Tuvo que abandonar su predio",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Sufrió la perdida de su predio con ocasión del conflicto",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "Dejó de tener ingresos por la pérdida o afectación a algún tipo de negocio o pertenencia (lucro cesante)"
+    },
+    {
+      "no_pregunta": "C8",
+      "codigo_externo": "C8_vex",
+      "capitulo_codigo": "C",
+      "texto": "En su opinión, ¿Qué tanto considera que conoce la Ley de víctimas (Ley de víctimas y restitución de tierras)??",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "La conoce poco",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No la conoce",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "La conoce mucho"
+    },
+    {
+      "no_pregunta": "C9",
+      "codigo_externo": "C9_vex",
+      "capitulo_codigo": "C",
+      "texto": "En su opinión que tanto conoce los Decretos Ley Étnicos, 4333, 4334 y 4335 de 2011?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Los conoce poco",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No los conoce",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Los conoce mucho"
+    },
+    {
+      "no_pregunta": "C10",
+      "codigo_externo": "C10_vex",
+      "capitulo_codigo": "C",
+      "texto": "Podría Mencionar algunos de estos derechos:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Derecho a la Justicia (judicialización de los responsables, conocer el estado de procesos judiciales que se estén adelantando)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Derecho a acudir a escenarios de diálogo y participación institucional y comunitario",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Derecho a que el Estado lo proteja y garantice su derecho a la vida, la atención y asistencia en condiciones de dignidad",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Derecho a participar en la formulación, implementación y seguimiento de la política pública de prevención, atención y reparación integral",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Derecho a que las mujeres, los niños, niñas y adolescentes, los adultos mayores, los grupos étnicos, la población LGBTI, y las personas con discapacidad sean tenidos en cuenta prioritariamente por la ley en tanto poblaciones más vulnerables",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Derecho a la restitución de la tierra si ha sido despojado de ella",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Derecho a la reparación integral (a medidas de indemnización, satisfacción, restitución, garantías de no repetición y retorno)",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Derecho de las mujeres a vivir libres de violencia",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Otro ¿cuál? _______________",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        }
+      ],
+      "descripcion_ayuda": "Derecho a la verdad sobre los hechos ocurridos"
+    },
+    {
+      "no_pregunta": "C11",
+      "codigo_externo": "C11_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Cuáles han sido exactamente las medidas de atención, asistencia y/o reparación que ha recibido por ser víctima?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Atención - Orientación en jornadas de atención",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Asistencia - Gratuidad en el trámite de documentos de identificación colombianos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Asistencia -Gratuidad en el trámite de registros civiles colombianos",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Asistencia - Ayuda a través de alguna organización humanitaria que sea una aliada de la Unidad para las Víctimas",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Asistencia - Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Reparación integral - Indemnización administrativa (Consiste en la entrega de una suma de dinero como compensación por los daños causados por el conflicto armado).",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Reparación integral -Restitución (Busca reestablecer los derechos de las víctimas y facilitar la reconstrucción de su proyecto de vida. En este caso, nos referimos concretamente al acceso a la restitución de tierras a través de la Unidad de Restitución de Tierras)",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Reparación integral - Satisfacción (Busca resarcir el dolor de las víctimas mediante la memoria histórica, la verdad y la dignificación, por ejemplo, a través de estrategias de la Unidad para las Víctimas como “Cimientos: iniciativas para una reparación sin fronteras” y la participación en conmemoraciones como el 9 de abril – Día Nacional de la Memoria y la Solidaridad con las Víctimas)",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Reparación integral -Garantías de no repetición (Se enfoca en procesos de transformación de las causas de la victimización y de reconciliación)",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Reparación integral -Rehabilitación (Se refiere a estrategias de atención psicosocial individual y grupal, presencial en algunos países y no presencial en el mundo entero. Ejemplo: las estrategias Raíces e Illa).",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        }
+      ],
+      "descripcion_ayuda": "Atención - Orientación por canales virtuales, telefónicos o presenciales"
+    },
+    {
+      "no_pregunta": "C12",
+      "codigo_externo": "C12_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿A través de qué instituciones ha accedido a cualquiera de las medidas de atención, asistencia y reparación integral antes mencionadas?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Unidad de Restitución de Tierras",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Centro Nacional de Memoria Histórica",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Consulados o Embajadas colombianos",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "SENA",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "No sabe / no responde",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "Unidad para las Víctimas"
+    },
+    {
+      "no_pregunta": "C13",
+      "codigo_externo": "C13_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Por qué no ha accedido a ninguna de las medidas a las que las víctimas del conflicto tienen derecho bajo la Ley 1448 de 2011 – Ley de Víctimas y Restitución de Tierras?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 13,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Porque no está incluida (a) en el Registro Único de Víctimas",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Porque no ha declarado para ser incluido (a) en el Registro Único de Víctimas",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Porque los trámites de acceso se le dificultan",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Porque teme perder su estatus de refugiado u otra medida de protección internacional",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Porque no sabe cómo acceder"
+    },
+    {
+      "no_pregunta": "C14",
+      "codigo_externo": "C14_vex",
+      "capitulo_codigo": "C",
+      "texto": "¿Ha participado en algún proceso de verdad, justicia o reparación a través de las siguientes instituciones colombianas?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 14,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Unidad de Búsqueda de Personas dadas por Desaparecidas",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Jurisdicción Especial para la Paz (JEP)",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Comisión para el Esclarecimiento de la Verdad"
+    },
+    {
+      "no_pregunta": "D1",
+      "codigo_externo": "D1_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Dónde vivía usted antes de salir de Colombia?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Municipio",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Departamento"
+    },
+    {
+      "no_pregunta": "D2",
+      "codigo_externo": "D2_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Cuántos años tenía usted cuando salió de Colombia?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "D3",
+      "codigo_externo": "D3_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Hace cuantos años salió de Colombia?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entre 1 y 2 años",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entre 2 y 5 años",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Entre 5 y 10 años",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Entre 10 y 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Más de 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Menos de 1 año"
+    },
+    {
+      "no_pregunta": "D4",
+      "codigo_externo": "D4_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Hace cuánto tiempo vive en este país? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entre 1 y 2 años",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entre 2 y 5 años",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Entre 5 y 10 años",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Entre 10 y 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Más de 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Menos de 1 año"
+    },
+    {
+      "no_pregunta": "D5",
+      "codigo_externo": "D5_vex",
+      "capitulo_codigo": "D",
+      "texto": "Cuando decidió salir de Colombia, ¿éste fue su primer país de destino?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "D6",
+      "codigo_externo": "D6_vex",
+      "capitulo_codigo": "D",
+      "texto": "Antes de llegar a este país, ¿por cuántos países pasó? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Uno",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Dos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Tres",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Cuatro",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Cinco",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Cero"
+    },
+    {
+      "no_pregunta": "D7",
+      "codigo_externo": "D7_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Cuáles fueron estos países?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "descripcion_ayuda": "Listado de Paises (selección múltiple)"
+    },
+    {
+      "no_pregunta": "D8",
+      "codigo_externo": "D8_vex",
+      "capitulo_codigo": "D",
+      "texto": "Cuando salió del país en un primer momento, ¿con quién lo hizo?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Con su esposa (o) o compañera (o)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Con su esposa (o) o compañera (o) e hijos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Con sus hijos (as)",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Con otros familiares",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Con conocido (s) o amigos",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Con otras víctimas del conflicto armado",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Otros ¿quiénes? _________________________",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        }
+      ],
+      "descripcion_ayuda": "Solo (a)"
+    },
+    {
+      "no_pregunta": "D9",
+      "codigo_externo": "D9_vex",
+      "capitulo_codigo": "D",
+      "texto": "Si los miembros de su núcleo familiar cercano no vinieron con usted en un primer momento, ¿hace cuánto tiempo que llegaron?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entre 1 y 2 años",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entre 2 y 5 años",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Entre 5 y 10 años",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Entre 10 y 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Más de 20 años",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "No han llegado",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Ya se encontraban aquí",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        }
+      ],
+      "descripcion_ayuda": "Menos de 1 año"
+    },
+    {
+      "no_pregunta": "D10",
+      "codigo_externo": "D10_vex",
+      "capitulo_codigo": "D",
+      "texto": "¿Usted vive actualmente con los miembros del núcleo familiar cercano que tenía en Colombia?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "D11",
+      "codigo_externo": "D11_vex",
+      "capitulo_codigo": "D",
+      "texto": "Las razones por las que usted vino a este país fueron: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Este país se encuentra cerca de Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Este país se encuentra lejos de Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Porque lo ayudaron para venir aquí",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Porque tenía familiares",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Porque tenía amigos o conocidos",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Porque es seguro",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Porque tiene alta probabilidad de obtener el estatus de refugiado",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Porque domina el idioma de este país",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Porque ya conocía este país",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Otra ¿cuál? __________",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        }
+      ],
+      "descripcion_ayuda": "Los costos del transporte para llegar aquí son económicos"
+    },
+    {
+      "no_pregunta": "E1",
+      "codigo_externo": "E1_vex",
+      "capitulo_codigo": "E",
+      "texto": "¿Usted ha solicitado asilo o alguna medida de protección internacional en este país? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "E2",
+      "codigo_externo": "E2_vex",
+      "capitulo_codigo": "E",
+      "texto": "Después de haber solicitado asilo o alguna medida de protección internacional en este país, usted fue: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Está a la espera de una respuesta",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Rechazado",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Aceptado"
+    },
+    {
+      "no_pregunta": "E3",
+      "codigo_externo": "E3_vex",
+      "capitulo_codigo": "E",
+      "texto": "¿Cuánto tiempo lleva esperando una respuesta? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entre 1 y 2 años",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entre 2 y 5 años",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Más de 5 años",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Menos de 1 año"
+    },
+    {
+      "no_pregunta": "E4",
+      "codigo_externo": "E4_vex",
+      "capitulo_codigo": "E",
+      "texto": "Durante el trámite de solicitud de asilo o de alguna medida de protección internacional, ¿usted tuvo (ha tenido) alguna restricción para acercarse a entidades del Estado colombiano para acceder a sus derechos como víctima del conflicto armado?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "E5",
+      "codigo_externo": "E5_vex",
+      "capitulo_codigo": "E",
+      "texto": "¿Qué dejo de hacer a causa de esta restricción?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No informó al consulado colombiano o a la Unidad para las Víctimas en Colombia su nuevo país de ubicación",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No ha accedido a las medidas de atención, asistencia o reparación integral",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Otro, ¿cuál",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "No se acercó al consulado colombiano para declarar los hechos que sufrió"
+    },
+    {
+      "no_pregunta": "E6",
+      "codigo_externo": "E6_vex",
+      "capitulo_codigo": "E",
+      "texto": "Actualmente, usted en este país: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Tiene una visa con permanencia de tiempo limitado",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No tiene permiso de permanencia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Tiene nacionalidad de este país",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Tiene estatus de refugiado o alguna medida de protección del Estado de acogida",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otro ¿cuál? _________",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Tiene residencia permanente"
+    },
+    {
+      "no_pregunta": "F1",
+      "codigo_externo": "F1_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿En este país ha debido aprender otro idioma, distinto al español, para comunicarse? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No Aplica",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F2",
+      "codigo_externo": "F2_vex",
+      "capitulo_codigo": "F",
+      "texto": "El dominio que usted tiene sobre el idioma de este país ahora es: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Lo domina poco",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No lo domina",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No aplica",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Lo domina mucho"
+    },
+    {
+      "no_pregunta": "F3",
+      "codigo_externo": "F3_vex",
+      "capitulo_codigo": "F",
+      "texto": "Las razones por las que usted y su núcleo familiar cercano viven en este lugar son: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Porque hay buenas oportunidades económicas",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Porque se siente más seguro",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Porque hay mayor acceso a programas del Estado",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Porque hay mayor acceso a los servicios sociales (salud, educación, vivienda)",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Porque hay una gran cantidad de población víctima",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Porque se siente parte de la comunidad",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Porque no tiene otra opción",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        }
+      ],
+      "descripcion_ayuda": "Porque está cerca de familiares y/o amigos que lo (la) apoyan"
+    },
+    {
+      "no_pregunta": "F4",
+      "codigo_externo": "F4_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Considera que usted y su núcleo familiar cercano tienen dificultades en el lugar donde viven ahora? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F5",
+      "codigo_externo": "F5_vex",
+      "capitulo_codigo": "F",
+      "texto": "Las dificultades que usted y su núcleo familiar cercano tienen en el lugar donde viven ahora:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Discriminación por su condición de migrante",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Discriminación por su pertenencia a un grupo étnico",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Riesgos de que sus hijos se vinculen a pandillas o grupos armados",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "No se identifica con las costumbres de la comunidad",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Se le dificulta movilizarse por el lugar y/o pagar por el transporte",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Hay pocas vías de acceso al lugar donde vive",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Se siente inseguro",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "No tiene redes de apoyo (amigos, familiares, vecinos)",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "No domina el idioma de este país",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 10
+        }
+      ],
+      "descripcion_ayuda": "Falta de oportunidades económicas"
+    },
+    {
+      "no_pregunta": "F6",
+      "codigo_externo": "F6_vex",
+      "capitulo_codigo": "F",
+      "texto": "Actualmente, usted vive en*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Un apartamento",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Una habitación",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Un inquilinato/pensión",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Albergue",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Una casa"
+    },
+    {
+      "no_pregunta": "F7",
+      "codigo_externo": "F7_vex",
+      "capitulo_codigo": "F",
+      "texto": "La vivienda donde vive actualmente es*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Propia",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Prestada",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Ocupación de hecho",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Hipotecada",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Facilitada por una ONG o por el Estado receptor",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Arrendada"
+    },
+    {
+      "no_pregunta": "F8",
+      "codigo_externo": "F8_vex",
+      "capitulo_codigo": "F",
+      "texto": "Actualmente, ¿con quién vive usted? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Con su pareja",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Con su familia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Con otras familias o personas",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Con otros inquilinos",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Solo (a)"
+    },
+    {
+      "no_pregunta": "F9",
+      "codigo_externo": "F9_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Ha tenido dificultades para conseguir vivienda? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F10",
+      "codigo_externo": "F10_vex",
+      "capitulo_codigo": "F",
+      "texto": "Las dificultades que ha tenido para conseguir vivienda han sido:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Rechazo por su nacionalidad",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Falta de ingresos económicos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Condiciones exigidas para acceder a una vivienda (documentos)"
+    },
+    {
+      "no_pregunta": "F11",
+      "codigo_externo": "F11_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Usted tiene acceso a servicios de salud en este país?  *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F12",
+      "codigo_externo": "F12_vex",
+      "capitulo_codigo": "F",
+      "texto": "En el tiempo que lleva viviendo aquí, ¿ha recibido atención psicosocial o psicológica en algún programa? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F13",
+      "codigo_externo": "F13_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Por parte de qué institución recibió esta atención? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 13,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Unidad para las Víctimas de Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Ministerio de Relaciones Exteriores de Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Una institución del Estado receptor",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Organización de víctimas",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Organización humanitaria",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "Ministerio de Salud de Colombia"
+    },
+    {
+      "no_pregunta": "F14",
+      "codigo_externo": "F14_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Usted está interesado (a) en recibir atención psicosocial?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 14,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F15",
+      "codigo_externo": "F15_vex",
+      "capitulo_codigo": "F",
+      "texto": "En este país, ¿usted ha cursado o está cursando algún tipo de estudio? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 15,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F16",
+      "codigo_externo": "F16_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Qué tipo de estudio ha cursado o está cursando en este país? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 16,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Estudios escolares (Básica/primaria/media/bachiller)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Estudios técnicos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Estudios profesionales",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Estudios de especialización/maestría/doctorado",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Estudios no formales"
+    },
+    {
+      "no_pregunta": "F17",
+      "codigo_externo": "F17_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿ha podido convalidar sus títulos en el país receptor?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 17,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F18",
+      "codigo_externo": "F18_vex",
+      "capitulo_codigo": "F",
+      "texto": "En caso de tener hijos (as), ¿Qué tipo de estudio cursan ellos actualmente? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 18,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Estudios de la Básica/primaria/media/bachiller",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Estudios técnicos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Estudios profesionales",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Estudios de especialización/maestría/doctorado",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Ninguno",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "No vive con sus hijos (as) o no tiene",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "Estudios no formales"
+    },
+    {
+      "no_pregunta": "F19",
+      "codigo_externo": "F19_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Ha tenido dificultades para desarrollar una actividad económica? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 19,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F20",
+      "codigo_externo": "F20_vex",
+      "capitulo_codigo": "F",
+      "texto": "Las dificultades principales para desarrollar una actividad económica actualmente son: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 20,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Es muy difícil para un colombiano encontrar empleo",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Es difícil para un colombiano poner un negocio",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No domina el idioma oficial de este país",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "No tiene los recursos económicos",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No tiene documentación necesaria o requisitos exigidos (cuenta bancaria, seguro médico, permiso de residencia, permiso de trabajo y/o documento de identificación)",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        }
+      ],
+      "descripcion_ayuda": "No hay oportunidades en este país"
+    },
+    {
+      "no_pregunta": "F21",
+      "codigo_externo": "F21_vex",
+      "capitulo_codigo": "F",
+      "texto": "Considera usted que sus ingresos mensuales le alcanzan para: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 21,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cubrir parcialmente (más o menos) sus necesidades",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No podía cubrir sus necesidades",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Cubrir todas sus necesidades"
+    },
+    {
+      "no_pregunta": "F22",
+      "codigo_externo": "F22_vex",
+      "capitulo_codigo": "F",
+      "texto": "Cuando vivía en Colombia sus ingresos mensuales le alcanzaban para: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 22,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cubrir parcialmente (más o menos) sus necesidades",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No podía cubrir sus necesidades",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Cubrir todas sus necesidades"
+    },
+    {
+      "no_pregunta": "F23",
+      "codigo_externo": "F23_vex",
+      "capitulo_codigo": "F",
+      "texto": "Actualmente, su ocupación es*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 23,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Empleado Informal (sin contrato)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Independiente",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Desempleado",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Hogar (labores de la casa)",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Rentista (persona que recibe dinero por arrendar bienes).",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Estudiante",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Pensionado",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        }
+      ],
+      "descripcion_ayuda": "Empleado formal (con contrato)"
+    },
+    {
+      "no_pregunta": "F24",
+      "codigo_externo": "F24_vex",
+      "capitulo_codigo": "F",
+      "texto": "En Colombia, su ocupación era*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 24,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Empleado Informal (sin contrato)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Independiente",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Desempleado",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Hogar (labores de la casa)",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Rentista (persona que recibe dinero por arrendar bienes).",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Estudiante",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Pensionado",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otro ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        }
+      ],
+      "descripcion_ayuda": "Empleado formal (con contrato)"
+    },
+    {
+      "no_pregunta": "F25",
+      "codigo_externo": "F25_vex",
+      "capitulo_codigo": "F",
+      "texto": "En este país usted se siente*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 25,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Igual de seguro (a) que en Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Menos seguro (a) que en Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Más seguro (a) que en Colombia"
+    },
+    {
+      "no_pregunta": "F26",
+      "codigo_externo": "F26_vex",
+      "capitulo_codigo": "F",
+      "texto": "Las personas que usted considera que le brindan apoyo o le ayudan se encuentran en*:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 26,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Otra ciudad en este país",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Otro país",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "En Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "No cuenta con personas que le apoyen y ayuden",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Esta ciudad"
+    },
+    {
+      "no_pregunta": "F27",
+      "codigo_externo": "F27_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Usted ha recibido en este país algún tipo de apoyo por su condición de víctima del conflicto armado colombiano por parte de alguna institución local? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 27,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F28",
+      "codigo_externo": "F28_vex",
+      "capitulo_codigo": "F",
+      "texto": "Estos apoyos los ha recibido de: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 28,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "La Cruz Roja",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "La Iglesia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Organismos Internacionales (ACNUR – OIM)",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "ONG (ejemplos: Consejo Noruego para refugiados, RET Internacional, Fupad)",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Consulado o Embajada colombiana",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Defensoría del Pueblo local",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Otro ¿cuál? ____________________________",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        }
+      ],
+      "descripcion_ayuda": "Gobierno local"
+    },
+    {
+      "no_pregunta": "F29",
+      "codigo_externo": "F29_vex",
+      "capitulo_codigo": "F",
+      "texto": "Cuando vivía en Colombia, ¿usted participaba en alguna organización social y/o política?  *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 29,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F30",
+      "codigo_externo": "F30_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿En qué tipo de organización participaba usted? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 30,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Organizaciones religiosas",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Organizaciones de derechos humanos (género, víctimas, refugiados)",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Comunitarias o barriales",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Organizaciones benéficas o voluntarias"
+    },
+    {
+      "no_pregunta": "F31",
+      "codigo_externo": "F31_vex",
+      "capitulo_codigo": "F",
+      "texto": "Actualmente ¿usted participa en alguna organización social y/o política? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 31,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "F32",
+      "codigo_externo": "F32_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿En qué tipo de organización participa usted?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 32,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Organizaciones religiosas",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Organizaciones de derechos humanos (género, víctimas, refugiados)",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Comunitarias o barriales",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Organizaciones benéficas o voluntarias"
+    },
+    {
+      "no_pregunta": "F33",
+      "codigo_externo": "F33_vex",
+      "capitulo_codigo": "F",
+      "texto": "¿Usted considera que su situación en general ha mejorado con respecto a la que vivía cuando estaba en Colombia?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 33,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "G1",
+      "codigo_externo": "G1_vex",
+      "capitulo_codigo": "G",
+      "texto": "¿Cuál fue el motivo por el cual perdió su predio?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Abandono forzado y Despojo",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Despojo",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "Abandono Forzado"
+    },
+    {
+      "no_pregunta": "G2",
+      "codigo_externo": "G2_vex",
+      "capitulo_codigo": "G",
+      "texto": "¿Dónde se encuentra ubicado su predio?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Municipio",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Departamento"
+    },
+    {
+      "no_pregunta": "G3",
+      "codigo_externo": "G3_vex",
+      "capitulo_codigo": "G",
+      "texto": "¿Ha recibido amenzas, hostigamientos o intimidaciones con motivo de su reclamación de tierras?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Prefiere no responder",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "G4",
+      "codigo_externo": "G4_vex",
+      "capitulo_codigo": "G",
+      "texto": "¿Conoce sobre el registro el Registro Único de Predios y Territorios Abandonados-RUPTA que busca porteger los predios que fueron abandonados por casusa del conflicto armado?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Desea recibir mayor información sobre la medida",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "H1",
+      "codigo_externo": "H1_vex",
+      "capitulo_codigo": "H",
+      "texto": "Usted tiene intención principalmente de: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Reasentarse en otro país",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Permanecer en este país",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Retornar a Colombia"
+    },
+    {
+      "no_pregunta": "H2",
+      "codigo_externo": "H2_vex",
+      "capitulo_codigo": "H",
+      "texto": "¿En cuánto tiempo piensa regresar? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entre 6 meses y un año",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entre uno y tres años",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Más de tres años",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "No lo tiene claro",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No desea regresar",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        }
+      ],
+      "descripcion_ayuda": "Entre 1 y 6 meses"
+    },
+    {
+      "no_pregunta": "H3",
+      "codigo_externo": "H3_vex",
+      "capitulo_codigo": "H",
+      "texto": "¿A qué parte de Colombia regresaría?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Al lugar donde vivía antes de salir",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No lo sabe",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "A otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        }
+      ],
+      "descripcion_ayuda": "A su lugar de nacimiento"
+    },
+    {
+      "no_pregunta": "H4",
+      "codigo_externo": "H4_vex",
+      "capitulo_codigo": "H",
+      "texto": "La principal razón por la cual usted no considera retornar a Colombia es: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Temor a recodar sucesos a causa del conflicto armado",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Allá no existen las condiciones necesarias para desarrollar sus proyectos",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Por falta de recursos económicos",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Otra ¿cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Temor que vuelva a ser víctima del conflicto armado"
+    },
+    {
+      "no_pregunta": "H5",
+      "codigo_externo": "H5_vex",
+      "capitulo_codigo": "H",
+      "texto": "Las razones por las cuales usted retornaría a Colombia son: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Extraña su país",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Quiere retomar actividades que solo puede hacer en Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Colombia ahora tiene mejores condiciones de vida",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Hay mayor seguridad en Colombia",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Que le garanticen las medidas de atención, asistencia y reparación integral",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Que le aseguren la reubicación en el lugar que usted desee",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Porque desde la implementación del Acuerdo de Paz de la Habana, usted se siente seguro",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Ninguno",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 9
+        }
+      ],
+      "descripcion_ayuda": "Quiere estar con su familia"
+    },
+    {
+      "no_pregunta": "H6",
+      "codigo_externo": "H6_vex",
+      "capitulo_codigo": "H",
+      "texto": "¿Usted considera que el retorno mejoraría sus condiciones actuales? *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No sabe/ No responde",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        }
+      ],
+      "descripcion_ayuda": "Sí"
+    },
+    {
+      "no_pregunta": "H7",
+      "codigo_externo": "H7_vex",
+      "capitulo_codigo": "H",
+      "texto": "Estas mejoras se darían en: *",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Sus relaciones y vínculos familiares o afectivos",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Desarrollo profesional o personal",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Seguridad",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        }
+      ],
+      "descripcion_ayuda": "Ingresos"
+    },
+    {
+      "no_pregunta": "H8",
+      "codigo_externo": "H8_vex",
+      "capitulo_codigo": "H",
+      "texto": "¿Conoce usted sobre la ley de retornos y sus beneficios?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    },
+    {
+      "no_pregunta": "H9",
+      "codigo_externo": "H9_vex",
+      "capitulo_codigo": "H",
+      "texto": "Le Gustaría conocerlas",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        }
+      ],
+      "descripcion_ayuda": "Si"
+    }
+  ],
+  "reglas_skip_logic": [],
+  "validaciones_cruzadas": []
+}

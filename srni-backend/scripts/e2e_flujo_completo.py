@@ -23,7 +23,7 @@ BASE = 'http://127.0.0.1:8001'
 USER = 'ALEXJUT'
 PWD = 'alexjut1030'
 
-INSTRUMENTOS = ['TERRITORIAL', 'ASISTENCIA', 'BUENAVENTURA', 'SAN_ANDRES', 'TELEFONICO', 'URBANO_ETNICO', 'RURAL_ETNICO']
+INSTRUMENTOS = ['TERRITORIAL', 'ASISTENCIA', 'BUENAVENTURA', 'SAN_ANDRES', 'TELEFONICO', 'URBANO_ETNICO', 'RURAL_ETNICO', 'VICTIMAS_EXTERIOR']
 
 # Generador de valores de prueba según tipo de pregunta
 def valor_dummy(tipo: str, opciones: list) -> str:
