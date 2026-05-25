@@ -103,9 +103,10 @@ export default function MainLayout() {
       />
 
       {/* ── Rutas ocultas (no aparecen en el tab bar) ── */}
-      <Tabs.Screen name="hogares/[hogarId]"               options={{ href: null }} />
-      <Tabs.Screen name="hogares/nuevo"                   options={{ href: null }} />
-      <Tabs.Screen name="hogares/conformar"               options={{ href: null }} />
+      <Tabs.Screen name="hogares/[hogarId]/index"             options={{ href: null }} />
+      <Tabs.Screen name="hogares/[hogarId]/caracterizaciones" options={{ href: null }} />
+      <Tabs.Screen name="hogares/nuevo"                       options={{ href: null }} />
+      <Tabs.Screen name="hogares/conformar"                   options={{ href: null }} />
       <Tabs.Screen name="encuestas/[sesionId]"            options={{ href: null }} />
       <Tabs.Screen name="caracterizar/index"              options={{ href: null }} />
       <Tabs.Screen name="formulario/index"                options={{ href: null }} />

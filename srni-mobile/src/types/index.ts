@@ -181,6 +181,9 @@ export interface HogarDetalle extends HogarResumen {
   numero_cuartos: number;
   observaciones: string;
   miembros: MiembroHogarResumen[];
+  total_miembros: number;
+  /** Caracterizaciones (sesiones de encuesta) asociadas al hogar — Sprint 13 */
+  sesiones: SesionResumen[];
   total_sesiones: number;
 }
 
