@@ -53,7 +53,7 @@ class HogarViewSet(viewsets.ModelViewSet):
             'autorizado', 'municipio__departamento', 'creado_por'
         ).prefetch_related(
             'miembros',
-            'sesiones__instrumento__perfil',
+            'sesiones__instrumento',
             'sesiones__encuestador',
         )
 
