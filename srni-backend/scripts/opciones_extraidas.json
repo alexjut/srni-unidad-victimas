@@ -1,0 +1,1906 @@
+{
+  "TERRITORIAL": [
+    {
+      "cap": "C",
+      "codigo_externo": "C6A",
+      "no_pregunta": "C20",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "C6A",
+        "fila_pregunta": 129,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "C6A",
+            "etiqueta": "Inundaciones, desbordamientos, crecientes, arroyos",
+            "id_resp_vivanto": 149,
+            "orden": 1
+          },
+          {
+            "valor": "C6B",
+            "etiqueta": "Avalanchas",
+            "id_resp_vivanto": 150,
+            "orden": 2
+          },
+          {
+            "valor": "C6C",
+            "etiqueta": "Vientos fuertes",
+            "id_resp_vivanto": 151,
+            "orden": 3
+          },
+          {
+            "valor": "C6D",
+            "etiqueta": "Derrumbes o deslizamientos de tierra",
+            "id_resp_vivanto": 152,
+            "orden": 4
+          },
+          {
+            "valor": "C6E",
+            "etiqueta": "Basura o contaminantes",
+            "id_resp_vivanto": 153,
+            "orden": 5
+          },
+          {
+            "valor": "C6F",
+            "etiqueta": "Zona de riesgo por electricidad o gas",
+            "id_resp_vivanto": 154,
+            "orden": 6
+          },
+          {
+            "valor": "C6H",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 156,
+            "orden": 7
+          },
+          {
+            "valor": "C6G",
+            "etiqueta": "Otra, ¿cuál? __________________________",
+            "id_resp_vivanto": 155,
+            "orden": 8
+          },
+          {
+            "valor": "C6I",
+            "etiqueta": "No sabe/No responde",
+            "id_resp_vivanto": 157,
+            "orden": 9
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Inundaciones, desbordamientos, crecientes, arroyos",
+          "[MATRIZ: C6B] Avalanchas",
+          "[MATRIZ: C6C] Vientos fuertes",
+          "[MATRIZ: C6D] Derrumbes o deslizamientos de tierra",
+          "[MATRIZ: C6E] Basura o contaminantes",
+          "[MATRIZ: C6F] Zona de riesgo por electricidad o gas",
+          "[MATRIZ: C6H] Ninguna",
+          "[MATRIZ: C6G] Otra, ¿cuál? __________________________",
+          "[MATRIZ: C6I] No sabe/No responde "
+        ],
+        "matriz_codigos": [
+          "C6A",
+          "C6B",
+          "C6C",
+          "C6D",
+          "C6E",
+          "C6F",
+          "C6H",
+          "C6G",
+          "C6I"
+        ],
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "C",
+      "codigo_externo": "C17A",
+      "no_pregunta": "C21",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "C17A",
+        "fila_pregunta": 139,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "C17A",
+            "etiqueta": "Minería Ilegal",
+            "id_resp_vivanto": 2641,
+            "orden": 1
+          },
+          {
+            "valor": "C17B",
+            "etiqueta": "Exploración y exploración minero-energética (petróleo, gas etc)",
+            "id_resp_vivanto": 2642,
+            "orden": 2
+          },
+          {
+            "valor": "C17C",
+            "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+            "id_resp_vivanto": 2643,
+            "orden": 3
+          },
+          {
+            "valor": "C17D",
+            "etiqueta": "Combares o bombardeos",
+            "id_resp_vivanto": 2644,
+            "orden": 4
+          },
+          {
+            "valor": "C17E",
+            "etiqueta": "Restricción a la movilidad - Confinamiento",
+            "id_resp_vivanto": 2645,
+            "orden": 5
+          },
+          {
+            "valor": "C17F",
+            "etiqueta": "Presencia de MAP, MUSE, etc.",
+            "id_resp_vivanto": 2646,
+            "orden": 6
+          },
+          {
+            "valor": "C17G",
+            "etiqueta": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+            "id_resp_vivanto": 2647,
+            "orden": 7
+          },
+          {
+            "valor": "C17H",
+            "etiqueta": "Ganadería extensiva",
+            "id_resp_vivanto": 2648,
+            "orden": 8
+          },
+          {
+            "valor": "C17I",
+            "etiqueta": "Presencia de cultivos ilícitos",
+            "id_resp_vivanto": 2649,
+            "orden": 9
+          },
+          {
+            "valor": "C17J",
+            "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos de uso ilícito",
+            "id_resp_vivanto": 2650,
+            "orden": 10
+          },
+          {
+            "valor": "C17K",
+            "etiqueta": "Rutas de tránsito de estupefacientes y/o armas",
+            "id_resp_vivanto": 2651,
+            "orden": 11
+          },
+          {
+            "valor": "C17L",
+            "etiqueta": "Actividades de explotación maderera",
+            "id_resp_vivanto": 2652,
+            "orden": 12
+          },
+          {
+            "valor": "C17M",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 2791,
+            "orden": 13
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Minería Ilegal",
+          "[MATRIZ: C17B] Exploración y exploración minero-energética (petróleo, gas etc)",
+          "[MATRIZ: C17C] Presencia de campamentos de actores armados ilegales o bases militares",
+          "[MATRIZ: C17D] Combares o bombardeos",
+          "[MATRIZ: C17E] Restricción a la movilidad - Confinamiento",
+          "[MATRIZ: C17F] Presencia de MAP, MUSE, etc.",
+          "[MATRIZ: C17G] Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+          "[MATRIZ: C17H] Ganadería extensiva",
+          "[MATRIZ: C17I] Presencia de cultivos ilícitos ",
+          "[MATRIZ: C17J] Aspersiones y/o fumigaciones aéreas para erradicación de cultivos de uso ilícito",
+          "[MATRIZ: C17K] Rutas de tránsito de estupefacientes y/o armas",
+          "[MATRIZ: C17L] Actividades de explotación maderera",
+          "[MATRIZ: C17M] Ninguna"
+        ],
+        "matriz_codigos": [
+          "C17A",
+          "C17B",
+          "C17C",
+          "C17D",
+          "C17E",
+          "C17F",
+          "C17G",
+          "C17H",
+          "C17I",
+          "C17J",
+          "C17K",
+          "C17L",
+          "C17M"
+        ],
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "D",
+      "codigo_externo": "E2",
+      "no_pregunta": "D5",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "E2",
+        "fila_pregunta": 162,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 217,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 218,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "D",
+      "codigo_externo": "RR2",
+      "no_pregunta": "D7",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "RR2",
+        "fila_pregunta": 165,
+        "tipo_detectado": "TEXTO_LIBRE",
+        "observacion": "Pregunta tipo TEXTO en Excel — no es LISTA real",
+        "opciones": [],
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "D",
+      "codigo_externo": "RR10A",
+      "no_pregunta": "D15",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "RR10A",
+        "fila_pregunta": 184,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Sabana Larga (Atlántico)",
+            "id_resp_vivanto": 3776,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Sampués (Sucre)",
+            "id_resp_vivanto": 3777,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Sahagún (Córdoba)",
+            "id_resp_vivanto": 3778,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "San Pelayo (Córdoba)",
+            "id_resp_vivanto": 3779,
+            "orden": 4
+          },
+          {
+            "valor": "5",
+            "etiqueta": "Cúcuta (Norte de Santander)",
+            "id_resp_vivanto": 3780,
+            "orden": 5
+          },
+          {
+            "valor": "6",
+            "etiqueta": "Girón (Santander)",
+            "id_resp_vivanto": 3781,
+            "orden": 6
+          },
+          {
+            "valor": "7",
+            "etiqueta": "Envigado (Antioquia)",
+            "id_resp_vivanto": 3782,
+            "orden": 7
+          },
+          {
+            "valor": "8",
+            "etiqueta": "Ataco (Tolima)",
+            "id_resp_vivanto": 3783,
+            "orden": 8
+          },
+          {
+            "valor": "9",
+            "etiqueta": "Bogotá Unión Romaní",
+            "id_resp_vivanto": 3784,
+            "orden": 9
+          },
+          {
+            "valor": "10",
+            "etiqueta": "Bogotá ProRrom",
+            "id_resp_vivanto": 3785,
+            "orden": 10
+          },
+          {
+            "valor": "11",
+            "etiqueta": "Pasto",
+            "id_resp_vivanto": 3786,
+            "orden": 11
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Sabana Larga (Atlántico)",
+          "2: Sampués (Sucre)",
+          "3: Sahagún (Córdoba)",
+          "4: San Pelayo (Córdoba)",
+          "5: Cúcuta (Norte de Santander)",
+          "6: Girón (Santander)",
+          "7: Envigado (Antioquia)",
+          "8: Ataco (Tolima)",
+          "9: Bogotá Unión Romaní",
+          "10: Bogotá ProRrom",
+          "11: Pasto"
+        ],
+        "matriz_codigos": null,
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "E",
+      "codigo_externo": "F4",
+      "no_pregunta": "E5",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "F4",
+        "fila_pregunta": 215,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "No le interesa",
+            "id_resp_vivanto": 244,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No conoce el proceso de reunificación",
+            "id_resp_vivanto": 245,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Otra",
+            "id_resp_vivanto": 246,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: No le interesa",
+          "2: No conoce el proceso de reunificación",
+          "3: Otra"
+        ],
+        "matriz_codigos": null,
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "I7A",
+      "no_pregunta": "B17",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I7A",
+        "fila_pregunta": 82,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I7A",
+            "etiqueta": "Física",
+            "id_resp_vivanto": 317,
+            "orden": 1
+          },
+          {
+            "valor": "I7K",
+            "etiqueta": "Visual",
+            "id_resp_vivanto": 2807,
+            "orden": 2
+          },
+          {
+            "valor": "I7L",
+            "etiqueta": "Auditiva",
+            "id_resp_vivanto": 2808,
+            "orden": 3
+          },
+          {
+            "valor": "I7C",
+            "etiqueta": "Intelectual",
+            "id_resp_vivanto": 319,
+            "orden": 4
+          },
+          {
+            "valor": "I7D",
+            "etiqueta": "Mental",
+            "id_resp_vivanto": 320,
+            "orden": 5
+          },
+          {
+            "valor": "I7M",
+            "etiqueta": "Sordoceguera",
+            "id_resp_vivanto": 2809,
+            "orden": 6
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Física",
+          "[MATRIZ: I7K] Visual",
+          "[MATRIZ: I7L] Auditiva",
+          "[MATRIZ: I7C] Intelectual",
+          "[MATRIZ: I7D] Mental",
+          "[MATRIZ: I7M] Sordoceguera"
+        ],
+        "matriz_codigos": [
+          "I7A",
+          "I7K",
+          "I7L",
+          "I7C",
+          "I7D",
+          "I7M"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "I13",
+      "no_pregunta": "B19",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I13",
+        "fila_pregunta": 94,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2358,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2359,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "B13A",
+      "no_pregunta": "B20",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "B13A",
+        "fila_pregunta": 96,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "B13A",
+            "etiqueta": "Trasplante renal",
+            "id_resp_vivanto": 3865,
+            "orden": 1
+          },
+          {
+            "valor": "B13B",
+            "etiqueta": "Diálisis peritoneal y hemodiálisis",
+            "id_resp_vivanto": 3866,
+            "orden": 2
+          },
+          {
+            "valor": "B13L",
+            "etiqueta": "Trasplante renal, corazón, hígado, médula ósea y córnea",
+            "id_resp_vivanto": 3876,
+            "orden": 3
+          },
+          {
+            "valor": "B13C",
+            "etiqueta": "Manejo quirúrgico para enfermedades del sistema nervioso central",
+            "id_resp_vivanto": 3867,
+            "orden": 4
+          },
+          {
+            "valor": "B13D",
+            "etiqueta": "Manejo quirúrgico para enfermedades del corazón",
+            "id_resp_vivanto": 3868,
+            "orden": 5
+          },
+          {
+            "valor": "B13E",
+            "etiqueta": "Reemplazos articulares",
+            "id_resp_vivanto": 3869,
+            "orden": 6
+          },
+          {
+            "valor": "B13F",
+            "etiqueta": "Manejo médico quirúrgico del paciente gran quemado",
+            "id_resp_vivanto": 3870,
+            "orden": 7
+          },
+          {
+            "valor": "B13G",
+            "etiqueta": "Manejo del trauma mayor",
+            "id_resp_vivanto": 3871,
+            "orden": 8
+          },
+          {
+            "valor": "B13H",
+            "etiqueta": "Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+            "id_resp_vivanto": 3872,
+            "orden": 9
+          },
+          {
+            "valor": "B13I",
+            "etiqueta": "Quimioterapia y radioterapia para el cáncer",
+            "id_resp_vivanto": 3873,
+            "orden": 10
+          },
+          {
+            "valor": "B13J",
+            "etiqueta": "Manejo de pacientes en Unidad de Cuidados Intensivos",
+            "id_resp_vivanto": 3874,
+            "orden": 11
+          },
+          {
+            "valor": "B13K",
+            "etiqueta": "Manejo quirúrgico de enfermedades congénitas",
+            "id_resp_vivanto": 3875,
+            "orden": 12
+          },
+          {
+            "valor": "B13M",
+            "etiqueta": "Corrección quirúrgica de la hernia de núcleo pulposo",
+            "id_resp_vivanto": 3877,
+            "orden": 13
+          },
+          {
+            "valor": "B13N",
+            "etiqueta": "Otra (EPOC, anemia falciforme, etc)",
+            "id_resp_vivanto": 3878,
+            "orden": 14
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Trasplante renal",
+          "[MATRIZ: B13B] Diálisis peritoneal y hemodiálisis",
+          "[MATRIZ: B13L] Trasplante renal, corazón, hígado, médula ósea y córnea",
+          "[MATRIZ: B13C] Manejo quirúrgico para enfermedades del sistema nervioso central",
+          "[MATRIZ: B13D] Manejo quirúrgico para enfermedades del corazón",
+          "[MATRIZ: B13E] Reemplazos articulares",
+          "[MATRIZ: B13F]  Manejo médico quirúrgico del paciente gran quemado",
+          "[MATRIZ: B13G] Manejo del trauma mayor",
+          "[MATRIZ: B13H] Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+          "[MATRIZ: B13I] Quimioterapia y radioterapia para el cáncer",
+          "[MATRIZ: B13J] Manejo de pacientes en Unidad de Cuidados Intensivos",
+          "[MATRIZ: B13K] Manejo quirúrgico de enfermedades congénitas",
+          "[MATRIZ: B13M] Corrección quirúrgica de la hernia de núcleo pulposo",
+          "[MATRIZ: B13N] Otra (EPOC, anemia falciforme, etc)"
+        ],
+        "matriz_codigos": [
+          "B13A",
+          "B13B",
+          "B13L",
+          "B13C",
+          "B13D",
+          "B13E",
+          "B13F",
+          "B13G",
+          "B13H",
+          "B13I",
+          "B13J",
+          "B13K",
+          "B13M",
+          "B13N"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "A15",
+      "no_pregunta": "B38",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "A15",
+        "fila_pregunta": 164,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Lo habla y lo entiende bien",
+            "id_resp_vivanto": 969,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Lo entiende y habla poco",
+            "id_resp_vivanto": 970,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Lo entiende pero no lo habla",
+            "id_resp_vivanto": 971,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "No lo entiende ni lo habla",
+            "id_resp_vivanto": 972,
+            "orden": 4
+          },
+          {
+            "valor": "5",
+            "etiqueta": "En su comunidad solo se habla español",
+            "id_resp_vivanto": 973,
+            "orden": 5
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Lo habla y lo entiende bien",
+          "2: Lo entiende y habla poco",
+          "3: Lo entiende pero no lo habla",
+          "4: No lo entiende ni lo habla",
+          "5: En su comunidad solo se habla español"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "A16",
+      "no_pregunta": "B39",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "A16",
+        "fila_pregunta": 169,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "4",
+            "etiqueta": "No lo entiende ni lo habla",
+            "id_resp_vivanto": 1049,
+            "orden": 1
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Lo entiende pero no lo habla",
+            "id_resp_vivanto": 1048,
+            "orden": 2
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Lo entiende y habla poco",
+            "id_resp_vivanto": 1047,
+            "orden": 3
+          },
+          {
+            "valor": "1",
+            "etiqueta": "Lo habla y lo entiende bien",
+            "id_resp_vivanto": 1046,
+            "orden": 4
+          }
+        ],
+        "opciones_texto_debug": [
+          "4: No lo entiende ni lo habla",
+          "3: Lo entiende pero no lo habla",
+          "2: Lo entiende y habla poco",
+          "1: Lo habla y lo entiende bien"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "B",
+      "codigo_externo": "A16A",
+      "no_pregunta": "B40",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "A16A",
+        "fila_pregunta": 173,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2635,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2636,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "G",
+      "codigo_externo": "H9",
+      "no_pregunta": "G2",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "H9",
+        "fila_pregunta": 281,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2398,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2399,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "G",
+      "codigo_externo": "H12A",
+      "no_pregunta": "G5",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "H12A",
+        "fila_pregunta": 292,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "H12A",
+            "etiqueta": "Distancia",
+            "id_resp_vivanto": 2673,
+            "orden": 1
+          },
+          {
+            "valor": "H12B",
+            "etiqueta": "Recursos económicos para el desplazamiento hasta el centro de salud",
+            "id_resp_vivanto": 2674,
+            "orden": 2
+          },
+          {
+            "valor": "H12C",
+            "etiqueta": "Edad, requiere acompañamiento",
+            "id_resp_vivanto": 2675,
+            "orden": 3
+          },
+          {
+            "valor": "H12D",
+            "etiqueta": "Demoras en la atención",
+            "id_resp_vivanto": 2676,
+            "orden": 4
+          },
+          {
+            "valor": "H12E",
+            "etiqueta": "Enfermedades propias del territorio",
+            "id_resp_vivanto": 2677,
+            "orden": 5
+          },
+          {
+            "valor": "H12F",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 2678,
+            "orden": 6
+          },
+          {
+            "valor": "H12_G",
+            "etiqueta": "Otro  ¿Cuál?",
+            "id_resp_vivanto": 2679,
+            "orden": 7
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Distancia",
+          "[MATRIZ: H12B] Recursos económicos para el desplazamiento hasta el centro de salud",
+          "[MATRIZ: H12C] Edad, requiere acompañamiento",
+          "[MATRIZ: H12D] Demoras en la atención",
+          "[MATRIZ: H12E] Enfermedades propias del territorio",
+          "[MATRIZ: H12F] Ninguna",
+          "[MATRIZ: H12_G] Otro  ¿Cuál?"
+        ],
+        "matriz_codigos": [
+          "H12A",
+          "H12B",
+          "H12C",
+          "H12D",
+          "H12E",
+          "H12F",
+          "H12G",
+          "H12_G"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "G",
+      "codigo_externo": "H14",
+      "no_pregunta": "G7",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "H14",
+        "fila_pregunta": 302,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2402,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2403,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "NS/NR",
+            "id_resp_vivanto": 2680,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No",
+          "3: NS/NR"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "H",
+      "codigo_externo": "I11A",
+      "no_pregunta": "H3",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I11A",
+        "fila_pregunta": 319,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I11A",
+            "etiqueta": "Individual",
+            "id_resp_vivanto": 354,
+            "orden": 1
+          },
+          {
+            "valor": "I11B",
+            "etiqueta": "Familiar",
+            "id_resp_vivanto": 355,
+            "orden": 2
+          },
+          {
+            "valor": "I11C",
+            "etiqueta": "Grupal",
+            "id_resp_vivanto": 356,
+            "orden": 3
+          },
+          {
+            "valor": "I11D",
+            "etiqueta": "Comunitaria",
+            "id_resp_vivanto": 357,
+            "orden": 4
+          },
+          {
+            "valor": "I11E",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 353,
+            "orden": 5
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Individual",
+          "[MATRIZ: I11B] Familiar",
+          "[MATRIZ: I11C] Grupal",
+          "[MATRIZ: I11D] Comunitaria",
+          "[MATRIZ: I11E] Ninguna"
+        ],
+        "matriz_codigos": [
+          "I11A",
+          "I11B",
+          "I11C",
+          "I11D",
+          "I11E"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "H",
+      "codigo_externo": "I25B",
+      "no_pregunta": "H4",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I25B",
+        "fila_pregunta": 329,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I25B",
+            "etiqueta": "Unidad para las Víctimas",
+            "id_resp_vivanto": 2404,
+            "orden": 1
+          },
+          {
+            "valor": "I25C",
+            "etiqueta": "PAPSIVI",
+            "id_resp_vivanto": 2405,
+            "orden": 2
+          },
+          {
+            "valor": "I25D",
+            "etiqueta": "Otra",
+            "id_resp_vivanto": 2406,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Unidad para las Víctimas",
+          "[MATRIZ: I25C] PAPSIVI",
+          "[MATRIZ: I25D] Otra"
+        ],
+        "matriz_codigos": [
+          "I25B",
+          "I25C",
+          "I25D",
+          "I25A"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "H",
+      "codigo_externo": "I26",
+      "no_pregunta": "H5",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I26",
+        "fila_pregunta": 337,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2407,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2408,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "H",
+      "codigo_externo": "I28A",
+      "no_pregunta": "H7",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I28A",
+        "fila_pregunta": 341,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I28A",
+            "etiqueta": "Individual",
+            "id_resp_vivanto": 2411,
+            "orden": 1
+          },
+          {
+            "valor": "I28B",
+            "etiqueta": "Familiar",
+            "id_resp_vivanto": 2412,
+            "orden": 2
+          },
+          {
+            "valor": "I28C",
+            "etiqueta": "Grupal",
+            "id_resp_vivanto": 2413,
+            "orden": 3
+          },
+          {
+            "valor": "I28D",
+            "etiqueta": "Comunitaria",
+            "id_resp_vivanto": 2414,
+            "orden": 4
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Individual",
+          "[MATRIZ: I28B] Familiar",
+          "[MATRIZ: I28C] Grupal",
+          "[MATRIZ: I28D] Comunitaria"
+        ],
+        "matriz_codigos": [
+          "I28A",
+          "I28B",
+          "I28C",
+          "I28D"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "JF",
+      "codigo_externo": "L6",
+      "no_pregunta": "J6",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "L6",
+        "fila_pregunta": 365,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Pidió ayuda a familiares, amigos, colegas",
+            "id_resp_vivanto": 421,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Visitó, llevó o envió hojas de vida a empresas ó empleadores",
+            "id_resp_vivanto": 422,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Visitó, llevó o envió hojas de vida a bolsas de empleo ó intermediarios",
+            "id_resp_vivanto": 423,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "Puso consultó avisos clasificados",
+            "id_resp_vivanto": 424,
+            "orden": 4
+          },
+          {
+            "valor": "5",
+            "etiqueta": "Se presentó a convocatorias",
+            "id_resp_vivanto": 425,
+            "orden": 5
+          },
+          {
+            "valor": "6",
+            "etiqueta": "Hizo preparativos para iniciar un negocio",
+            "id_resp_vivanto": 426,
+            "orden": 6
+          },
+          {
+            "valor": "8",
+            "etiqueta": "Se presento a una finca a trabajar como jornalero",
+            "id_resp_vivanto": 1283,
+            "orden": 7
+          },
+          {
+            "valor": "7",
+            "etiqueta": "Otro medio, ¿Cuál?",
+            "id_resp_vivanto": 427,
+            "orden": 8
+          },
+          {
+            "valor": "98",
+            "etiqueta": "No sabe, no responde",
+            "id_resp_vivanto": 428,
+            "orden": 9
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Pidió ayuda a familiares, amigos, colegas",
+          "2: Visitó, llevó o envió hojas de vida a empresas ó empleadores",
+          "3: Visitó, llevó o envió hojas de vida a bolsas de empleo ó intermediarios",
+          "4: Puso consultó avisos clasificados",
+          "5: Se presentó a convocatorias",
+          "6: Hizo preparativos para iniciar un negocio",
+          "8: Se presento a una finca a trabajar como jornalero",
+          "7: Otro medio, ¿Cuál?",
+          "98: No sabe, no responde"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "JF",
+      "codigo_externo": "L8",
+      "no_pregunta": "J8",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "L8",
+        "fila_pregunta": 377,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Ya encontró trabajo",
+            "id_resp_vivanto": 431,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No hay trabajo disponible  en la ciudad o región",
+            "id_resp_vivanto": 432,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "No encuentra trabajo en su oficio o profesión",
+            "id_resp_vivanto": 1020,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "Está esperando que lo llamen o esperando temporada alta",
+            "id_resp_vivanto": 433,
+            "orden": 4
+          },
+          {
+            "valor": "5",
+            "etiqueta": "No sabe cómo buscarlo",
+            "id_resp_vivanto": 434,
+            "orden": 5
+          },
+          {
+            "valor": "6",
+            "etiqueta": "Está cansado de buscar",
+            "id_resp_vivanto": 435,
+            "orden": 6
+          },
+          {
+            "valor": "7",
+            "etiqueta": "Carece de la experiencia necesaria",
+            "id_resp_vivanto": 436,
+            "orden": 7
+          },
+          {
+            "valor": "8",
+            "etiqueta": "No tiene recursos para instalar un negocio",
+            "id_resp_vivanto": 437,
+            "orden": 8
+          },
+          {
+            "valor": "9",
+            "etiqueta": "Los empleadores lo consideran muy joven / viejo",
+            "id_resp_vivanto": 438,
+            "orden": 9
+          },
+          {
+            "valor": "10",
+            "etiqueta": "Usted se considera muy joven o muy viejo",
+            "id_resp_vivanto": 439,
+            "orden": 10
+          },
+          {
+            "valor": "11",
+            "etiqueta": "Responsabilidades familiares",
+            "id_resp_vivanto": 440,
+            "orden": 11
+          },
+          {
+            "valor": "12",
+            "etiqueta": "Problemas de salud",
+            "id_resp_vivanto": 441,
+            "orden": 12
+          },
+          {
+            "valor": "13",
+            "etiqueta": "Está estudiando",
+            "id_resp_vivanto": 442,
+            "orden": 13
+          },
+          {
+            "valor": "98",
+            "etiqueta": "Otro, ¿Cuál?",
+            "id_resp_vivanto": 443,
+            "orden": 14
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Ya encontró trabajo ",
+          "2: No hay trabajo disponible  en la ciudad o región",
+          "3: No encuentra trabajo en su oficio o profesión",
+          "4: Está esperando que lo llamen o esperando temporada alta",
+          "5: No sabe cómo buscarlo",
+          "6: Está cansado de buscar",
+          "7: Carece de la experiencia necesaria",
+          "8: No tiene recursos para instalar un negocio",
+          "9: Los empleadores lo consideran muy joven / viejo",
+          "10: Usted se considera muy joven o muy viejo",
+          "11: Responsabilidades familiares",
+          "12: Problemas de salud",
+          "13: Está estudiando",
+          "98: Otro, ¿Cuál?"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "K",
+      "codigo_externo": "PL1",
+      "no_pregunta": "K2",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "PL1",
+        "fila_pregunta": 520,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2415,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2416,
+            "orden": 2
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si ",
+          "2: No"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "K",
+      "codigo_externo": "PL3",
+      "no_pregunta": "K4",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "PL3",
+        "fila_pregunta": 525,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Alto",
+            "id_resp_vivanto": 2419,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Medio",
+            "id_resp_vivanto": 2420,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Bajo",
+            "id_resp_vivanto": 2421,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Alto ",
+          "2: Medio",
+          "3: Bajo"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "L",
+      "codigo_externo": "FP2",
+      "no_pregunta": "L2",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "FP2",
+        "fila_pregunta": 778,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Carrera Militar",
+            "id_resp_vivanto": 2600,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Carrera Policial",
+            "id_resp_vivanto": 2601,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 2602,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "Prestación de Servicio Militar o Policial",
+            "id_resp_vivanto": 2603,
+            "orden": 4
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Carrera Militar",
+          "2: Carrera Policial",
+          "3: Ninguna",
+          "4: Prestación de Servicio Militar o Policial"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "L",
+      "codigo_externo": "FP3",
+      "no_pregunta": "L3",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "FP3",
+        "fila_pregunta": 782,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Ejército",
+            "id_resp_vivanto": 2604,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Fuerza aérea",
+            "id_resp_vivanto": 2605,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Armada nacional",
+            "id_resp_vivanto": 2606,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "Policía nacional",
+            "id_resp_vivanto": 2607,
+            "orden": 4
+          },
+          {
+            "valor": "5",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 2608,
+            "orden": 5
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Ejército",
+          "2: Fuerza aérea",
+          "3: Armada nacional ",
+          "4: Policía nacional",
+          "5: Ninguna"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "L",
+      "codigo_externo": "FP8",
+      "no_pregunta": "L8",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "FP8",
+        "fila_pregunta": 793,
+        "tipo_detectado": "TEXTO_LIBRE",
+        "observacion": "Pregunta tipo FECHA en Excel — no es LISTA real",
+        "opciones": [],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "M",
+      "codigo_externo": "AT1A",
+      "no_pregunta": "M1",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "AT1A",
+        "fila_pregunta": 294,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "AT1A",
+            "etiqueta": "Para lograr el abastecimiento de alimentos",
+            "id_resp_vivanto": 3974,
+            "orden": 1
+          },
+          {
+            "valor": "AT1B",
+            "etiqueta": "Para mantener los vínculos familiares y sociales",
+            "id_resp_vivanto": 3975,
+            "orden": 2
+          },
+          {
+            "valor": "AT1C",
+            "etiqueta": "Por motivos culturales y espirituales",
+            "id_resp_vivanto": 3976,
+            "orden": 3
+          },
+          {
+            "valor": "AT1D",
+            "etiqueta": "Otros motivos",
+            "id_resp_vivanto": 3977,
+            "orden": 4
+          },
+          {
+            "valor": "AT1E",
+            "etiqueta": "No mantiene relación urbano - rural",
+            "id_resp_vivanto": 3978,
+            "orden": 5
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Para lograr el abastecimiento de alimentos",
+          "[MATRIZ: AT1B] Para mantener los vínculos familiares y sociales",
+          "[MATRIZ: AT1C] Por motivos culturales y espirituales",
+          "[MATRIZ: AT1D] Otros motivos",
+          "[MATRIZ: AT1E] No mantiene relación urbano - rural"
+        ],
+        "matriz_codigos": [
+          "AT1A",
+          "AT1B",
+          "AT1C",
+          "AT1D",
+          "AT1E"
+        ],
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "M",
+      "codigo_externo": "AT3",
+      "no_pregunta": "M3",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "AT3",
+        "fila_pregunta": 302,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Resguardo Indígena",
+            "id_resp_vivanto": 2744,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "Territorios de ocupación colectiva comunidades indígenas sin titulación",
+            "id_resp_vivanto": 2745,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "Territorios colectivos de comunidades negras",
+            "id_resp_vivanto": 2746,
+            "orden": 3
+          },
+          {
+            "valor": "4",
+            "etiqueta": "Territorios de ocupación colectiva de comunidades negras sin titulación",
+            "id_resp_vivanto": 2747,
+            "orden": 4
+          },
+          {
+            "valor": "6",
+            "etiqueta": "Territorios Ancestralmente habitados",
+            "id_resp_vivanto": 4521,
+            "orden": 5
+          },
+          {
+            "valor": "7",
+            "etiqueta": "Territorios Ganados al mar",
+            "id_resp_vivanto": 4522,
+            "orden": 6
+          },
+          {
+            "valor": "5",
+            "etiqueta": "Ninguno de los anteriores",
+            "id_resp_vivanto": 2748,
+            "orden": 7
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Resguardo Indígena",
+          "2: Territorios de ocupación colectiva comunidades indígenas sin titulación",
+          "3: Territorios colectivos de comunidades negras",
+          "4: Territorios de ocupación colectiva de comunidades negras sin titulación",
+          "6: Territorios Ancestralmente habitados",
+          "7: Territorios Ganados al mar",
+          "5: Ninguno de los anteriores"
+        ],
+        "matriz_codigos": null,
+        "hoja": "HOGAR Caracterización",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "M",
+      "codigo_externo": "AT5",
+      "no_pregunta": "M5",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": false,
+        "observacion": "No encontrada en ningún diccionario"
+      }
+    }
+  ],
+  "TELEFONICO": [
+    {
+      "cap": "B",
+      "codigo_externo": "I7A_tel",
+      "no_pregunta": "B12",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I7A_tel",
+        "fila_pregunta": 76,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I7A_tel",
+            "etiqueta": "Física",
+            "id_resp_vivanto": 4621,
+            "orden": 1
+          },
+          {
+            "valor": "I7K_tel",
+            "etiqueta": "Visual",
+            "id_resp_vivanto": 4622,
+            "orden": 2
+          },
+          {
+            "valor": "I7L_tel",
+            "etiqueta": "Auditiva",
+            "id_resp_vivanto": 4623,
+            "orden": 3
+          },
+          {
+            "valor": "I7C_tel",
+            "etiqueta": "Intelectual",
+            "id_resp_vivanto": 4624,
+            "orden": 4
+          },
+          {
+            "valor": "I7D_tel",
+            "etiqueta": "Mental",
+            "id_resp_vivanto": 4625,
+            "orden": 5
+          },
+          {
+            "valor": "I7M_tel",
+            "etiqueta": "Sordoceguera",
+            "id_resp_vivanto": 4626,
+            "orden": 6
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Física",
+          "[MATRIZ: I7K_tel] Visual",
+          "[MATRIZ: I7L_tel] Auditiva",
+          "[MATRIZ: I7C_tel] Intelectual",
+          "[MATRIZ: I7D_tel] Mental",
+          "[MATRIZ: I7M_tel] Sordoceguera"
+        ],
+        "matriz_codigos": [
+          "I7A_tel",
+          "I7K_tel",
+          "I7L_tel",
+          "I7C_tel",
+          "I7D_tel",
+          "I7M_tel"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V8_Perfil Telefónico.xlsx"
+      }
+    },
+    {
+      "cap": "D",
+      "codigo_externo": "H14_tel",
+      "no_pregunta": "D4",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "H14",
+        "fila_pregunta": 302,
+        "tipo_detectado": "OPCIONES_CLASICAS",
+        "opciones": [
+          {
+            "valor": "1",
+            "etiqueta": "Si",
+            "id_resp_vivanto": 2402,
+            "orden": 1
+          },
+          {
+            "valor": "2",
+            "etiqueta": "No",
+            "id_resp_vivanto": 2403,
+            "orden": 2
+          },
+          {
+            "valor": "3",
+            "etiqueta": "NS/NR",
+            "id_resp_vivanto": 2680,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Si",
+          "2: No",
+          "3: NS/NR"
+        ],
+        "matriz_codigos": null,
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "F",
+      "codigo_externo": "I11A_tel",
+      "no_pregunta": "F3",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I11A",
+        "fila_pregunta": 319,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I11A",
+            "etiqueta": "Individual",
+            "id_resp_vivanto": 354,
+            "orden": 1
+          },
+          {
+            "valor": "I11B",
+            "etiqueta": "Familiar",
+            "id_resp_vivanto": 355,
+            "orden": 2
+          },
+          {
+            "valor": "I11C",
+            "etiqueta": "Grupal",
+            "id_resp_vivanto": 356,
+            "orden": 3
+          },
+          {
+            "valor": "I11D",
+            "etiqueta": "Comunitaria",
+            "id_resp_vivanto": 357,
+            "orden": 4
+          },
+          {
+            "valor": "I11E",
+            "etiqueta": "Ninguna",
+            "id_resp_vivanto": 353,
+            "orden": 5
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Individual",
+          "[MATRIZ: I11B] Familiar",
+          "[MATRIZ: I11C] Grupal",
+          "[MATRIZ: I11D] Comunitaria",
+          "[MATRIZ: I11E] Ninguna"
+        ],
+        "matriz_codigos": [
+          "I11A",
+          "I11B",
+          "I11C",
+          "I11D",
+          "I11E"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "F",
+      "codigo_externo": "I25B_tel",
+      "no_pregunta": "F4",
+      "tipo_actual": "LISTA",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I25B",
+        "fila_pregunta": 329,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I25B",
+            "etiqueta": "Unidad para las Víctimas",
+            "id_resp_vivanto": 2404,
+            "orden": 1
+          },
+          {
+            "valor": "I25C",
+            "etiqueta": "PAPSIVI",
+            "id_resp_vivanto": 2405,
+            "orden": 2
+          },
+          {
+            "valor": "I25D",
+            "etiqueta": "Otra",
+            "id_resp_vivanto": 2406,
+            "orden": 3
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Unidad para las Víctimas",
+          "[MATRIZ: I25C] PAPSIVI",
+          "[MATRIZ: I25D] Otra"
+        ],
+        "matriz_codigos": [
+          "I25B",
+          "I25C",
+          "I25D",
+          "I25A"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    },
+    {
+      "cap": "F",
+      "codigo_externo": "I28A_tel",
+      "no_pregunta": "F6",
+      "tipo_actual": "LISTA_MULTIPLE",
+      "analisis": {
+        "encontrada": true,
+        "codigo_en_excel": "I28A",
+        "fila_pregunta": 341,
+        "tipo_detectado": "MATRIZ_SINO",
+        "opciones": [
+          {
+            "valor": "I28A",
+            "etiqueta": "Individual",
+            "id_resp_vivanto": 2411,
+            "orden": 1
+          },
+          {
+            "valor": "I28B",
+            "etiqueta": "Familiar",
+            "id_resp_vivanto": 2412,
+            "orden": 2
+          },
+          {
+            "valor": "I28C",
+            "etiqueta": "Grupal",
+            "id_resp_vivanto": 2413,
+            "orden": 3
+          },
+          {
+            "valor": "I28D",
+            "etiqueta": "Comunitaria",
+            "id_resp_vivanto": 2414,
+            "orden": 4
+          }
+        ],
+        "opciones_texto_debug": [
+          "1: Individual",
+          "[MATRIZ: I28B] Familiar",
+          "[MATRIZ: I28C] Grupal",
+          "[MATRIZ: I28D] Comunitaria"
+        ],
+        "matriz_codigos": [
+          "I28A",
+          "I28B",
+          "I28C",
+          "I28D"
+        ],
+        "hoja": "PERSONAS-Caracterización ",
+        "archivo": "Diccionario_de_datos__Entrevista de Caracterización_V7_Perfil Territorial.xlsx"
+      }
+    }
+  ]
+}
