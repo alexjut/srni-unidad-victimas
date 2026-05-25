@@ -27,7 +27,7 @@ export default function MainLayout() {
 
   return (
     <Tabs
-      initialRouteName="busqueda"
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#1565C0',
@@ -58,18 +58,29 @@ export default function MainLayout() {
         },
       }}
     >
-      {/* ── Tab 1: Buscar Víctima — pantalla inicial ── */}
+      {/* ── Tab 1: Inicio / Dashboard — pantalla inicial ── */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Inicio',
+          tabBarIcon: ({ color, size }: IconProps) => (
+            <MaterialCommunityIcons name="home-variant" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Tab 2: Búsqueda RNI ── */}
       <Tabs.Screen
         name="busqueda"
         options={{
-          title: 'Víctimas',
+          title: 'Buscar',
           tabBarIcon: ({ color, size }: IconProps) => (
             <MaterialCommunityIcons name="account-search" size={size} color={color} />
           ),
         }}
       />
 
-      {/* ── Tab 2: Hogares ── */}
+      {/* ── Tab 3: Hogares ── */}
       <Tabs.Screen
         name="hogares/index"
         options={{
@@ -80,7 +91,7 @@ export default function MainLayout() {
         }}
       />
 
-      {/* ── Tab 3: Encuestas ── */}
+      {/* ── Tab 4: Encuestas ── */}
       <Tabs.Screen
         name="encuestas/index"
         options={{
@@ -91,20 +102,10 @@ export default function MainLayout() {
         }}
       />
 
-      {/* ── Tab 4: Menú / perfil / dashboard ── */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Menú',
-          tabBarIcon: ({ color, size }: IconProps) => (
-            <MaterialCommunityIcons name="dots-grid" size={size} color={color} />
-          ),
-        }}
-      />
-
       {/* ── Rutas ocultas (no aparecen en el tab bar) ── */}
       <Tabs.Screen name="hogares/[hogarId]"               options={{ href: null }} />
       <Tabs.Screen name="hogares/nuevo"                   options={{ href: null }} />
+      <Tabs.Screen name="hogares/conformar"               options={{ href: null }} />
       <Tabs.Screen name="encuestas/[sesionId]"            options={{ href: null }} />
       <Tabs.Screen name="caracterizar/index"              options={{ href: null }} />
       <Tabs.Screen name="formulario/index"                options={{ href: null }} />

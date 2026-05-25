@@ -33,6 +33,19 @@ srni-mobile/.expo/
 srni-mobile/android/
 srni-mobile/ios/
 srni-mobile/.env.local
+.expo/
+
+# ─── Frontend Web (Sprint 12) ────────────────────────────────────────────────
+srni-frontend/node_modules/
+srni-frontend/dist/
+srni-frontend/.env.local
+
+# ─── Archivos de contexto local del contratista (no son del repo) ────────────
+*.pptx
+*.ogg
+*.mp3
+*.mp4
+noingreso.*
 
 # ─── APK de análisis — no incluir en el repo ─────────────────────────────────
 apk_extracted/

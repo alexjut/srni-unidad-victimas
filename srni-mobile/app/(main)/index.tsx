@@ -89,13 +89,13 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
 
-        {/* Siguiente paso */}
+        {/* ── Botón principal: iniciar caracterización ── */}
         {perfil?.puede_caracterizar && (
           <NextStepCard
-            title="Registrar nuevo hogar"
-            description="Inicia el proceso de caracterización creando la unidad familiar."
+            title="Crear hogar y entrevista"
+            description="Busca la víctima en el RNI, conforma el hogar y arranca la caracterización."
             icon="home-plus"
-            onPress={() => router.push('/(main)/hogares/nuevo')}
+            onPress={() => router.push('/(main)/busqueda')}
           />
         )}
 

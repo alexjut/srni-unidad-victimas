@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gov-grisTenue text-gray-800 font-sans;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Botón primario GOV.CO */
+  .btn-primary {
+    @apply bg-gov-azul hover:bg-gov-azulOscuro text-white font-semibold
+           px-4 py-2 rounded-md transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  /* Botón secundario */
+  .btn-secondary {
+    @apply border border-gov-azul text-gov-azul hover:bg-gov-azulTenue
+           font-semibold px-4 py-2 rounded-md transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  /* Input estándar */
+  .input {
+    @apply w-full border border-gov-borde rounded-md px-3 py-2 text-sm
+           focus:outline-none focus:ring-2 focus:ring-gov-azul focus:border-transparent
+           bg-white placeholder-gray-400;
+  }
+  /* Card */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gov-borde p-4;
+  }
+  /* Badge de estado */
+  .badge-verde  { @apply bg-gov-verdeTenue  text-gov-verde  text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-rojo   { @apply bg-gov-rojoTenue   text-gov-rojo   text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-azul   { @apply bg-gov-azulTenue   text-gov-azul   text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-gris   { @apply bg-gray-100        text-gov-gris   text-xs font-semibold px-2 py-0.5 rounded-full; }
+}

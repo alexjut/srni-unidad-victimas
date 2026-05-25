@@ -1,0 +1,34 @@
+import apiClient from './client';
+
+export interface LoginPayload {
+  codigo_usuario: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  access: string;
+  refresh: string;
+}
+
+export interface PerfilUsuario {
+  codigo_usuario: string;
+  nombre_completo: string;
+  email: string;
+  perfil: {
+    id: number;
+    nombre: string;
+    puede_caracterizar: boolean;
+    puede_buscar_rni: boolean;
+  } | null;
+}
+
+export const authApi = {
+  login: (payload: LoginPayload) =>
+    apiClient.post<TokenResponse>('/api/auth/token/', payload),
+
+  refresh: (refresh: string) =>
+    apiClient.post<{ access: string }>('/api/auth/token/refresh/', { refresh }),
+
+  perfil: () =>
+    apiClient.get<PerfilUsuario>('/api/auth/perfil/'),
+};

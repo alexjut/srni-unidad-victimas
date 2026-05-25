@@ -3,20 +3,22 @@
 **Tecnología:** React Native + Expo SDK 54  
 **Enrutamiento:** Expo Router (file-based routing)  
 **Estado:** En desarrollo activo  
-**Última actualización:** 2026-05-21
+**Última actualización:** 2026-05-25
 
 ---
 
 ## Qué ES el frontend actual
 
-El frontend del SRNI es la **app móvil React Native**, no una SPA Angular.
-La ARQUITECTURA.md menciona Angular 17 como plan a futuro (Fase 2 — web).
-Lo que existe y funciona hoy es `srni-mobile/`.
+El frontend del SRNI tiene **dos capas** trabajando contra el mismo backend:
+
+| Capa | Carpeta | Descripción |
+|------|---------|------------|
+| 📱 **App móvil** (captura de campo, offline-first) | `srni-mobile/` | React Native + Expo SDK 54 — esta es la herramienta del encuestador |
+| 🌐 **Panel web** (supervisión, lectura) | `srni-frontend/` | React 18 + Vite + Tailwind — scaffold desde Sprint 12. Ver `docs/frontend/estado-actual.md` |
 
 No existe aún:
-- Frontend web Angular
-- PWA offline-first
-- Dashboard web de supervisores
+- PWA offline-first del panel web (no se necesita; la captura es móvil)
+- Mapas georreferenciados (Sprint futuro)
 
 ---
 
@@ -35,8 +37,9 @@ srni-mobile/app/
     ├── busqueda.tsx                     ✅ Búsqueda RNI (server-side, sin PII en cliente)
     ├── hogares/
     │   ├── index.tsx                    ✅ Lista de hogares asignados
-    │   ├── nuevo.tsx                    ✅ Crear nuevo hogar
-    │   └── [hogarId].tsx               ✅ Detalle/edición de hogar
+    │   ├── nuevo.tsx                    ✅ Crear nuevo hogar (etiqueta "Autorizado") — S12
+    │   ├── conformar.tsx                ✅ Conformar hogar — autorizado + integrantes con rol (S12)
+    │   └── [hogarId].tsx               ✅ Detalle + badge AUTORIZADO + chips INCLUIDO/NO_INCLUIDO (S12)
     ├── caracterizar/
     │   └── index.tsx                    ✅ Flujo instrumento → hogar → crear sesión
     ├── formulario/
@@ -155,7 +158,7 @@ Las reglas se descargan junto con el instrumento en `GET /api/formulario/instrum
 
 ---
 
-## Estado actual — todo implementado (Sprint 11)
+## Estado actual — todo implementado (Sprint 12)
 
 | Funcionalidad | Sprint | Estado |
 |--------------|--------|--------|
@@ -171,15 +174,18 @@ Las reglas se descargan junto con el instrumento en `GET /api/formulario/instrum
 | Path offline al guardar capítulo | S9 | ✅ |
 | Pantalla sync-status con estado de la cola | S9 | ✅ |
 | Reportes de producción con métricas y export CSV | S10 | ✅ |
+| Modelo hogar v2: Autorizado + rol + estado_inclusion | S12 | ✅ |
+| Pantalla "Conformar Hogar" con roles MIEMBRO/TUTOR/CUIDADOR | S12 | ✅ |
+| Login refactor: fix icono `mountain` → `image-filter-hdr` | S12 | ✅ |
 
-## Pendientes (backlog Fase 2)
+## Pendientes (backlog Sprint 13+)
 
 | Pendiente | Prioridad |
 |-----------|-----------|
 | Push notifications para asignaciones nuevas | Baja |
 | Firma digital del encuestador al cerrar sesión | Media |
-| Dashboard web de supervisores (Angular — Fase 2) | Alta |
 | Panel de gestión (Django Admin extendido) | Media |
+| Mapas georreferenciados de hogares (móvil + web) | Baja |
 
 ---
 
