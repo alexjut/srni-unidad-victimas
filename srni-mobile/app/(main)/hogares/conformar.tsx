@@ -8,7 +8,10 @@
  *  3. Formulario para agregar integrantes uno a uno:
  *     Tipo Doc · Número · Primer Nombre · Segundo Nombre ·
  *     Primer Apellido · Segundo Apellido · Fecha Nacimiento · Parentesco · Género
- *  4. Botón "Iniciar Entrevista" → crea la sesión y navega al formulario
+ *  4. Botón "Continuar a caracterizaciones" → navega al hub del hogar
+ *     (Sprint 14: ya no crea la sesión aquí. La caracterización se inicia
+ *      desde el hub, donde el usuario ve el listado de las ya creadas
+ *      y puede agregar nuevas con "+ Nueva caracterización".)
  */
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -22,7 +25,6 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
-import { encuestasApi } from '../../../src/api/encuestas';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -187,7 +189,6 @@ export default function ConformarHogarScreen() {
   const {
     victimaFuente,
     victimaLocalId,
-    instrumentoId,
     rutaEntrevista,
     setRutaEntrevista,
     setHogarId,
@@ -223,8 +224,8 @@ export default function ConformarHogarScreen() {
   const [modalRol,        setModalRol]        = useState(false);
   const [modalRuta,       setModalRuta]       = useState(false);
 
-  // Iniciar entrevista
-  const [iniciando, setIniciando] = useState(false);
+  // Continuar al hub de caracterizaciones
+  const [continuando, setContinuando] = useState(false);
   const [errorInicio, setErrorInicio] = useState('');
 
   // ── Crear hogar al montar ─────────────────────────────────────────────────
@@ -336,28 +337,23 @@ export default function ConformarHogarScreen() {
     }
   }
 
-  // ── Iniciar entrevista ────────────────────────────────────────────────────
-  async function iniciarEntrevista() {
-    if (!hogarId || !instrumentoId) return;
-    setIniciando(true);
+  // ── Continuar al hub de caracterizaciones (Sprint 14) ─────────────────────
+  // El hogar ya fue creado al montar la pantalla. Aquí solo navegamos al
+  // listado de caracterizaciones del hogar — desde allí el usuario decide
+  // si crea una nueva (con instrumento + ruta) o entra a una existente.
+  async function continuarACaracterizaciones() {
+    if (!hogarId) return;
+    setContinuando(true);
     setErrorInicio('');
     try {
-      const { data: sesion } = await encuestasApi.crear({
-        hogar: hogarId,
-        instrumento: instrumentoId,
-        ruta_entrevista: rutaEntrevista,
-      });
-      limpiar();
       router.replace({
-        pathname: '/(main)/encuestas/[sesionId]',
-        params: { sesionId: sesion.id },
+        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+        params: { hogarId },
       });
     } catch (err: any) {
-      setErrorInicio(
-        err?.response?.data?.detail ?? 'No se pudo crear la sesión. Intente nuevamente.',
-      );
+      setErrorInicio('No se pudo continuar. Intente nuevamente.');
     } finally {
-      setIniciando(false);
+      setContinuando(false);
     }
   }
 
@@ -577,17 +573,17 @@ export default function ConformarHogarScreen() {
 
           <Divider style={styles.divider} />
 
-          {/* ── Iniciar Entrevista ── */}
+          {/* ── Continuar a caracterizaciones (Sprint 14) ── */}
           {errorInicio ? (
             <Text style={styles.errorTxt}>{errorInicio}</Text>
           ) : null}
 
           <GovButton
-            label={`Iniciar Entrevista (${integrantes.length} integrante${integrantes.length !== 1 ? 's' : ''})`}
-            icon="play-circle"
-            onPress={iniciarEntrevista}
-            loading={iniciando}
-            disabled={!hogarId || !instrumentoId || iniciando}
+            label={`Continuar a caracterizaciones (${integrantes.length} integrante${integrantes.length !== 1 ? 's' : ''})`}
+            icon="arrow-right-circle"
+            onPress={continuarACaracterizaciones}
+            loading={continuando}
+            disabled={!hogarId || continuando}
           />
 
           <Button

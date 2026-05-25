@@ -5,22 +5,27 @@
  *  - Badge ★ AUTORIZADO para el titular de la entrevista
  *  - Chips INCLUIDO (verde) / NO INCLUIDO (gris) por cada integrante
  *  - Selector de ROL (Miembro / Tutor / Cuidador permanente) al agregar
- *  - Botón "Crear entrevista" solo activo cuando el hogar tiene su autorizado
+ *  - UN solo botón "Ver caracterizaciones (N)" → hub del hogar (Sprint 14)
+ *
+ * Sprint 14: se removieron los botones "Crear entrevista" y "Ver sesiones
+ * de este hogar" — ahora todo pasa por el hub /(main)/hogares/[hogarId]/
+ * caracterizaciones, que muestra el listado y permite crear nuevas desde
+ * un solo lugar.
  */
 import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { hogaresApi } from '../../../src/api/hogares';
-import { victimasApi } from '../../../src/api/victimas';
-import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
-import { GovHeader } from '../../../src/components/GovHeader';
-import { GovButton } from '../../../src/components/GovButton';
-import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
+import { hogaresApi } from '../../../../src/api/hogares';
+import { victimasApi } from '../../../../src/api/victimas';
+import { useCaracterizacionStore } from '../../../../src/stores/caracterizacionStore';
+import { GovHeader } from '../../../../src/components/GovHeader';
+import { GovButton } from '../../../../src/components/GovButton';
+import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../../src/theme/govTheme';
 import type {
   HogarDetalle, MiembroHogarResumen, VictimaResumenFuente, RolMiembro,
-} from '../../../src/types';
+} from '../../../../src/types';
 
 // ─── Labels de rol ────────────────────────────────────────────────────────────
 
@@ -236,9 +241,12 @@ export default function HogarDetalleScreen() {
   // ── El hogar tiene autorizado cuando hay al menos un miembro con es_autorizado=true
   const tieneAutorizado = (hogar?.miembros ?? []).some((m) => m.es_autorizado);
 
-  function crearEntrevista() {
+  function verCaracterizaciones() {
     if (!hogar) return;
-    router.push({ pathname: '/(main)/caracterizar/index', params: { hogarId: hogar.id } });
+    router.push({
+      pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+      params: { hogarId: hogar.id },
+    });
   }
 
   // ── Agregar miembro desde grupo familiar RUV ──────────────────────────────
@@ -403,29 +411,24 @@ export default function HogarDetalleScreen() {
           </SeccionCard>
         )}
 
-        {/* Entrevista */}
-        <SeccionCard titulo={`Entrevista de caracterización (${hogar.total_sesiones})`}>
-          {/* Botón principal — solo activo cuando hay autorizado */}
+        {/* Caracterizaciones del hogar — un solo botón unificado (Sprint 14) */}
+        <SeccionCard titulo="Caracterizaciones del hogar">
           <GovButton
-            label="Crear entrevista"
-            icon="clipboard-text-play"
-            onPress={crearEntrevista}
+            label={`Ver caracterizaciones (${hogar.total_sesiones})`}
+            icon="clipboard-list"
+            onPress={verCaracterizaciones}
             disabled={!tieneAutorizado}
           />
-          {!tieneAutorizado && (
+          {!tieneAutorizado ? (
             <Text style={styles.ayudaEntrevista}>
-              Primero confirma el autorizado del hogar para crear la entrevista.
+              Primero confirma el autorizado del hogar para acceder a las caracterizaciones.
             </Text>
-          )}
-          {hogar.total_sesiones > 0 && (
-            <View style={styles.verSesionesWrap}>
-              <GovButton
-                label="Ver sesiones de este hogar"
-                variant="secondary"
-                icon="clipboard-list"
-                onPress={() => router.push({ pathname: '/(main)/encuestas', params: { hogar: hogar.id } })}
-              />
-            </View>
+          ) : (
+            <Text style={styles.ayudaEntrevista}>
+              {hogar.total_sesiones === 0
+                ? 'Aún no se ha iniciado ninguna caracterización para este hogar.'
+                : 'Revisa el progreso, abre una caracterización existente o crea una nueva.'}
+            </Text>
           )}
         </SeccionCard>
 
@@ -507,9 +510,6 @@ const styles = StyleSheet.create({
     ...FONT.body,
     color: GOV.rojo,
     textAlign: 'center',
-  },
-  verSesionesWrap: {
-    marginTop: SPACING.sm,
   },
 });
 

@@ -142,12 +142,18 @@ export default function CaracterizarScreen() {
     if (!seleccionado) return;
     setCreando(true);
     try {
-      const { data } = await encuestasApi.crear({
+      await encuestasApi.crear({
         hogar: hId,
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
-      router.replace({ pathname: '/(main)/encuestas/[sesionId]', params: { sesionId: data.id } });
+      // Sprint 14: tras crear la caracterización volvemos al hub del hogar
+      // (no al formulario directo). El usuario ve la nueva sesión en la lista
+      // y decide si entra a llenarla o crea otra.
+      router.replace({
+        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+        params: { hogarId: hId },
+      });
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
       setCreando(false);
