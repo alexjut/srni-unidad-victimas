@@ -13,6 +13,7 @@ import * as colaDao from '../../../src/db/colaDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
+import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
@@ -39,6 +40,7 @@ export default function CapituloScreen() {
   }>();
 
   const { estaOnline, refrescarContadores } = useSyncStore();
+  const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
   const {
     activo: iaActivo,
     estado: estadoIA,
@@ -125,6 +127,7 @@ export default function CapituloScreen() {
             borrador_id: nuevo.id,
             hogar: hogarId,
             instrumento: instrId,
+            ruta_entrevista: rutaEntrevista,
           });
           await refrescarContadores();
         }

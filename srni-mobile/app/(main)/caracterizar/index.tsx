@@ -11,6 +11,7 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
+import { descargarInstrumento } from '../../../src/services/sincronizacion';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -147,6 +148,14 @@ export default function CaracterizarScreen() {
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
+
+      // Sprint 17: descargar el instrumento elegido a SQLite ANTES de
+      // navegar al hub. Sin esto el formulario [temaId].tsx no encontraría
+      // los capítulos/preguntas (SQLite solo guarda un instrumento a la vez).
+      // Si falla la descarga (sin red), el flujo offline igual funciona si
+      // ya estaba descargado previamente; sino, el formulario lo avisa.
+      await descargarInstrumento(seleccionado.codigo);
+
       // Sprint 14: tras crear la caracterización volvemos al hub del hogar
       // (no al formulario directo). El usuario ve la nueva sesión en la lista
       // y decide si entra a llenarla o crea otra.

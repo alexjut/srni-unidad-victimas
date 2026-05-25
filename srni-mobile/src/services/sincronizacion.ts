@@ -55,9 +55,13 @@ export async function descargarInstrumento(perfilCodigo?: string): Promise<boole
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
+  // Sprint 12: el backend renombró 'jefe_hogar' → 'autorizado'.
+  // Aceptamos ambos en el payload por compatibilidad con items viejos
+  // ya encolados antes del fix del Sprint 17.
   const payload = JSON.parse(item.payload) as {
     id_local: string;
-    jefe_hogar: string;
+    autorizado?: string;
+    jefe_hogar?: string;          // legado — items encolados antes del Sprint 17
     municipio?: number;
     tipo_vivienda?: string;
     condicion_ocupacion?: string;
@@ -67,8 +71,13 @@ async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
     observaciones?: string;
   };
 
+  const autorizado = payload.autorizado ?? payload.jefe_hogar;
+  if (!autorizado) {
+    throw new Error('Payload sin autorizado/jefe_hogar — hogar inválido');
+  }
+
   const { data } = await hogaresApi.crear({
-    jefe_hogar: payload.jefe_hogar,
+    autorizado,
     municipio: payload.municipio,
     tipo_vivienda: payload.tipo_vivienda,
     condicion_ocupacion: payload.condicion_ocupacion,
@@ -107,11 +116,13 @@ async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
     borrador_id: string;
     hogar: string;
     instrumento: string;
+    ruta_entrevista?: string;
   };
 
   const { data } = await encuestasApi.crear({
     hogar: payload.hogar,
     instrumento: payload.instrumento,
+    ruta_entrevista: payload.ruta_entrevista ?? 'GENERAL',
   });
 
   await borradoresDao.marcarSincronizado(payload.borrador_id, data.id);
@@ -148,7 +159,11 @@ async function procesarResponderBulk(item: colaDao.ColaItem): Promise<void> {
     throw new Error('sesion_id no disponible aún — esperando CREAR_SESION');
   }
 
-  const respuestas = payload.respuestas.filter(r => r.valor?.trim());
+  // Defensiva: r.valor puede no ser string si la cola tiene items viejos
+  const respuestas = payload.respuestas.filter(r => {
+    const v = r.valor;
+    return v !== undefined && v !== null && String(v).trim() !== '';
+  });
   if (respuestas.length === 0) return;
 
   await encuestasApi.responderBulk(payload.sesion_id, respuestas);
