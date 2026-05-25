@@ -20,7 +20,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.autenticacion.permissions import PuedeCaracterizar
 from apps.auditoria.models import LogAcceso
 from apps.formulario.models import Pregunta
+from srni.pagination import CursorTimePagination
 from .models import SesionEncuesta, RespuestaEncuesta
+from .filters import SesionEncuestaFilterSet
 from .serializers import (
     SesionEncuestaListSerializer, SesionEncuestaDetalleSerializer,
     RespuestaEncuestaSerializer,
@@ -44,9 +46,14 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
     Solo los encuestadores con puede_caracterizar pueden operar este endpoint.
     """
     permission_classes = [IsAuthenticated, PuedeCaracterizar]
+    pagination_class = CursorTimePagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['estado', 'hogar', 'instrumento']
-    ordering_fields = ['created_at', 'updated_at', 'porcentaje_completado']
+    filterset_class = SesionEncuestaFilterSet
+    ordering_fields = [
+        'created_at', 'updated_at',
+        'porcentaje_completado',
+        'fecha_inicio', 'fecha_fin',
+    ]
     ordering = ['-created_at']
     http_method_names = ['get', 'post', 'patch', 'head', 'options']
 

@@ -13,6 +13,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.autenticacion.permissions import PuedeCaracterizar
 from apps.auditoria.models import LogAcceso
 from .models import Hogar, MiembroHogar
+from .filters import HogarFilterSet
 from .serializers import (
     HogarListSerializer, HogarDetalleSerializer,
     AgregarMiembroSerializer, MiembroHogarSerializer,
@@ -42,15 +43,19 @@ class HogarViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticated, PuedeCaracterizar]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['estado', 'municipio', 'tipo_vivienda']
-    ordering_fields = ['created_at', 'updated_at', 'estado']
+    filterset_class = HogarFilterSet
+    ordering_fields = ['created_at', 'updated_at', 'estado', 'numero_personas']
     ordering = ['-created_at']
 
     def get_queryset(self):
         user = self.request.user
         qs = Hogar.objects.select_related(
             'autorizado', 'municipio__departamento', 'creado_por'
-        ).prefetch_related('miembros')
+        ).prefetch_related(
+            'miembros',
+            'sesiones__instrumento__perfil',
+            'sesiones__encuestador',
+        )
 
         if not (user.puede('administrar')):
             qs = qs.filter(creado_por=user)
