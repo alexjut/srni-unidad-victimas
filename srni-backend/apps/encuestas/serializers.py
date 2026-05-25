@@ -27,10 +27,10 @@ class RespuestaEncuestaSerializer(serializers.ModelSerializer):
 class SesionEncuestaListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     instrumento_nombre = serializers.CharField(
-        source='instrumento.perfil.nombre', read_only=True, default=None
+        source='instrumento.nombre', read_only=True, default=None
     )
     instrumento_numero = serializers.CharField(
-        source='instrumento.numero', read_only=True, default=None
+        source='instrumento.version', read_only=True, default=None
     )
     encuestador_nombre = serializers.CharField(
         source='encuestador.nombre_completo', read_only=True, default=None
@@ -52,10 +52,10 @@ class SesionEncuestaListSerializer(serializers.ModelSerializer):
 class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     instrumento_nombre = serializers.CharField(
-        source='instrumento.perfil.nombre', read_only=True, default=None
+        source='instrumento.nombre', read_only=True, default=None
     )
     instrumento_numero = serializers.CharField(
-        source='instrumento.numero', read_only=True, default=None
+        source='instrumento.version', read_only=True, default=None
     )
     respuestas = RespuestaEncuestaSerializer(many=True, read_only=True)
     total_respuestas = serializers.IntegerField(source='respuestas.count', read_only=True)

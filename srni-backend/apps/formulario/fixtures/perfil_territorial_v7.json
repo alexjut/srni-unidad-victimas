@@ -80,7 +80,10 @@
       "nivel": "PERSONA",
       "poblacion_objetivo": "VICTIMAS_RUV_3_ANOS_MAS",
       "objetivo": "Conocer el nivel de asistencia escolar y nivel educativo alcanzado.",
-      "aplicabilidad": {"ruv_incluido": true, "edad_min": 3}
+      "aplicabilidad": {
+        "ruv_incluido": true,
+        "edad_min": 3
+      }
     },
     {
       "codigo": "G",
@@ -226,7 +229,9 @@
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 200},
+      "validaciones": {
+        "max_length": 200
+      },
       "opciones": []
     },
     {
@@ -241,7 +246,9 @@
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -256,7 +263,9 @@
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 300},
+      "validaciones": {
+        "max_length": 300
+      },
       "opciones": []
     },
     {
@@ -271,7 +280,10 @@
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 1000000, "max": 9999999999},
+      "validaciones": {
+        "min": 1000000,
+        "max": 9999999999
+      },
       "opciones": []
     },
     {
@@ -286,7 +298,10 @@
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 3000000000, "max": 3999999999},
+      "validaciones": {
+        "min": 3000000000,
+        "max": 3999999999
+      },
       "opciones": []
     },
     {
@@ -316,7 +331,9 @@
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"regex": "^[^@]+@[^@]+\\.[^@]+$"},
+      "validaciones": {
+        "regex": "^[^@]+@[^@]+\\.[^@]+$"
+      },
       "opciones": []
     },
     {
@@ -376,7 +393,9 @@
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 200},
+      "validaciones": {
+        "max_length": 200
+      },
       "opciones": []
     },
     {
@@ -391,7 +410,9 @@
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -406,7 +427,9 @@
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 300},
+      "validaciones": {
+        "max_length": 300
+      },
       "opciones": []
     },
     {
@@ -661,7 +684,10 @@
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 1, "max": 30},
+      "validaciones": {
+        "min": 1,
+        "max": 30
+      },
       "opciones": []
     },
     {
@@ -676,7 +702,10 @@
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 1, "max": 30},
+      "validaciones": {
+        "min": 1,
+        "max": 30
+      },
       "opciones": []
     },
     {
@@ -691,7 +720,9 @@
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0},
+      "validaciones": {
+        "min": 0
+      },
       "opciones": []
     },
     {
@@ -722,7 +753,62 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "C6A",
+          "etiqueta": "Inundaciones, desbordamientos, crecientes, arroyos",
+          "id_resp_vivanto": 149,
+          "orden": 1
+        },
+        {
+          "valor": "C6B",
+          "etiqueta": "Avalanchas",
+          "id_resp_vivanto": 150,
+          "orden": 2
+        },
+        {
+          "valor": "C6C",
+          "etiqueta": "Vientos fuertes",
+          "id_resp_vivanto": 151,
+          "orden": 3
+        },
+        {
+          "valor": "C6D",
+          "etiqueta": "Derrumbes o deslizamientos de tierra",
+          "id_resp_vivanto": 152,
+          "orden": 4
+        },
+        {
+          "valor": "C6E",
+          "etiqueta": "Basura o contaminantes",
+          "id_resp_vivanto": 153,
+          "orden": 5
+        },
+        {
+          "valor": "C6F",
+          "etiqueta": "Zona de riesgo por electricidad o gas",
+          "id_resp_vivanto": 154,
+          "orden": 6
+        },
+        {
+          "valor": "C6H",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 156,
+          "orden": 7
+        },
+        {
+          "valor": "C6G",
+          "etiqueta": "Otra, ¿cuál? __________________________",
+          "id_resp_vivanto": 155,
+          "orden": 8
+        },
+        {
+          "valor": "C6I",
+          "etiqueta": "No sabe/No responde",
+          "id_resp_vivanto": 157,
+          "orden": 9
+        }
+      ]
     },
     {
       "no_pregunta": "C21",
@@ -737,7 +823,86 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "C17A",
+          "etiqueta": "Minería Ilegal",
+          "id_resp_vivanto": 2641,
+          "orden": 1
+        },
+        {
+          "valor": "C17B",
+          "etiqueta": "Exploración y exploración minero-energética (petróleo, gas etc)",
+          "id_resp_vivanto": 2642,
+          "orden": 2
+        },
+        {
+          "valor": "C17C",
+          "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+          "id_resp_vivanto": 2643,
+          "orden": 3
+        },
+        {
+          "valor": "C17D",
+          "etiqueta": "Combares o bombardeos",
+          "id_resp_vivanto": 2644,
+          "orden": 4
+        },
+        {
+          "valor": "C17E",
+          "etiqueta": "Restricción a la movilidad - Confinamiento",
+          "id_resp_vivanto": 2645,
+          "orden": 5
+        },
+        {
+          "valor": "C17F",
+          "etiqueta": "Presencia de MAP, MUSE, etc.",
+          "id_resp_vivanto": 2646,
+          "orden": 6
+        },
+        {
+          "valor": "C17G",
+          "etiqueta": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+          "id_resp_vivanto": 2647,
+          "orden": 7
+        },
+        {
+          "valor": "C17H",
+          "etiqueta": "Ganadería extensiva",
+          "id_resp_vivanto": 2648,
+          "orden": 8
+        },
+        {
+          "valor": "C17I",
+          "etiqueta": "Presencia de cultivos ilícitos",
+          "id_resp_vivanto": 2649,
+          "orden": 9
+        },
+        {
+          "valor": "C17J",
+          "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos de uso ilícito",
+          "id_resp_vivanto": 2650,
+          "orden": 10
+        },
+        {
+          "valor": "C17K",
+          "etiqueta": "Rutas de tránsito de estupefacientes y/o armas",
+          "id_resp_vivanto": 2651,
+          "orden": 11
+        },
+        {
+          "valor": "C17L",
+          "etiqueta": "Actividades de explotación maderera",
+          "id_resp_vivanto": 2652,
+          "orden": 12
+        },
+        {
+          "valor": "C17M",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2791,
+          "orden": 13
+        }
+      ]
     },
     {
       "no_pregunta": "C22",
@@ -751,7 +916,9 @@
       "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -812,7 +979,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 217,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 218,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "D6",
@@ -835,13 +1015,15 @@
       "id_preg": 883,
       "capitulo_codigo": "D",
       "texto": "¿Cuánto tiempo lleva en el lugar de retorno o reubicación?",
-      "tipo": "LISTA",
+      "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {},
+      "validaciones": {
+        "max_length": 500
+      },
       "opciones": []
     },
     {
@@ -916,7 +1098,9 @@
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 200},
+      "validaciones": {
+        "max_length": 200
+      },
       "opciones": []
     },
     {
@@ -946,7 +1130,9 @@
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 300},
+      "validaciones": {
+        "max_length": 300
+      },
       "opciones": []
     },
     {
@@ -962,7 +1148,74 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Sabana Larga (Atlántico)",
+          "id_resp_vivanto": 3776,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Sampués (Sucre)",
+          "id_resp_vivanto": 3777,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Sahagún (Córdoba)",
+          "id_resp_vivanto": 3778,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "San Pelayo (Córdoba)",
+          "id_resp_vivanto": 3779,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Cúcuta (Norte de Santander)",
+          "id_resp_vivanto": 3780,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Girón (Santander)",
+          "id_resp_vivanto": 3781,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Envigado (Antioquia)",
+          "id_resp_vivanto": 3782,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Ataco (Tolima)",
+          "id_resp_vivanto": 3783,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Bogotá Unión Romaní",
+          "id_resp_vivanto": 3784,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Bogotá ProRrom",
+          "id_resp_vivanto": 3785,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Pasto",
+          "id_resp_vivanto": 3786,
+          "orden": 11
+        }
+      ]
     },
     {
       "no_pregunta": "D16",
@@ -976,7 +1229,9 @@
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -1006,7 +1261,10 @@
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 1, "max": 20},
+      "validaciones": {
+        "min": 1,
+        "max": 20
+      },
       "opciones": []
     },
     {
@@ -1052,7 +1310,26 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "No le interesa",
+          "id_resp_vivanto": 244,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No conoce el proceso de reunificación",
+          "id_resp_vivanto": 245,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 246,
+          "orden": 3
+        }
+      ]
     },
     {
       "no_pregunta": "E6",
@@ -1066,7 +1343,9 @@
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -1081,7 +1360,9 @@
       "orden": 1,
       "es_precargada": true,
       "fuente_precarga": "RUV",
-      "validaciones": {"max_length": 60},
+      "validaciones": {
+        "max_length": 60
+      },
       "opciones": []
     },
     {
@@ -1096,7 +1377,9 @@
       "orden": 2,
       "es_precargada": true,
       "fuente_precarga": "RUV",
-      "validaciones": {"max_length": 60},
+      "validaciones": {
+        "max_length": 60
+      },
       "opciones": []
     },
     {
@@ -1126,7 +1409,10 @@
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0, "max": 120},
+      "validaciones": {
+        "min": 0,
+        "max": 120
+      },
       "opciones": []
     },
     {
@@ -1186,7 +1472,9 @@
       "orden": 8,
       "es_precargada": true,
       "fuente_precarga": "RUV",
-      "validaciones": {"max_length": 20},
+      "validaciones": {
+        "max_length": 20
+      },
       "opciones": []
     },
     {
@@ -1201,7 +1489,9 @@
       "orden": 9,
       "es_precargada": true,
       "fuente_precarga": "RUV",
-      "validaciones": {"max_length": 15},
+      "validaciones": {
+        "max_length": 15
+      },
       "opciones": []
     },
     {
@@ -1322,7 +1612,44 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "I7A",
+          "etiqueta": "Física",
+          "id_resp_vivanto": 317,
+          "orden": 1
+        },
+        {
+          "valor": "I7K",
+          "etiqueta": "Visual",
+          "id_resp_vivanto": 2807,
+          "orden": 2
+        },
+        {
+          "valor": "I7L",
+          "etiqueta": "Auditiva",
+          "id_resp_vivanto": 2808,
+          "orden": 3
+        },
+        {
+          "valor": "I7C",
+          "etiqueta": "Intelectual",
+          "id_resp_vivanto": 319,
+          "orden": 4
+        },
+        {
+          "valor": "I7D",
+          "etiqueta": "Mental",
+          "id_resp_vivanto": 320,
+          "orden": 5
+        },
+        {
+          "valor": "I7M",
+          "etiqueta": "Sordoceguera",
+          "id_resp_vivanto": 2809,
+          "orden": 6
+        }
+      ]
     },
     {
       "no_pregunta": "B18",
@@ -1352,7 +1679,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2358,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2359,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "B20",
@@ -1367,7 +1707,92 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "B13A",
+          "etiqueta": "Trasplante renal",
+          "id_resp_vivanto": 3865,
+          "orden": 1
+        },
+        {
+          "valor": "B13B",
+          "etiqueta": "Diálisis peritoneal y hemodiálisis",
+          "id_resp_vivanto": 3866,
+          "orden": 2
+        },
+        {
+          "valor": "B13L",
+          "etiqueta": "Trasplante renal, corazón, hígado, médula ósea y córnea",
+          "id_resp_vivanto": 3876,
+          "orden": 3
+        },
+        {
+          "valor": "B13C",
+          "etiqueta": "Manejo quirúrgico para enfermedades del sistema nervioso central",
+          "id_resp_vivanto": 3867,
+          "orden": 4
+        },
+        {
+          "valor": "B13D",
+          "etiqueta": "Manejo quirúrgico para enfermedades del corazón",
+          "id_resp_vivanto": 3868,
+          "orden": 5
+        },
+        {
+          "valor": "B13E",
+          "etiqueta": "Reemplazos articulares",
+          "id_resp_vivanto": 3869,
+          "orden": 6
+        },
+        {
+          "valor": "B13F",
+          "etiqueta": "Manejo médico quirúrgico del paciente gran quemado",
+          "id_resp_vivanto": 3870,
+          "orden": 7
+        },
+        {
+          "valor": "B13G",
+          "etiqueta": "Manejo del trauma mayor",
+          "id_resp_vivanto": 3871,
+          "orden": 8
+        },
+        {
+          "valor": "B13H",
+          "etiqueta": "Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+          "id_resp_vivanto": 3872,
+          "orden": 9
+        },
+        {
+          "valor": "B13I",
+          "etiqueta": "Quimioterapia y radioterapia para el cáncer",
+          "id_resp_vivanto": 3873,
+          "orden": 10
+        },
+        {
+          "valor": "B13J",
+          "etiqueta": "Manejo de pacientes en Unidad de Cuidados Intensivos",
+          "id_resp_vivanto": 3874,
+          "orden": 11
+        },
+        {
+          "valor": "B13K",
+          "etiqueta": "Manejo quirúrgico de enfermedades congénitas",
+          "id_resp_vivanto": 3875,
+          "orden": 12
+        },
+        {
+          "valor": "B13M",
+          "etiqueta": "Corrección quirúrgica de la hernia de núcleo pulposo",
+          "id_resp_vivanto": 3877,
+          "orden": 13
+        },
+        {
+          "valor": "B13N",
+          "etiqueta": "Otra (EPOC, anemia falciforme, etc)",
+          "id_resp_vivanto": 3878,
+          "orden": 14
+        }
+      ]
     },
     {
       "no_pregunta": "B21",
@@ -1471,7 +1896,9 @@
       "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -1486,7 +1913,9 @@
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -1501,7 +1930,9 @@
       "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -1531,7 +1962,9 @@
       "orden": 31,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 150},
+      "validaciones": {
+        "max_length": 150
+      },
       "opciones": []
     },
     {
@@ -1622,7 +2055,38 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Lo habla y lo entiende bien",
+          "id_resp_vivanto": 969,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Lo entiende y habla poco",
+          "id_resp_vivanto": 970,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Lo entiende pero no lo habla",
+          "id_resp_vivanto": 971,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "No lo entiende ni lo habla",
+          "id_resp_vivanto": 972,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "En su comunidad solo se habla español",
+          "id_resp_vivanto": 973,
+          "orden": 5
+        }
+      ]
     },
     {
       "no_pregunta": "B39",
@@ -1637,7 +2101,32 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "4",
+          "etiqueta": "No lo entiende ni lo habla",
+          "id_resp_vivanto": 1049,
+          "orden": 1
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Lo entiende pero no lo habla",
+          "id_resp_vivanto": 1048,
+          "orden": 2
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Lo entiende y habla poco",
+          "id_resp_vivanto": 1047,
+          "orden": 3
+        },
+        {
+          "valor": "1",
+          "etiqueta": "Lo habla y lo entiende bien",
+          "id_resp_vivanto": 1046,
+          "orden": 4
+        }
+      ]
     },
     {
       "no_pregunta": "B40",
@@ -1652,7 +2141,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2635,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2636,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "B41",
@@ -1907,7 +2409,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2398,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2399,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "G3",
@@ -1952,7 +2467,50 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "H12A",
+          "etiqueta": "Distancia",
+          "id_resp_vivanto": 2673,
+          "orden": 1
+        },
+        {
+          "valor": "H12B",
+          "etiqueta": "Recursos económicos para el desplazamiento hasta el centro de salud",
+          "id_resp_vivanto": 2674,
+          "orden": 2
+        },
+        {
+          "valor": "H12C",
+          "etiqueta": "Edad, requiere acompañamiento",
+          "id_resp_vivanto": 2675,
+          "orden": 3
+        },
+        {
+          "valor": "H12D",
+          "etiqueta": "Demoras en la atención",
+          "id_resp_vivanto": 2676,
+          "orden": 4
+        },
+        {
+          "valor": "H12E",
+          "etiqueta": "Enfermedades propias del territorio",
+          "id_resp_vivanto": 2677,
+          "orden": 5
+        },
+        {
+          "valor": "H12F",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2678,
+          "orden": 6
+        },
+        {
+          "valor": "H12_G",
+          "etiqueta": "Otro  ¿Cuál?",
+          "id_resp_vivanto": 2679,
+          "orden": 7
+        }
+      ]
     },
     {
       "no_pregunta": "G6",
@@ -1982,7 +2540,26 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2402,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2403,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "NS/NR",
+          "id_resp_vivanto": 2680,
+          "orden": 3
+        }
+      ]
     },
     {
       "no_pregunta": "H1",
@@ -2027,7 +2604,38 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "I11A",
+          "etiqueta": "Individual",
+          "id_resp_vivanto": 354,
+          "orden": 1
+        },
+        {
+          "valor": "I11B",
+          "etiqueta": "Familiar",
+          "id_resp_vivanto": 355,
+          "orden": 2
+        },
+        {
+          "valor": "I11C",
+          "etiqueta": "Grupal",
+          "id_resp_vivanto": 356,
+          "orden": 3
+        },
+        {
+          "valor": "I11D",
+          "etiqueta": "Comunitaria",
+          "id_resp_vivanto": 357,
+          "orden": 4
+        },
+        {
+          "valor": "I11E",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 353,
+          "orden": 5
+        }
+      ]
     },
     {
       "no_pregunta": "H4",
@@ -2042,7 +2650,26 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "I25B",
+          "etiqueta": "Unidad para las Víctimas",
+          "id_resp_vivanto": 2404,
+          "orden": 1
+        },
+        {
+          "valor": "I25C",
+          "etiqueta": "PAPSIVI",
+          "id_resp_vivanto": 2405,
+          "orden": 2
+        },
+        {
+          "valor": "I25D",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 2406,
+          "orden": 3
+        }
+      ]
     },
     {
       "no_pregunta": "H5",
@@ -2057,7 +2684,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2407,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2408,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "H6",
@@ -2087,7 +2727,32 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "I28A",
+          "etiqueta": "Individual",
+          "id_resp_vivanto": 2411,
+          "orden": 1
+        },
+        {
+          "valor": "I28B",
+          "etiqueta": "Familiar",
+          "id_resp_vivanto": 2412,
+          "orden": 2
+        },
+        {
+          "valor": "I28C",
+          "etiqueta": "Grupal",
+          "id_resp_vivanto": 2413,
+          "orden": 3
+        },
+        {
+          "valor": "I28D",
+          "etiqueta": "Comunitaria",
+          "id_resp_vivanto": 2414,
+          "orden": 4
+        }
+      ]
     },
     {
       "no_pregunta": "H8",
@@ -2116,7 +2781,9 @@
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -2371,7 +3038,9 @@
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -2462,7 +3131,62 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Pidió ayuda a familiares, amigos, colegas",
+          "id_resp_vivanto": 421,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Visitó, llevó o envió hojas de vida a empresas ó empleadores",
+          "id_resp_vivanto": 422,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Visitó, llevó o envió hojas de vida a bolsas de empleo ó intermediarios",
+          "id_resp_vivanto": 423,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Puso consultó avisos clasificados",
+          "id_resp_vivanto": 424,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Se presentó a convocatorias",
+          "id_resp_vivanto": 425,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Hizo preparativos para iniciar un negocio",
+          "id_resp_vivanto": 426,
+          "orden": 6
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Se presento a una finca a trabajar como jornalero",
+          "id_resp_vivanto": 1283,
+          "orden": 7
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Otro medio, ¿Cuál?",
+          "id_resp_vivanto": 427,
+          "orden": 8
+        },
+        {
+          "valor": "98",
+          "etiqueta": "No sabe, no responde",
+          "id_resp_vivanto": 428,
+          "orden": 9
+        }
+      ]
     },
     {
       "no_pregunta": "J7",
@@ -2492,7 +3216,92 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Ya encontró trabajo",
+          "id_resp_vivanto": 431,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No hay trabajo disponible  en la ciudad o región",
+          "id_resp_vivanto": 432,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No encuentra trabajo en su oficio o profesión",
+          "id_resp_vivanto": 1020,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Está esperando que lo llamen o esperando temporada alta",
+          "id_resp_vivanto": 433,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No sabe cómo buscarlo",
+          "id_resp_vivanto": 434,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Está cansado de buscar",
+          "id_resp_vivanto": 435,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Carece de la experiencia necesaria",
+          "id_resp_vivanto": 436,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "No tiene recursos para instalar un negocio",
+          "id_resp_vivanto": 437,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Los empleadores lo consideran muy joven / viejo",
+          "id_resp_vivanto": 438,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Usted se considera muy joven o muy viejo",
+          "id_resp_vivanto": 439,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Responsabilidades familiares",
+          "id_resp_vivanto": 440,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Problemas de salud",
+          "id_resp_vivanto": 441,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Está estudiando",
+          "id_resp_vivanto": 442,
+          "orden": 13
+        },
+        {
+          "valor": "98",
+          "etiqueta": "Otro, ¿Cuál?",
+          "id_resp_vivanto": 443,
+          "orden": 14
+        }
+      ]
     },
     {
       "no_pregunta": "J9",
@@ -2551,7 +3360,10 @@
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0, "max": 600},
+      "validaciones": {
+        "min": 0,
+        "max": 600
+      },
       "opciones": []
     },
     {
@@ -2566,7 +3378,9 @@
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 200},
+      "validaciones": {
+        "max_length": 200
+      },
       "opciones": []
     },
     {
@@ -2596,7 +3410,10 @@
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0, "max": 168},
+      "validaciones": {
+        "min": 0,
+        "max": 168
+      },
       "opciones": []
     },
     {
@@ -2641,7 +3458,9 @@
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0},
+      "validaciones": {
+        "min": 0
+      },
       "opciones": []
     },
     {
@@ -2656,7 +3475,9 @@
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0},
+      "validaciones": {
+        "min": 0
+      },
       "opciones": []
     },
     {
@@ -2671,7 +3492,9 @@
       "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0},
+      "validaciones": {
+        "min": 0
+      },
       "opciones": []
     },
     {
@@ -2686,7 +3509,9 @@
       "orden": 41,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -2702,7 +3527,20 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2415,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2416,
+          "orden": 2
+        }
+      ]
     },
     {
       "no_pregunta": "K3",
@@ -2732,7 +3570,26 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Alto",
+          "id_resp_vivanto": 2419,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Medio",
+          "id_resp_vivanto": 2420,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Bajo",
+          "id_resp_vivanto": 2421,
+          "orden": 3
+        }
+      ]
     },
     {
       "no_pregunta": "K5",
@@ -2746,7 +3603,10 @@
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0, "max": 50},
+      "validaciones": {
+        "min": 0,
+        "max": 50
+      },
       "opciones": []
     },
     {
@@ -2806,7 +3666,9 @@
       "orden": 38,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -2837,7 +3699,32 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Carrera Militar",
+          "id_resp_vivanto": 2600,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Carrera Policial",
+          "id_resp_vivanto": 2601,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2602,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Prestación de Servicio Militar o Policial",
+          "id_resp_vivanto": 2603,
+          "orden": 4
+        }
+      ]
     },
     {
       "no_pregunta": "L3",
@@ -2852,7 +3739,38 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Ejército",
+          "id_resp_vivanto": 2604,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Fuerza aérea",
+          "id_resp_vivanto": 2605,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Armada nacional",
+          "id_resp_vivanto": 2606,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Policía nacional",
+          "id_resp_vivanto": 2607,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2608,
+          "orden": 5
+        }
+      ]
     },
     {
       "no_pregunta": "L4",
@@ -2920,13 +3838,15 @@
       "id_preg": 858,
       "capitulo_codigo": "L",
       "texto": "¿En qué consistió la reparación recibida?",
-      "tipo": "LISTA_MULTIPLE",
+      "tipo": "TEXTO_LARGO",
       "nivel": "PERSONA",
       "obligatoria": false,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {},
+      "validaciones": {
+        "max_length": 500
+      },
       "opciones": []
     },
     {
@@ -2956,7 +3876,9 @@
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     },
     {
@@ -2972,7 +3894,38 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "AT1A",
+          "etiqueta": "Para lograr el abastecimiento de alimentos",
+          "id_resp_vivanto": 3974,
+          "orden": 1
+        },
+        {
+          "valor": "AT1B",
+          "etiqueta": "Para mantener los vínculos familiares y sociales",
+          "id_resp_vivanto": 3975,
+          "orden": 2
+        },
+        {
+          "valor": "AT1C",
+          "etiqueta": "Por motivos culturales y espirituales",
+          "id_resp_vivanto": 3976,
+          "orden": 3
+        },
+        {
+          "valor": "AT1D",
+          "etiqueta": "Otros motivos",
+          "id_resp_vivanto": 3977,
+          "orden": 4
+        },
+        {
+          "valor": "AT1E",
+          "etiqueta": "No mantiene relación urbano - rural",
+          "id_resp_vivanto": 3978,
+          "orden": 5
+        }
+      ]
     },
     {
       "no_pregunta": "M2",
@@ -3002,7 +3955,50 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Resguardo Indígena",
+          "id_resp_vivanto": 2744,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Territorios de ocupación colectiva comunidades indígenas sin titulación",
+          "id_resp_vivanto": 2745,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Territorios colectivos de comunidades negras",
+          "id_resp_vivanto": 2746,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Territorios de ocupación colectiva de comunidades negras sin titulación",
+          "id_resp_vivanto": 2747,
+          "orden": 4
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Territorios Ancestralmente habitados",
+          "id_resp_vivanto": 4521,
+          "orden": 5
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Territorios Ganados al mar",
+          "id_resp_vivanto": 4522,
+          "orden": 6
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Ninguno de los anteriores",
+          "id_resp_vivanto": 2748,
+          "orden": 7
+        }
+      ]
     },
     {
       "no_pregunta": "M4",
@@ -3032,7 +4028,56 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cultivos transitorios (yuca, maíz, frijol, etc.)",
+          "id_resp_vivanto": 0,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Cultivos permanentes (café, cacao, frutales, etc.)",
+          "id_resp_vivanto": 0,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Pastos / Ganadería",
+          "id_resp_vivanto": 0,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Bosque natural o plantado",
+          "id_resp_vivanto": 0,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Vivienda",
+          "id_resp_vivanto": 0,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Recreación o conservación",
+          "id_resp_vivanto": 0,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Sin uso productivo",
+          "id_resp_vivanto": 0,
+          "orden": 7
+        },
+        {
+          "valor": "98",
+          "etiqueta": "Otro uso",
+          "id_resp_vivanto": 0,
+          "orden": 8
+        }
+      ]
     },
     {
       "no_pregunta": "M6",
@@ -3061,7 +4106,9 @@
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"min": 0},
+      "validaciones": {
+        "min": 0
+      },
       "opciones": []
     },
     {
@@ -3091,7 +4138,9 @@
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {"max_length": 1000},
+      "validaciones": {
+        "max_length": 1000
+      },
       "opciones": []
     }
   ],

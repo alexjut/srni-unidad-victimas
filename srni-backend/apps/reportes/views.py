@@ -55,7 +55,7 @@ def _sesiones_periodo(encuestador, desde: date, hasta: date):
     return SesionEncuesta.objects.filter(
         encuestador=encuestador,
         created_at__range=(desde_dt, hasta_dt),
-    ).select_related('instrumento', 'instrumento__perfil', 'hogar')
+    ).select_related('instrumento', 'hogar')
 
 
 def _build_sesion_data(sesion) -> dict:
@@ -68,7 +68,7 @@ def _build_sesion_data(sesion) -> dict:
         'id': sesion.id,
         'hogar_id': sesion.hogar_id,
         'instrumento_nombre': sesion.instrumento.nombre if hasattr(sesion.instrumento, 'nombre') else str(sesion.instrumento),
-        'perfil_codigo': sesion.instrumento.perfil.codigo if hasattr(sesion.instrumento, 'perfil') else '',
+        'perfil_codigo': sesion.instrumento.codigo if sesion.instrumento else '',
         'estado': sesion.estado,
         'estado_display': sesion.get_estado_display(),
         'porcentaje_completado': sesion.porcentaje_completado,
@@ -132,7 +132,7 @@ def produccion_resumen(request):
     instr_qs = qs.values(
         'instrumento__id',
         'instrumento__nombre',
-        'instrumento__perfil__codigo',
+        'instrumento__codigo',
     ).annotate(
         total=Count('id'),
         completadas=Count('id', filter=Q(estado='COMPLETADA')),
@@ -142,7 +142,7 @@ def produccion_resumen(request):
         {
             'instrumento_id': item['instrumento__id'],
             'instrumento_nombre': item['instrumento__nombre'] or '',
-            'perfil_codigo': item['instrumento__perfil__codigo'] or '',
+            'perfil_codigo': item['instrumento__codigo'] or '',
             'total': item['total'],
             'completadas': item['completadas'],
             'promedio_completado': round(item['promedio'] or 0.0, 1),
@@ -269,7 +269,7 @@ def produccion_export_csv(request):
             if s.fecha_fin and s.fecha_inicio:
                 duracion = round((s.fecha_fin - s.fecha_inicio).total_seconds() / 60, 1)
             nombre_instr = s.instrumento.nombre if hasattr(s.instrumento, 'nombre') else str(s.instrumento)
-            perfil = s.instrumento.perfil.codigo if hasattr(s.instrumento, 'perfil') else ''
+            perfil = s.instrumento.codigo if s.instrumento else ''
             yield writer.writerow([
                 s.id, s.hogar_id, nombre_instr, perfil,
                 encuestador_nombre, s.estado, s.porcentaje_completado,

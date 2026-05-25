@@ -9,7 +9,7 @@
  *
  * La consulta va SIEMPRE al servidor. No se cachea PII localmente.
  */
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, Modal, ImageBackground } from 'react-native';
 import {
   Text, TextInput, Button, SegmentedButtons,
@@ -17,7 +17,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 import { GovHeader } from '../../src/components/GovHeader';
 
@@ -489,6 +489,25 @@ export default function BusquedaScreen() {
   const rutaLabel = RUTAS.find((r) => r.value === rutaEntrevista)?.label ?? 'General';
 
   const [noIncluidaRegistrada, setNoIncluidaRegistrada] = useState(false);
+
+  // ── Sprint 16: limpiar el estado al volver a la pantalla si ya hubo un
+  // flujo completado previamente. Detecta el "regreso desde el hub" leyendo
+  // victimaLocalId del store — si está poblado significa que ya conformamos
+  // un hogar y la sigueinte vez que entremos a la búsqueda, debe quedar limpia.
+  useFocusEffect(
+    useCallback(() => {
+      const { victimaLocalId, hogarId, limpiar } = useCaracterizacionStore.getState();
+      if (victimaLocalId || hogarId) {
+        // Reset completo del formulario y del store del flujo anterior
+        setDocumento('');
+        setResultado(null);
+        setErrorBusqueda(null);
+        setInstrumentoSeleccionado(null);
+        setNoIncluidaRegistrada(false);
+        limpiar();
+      }
+    }, []),
+  );
 
   async function cargarInstrumentos() {
     if (instrumentos.length > 0) return; // Ya cargados
