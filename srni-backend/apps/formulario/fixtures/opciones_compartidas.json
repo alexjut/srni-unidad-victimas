@@ -342,6 +342,180 @@
       {"valor": "3", "etiqueta": "Usó remedios caseros", "id_resp_vivanto": 0, "orden": 3},
       {"valor": "4", "etiqueta": "No hizo nada", "id_resp_vivanto": 0, "orden": 4},
       {"valor": "98", "etiqueta": "Otro", "id_resp_vivanto": 0, "orden": 5}
+    ],
+    "MATERIAL_PAREDES": [
+      {"valor": "1", "etiqueta": "Ladrillo, Bloque, material prefabricado, piedra", "id_resp_vivanto": 4718, "orden": 1},
+      {"valor": "2", "etiqueta": "Madera pulida", "id_resp_vivanto": 4719, "orden": 2},
+      {"valor": "3", "etiqueta": "Adobe o tapia pisada", "id_resp_vivanto": 4720, "orden": 3},
+      {"valor": "4", "etiqueta": "Bahareque y/o muro tendinoso", "id_resp_vivanto": 4721, "orden": 4},
+      {"valor": "5", "etiqueta": "Madera burda, tabla, tablón", "id_resp_vivanto": 4722, "orden": 5},
+      {"valor": "6", "etiqueta": "Guadua", "id_resp_vivanto": 4723, "orden": 6},
+      {"valor": "7", "etiqueta": "Caña, esterilla, otro tipo de material vegetal", "id_resp_vivanto": 4724, "orden": 7},
+      {"valor": "8", "etiqueta": "Zinc, tela, cartón, latas, desechos, plástico", "id_resp_vivanto": 4725, "orden": 8},
+      {"valor": "9", "etiqueta": "Sin paredes", "id_resp_vivanto": 4726, "orden": 9}
+    ],
+    "SI_NO_NS": [
+      {"valor": "1",  "etiqueta": "Sí",                       "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2",  "etiqueta": "No",                       "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "99", "etiqueta": "No sabe / No responde",    "id_resp_vivanto": 0, "orden": 3}
+    ],
+    "TIEMPO_DESPLAZAMIENTO": [
+      {"valor": "1", "etiqueta": "Menos de 1 mes",          "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Entre 1 y 6 meses",       "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Entre 6 meses y 1 año",   "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Entre 1 y 3 años",        "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Entre 3 y 5 años",        "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Entre 5 y 10 años",       "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Más de 10 años",          "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "99", "etiqueta": "No sabe / No responde",  "id_resp_vivanto": 0, "orden": 8}
+    ],
+    "MATERIAL_PISO": [
+      {"valor": "1", "etiqueta": "Tierra, arena",                                             "id_resp_vivanto": 4727, "orden": 1},
+      {"valor": "2", "etiqueta": "Cemento, gravilla",                                         "id_resp_vivanto": 4728, "orden": 2},
+      {"valor": "3", "etiqueta": "Madera burda, tabla, tablón, otro vegetal",                 "id_resp_vivanto": 4729, "orden": 3},
+      {"valor": "4", "etiqueta": "Baldosín, ladrillo, vinisol, otros materiales sintéticos",  "id_resp_vivanto": 4730, "orden": 4},
+      {"valor": "5", "etiqueta": "Mármol",                                                    "id_resp_vivanto": 4731, "orden": 5},
+      {"valor": "6", "etiqueta": "Madera pulida",                                             "id_resp_vivanto": 4732, "orden": 6},
+      {"valor": "7", "etiqueta": "Alfombra o tapete de pared a pared",                        "id_resp_vivanto": 4733, "orden": 7}
+    ],
+    "MATERIAL_TECHO": [
+      {"valor": "1", "etiqueta": "Plancha (concreto, cemento)",     "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Teja de barro",                   "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Teja de asbesto-cemento (Eternit)","id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Zinc o lámina metálica",          "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Madera",                          "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Palma, paja, hojas",              "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Plástico, lona, tela",            "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "98", "etiqueta": "Otro",                           "id_resp_vivanto": 0, "orden": 8}
+    ],
+    "AGUA_FUENTE": [
+      {"valor": "1", "etiqueta": "Acueducto público",               "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Acueducto veredal o comunitario", "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Pozo con bomba",                  "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Pozo sin bomba, aljibe",          "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Río, quebrada, manantial",        "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Agua lluvia",                     "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Carrotanque",                     "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Agua embotellada o en bolsa",     "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "98", "etiqueta": "Otra",                           "id_resp_vivanto": 0, "orden": 9}
+    ],
+    "ALUMBRADO": [
+      {"valor": "1", "etiqueta": "Red eléctrica del servicio público", "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Planta eléctrica comunitaria",       "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Planta eléctrica propia",            "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Paneles solares",                    "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Vela, lámpara de kerosene, gasolina","id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "No tiene servicio eléctrico",        "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "98", "etiqueta": "Otra fuente",                       "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "BASURA": [
+      {"valor": "1", "etiqueta": "Servicio público de aseo",                "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "La queman o entierran en el lote",        "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "La arrojan a un patio, lote, zanja o baldío", "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "La arrojan a un río, quebrada, caño o laguna", "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "La reciclan o usan para abono / animales","id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "La eliminan de otra forma",               "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "98", "etiqueta": "Otra forma",                             "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "COMBUSTIBLE": [
+      {"valor": "1", "etiqueta": "Gas natural conectado a red pública",  "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Gas propano (cilindro o pipeta)",      "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Electricidad",                         "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Leña, madera o carbón de leña",        "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Carbón mineral",                       "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Kerosene, petróleo, gasolina, ACPM",   "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Materiales de desecho",                "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "No cocinan",                           "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "98", "etiqueta": "Otro combustible",                    "id_resp_vivanto": 0, "orden": 9}
+    ],
+    "SANEAMIENTO": [
+      {"valor": "1", "etiqueta": "Inodoro conectado al alcantarillado",          "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Inodoro conectado a pozo séptico",             "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Inodoro sin conexión a alcantarillado ni pozo","id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Letrina",                                       "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Bajamar (sanitario en zona costera)",          "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "No tiene servicio sanitario",                  "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "98", "etiqueta": "Otro",                                        "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "CONDICION_OCUPACION": [
+      {"valor": "1", "etiqueta": "Propia, totalmente pagada",                 "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Propia, la están pagando",                  "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "En arriendo o subarriendo",                 "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Con permiso del propietario (sin pago)",    "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Posesión sin título (ocupante de hecho)",   "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Propiedad colectiva",                       "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "98", "etiqueta": "Otra forma",                               "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "ESTRATO": [
+      {"valor": "1", "etiqueta": "Estrato 1",   "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Estrato 2",   "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Estrato 3",   "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Estrato 4",   "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Estrato 5",   "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Estrato 6",   "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "9", "etiqueta": "Sin estrato", "id_resp_vivanto": 0, "orden": 7}
+    ],
+    "D_CUARTOS": [
+      {"valor": "1", "etiqueta": "1 cuarto",       "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "2 cuartos",      "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "3 cuartos",      "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "4 cuartos",      "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "5 cuartos",      "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "6 o más cuartos","id_resp_vivanto": 0, "orden": 6}
+    ],
+    "D_PERSONAS": [
+      {"valor": "1", "etiqueta": "1 persona",         "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "2 personas",        "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "3 personas",        "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "4 personas",        "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "5 personas",        "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "6 personas",        "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "7 personas",        "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "8 personas",        "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "9", "etiqueta": "9 personas",        "id_resp_vivanto": 0, "orden": 9},
+      {"valor": "10", "etiqueta": "10 o más personas","id_resp_vivanto": 0, "orden": 10}
+    ],
+    "TIPO_AYUDA_HUMANITARIA": [
+      {"valor": "1", "etiqueta": "Alimentación",                            "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Alojamiento temporal",                    "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Auxilio funerario",                       "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Vestuario",                               "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Aseo personal y elementos de hábitat",    "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Transporte de emergencia",                "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Atención médica y psicosocial",           "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Apoyo económico (transferencia monetaria)","id_resp_vivanto": 0, "orden": 8},
+      {"valor": "98", "etiqueta": "Otra ayuda",                             "id_resp_vivanto": 0, "orden": 9}
+    ],
+    "TIPO_DISCAPACIDAD": [
+      {"valor": "1", "etiqueta": "Física / Motora",                  "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Visual (ceguera o baja visión)",   "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Auditiva (sordera o hipoacusia)",  "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Sordoceguera",                     "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Mental psicosocial",               "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Intelectual / Cognitiva",          "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Múltiple",                         "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "98", "etiqueta": "Otra",                            "id_resp_vivanto": 0, "orden": 8}
+    ],
+    "FRECUENCIA_VISITA": [
+      {"valor": "1", "etiqueta": "Diaria",                  "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "Semanal",                 "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Quincenal",               "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Mensual",                 "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Cada 3 meses",            "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Cada 6 meses",            "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Anual",                   "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "8", "etiqueta": "Nunca",                   "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "99", "etiqueta": "No sabe / No responde",  "id_resp_vivanto": 0, "orden": 9}
+    ],
+    "ESTADO_PROCESO": [
+      {"valor": "1", "etiqueta": "En trámite (radicado)",                 "id_resp_vivanto": 0, "orden": 1},
+      {"valor": "2", "etiqueta": "En estudio / evaluación",               "id_resp_vivanto": 0, "orden": 2},
+      {"valor": "3", "etiqueta": "Aprobado / favorable",                  "id_resp_vivanto": 0, "orden": 3},
+      {"valor": "4", "etiqueta": "Rechazado / negado",                    "id_resp_vivanto": 0, "orden": 4},
+      {"valor": "5", "etiqueta": "Suspendido / archivado",                "id_resp_vivanto": 0, "orden": 5},
+      {"valor": "6", "etiqueta": "Pendiente de información adicional",    "id_resp_vivanto": 0, "orden": 6},
+      {"valor": "7", "etiqueta": "Recurso o tutela en curso",             "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "99", "etiqueta": "No sabe / No responde",                "id_resp_vivanto": 0, "orden": 8}
     ]
   }
 }
