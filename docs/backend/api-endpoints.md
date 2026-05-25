@@ -4,7 +4,7 @@
 **Base URL dev:** `http://localhost:8001/api/`  
 **Base URL prod:** `https://srniapk-dev.ngrok.app/api/` (tunnel ngrok)  
 **Autenticación:** JWT Bearer Token  
-**Última actualización:** 2026-05-21
+**Última actualización:** 2026-05-25 (Sprint 13 — backend habilitador panel web)
 
 ---
 
@@ -152,17 +152,18 @@ Respuesta:
 
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
-| GET | `/hogares/` | Hogares del encuestador autenticado | Sí |
-| POST | `/hogares/` | Crear nuevo hogar | Sí |
-| GET | `/hogares/{id}/` | Detalle de hogar | Sí |
+| GET | `/hogares/` | Hogares del encuestador autenticado (filtros server-side) | Sí |
+| POST | `/hogares/` | Crear nuevo hogar (auto-inserta autorizado como primer miembro) | Sí |
+| GET | `/hogares/{id}/` | Detalle de hogar con miembros + sesiones asociadas | Sí |
 | PATCH | `/hogares/{id}/` | Actualizar hogar | Sí |
 | GET | `/hogares/{id}/miembros/` | Miembros del hogar | Sí |
-| POST | `/hogares/{id}/miembros/` | Agregar miembro | Sí |
+| POST | `/hogares/{id}/agregar-miembro/` | Agregar miembro (rol MIEMBRO/TUTOR/CUIDADOR_PERMANENTE) | Sí |
+| PATCH | `/hogares/{id}/cambiar-autorizado/` | Reasignar el autorizado del hogar | Sí |
 
-### Crear hogar
+### Crear hogar (Sprint 12 — modelo v2)
 ```json
 {
-  "jefe_hogar": "uuid-victima",
+  "autorizado": "uuid-victima",
   "municipio": 29,
   "tipo_vivienda": "CASA",
   "condicion_ocupacion": "ARRIENDO",
@@ -172,18 +173,101 @@ Respuesta:
 }
 ```
 
+### Filtros del listado (Sprint 13)
+
+`GET /api/hogares/` acepta los siguientes query params server-side:
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `estado` | string | `BORRADOR` / `ACTIVO` / `ARCHIVADO` |
+| `municipio` | UUID | ID del municipio |
+| `tipo_vivienda` | string | `CASA` / `APARTAMENTO` / `CUARTO` / `CAMBUCHE` / `CONTENEDOR` / `OTRO` |
+| `creado_por` | UUID | ID del encuestador |
+| `created_at_after` | date | Hogares creados desde esta fecha (inclusive) |
+| `created_at_before` | date | Hogares creados hasta esta fecha (inclusive) |
+| `busqueda` | string | Texto libre en `codigo_hogar` o `observaciones` |
+| `ordering` | string | `created_at`, `updated_at`, `estado`, `numero_personas` (prefijo `-` para descendente) |
+| `page` | int | Página (default 1, 20 por página) |
+
+**Ejemplo combinado:** `GET /api/hogares/?estado=ACTIVO&tipo_vivienda=CASA&created_at_after=2026-01-01&ordering=-created_at`
+
+### Respuesta del detalle (Sprint 13)
+
+`GET /api/hogares/{id}/` ahora incluye:
+
+```json
+{
+  "id": "uuid", "autorizado": "uuid-victima", "autorizado_hash": "sha256",
+  "municipio": 29, "municipio_nombre": "Medellín",
+  "municipio_detalle": { "id": 29, "codigo_dane": "05001", "nombre": "Medellín", ... },
+  "tipo_vivienda": "CASA", "tipo_vivienda_display": "Casa",
+  "condicion_ocupacion": "ARRIENDO", "condicion_ocupacion_display": "Arriendo",
+  "estrato": 2, "numero_cuartos": 3, "numero_personas": 4,
+  "estado": "ACTIVO", "estado_display": "Activo — caracterización completa",
+  "miembros": [
+    {
+      "id": "uuid", "rol": "MIEMBRO", "rol_display": "Miembro del hogar",
+      "es_autorizado": true, "estado_inclusion": "INCLUIDO",
+      "estado_inclusion_display": "Incluido — víctima registrada en el RUV",
+      "parentesco": "", "parentesco_display": "",
+      "tipo_persona": "5001", "incluido_ruv": true, "tiene_discapacidad": false,
+      "victima": "uuid", "victima_hash": "sha256"
+    }
+  ],
+  "total_miembros": 4,
+  "sesiones": [
+    {
+      "id": "uuid", "hogar": "uuid",
+      "instrumento": "uuid", "instrumento_nombre": "Territorial",
+      "instrumento_numero": "V7",
+      "encuestador": "uuid", "encuestador_nombre": "Javier Aguilar",
+      "estado": "COMPLETADA", "estado_display": "Completada",
+      "porcentaje_completado": 100,
+      "fecha_inicio": "2026-05-20T14:00:00Z",
+      "fecha_fin": "2026-05-20T15:32:00Z",
+      "created_at": "...", "updated_at": "..."
+    }
+  ],
+  "total_sesiones": 1,
+  "creado_por": "uuid-usuario", "encuestador_nombre": "Javier Aguilar",
+  "created_at": "...", "updated_at": "..."
+}
+```
+
 ---
 
 ## Encuestas (Sesiones)
 
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
-| GET | `/encuestas/` | Sesiones del encuestador | Sí |
+| GET | `/encuestas/` | Sesiones del encuestador (filtros + paginación cursor) | Sí |
 | POST | `/encuestas/` | Iniciar nueva sesión | Sí |
 | GET | `/encuestas/{id}/` | Detalle de sesión | Sí |
+| GET | `/encuestas/{id}/respuestas/` | Listado de respuestas guardadas | Sí |
 | POST | `/encuestas/{id}/responder/` | Guardar respuesta individual | Sí |
 | POST | `/encuestas/{id}/responder-bulk/` | Guardar N respuestas en una sola llamada (Sprint 8) | Sí |
 | POST | `/encuestas/{id}/finalizar/` | Cerrar sesión (estado COMPLETADA) | Sí |
+
+### Filtros del listado (Sprint 13)
+
+`GET /api/encuestas/` acepta:
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `estado` | string | `INICIADA` / `EN_PROGRESO` / `COMPLETADA` / `SUSPENDIDA` |
+| `instrumento` | UUID | Filtrar por instrumento |
+| `ruta_entrevista` | string | `GENERAL` / `ACCIONES_CONSTITUCIONALES` / `MODIFICACION_NUCLEO` / `ESPECIAL` |
+| `encuestador` | UUID | ID del encuestador |
+| `hogar` | UUID | ID del hogar |
+| `fecha_inicio_after` | date | Sesiones iniciadas desde esta fecha (inclusive) |
+| `fecha_inicio_before` | date | Sesiones iniciadas hasta esta fecha (inclusive) |
+| `porcentaje_min` | int | Porcentaje completado >= N |
+| `porcentaje_max` | int | Porcentaje completado <= N |
+| `ordering` | string | `created_at`, `updated_at`, `porcentaje_completado`, `fecha_inicio`, `fecha_fin` |
+| `cursor` | opaco | Cursor de paginación (devuelto en `next` / `previous`) |
+| `page_size` | int | Tamaño de página (default 20, máx 200) |
+
+**Paginación cursor:** este endpoint usa `CursorTimePagination` (más estable que offset para listas que crecen rápido). El cliente sigue los enlaces `next` / `previous` sin calcular páginas.
 
 ### Crear sesión
 ```json
@@ -297,6 +381,91 @@ Parámetros opcionales: `desde=YYYY-MM-DD`, `hasta=YYYY-MM-DD`
   "sesiones_recientes": []
 }
 ```
+
+---
+
+## Reportes — Supervisor y Dashboard (Sprint 13)
+
+Endpoints habilitadores para el panel web. Requieren perfil con `puede_ver_reportes=True`.
+
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| GET | `/reportes/supervisor/` | Métricas comparativas por encuestador (vista supervisor) | Sí — `puede_ver_reportes` |
+| GET | `/reportes/dashboard/series/` | Series temporales y distribución por instrumento | Sí — `puede_ver_reportes` |
+
+### `GET /reportes/supervisor/`
+
+Tabla cross-encuestador con métricas agregadas del período.
+
+**Query params:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `desde` | date | Inicio del período (default: día 1 del mes actual) |
+| `hasta` | date | Fin del período (default: hoy) |
+
+**Respuesta:**
+
+```json
+{
+  "periodo_desde": "2026-05-01",
+  "periodo_hasta": "2026-05-25",
+  "encuestadores_activos": 5,
+  "totales": {
+    "sesiones_total": 120,
+    "sesiones_completadas": 87,
+    "sesiones_en_progreso": 30,
+    "sesiones_suspendidas": 3,
+    "hogares_caracterizados": 80,
+    "promedio_completado": 76.4
+  },
+  "encuestadores": [
+    {
+      "id": "uuid",
+      "codigo_usuario": "ALEXJUT",
+      "nombre_completo": "Javier Aguilar",
+      "perfil_codigo": "ASISTENCIA",
+      "sesiones_total": 30,
+      "sesiones_completadas": 25,
+      "sesiones_en_progreso": 4,
+      "sesiones_suspendidas": 1,
+      "hogares_caracterizados": 22,
+      "promedio_completado": 82.1,
+      "ultima_actividad": "2026-05-25T14:32:00Z"
+    }
+  ]
+}
+```
+
+### `GET /reportes/dashboard/series/`
+
+Datos para gráficos del dashboard: serie temporal diaria (últimos 30 días por default) y distribución por instrumento. Si el usuario tiene `puede_administrar=True` ve a todo el equipo; si solo tiene `puede_ver_reportes` ve únicamente sus propias sesiones.
+
+**Query params:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `desde` | date | Inicio del período (default: hoy − 30 días) |
+| `hasta` | date | Fin del período (default: hoy) |
+
+**Respuesta:**
+
+```json
+{
+  "periodo_desde": "2026-04-25",
+  "periodo_hasta": "2026-05-25",
+  "serie_diaria": [
+    { "fecha": "2026-04-25", "sesiones_iniciadas": 4, "sesiones_completadas": 3 },
+    { "fecha": "2026-04-26", "sesiones_iniciadas": 2, "sesiones_completadas": 0 }
+  ],
+  "distribucion_por_instrumento": [
+    { "instrumento_codigo": "TERRITORIAL", "instrumento_nombre": "Caracterización Territorial", "total": 45 },
+    { "instrumento_codigo": "ASISTENCIA",  "instrumento_nombre": "Asistencia",                  "total": 30 }
+  ]
+}
+```
+
+> **Nota:** la serie incluye todos los días del rango (incluso los días sin actividad, con ceros). Esto evita que el frontend tenga que rellenar los huecos.
 
 ---
 

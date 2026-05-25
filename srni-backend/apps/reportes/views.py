@@ -13,7 +13,7 @@ Permisos:
 import csv
 from datetime import date, timedelta, datetime
 
-from django.db.models import Count, Avg, Q, Sum
+from django.db.models import Count, Avg, Q, Sum, Max
 from django.db.models.functions import TruncDate
 from django.http import StreamingHttpResponse
 from django.utils import timezone
@@ -23,13 +23,17 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.autenticacion.permissions import PuedeCaracterizar, PuedeVerReportes
+from apps.autenticacion.permissions import (
+    PuedeCaracterizar, PuedeVerReportes, PuedeAdministrar,
+)
 from apps.encuestas.models import SesionEncuesta, RespuestaEncuesta
 from apps.autenticacion.models import Usuario
 
 from .serializers import (
     ProduccionEncuestadorSerializer,
     SesionResumenReporteSerializer,
+    SupervisorReporteSerializer,
+    DashboardSeriesSerializer,
 )
 
 
@@ -282,3 +286,196 @@ def produccion_export_csv(request):
     )
     response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
     return response
+
+
+# ─── Endpoint: vista supervisor (S13) ─────────────────────────────────────────
+
+def _rango_periodo(request):
+    """Resuelve el rango ?desde=&hasta= con defaults (mes actual)."""
+    hoy = date.today()
+    desde = _parse_date(request.query_params.get('desde'), hoy.replace(day=1))
+    hasta = _parse_date(request.query_params.get('hasta'), hoy)
+    desde_dt = make_aware(datetime(desde.year, desde.month, desde.day, 0, 0, 0))
+    hasta_dt = make_aware(datetime(hasta.year, hasta.month, hasta.day, 23, 59, 59))
+    return desde, hasta, desde_dt, hasta_dt
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, PuedeVerReportes])
+def supervisor_reporte(request):
+    """
+    Vista supervisor — métricas comparativas por encuestador.
+
+    Query params:
+      desde   ISO date — inicio del período (default: 1° del mes actual)
+      hasta   ISO date — fin del período (default: hoy)
+
+    Requiere perfil con puede_ver_reportes=True.
+
+    Respuesta:
+      {
+        "periodo_desde": "2026-05-01",
+        "periodo_hasta": "2026-05-25",
+        "encuestadores_activos": 5,
+        "totales": { "sesiones_total": ..., "promedio_completado": ... },
+        "encuestadores": [
+          {
+            "id": "...", "codigo_usuario": "ENC001",
+            "nombre_completo": "...", "perfil_codigo": "ASISTENCIA",
+            "sesiones_total": 30, "sesiones_completadas": 25,
+            "hogares_caracterizados": 22, "promedio_completado": 82.1,
+            "ultima_actividad": "2026-05-25T14:32:00Z"
+          }, ...
+        ]
+      }
+    """
+    desde, hasta, desde_dt, hasta_dt = _rango_periodo(request)
+
+    sesiones_qs = SesionEncuesta.objects.filter(
+        created_at__range=(desde_dt, hasta_dt),
+        encuestador__isnull=False,
+    )
+
+    # Agregaciones por encuestador
+    por_enc = sesiones_qs.values(
+        'encuestador__id',
+        'encuestador__codigo_usuario',
+        'encuestador__nombre_completo',
+        'encuestador__perfil__codigo',
+    ).annotate(
+        sesiones_total=Count('id'),
+        sesiones_completadas=Count('id', filter=Q(estado='COMPLETADA')),
+        sesiones_en_progreso=Count(
+            'id',
+            filter=Q(estado__in=['INICIADA', 'EN_PROGRESO']),
+        ),
+        sesiones_suspendidas=Count('id', filter=Q(estado='SUSPENDIDA')),
+        hogares_caracterizados=Count(
+            'hogar', filter=Q(estado='COMPLETADA'), distinct=True,
+        ),
+        promedio_completado=Avg('porcentaje_completado'),
+        ultima_actividad=Max('updated_at'),
+    ).order_by('-sesiones_total')
+
+    encuestadores = [
+        {
+            'id': item['encuestador__id'],
+            'codigo_usuario': item['encuestador__codigo_usuario'],
+            'nombre_completo': item['encuestador__nombre_completo'],
+            'perfil_codigo': item['encuestador__perfil__codigo'] or '',
+            'sesiones_total': item['sesiones_total'],
+            'sesiones_completadas': item['sesiones_completadas'],
+            'sesiones_en_progreso': item['sesiones_en_progreso'],
+            'sesiones_suspendidas': item['sesiones_suspendidas'],
+            'hogares_caracterizados': item['hogares_caracterizados'],
+            'promedio_completado': round(item['promedio_completado'] or 0.0, 1),
+            'ultima_actividad': item['ultima_actividad'],
+        }
+        for item in por_enc
+    ]
+
+    # Totales globales
+    global_agg = sesiones_qs.aggregate(
+        sesiones_total=Count('id'),
+        sesiones_completadas=Count('id', filter=Q(estado='COMPLETADA')),
+        sesiones_en_progreso=Count(
+            'id', filter=Q(estado__in=['INICIADA', 'EN_PROGRESO']),
+        ),
+        sesiones_suspendidas=Count('id', filter=Q(estado='SUSPENDIDA')),
+        hogares_caracterizados=Count(
+            'hogar', filter=Q(estado='COMPLETADA'), distinct=True,
+        ),
+        promedio_completado=Avg('porcentaje_completado'),
+    )
+
+    data = {
+        'periodo_desde': desde,
+        'periodo_hasta': hasta,
+        'encuestadores_activos': len(encuestadores),
+        'totales': {
+            'sesiones_total': global_agg['sesiones_total'] or 0,
+            'sesiones_completadas': global_agg['sesiones_completadas'] or 0,
+            'sesiones_en_progreso': global_agg['sesiones_en_progreso'] or 0,
+            'sesiones_suspendidas': global_agg['sesiones_suspendidas'] or 0,
+            'hogares_caracterizados': global_agg['hogares_caracterizados'] or 0,
+            'promedio_completado': round(global_agg['promedio_completado'] or 0.0, 1),
+        },
+        'encuestadores': encuestadores,
+    }
+
+    return Response(SupervisorReporteSerializer(data).data)
+
+
+# ─── Endpoint: dashboard series temporales (S13) ──────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, PuedeVerReportes])
+def dashboard_series(request):
+    """
+    Series temporales para gráficos del dashboard.
+
+    Query params:
+      desde   ISO date — default: hoy − 30 días
+      hasta   ISO date — default: hoy
+
+    Devuelve:
+      - serie_diaria: lista de (fecha, sesiones_iniciadas, sesiones_completadas)
+      - distribucion_por_instrumento: lista (instrumento_codigo, nombre, total)
+
+    Si el usuario tiene puede_administrar=True ve todos los encuestadores.
+    Si solo tiene puede_ver_reportes ve únicamente sus propias sesiones.
+    """
+    hoy = date.today()
+    desde = _parse_date(request.query_params.get('desde'), hoy - timedelta(days=30))
+    hasta = _parse_date(request.query_params.get('hasta'), hoy)
+    desde_dt = make_aware(datetime(desde.year, desde.month, desde.day, 0, 0, 0))
+    hasta_dt = make_aware(datetime(hasta.year, hasta.month, hasta.day, 23, 59, 59))
+
+    qs = SesionEncuesta.objects.filter(created_at__range=(desde_dt, hasta_dt))
+    if not request.user.puede('administrar'):
+        qs = qs.filter(encuestador=request.user)
+
+    # Serie diaria de iniciadas (created_at) y completadas (fecha_fin)
+    iniciadas_qs = qs.annotate(
+        fecha=TruncDate('created_at'),
+    ).values('fecha').annotate(total=Count('id'))
+    iniciadas_map = {item['fecha']: item['total'] for item in iniciadas_qs}
+
+    completadas_qs = qs.filter(estado='COMPLETADA', fecha_fin__isnull=False).annotate(
+        fecha=TruncDate('fecha_fin'),
+    ).values('fecha').annotate(total=Count('id'))
+    completadas_map = {item['fecha']: item['total'] for item in completadas_qs}
+
+    # Generar serie completa día a día (incluyendo días sin actividad)
+    serie_diaria = []
+    cursor = desde
+    while cursor <= hasta:
+        serie_diaria.append({
+            'fecha': cursor,
+            'sesiones_iniciadas': iniciadas_map.get(cursor, 0),
+            'sesiones_completadas': completadas_map.get(cursor, 0),
+        })
+        cursor += timedelta(days=1)
+
+    # Distribución por instrumento (no usamos perfil — el modelo no lo tiene)
+    distrib_qs = qs.values(
+        'instrumento__codigo',
+        'instrumento__nombre',
+    ).annotate(total=Count('id')).order_by('-total')
+    distribucion = [
+        {
+            'instrumento_codigo': item['instrumento__codigo'] or '',
+            'instrumento_nombre': item['instrumento__nombre'] or '',
+            'total': item['total'],
+        }
+        for item in distrib_qs
+    ]
+
+    data = {
+        'periodo_desde': desde,
+        'periodo_hasta': hasta,
+        'serie_diaria': serie_diaria,
+        'distribucion_por_instrumento': distribucion,
+    }
+
+    return Response(DashboardSeriesSerializer(data).data)

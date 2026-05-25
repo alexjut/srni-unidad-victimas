@@ -8,6 +8,7 @@ MiembroHogarSerializer  — miembro con campos PII opcionales (cifrados en model
 from rest_framework import serializers
 from apps.parametricas.serializers import MunicipioSerializer, TipoDocumentoSerializer
 from apps.victimas.serializers import VictimaListSerializer
+from apps.encuestas.serializers import SesionEncuestaListSerializer
 from .models import Hogar, MiembroHogar
 
 
@@ -131,10 +132,14 @@ class HogarDetalleSerializer(serializers.ModelSerializer):
     )
     municipio_detalle = MunicipioSerializer(source='municipio', read_only=True)
     miembros = MiembroHogarListSerializer(many=True, read_only=True)
+    sesiones = SesionEncuestaListSerializer(many=True, read_only=True)
     total_miembros = serializers.IntegerField(source='miembros.count', read_only=True)
     total_sesiones = serializers.IntegerField(source='sesiones.count', read_only=True)
     autorizado_hash = serializers.CharField(
         source='autorizado.numero_documento_hash', read_only=True
+    )
+    encuestador_nombre = serializers.CharField(
+        source='creado_por.nombre_completo', read_only=True, default=None
     )
 
     class Meta:
@@ -148,16 +153,18 @@ class HogarDetalleSerializer(serializers.ModelSerializer):
             'estrato', 'numero_cuartos', 'numero_personas',
             'estado', 'estado_display',
             'observaciones',
-            'miembros', 'total_miembros', 'total_sesiones',
-            'creado_por',
+            'miembros', 'total_miembros',
+            'sesiones', 'total_sesiones',
+            'creado_por', 'encuestador_nombre',
             'created_at', 'updated_at',
         ]
         read_only_fields = [
             'id', 'created_at', 'updated_at',
             'estado_display', 'tipo_vivienda_display',
             'condicion_ocupacion_display', 'municipio_nombre', 'municipio_detalle',
-            'miembros', 'total_miembros', 'total_sesiones',
-            'autorizado_hash',
+            'miembros', 'total_miembros',
+            'sesiones', 'total_sesiones',
+            'autorizado_hash', 'encuestador_nombre',
         ]
 
 
