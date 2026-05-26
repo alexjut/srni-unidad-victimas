@@ -7,6 +7,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { descargarInstrumento } from '../../../src/services/sincronizacion';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
@@ -37,6 +38,7 @@ export default function SesionDetalleScreen() {
   const [sesion, setSesion] = useState<SesionDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
+  const [continuandoFormulario, setContinuandoFormulario] = useState(false);
   const [error, setError] = useState('');
 
   function cargar() {
@@ -163,9 +165,27 @@ export default function SesionDetalleScreen() {
             <Text style={styles.seccionTitulo}>Continuar</Text>
 
             <GovButton
-              label={`Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`}
+              label={
+                continuandoFormulario
+                  ? 'Cargando instrumento…'
+                  : `Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`
+              }
               icon="clipboard-text"
-              onPress={() =>
+              loading={continuandoFormulario}
+              disabled={continuandoFormulario}
+              onPress={async () => {
+                // Sprint 17: asegurar que el instrumento de ESTA sesión está
+                // descargado en SQLite local antes de entrar al formulario.
+                // Si SQLite tiene un instrumento distinto (porque el usuario
+                // venía de otra sesión), re-descargar sobreescribe.
+                setContinuandoFormulario(true);
+                try {
+                  if ((sesion as any).instrumento_codigo) {
+                    await descargarInstrumento((sesion as any).instrumento_codigo);
+                  }
+                } finally {
+                  setContinuandoFormulario(false);
+                }
                 router.push({
                   pathname: '/(main)/formulario',
                   params: {
@@ -173,8 +193,8 @@ export default function SesionDetalleScreen() {
                     instrumentoId: sesion.instrumento,
                     hogarId: sesion.hogar,
                   },
-                })
-              }
+                });
+              }}
             />
 
             <View style={styles.sepBtn}>

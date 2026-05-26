@@ -205,6 +205,7 @@ export interface SesionResumen {
   id: string;
   hogar: string;
   instrumento: string;         // UUID de InstrumentoVersion (Sprint 7)
+  instrumento_codigo?: string; // Código del perfil — necesario para descargar instrumento offline (Sprint 17)
   instrumento_nombre: string;
   instrumento_numero: string;  // p.ej. "V8"
   encuestador: string | null;

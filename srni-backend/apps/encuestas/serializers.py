@@ -26,6 +26,9 @@ class RespuestaEncuestaSerializer(serializers.ModelSerializer):
 
 class SesionEncuestaListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    instrumento_codigo = serializers.CharField(
+        source='instrumento.codigo', read_only=True, default=None
+    )
     instrumento_nombre = serializers.CharField(
         source='instrumento.nombre', read_only=True, default=None
     )
@@ -51,6 +54,9 @@ class SesionEncuestaListSerializer(serializers.ModelSerializer):
 
 class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    instrumento_codigo = serializers.CharField(
+        source='instrumento.codigo', read_only=True, default=None
+    )
     instrumento_nombre = serializers.CharField(
         source='instrumento.nombre', read_only=True, default=None
     )
@@ -64,7 +70,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
         model = SesionEncuesta
         fields = [
             'id', 'hogar',
-            'instrumento', 'instrumento_nombre', 'instrumento_numero',
+            'instrumento', 'instrumento_codigo', 'instrumento_nombre', 'instrumento_numero',
             'ruta_entrevista',
             'encuestador',
             'estado', 'estado_display',
@@ -76,7 +82,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id', 'porcentaje_completado', 'fecha_inicio',
-            'estado_display', 'instrumento_nombre', 'instrumento_numero',
+            'estado_display', 'instrumento_codigo', 'instrumento_nombre', 'instrumento_numero',
             'respuestas', 'total_respuestas',
             'created_at', 'updated_at',
         ]
