@@ -1,29 +1,31 @@
 /**
- * Instrumentos en memoria — Sprint 18 Fase 1B (definitivo).
+ * Instrumentos en memoria — Sprint 18 Fase C (lazy per-perfil).
  *
- * Los instrumentos (capítulos, preguntas, opciones, reglas) son datos
- * ESTÁTICOS read-only que vienen del bundle empaquetado en el APK.
- * NO tiene sentido meterlos en SQLite — solo causa transacciones masivas
- * que colisionan con escrituras de cola/borradores → 'database is locked'.
+ * Los instrumentos son datos ESTÁTICOS read-only del bundle. Esta capa los
+ * indexa en Maps en memoria. Lectura O(1) directa, sin SQLite, sin awaits.
  *
- * Esta capa carga los 8 instrumentos al primer uso (require static) y los
- * mantiene en memoria. La lectura es O(1) directamente sobre Map.
+ * Sprint 18 Fase C: solo MANTIENE UN PERFIL EN MEMORIA a la vez.
+ * Cuando se activa un perfil distinto, libera los Maps del anterior.
+ * En una entrevista solo se usa un instrumento — no tiene sentido tener
+ * los 8 cargados (protege celulares gama baja de campo, 2-3MB extra).
  *
  * SQLite se mantiene SOLO para:
- *   - borradores (sesiones en progreso)
- *   - respuestas (lo que el usuario captura)
- *   - cola_sincronizacion
- *   - hogares_offline
+ *   - borradores, respuestas, cola_sincronizacion, hogares_offline
  *
  * API:
- *   activarPerfil(codigo)        - cambia el perfil activo (sin escribir nada)
- *   getCapitulos()               - capítulos del perfil activo
- *   getPreguntas(capId)          - preguntas de un capítulo
- *   getOpciones(pregId)          - opciones de una pregunta
- *   getOpcionesBatch(pregIds[])  - {pregId → opciones[]}
- *   getReglas()                  - reglas skip logic del perfil activo
- *   getMeta()                    - metadata del perfil activo (id, codigo, version)
- *   getCapituloIdDePregunta(id)  - para joins respuestas → capítulo
+ *   activarPerfil(codigo)         - carga ese perfil en memoria, libera el previo
+ *   listaPerfiles()               - los 8 códigos disponibles en el bundle
+ *   getPerfilActivo()             - codigo del perfil activo o null
+ *   getMeta()                     - metadata {id, codigo, version}
+ *   getCapitulos()                - capítulos del perfil activo
+ *   getPreguntas(capId)           - preguntas de un capítulo
+ *   getOpciones(pregId)           - opciones de una pregunta
+ *   getOpcionesBatch(pregIds[])   - {pregId → opciones[]}
+ *   getReglas()                   - reglas skip logic del perfil activo
+ *   getReglasPorCapitulo(capId)   - reglas que afectan a un capítulo
+ *   contarPreguntasPorCapitulo()  - {capId → {total, obligatorias}}
+ *   getCapituloIdDePregunta(id)   - join respuesta → capítulo
+ *   codigoPorInstrumentoId(uuid)  - busca el código del perfil por UUID
  */
 import type {
   CapituloRow, PreguntaRow, OpcionRow, ReglaSkipLogicRow,
@@ -44,101 +46,116 @@ const BUNDLED: Record<string, any> = {
 
 export type PerfilCodigo = keyof typeof BUNDLED;
 
-// ── Caches (se llenan al primer acceso) ──────────────────────────────────────
-const _porCodigo = new Map<string, any>();
-const _capsPorPerfil = new Map<string, CapituloRow[]>();
-const _capPorId = new Map<string, CapituloRow>();
-const _pregsPorCap = new Map<string, PreguntaRow[]>();
-const _opcionesPorPreg = new Map<string, OpcionRow[]>();
-const _reglasPorPerfil = new Map<string, ReglaSkipLogicRow[]>();
-const _capPorPregId = new Map<string, string>();   // para JOIN respuestas → cap
-
+// ── Caches del PERFIL ACTIVO (se vacían al cambiar de perfil) ────────────────
+let _capsActivo: CapituloRow[] = [];
+let _pregsPorCap = new Map<string, PreguntaRow[]>();
+let _opcionesPorPreg = new Map<string, OpcionRow[]>();
+let _reglasActivo: ReglaSkipLogicRow[] = [];
+let _capPorPregId = new Map<string, string>();
+let _conteoPreguntas: Record<string, { total: number; obligatorias: number }> = {};
+let _metaActivo: InstrumentoMeta | null = null;
 let _perfilActivo: string | null = null;
-let _inicializado = false;
 
-// ── Inicialización idempotente ───────────────────────────────────────────────
-function _inicializar(): void {
-  if (_inicializado) return;
+/**
+ * Vacía los Maps del perfil actual y carga el nuevo desde el bundle.
+ * Asignar nuevos Map permite que el GC libere el anterior (no acumula).
+ */
+function _cargarPerfilEnMemoria(codigo: string): void {
+  const data = BUNDLED[codigo];
+  if (!data) throw new Error(`Perfil no encontrado en el bundle: ${codigo}`);
 
-  for (const [codigo, data] of Object.entries(BUNDLED)) {
-    _porCodigo.set(codigo, data);
+  const caps: CapituloRow[] = [];
+  const pregsPorCap = new Map<string, PreguntaRow[]>();
+  const opcionesPorPreg = new Map<string, OpcionRow[]>();
+  const capPorPregId = new Map<string, string>();
+  const conteo: Record<string, { total: number; obligatorias: number }> = {};
 
-    const caps: CapituloRow[] = [];
-    for (const cap of data.capitulos ?? []) {
-      const capRow: CapituloRow = {
-        id: cap.id,
-        codigo: cap.codigo,
-        nombre: cap.nombre,
-        orden: cap.orden ?? 0,
-        nivel: cap.nivel ?? 'HOGAR',
-        activo: 1,
-      };
-      caps.push(capRow);
-      _capPorId.set(cap.id, capRow);
+  for (const cap of data.capitulos ?? []) {
+    caps.push({
+      id: cap.id,
+      codigo: cap.codigo,
+      nombre: cap.nombre,
+      orden: cap.orden ?? 0,
+      nivel: cap.nivel ?? 'HOGAR',
+      activo: 1,
+    });
 
-      const pregs: PreguntaRow[] = [];
-      for (const p of cap.preguntas ?? []) {
-        if (!p.activa) continue;
-        const pregRow: PreguntaRow = {
-          id: p.id,
-          capitulo_id: cap.id,
-          codigo_externo: p.codigo_externo,
-          no_pregunta: p.no_pregunta ?? '',
-          texto: p.texto ?? '',
-          descripcion_ayuda: p.descripcion_ayuda ?? '',
-          tipo: p.tipo ?? 'TEXTO',
-          nivel: p.nivel ?? cap.nivel ?? 'HOGAR',
-          orden: p.orden ?? 0,
-          obligatoria: p.obligatoria ? 1 : 0,
-          activa: 1,
-          validaciones: typeof p.validaciones === 'string'
-            ? p.validaciones
-            : JSON.stringify(p.validaciones ?? {}),
-        };
-        pregs.push(pregRow);
-        _capPorPregId.set(p.id, cap.id);
+    const pregs: PreguntaRow[] = [];
+    let obligs = 0;
+    for (const p of cap.preguntas ?? []) {
+      if (!p.activa) continue;
+      const obligatoria = p.obligatoria ? 1 : 0;
+      if (obligatoria === 1) obligs++;
+      pregs.push({
+        id: p.id,
+        capitulo_id: cap.id,
+        codigo_externo: p.codigo_externo,
+        no_pregunta: p.no_pregunta ?? '',
+        texto: p.texto ?? '',
+        descripcion_ayuda: p.descripcion_ayuda ?? '',
+        tipo: p.tipo ?? 'TEXTO',
+        nivel: p.nivel ?? cap.nivel ?? 'HOGAR',
+        orden: p.orden ?? 0,
+        obligatoria,
+        activa: 1,
+        validaciones: typeof p.validaciones === 'string'
+          ? p.validaciones
+          : JSON.stringify(p.validaciones ?? {}),
+      });
+      capPorPregId.set(p.id, cap.id);
 
-        const opciones: OpcionRow[] = (p.opciones ?? []).map((o: any) => ({
-          id: o.id,
-          pregunta_id: p.id,
-          valor: o.valor ?? '',
-          etiqueta: o.etiqueta ?? '',
-          orden: o.orden ?? 0,
-          finaliza_capitulo: o.finaliza_capitulo ? 1 : 0,
-        }));
-        _opcionesPorPreg.set(p.id, opciones);
-      }
-      pregs.sort((a, b) => a.orden - b.orden);
-      _pregsPorCap.set(cap.id, pregs);
+      const opciones: OpcionRow[] = (p.opciones ?? []).map((o: any) => ({
+        id: o.id,
+        pregunta_id: p.id,
+        valor: o.valor ?? '',
+        etiqueta: o.etiqueta ?? '',
+        orden: o.orden ?? 0,
+        finaliza_capitulo: o.finaliza_capitulo ? 1 : 0,
+      }));
+      opcionesPorPreg.set(p.id, opciones);
     }
-    caps.sort((a, b) => a.orden - b.orden);
-    _capsPorPerfil.set(codigo, caps);
-
-    const reglas: ReglaSkipLogicRow[] = (data.reglas ?? []).map((r: any) => ({
-      id: r.id,
-      instrumento_id: data.id,
-      pregunta_origen_codigo: r.pregunta_origen_codigo ?? null,
-      valor_trigger: r.valor_trigger ?? '',
-      expresion_origen: r.expresion_origen ?? '',
-      pregunta_afectada_id: r.pregunta_afectada ?? null,
-      pregunta_afectada_codigo: r.pregunta_afectada_codigo ?? null,
-      capitulo_afectado_id: r.capitulo_afectado ?? null,
-      accion: r.accion,
-    }));
-    _reglasPorPerfil.set(codigo, reglas);
+    pregs.sort((a, b) => a.orden - b.orden);
+    pregsPorCap.set(cap.id, pregs);
+    conteo[cap.id] = { total: pregs.length, obligatorias: obligs };
   }
+  caps.sort((a, b) => a.orden - b.orden);
 
-  _inicializado = true;
+  const reglas: ReglaSkipLogicRow[] = (data.reglas ?? []).map((r: any) => ({
+    id: r.id,
+    instrumento_id: data.id,
+    pregunta_origen_codigo: r.pregunta_origen_codigo ?? null,
+    valor_trigger: r.valor_trigger ?? '',
+    expresion_origen: r.expresion_origen ?? '',
+    pregunta_afectada_id: r.pregunta_afectada ?? null,
+    pregunta_afectada_codigo: r.pregunta_afectada_codigo ?? null,
+    capitulo_afectado_id: r.capitulo_afectado ?? null,
+    accion: r.accion,
+  }));
+
+  // Reemplazo atómico: el GC libera los Maps del perfil anterior
+  _capsActivo = caps;
+  _pregsPorCap = pregsPorCap;
+  _opcionesPorPreg = opcionesPorPreg;
+  _reglasActivo = reglas;
+  _capPorPregId = capPorPregId;
+  _conteoPreguntas = conteo;
+  _metaActivo = {
+    instrumento_id: data.id,
+    perfil_codigo: data.codigo,
+    version: data.version ?? data.numero ?? '',
+    descargado_en: '(bundled)',
+  };
+  _perfilActivo = codigo;
 }
 
 // ── API pública ──────────────────────────────────────────────────────────────
 
 export function activarPerfil(codigo: string): void {
-  _inicializar();
-  if (!_porCodigo.has(codigo)) {
+  if (!(codigo in BUNDLED)) {
     throw new Error(`Perfil no encontrado en el bundle: ${codigo}`);
   }
-  _perfilActivo = codigo;
+  if (_perfilActivo === codigo) return; // ya activo, no recargar
+  _cargarPerfilEnMemoria(codigo);
 }
 
 export function getPerfilActivo(): string | null {
@@ -146,41 +163,26 @@ export function getPerfilActivo(): string | null {
 }
 
 export function listaPerfiles(): PerfilCodigo[] {
-  _inicializar();
-  return Array.from(_porCodigo.keys()) as PerfilCodigo[];
+  return Object.keys(BUNDLED) as PerfilCodigo[];
 }
 
 export function getMeta(): InstrumentoMeta | null {
-  _inicializar();
-  if (!_perfilActivo) return null;
-  const data = _porCodigo.get(_perfilActivo);
-  if (!data) return null;
-  return {
-    instrumento_id: data.id,
-    perfil_codigo: data.codigo,
-    version: data.version ?? data.numero ?? '',
-    descargado_en: '(bundled)',
-  };
+  return _metaActivo;
 }
 
 export function getCapitulos(): CapituloRow[] {
-  _inicializar();
-  if (!_perfilActivo) return [];
-  return _capsPorPerfil.get(_perfilActivo) ?? [];
+  return _capsActivo;
 }
 
 export function getPreguntas(capituloId: string): PreguntaRow[] {
-  _inicializar();
   return _pregsPorCap.get(capituloId) ?? [];
 }
 
 export function getOpciones(preguntaId: string): OpcionRow[] {
-  _inicializar();
   return _opcionesPorPreg.get(preguntaId) ?? [];
 }
 
 export function getOpcionesBatch(preguntaIds: string[]): Record<string, OpcionRow[]> {
-  _inicializar();
   const out: Record<string, OpcionRow[]> = {};
   for (const id of preguntaIds) {
     out[id] = _opcionesPorPreg.get(id) ?? [];
@@ -189,33 +191,19 @@ export function getOpcionesBatch(preguntaIds: string[]): Record<string, OpcionRo
 }
 
 export function getReglas(): ReglaSkipLogicRow[] {
-  _inicializar();
-  if (!_perfilActivo) return [];
-  return _reglasPorPerfil.get(_perfilActivo) ?? [];
+  return _reglasActivo;
 }
 
 export function getReglasPorCapitulo(capituloId: string): ReglaSkipLogicRow[] {
-  return getReglas().filter((r) => r.capitulo_afectado_id === capituloId);
+  return _reglasActivo.filter((r) => r.capitulo_afectado_id === capituloId);
 }
 
 export function contarPreguntasPorCapitulo(): Record<string, { total: number; obligatorias: number }> {
-  _inicializar();
-  const out: Record<string, { total: number; obligatorias: number }> = {};
-  for (const caps of _capsPorPerfil.values()) {
-    for (const cap of caps) {
-      const pregs = _pregsPorCap.get(cap.id) ?? [];
-      out[cap.id] = {
-        total: pregs.length,
-        obligatorias: pregs.filter((p) => p.obligatoria === 1).length,
-      };
-    }
-  }
-  return out;
+  return _conteoPreguntas;
 }
 
 /** Útil para joins respuestas → capítulo (las respuestas viven en SQLite). */
 export function getCapituloIdDePregunta(preguntaId: string): string | null {
-  _inicializar();
   return _capPorPregId.get(preguntaId) ?? null;
 }
 
@@ -223,10 +211,12 @@ export function getCapituloIdDePregunta(preguntaId: string): string | null {
  * Sprint 18 Fase B: dado un instrumento_id (UUID) busca su código de perfil
  * en el bundle. Permite recuperar el código cuando la sesión solo tiene el
  * UUID y el detalle backend no es accesible (offline).
+ *
+ * Esta función SÍ debe escanear todos los bundles porque el UUID puede ser
+ * de cualquier perfil — no requiere cargarlos a memoria, solo lee el .id.
  */
 export function codigoPorInstrumentoId(instrumentoId: string): string | null {
-  _inicializar();
-  for (const [codigo, data] of _porCodigo.entries()) {
+  for (const [codigo, data] of Object.entries(BUNDLED)) {
     if (data?.id === instrumentoId) return codigo;
   }
   return null;
