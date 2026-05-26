@@ -23,7 +23,8 @@ import {
   Chip,
 } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as instrumentos from '../../../src/services/instrumentos';
+import type { PreguntaRow, OpcionRow } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -48,26 +49,26 @@ export default function GrabacionEntrevistaScreen() {
   const { estado, procesarEntrevista, errorMensaje, resultadosBatch } = useIAStore();
 
   const [transcripcion, setTranscripcion] = useState('');
-  const [preguntas, setPreguntas] = useState<instrumentoDao.PreguntaRow[]>([]);
+  const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
   const [opcionesPorPregunta, setOpcionesPorPregunta] = useState<
-    Record<string, instrumentoDao.OpcionRow[]>
+    Record<string, OpcionRow[]>
   >({});
   const [cargandoPreguntas, setCargandoPreguntas] = useState(true);
 
   const procesando = estado === 'procesando_entrevista';
 
-  // ── Cargar preguntas del capítulo desde SQLite ─────────────────────────────
+  // Sprint 18 Fase D: lecturas del instrumento desde memoria (no SQLite).
   useEffect(() => {
     if (!temaId) return;
-    (async () => {
-      const pgs = await instrumentoDao.getPreguntas(temaId);
+    try {
+      const pgs = instrumentos.getPreguntas(temaId);
       setPreguntas(pgs);
       if (pgs.length > 0) {
-        const opts = await instrumentoDao.getOpcionesBatch(pgs.map((p) => p.id));
-        setOpcionesPorPregunta(opts);
+        setOpcionesPorPregunta(instrumentos.getOpcionesBatch(pgs.map((p) => p.id)));
       }
+    } finally {
       setCargandoPreguntas(false);
-    })().catch(() => setCargandoPreguntas(false));
+    }
   }, [temaId]);
 
   // ── Navegar a revision-ia cuando lleguen los resultados ────────────────────

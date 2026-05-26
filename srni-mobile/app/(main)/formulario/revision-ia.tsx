@@ -22,7 +22,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -217,8 +217,9 @@ export default function RevisionIAScreen() {
       setCargando(false);
       return;
     }
-    (async () => {
-      const pgs = await instrumentoDao.getPreguntas(temaId);
+    // Sprint 18 Fase D: lectura desde memoria (sin await)
+    try {
+      const pgs = instrumentos.getPreguntas(temaId);
       const mapa: Record<string, string> = {};
       for (const p of pgs) mapa[p.id] = p.texto;
 
@@ -230,8 +231,9 @@ export default function RevisionIAScreen() {
         editando: false,
       }));
       setItems(editables);
+    } finally {
       setCargando(false);
-    })().catch(() => setCargando(false));
+    }
   }, [resultadosBatch, temaId]);
 
   // ── Limpieza al desmontar ─────────────────────────────────────────────────
@@ -287,7 +289,7 @@ export default function RevisionIAScreen() {
       // Obtener o crear borrador
       let bid = borradorIdParam ?? null;
       if (!bid && sesionServerId) {
-        const meta = await instrumentoDao.getMeta();
+        const meta = instrumentos.getMeta();
         const instrId = meta?.instrumento_id ?? '';
         const borrador = await borradoresDao.crearBorrador(instrId);
         bid = borrador.id;
