@@ -19,6 +19,7 @@ class RespuestaEncuestaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'sesion', 'pregunta',
             'pregunta_codigo', 'pregunta_texto',
+            'miembro',          # Sprint 21 — null si HOGAR, FK a MiembroHogar si PERSONA
             'valor', 'updated_at',
         ]
         read_only_fields = ['id', 'updated_at', 'pregunta_codigo', 'pregunta_texto']
@@ -149,6 +150,7 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
 class ResponderPreguntaSerializer(serializers.Serializer):
     """Input para POST /api/encuestas/{id}/responder/"""
     pregunta_id = serializers.UUIDField()
+    miembro_id = serializers.UUIDField(required=False, allow_null=True)
     valor = serializers.CharField(allow_blank=True, max_length=50_000)
 
     def validate_valor(self, value):
@@ -156,8 +158,9 @@ class ResponderPreguntaSerializer(serializers.Serializer):
 
 
 class BulkItemSerializer(serializers.Serializer):
-    """Un ítem dentro del bulk — pregunta_id + valor."""
+    """Un ítem dentro del bulk — pregunta_id + miembro_id (opcional) + valor."""
     pregunta_id = serializers.UUIDField()
+    miembro_id = serializers.UUIDField(required=False, allow_null=True)
     valor = serializers.CharField(allow_blank=True, max_length=50_000)
 
     def validate_valor(self, value):

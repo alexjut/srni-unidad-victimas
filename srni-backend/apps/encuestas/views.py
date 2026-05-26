@@ -20,9 +20,46 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.autenticacion.permissions import PuedeCaracterizar
 from apps.auditoria.models import LogAcceso
 from apps.formulario.models import Pregunta
+from apps.hogares.models import MiembroHogar
 from srni.pagination import CursorTimePagination
 from .models import SesionEncuesta, RespuestaEncuesta
 from .filters import SesionEncuestaFilterSet
+
+
+def _resolver_miembro(sesion, pregunta, miembro_id):
+    """
+    Sprint 21 — valida coherencia de nivel pregunta/miembro y devuelve la
+    instancia MiembroHogar (o None si la pregunta es HOGAR).
+
+    Reglas:
+      - pregunta.nivel == 'HOGAR':   miembro_id debe ser None.
+      - pregunta.nivel == 'PERSONA': miembro_id requerido y debe pertenecer
+                                     al hogar de la sesión.
+
+    Devuelve (miembro, error_dict). Si error_dict es no-None, la vista debe
+    responder 400 con ese dict.
+    """
+    if pregunta.nivel == 'HOGAR':
+        if miembro_id is not None:
+            return None, {
+                'miembro_id': f"La pregunta '{pregunta.codigo_externo}' es de nivel HOGAR; "
+                              f'no admite miembro_id.',
+            }
+        return None, None
+
+    # nivel == PERSONA
+    if miembro_id is None:
+        return None, {
+            'miembro_id': f"La pregunta '{pregunta.codigo_externo}' es de nivel PERSONA; "
+                          f'requiere miembro_id.',
+        }
+    try:
+        miembro = MiembroHogar.objects.get(pk=miembro_id, hogar=sesion.hogar_id)
+    except MiembroHogar.DoesNotExist:
+        return None, {
+            'miembro_id': f'El miembro {miembro_id} no pertenece al hogar de esta sesión.',
+        }
+    return miembro, None
 from .serializers import (
     SesionEncuestaListSerializer, SesionEncuestaDetalleSerializer,
     RespuestaEncuestaSerializer,
@@ -110,6 +147,7 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         pregunta_id = serializer.validated_data['pregunta_id']
+        miembro_id = serializer.validated_data.get('miembro_id')
         valor = serializer.validated_data['valor']
 
         # Verificar que la pregunta pertenece al instrumento de la sesión
@@ -124,10 +162,16 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Upsert de la respuesta
+        # Sprint 21 — resolver miembro según nivel de la pregunta
+        miembro, err = _resolver_miembro(sesion, pregunta, miembro_id)
+        if err:
+            return Response(err, status=status.HTTP_400_BAD_REQUEST)
+
+        # Upsert de la respuesta — uniqueness por (sesion, pregunta, miembro)
         respuesta, created = RespuestaEncuesta.objects.update_or_create(
             sesion=sesion,
             pregunta=pregunta,
+            miembro=miembro,
             defaults={'valor': valor},
         )
 
@@ -240,19 +284,60 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Sprint 21 — pre-cachear miembros del hogar (1 query) para validar
+        # cada item sin N+1.
+        miembros_map = {
+            str(m.pk): m for m in MiembroHogar.objects.filter(hogar=sesion.hogar_id)
+        }
+
         creadas, actualizadas = 0, 0
+        errores_nivel = []
         with transaction.atomic():
             for item in items:
                 pid = str(item['pregunta_id'])
+                pregunta = pregunta_map[pid]
+                miembro_id = item.get('miembro_id')
+                miembro_id_str = str(miembro_id) if miembro_id else None
+
+                # Validación HOGAR vs PERSONA (sin querying — usa el cache)
+                if pregunta.nivel == 'HOGAR':
+                    if miembro_id_str:
+                        errores_nivel.append(
+                            f'{pregunta.codigo_externo} es HOGAR pero trae miembro_id'
+                        )
+                        continue
+                    miembro = None
+                else:  # PERSONA
+                    if not miembro_id_str:
+                        errores_nivel.append(
+                            f'{pregunta.codigo_externo} es PERSONA pero falta miembro_id'
+                        )
+                        continue
+                    miembro = miembros_map.get(miembro_id_str)
+                    if miembro is None:
+                        errores_nivel.append(
+                            f'miembro {miembro_id_str} no pertenece al hogar'
+                        )
+                        continue
+
                 _, created = RespuestaEncuesta.objects.update_or_create(
                     sesion=sesion,
-                    pregunta=pregunta_map[pid],
+                    pregunta=pregunta,
+                    miembro=miembro,
                     defaults={'valor': item['valor']},
                 )
                 if created:
                     creadas += 1
                 else:
                     actualizadas += 1
+
+            if errores_nivel:
+                # Si hubo cualquier inconsistencia, abortar todo el bulk
+                transaction.set_rollback(True)
+                return Response(
+                    {'detail': 'Errores de nivel HOGAR/PERSONA', 'errores': errores_nivel[:10]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             nuevo_pct = sesion.recalcular_porcentaje()
             SesionEncuesta.objects.filter(pk=sesion.pk).update(

@@ -119,16 +119,27 @@ class SesionEncuesta(models.Model):
     def recalcular_porcentaje(self) -> int:
         """
         Calcula el porcentaje de preguntas obligatorias respondidas.
-        Solo cuenta preguntas activas y obligatorias del instrumento vigente.
+
+        Sprint 21 — las preguntas tipo PERSONA cuentan N veces (una por cada
+        miembro del hogar). Las HOGAR cuentan una sola vez.
         """
         from apps.formulario.models import Pregunta
 
-        total = Pregunta.objects.filter(
+        n_miembros = self.hogar.miembros.count() if self.hogar_id else 0
+        # Si el hogar no tiene miembros registrados todavía, asumimos 1
+        # (el autorizado) para no dividir por cero.
+        n_miembros = max(n_miembros, 1)
+
+        preg_hogar = Pregunta.objects.filter(
             capitulo__instrumento=self.instrumento,
-            obligatoria=True,
-            activa=True,
+            obligatoria=True, activa=True, nivel='HOGAR',
+        ).count()
+        preg_persona = Pregunta.objects.filter(
+            capitulo__instrumento=self.instrumento,
+            obligatoria=True, activa=True, nivel='PERSONA',
         ).count()
 
+        total = preg_hogar + preg_persona * n_miembros
         if total == 0:
             return 0
 
@@ -143,7 +154,12 @@ class SesionEncuesta(models.Model):
 class RespuestaEncuesta(models.Model):
     """
     Respuesta a una pregunta específica dentro de una sesión.
-    unique_together(sesion, pregunta) garantiza exactamente una respuesta por pregunta.
+
+    Sprint 21 — Una pregunta de nivel HOGAR tiene UNA respuesta por sesión
+    (miembro=NULL). Una pregunta de nivel PERSONA tiene UNA respuesta por
+    cada miembro del hogar (miembro != NULL, FK a MiembroHogar).
+    UniqueConstraint garantiza no duplicados.
+
     Para preguntas de selección múltiple, `valor` es un JSON array como string.
     """
     sesion = models.ForeignKey(
@@ -151,6 +167,15 @@ class RespuestaEncuesta(models.Model):
     )
     pregunta = models.ForeignKey(
         'formulario.Pregunta', on_delete=models.PROTECT, related_name='respuestas'
+    )
+    # Sprint 21 — para preguntas PERSONA: a qué miembro del hogar aplica.
+    # NULL si la pregunta es HOGAR. NOT NULL si es PERSONA (validado en serializer).
+    miembro = models.ForeignKey(
+        'hogares.MiembroHogar',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='respuestas',
+        help_text='Miembro del hogar al que aplica la respuesta. NULL si la pregunta es HOGAR.',
     )
     # Para OPCION_UNICA: "A" / Para OPCION_MULTIPLE: '["A","B"]' / Para SINO: "true"
     valor = models.TextField(blank=True, default='')
@@ -161,8 +186,18 @@ class RespuestaEncuesta(models.Model):
     class Meta:
         verbose_name = 'Respuesta'
         verbose_name_plural = 'Respuestas'
-        unique_together = [('sesion', 'pregunta')]
-        ordering = ['pregunta__orden']
+        constraints = [
+            # Sprint 21 — exactamente una respuesta por (sesion, pregunta, miembro).
+            # SQLite/PostgreSQL tratan NULL como distinto en UNIQUE — eso es lo
+            # que queremos: preguntas HOGAR (miembro=NULL) admiten 1 sola; las
+            # PERSONA (miembro=ID) admiten N (una por miembro).
+            models.UniqueConstraint(
+                fields=['sesion', 'pregunta', 'miembro'],
+                name='respuesta_unica_por_miembro',
+            ),
+        ]
+        ordering = ['pregunta__orden', 'miembro_id']
 
     def __str__(self):
-        return f'[{self.pregunta.codigo_externo}] → "{self.valor[:40]}"'
+        miembro = f' [m={str(self.miembro_id)[:8]}]' if self.miembro_id else ''
+        return f'[{self.pregunta.codigo_externo}]{miembro} → "{self.valor[:40]}"'
