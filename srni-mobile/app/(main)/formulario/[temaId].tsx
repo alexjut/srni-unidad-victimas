@@ -19,6 +19,7 @@ import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
+import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
 
@@ -430,7 +431,10 @@ function PreguntaItem({
   const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
   const esNumerico = pregunta.tipo === 'NUMERICO';
   const esFecha    = pregunta.tipo === 'FECHA';
-  const esRadio    = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA' || pregunta.tipo === 'COMBO_DINAMICO';
+  // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — se renderiza con
+  // SelectorMunicipio (consume /api/parametricas/municipios/todos/).
+  const esRadio    = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA';
+  const esCombo    = pregunta.tipo === 'COMBO_DINAMICO';
   const esMultiple = pregunta.tipo === 'LISTA_MULTIPLE';
   const esBoolean  = pregunta.tipo === 'BOOLEAN';
 
@@ -529,6 +533,16 @@ function PreguntaItem({
             ))}
           </RadioButton.Group>
         )
+      )}
+
+      {/* Sprint 20: COMBO_DINAMICO = municipio (Z2/Z5A/Z15/A23A/HV3/Lud_encuesta).
+          Consume /api/parametricas/municipios/todos/ con caché en memoria. */}
+      {esCombo && (
+        <SelectorMunicipio
+          valor={valor}
+          onChange={onChange}
+          label={pregunta.no_pregunta ? `${pregunta.no_pregunta} · Municipio` : 'Municipio'}
+        />
       )}
 
       {esMultiple && (

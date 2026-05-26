@@ -66,6 +66,15 @@ export const parametricasApi = {
       { params: { departamento: deptoId, activo: 'true', page_size: 200 } },
     ),
 
+  /**
+   * Sprint 20 — devuelve los 1102 municipios DANE de Colombia en una sola
+   * respuesta sin paginar. Usado para alimentar los selectores
+   * COMBO_DINAMICO del formulario (Z2/Z5A/Z15/A23A/HV3 — todos pedidos de
+   * municipio). El cliente cachea el resultado en memoria.
+   */
+  listarMunicipiosTodos: () =>
+    apiClient.get<Municipio[]>(`${BASE}/municipios/todos/`),
+
   listarPuntosPorDT: (dtId: number) =>
     apiClient.get<PaginatedResponse<PuntoAtencion>>(
       `${BASE}/puntos-atencion/`,
@@ -83,6 +92,7 @@ interface ParamCache {
   deptosPorDT: Map<number, Departamento[]>;
   muniPorDepto: Map<number, Municipio[]>;
   puntosPorDT: Map<number, PuntoAtencion[]>;
+  muniTodos: Municipio[] | null;
 }
 
 const paramCache: ParamCache = {
@@ -90,6 +100,7 @@ const paramCache: ParamCache = {
   deptosPorDT: new Map(),
   muniPorDepto: new Map(),
   puntosPorDT: new Map(),
+  muniTodos: null,
 };
 
 export const parametricasCacheado = {
@@ -124,11 +135,20 @@ export const parametricasCacheado = {
     return data.results;
   },
 
+  /** Sprint 20 — los 1102 municipios DANE para los COMBO_DINAMICO del formulario. */
+  async getMunicipiosTodos(): Promise<Municipio[]> {
+    if (paramCache.muniTodos) return paramCache.muniTodos;
+    const { data } = await parametricasApi.listarMunicipiosTodos();
+    paramCache.muniTodos = data;
+    return data;
+  },
+
   /** Limpia toda la caché (útil al cerrar sesión). */
   invalidar() {
     paramCache.direcciones = null;
     paramCache.deptosPorDT.clear();
     paramCache.muniPorDepto.clear();
     paramCache.puntosPorDT.clear();
+    paramCache.muniTodos = null;
   },
 };

@@ -3,7 +3,9 @@ Views de paramétricas — todos los endpoints son de solo lectura.
 Accesibles con autenticación JWT; no requieren permisos especiales.
 """
 from rest_framework import viewsets, mixins
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -56,6 +58,19 @@ class MunicipioViewSet(ReadOnlyViewSet):
     search_fields = ['nombre', 'codigo_dane']
     ordering_fields = ['nombre', 'codigo_dane', 'departamento__nombre']
     ordering = ['departamento__nombre', 'nombre']
+
+    @action(detail=False, methods=['get'], url_path='todos')
+    def todos(self, request):
+        """
+        Sprint 20: devuelve los 1102 municipios DANE en una sola respuesta
+        sin paginar. Usado por el mobile para cachear el catálogo completo
+        al login (1102 ítems × ~80 bytes ≈ 90 KB, perfectamente manejable).
+        Necesario para los selectores COMBO_DINAMICO del formulario que
+        piden 'Lugar de la encuesta', 'Lugar de residencia', etc.
+        """
+        qs = self.filter_queryset(self.get_queryset()).filter(activo=True)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(
