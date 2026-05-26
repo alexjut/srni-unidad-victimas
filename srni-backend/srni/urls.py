@@ -11,6 +11,7 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from drf_spectacular.utils import extend_schema
+from .debug_views import log_error_mobile
 
 
 def health_check(request):
@@ -84,6 +85,9 @@ urlpatterns = [
 
     # Módulo Sprint 10 — Reportes de producción
     path('api/reportes/', include('apps.reportes.urls')),
+
+    # Sprint 17 — Endpoint de debug: recibe errores móvil y los printea en consola
+    path('api/_debug/log/', log_error_mobile, name='debug-log-mobile'),
 
     # Documentación OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

@@ -8,6 +8,8 @@ import { useAuthStore } from '../src/stores/authStore';
 import { useSyncStore } from '../src/stores/syncStore';
 import { initDatabase } from '../src/db/schema';
 import { govTheme } from '../src/theme/govTheme';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { reportarExcepcion } from '../src/services/errorReporter';
 
 export default function RootLayout() {
   const { cargarPerfil, usuario } = useAuthStore();
@@ -22,19 +24,24 @@ export default function RootLayout() {
         await initDatabase();
       } catch (e) {
         console.warn('[RootLayout] initDatabase falló:', e);
+        reportarExcepcion(e, '[RootLayout] initDatabase');
       }
-      cargarPerfil().catch(() => {});
+      cargarPerfil().catch((e) => reportarExcepcion(e, '[RootLayout] cargarPerfil'));
     })();
   }, []);
 
   useEffect(() => {
-    if (usuario) inicializar().catch(() => {});
+    if (usuario) {
+      inicializar().catch((e) => reportarExcepcion(e, '[RootLayout] syncStore.inicializar'));
+    }
   }, [usuario?.id]);
 
   return (
-    <PaperProvider theme={govTheme}>
-      <StatusBar style="light" backgroundColor="#1565C0" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </PaperProvider>
+    <ErrorBoundary>
+      <PaperProvider theme={govTheme}>
+        <StatusBar style="light" backgroundColor="#1565C0" />
+        <Stack screenOptions={{ headerShown: false }} />
+      </PaperProvider>
+    </ErrorBoundary>
   );
 }
