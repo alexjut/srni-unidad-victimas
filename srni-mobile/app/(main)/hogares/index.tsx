@@ -2,13 +2,13 @@
  * Lista de hogares — GOV.CO design system.
  * Combina hogares del servidor (online) con hogares offline (SQLite).
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import {
   Text, Chip, FAB, ActivityIndicator, SegmentedButtons,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
 import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
 import { useSyncStore } from '../../../src/stores/syncStore';
@@ -114,13 +114,17 @@ export default function HogaresIndexScreen() {
       // SQLite no disponible
     }
 
-    if (estaOnline) {
-      try {
-        const res = await hogaresApi.listar(filtroEstado ? { estado: filtroEstado } : undefined);
-        for (const h of res.data.results) resultado.push({ tipo: 'servidor', data: h });
-      } catch {
-        setError('No se pudo cargar hogares del servidor.');
-      }
+    // Sprint 17 fix: NO condicionar la llamada a `estaOnline`. El flag se actualiza
+    // con polling cada 60 s y puede estar desincronizado al montar la pantalla
+    // (queda en false hasta que el primer checkConnectivity resuelva). El try/catch
+    // ya maneja el caso sin red. Esto evita el bug en el que el usuario no veía
+    // los hogares creados en el servidor.
+    try {
+      const res = await hogaresApi.listar(filtroEstado ? { estado: filtroEstado } : undefined);
+      for (const h of res.data.results) resultado.push({ tipo: 'servidor', data: h });
+    } catch {
+      if (estaOnline) setError('No se pudo cargar hogares del servidor.');
+      // Sin red: silenciosamente solo mostramos los offline.
     }
 
     setItems(resultado);
@@ -128,7 +132,14 @@ export default function HogaresIndexScreen() {
     setRefrescando(false);
   }, [estaOnline, filtroEstado]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  // useFocusEffect recarga al volver al tab (p. ej. tras crear un hogar en /nuevo
+  // o /conformar). Con useEffect tradicional la pantalla quedaba con estado obsoleto
+  // porque los tabs preservan la instancia montada.
+  useFocusEffect(
+    useCallback(() => {
+      cargar();
+    }, [cargar]),
+  );
 
   if (cargando) {
     return (
