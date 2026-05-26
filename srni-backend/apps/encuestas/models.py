@@ -63,6 +63,32 @@ class SesionEncuesta(models.Model):
         related_name='sesiones_encuesta',
     )
 
+    # Sprint 19 — Ubicación de atención (metadata del encuestador, no de la
+    # víctima). Reemplaza el viejo capítulo "INFORMACIÓN GENERAL" del APK
+    # original. Las 4 FKs forman una cascada UARIV:
+    #   direccion_territorial  → departamento_atencion  → municipio_atencion
+    #   direccion_territorial  → punto_atencion
+    direccion_territorial = models.ForeignKey(
+        'parametricas.DireccionTerritorial',
+        on_delete=models.PROTECT, null=True, blank=True,
+        related_name='sesiones',
+    )
+    departamento_atencion = models.ForeignKey(
+        'parametricas.Departamento',
+        on_delete=models.PROTECT, null=True, blank=True,
+        related_name='sesiones_atencion',
+    )
+    municipio_atencion = models.ForeignKey(
+        'parametricas.Municipio',
+        on_delete=models.PROTECT, null=True, blank=True,
+        related_name='sesiones_atencion',
+    )
+    punto_atencion = models.ForeignKey(
+        'parametricas.PuntoAtencion',
+        on_delete=models.PROTECT, null=True, blank=True,
+        related_name='sesiones',
+    )
+
     estado = models.CharField(
         max_length=15, choices=ESTADO, default='INICIADA', db_index=True
     )

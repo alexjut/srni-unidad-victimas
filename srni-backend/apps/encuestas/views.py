@@ -60,7 +60,9 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = SesionEncuesta.objects.select_related(
-            'hogar', 'instrumento', 'encuestador'
+            'hogar', 'instrumento', 'encuestador',
+            'direccion_territorial', 'departamento_atencion',
+            'municipio_atencion', 'punto_atencion',
         ).prefetch_related('respuestas')
         if not user.puede('administrar'):
             qs = qs.filter(encuestador=user)
