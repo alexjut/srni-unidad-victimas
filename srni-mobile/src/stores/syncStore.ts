@@ -54,8 +54,9 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   inicializar: async () => {
     await colaDao.resetearBloqueados();
 
-    const meta = await instrumentoDao.getMeta();
-    set({ instrumentoDescargado: !!meta });
+    // Sprint 18 F1B: los instrumentos viven en memoria (bundle).
+    // instrumentoDescargado siempre true porque el bundle siempre está disponible.
+    set({ instrumentoDescargado: true });
 
     await get().refrescarContadores();
     await get().checkConnectivity();
@@ -80,15 +81,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     set({ estaOnline: online });
 
     if (online) {
-      // Descargar instrumento si no lo tenemos (usa perfil_codigo del meta local)
-      if (!get().instrumentoDescargado) {
-        const descargado = await sincronizacionService.descargarInstrumento();
-        if (descargado) {
-          set({ instrumentoDescargado: true });
-        }
-      }
+      // Sprint 18 F1B: NO descargar instrumentos aquí — viven en el bundle
+      // y se cargan en memoria. La descarga masiva era la causa raíz del
+      // 'database is locked' que aparecía cada 60s del polling.
+      // (Fase 2 del plan original reintroducirá un GET /api/formulario/versiones/
+      //  ligero para detectar versiones nuevas, pero ESO no es descarga masiva.)
 
-      // Si acaba de recuperar conexión o hay pendientes, intentar sync
       await get().refrescarContadores();
       const { pendientesCola, sincronizando } = get();
       if ((eraOffline || pendientesCola > 0) && !sincronizando) {
