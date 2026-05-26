@@ -8,7 +8,7 @@ import * as instrumentoDao from '../../../src/db/instrumentoDao';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { descargarInstrumento } from '../../../src/services/sincronizacion';
+import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -188,21 +188,25 @@ export default function FormularioIndexScreen() {
       if (necesitaDescargar) {
         setDescargando(true);
         try {
+          // Sprint 18: tomar el código del instrumento de la sesión y cargarlo
+          // desde el BUNDLE (assets empaquetados en el APK). Sin red.
           const { data: sesion } = await encuestasApi.detalle(sesionServerId!);
-          const codigo = (sesion as any).instrumento_codigo;
-          reportarError({
-            nivel: 'info',
-            mensaje: `formulario/index: descargando '${codigo}' (caps actuales: ${caps.length}, meta actual: ${m?.instrumento_id?.slice(0,8) ?? 'null'}, sesion: ${instrumentoId?.slice(0,8)})`,
-            pantalla: 'formulario/index',
-            contexto: { sesionServerId, codigo, instrumentoId },
-          });
+          const codigo = (sesion as any).instrumento_codigo as string | undefined;
           if (codigo) {
-            const ok = await descargarInstrumento(codigo);
-            if (!ok) {
-              setErrorDescarga(`No se pudo descargar el instrumento ${codigo}. Revisa la consola Django para ver el error exacto.`);
+            try {
+              await asegurarInstrumentoLocal(codigo as PerfilCodigo);
+              caps = await instrumentoDao.getCapitulos();
+              m = await instrumentoDao.getMeta();
+            } catch (e) {
+              setErrorDescarga(`No se pudo cargar el instrumento ${codigo} desde el bundle local.`);
+              reportarError({
+                nivel: 'error',
+                mensaje: 'asegurarInstrumentoLocal falló',
+                stack: (e as Error)?.stack,
+                pantalla: 'formulario/index',
+                contexto: { codigo, sesionServerId },
+              });
             }
-            caps = await instrumentoDao.getCapitulos();
-            m = await instrumentoDao.getMeta();
           } else {
             setErrorDescarga('La sesión no tiene un código de instrumento asociado (instrumento_codigo).');
           }

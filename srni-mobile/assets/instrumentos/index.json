@@ -1,0 +1,66 @@
+[
+  {
+    "codigo": "ASISTENCIA",
+    "version": "V8",
+    "nombre": "Perfil Asistencia",
+    "archivo": "asistencia_v8.json",
+    "capitulos": 7,
+    "preguntas": 178
+  },
+  {
+    "codigo": "BUENAVENTURA",
+    "version": "V7",
+    "nombre": "Perfil Buenaventura UARIV",
+    "archivo": "buenaventura_v7.json",
+    "capitulos": 17,
+    "preguntas": 152
+  },
+  {
+    "codigo": "RURAL_ETNICO",
+    "version": "V1",
+    "nombre": "Perfil Rural Étnico UARIV V1",
+    "archivo": "rural_etnico_v1.json",
+    "capitulos": 14,
+    "preguntas": 106
+  },
+  {
+    "codigo": "SAN_ANDRES",
+    "version": "V7",
+    "nombre": "Perfil San Andrés, Providencia y Santa Catalina UARIV",
+    "archivo": "san_andres_v7.json",
+    "capitulos": 14,
+    "preguntas": 110
+  },
+  {
+    "codigo": "TELEFONICO",
+    "version": "V8",
+    "nombre": "Perfil Telefónico SAAH",
+    "archivo": "telefonico_v8.json",
+    "capitulos": 7,
+    "preguntas": 66
+  },
+  {
+    "codigo": "TERRITORIAL",
+    "version": "V7",
+    "nombre": "Perfil Territorial",
+    "archivo": "territorial_v7.json",
+    "capitulos": 14,
+    "preguntas": 198
+  },
+  {
+    "codigo": "URBANO_ETNICO",
+    "version": "V1",
+    "nombre": "Perfil Urbano Étnico UARIV V1",
+    "archivo": "urbano_etnico_v1.json",
+    "capitulos": 12,
+    "preguntas": 86
+  },
+  {
+    "codigo": "VICTIMAS_EXTERIOR",
+    "version": "V1",
+    "nombre": "Perfil Víctimas en el Exterior UARIV",
+    "archivo": "victimas_exterior_v1.json",
+    "capitulos": 8,
+    "preguntas": 110
+  }
+]

@@ -11,7 +11,7 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
-import { descargarInstrumento } from '../../../src/services/sincronizacion';
+import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -149,16 +149,14 @@ export default function CaracterizarScreen() {
         ruta_entrevista: rutaEntrevista,
       });
 
-      // Sprint 17: descargar el instrumento elegido a SQLite ANTES de
-      // navegar al hub. Sin esto el formulario [temaId].tsx no encontraría
-      // los capítulos/preguntas (SQLite solo guarda un instrumento a la vez).
-      // Si falla, formulario/index.tsx tiene un fallback que vuelve a
-      // intentar la descarga, pero avisamos al usuario aquí también.
-      const okDescarga = await descargarInstrumento(seleccionado.codigo);
-      if (!okDescarga) {
+      // Sprint 18: cargar el instrumento desde el bundle (no red).
+      // Idempotente — si ya está en SQLite no hace nada.
+      try {
+        await asegurarInstrumentoLocal(seleccionado.codigo as PerfilCodigo);
+      } catch (e) {
         Alert.alert(
           'Aviso',
-          `La sesión se creó pero el instrumento ${seleccionado.codigo} no se descargó completamente. La app intentará descargarlo automáticamente al abrir el formulario.`,
+          `La sesión se creó pero hubo un problema cargando el instrumento ${seleccionado.codigo} desde el dispositivo. Verifica los logs.`,
         );
       }
 

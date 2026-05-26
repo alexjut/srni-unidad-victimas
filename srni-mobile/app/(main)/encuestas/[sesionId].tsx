@@ -7,7 +7,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { descargarInstrumento } from '../../../src/services/sincronizacion';
+import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
@@ -174,14 +174,14 @@ export default function SesionDetalleScreen() {
               loading={continuandoFormulario}
               disabled={continuandoFormulario}
               onPress={async () => {
-                // Sprint 17: asegurar que el instrumento de ESTA sesión está
-                // descargado en SQLite local antes de entrar al formulario.
-                // Si SQLite tiene un instrumento distinto (porque el usuario
-                // venía de otra sesión), re-descargar sobreescribe.
+                // Sprint 18: cargar el instrumento de ESTA sesión desde el
+                // bundle empaquetado (assets, sin red). Idempotente: si ya
+                // está en SQLite no hace nada.
                 setContinuandoFormulario(true);
                 try {
-                  if ((sesion as any).instrumento_codigo) {
-                    await descargarInstrumento((sesion as any).instrumento_codigo);
+                  const codigo = (sesion as any).instrumento_codigo as string | undefined;
+                  if (codigo) {
+                    await asegurarInstrumentoLocal(codigo as PerfilCodigo);
                   }
                 } finally {
                   setContinuandoFormulario(false);
