@@ -24,28 +24,34 @@ export async function estaOnline(): Promise<boolean> {
 
 /**
  * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
- * Si ya tenemos la misma versión no hace nada.
+ * Si ya tenemos la misma versión no hace nada (evita re-escritura).
  * Usa el perfil_codigo del meta local cuando no se pasa parámetro.
+ *
+ * Sprint 17 fix: backend devuelve `codigo` y `version`, no `perfil_codigo`/`numero`.
+ * Errores ahora se reportan al backend (no silencio total).
  */
 export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
+  let perfil = '';
   try {
     const meta = await instrumentoDao.getMeta();
-    const perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
+    perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
 
     const { data } = await apiClient.get(
       `/api/formulario/instrumento/${perfil}/`,
     );
 
-    if (
-      meta?.instrumento_id === data.id &&
-      meta?.version === data.numero
-    ) {
-      return false;
+    // Comparar contra los campos reales del backend
+    const versionServidor = data.version ?? data.numero;
+    if (meta?.instrumento_id === data.id && meta?.version === versionServidor) {
+      return false; // ya tenemos esta versión
     }
 
     await instrumentoDao.guardarInstrumentoCompleto(data);
     return true;
-  } catch {
+  } catch (err) {
+    // Reportar al backend para visibilidad en consola Django
+    const { reportarExcepcion } = await import('./errorReporter');
+    reportarExcepcion(err, 'descargarInstrumento', { perfil });
     return false;
   }
 }

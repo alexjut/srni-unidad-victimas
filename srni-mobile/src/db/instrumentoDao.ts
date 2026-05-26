@@ -108,12 +108,22 @@ interface CapituloBackend {
   preguntas: PreguntaBackend[];
 }
 
+/**
+ * Forma real de la respuesta del backend (InstrumentoCompletoView).
+ * Sprint 17 fix: los campos son `codigo` y `version`, no `perfil_codigo`/`numero`.
+ * Esos nombres viejos quedaron como aliases solo para retro-compat con
+ * posibles mocks de tests pero NO los devuelve el backend real.
+ */
 export interface InstrumentoCompletoBackend {
-  id: string;           // UUID de InstrumentoVersion
-  perfil_codigo: string;
-  numero: string;
+  id: string;             // UUID de Instrumento
+  codigo: string;         // p.ej. "TERRITORIAL"
+  nombre?: string;
+  version: string;        // p.ej. "V7"
   capitulos: CapituloBackend[];
   reglas: ReglaBackend[];
+  // Aliases viejos opcionales (no se usan, mantenidos por si algún mock los pasa)
+  perfil_codigo?: string;
+  numero?: string;
 }
 
 // ─── Escritura ────────────────────────────────────────────────────────────────
@@ -186,11 +196,16 @@ export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBacken
       );
     }
 
+    // Sprint 17 fix: backend devuelve `codigo` y `version`, no `perfil_codigo`/`numero`.
+    // Aceptamos los aliases viejos como fallback solo por defensiva.
+    const perfilCodigo = data.codigo ?? data.perfil_codigo ?? '';
+    const version      = data.version ?? data.numero ?? '0';
+
     // Guardar metadata
     await db.runAsync(
       `INSERT INTO instrumento_meta (id, instrumento_id, perfil_codigo, version, descargado_en)
        VALUES (1, ?, ?, ?, ?)`,
-      [data.id, data.perfil_codigo, data.numero, new Date().toISOString()],
+      [data.id, perfilCodigo, version, new Date().toISOString()],
     );
   });
 }

@@ -8,6 +8,8 @@ import * as instrumentoDao from '../../../src/db/instrumentoDao';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { descargarInstrumento } from '../../../src/services/sincronizacion';
+import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { EmptyState } from '../../../src/components/EmptyState';
@@ -163,27 +165,72 @@ export default function FormularioIndexScreen() {
   const [observaciones, setObservaciones] = useState('');
   const [finalizando, setFinalizando] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const [caps, m, conteo] = await Promise.all([
-        instrumentoDao.getCapitulos(),
-        instrumentoDao.getMeta(),
-        instrumentoDao.contarPreguntasPorCapitulo(),
-      ]);
+  const [descargando, setDescargando] = useState(false);
+  const [errorDescarga, setErrorDescarga] = useState('');
+
+  // Sprint 17: si llegamos sin capítulos en SQLite pero tenemos sesionServerId,
+  // intentamos descargar el instrumento de la sesión automáticamente.
+  async function cargarTodo() {
+    setCargando(true);
+    setErrorDescarga('');
+    try {
+      let caps = await instrumentoDao.getCapitulos();
+      let m = await instrumentoDao.getMeta();
+
+      // Si no hay capítulos en SQLite y tenemos sesionServerId, descargar
+      if (caps.length === 0 && sesionServerId) {
+        setDescargando(true);
+        try {
+          const { data: sesion } = await encuestasApi.detalle(sesionServerId);
+          const codigo = (sesion as any).instrumento_codigo;
+          if (codigo) {
+            const ok = await descargarInstrumento(codigo);
+            if (!ok) {
+              setErrorDescarga(`No se pudo descargar el instrumento ${codigo}. Verifique la conexión.`);
+              reportarError({
+                nivel: 'error',
+                mensaje: `descargarInstrumento('${codigo}') retornó false`,
+                pantalla: 'formulario/index',
+                contexto: { sesionServerId, codigo },
+              });
+            }
+            caps = await instrumentoDao.getCapitulos();
+            m = await instrumentoDao.getMeta();
+          } else {
+            setErrorDescarga('La sesión no tiene un código de instrumento asociado.');
+          }
+        } finally {
+          setDescargando(false);
+        }
+      }
+
+      const conteo = await instrumentoDao.contarPreguntasPorCapitulo();
       setCapitulos(caps);
       setMeta(m);
       setConteoPreguntas(conteo);
 
-      // Cargar respuestas del borrador vinculado a esta sesión
       if (sesionServerId) {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {
           setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
         }
       }
-    })()
-      .catch(() => {})
-      .finally(() => setCargando(false));
+    } catch (e) {
+      reportarError({
+        nivel: 'error',
+        mensaje: 'formulario/index cargarTodo falló',
+        stack: (e as Error)?.stack,
+        pantalla: 'formulario/index',
+        contexto: { sesionServerId, instrumentoId, hogarId },
+      });
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  useEffect(() => {
+    cargarTodo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesionServerId]);
 
   // Recalcular progreso al volver de un capítulo
@@ -268,7 +315,9 @@ export default function FormularioIndexScreen() {
         {renderMiga()}
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
-          <Text style={styles.cargandoTxt}>Cargando instrumento…</Text>
+          <Text style={styles.cargandoTxt}>
+            {descargando ? 'Descargando instrumento…' : 'Cargando instrumento…'}
+          </Text>
         </View>
       </View>
     );
@@ -282,7 +331,12 @@ export default function FormularioIndexScreen() {
         <EmptyState
           icon="clipboard-alert-outline"
           title="Sin instrumento"
-          message="No hay instrumento cargado. Vaya al Dashboard y sincronice para descargar el formulario."
+          message={
+            errorDescarga
+              || 'No hay instrumento cargado en el dispositivo. Toca "Reintentar descarga" si tienes conexión.'
+          }
+          actionLabel="Reintentar descarga"
+          onAction={cargarTodo}
         />
       </View>
     );

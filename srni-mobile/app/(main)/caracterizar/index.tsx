@@ -152,9 +152,15 @@ export default function CaracterizarScreen() {
       // Sprint 17: descargar el instrumento elegido a SQLite ANTES de
       // navegar al hub. Sin esto el formulario [temaId].tsx no encontraría
       // los capítulos/preguntas (SQLite solo guarda un instrumento a la vez).
-      // Si falla la descarga (sin red), el flujo offline igual funciona si
-      // ya estaba descargado previamente; sino, el formulario lo avisa.
-      await descargarInstrumento(seleccionado.codigo);
+      // Si falla, formulario/index.tsx tiene un fallback que vuelve a
+      // intentar la descarga, pero avisamos al usuario aquí también.
+      const okDescarga = await descargarInstrumento(seleccionado.codigo);
+      if (!okDescarga) {
+        Alert.alert(
+          'Aviso',
+          `La sesión se creó pero el instrumento ${seleccionado.codigo} no se descargó completamente. La app intentará descargarlo automáticamente al abrir el formulario.`,
+        );
+      }
 
       // Sprint 14: tras crear la caracterización volvemos al hub del hogar
       // (no al formulario directo). El usuario ve la nueva sesión en la lista
