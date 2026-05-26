@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@react-native-community/datetimepicker": "~8.4.4",
     "axios": "^1.15.0",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",

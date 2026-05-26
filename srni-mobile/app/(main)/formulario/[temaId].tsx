@@ -21,6 +21,7 @@ import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
+import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
 import type { MiembroHogarResumen } from '../../../src/types';
@@ -699,13 +700,11 @@ function PreguntaItem({
       )}
 
       {esFecha && (
-        <TextInput
-          value={valor}
-          onChangeText={onChange}
-          placeholder="AAAA-MM-DD"
-          keyboardType="numeric"
-          style={styles.inputTexto}
-          dense
+        <SelectorFecha
+          valor={valor}
+          onChange={onChange}
+          label={pregunta.no_pregunta ? `${pregunta.no_pregunta} · Fecha` : 'Fecha'}
+          permitirFuturo={false}
         />
       )}
 
