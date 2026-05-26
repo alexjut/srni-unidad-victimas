@@ -42,6 +42,22 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // Sprint 17: loguear todos los errores HTTP al backend para visibilidad
+    // No bloquea — usa dynamic import por si client.ts se carga muy temprano.
+    if (error.response?.status !== 401) {
+      import('../services/errorReporter').then(({ reportarError }) => {
+        reportarError({
+          nivel: error.response?.status && error.response.status >= 500 ? 'error' : 'warn',
+          mensaje: `HTTP ${error.response?.status ?? 'red'} ${original?.method?.toUpperCase()} ${original?.url}`,
+          pantalla: '[axios-interceptor]',
+          contexto: {
+            status: error.response?.status,
+            body: typeof error.response?.data === 'object' ? error.response?.data : String(error.response?.data ?? '').slice(0, 300),
+          },
+        });
+      }).catch(() => {});
+    }
+
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }

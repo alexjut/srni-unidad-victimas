@@ -168,8 +168,8 @@ export default function FormularioIndexScreen() {
   const [descargando, setDescargando] = useState(false);
   const [errorDescarga, setErrorDescarga] = useState('');
 
-  // Sprint 17: si llegamos sin capítulos en SQLite pero tenemos sesionServerId,
-  // intentamos descargar el instrumento de la sesión automáticamente.
+  // Sprint 17: si llegamos sin capítulos en SQLite, O el instrumento descargado
+  // es distinto al de la sesión actual, descargamos automáticamente.
   async function cargarTodo() {
     setCargando(true);
     setErrorDescarga('');
@@ -177,27 +177,34 @@ export default function FormularioIndexScreen() {
       let caps = await instrumentoDao.getCapitulos();
       let m = await instrumentoDao.getMeta();
 
-      // Si no hay capítulos en SQLite y tenemos sesionServerId, descargar
-      if (caps.length === 0 && sesionServerId) {
+      // Descargar si:
+      //  (a) no hay capítulos en SQLite, o
+      //  (b) el instrumento descargado NO coincide con el de la sesión actual
+      const necesitaDescargar = sesionServerId && (
+        caps.length === 0 ||
+        (instrumentoId && m?.instrumento_id && m.instrumento_id !== instrumentoId)
+      );
+
+      if (necesitaDescargar) {
         setDescargando(true);
         try {
-          const { data: sesion } = await encuestasApi.detalle(sesionServerId);
+          const { data: sesion } = await encuestasApi.detalle(sesionServerId!);
           const codigo = (sesion as any).instrumento_codigo;
+          reportarError({
+            nivel: 'info',
+            mensaje: `formulario/index: descargando '${codigo}' (caps actuales: ${caps.length}, meta actual: ${m?.instrumento_id?.slice(0,8) ?? 'null'}, sesion: ${instrumentoId?.slice(0,8)})`,
+            pantalla: 'formulario/index',
+            contexto: { sesionServerId, codigo, instrumentoId },
+          });
           if (codigo) {
             const ok = await descargarInstrumento(codigo);
             if (!ok) {
-              setErrorDescarga(`No se pudo descargar el instrumento ${codigo}. Verifique la conexión.`);
-              reportarError({
-                nivel: 'error',
-                mensaje: `descargarInstrumento('${codigo}') retornó false`,
-                pantalla: 'formulario/index',
-                contexto: { sesionServerId, codigo },
-              });
+              setErrorDescarga(`No se pudo descargar el instrumento ${codigo}. Revisa la consola Django para ver el error exacto.`);
             }
             caps = await instrumentoDao.getCapitulos();
             m = await instrumentoDao.getMeta();
           } else {
-            setErrorDescarga('La sesión no tiene un código de instrumento asociado.');
+            setErrorDescarga('La sesión no tiene un código de instrumento asociado (instrumento_codigo).');
           }
         } finally {
           setDescargando(false);
@@ -218,7 +225,7 @@ export default function FormularioIndexScreen() {
     } catch (e) {
       reportarError({
         nivel: 'error',
-        mensaje: 'formulario/index cargarTodo falló',
+        mensaje: 'formulario/index cargarTodo falló: ' + ((e as Error)?.message ?? String(e)),
         stack: (e as Error)?.stack,
         pantalla: 'formulario/index',
         contexto: { sesionServerId, instrumentoId, hogarId },

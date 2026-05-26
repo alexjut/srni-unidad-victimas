@@ -24,32 +24,47 @@ export async function estaOnline(): Promise<boolean> {
 
 /**
  * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
- * Si ya tenemos la misma versión no hace nada (evita re-escritura).
- * Usa el perfil_codigo del meta local cuando no se pasa parámetro.
+ * Si ya tenemos la misma versión Y existen capítulos en SQLite, skipea.
  *
- * Sprint 17 fix: backend devuelve `codigo` y `version`, no `perfil_codigo`/`numero`.
- * Errores ahora se reportan al backend (no silencio total).
+ * Sprint 17 fix:
+ *   - backend devuelve `codigo` y `version` (no `perfil_codigo`/`numero`)
+ *   - verifica capítulos físicos en SQLite (no solo meta) antes de skipear
+ *   - errores se reportan al backend para visibilidad en consola Django
+ *   - logs de inicio/fin para trazabilidad
  */
 export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
   let perfil = '';
   try {
+    const { log } = await import('./logger');
     const meta = await instrumentoDao.getMeta();
     perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
+    log.event('DESCARGA', `Inicio descarga instrumento`, { perfil, metaActual: meta?.perfil_codigo });
 
     const { data } = await apiClient.get(
       `/api/formulario/instrumento/${perfil}/`,
     );
 
-    // Comparar contra los campos reales del backend
     const versionServidor = data.version ?? data.numero;
-    if (meta?.instrumento_id === data.id && meta?.version === versionServidor) {
-      return false; // ya tenemos esta versión
+    const capsActuales = await instrumentoDao.getCapitulos();
+    const yaTengoVersion =
+      meta?.instrumento_id === data.id &&
+      meta?.version === versionServidor &&
+      capsActuales.length > 0;
+
+    if (yaTengoVersion) {
+      log.event('DESCARGA', 'Skip — ya tengo esta versión + capítulos', { perfil, caps: capsActuales.length });
+      return true; // OK desde el punto de vista del caller (sí está disponible)
     }
 
     await instrumentoDao.guardarInstrumentoCompleto(data);
+    const capsTras = await instrumentoDao.getCapitulos();
+    log.event('DESCARGA', 'Guardado en SQLite', {
+      perfil,
+      capitulos: capsTras.length,
+      preguntas: data.capitulos?.reduce((acc: number, c: any) => acc + (c.preguntas?.length ?? 0), 0),
+    });
     return true;
   } catch (err) {
-    // Reportar al backend para visibilidad en consola Django
     const { reportarExcepcion } = await import('./errorReporter');
     reportarExcepcion(err, 'descargarInstrumento', { perfil });
     return false;
