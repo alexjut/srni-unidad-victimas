@@ -11,7 +11,7 @@
  *  - conformar.tsx ya no crea la sesión directamente
  *  - [hogarId]/index.tsx ya no tiene dos botones sueltos
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -179,26 +179,42 @@ export default function CaracterizacionesHogarScreen() {
   const [error, setError] = useState('');
 
   const cargar = useCallback(async () => {
-    if (!hogarId) return;
+    if (!hogarId) {
+      setError('No se recibió identificador del hogar. Vuelve a la lista de hogares.');
+      setCargando(false);
+      setRefrescando(false);
+      return;
+    }
     setError('');
     try {
       const { data } = await hogaresApi.detalle(hogarId);
       setHogar(data);
-    } catch {
-      setError('No se pudo cargar el hogar. Verifique la conexión.');
+    } catch (err: any) {
+      // Sprint 17 QA fix: diferenciar tipos de error para que el usuario
+      // entienda qué pasó (especialmente útil tras un reset de BD).
+      const status = err?.response?.status;
+      if (status === 404) {
+        setError(
+          'Este hogar ya no existe en el servidor. Es posible que haya sido eliminado '
+          + 'o que estés viendo una caché antigua. Vuelve a la lista de hogares.',
+        );
+      } else if (status === 403) {
+        setError('No tienes permisos para ver este hogar.');
+      } else if (status === 401) {
+        setError('Tu sesión expiró. Vuelve a iniciar sesión.');
+      } else if (!err?.response) {
+        setError('Sin conexión con el servidor. Verifica tu red.');
+      } else {
+        setError(`No se pudo cargar el hogar (error ${status ?? 'desconocido'}).`);
+      }
     } finally {
       setCargando(false);
       setRefrescando(false);
     }
   }, [hogarId]);
 
-  // Carga inicial
-  useEffect(() => {
-    cargar();
-  }, [cargar]);
-
-  // Recarga cada vez que la pantalla vuelve a tener foco
-  // (p. ej. tras crear una nueva caracterización y regresar)
+  // Carga inicial + foco. useFocusEffect ya cubre el primer mount,
+  // por lo que NO se necesita un useEffect adicional (evita doble request).
   useFocusEffect(
     useCallback(() => {
       cargar();
@@ -248,9 +264,12 @@ export default function CaracterizacionesHogarScreen() {
   }
 
   if (error || !hogar) {
+    // Sprint 17 QA: si el hogar no existe ya, "volver al hogar" caería en el
+    // mismo error. Mejor ofrecer ir directo a la lista de hogares.
+    const irAListaHogares = () => router.replace('/(main)/hogares');
     return (
       <View style={styles.root}>
-        <GovHeader title="Caracterizaciones" onBack={volverAHogar} />
+        <GovHeader title="Caracterizaciones" onBack={irAListaHogares} />
         <View style={styles.miga}>
           <Text style={styles.migaTxt}>
             Hogar {hogarCorto}…  ›  Caracterizaciones
@@ -259,7 +278,7 @@ export default function CaracterizacionesHogarScreen() {
         <View style={styles.centrado}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
           <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
-          <GovButton label="Volver" variant="secondary" onPress={volverAHogar} fullWidth={false} />
+          <GovButton label="Ir a la lista de hogares" variant="secondary" onPress={irAListaHogares} fullWidth={false} />
         </View>
       </View>
     );

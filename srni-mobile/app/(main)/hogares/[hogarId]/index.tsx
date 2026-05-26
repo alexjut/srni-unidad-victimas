@@ -222,10 +222,30 @@ export default function HogarDetalleScreen() {
   const [miembrosAgregados, setMiembrosAgregados] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!hogarId) return;
+    if (!hogarId) {
+      setError('No se recibió identificador del hogar.');
+      setCargando(false);
+      return;
+    }
     hogaresApi.detalle(hogarId)
       .then((res) => setHogar(res.data))
-      .catch(() => setError('No se pudo cargar el hogar.'))
+      .catch((err: any) => {
+        // Sprint 17 QA fix: errores específicos para que el usuario sepa qué pasó.
+        const status = err?.response?.status;
+        if (status === 404) {
+          setError(
+            'Este hogar ya no existe en el servidor. Vuelve a la lista de hogares.',
+          );
+        } else if (status === 403) {
+          setError('No tienes permisos para ver este hogar.');
+        } else if (status === 401) {
+          setError('Tu sesión expiró. Vuelve a iniciar sesión.');
+        } else if (!err?.response) {
+          setError('Sin conexión con el servidor. Verifica tu red.');
+        } else {
+          setError(`No se pudo cargar el hogar (error ${status ?? 'desconocido'}).`);
+        }
+      })
       .finally(() => setCargando(false));
   }, [hogarId]);
 
@@ -301,13 +321,16 @@ export default function HogarDetalleScreen() {
   }
 
   if (error || !hogar) {
+    // Sprint 17 QA: si el hogar no se pudo cargar, ofrecer ir a la lista
+    // (router.back() puede volver a una ruta inválida tras reset de BD).
+    const irAListaHogares = () => router.replace('/(main)/hogares');
     return (
       <View style={styles.root}>
-        <GovHeader title="Detalle del hogar" onBack={() => router.back()} />
+        <GovHeader title="Detalle del hogar" onBack={irAListaHogares} />
         <View style={styles.centrado}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
           <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
-          <GovButton label="Volver" variant="secondary" onPress={() => router.back()} />
+          <GovButton label="Ir a la lista de hogares" variant="secondary" onPress={irAListaHogares} />
         </View>
       </View>
     );
