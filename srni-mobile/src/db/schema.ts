@@ -14,56 +14,26 @@
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
+// Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
+// instrumentos viven en memoria (bundle JSON). DDL_V0 solo crea las tablas
+// de DATOS CAPTURADOS (borradores, respuestas, sync_log). Las tablas de
+// instrumentos viejas se eliminan en MIGRATION_V4 para usuarios existentes.
+//
+// NO se incluyen FOREIGN KEYS hacia tablas de instrumento — solo entre
+// respuestas y borradores (ambas vivas).
 const DDL_V0 = `
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
   PRAGMA busy_timeout = 5000;
 
-  CREATE TABLE IF NOT EXISTS temas (
-    id          INTEGER PRIMARY KEY,
-    codigo      TEXT    NOT NULL,
-    nombre      TEXT    NOT NULL,
-    orden       INTEGER NOT NULL DEFAULT 0,
-    activo      INTEGER NOT NULL DEFAULT 1
-  );
-
-  CREATE TABLE IF NOT EXISTS preguntas (
-    id              INTEGER PRIMARY KEY,
-    tema_id         INTEGER NOT NULL REFERENCES temas(id),
-    codigo          TEXT    NOT NULL,
-    texto           TEXT    NOT NULL,
-    texto_ayuda     TEXT    NOT NULL DEFAULT '',
-    tipo_respuesta  TEXT    NOT NULL DEFAULT 'OPCION_UNICA',
-    orden           INTEGER NOT NULL DEFAULT 0,
-    requerida       INTEGER NOT NULL DEFAULT 1,
-    activa          INTEGER NOT NULL DEFAULT 1,
-    validacion      TEXT    NOT NULL DEFAULT '{}'
-  );
-
-  CREATE TABLE IF NOT EXISTS opciones_respuesta (
-    id          INTEGER PRIMARY KEY,
-    pregunta_id INTEGER NOT NULL REFERENCES preguntas(id),
-    codigo      TEXT    NOT NULL,
-    texto       TEXT    NOT NULL,
-    orden       INTEGER NOT NULL DEFAULT 0
-  );
-
-  CREATE TABLE IF NOT EXISTS preguntas_derivadas (
-    id                  INTEGER PRIMARY KEY,
-    pregunta_padre_id   INTEGER NOT NULL REFERENCES preguntas(id),
-    pregunta_hija_id    INTEGER NOT NULL REFERENCES preguntas(id),
-    operador            TEXT    NOT NULL DEFAULT 'EQ',
-    valor_condicion     TEXT    NOT NULL DEFAULT ''
-  );
-
   CREATE TABLE IF NOT EXISTS borradores (
     id              TEXT    PRIMARY KEY,
     hogar_id        TEXT,
     sesion_id       TEXT,
-    instrumento_id  INTEGER,
+    instrumento_id  TEXT,
     estado          TEXT    NOT NULL DEFAULT 'EN_PROGRESO',
     created_at      TEXT    NOT NULL,
     updated_at      TEXT    NOT NULL
@@ -72,7 +42,7 @@ const DDL_V0 = `
   CREATE TABLE IF NOT EXISTS respuestas (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     borrador_id TEXT    NOT NULL REFERENCES borradores(id),
-    pregunta_id INTEGER NOT NULL REFERENCES preguntas(id),
+    pregunta_id TEXT    NOT NULL,
     valor       TEXT    NOT NULL DEFAULT '',
     updated_at  TEXT    NOT NULL
   );
@@ -227,6 +197,21 @@ const MIGRATION_V2 = `
   PRAGMA foreign_keys = ON;
 `;
 
+// ─── Migración v4 — DROP tablas de instrumento (Sprint 18 Fase F) ────────────
+// Los instrumentos viven en memoria desde el bundle. Las tablas viejas en
+// SQLite están vacías (post F1B) y solo ocupan espacio. Se eliminan limpiamente.
+// IMPORTANTE: NO se tocan respuestas, cola_sincronizacion, borradores,
+// hogares_offline — eso es trabajo del usuario que NO se debe perder.
+const MIGRATION_V4 = `
+  DROP TABLE IF EXISTS reglas_skip_logic;
+  DROP TABLE IF EXISTS opciones_respuesta;
+  DROP TABLE IF EXISTS preguntas;
+  DROP TABLE IF EXISTS capitulos;
+  DROP TABLE IF EXISTS temas;
+  DROP TABLE IF EXISTS preguntas_derivadas;
+  DROP TABLE IF EXISTS instrumento_meta;
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -276,6 +261,15 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(
       'ALTER TABLE cola_sincronizacion ADD COLUMN retry_after TEXT',
     );
+  }
+
+  if (currentVersion < 4) {
+    // Sprint 18 Fase F: drop tablas de instrumento (vacias post F1B).
+    // Idempotente — usa DROP IF EXISTS. No toca borradores/respuestas/cola/hogares_offline.
+    await db.execAsync(MIGRATION_V4);
+  }
+
+  if (currentVersion < SCHEMA_VERSION) {
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
 
