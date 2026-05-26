@@ -155,7 +155,10 @@ def produccion_resumen(request):
 
     data = {
         'encuestador_id': encuestador.id,
-        'encuestador_nombre': encuestador.get_full_name() or encuestador.username,
+        # Sprint 20: el modelo custom Usuario no tiene get_full_name()/username.
+        # Usar nombre_completo (campo del modelo) con fallback al codigo_usuario.
+        'encuestador_nombre': getattr(encuestador, 'nombre_completo', '')
+                              or getattr(encuestador, 'codigo_usuario', ''),
         'periodo_desde': desde,
         'periodo_hasta': hasta,
         'sesiones_total': sesiones_total,
@@ -255,7 +258,8 @@ def produccion_export_csv(request):
 
     qs = _sesiones_periodo(encuestador, desde, hasta).order_by('fecha_inicio')
 
-    encuestador_nombre = encuestador.get_full_name() or encuestador.username
+    encuestador_nombre = getattr(encuestador, 'nombre_completo', '') \
+                         or getattr(encuestador, 'codigo_usuario', '')
 
     def _rows():
         writer = csv.writer(_Echo())
@@ -279,7 +283,7 @@ def produccion_export_csv(request):
                 duracion or '',
             ])
 
-    nombre_archivo = f'produccion_{encuestador.username}_{desde}_{hasta}.csv'
+    nombre_archivo = f'produccion_{encuestador.codigo_usuario}_{desde}_{hasta}.csv'
     response = StreamingHttpResponse(
         _rows(),
         content_type='text/csv; charset=utf-8',

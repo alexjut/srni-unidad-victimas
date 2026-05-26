@@ -42,6 +42,20 @@ class ProduccionEncuestadorSerializer(serializers.Serializer):
     por_instrumento = ResumenInstrumentoSerializer(many=True)
     sesiones_recientes = SesionResumenReporteSerializer(many=True)
 
+    # Sprint 20 — aliases que el panel web Brando ya consume (Dashboard.tsx y
+    # Reportes.tsx). No duplican datos: son SerializerMethodField que leen los
+    # mismos campos con otros nombres. El mobile sigue usando los originales.
+    sesiones_finalizadas    = serializers.IntegerField(source='sesiones_completadas',  read_only=True)
+    sesiones_en_proceso     = serializers.IntegerField(source='sesiones_en_progreso',  read_only=True)
+    hogares_total           = serializers.IntegerField(source='hogares_caracterizados', read_only=True)
+    periodo_inicio          = serializers.DateField(   source='periodo_desde',         read_only=True)
+    periodo_fin             = serializers.DateField(   source='periodo_hasta',         read_only=True)
+    # victimas_caracterizadas — el panel lo muestra. En este modelo todavía no
+    # tenemos un contador distinto al de hogares (1 hogar ≈ varias víctimas),
+    # así que reportamos el conteo de hogares hasta que el supervisor defina
+    # la métrica oficial. Sirve para que el dashboard no muestre 'undefined'.
+    victimas_caracterizadas = serializers.IntegerField(source='hogares_caracterizados', read_only=True)
+
 
 # ─── Sprint 13 — Vista supervisor ─────────────────────────────────────────────
 
