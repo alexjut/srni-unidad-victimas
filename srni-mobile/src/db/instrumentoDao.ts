@@ -133,48 +133,62 @@ export interface InstrumentoCompletoBackend {
  * Borra y reescribe todas las tablas del instrumento para garantizar coherencia.
  */
 export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBackend): Promise<void> {
+  // Logger import dinámico para evitar ciclo en imports
+  const { log } = await import('../services/logger');
   const db = await openDb();
+  log.event('GUARDAR', 'A. openDb OK, iniciando transacción', {
+    caps: data.capitulos?.length, reglas: data.reglas?.length,
+  });
 
-  await db.withTransactionAsync(async () => {
-    // Limpiar todo lo anterior
-    await db.runAsync('DELETE FROM reglas_skip_logic');
-    await db.runAsync('DELETE FROM opciones_respuesta');
-    await db.runAsync('DELETE FROM preguntas');
-    await db.runAsync('DELETE FROM capitulos');
-    await db.runAsync('DELETE FROM instrumento_meta');
+  let preguntaActual = '';
+  let capActual = '';
+  try {
+    await db.withTransactionAsync(async () => {
+      log.event('GUARDAR', 'B. Limpiando tablas previas');
+      await db.runAsync('DELETE FROM reglas_skip_logic');
+      await db.runAsync('DELETE FROM opciones_respuesta');
+      await db.runAsync('DELETE FROM preguntas');
+      await db.runAsync('DELETE FROM capitulos');
+      await db.runAsync('DELETE FROM instrumento_meta');
+      log.event('GUARDAR', 'C. Tablas limpias');
 
-    // Guardar capítulos y sus preguntas
-    for (const cap of data.capitulos) {
-      await db.runAsync(
-        'INSERT INTO capitulos (id, codigo, nombre, orden, nivel, activo) VALUES (?, ?, ?, ?, ?, 1)',
-        [cap.id, cap.codigo, cap.nombre, cap.orden, cap.nivel ?? 'HOGAR'],
-      );
-
-      for (const p of cap.preguntas ?? []) {
-        if (!p.activa) continue;
-
+      let totalP = 0, totalO = 0;
+      for (const cap of data.capitulos) {
+        capActual = cap.codigo;
         await db.runAsync(
-          `INSERT INTO preguntas
-             (id, capitulo_id, codigo_externo, no_pregunta, texto, descripcion_ayuda,
-              tipo, nivel, orden, obligatoria, activa, validaciones)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-          [
-            p.id, cap.id, p.codigo_externo, p.no_pregunta ?? '',
-            p.texto, p.descripcion_ayuda ?? '',
-            p.tipo, p.nivel ?? cap.nivel ?? 'HOGAR',
-            p.orden, p.obligatoria ? 1 : 0,
-            JSON.stringify(p.validaciones ?? {}),
-          ],
+          'INSERT INTO capitulos (id, codigo, nombre, orden, nivel, activo) VALUES (?, ?, ?, ?, ?, 1)',
+          [cap.id, cap.codigo, cap.nombre, cap.orden, cap.nivel ?? 'HOGAR'],
         );
 
-        for (const o of p.opciones ?? []) {
+        for (const p of cap.preguntas ?? []) {
+          if (!p.activa) continue;
+          preguntaActual = p.codigo_externo;
+
           await db.runAsync(
-            'INSERT INTO opciones_respuesta (id, pregunta_id, valor, etiqueta, orden, finaliza_capitulo) VALUES (?, ?, ?, ?, ?, ?)',
-            [o.id, p.id, o.valor, o.etiqueta, o.orden, o.finaliza_capitulo ? 1 : 0],
+            `INSERT INTO preguntas
+               (id, capitulo_id, codigo_externo, no_pregunta, texto, descripcion_ayuda,
+                tipo, nivel, orden, obligatoria, activa, validaciones)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+            [
+              p.id, cap.id, p.codigo_externo, p.no_pregunta ?? '',
+              p.texto ?? '', p.descripcion_ayuda ?? '',
+              p.tipo ?? 'TEXTO', p.nivel ?? cap.nivel ?? 'HOGAR',
+              p.orden ?? 0, p.obligatoria ? 1 : 0,
+              JSON.stringify(p.validaciones ?? {}),
+            ],
           );
+          totalP++;
+
+          for (const o of p.opciones ?? []) {
+            await db.runAsync(
+              'INSERT INTO opciones_respuesta (id, pregunta_id, valor, etiqueta, orden, finaliza_capitulo) VALUES (?, ?, ?, ?, ?, ?)',
+              [o.id, p.id, o.valor ?? '', o.etiqueta ?? '', o.orden ?? 0, o.finaliza_capitulo ? 1 : 0],
+            );
+            totalO++;
+          }
         }
       }
-    }
+      log.event('GUARDAR', 'D. Capítulos+preguntas+opciones insertadas', { totalP, totalO });
 
     // Guardar reglas del instrumento (nivel versión)
     for (const r of data.reglas ?? []) {
@@ -207,7 +221,16 @@ export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBacken
        VALUES (1, ?, ?, ?, ?)`,
       [data.id, perfilCodigo, version, new Date().toISOString()],
     );
-  });
+    log.event('GUARDAR', 'E. Meta insertado', { perfilCodigo, version });
+    });
+    log.event('GUARDAR', 'F. Transacción commit OK');
+  } catch (err) {
+    log.error('guardarInstrumentoCompleto EXPLOTÓ', err, {
+      ultimoCap: capActual,
+      ultimaPregunta: preguntaActual,
+    });
+    throw err;
+  }
 }
 
 // ─── Lectura ──────────────────────────────────────────────────────────────────

@@ -34,15 +34,22 @@ export async function estaOnline(): Promise<boolean> {
  */
 export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
   let perfil = '';
+  const { log } = await import('./logger');
   try {
-    const { log } = await import('./logger');
     const meta = await instrumentoDao.getMeta();
     perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
-    log.event('DESCARGA', `Inicio descarga instrumento`, { perfil, metaActual: meta?.perfil_codigo });
+    log.event('DESCARGA', `1/5 Inicio`, { perfil, metaActual: meta?.perfil_codigo });
 
-    const { data } = await apiClient.get(
-      `/api/formulario/instrumento/${perfil}/`,
-    );
+    log.event('DESCARGA', `2/5 Antes fetch HTTP`, { url: `/api/formulario/instrumento/${perfil}/` });
+    const respuesta = await apiClient.get(`/api/formulario/instrumento/${perfil}/`);
+    const data = respuesta.data;
+    log.event('DESCARGA', `3/5 HTTP OK`, {
+      status: respuesta.status,
+      id: data?.id?.slice(0, 8),
+      codigo: data?.codigo,
+      version: data?.version,
+      caps: data?.capitulos?.length,
+    });
 
     const versionServidor = data.version ?? data.numero;
     const capsActuales = await instrumentoDao.getCapitulos();
@@ -52,19 +59,24 @@ export async function descargarInstrumento(perfilCodigo?: string): Promise<boole
       capsActuales.length > 0;
 
     if (yaTengoVersion) {
-      log.event('DESCARGA', 'Skip — ya tengo esta versión + capítulos', { perfil, caps: capsActuales.length });
-      return true; // OK desde el punto de vista del caller (sí está disponible)
+      log.event('DESCARGA', `Skip — ya tengo`, { perfil, caps: capsActuales.length });
+      return true;
     }
 
+    log.event('DESCARGA', `4/5 Antes guardar en SQLite`);
     await instrumentoDao.guardarInstrumentoCompleto(data);
     const capsTras = await instrumentoDao.getCapitulos();
-    log.event('DESCARGA', 'Guardado en SQLite', {
+    log.event('DESCARGA', `5/5 OK guardado`, {
       perfil,
       capitulos: capsTras.length,
       preguntas: data.capitulos?.reduce((acc: number, c: any) => acc + (c.preguntas?.length ?? 0), 0),
     });
     return true;
   } catch (err) {
+    log.error(`descargarInstrumento FALLO en ${perfil}`, err, {
+      perfil,
+      tipoError: (err as any)?.code ?? (err as any)?.name,
+    });
     const { reportarExcepcion } = await import('./errorReporter');
     reportarExcepcion(err, 'descargarInstrumento', { perfil });
     return false;
