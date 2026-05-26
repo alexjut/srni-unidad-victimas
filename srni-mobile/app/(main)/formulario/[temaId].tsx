@@ -15,6 +15,7 @@ import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { hogaresApi } from '../../../src/api/hogares';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -22,6 +23,27 @@ import { GovButton } from '../../../src/components/GovButton';
 import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
+import type { MiembroHogarResumen } from '../../../src/types';
+
+// Sprint 21 — clave compuesta para indexar respuestas por (pregunta, miembro).
+// Miembro vacío = pregunta nivel HOGAR (única para toda la sesión).
+function claveResp(preguntaId: string, miembroId: string | null | undefined): string {
+  return `${preguntaId}|${miembroId ?? ''}`;
+}
+
+interface ItemLista {
+  type: 'header-hogar' | 'header-miembro' | 'pregunta';
+  /** preguntas tipo 'pregunta' */
+  pregunta?: PreguntaRow;
+  /** índice global dentro del cap (para numeración) */
+  indexGlobal?: number;
+  /** total visible global */
+  totalGlobal?: number;
+  /** miembro al que aplica la pregunta (null = HOGAR) */
+  miembro?: MiembroHogarResumen | null;
+  /** llave única para FlatList */
+  key: string;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -57,11 +79,17 @@ export default function CapituloScreen() {
   const [preguntas, setPreguntas] = useState<PreguntaRow[]>([]);
   const [opciones, setOpciones] = useState<Record<string, OpcionRow[]>>({});
   const [reglas, setReglas] = useState<ReglaSkipLogicRow[]>([]);
+  // Sprint 21 — respuestas indexadas por clave compuesta `preguntaId|miembroId`.
+  // Para HOGAR la clave es `preguntaId|` (miembro vacío).
   const [respuestas, setRespuestasState] = useState<Record<string, string>>({});
   const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
   const [capituloNombre, setCapituloNombre] = useState('');
   const [cargando, setCargando] = useState(true);
   const [sincronizando, setSincronizando] = useState(false);
+  // Sprint 21 — miembros del hogar para instanciar preguntas PERSONA.
+  // Si no hay hogar resuelto o se está offline sin caché, queda en [] y el
+  // motor cae a comportamiento HOGAR-only (degradación segura).
+  const [miembros, setMiembros] = useState<MiembroHogarResumen[]>([]);
 
   // ── Cargar datos del capítulo + borradores previos ──────────────────────────
   useEffect(() => {
@@ -86,8 +114,8 @@ export default function CapituloScreen() {
       const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
 
       if (borradorIdParam) {
-        // Ya tenemos un borrador local — cargar sus respuestas
-        setRespuestasState(await borradoresDao.getRespuestaMap(borradorIdParam));
+        // Ya tenemos un borrador local — cargar sus respuestas (clave compuesta)
+        setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borradorIdParam));
         setBorradorId(borradorIdParam);
 
       } else if (sesionServerId) {
@@ -96,7 +124,7 @@ export default function CapituloScreen() {
 
         if (existente) {
           setBorradorId(existente.id);
-          setRespuestasState(await borradoresDao.getRespuestaMap(existente.id));
+          setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(existente.id));
         } else {
           // Crear nuevo borrador y vincularlo
           const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
@@ -108,9 +136,13 @@ export default function CapituloScreen() {
             try {
               const { data: previas } = await encuestasApi.getRespuestas(sesionServerId);
               for (const r of previas) {
-                if (r.valor) await borradoresDao.upsertRespuesta(nuevo.id, r.pregunta, r.valor);
+                if (r.valor) {
+                  // Sprint 21: r.miembro puede venir del backend; usar para indexar
+                  const mid = (r as any).miembro ?? null;
+                  await borradoresDao.upsertRespuesta(nuevo.id, r.pregunta, r.valor, mid);
+                }
               }
-              setRespuestasState(await borradoresDao.getRespuestaMap(nuevo.id));
+              setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(nuevo.id));
             } catch { /* sin red — empieza en blanco */ }
           }
         }
@@ -134,12 +166,50 @@ export default function CapituloScreen() {
     })().catch(() => setCargando(false));
   }, [temaId]);
 
+  // ── Sprint 21 — cargar miembros del hogar ──────────────────────────────────
+  useEffect(() => {
+    if (!hogarId) return;
+    let activo = true;
+    hogaresApi.detalle(hogarId)
+      .then(({ data }) => {
+        if (!activo) return;
+        // Ordenar: autorizado primero, después por parentesco/orden natural.
+        const ordenados = [...(data.miembros ?? [])].sort((a, b) => {
+          if (a.es_autorizado && !b.es_autorizado) return -1;
+          if (!a.es_autorizado && b.es_autorizado) return 1;
+          return 0;
+        });
+        setMiembros(ordenados);
+      })
+      .catch(() => {
+        // Offline o sin permisos — degradación: queda en [] y solo HOGAR funciona.
+      });
+    return () => { activo = false; };
+  }, [hogarId]);
+
   // ── Skip logic ──────────────────────────────────────────────────────────────
+  // Sprint 21: la skip logic evalúa a nivel de pregunta (no por miembro).
+  // Para HOGAR usamos su única respuesta. Para PERSONA usamos la primera
+  // respuesta no vacía como representante — suficiente para reglas globales
+  // del tipo "si el hogar tiene X, mostrar Y". Reglas por miembro quedarían
+  // para iteración futura.
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
     const m: Record<string, string> = {};
-    for (const p of preguntas) m[p.codigo_externo] = respuestas[p.id] ?? '';
+    for (const p of preguntas) {
+      const claveHogar = claveResp(p.id, null);
+      if (respuestas[claveHogar]) {
+        m[p.codigo_externo] = respuestas[claveHogar];
+        continue;
+      }
+      // PERSONA: buscar primera respuesta no vacía entre miembros
+      for (const miembro of miembros) {
+        const val = respuestas[claveResp(p.id, miembro.id)];
+        if (val) { m[p.codigo_externo] = val; break; }
+      }
+      if (!m[p.codigo_externo]) m[p.codigo_externo] = '';
+    }
     return m;
-  }, [preguntas, respuestas]);
+  }, [preguntas, respuestas, miembros]);
 
   const { visibles } = useMemo(
     () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
@@ -151,25 +221,93 @@ export default function CapituloScreen() {
     [preguntas, visibles],
   );
 
+  // Sprint 21 — separar visibles por nivel
+  const visiblesHogar = useMemo(
+    () => preguntasVisibles.filter((p) => p.nivel === 'HOGAR'),
+    [preguntasVisibles],
+  );
+  const visiblesPersona = useMemo(
+    () => preguntasVisibles.filter((p) => p.nivel === 'PERSONA'),
+    [preguntasVisibles],
+  );
+
+  // Sprint 21 — construir lista plana de items para FlatList:
+  //   header HOGAR (si hay preguntas HOGAR)
+  //   preguntas HOGAR
+  //   por cada miembro:
+  //     header miembro
+  //     preguntas PERSONA con su miembro
+  const items = useMemo<ItemLista[]>(() => {
+    const out: ItemLista[] = [];
+    let idx = 0;
+    const totalGlobal =
+      visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 0);
+
+    if (visiblesHogar.length > 0) {
+      out.push({ type: 'header-hogar', key: 'hdr-hogar' });
+      for (const p of visiblesHogar) {
+        out.push({
+          type: 'pregunta', pregunta: p, miembro: null,
+          indexGlobal: idx++, totalGlobal,
+          key: `q-${p.id}-`,
+        });
+      }
+    }
+
+    // Si el hogar todavía no cargó miembros, mostramos solo HOGAR y un aviso
+    if (visiblesPersona.length > 0) {
+      if (miembros.length === 0) {
+        out.push({ type: 'header-miembro', miembro: null, key: 'hdr-sin-miembros' });
+      } else {
+        for (const m of miembros) {
+          out.push({ type: 'header-miembro', miembro: m, key: `hdr-${m.id}` });
+          for (const p of visiblesPersona) {
+            out.push({
+              type: 'pregunta', pregunta: p, miembro: m,
+              indexGlobal: idx++, totalGlobal,
+              key: `q-${p.id}-${m.id}`,
+            });
+          }
+        }
+      }
+    }
+    return out;
+  }, [visiblesHogar, visiblesPersona, miembros]);
+
   // ── Progreso del capítulo ───────────────────────────────────────────────────
   const { totalOblig, respondidoOblig } = useMemo(() => {
-    const visiblesOblig = preguntasVisibles.filter((p) => p.obligatoria === 1);
-    return {
-      totalOblig: visiblesOblig.length,
-      respondidoOblig: visiblesOblig.filter((p) => !!respuestas[p.id]?.trim()).length,
-    };
-  }, [preguntasVisibles, respuestas]);
+    const obligHogar = visiblesHogar.filter((p) => p.obligatoria === 1);
+    const obligPersona = visiblesPersona.filter((p) => p.obligatoria === 1);
+    const totalOblig = obligHogar.length + obligPersona.length * miembros.length;
+
+    let respondidoOblig = 0;
+    for (const p of obligHogar) {
+      if (respuestas[claveResp(p.id, null)]?.trim()) respondidoOblig++;
+    }
+    for (const p of obligPersona) {
+      for (const m of miembros) {
+        if (respuestas[claveResp(p.id, m.id)]?.trim()) respondidoOblig++;
+      }
+    }
+    return { totalOblig, respondidoOblig };
+  }, [visiblesHogar, visiblesPersona, miembros, respuestas]);
 
   const progresoCap = totalOblig > 0 ? respondidoOblig / totalOblig : 0;
 
   // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
-  const setRespuesta = useCallback(async (preguntaId: string, valor: string) => {
-    setRespuestasState((prev) => ({ ...prev, [preguntaId]: valor }));
+  // Sprint 21: miembroId es opcional. null/undefined para preguntas HOGAR.
+  const setRespuesta = useCallback(async (
+    preguntaId: string,
+    valor: string,
+    miembroId: string | null = null,
+  ) => {
+    const clave = claveResp(preguntaId, miembroId);
+    setRespuestasState((prev) => ({ ...prev, [clave]: valor }));
 
     const bid = borradorId ?? borradorIdParam;
     if (!bid) return;
 
-    borradoresDao.upsertRespuesta(bid, preguntaId, valor).catch(() => {});
+    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId).catch(() => {});
 
     const borrador = await borradoresDao.getBorrador(bid);
     if (borrador) {
@@ -177,6 +315,7 @@ export default function CapituloScreen() {
         borrador_id: bid,
         sesion_id: borrador.sesion_id ?? null,
         pregunta_id: preguntaId,
+        miembro_id: miembroId,
         valor,
       });
       await refrescarContadores();
@@ -206,10 +345,16 @@ export default function CapituloScreen() {
     if (bid && sesionServerId) {
       setSincronizando(true);
       try {
-        const mapa = await borradoresDao.getRespuestaMap(bid);
-        const arr = Object.entries(mapa)
-          .filter(([, v]) => v.trim() !== '')
-          .map(([pregunta_id, valor]) => ({ pregunta_id, valor }));
+        // Sprint 21 — leer TODAS las respuestas (HOGAR + PERSONA × N miembros)
+        // y mandarlas con su miembro_id correspondiente.
+        const rows = await borradoresDao.getRespuestas(bid);
+        const arr = rows
+          .filter((r) => r.valor.trim() !== '')
+          .map((r) => ({
+            pregunta_id: r.pregunta_id,
+            miembro_id: r.miembro_id,  // null para HOGAR
+            valor: r.valor,
+          }));
 
         if (arr.length > 0) {
           if (estaOnline) {
@@ -232,15 +377,24 @@ export default function CapituloScreen() {
   }
 
   async function finalizarCapitulo() {
-    // Preguntas obligatorias visibles sin respuesta
-    const faltantes = preguntasVisibles.filter(
-      (p) => p.obligatoria === 1 && !respuestas[p.id]?.trim(),
-    );
+    // Sprint 21 — preguntas obligatorias sin respuesta, considerando HOGAR
+    // (1 por pregunta) y PERSONA (1 por pregunta × miembro).
+    let faltantes = 0;
+    for (const p of visiblesHogar) {
+      if (p.obligatoria !== 1) continue;
+      if (!respuestas[claveResp(p.id, null)]?.trim()) faltantes++;
+    }
+    for (const p of visiblesPersona) {
+      if (p.obligatoria !== 1) continue;
+      for (const m of miembros) {
+        if (!respuestas[claveResp(p.id, m.id)]?.trim()) faltantes++;
+      }
+    }
 
-    if (faltantes.length > 0) {
+    if (faltantes > 0) {
       Alert.alert(
         'Preguntas requeridas',
-        `Hay ${faltantes.length} pregunta${faltantes.length > 1 ? 's' : ''} obligatoria${faltantes.length > 1 ? 's' : ''} sin responder.\n\n¿Desea guardar de todas formas?`,
+        `Hay ${faltantes} pregunta${faltantes > 1 ? 's' : ''} obligatoria${faltantes > 1 ? 's' : ''} sin responder (contando todos los miembros del hogar).\n\n¿Desea guardar de todas formas?`,
         [
           { text: 'Revisar', style: 'cancel' },
           { text: 'Guardar igual', onPress: guardarYVolver },
@@ -263,7 +417,8 @@ export default function CapituloScreen() {
     );
   }
 
-  const totalVisible = preguntasVisibles.length;
+  // Sprint 21 — total visible incluye HOGAR (1×) + PERSONA (N miembros)
+  const totalVisible = visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 1);
   const migaContexto = hogarId
     ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${capituloNombre || 'Capítulo'}`
     : capituloNombre || 'Capítulo';
@@ -329,27 +484,68 @@ export default function CapituloScreen() {
       </View>
 
       <FlatList
-        data={preguntasVisibles}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <PreguntaItem
-            pregunta={item}
-            index={index}
-            total={totalVisible}
-            opciones={opciones[item.id] ?? []}
-            valor={respuestas[item.id] ?? ''}
-            onChange={(v) => setRespuesta(item.id, v)}
-            iaActivo={iaActivo}
-            onTextoIA={(texto) => handleTextoTranscrito(item.id, texto)}
-            sugerenciaActiva={
-              sugerencia && preguntaActivaId === item.id && estadoIA === 'sugerida'
-                ? sugerencia
-                : null
+        data={items}
+        keyExtractor={(it) => it.key}
+        renderItem={({ item }) => {
+          if (item.type === 'header-hogar') {
+            return (
+              <View style={styles.seccionHeader}>
+                <MaterialCommunityIcons name="home-variant" size={18} color={GOV.azul} />
+                <Text style={styles.seccionTitulo}>Datos del hogar</Text>
+              </View>
+            );
+          }
+          if (item.type === 'header-miembro') {
+            if (!item.miembro) {
+              return (
+                <View style={styles.seccionHeaderWarning}>
+                  <MaterialCommunityIcons name="alert-circle-outline" size={18} color={GOV.naranja} />
+                  <Text style={styles.seccionTituloWarning}>
+                    Este capítulo tiene preguntas por persona, pero no se pudieron cargar los miembros del hogar.
+                  </Text>
+                </View>
+              );
             }
-            onAceptarIA={() => handleAceptarSugerencia(item.id)}
-            onRechazarIA={rechazarSugerencia}
-          />
-        )}
+            const m = item.miembro;
+            const titulo = m.es_autorizado ? `${m.rol_display} · AUTORIZADO` : m.rol_display;
+            return (
+              <View style={styles.seccionHeader}>
+                <MaterialCommunityIcons
+                  name={m.es_autorizado ? 'account-star' : 'account'}
+                  size={18}
+                  color={GOV.azul}
+                />
+                <Text style={styles.seccionTitulo}>{titulo || 'Miembro'}</Text>
+              </View>
+            );
+          }
+          // type === 'pregunta'
+          const p = item.pregunta!;
+          const miembroId = item.miembro?.id ?? null;
+          const clave = claveResp(p.id, miembroId);
+          const valor = respuestas[clave] ?? '';
+          // IA: solo se asocia con HOGAR por ahora (clave preguntaId solo)
+          const iaPreguntaKey = miembroId ? null : p.id;
+          return (
+            <PreguntaItem
+              pregunta={p}
+              index={item.indexGlobal ?? 0}
+              total={item.totalGlobal ?? 0}
+              opciones={opciones[p.id] ?? []}
+              valor={valor}
+              onChange={(v) => setRespuesta(p.id, v, miembroId)}
+              iaActivo={iaActivo && !miembroId}
+              onTextoIA={iaPreguntaKey ? (texto) => handleTextoTranscrito(p.id, texto) : undefined}
+              sugerenciaActiva={
+                iaPreguntaKey && sugerencia && preguntaActivaId === p.id && estadoIA === 'sugerida'
+                  ? sugerencia
+                  : null
+              }
+              onAceptarIA={iaPreguntaKey ? () => handleAceptarSugerencia(p.id) : undefined}
+              onRechazarIA={rechazarSugerencia}
+            />
+          );
+        }}
         contentContainerStyle={styles.lista}
         ListEmptyComponent={
           <Text style={styles.sinPreguntas}>No hay preguntas en este capítulo.</Text>
@@ -621,6 +817,36 @@ const styles = StyleSheet.create({
 
   lista: { padding: SPACING.md, paddingBottom: 96 },
   sinPreguntas: { textAlign: 'center', color: GOV.textoT, marginTop: SPACING.xl, ...FONT.body },
+
+  // Sprint 21 — headers de sección (Datos del hogar / Datos de cada miembro)
+  seccionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.azul,
+  },
+  seccionTitulo: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro, flex: 1 },
+  seccionHeaderWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.naranja,
+  },
+  seccionTituloWarning: { ...FONT.caption, color: GOV.textoP, flex: 1 },
 
   // Tarjeta de pregunta
   preguntaCard: {
