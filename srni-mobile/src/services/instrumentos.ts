@@ -218,3 +218,16 @@ export function getCapituloIdDePregunta(preguntaId: string): string | null {
   _inicializar();
   return _capPorPregId.get(preguntaId) ?? null;
 }
+
+/**
+ * Sprint 18 Fase B: dado un instrumento_id (UUID) busca su código de perfil
+ * en el bundle. Permite recuperar el código cuando la sesión solo tiene el
+ * UUID y el detalle backend no es accesible (offline).
+ */
+export function codigoPorInstrumentoId(instrumentoId: string): string | null {
+  _inicializar();
+  for (const [codigo, data] of _porCodigo.entries()) {
+    if (data?.id === instrumentoId) return codigo;
+  }
+  return null;
+}

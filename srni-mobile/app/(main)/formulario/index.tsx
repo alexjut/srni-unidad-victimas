@@ -168,54 +168,80 @@ export default function FormularioIndexScreen() {
   const [descargando, setDescargando] = useState(false);
   const [errorDescarga, setErrorDescarga] = useState('');
 
-  // Sprint 18 F1B: instrumentos en memoria (require bundle). Activamos el
-  // perfil correcto leyendo el instrumento_codigo de la sesión y todo
-  // queda en RAM — sin SQLite, sin race conditions, sin lock.
+  // Sprint 18 Fase B: instrumento_codigo de la sesión es AUTORIDAD ÚNICA.
+  // Prioridad de resolución:
+  //   1. encuestasApi.detalle(sesionId).instrumento_codigo (backend, fuente)
+  //   2. codigoPorInstrumentoId(instrumentoId param) — offline-friendly,
+  //      busca el UUID en el bundle local y devuelve el código del perfil
+  // Si ninguna funciona → ERROR explícito, bloquear formulario.
+  // NUNCA caer a 'TERRITORIAL' como default: el encuestador podría capturar
+  // contra el instrumento equivocado y corromper datos en silencio.
   async function cargarTodo() {
     setCargando(true);
     setErrorDescarga('');
     try {
-      // 1. Determinar qué perfil activar
       let codigoPerfil: string | null = null;
+      let origen = 'desconocido';
+
       if (sesionServerId) {
         try {
           const { data: sesion } = await encuestasApi.detalle(sesionServerId);
           codigoPerfil = (sesion as any).instrumento_codigo ?? null;
+          if (codigoPerfil) origen = 'backend';
         } catch (e) {
           reportarError({
             nivel: 'warn',
-            mensaje: 'No se pudo cargar detalle de sesión — usando perfil actual o TERRITORIAL',
-            stack: (e as Error)?.stack,
+            mensaje: 'encuestasApi.detalle falló — intentando fallback offline via instrumentoId',
             pantalla: 'formulario/index',
             contexto: { sesionServerId },
           });
         }
       }
-      codigoPerfil = codigoPerfil ?? instrumentos.getPerfilActivo() ?? 'TERRITORIAL';
+
+      // Fallback OFFLINE: usar el instrumentoId que vino como param para
+      // buscar el código en el bundle local.
+      if (!codigoPerfil && instrumentoId) {
+        codigoPerfil = instrumentos.codigoPorInstrumentoId(instrumentoId);
+        if (codigoPerfil) origen = 'bundle-by-uuid';
+      }
+
+      // Sin ninguna fuente confiable → ERROR. NO caer a TERRITORIAL.
+      if (!codigoPerfil) {
+        setErrorDescarga(
+          'No se pudo determinar el instrumento de esta sesión. ' +
+          'Conéctate a internet para sincronizar o vuelve a crear la caracterización.'
+        );
+        reportarError({
+          nivel: 'error',
+          mensaje: 'No se pudo determinar codigo de instrumento (sin backend ni instrumentoId match)',
+          pantalla: 'formulario/index',
+          contexto: { sesionServerId, instrumentoId, hogarId },
+        });
+        return;
+      }
 
       try {
         instrumentos.activarPerfil(codigoPerfil);
       } catch (e) {
-        setErrorDescarga(`El perfil "${codigoPerfil}" no está disponible en este dispositivo.`);
+        setErrorDescarga(
+          `El instrumento "${codigoPerfil}" no está disponible en este dispositivo. ` +
+          'Reinstala la aplicación para obtener los instrumentos más recientes.'
+        );
         reportarError({
           nivel: 'error',
           mensaje: 'activarPerfil falló',
           stack: (e as Error)?.stack,
           pantalla: 'formulario/index',
-          contexto: { codigoPerfil },
+          contexto: { codigoPerfil, origen },
         });
+        return;
       }
 
-      // 2. Leer de memoria — instantáneo
-      const caps = instrumentos.getCapitulos();
-      const m = instrumentos.getMeta();
-      const conteo = instrumentos.contarPreguntasPorCapitulo();
+      // Leer de memoria — instantáneo
+      setCapitulos(instrumentos.getCapitulos());
+      setMeta(instrumentos.getMeta());
+      setConteoPreguntas(instrumentos.contarPreguntasPorCapitulo());
 
-      setCapitulos(caps);
-      setMeta(m);
-      setConteoPreguntas(conteo);
-
-      // 3. Cargar respuestas del borrador (SI tenemos SQLite, eso sí)
       if (sesionServerId) {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {
