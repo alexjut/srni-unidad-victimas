@@ -532,9 +532,8 @@ export default function BusquedaScreen() {
     try {
       const { data } = await victimasApi.consultarFuente(tipoDoc, documento.trim());
       setResultado(data);
-      if (data.encontrado && data.victima?.habilitado_para_caracterizacion) {
-        cargarInstrumentos();
-      }
+      // Sprint 17: ya NO se cargan instrumentos aquí. El selector vive en el hub
+      // de caracterizaciones tras conformar el hogar (flujo cosido Sprint 14).
     } catch {
       setErrorBusqueda('Error al consultar el RNI. Verifique la conexión.');
     } finally {
@@ -544,13 +543,12 @@ export default function BusquedaScreen() {
 
   async function conformarHogar() {
     const v = resultado?.victima;
-    if (!v || !instrumentoSeleccionado) return;
+    if (!v) return;
     setCargandoRegistro(true);
     try {
       const { data } = await victimasApi.registrarDesdeFuente(v);
       useCaracterizacionStore.getState().setVictimaFuente(v);
       useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
-      useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
       router.push('/(main)/hogares/conformar');
     } catch {
       setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
@@ -559,10 +557,8 @@ export default function BusquedaScreen() {
     }
   }
 
-  // Víctima ya registrada (no incluida) — solo falta seleccionar instrumento y navegar
+  // Víctima ya registrada (no incluida) — directo a conformar hogar
   function conformarHogarNoIncluida() {
-    if (!instrumentoSeleccionado) return;
-    useCaracterizacionStore.getState().setInstrumentoId(instrumentoSeleccionado.id);
     router.push('/(main)/hogares/conformar');
   }
 
@@ -595,7 +591,6 @@ export default function BusquedaScreen() {
       useCaracterizacionStore.getState().setVictimaFuente(payload);
       useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
       setNoIncluidaRegistrada(true);
-      cargarInstrumentos();
     } catch {
       setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
     } finally {
@@ -630,27 +625,17 @@ export default function BusquedaScreen() {
               <Text style={styles.tarjetaFuente}>Pendiente de inclusión en el RUV</Text>
             </Surface>
 
-            <SeccionInstrumentos
-              instrumentos={instrumentos}
-              cargando={cargandoInstrumentos}
-              seleccionado={instrumentoSeleccionado}
-              onSelect={setInstrumentoSeleccionado}
-            />
-
-            {(instrumentos.length > 0 || !cargandoInstrumentos) && (
-              <Button
-                mode="contained"
-                icon="home-plus"
-                onPress={conformarHogarNoIncluida}
-                disabled={!instrumentoSeleccionado}
-                buttonColor={GOV.naranja}
-                textColor="#FFFFFF"
-                style={[styles.botonAccion, styles.botonConformar]}
-                contentStyle={styles.botonAccionContent}
-              >
-                Conformar hogar
-              </Button>
-            )}
+            <Button
+              mode="contained"
+              icon="home-plus"
+              onPress={conformarHogarNoIncluida}
+              buttonColor={GOV.naranja}
+              textColor="#FFFFFF"
+              style={[styles.botonAccion, styles.botonConformar]}
+              contentStyle={styles.botonAccionContent}
+            >
+              Conformar hogar
+            </Button>
           </>
         );
       }
@@ -670,33 +655,25 @@ export default function BusquedaScreen() {
       return <TarjetaNoHabilitado resultado={resultado} />;
     }
 
-    // Habilitado: mostrar info víctima + selección de instrumento + CTA
+    // Habilitado: mostrar info víctima + CTA directo a conformar hogar
+    // (el instrumento se elige despues en el hub — flujo cosido Sprint 14)
     return (
       <>
         <TarjetaHabilitado resultado={resultado} />
 
-        <SeccionInstrumentos
-          instrumentos={instrumentos}
-          cargando={cargandoInstrumentos}
-          seleccionado={instrumentoSeleccionado}
-          onSelect={setInstrumentoSeleccionado}
-        />
-
-        {(instrumentos.length > 0 || !cargandoInstrumentos) && (
-          <Button
-            mode="contained"
-            icon="home-plus"
-            onPress={conformarHogar}
-            disabled={cargandoRegistro || !instrumentoSeleccionado}
-            loading={cargandoRegistro}
-            buttonColor={GOV.azul}
-            textColor="#FFFFFF"
-            style={[styles.botonAccion, styles.botonConformar]}
-            contentStyle={styles.botonAccionContent}
-          >
-            {cargandoRegistro ? 'Registrando…' : 'Conformar hogar'}
-          </Button>
-        )}
+        <Button
+          mode="contained"
+          icon="home-plus"
+          onPress={conformarHogar}
+          disabled={cargandoRegistro}
+          loading={cargandoRegistro}
+          buttonColor={GOV.azul}
+          textColor="#FFFFFF"
+          style={[styles.botonAccion, styles.botonConformar]}
+          contentStyle={styles.botonAccionContent}
+        >
+          {cargandoRegistro ? 'Registrando…' : 'Conformar hogar'}
+        </Button>
       </>
     );
   }

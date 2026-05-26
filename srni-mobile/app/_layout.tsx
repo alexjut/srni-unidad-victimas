@@ -14,8 +14,17 @@ export default function RootLayout() {
   const { inicializar } = useSyncStore();
 
   useEffect(() => {
-    initDatabase().catch(() => {});
-    cargarPerfil().catch(() => {});
+    // CRÍTICO: esperar a que initDatabase termine ANTES de cualquier otra
+    // operación que use la BD (cargarPerfil → JWT en SecureStore es ok,
+    // pero el syncStore.inicializar() usa colaDao que necesita la BD).
+    (async () => {
+      try {
+        await initDatabase();
+      } catch (e) {
+        console.warn('[RootLayout] initDatabase falló:', e);
+      }
+      cargarPerfil().catch(() => {});
+    })();
   }, []);
 
   useEffect(() => {

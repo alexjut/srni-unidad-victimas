@@ -227,9 +227,26 @@ const MIGRATION_V2 = `
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
+// veces desde DAOs concurrentes (Sprint 17 fix).
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+let _initialized = false;
+
+async function _abrirConexion(): Promise<SQLite.SQLiteDatabase> {
+  if (!_dbPromise) {
+    _dbPromise = SQLite.openDatabaseAsync(DB_NAME);
+  }
+  return _dbPromise;
+}
 
 export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
-  const db = await SQLite.openDatabaseAsync(DB_NAME);
+  const db = await _abrirConexion();
+
+  if (_initialized) {
+    return db;
+  }
 
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const currentVersion = row?.user_version ?? 0;
@@ -251,10 +268,18 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION}`);
   }
 
+  _initialized = true;
   return db;
 }
 
-/** Abre la BD sin re-inicializar. Para uso en DAOs/servicios. */
+/**
+ * Abre la BD reutilizando la conexión singleton.
+ * IMPORTANTE: si initDatabase aún no terminó, espera a que termine antes de
+ * retornar — evita NPE en prepareAsync por usar la BD antes de tener tablas.
+ */
 export async function openDb(): Promise<SQLite.SQLiteDatabase> {
-  return SQLite.openDatabaseAsync(DB_NAME);
+  if (!_initialized) {
+    return initDatabase();
+  }
+  return _abrirConexion();
 }
