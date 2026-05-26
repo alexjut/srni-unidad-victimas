@@ -1,6 +1,6 @@
 // Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, FlatList, StyleSheet, Alert } from 'react-native';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { View, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
   ActivityIndicator, Chip, IconButton, ProgressBar,
@@ -91,6 +91,16 @@ export default function CapituloScreen() {
   // Si no hay hogar resuelto o se está offline sin caché, queda en [] y el
   // motor cae a comportamiento HOGAR-only (degradación segura).
   const [miembros, setMiembros] = useState<MiembroHogarResumen[]>([]);
+  // Sprint 21 Fase F — wizard por miembro. 0 = primer miembro activo.
+  // Solo se renderiza el miembro en este índice (no todos en scroll).
+  const [miembroIdx, setMiembroIdx] = useState(0);
+  const flatRef = useRef<FlatList | null>(null);
+
+  // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
+  // encuestador vea desde la primera pregunta del nuevo miembro.
+  useEffect(() => {
+    flatRef.current?.scrollToOffset?.({ offset: 0, animated: true });
+  }, [miembroIdx]);
 
   // ── Cargar datos del capítulo + borradores previos ──────────────────────────
   useEffect(() => {
@@ -232,12 +242,12 @@ export default function CapituloScreen() {
     [preguntasVisibles],
   );
 
-  // Sprint 21 — construir lista plana de items para FlatList:
-  //   header HOGAR (si hay preguntas HOGAR)
-  //   preguntas HOGAR
-  //   por cada miembro:
-  //     header miembro
-  //     preguntas PERSONA con su miembro
+  // Sprint 21 Fase F — wizard por miembro.
+  // La FlatList renderea:
+  //   - todas las preguntas HOGAR (siempre arriba)
+  //   - SOLO el miembro activo (miembroIdx), no todos
+  // El usuario navega con botones 'Anterior/Siguiente miembro'.
+  const miembroActivo = miembros[miembroIdx] ?? null;
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
@@ -255,25 +265,34 @@ export default function CapituloScreen() {
       }
     }
 
-    // Si el hogar todavía no cargó miembros, mostramos solo HOGAR y un aviso
     if (visiblesPersona.length > 0) {
       if (miembros.length === 0) {
         out.push({ type: 'header-miembro', miembro: null, key: 'hdr-sin-miembros' });
-      } else {
-        for (const m of miembros) {
-          out.push({ type: 'header-miembro', miembro: m, key: `hdr-${m.id}` });
-          for (const p of visiblesPersona) {
-            out.push({
-              type: 'pregunta', pregunta: p, miembro: m,
-              indexGlobal: idx++, totalGlobal,
-              key: `q-${p.id}-${m.id}`,
-            });
-          }
+      } else if (miembroActivo) {
+        // Solo el miembro activo: header + sus preguntas PERSONA
+        out.push({ type: 'header-miembro', miembro: miembroActivo, key: `hdr-${miembroActivo.id}` });
+        for (const p of visiblesPersona) {
+          out.push({
+            type: 'pregunta', pregunta: p, miembro: miembroActivo,
+            indexGlobal: idx++, totalGlobal,
+            key: `q-${p.id}-${miembroActivo.id}`,
+          });
         }
       }
     }
     return out;
-  }, [visiblesHogar, visiblesPersona, miembros]);
+  }, [visiblesHogar, visiblesPersona, miembros, miembroActivo]);
+
+  // Sprint 21 Fase F — completitud del miembro activo (para habilitar avance).
+  const obligPersonaActivo = useMemo(() => {
+    if (!miembroActivo) return { total: 0, faltan: 0 };
+    const oblig = visiblesPersona.filter((p) => p.obligatoria === 1);
+    let faltan = 0;
+    for (const p of oblig) {
+      if (!respuestas[claveResp(p.id, miembroActivo.id)]?.trim()) faltan++;
+    }
+    return { total: oblig.length, faltan };
+  }, [visiblesPersona, respuestas, miembroActivo]);
 
   // ── Progreso del capítulo ───────────────────────────────────────────────────
   const { totalOblig, respondidoOblig } = useMemo(() => {
@@ -485,6 +504,7 @@ export default function CapituloScreen() {
       </View>
 
       <FlatList
+        ref={flatRef}
         data={items}
         keyExtractor={(it) => it.key}
         renderItem={({ item }) => {
@@ -557,6 +577,68 @@ export default function CapituloScreen() {
         contentContainerStyle={styles.lista}
         ListEmptyComponent={
           <Text style={styles.sinPreguntas}>No hay preguntas en este capítulo.</Text>
+        }
+        ListFooterComponent={
+          // Sprint 21 Fase F — navegador wizard entre miembros.
+          // Solo aparece si el capítulo tiene preguntas PERSONA y hay >1 miembro.
+          visiblesPersona.length > 0 && miembros.length > 0 ? (
+            <View style={styles.navMiembros}>
+              <View style={styles.navMiembrosCounter}>
+                <MaterialCommunityIcons name="account-group" size={16} color={GOV.azulOscuro} />
+                <Text style={styles.navMiembrosTxt}>
+                  Persona {miembroIdx + 1} de {miembros.length}
+                </Text>
+                {obligPersonaActivo.total > 0 && (
+                  <Text style={[
+                    styles.navMiembrosFaltan,
+                    obligPersonaActivo.faltan === 0 && { color: GOV.verde },
+                  ]}>
+                    {obligPersonaActivo.faltan === 0
+                      ? '✓ completa'
+                      : `${obligPersonaActivo.faltan} obligatoria${obligPersonaActivo.faltan > 1 ? 's' : ''} sin responder`}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.navMiembrosBotones}>
+                <Pressable
+                  onPress={() => setMiembroIdx((i) => Math.max(0, i - 1))}
+                  disabled={miembroIdx === 0}
+                  style={({ pressed }) => [
+                    styles.navBtn,
+                    styles.navBtnSecundario,
+                    miembroIdx === 0 && styles.navBtnDisabled,
+                    pressed && miembroIdx > 0 && { opacity: 0.85 },
+                  ]}
+                >
+                  <MaterialCommunityIcons name="chevron-left" size={20}
+                    color={miembroIdx === 0 ? GOV.textoT : GOV.azulOscuro} />
+                  <Text style={[
+                    styles.navBtnTxt,
+                    miembroIdx === 0 && { color: GOV.textoT },
+                  ]}>Anterior</Text>
+                </Pressable>
+
+                {miembroIdx < miembros.length - 1 ? (
+                  <Pressable
+                    onPress={() => setMiembroIdx((i) => Math.min(miembros.length - 1, i + 1))}
+                    style={({ pressed }) => [
+                      styles.navBtn,
+                      styles.navBtnPrimario,
+                      pressed && { opacity: 0.88 },
+                    ]}
+                  >
+                    <Text style={styles.navBtnTxtPrimario}>Siguiente miembro</Text>
+                    <MaterialCommunityIcons name="chevron-right" size={20} color="#FFF" />
+                  </Pressable>
+                ) : (
+                  <View style={[styles.navBtn, styles.navBtnUltimo]}>
+                    <MaterialCommunityIcons name="check-circle-outline" size={18} color={GOV.verde} />
+                    <Text style={styles.navBtnUltimoTxt}>Último miembro</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          ) : null
         }
       />
 
@@ -853,6 +935,60 @@ const styles = StyleSheet.create({
     borderLeftColor: GOV.naranja,
   },
   seccionTituloWarning: { ...FONT.caption, color: GOV.textoP, flex: 1 },
+
+  // Sprint 21 Fase F — navegador wizard entre miembros
+  navMiembros: {
+    marginTop: SPACING.md,
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+    gap: SPACING.sm,
+  },
+  navMiembrosCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingBottom: SPACING.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  navMiembrosTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
+  navMiembrosFaltan: {
+    ...FONT.caption,
+    color: GOV.naranja,
+    marginLeft: 'auto',
+    fontWeight: '600',
+  },
+  navMiembrosBotones: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  navBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
+  },
+  navBtnSecundario: {
+    backgroundColor: GOV.azulTenue,
+    borderWidth: 1,
+    borderColor: GOV.azul,
+  },
+  navBtnPrimario: { backgroundColor: GOV.azul },
+  navBtnDisabled: { backgroundColor: GOV.fondoApp, borderColor: GOV.borde },
+  navBtnUltimo: {
+    backgroundColor: GOV.verdeTenue,
+    borderWidth: 1,
+    borderColor: GOV.verde,
+  },
+  navBtnTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
+  navBtnTxtPrimario: { ...FONT.body, fontWeight: '700', color: '#FFF' },
+  navBtnUltimoTxt: { ...FONT.body, fontWeight: '700', color: GOV.verde },
 
   // Tarjeta de pregunta
   preguntaCard: {
