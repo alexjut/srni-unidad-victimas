@@ -132,11 +132,37 @@ export interface InstrumentoCompletoBackend {
  * Persiste el instrumento completo desde el backend.
  * Borra y reescribe todas las tablas del instrumento para garantizar coherencia.
  */
+// Sprint 18 fix: mutex GLOBAL para serializar TODAS las escrituras masivas
+// del instrumento. SQLite no admite transacciones de escritura concurrentes
+// — si dos guardarInstrumentoCompleto corren a la vez, una explota con
+// 'database is locked'. Esta promise compartida serializa cualquier llamada.
+let _guardarEnCurso: Promise<void> = Promise.resolve();
+
 export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBackend): Promise<void> {
+  // Encolar este guardado al final de la cadena de promesas
+  const previo = _guardarEnCurso;
+  let resolverEste!: () => void;
+  let rechazarEste!: (e: unknown) => void;
+  _guardarEnCurso = new Promise<void>((res, rej) => {
+    resolverEste = res;
+    rechazarEste = rej;
+  });
+
+  try {
+    await previo.catch(() => {}); // esperar al anterior aunque haya fallado
+    await _ejecutarGuardado(data);
+    resolverEste();
+  } catch (err) {
+    rechazarEste(err);
+    throw err;
+  }
+}
+
+async function _ejecutarGuardado(data: InstrumentoCompletoBackend): Promise<void> {
   const { log } = await import('../services/logger');
   const db = await openDb();
   log.event('GUARDAR', 'A. openDb OK, iniciando transaccion', {
-    caps: data.capitulos?.length, reglas: data.reglas?.length,
+    caps: data.capitulos?.length, reglas: data.reglas?.length, codigo: data.codigo,
   });
 
   const perfilCodigo = data.codigo ?? data.perfil_codigo ?? '';

@@ -20,6 +20,7 @@ const SCHEMA_VERSION = 3;
 const DDL_V0 = `
   PRAGMA journal_mode = WAL;
   PRAGMA foreign_keys = ON;
+  PRAGMA busy_timeout = 5000;
 
   CREATE TABLE IF NOT EXISTS temas (
     id          INTEGER PRIMARY KEY,
@@ -236,7 +237,17 @@ let _initialized = false;
 
 async function _abrirConexion(): Promise<SQLite.SQLiteDatabase> {
   if (!_dbPromise) {
-    _dbPromise = SQLite.openDatabaseAsync(DB_NAME);
+    _dbPromise = (async () => {
+      const db = await SQLite.openDatabaseAsync(DB_NAME);
+      // Sprint 18 fix: busy_timeout hace que SQLite espere hasta 5s antes
+      // de fallar con 'database is locked' en lugar de fallar inmediato.
+      // Resuelve race conditions entre transacción de instrumento + escrituras
+      // simultáneas de cola/borradores/respuestas.
+      try {
+        await db.execAsync('PRAGMA busy_timeout = 5000');
+      } catch { /* idempotente */ }
+      return db;
+    })();
   }
   return _dbPromise;
 }
