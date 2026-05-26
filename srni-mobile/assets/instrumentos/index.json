@@ -37,7 +37,7 @@
     "nombre": "Entrevista telefónica",
     "archivo": "telefonico_v8.json",
     "capitulos": 7,
-    "preguntas": 64
+    "preguntas": 67
   },
   {
     "codigo": "TERRITORIAL",
@@ -45,7 +45,7 @@
     "nombre": "Caracterización territorial",
     "archivo": "territorial_v7.json",
     "capitulos": 14,
-    "preguntas": 197
+    "preguntas": 200
   },
   {
     "codigo": "URBANO_ETNICO",
