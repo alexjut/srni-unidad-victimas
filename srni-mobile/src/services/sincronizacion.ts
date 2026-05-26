@@ -1,9 +1,12 @@
 // Sincronización offline → servidor: cola con backoff exponencial y bulk de respuestas.
+//
+// Sprint 18 Fase E: eliminada descargarInstrumento (los instrumentos viven en
+// bundle/memoria, no se descargan más). Solo queda la lógica de sincronización
+// de respuestas/hogares/sesiones (la cola).
 import apiClient from '../api/client';
 import { hogaresApi } from '../api/hogares';
 import { encuestasApi } from '../api/encuestas';
 import type { ResponderPayload } from '../api/encuestas';
-import * as instrumentoDao from '../db/instrumentoDao';
 import * as borradoresDao from '../db/borradoresDao';
 import { openDb } from '../db/schema';
 import * as hogaresOfflineDao from '../db/hogaresOfflineDao';
@@ -18,92 +21,6 @@ export async function estaOnline(): Promise<boolean> {
     await apiClient.get('/health/', { timeout: 4000 });
     return true;
   } catch {
-    return false;
-  }
-}
-
-/**
- * Descarga el instrumento completo de un perfil y lo guarda en SQLite.
- * Si ya tenemos la misma versión Y existen capítulos en SQLite, skipea.
- *
- * Sprint 17 fix:
- *   - backend devuelve `codigo` y `version` (no `perfil_codigo`/`numero`)
- *   - verifica capítulos físicos en SQLite (no solo meta) antes de skipear
- *   - errores se reportan al backend para visibilidad en consola Django
- *   - logs de inicio/fin para trazabilidad
- */
-// Sprint 17 fix: mutex global para evitar descargas concurrentes que generan
-// `database is locked` en SQLite (no soporta múltiples writers simultáneos).
-// Si una descarga ya está en curso para el mismo perfil, las demás esperan
-// el resultado en vez de iniciar otra transacción.
-const _descargasEnCurso = new Map<string, Promise<boolean>>();
-
-export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
-  const { log } = await import('./logger');
-  const meta = await instrumentoDao.getMeta();
-  const perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
-
-  // ¿Ya hay una descarga en curso para este perfil? Reusar esa promesa.
-  const enCurso = _descargasEnCurso.get(perfil);
-  if (enCurso) {
-    log.event('DESCARGA', `Skip — ya en curso, reusando promesa`, { perfil });
-    return enCurso;
-  }
-
-  const tarea = _ejecutarDescarga(perfil);
-  _descargasEnCurso.set(perfil, tarea);
-  try {
-    return await tarea;
-  } finally {
-    _descargasEnCurso.delete(perfil);
-  }
-}
-
-async function _ejecutarDescarga(perfil: string): Promise<boolean> {
-  const { log } = await import('./logger');
-  try {
-    log.event('DESCARGA', `1/5 Inicio`, { perfil });
-    const meta = await instrumentoDao.getMeta();
-
-    log.event('DESCARGA', `2/5 Antes fetch HTTP`, { url: `/api/formulario/instrumento/${perfil}/` });
-    const respuesta = await apiClient.get(`/api/formulario/instrumento/${perfil}/`);
-    const data = respuesta.data;
-    log.event('DESCARGA', `3/5 HTTP OK`, {
-      status: respuesta.status,
-      id: data?.id?.slice(0, 8),
-      codigo: data?.codigo,
-      version: data?.version,
-      caps: data?.capitulos?.length,
-    });
-
-    const versionServidor = data.version ?? data.numero;
-    const capsActuales = await instrumentoDao.getCapitulos();
-    const yaTengoVersion =
-      meta?.instrumento_id === data.id &&
-      meta?.version === versionServidor &&
-      capsActuales.length > 0;
-
-    if (yaTengoVersion) {
-      log.event('DESCARGA', `Skip — ya tengo`, { perfil, caps: capsActuales.length });
-      return true;
-    }
-
-    log.event('DESCARGA', `4/5 Antes guardar en SQLite`);
-    await instrumentoDao.guardarInstrumentoCompleto(data);
-    const capsTras = await instrumentoDao.getCapitulos();
-    log.event('DESCARGA', `5/5 OK guardado`, {
-      perfil,
-      capitulos: capsTras.length,
-      preguntas: data.capitulos?.reduce((acc: number, c: any) => acc + (c.preguntas?.length ?? 0), 0),
-    });
-    return true;
-  } catch (err) {
-    log.error(`descargarInstrumento FALLO en ${perfil}`, err, {
-      perfil,
-      tipoError: (err as any)?.code ?? (err as any)?.name,
-    });
-    const { reportarExcepcion } = await import('./errorReporter');
-    reportarExcepcion(err, 'descargarInstrumento', { perfil });
     return false;
   }
 }
