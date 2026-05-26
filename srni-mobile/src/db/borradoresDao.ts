@@ -131,21 +131,24 @@ export async function findBySesionId(sesionId: string): Promise<BorradorRow | nu
 
 /**
  * Cuenta respuestas no vacías por capítulo para un borrador dado.
- * Útil para calcular progreso por capítulo en la lista de capítulos.
+ * Sprint 18: las preguntas viven en memoria (no SQLite), así que el JOIN
+ * lo hacemos en JS usando el cache de instrumentos.
  */
 export async function contarRespuestasPorCapitulo(
   borradorId: string,
 ): Promise<Record<string, number>> {
+  const { getCapituloIdDePregunta } = await import('../services/instrumentos');
   const db = await openDb();
-  const rows = await db.getAllAsync<{ capitulo_id: string; cnt: number }>(
-    `SELECT p.capitulo_id, COUNT(*) AS cnt
-     FROM respuestas r
-     JOIN preguntas p ON p.id = r.pregunta_id
-     WHERE r.borrador_id = ? AND r.valor != ''
-     GROUP BY p.capitulo_id`,
+  const rows = await db.getAllAsync<{ pregunta_id: string }>(
+    `SELECT pregunta_id FROM respuestas WHERE borrador_id = ? AND valor != ''`,
     [borradorId],
   );
   const map: Record<string, number> = {};
-  for (const r of rows) map[r.capitulo_id] = r.cnt;
+  for (const r of rows) {
+    const capId = getCapituloIdDePregunta(r.pregunta_id);
+    if (capId) {
+      map[capId] = (map[capId] ?? 0) + 1;
+    }
+  }
   return map;
 }

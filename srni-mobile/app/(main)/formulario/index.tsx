@@ -4,11 +4,11 @@ import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingVi
 import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
+import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -149,8 +149,8 @@ export default function FormularioIndexScreen() {
 
   const { activo: iaActivo } = useIAStore();
 
-  const [capitulos, setCapitulos] = useState<instrumentoDao.CapituloRow[]>([]);
-  const [meta, setMeta] = useState<instrumentoDao.InstrumentoMeta | null>(null);
+  const [capitulos, setCapitulos] = useState<CapituloRow[]>([]);
+  const [meta, setMeta] = useState<InstrumentoMeta | null>(null);
   const [cargando, setCargando] = useState(true);
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
@@ -168,58 +168,54 @@ export default function FormularioIndexScreen() {
   const [descargando, setDescargando] = useState(false);
   const [errorDescarga, setErrorDescarga] = useState('');
 
-  // Sprint 17: si llegamos sin capítulos en SQLite, O el instrumento descargado
-  // es distinto al de la sesión actual, descargamos automáticamente.
+  // Sprint 18 F1B: instrumentos en memoria (require bundle). Activamos el
+  // perfil correcto leyendo el instrumento_codigo de la sesión y todo
+  // queda en RAM — sin SQLite, sin race conditions, sin lock.
   async function cargarTodo() {
     setCargando(true);
     setErrorDescarga('');
     try {
-      let caps = await instrumentoDao.getCapitulos();
-      let m = await instrumentoDao.getMeta();
-
-      // Descargar si:
-      //  (a) no hay capítulos en SQLite, o
-      //  (b) el instrumento descargado NO coincide con el de la sesión actual
-      const necesitaDescargar = sesionServerId && (
-        caps.length === 0 ||
-        (instrumentoId && m?.instrumento_id && m.instrumento_id !== instrumentoId)
-      );
-
-      if (necesitaDescargar) {
-        setDescargando(true);
+      // 1. Determinar qué perfil activar
+      let codigoPerfil: string | null = null;
+      if (sesionServerId) {
         try {
-          // Sprint 18: tomar el código del instrumento de la sesión y cargarlo
-          // desde el BUNDLE (assets empaquetados en el APK). Sin red.
-          const { data: sesion } = await encuestasApi.detalle(sesionServerId!);
-          const codigo = (sesion as any).instrumento_codigo as string | undefined;
-          if (codigo) {
-            try {
-              await asegurarInstrumentoLocal(codigo as PerfilCodigo);
-              caps = await instrumentoDao.getCapitulos();
-              m = await instrumentoDao.getMeta();
-            } catch (e) {
-              setErrorDescarga(`No se pudo cargar el instrumento ${codigo} desde el bundle local.`);
-              reportarError({
-                nivel: 'error',
-                mensaje: 'asegurarInstrumentoLocal falló',
-                stack: (e as Error)?.stack,
-                pantalla: 'formulario/index',
-                contexto: { codigo, sesionServerId },
-              });
-            }
-          } else {
-            setErrorDescarga('La sesión no tiene un código de instrumento asociado (instrumento_codigo).');
-          }
-        } finally {
-          setDescargando(false);
+          const { data: sesion } = await encuestasApi.detalle(sesionServerId);
+          codigoPerfil = (sesion as any).instrumento_codigo ?? null;
+        } catch (e) {
+          reportarError({
+            nivel: 'warn',
+            mensaje: 'No se pudo cargar detalle de sesión — usando perfil actual o TERRITORIAL',
+            stack: (e as Error)?.stack,
+            pantalla: 'formulario/index',
+            contexto: { sesionServerId },
+          });
         }
       }
+      codigoPerfil = codigoPerfil ?? instrumentos.getPerfilActivo() ?? 'TERRITORIAL';
 
-      const conteo = await instrumentoDao.contarPreguntasPorCapitulo();
+      try {
+        instrumentos.activarPerfil(codigoPerfil);
+      } catch (e) {
+        setErrorDescarga(`El perfil "${codigoPerfil}" no está disponible en este dispositivo.`);
+        reportarError({
+          nivel: 'error',
+          mensaje: 'activarPerfil falló',
+          stack: (e as Error)?.stack,
+          pantalla: 'formulario/index',
+          contexto: { codigoPerfil },
+        });
+      }
+
+      // 2. Leer de memoria — instantáneo
+      const caps = instrumentos.getCapitulos();
+      const m = instrumentos.getMeta();
+      const conteo = instrumentos.contarPreguntasPorCapitulo();
+
       setCapitulos(caps);
       setMeta(m);
       setConteoPreguntas(conteo);
 
+      // 3. Cargar respuestas del borrador (SI tenemos SQLite, eso sí)
       if (sesionServerId) {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {

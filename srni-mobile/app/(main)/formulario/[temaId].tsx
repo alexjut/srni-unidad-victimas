@@ -7,7 +7,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
-import * as instrumentoDao from '../../../src/db/instrumentoDao';
+import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
@@ -67,25 +67,21 @@ export default function CapituloScreen() {
     if (!temaId) return;
 
     (async () => {
-      // Nombre del capítulo
-      const caps = await instrumentoDao.getCapitulos();
+      // Sprint 18 F1B: TODO viene de memoria (bundle), no SQLite.
+      const caps = instrumentos.getCapitulos();
       const cap = caps.find((c) => c.id === temaId);
       setCapituloNombre(cap?.nombre ?? '');
 
-      // Preguntas y opciones
-      const pgs = await instrumentoDao.getPreguntas(temaId);
+      const pgs = instrumentos.getPreguntas(temaId);
       setPreguntas(pgs);
       if (pgs.length > 0) {
-        setOpciones(await instrumentoDao.getOpcionesBatch(pgs.map((p) => p.id)));
+        setOpciones(instrumentos.getOpcionesBatch(pgs.map((p) => p.id)));
       }
 
-      // Reglas de skip logic
-      if (instrumentoId) {
-        setReglas(await instrumentoDao.getReglasPorCapitulo(temaId, instrumentoId));
-      }
+      setReglas(instrumentos.getReglasPorCapitulo(temaId));
 
       // ── Resolver borrador ─────────────────────────────────────────────────
-      const meta = await instrumentoDao.getMeta();
+      const meta = instrumentos.getMeta();
       const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
 
       if (borradorIdParam) {

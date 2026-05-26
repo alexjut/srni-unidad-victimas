@@ -11,7 +11,7 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
-import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
+import { activarPerfil } from '../../../src/services/instrumentos';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -149,14 +149,14 @@ export default function CaracterizarScreen() {
         ruta_entrevista: rutaEntrevista,
       });
 
-      // Sprint 18: cargar el instrumento desde el bundle (no red).
-      // Idempotente — si ya está en SQLite no hace nada.
+      // Sprint 18 F1B: activar el perfil en el cache de memoria. Cero escritura
+      // a SQLite — el formulario lee directo de los JSON empaquetados.
       try {
-        await asegurarInstrumentoLocal(seleccionado.codigo as PerfilCodigo);
+        activarPerfil(seleccionado.codigo);
       } catch (e) {
         Alert.alert(
           'Aviso',
-          `La sesión se creó pero hubo un problema cargando el instrumento ${seleccionado.codigo} desde el dispositivo. Verifica los logs.`,
+          `El perfil ${seleccionado.codigo} no está disponible en el bundle local. Reinstala la app.`,
         );
       }
 

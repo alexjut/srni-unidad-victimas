@@ -7,7 +7,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { asegurarInstrumentoLocal, type PerfilCodigo } from '../../../src/services/bundledInstrumentos';
+import { activarPerfil } from '../../../src/services/instrumentos';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
@@ -38,7 +38,6 @@ export default function SesionDetalleScreen() {
   const [sesion, setSesion] = useState<SesionDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
-  const [continuandoFormulario, setContinuandoFormulario] = useState(false);
   const [error, setError] = useState('');
 
   function cargar() {
@@ -165,26 +164,13 @@ export default function SesionDetalleScreen() {
             <Text style={styles.seccionTitulo}>Continuar</Text>
 
             <GovButton
-              label={
-                continuandoFormulario
-                  ? 'Cargando instrumento…'
-                  : `Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`
-              }
+              label={`Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`}
               icon="clipboard-text"
-              loading={continuandoFormulario}
-              disabled={continuandoFormulario}
-              onPress={async () => {
-                // Sprint 18: cargar el instrumento de ESTA sesión desde el
-                // bundle empaquetado (assets, sin red). Idempotente: si ya
-                // está en SQLite no hace nada.
-                setContinuandoFormulario(true);
-                try {
-                  const codigo = (sesion as any).instrumento_codigo as string | undefined;
-                  if (codigo) {
-                    await asegurarInstrumentoLocal(codigo as PerfilCodigo);
-                  }
-                } finally {
-                  setContinuandoFormulario(false);
+              onPress={() => {
+                // Sprint 18 F1B: activar perfil en memoria (instantáneo, sin BD)
+                const codigo = (sesion as any).instrumento_codigo as string | undefined;
+                if (codigo) {
+                  try { activarPerfil(codigo); } catch {}
                 }
                 router.push({
                   pathname: '/(main)/formulario',
