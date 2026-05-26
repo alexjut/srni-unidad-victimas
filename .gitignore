@@ -53,6 +53,25 @@ apk_work/
 *.apk
 *.db
 
+# ─── Material de referencia local — NO al repo ───────────────────────────────
+# Archivos de UARIV (Excel diccionarios), capturas de pantalla, PDFs de actas.
+# Son contexto local para el desarrollo, pesan mucho y no deben versionarse.
+docs/perfiles/
+imagenes-errores/
+imagenes-errores.zip
+pantallazo*.jpeg
+pantallazo*.png
+*.pptx
+*.pdf
+*.docx
+*.xlsx
+*.ogg
+*.jpeg
+
+# Frontend (Sprint 12) — secretos locales
+srni-frontend/.env.local
+srni-frontend/.env.*.local
+
 # ─── Claude Code (contexto local — nunca al repositorio) ────────────────────
 .claude/
 CLAUDE.md
