@@ -376,10 +376,35 @@ export default function CapituloScreen() {
 // Componente de pregunta individual
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Sprint 17: alineado con el backend, que espera "true"/"false" como string.
+// Pero al leer aceptamos también formatos viejos ('1'/'0') para retro-compat.
 const BOOLEAN_OPCIONES = [
-  { valor: '1', etiqueta: 'Sí' },
-  { valor: '0', etiqueta: 'No' },
+  { valor: 'true',  etiqueta: 'Sí' },
+  { valor: 'false', etiqueta: 'No' },
 ];
+
+function leerBooleanGuardado(valor: string): string {
+  // Retro-compat: '1' → 'true', '0' → 'false'
+  if (valor === '1' || valor === 'true')  return 'true';
+  if (valor === '0' || valor === 'false') return 'false';
+  return '';
+}
+
+/** Parsea LISTA_MULTIPLE: acepta JSON nuevo o CSV viejo. */
+function parseMultiValor(valor: string): string[] {
+  if (!valor) return [];
+  const trimmed = valor.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  // CSV viejo (retro-compat)
+  return trimmed.split(',').map(s => s.trim()).filter(Boolean);
+}
 
 function PreguntaItem({
   pregunta,
@@ -489,7 +514,7 @@ function PreguntaItem({
       )}
 
       {esBoolean && (
-        <RadioButton.Group value={valor} onValueChange={onChange}>
+        <RadioButton.Group value={leerBooleanGuardado(valor)} onValueChange={onChange}>
           {BOOLEAN_OPCIONES.map((o) => (
             <RadioButton.Item key={o.valor} label={o.etiqueta} value={o.valor} />
           ))}
@@ -497,33 +522,53 @@ function PreguntaItem({
       )}
 
       {esRadio && (
-        <RadioButton.Group value={valor} onValueChange={onChange}>
-          {opciones.map((o) => (
-            <RadioButton.Item key={o.id} label={o.etiqueta} value={o.valor} />
-          ))}
-        </RadioButton.Group>
+        opciones.length === 0 ? (
+          <Text style={styles.sinOpciones}>
+            ⚠ Esta pregunta no tiene opciones cargadas — contacte al administrador.
+          </Text>
+        ) : (
+          <RadioButton.Group value={valor} onValueChange={onChange}>
+            {opciones.map((o) => (
+              <RadioButton.Item key={o.id} label={o.etiqueta} value={o.valor} />
+            ))}
+          </RadioButton.Group>
+        )
       )}
 
       {esMultiple && (
-        <View>
-          {opciones.map((o) => {
-            const seleccionados = valor ? valor.split(',').filter(Boolean) : [];
-            return (
-              <Checkbox.Item
-                key={o.id}
-                label={o.etiqueta}
-                status={seleccionados.includes(o.valor) ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  const sel = [...seleccionados];
-                  const idx = sel.indexOf(o.valor);
-                  if (idx >= 0) sel.splice(idx, 1);
-                  else sel.push(o.valor);
-                  onChange(sel.join(','));
-                }}
-              />
-            );
-          })}
-        </View>
+        opciones.length === 0 ? (
+          <Text style={styles.sinOpciones}>
+            ⚠ Esta pregunta no tiene opciones cargadas — contacte al administrador.
+          </Text>
+        ) : (() => {
+          const seleccionados = parseMultiValor(valor);
+          return (
+            <View>
+              <Text style={styles.multiHint}>
+                Selecciona todas las que apliquen
+                {seleccionados.length > 0 && ` (${seleccionados.length} seleccionada${seleccionados.length !== 1 ? 's' : ''})`}
+              </Text>
+              {opciones.map((o) => {
+                const marcado = seleccionados.includes(o.valor);
+                return (
+                  <Checkbox.Item
+                    key={o.id}
+                    label={o.etiqueta}
+                    status={marcado ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      const sel = [...seleccionados];
+                      const idx = sel.indexOf(o.valor);
+                      if (idx >= 0) sel.splice(idx, 1);
+                      else sel.push(o.valor);
+                      // Sprint 17: guardar como JSON (alineado con backend)
+                      onChange(sel.length > 0 ? JSON.stringify(sel) : '');
+                    }}
+                  />
+                );
+              })}
+            </View>
+          );
+        })()
       )}
     </View>
   );
@@ -614,6 +659,21 @@ const styles = StyleSheet.create({
   textoPregunta: { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: SPACING.sm },
   ayuda: { ...FONT.small, color: GOV.textoS, marginBottom: SPACING.sm },
   inputTexto: { backgroundColor: GOV.fondoApp },
+  multiHint: {
+    ...FONT.caption,
+    color: GOV.azul,
+    fontWeight: '600',
+    marginBottom: SPACING.xs,
+    fontStyle: 'italic',
+  },
+  sinOpciones: {
+    ...FONT.small,
+    color: GOV.naranja,
+    fontStyle: 'italic',
+    padding: SPACING.sm,
+    backgroundColor: GOV.naranjaTenue,
+    borderRadius: RADIUS.sm,
+  },
   footerBar: {
     backgroundColor: GOV.superficie,
     padding: SPACING.md,
