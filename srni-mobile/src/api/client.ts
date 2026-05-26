@@ -37,22 +37,64 @@ function processQueue(newToken: string) {
   refreshQueue = [];
 }
 
+// Sprint 18 Fase G — Redactor de PII para logs remotos.
+// Endpoints donde la URL o el body pueden contener PII de víctimas:
+//   - /api/victimas/*           (búsqueda con documento, detalle)
+//   - /api/hogares/*/agregar-miembro/ (nombres, documentos)
+//   - /api/hogares/*/cambiar-autorizado/
+//   - /api/encuestas/*/responder*    (valor de respuestas puede ser PII)
+//   - /api/auth/login/          (password en body de request)
+const ENDPOINTS_PII = [
+  '/api/victimas/',
+  '/api/hogares/',
+  '/api/encuestas/',
+  '/api/auth/login',
+  '/api/auth/cambiar-password',
+];
+
+function sanitizarUrl(url: string | undefined): string {
+  if (!url) return '?';
+  // Si el endpoint maneja PII, quitar query string y dejar solo el path
+  const sinQuery = url.split('?')[0];
+  for (const pii of ENDPOINTS_PII) {
+    if (sinQuery.includes(pii)) {
+      return `${sinQuery} [query+body redactados por PII]`;
+    }
+  }
+  return url;
+}
+
+function sanitizarBody(url: string | undefined, body: unknown): unknown {
+  if (!url) return body;
+  const sinQuery = url.split('?')[0];
+  for (const pii of ENDPOINTS_PII) {
+    if (sinQuery.includes(pii)) {
+      return '[REDACTADO — endpoint PII]';
+    }
+  }
+  if (typeof body === 'object') return body;
+  return String(body ?? '').slice(0, 300);
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Sprint 17: loguear todos los errores HTTP al backend para visibilidad
-    // No bloquea — usa dynamic import por si client.ts se carga muy temprano.
+    // Sprint 17: loguear errores HTTP al backend para visibilidad
+    // Sprint 18 Fase G: sanitizar URL+body si el endpoint es de PII (víctimas,
+    // hogares, encuestas, login). Solo se loguea el path, sin query string.
     if (error.response?.status !== 401) {
       import('../services/errorReporter').then(({ reportarError }) => {
+        const urlSafe = sanitizarUrl(original?.url);
+        const bodySafe = sanitizarBody(original?.url, error.response?.data);
         reportarError({
           nivel: error.response?.status && error.response.status >= 500 ? 'error' : 'warn',
-          mensaje: `HTTP ${error.response?.status ?? 'red'} ${original?.method?.toUpperCase()} ${original?.url}`,
+          mensaje: `HTTP ${error.response?.status ?? 'red'} ${original?.method?.toUpperCase()} ${urlSafe}`,
           pantalla: '[axios-interceptor]',
           contexto: {
             status: error.response?.status,
-            body: typeof error.response?.data === 'object' ? error.response?.data : String(error.response?.data ?? '').slice(0, 300),
+            body: bodySafe,
           },
         });
       }).catch(() => {});
