@@ -357,11 +357,18 @@ export default function ConformarHogarScreen() {
     }
   }
 
+  // Back coherente: vuelve a la pantalla de búsqueda (padre conceptual del flujo).
+  // Evita `router.back()` ciego que puede saltar al home si la pila se rompió.
+  const volverABusqueda = () => router.push('/(main)/busqueda');
+
   // ── Render: cargando hogar ────────────────────────────────────────────────
   if (creandoHogar) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Conformar Hogar" showBack />
+        <GovHeader title="Conformar Hogar" onBack={volverABusqueda} />
+        <View style={styles.miga}>
+          <Text style={styles.migaTxt}>Búsqueda  ›  Conformar hogar</Text>
+        </View>
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
           <Text style={styles.cargandoTxt}>Registrando hogar…</Text>
@@ -373,13 +380,16 @@ export default function ConformarHogarScreen() {
   if (errorHogar) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Conformar Hogar" showBack />
+        <GovHeader title="Conformar Hogar" onBack={volverABusqueda} />
+        <View style={styles.miga}>
+          <Text style={styles.migaTxt}>Búsqueda  ›  Conformar hogar</Text>
+        </View>
         <View style={styles.centrado}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
           <Text style={[styles.cargandoTxt, { color: GOV.rojo, marginTop: SPACING.sm }]}>
             {errorHogar}
           </Text>
-          <Button mode="outlined" onPress={() => router.back()} style={{ marginTop: SPACING.md }}>
+          <Button mode="outlined" onPress={volverABusqueda} style={{ marginTop: SPACING.md }}>
             Volver
           </Button>
         </View>
@@ -394,8 +404,13 @@ export default function ConformarHogarScreen() {
       <GovHeader
         title="Conformar Hogar"
         subtitle={`${integrantes.length} integrante${integrantes.length !== 1 ? 's' : ''}`}
-        showBack
+        onBack={volverABusqueda}
       />
+
+      {/* Miga de pan */}
+      <View style={styles.miga}>
+        <Text style={styles.migaTxt}>Búsqueda  ›  Conformar hogar</Text>
+      </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -590,7 +605,7 @@ export default function ConformarHogarScreen() {
             mode="text"
             onPress={() => {
               limpiar();
-              router.back();
+              volverABusqueda();
             }}
             style={{ marginTop: SPACING.xs }}
             textColor={GOV.textoT}
@@ -652,6 +667,17 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: GOV.fondoApp,
+  },
+  miga: {
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  migaTxt: {
+    ...FONT.caption,
+    color: GOV.azulOscuro,
   },
   centrado: {
     flex: 1,

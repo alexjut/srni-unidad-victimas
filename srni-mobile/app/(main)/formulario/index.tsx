@@ -247,10 +247,25 @@ export default function FormularioIndexScreen() {
     ? `Hogar ${hogarId.slice(0, 8)}… · ${capitulos.length} capítulos`
     : `${capitulos.length} capítulos`;
 
+  // Miga: muestra el contexto del flujo (Sesión › Capítulos), con Hogar si está disponible.
+  // El back nativo de router.back() es correcto porque venimos de [sesionId].
+  const sesionCorta = sesionServerId ? String(sesionServerId).slice(0, 8) : null;
+  const hogarCorto  = hogarId ? String(hogarId).slice(0, 8) : null;
+  const renderMiga = () => (
+    <View style={styles.miga}>
+      <Text style={styles.migaTxt}>
+        {hogarCorto ? `Hogar ${hogarCorto}…  ›  ` : ''}
+        {sesionCorta ? `Sesión ${sesionCorta}…  ›  ` : ''}
+        Capítulos
+      </Text>
+    </View>
+  );
+
   if (cargando) {
     return (
       <View style={styles.root}>
         <GovHeader title="Formulario" subtitle="Instrumento de caracterización" onBack={() => router.back()} />
+        {renderMiga()}
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
           <Text style={styles.cargandoTxt}>Cargando instrumento…</Text>
@@ -263,6 +278,7 @@ export default function FormularioIndexScreen() {
     return (
       <View style={styles.root}>
         <GovHeader title="Formulario" subtitle="Instrumento de caracterización" onBack={() => router.back()} />
+        {renderMiga()}
         <EmptyState
           icon="clipboard-alert-outline"
           title="Sin instrumento"
@@ -282,13 +298,8 @@ export default function FormularioIndexScreen() {
         onBack={() => router.back()}
       />
 
-      {hogarId && (
-        <View style={styles.miga}>
-          <Text style={styles.migaTxt}>
-            Hogares  ›  Hogar {hogarId.slice(0, 8)}…  ›  Formulario
-          </Text>
-        </View>
-      )}
+      {/* Miga de pan */}
+      {renderMiga()}
 
       {/* ── Selector de modo ────────────────────────────────────────────────── */}
       {mostrarSelectorModo && (

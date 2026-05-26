@@ -219,12 +219,27 @@ export default function CaracterizacionesHogarScreen() {
     });
   }
 
+  // Back coherente: vuelve al detalle del hogar (padre conceptual del hub).
+  // Evita `router.back()` ciego que puede saltar al home si la pila se rompió.
+  const volverAHogar = () =>
+    router.push({
+      pathname: '/(main)/hogares/[hogarId]',
+      params: { hogarId: String(hogarId) },
+    });
+
+  const hogarCorto = hogar?.id ? hogar.id.slice(0, 8) : (hogarId ? String(hogarId).slice(0, 8) : '');
+
   // ── Estados de carga / error ────────────────────────────────────────────────
 
   if (cargando) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Caracterizaciones" onBack={() => router.back()} />
+        <GovHeader title="Caracterizaciones" onBack={volverAHogar} />
+        <View style={styles.miga}>
+          <Text style={styles.migaTxt}>
+            Hogar {hogarCorto}…  ›  Caracterizaciones
+          </Text>
+        </View>
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
         </View>
@@ -235,11 +250,16 @@ export default function CaracterizacionesHogarScreen() {
   if (error || !hogar) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Caracterizaciones" onBack={() => router.back()} />
+        <GovHeader title="Caracterizaciones" onBack={volverAHogar} />
+        <View style={styles.miga}>
+          <Text style={styles.migaTxt}>
+            Hogar {hogarCorto}…  ›  Caracterizaciones
+          </Text>
+        </View>
         <View style={styles.centrado}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
           <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
-          <GovButton label="Volver" variant="secondary" onPress={() => router.back()} fullWidth={false} />
+          <GovButton label="Volver" variant="secondary" onPress={volverAHogar} fullWidth={false} />
         </View>
       </View>
     );
@@ -254,9 +274,16 @@ export default function CaracterizacionesHogarScreen() {
     <View style={styles.root}>
       <GovHeader
         title="Caracterizaciones"
-        subtitle={hogar.municipio_nombre ?? `Hogar ${hogar.id.slice(0, 8)}…`}
-        onBack={() => router.back()}
+        subtitle={hogar.municipio_nombre ?? `Hogar ${hogarCorto}…`}
+        onBack={volverAHogar}
       />
+
+      {/* Miga de pan */}
+      <View style={styles.miga}>
+        <Text style={styles.migaTxt}>
+          Hogar {hogarCorto}…  ›  Caracterizaciones
+        </Text>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -323,6 +350,14 @@ export default function CaracterizacionesHogarScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: GOV.fondoApp },
+  miga: {
+    backgroundColor: GOV.azulTenue,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: GOV.borde,
+  },
+  migaTxt: { ...FONT.caption, color: GOV.azulOscuro },
   centrado: {
     flex: 1,
     justifyContent: 'center',
