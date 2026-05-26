@@ -136,6 +136,12 @@ export type EstadoInclusion = 'INCLUIDO' | 'NO_INCLUIDO';
 
 export interface MiembroHogarResumen {
   id: string;
+  /**
+   * Sprint 21 — nombre completo del miembro. Solo visible para encuestadores
+   * con `puede_caracterizar`. Vive en memoria del cliente, NUNCA se persiste
+   * en SQLite. Puede venir vacío si el miembro no se ha completado.
+   */
+  nombre_completo: string;
   parentesco: Parentesco | '';
   parentesco_display: string;
   genero: 'M' | 'F' | 'NB' | 'ND';

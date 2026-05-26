@@ -77,10 +77,35 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
         source='victima.numero_documento_hash', read_only=True, default=None
     )
 
+    # Sprint 21 — nombre_completo derivado: si el miembro tiene nombre propio
+    # úsalo; si no, combina los nombres/apellidos de la víctima RNI vinculada
+    # (típicamente el autorizado). Si ambos vacíos, queda ''.
+    nombre_completo = serializers.SerializerMethodField()
+
+    def get_nombre_completo(self, obj):
+        propio = (obj.nombre_completo or '').strip()
+        if propio:
+            return propio
+        v = obj.victima
+        if v is None:
+            return ''
+        partes = [
+            (v.primer_nombre or '').strip(),
+            (v.segundo_nombre or '').strip(),
+            (v.primer_apellido or '').strip(),
+            (v.segundo_apellido or '').strip(),
+        ]
+        return ' '.join(p for p in partes if p)
+
     class Meta:
         model = MiembroHogar
         fields = [
             'id',
+            # Sprint 21 — nombre_completo visible para el encuestador.
+            # El endpoint /api/hogares/{id}/ requiere puede_caracterizar,
+            # así que solo el encuestador que está activo en la entrevista
+            # ve este campo. NUNCA se persiste en SQLite local del dispositivo.
+            'nombre_completo',
             'parentesco', 'parentesco_display',
             'genero', 'fecha_nacimiento',
             'rol', 'rol_display',

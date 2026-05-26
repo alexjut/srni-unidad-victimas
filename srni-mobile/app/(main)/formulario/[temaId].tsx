@@ -508,7 +508,14 @@ export default function CapituloScreen() {
               );
             }
             const m = item.miembro;
-            const titulo = m.es_autorizado ? `${m.rol_display} · AUTORIZADO` : m.rol_display;
+            // Sprint 21 — header con nombre: "Autorizado · Juan Pérez" o
+            // "Miembro · María García". Si nombre_completo vino vacío,
+            // mostramos solo el rol (fallback seguro).
+            const rolPrefijo = m.es_autorizado ? 'Autorizado' : 'Miembro';
+            const nombre = (m.nombre_completo ?? '').trim();
+            const titulo = nombre
+              ? `${rolPrefijo} · ${nombre}`
+              : `${rolPrefijo} · ${m.rol_display || 'sin nombre'}`;
             return (
               <View style={styles.seccionHeader}>
                 <MaterialCommunityIcons
@@ -516,7 +523,7 @@ export default function CapituloScreen() {
                   size={18}
                   color={GOV.azul}
                 />
-                <Text style={styles.seccionTitulo}>{titulo || 'Miembro'}</Text>
+                <Text style={styles.seccionTitulo}>{titulo}</Text>
               </View>
             );
           }
