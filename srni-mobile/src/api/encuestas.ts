@@ -44,6 +44,19 @@ export const encuestasApi = {
   crear: (payload: CrearSesionPayload) =>
     apiClient.post<SesionDetalle>('/api/encuestas/', payload),
 
+  /**
+   * Sprint 19 — actualiza campos de una sesión (PATCH).
+   * Usado para guardar ubicación de atención (DT/Depto/Mun/Punto) después de
+   * que el encuestador la elija en la pantalla ubicacion-atencion.
+   */
+  actualizar: (id: string, payload: Partial<{
+    direccion_territorial: number | null;
+    departamento_atencion: number | null;
+    municipio_atencion: number | null;
+    punto_atencion: number | null;
+  }>) =>
+    apiClient.patch<SesionDetalle>(`/api/encuestas/${id}/`, payload),
+
   responder: (sesionId: string, payload: ResponderPayload) =>
     apiClient.post<RespuestaEncuesta>(
       `/api/encuestas/${sesionId}/responder/`,

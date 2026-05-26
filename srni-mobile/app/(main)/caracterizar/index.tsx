@@ -143,7 +143,7 @@ export default function CaracterizarScreen() {
     if (!seleccionado) return;
     setCreando(true);
     try {
-      await encuestasApi.crear({
+      const { data: sesion } = await encuestasApi.crear({
         hogar: hId,
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
@@ -160,12 +160,16 @@ export default function CaracterizarScreen() {
         );
       }
 
-      // Sprint 14: tras crear la caracterización volvemos al hub del hogar
-      // (no al formulario directo). El usuario ve la nueva sesión en la lista
-      // y decide si entra a llenarla o crea otra.
+      // Sprint 19: tras crear la caracterización, pedir la ubicación de
+      // atención (DT / Depto / Mun / Punto) antes de devolver al hub. Si el
+      // usuario omite, igual llega al hub con la sesión creada (sin ubicación).
       router.replace({
-        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-        params: { hogarId: hId },
+        pathname: '/(main)/caracterizar/ubicacion-atencion',
+        params: {
+          sesionId: sesion.id,
+          hogarId: hId,
+          instrumentoCodigo: seleccionado.codigo,
+        },
       });
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
