@@ -148,6 +148,8 @@ async function procesarResponder(item: colaDao.ColaItem): Promise<void> {
   const payload = JSON.parse(item.payload) as {
     sesion_id: string;
     pregunta_id: string;
+    /** Sprint 21: presente cuando la pregunta es PERSONA. */
+    miembro_id?: string | null;
     valor: string;
   };
 
@@ -157,6 +159,7 @@ async function procesarResponder(item: colaDao.ColaItem): Promise<void> {
 
   await encuestasApi.responder(payload.sesion_id, {
     pregunta_id: payload.pregunta_id,
+    miembro_id: payload.miembro_id ?? null,
     valor: payload.valor,
   });
 }

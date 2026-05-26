@@ -23,7 +23,8 @@ export interface BorradorRow {
 export interface RespuestaRow {
   id: number;
   borrador_id: string;
-  pregunta_id: string;  // UUID de Pregunta
+  pregunta_id: string;       // UUID de Pregunta
+  miembro_id: string | null; // Sprint 21: null para preguntas HOGAR, UUID de MiembroHogar para PERSONA
   valor: string;
   updated_at: string;
 }
@@ -59,20 +60,30 @@ export async function listarBorradores(): Promise<BorradorRow[]> {
 
 /**
  * Guarda o actualiza una respuesta (upsert).
- * pregunta_id es UUID de Pregunta.
+ *
+ * Sprint 21 — `miembroId` es:
+ *   - null/undefined si la pregunta es nivel HOGAR (1 respuesta por sesión)
+ *   - UUID del miembro si la pregunta es nivel PERSONA (N respuestas, una por miembro)
+ *
+ * El unique index (borrador_id, pregunta_id, miembro_id) garantiza no duplicar.
+ * SQLite trata NULL como distinto en UNIQUE, así que el ON CONFLICT funciona
+ * tanto para HOGAR (miembro_id=NULL) como para PERSONA (miembro_id=<uuid>).
  */
 export async function upsertRespuesta(
   borradorId: string,
-  preguntaId: string,  // UUID
+  preguntaId: string,
   valor: string,
+  miembroId?: string | null,
 ): Promise<void> {
   const db = await openDb();
   const now = new Date().toISOString();
+  const mid = miembroId ?? null;
   await db.runAsync(
-    `INSERT INTO respuestas (borrador_id, pregunta_id, valor, updated_at)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(borrador_id, pregunta_id) DO UPDATE SET valor = excluded.valor, updated_at = excluded.updated_at`,
-    [borradorId, preguntaId, valor, now],
+    `INSERT INTO respuestas (borrador_id, pregunta_id, miembro_id, valor, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(borrador_id, pregunta_id, miembro_id)
+     DO UPDATE SET valor = excluded.valor, updated_at = excluded.updated_at`,
+    [borradorId, preguntaId, mid, valor, now],
   );
   await db.runAsync('UPDATE borradores SET updated_at = ? WHERE id = ?', [now, borradorId]);
 }
@@ -85,11 +96,41 @@ export async function getRespuestas(borradorId: string): Promise<RespuestaRow[]>
   );
 }
 
-/** Devuelve mapa pregunta_id (UUID) → valor. */
+/**
+ * Devuelve mapa pregunta_id → valor. Solo respuestas tipo HOGAR (miembro_id null).
+ * Mantiene compatibilidad con el motor pre-Sprint 21.
+ */
 export async function getRespuestaMap(borradorId: string): Promise<Record<string, string>> {
   const rows = await getRespuestas(borradorId);
   const map: Record<string, string> = {};
-  for (const r of rows) map[r.pregunta_id] = r.valor;
+  for (const r of rows) {
+    if (r.miembro_id == null) map[r.pregunta_id] = r.valor;
+  }
+  return map;
+}
+
+/**
+ * Sprint 21 — devuelve mapa con clave compuesta `pregunta_id|miembro_id` o
+ * `pregunta_id|` para HOGAR. Permite al motor restaurar borradores con
+ * preguntas PERSONA por miembro.
+ *
+ * Ejemplo:
+ *   { "p-uuid|" : "valor HOGAR",
+ *     "p-uuid|m1-uuid" : "valor para miembro 1",
+ *     "p-uuid|m2-uuid" : "valor para miembro 2" }
+ */
+export function claveRespuesta(preguntaId: string, miembroId?: string | null): string {
+  return `${preguntaId}|${miembroId ?? ''}`;
+}
+
+export async function getRespuestaMapCompuesto(
+  borradorId: string,
+): Promise<Record<string, string>> {
+  const rows = await getRespuestas(borradorId);
+  const map: Record<string, string> = {};
+  for (const r of rows) {
+    map[claveRespuesta(r.pregunta_id, r.miembro_id)] = r.valor;
+  }
   return map;
 }
 

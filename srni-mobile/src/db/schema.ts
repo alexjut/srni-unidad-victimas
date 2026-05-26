@@ -14,7 +14,7 @@
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -43,12 +43,16 @@ const DDL_V0 = `
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     borrador_id TEXT    NOT NULL REFERENCES borradores(id),
     pregunta_id TEXT    NOT NULL,
+    miembro_id  TEXT,
     valor       TEXT    NOT NULL DEFAULT '',
     updated_at  TEXT    NOT NULL
   );
 
+  -- Sprint 21: unique por (borrador, pregunta, miembro). SQLite trata NULL
+  -- como distinto en UNIQUE → preguntas HOGAR (miembro=NULL) admiten 1 sola;
+  -- PERSONA (miembro=ID) admiten N (una por miembro del hogar).
   CREATE UNIQUE INDEX IF NOT EXISTS idx_respuestas_unique
-    ON respuestas(borrador_id, pregunta_id);
+    ON respuestas(borrador_id, pregunta_id, miembro_id);
 
   CREATE TABLE IF NOT EXISTS sync_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,6 +216,17 @@ const MIGRATION_V4 = `
   DROP TABLE IF EXISTS instrumento_meta;
 `;
 
+// ─── Migración v5 — respuestas.miembro_id (Sprint 21) ────────────────────────
+// Agrega columna miembro_id a respuestas + recrea el unique index para incluirla.
+// SQLite no soporta ALTER COLUMN para cambiar unique, así que dropeamos el
+// index viejo y creamos uno nuevo.
+const MIGRATION_V5 = `
+  ALTER TABLE respuestas ADD COLUMN miembro_id TEXT;
+  DROP INDEX IF EXISTS idx_respuestas_unique;
+  CREATE UNIQUE INDEX idx_respuestas_unique
+    ON respuestas(borrador_id, pregunta_id, miembro_id);
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -267,6 +282,22 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     // Sprint 18 Fase F: drop tablas de instrumento (vacias post F1B).
     // Idempotente — usa DROP IF EXISTS. No toca borradores/respuestas/cola/hogares_offline.
     await db.execAsync(MIGRATION_V4);
+  }
+
+  if (currentVersion < 5) {
+    // Sprint 21: respuestas.miembro_id para soportar preguntas PERSONA por miembro.
+    try {
+      await db.execAsync(MIGRATION_V5);
+    } catch (e: any) {
+      // ALTER TABLE ADD COLUMN no es idempotente en SQLite si la columna ya existe.
+      // En ese caso, solo recreamos el index.
+      if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
+      await db.execAsync(`
+        DROP INDEX IF EXISTS idx_respuestas_unique;
+        CREATE UNIQUE INDEX idx_respuestas_unique
+          ON respuestas(borrador_id, pregunta_id, miembro_id);
+      `);
+    }
   }
 
   if (currentVersion < SCHEMA_VERSION) {

@@ -12,6 +12,8 @@ export interface CrearSesionPayload {
 
 export interface ResponderPayload {
   pregunta_id: string;
+  /** Sprint 21: null si la pregunta es HOGAR, UUID del miembro si es PERSONA. */
+  miembro_id?: string | null;
   valor: string;
 }
 
