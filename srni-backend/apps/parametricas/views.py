@@ -37,7 +37,9 @@ class ReadOnlyViewSet(
 class DepartamentoViewSet(ReadOnlyViewSet):
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
-    filterset_fields = ['activo']
+    # Sprint 19: filtro M2M para cascada DT→Depto.
+    # GET /api/parametricas/departamentos/?direcciones_territoriales=<dt_id>
+    filterset_fields = ['activo', 'direcciones_territoriales']
     search_fields = ['nombre', 'codigo_dane']
     ordering_fields = ['nombre', 'codigo_dane']
     ordering = ['nombre']
