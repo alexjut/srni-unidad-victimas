@@ -32,13 +32,38 @@ export async function estaOnline(): Promise<boolean> {
  *   - errores se reportan al backend para visibilidad en consola Django
  *   - logs de inicio/fin para trazabilidad
  */
+// Sprint 17 fix: mutex global para evitar descargas concurrentes que generan
+// `database is locked` en SQLite (no soporta múltiples writers simultáneos).
+// Si una descarga ya está en curso para el mismo perfil, las demás esperan
+// el resultado en vez de iniciar otra transacción.
+const _descargasEnCurso = new Map<string, Promise<boolean>>();
+
 export async function descargarInstrumento(perfilCodigo?: string): Promise<boolean> {
-  let perfil = '';
+  const { log } = await import('./logger');
+  const meta = await instrumentoDao.getMeta();
+  const perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
+
+  // ¿Ya hay una descarga en curso para este perfil? Reusar esa promesa.
+  const enCurso = _descargasEnCurso.get(perfil);
+  if (enCurso) {
+    log.event('DESCARGA', `Skip — ya en curso, reusando promesa`, { perfil });
+    return enCurso;
+  }
+
+  const tarea = _ejecutarDescarga(perfil);
+  _descargasEnCurso.set(perfil, tarea);
+  try {
+    return await tarea;
+  } finally {
+    _descargasEnCurso.delete(perfil);
+  }
+}
+
+async function _ejecutarDescarga(perfil: string): Promise<boolean> {
   const { log } = await import('./logger');
   try {
+    log.event('DESCARGA', `1/5 Inicio`, { perfil });
     const meta = await instrumentoDao.getMeta();
-    perfil = perfilCodigo ?? meta?.perfil_codigo ?? 'TERRITORIAL';
-    log.event('DESCARGA', `1/5 Inicio`, { perfil, metaActual: meta?.perfil_codigo });
 
     log.event('DESCARGA', `2/5 Antes fetch HTTP`, { url: `/api/formulario/instrumento/${perfil}/` });
     const respuesta = await apiClient.get(`/api/formulario/instrumento/${perfil}/`);

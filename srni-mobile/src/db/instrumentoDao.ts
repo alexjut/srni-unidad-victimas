@@ -133,15 +133,18 @@ export interface InstrumentoCompletoBackend {
  * Borra y reescribe todas las tablas del instrumento para garantizar coherencia.
  */
 export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBackend): Promise<void> {
-  // Logger import dinámico para evitar ciclo en imports
   const { log } = await import('../services/logger');
   const db = await openDb();
-  log.event('GUARDAR', 'A. openDb OK, iniciando transacción', {
+  log.event('GUARDAR', 'A. openDb OK, iniciando transaccion', {
     caps: data.capitulos?.length, reglas: data.reglas?.length,
   });
 
+  const perfilCodigo = data.codigo ?? data.perfil_codigo ?? '';
+  const version      = data.version ?? data.numero ?? '0';
+
   let preguntaActual = '';
   let capActual = '';
+
   try {
     await db.withTransactionAsync(async () => {
       log.event('GUARDAR', 'B. Limpiando tablas previas');
@@ -152,7 +155,9 @@ export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBacken
       await db.runAsync('DELETE FROM instrumento_meta');
       log.event('GUARDAR', 'C. Tablas limpias');
 
-      let totalP = 0, totalO = 0;
+      let totalP = 0;
+      let totalO = 0;
+
       for (const cap of data.capitulos) {
         capActual = cap.codigo;
         await db.runAsync(
@@ -165,10 +170,7 @@ export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBacken
           preguntaActual = p.codigo_externo;
 
           await db.runAsync(
-            `INSERT INTO preguntas
-               (id, capitulo_id, codigo_externo, no_pregunta, texto, descripcion_ayuda,
-                tipo, nivel, orden, obligatoria, activa, validaciones)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+            `INSERT INTO preguntas (id, capitulo_id, codigo_externo, no_pregunta, texto, descripcion_ayuda, tipo, nivel, orden, obligatoria, activa, validaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
             [
               p.id, cap.id, p.codigo_externo, p.no_pregunta ?? '',
               p.texto ?? '', p.descripcion_ayuda ?? '',
@@ -188,44 +190,33 @@ export async function guardarInstrumentoCompleto(data: InstrumentoCompletoBacken
           }
         }
       }
-      log.event('GUARDAR', 'D. Capítulos+preguntas+opciones insertadas', { totalP, totalO });
+      log.event('GUARDAR', 'D. Caps+pregs+opcs insertadas', { totalP, totalO });
 
-    // Guardar reglas del instrumento (nivel versión)
-    for (const r of data.reglas ?? []) {
+      for (const r of data.reglas ?? []) {
+        await db.runAsync(
+          `INSERT INTO reglas_skip_logic (id, instrumento_id, pregunta_origen_codigo, valor_trigger, expresion_origen, pregunta_afectada_id, pregunta_afectada_codigo, capitulo_afectado_id, accion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            r.id, data.id,
+            r.pregunta_origen_codigo ?? null,
+            r.valor_trigger ?? '',
+            r.expresion_origen ?? '',
+            r.pregunta_afectada ?? null,
+            r.pregunta_afectada_codigo ?? null,
+            r.capitulo_afectado ?? null,
+            r.accion,
+          ],
+        );
+      }
+
       await db.runAsync(
-        `INSERT INTO reglas_skip_logic
-           (id, instrumento_id, pregunta_origen_codigo, valor_trigger, expresion_origen,
-            pregunta_afectada_id, pregunta_afectada_codigo, capitulo_afectado_id, accion)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          r.id, data.id,
-          r.pregunta_origen_codigo ?? null,
-          r.valor_trigger ?? '',
-          r.expresion_origen ?? '',
-          r.pregunta_afectada ?? null,
-          r.pregunta_afectada_codigo ?? null,
-          r.capitulo_afectado ?? null,
-          r.accion,
-        ],
+        `INSERT INTO instrumento_meta (id, instrumento_id, perfil_codigo, version, descargado_en) VALUES (1, ?, ?, ?, ?)`,
+        [data.id, perfilCodigo, version, new Date().toISOString()],
       );
-    }
-
-    // Sprint 17 fix: backend devuelve `codigo` y `version`, no `perfil_codigo`/`numero`.
-    // Aceptamos los aliases viejos como fallback solo por defensiva.
-    const perfilCodigo = data.codigo ?? data.perfil_codigo ?? '';
-    const version      = data.version ?? data.numero ?? '0';
-
-    // Guardar metadata
-    await db.runAsync(
-      `INSERT INTO instrumento_meta (id, instrumento_id, perfil_codigo, version, descargado_en)
-       VALUES (1, ?, ?, ?, ?)`,
-      [data.id, perfilCodigo, version, new Date().toISOString()],
-    );
-    log.event('GUARDAR', 'E. Meta insertado', { perfilCodigo, version });
+      log.event('GUARDAR', 'E. Meta insertado', { perfilCodigo, version });
     });
-    log.event('GUARDAR', 'F. Transacción commit OK');
+    log.event('GUARDAR', 'F. Transaccion commit OK');
   } catch (err) {
-    log.error('guardarInstrumentoCompleto EXPLOTÓ', err, {
+    log.error('guardarInstrumentoCompleto EXPLOTO', err, {
       ultimoCap: capActual,
       ultimaPregunta: preguntaActual,
     });
