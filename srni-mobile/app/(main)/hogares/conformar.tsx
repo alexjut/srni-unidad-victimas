@@ -27,6 +27,7 @@ import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { GovHeader } from '../../../src/components/GovHeader';
+import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 
@@ -257,6 +258,7 @@ export default function ConformarHogarScreen() {
           tipo_documento: v?.tipo_documento ?? '',
           numero_documento: v?.numero_documento ?? '',
           parentesco_display: '',
+          rol_display: 'Autorizado',
           genero: v?.genero ?? '',
           fecha_nacimiento: '',
         }]);
@@ -521,18 +523,15 @@ export default function ConformarHogarScreen() {
             ? <HelperText type="error">{erroresForm.primerApell}</HelperText>
             : null}
 
-          {/* Fecha de Nacimiento */}
-          <TextInput
-            label="Fecha Nacimiento (AAAA-MM-DD)"
-            value={fechaNac}
-            onChangeText={setFechaNac}
-            mode="outlined"
-            placeholder="1990-01-15"
-            keyboardType="numeric"
-            style={styles.input}
-            activeOutlineColor={GOV.azul}
-            error={!!erroresForm.fechaNac}
-          />
+          {/* Fecha de Nacimiento — Sprint 21: calendario nativo en lugar de input */}
+          <View style={styles.input}>
+            <SelectorFecha
+              valor={fechaNac}
+              onChange={setFechaNac}
+              label="Fecha de nacimiento"
+              permitirFuturo={false}
+            />
+          </View>
           {erroresForm.fechaNac
             ? <HelperText type="error">{erroresForm.fechaNac}</HelperText>
             : null}

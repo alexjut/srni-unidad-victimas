@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 
 import { GovHeader } from '../../src/components/GovHeader';
+import { SelectorFecha } from '../../src/components/SelectorFecha';
 
 // Imagen auténtica de comunidad indígena Emberá — Unidad para las Víctimas
 const IMAGEN_FONDO = {
@@ -421,13 +422,15 @@ function TarjetaNoEncontrado({
             autoCapitalize="characters" style={styles.formInput}
             outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
           />
-          <TextInput
-            mode="outlined" label="Fecha nacimiento * (AAAA-MM-DD)"
-            value={fechaNacimiento} onChangeText={setFechaNacimiento}
-            keyboardType="numeric" placeholder="Ej: 1985-03-15"
-            style={styles.formInput}
-            outlineColor={GOV.borde} activeOutlineColor={GOV.azul}
-          />
+          {/* Sprint 21: calendario nativo en lugar de input AAAA-MM-DD */}
+          <View style={styles.formInput}>
+            <SelectorFecha
+              valor={fechaNacimiento}
+              onChange={setFechaNacimiento}
+              label="Fecha de nacimiento *"
+              permitirFuturo={false}
+            />
+          </View>
 
           <Text style={styles.formLabel}>Género</Text>
           <SegmentedButtons
