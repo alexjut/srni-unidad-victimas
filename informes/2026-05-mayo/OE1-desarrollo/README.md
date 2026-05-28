@@ -1,5 +1,23 @@
 # OE1 — Desarrollo, mantenimiento, documentación y soporte
 
+> **Obligación contractual:** *Apoyar actividades de desarrollo, mantenimiento, documentación y soporte de las soluciones tecnológicas y aplicativos móviles.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se ejecutaron **16 sprints técnicos (6 al 21)** con un total de **80 commits firmados** distribuidos en los 3 componentes del sistema: backend Django REST Framework, app móvil React Native + Expo SDK 54 y panel web React + Vite. Los avances incluyeron: rediseño completo de UX del login con biometría y flujo de caracterización (Sprint 7), motor de formulario end-to-end con bulk sync (Sprint 8), sincronización masiva robusta con backoff exponencial (Sprint 9), reportes de producción del encuestador (Sprint 10), hardening de seguridad para producción (Sprint 11), implementación del panel web React + Tailwind para supervisores (Sprint 12), backend habilitador con filtros server-side y endpoints de supervisor/dashboard (Sprint 13), refactor del flujo móvil a un hub de caracterizaciones por hogar (Sprint 14), carga completa de los 8 instrumentos UARIV (Sprint 15), fix de 3 bugs críticos en el flujo móvil (Sprint 16), QA exhaustivo con sistema de captura de errores en producción (Sprint 17), refactor a arquitectura in-memory que elimina el "database is locked" recurrente (Sprint 18), implementación de la ubicación de atención como metadata de la sesión con cascada UARIV de 21 DTs y 1102 municipios (Sprint 19), backend habilitador para el panel web con renombrado descriptivo de instrumentos y render del selector dinámico de municipio (Sprint 20) y, finalmente, soporte de preguntas tipo PERSONA por cada miembro del hogar con wizard de navegación + calendario nativo en fechas (Sprint 21). El soporte continuo del mes resolvió 8 bugs críticos sin afectar la disponibilidad del entorno de desarrollo.
+
+## Evidencia que soporta esta actividad
+
+- **Repositorio Git:** `tfsunidad.visualstudio.com/...IGED MOVIL 2026-04` (Azure DevOps oficial UARIV) y `github.com/alexjut/srni-unidad-victimas` (GitHub backup) — rama `main` al commit `7d1a6b9`.
+- **Bitácora de commits:** `OE8-informes/git-log-mayo-2026.txt` (80 commits con fecha, hash y mensaje).
+- **Documentación de sprints:** `docs/sprints/sprint-07.md` a `sprint-11.md` + bitácora interna `docs/frontend/bitacora-desarrollo.md`.
+- **Snapshot del estado del proyecto:** `docs/estado-actual.md`.
+- **Reporte automatizado de QA por instrumento:** `docs/qa-perfiles-sprint20.md` (regenerable con `scripts/qa_perfiles.py`).
+- **Correo de coordinación con frontend (Brando):** `docs/correo-brando.md`.
+- **Código fuente:** carpetas `srni-backend/`, `srni-mobile/`, `srni-frontend/` en el repositorio versionado.
+
+---
+
 ## Actividades del cronograma
 
 1. Análisis del aplicativo móvil existente (APK Vivanto v4.1)

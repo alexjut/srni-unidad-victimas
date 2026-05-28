@@ -1,5 +1,26 @@
 # OE4 — Diseño e implementación de soluciones tecnológicas
 
+> **Obligación contractual:** *Realizar el diseño e implementación de las soluciones tecnológicas y aplicativos móviles que genere la Subdirección Red Nacional de Información para el procedimiento de Instrumentalización de la Información.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se consolidó la **arquitectura completa de 3 componentes** del sistema de caracterización de víctimas, todos comunicándose por HTTPS + JWT. El **backend Django REST Framework** quedó operativo con 8 apps (autenticación, víctimas, formulario, hogares, encuestas, paramétricas, IA y reportes) + 2 transversales (auditoría y sincronización), con autenticación JWT de refresh rotativo (access 15 min, refresh 8 h), Swagger autogenerado en `/api/schema/swagger-ui/`, throttle global y por endpoint, filtros server-side con django-filter, paginación cursor para listas volátiles (sesiones) y page-number para el resto. La **aplicación móvil React Native + Expo SDK 54** quedó implementada con Expo Router file-based, motor offline expo-sqlite con cola de sincronización, instrumentos pre-empaquetados como bundle JSON (no requiere descarga online), y bibliotecas auxiliares: react-native-paper para UI, expo-secure-store para tokens, expo-local-authentication para biometría, datetimepicker para calendario nativo y linear-gradient para fondos institucionales. El **panel web React + Vite + Tailwind + Zustand** quedó scaffolded con 5 páginas (Login, Dashboard, Hogares, Encuestas, Reportes), cliente axios con auto-refresh JWT en cola y estado global persistido en sessionStorage (nunca localStorage por seguridad). El despliegue local quedó orquestado por `docker-compose.yml` que levanta PostgreSQL con pgcrypto habilitado, Redis para cache y broker de Celery, backend Django con gunicorn y Nginx con configuración TLS lista. Los Docker Secrets quedaron preparados en `infra/secrets/` (excluidos del repo) para inyectar credenciales en producción.
+
+## Evidencia que soporta esta actividad
+
+- **Diagrama de arquitectura:** `informes/2026-05-mayo/OE4-arquitectura/README.md` (sección "Arquitectura general" con ascii diagram).
+- **Orquestación contenedores:** `docker-compose.yml` (raíz del repositorio).
+- **Configuración Nginx + TLS:** `infra/nginx/srni.conf`.
+- **Settings backend:** `srni-backend/srni/settings/base.py`, `development.py`, `production.py`.
+- **Inicializador PostgreSQL:** `infra/postgres/init.sql` (habilita pgcrypto).
+- **Backend operativo:** carpeta `srni-backend/` con 8 apps Django.
+- **App móvil operativa:** carpeta `srni-mobile/` con Expo SDK 54.
+- **Panel web operativo:** carpeta `srni-frontend/` con Vite + React 18.
+- **Documentación de arranque:** `docs/ARRANQUE-DEV.md` y scripts `arrancar-backend.ps1` + `arrancar-mobile.ps1`.
+- **Copias locales en esta carpeta:** `docker-compose.yml`, `nginx.conf`, `base.py`.
+
+---
+
 ## Actividades del cronograma
 
 1. Solicitud de usuarios y permisos para servidores SRNI (FTP, Azure, BD, Ficha)

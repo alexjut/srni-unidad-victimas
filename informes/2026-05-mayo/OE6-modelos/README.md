@@ -1,5 +1,23 @@
 # OE6 — Modelos de datos documentados
 
+> **Obligación contractual:** *Crear y documentar modelos de datos que reflejen con precisión la información que se desea analizar, considerando las relaciones entre los diferentes conjuntos de datos en las soluciones tecnológicas y aplicativos móviles.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se diseñaron, implementaron y documentaron **tres modelos de datos integrados** que reflejan el dominio completo del procedimiento de instrumentalización de víctimas. **Modelo del Instrumento:** Instrumento → Capítulo → Pregunta → OpcionRespuesta + ReglaSkipLogic, soportando 9 tipos de pregunta (TEXTO, TEXTO_LARGO, NUMERICO, FECHA, BOOLEAN, RADIO, LISTA, LISTA_MULTIPLE y COMBO_DINAMICO para selectores DIVIPOLA dinámicos), 2 niveles (HOGAR único o PERSONA repetido por miembro) y 4 acciones de skip logic (HABILITAR, DESHABILITAR, OBLIGAR, FINALIZAR). El modelo se materializa en **1 001 preguntas activas** y **2 239 opciones** distribuidas en los 8 instrumentos UARIV. **Modelo del ciclo de caracterización:** Victima (PII cifrado + hash SHA-256) → Hogar (autorizado, municipio, vivienda) → MiembroHogar (rol, parentesco, género, es_autorizado, estado_inclusion) y, paralelamente, Hogar → SesionEncuesta (instrumento + ruta + encuestador + 4 FKs de ubicación de atención de la Sprint 19) → RespuestaEncuesta (con FK opcional a miembro de la Sprint 21 y UniqueConstraint `(sesion, pregunta, miembro)` que diferencia respuestas tipo HOGAR de las repetidas por miembro). **Modelo paramétrico:** Departamento DANE → Municipio DANE → Vereda, con M2M a DireccionTerritorial UARIV y FK desde PuntoAtencion. La documentación incluye reglas de cardinalidad (1:N, 1:1), reglas de integridad (validación cascada UARIV en el serializer, `es_autorizado` único por hogar, coherencia HOGAR/PERSONA en respuestas) y cantidades cargadas en BD al cierre del mes (33 deptos, 1102 muns, 21 DTs, 41 puntos, 8 instrumentos, 1001 preguntas activas).
+
+## Evidencia que soporta esta actividad
+
+- **Modelo Django del instrumento:** `srni-backend/apps/formulario/models.py` (Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic).
+- **Modelo Django del ciclo de caracterización:** `srni-backend/apps/encuestas/models.py` (SesionEncuesta, RespuestaEncuesta), `srni-backend/apps/hogares/models.py` (Hogar, MiembroHogar), `srni-backend/apps/victimas/models.py` (Victima).
+- **Modelo Django paramétrico:** `srni-backend/apps/parametricas/models.py` (Departamento, Municipio, Vereda, DireccionTerritorial, PuntoAtencion, TipoDocumento, ComunidadNegra, ResguardoIndigena).
+- **Documentación de relaciones:** sección "Reglas de cardinalidad" y "Reglas de integridad" del README.md de esta carpeta, con diagramas ASCII de cada modelo.
+- **Schema SQLite móvil reflejando los modelos:** `srni-mobile/src/db/schema.ts` con tablas borradores y respuestas.
+- **Documentación cualitativa de cada tipo de pregunta:** sección "Tipos de pregunta soportados" del README.md.
+- **Copias locales en esta carpeta:** `modelos-py-formulario.py`, `modelos-py-encuestas.py`, `modelos-py-hogares.py`, `modelos-py-parametricas.py`.
+
+---
+
 ## Actividades del cronograma
 
 1. Modelo instrumento → tema → pregunta → opción con skip logic

@@ -1,5 +1,28 @@
 # OE5 — Estructura de bases de datos
 
+> **Obligación contractual:** *Crear, diseñar y documentar la estructura de bases de datos para garantizar la eficiencia, integridad y seguridad de los datos utilizados en los procedimientos de instrumentalización de la información y análisis tecnológicas y aplicativos móviles.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se consolidó la **estructura completa de las dos bases de datos** del sistema: PostgreSQL en el servidor (con extensión `pgcrypto` habilitada para cifrado de PII a nivel de columna) y SQLite en el dispositivo móvil (para soporte offline). En PostgreSQL, las 8 apps Django evolucionaron a través de **27 migraciones versionadas en Git** (todas aplicables idempotentemente) que cubren el modelo del Diccionario UARIV V8, cifrado y hashing de PII, hogares v2 con autorizado + rol + estado_inclusion, sesiones con 4 FKs nuevas de ubicación de atención (Sprint 19), respuestas con FK opcional a miembro y UniqueConstraint compuesta `(sesion, pregunta, miembro)` (Sprint 21), paramétricas DANE + UARIV, usuario custom con perfiles de permisos granulares, LogAcceso inmutable y modelos de IA (consentimiento + logs Gemini). En SQLite móvil se versionó el schema desde **V0 hasta V5** con migraciones controladas por `PRAGMA user_version` y transaccionales: V0 incluía tablas iniciales de captura, V1 agregó instrumento_meta + hogares_offline + cola_sincronizacion, V2 migró a UUIDs, V3 agregó retry_after para backoff, V4 eliminó las tablas de instrumento (al pasar a arquitectura in-memory en el Sprint 18) y V5 (Sprint 21) agregó la columna `miembro_id` con nuevo UNIQUE index para soportar preguntas tipo PERSONA por miembro. El esquema garantiza integridad referencial con FK PROTECT, integridad lógica con validación en serializers (cascada DT→Depto→Mun, coherencia HOGAR/PERSONA), y eficiencia mediante 14 índices DB-level + cache en memoria de los catálogos paramétricos.
+
+## Evidencia que soporta esta actividad
+
+- **Migraciones Django versionadas:** carpetas `srni-backend/apps/*/migrations/` (27 archivos generados y aplicados en mayo).
+- **Migraciones críticas del mes:**
+  - `encuestas/0005_sesionencuesta_departamento_atencion_*.py` (4 FKs ubicación atención)
+  - `encuestas/0006_alter_respuestaencuesta_options_*.py` (miembro FK + UniqueConstraint)
+  - `hogares/0003_autorizado_rol_*.py` (Hogar v2)
+  - `hogares/0004_remove_miembrohogar_*.py` (renames de índices)
+- **Modelos Django:** `srni-backend/apps/encuestas/models.py`, `hogares/models.py`, `formulario/models.py`, `parametricas/models.py`.
+- **Schema SQLite mobile:** `srni-mobile/src/db/schema.ts` (V5 con DDL_V0 + 5 migraciones idempotentes).
+- **Habilitación pgcrypto:** `infra/postgres/init.sql`.
+- **DAOs de acceso a datos en mobile:** `srni-mobile/src/db/borradoresDao.ts`, `colaDao.ts`, `hogaresOfflineDao.ts`, `instrumentoDao.ts`.
+- **Diagrama ER en ASCII:** sección "Diseño de relaciones" del README.md de esta carpeta.
+- **Copias locales en esta carpeta:** `encuestas-models.py`, `hogares-models.py`, `formulario-models.py`, `schema-mobile.ts`.
+
+---
+
 ## Actividades del cronograma
 
 1. **Diseño del modelo entidad-relación** completo del sistema

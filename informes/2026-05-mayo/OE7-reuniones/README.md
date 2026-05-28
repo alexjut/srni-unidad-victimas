@@ -1,5 +1,26 @@
 # OE7 — Reuniones y coordinación con supervisor
 
+> **Obligación contractual:** *Asistir a las reuniones programadas para tratar temas relacionados con el desarrollo del objeto del contrato y las demás que sean requeridas por el supervisor.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se asistió a las reuniones de coordinación con el supervisor Oscar Andrés Manosalva García y con el equipo de Caracterización SRNI. Las reuniones de equipo permitieron identificar hallazgos críticos del aplicativo móvil que se atendieron como sprints inmediatos (por ejemplo, el equipo SRNI envió evidencias gráficas el 26/05 mostrando que los 8 instrumentos debían comenzar con un capítulo de Información General de Atención —Dirección Territorial, Departamento, Punto y Municipio de Atención—, lo que se resolvió en el mismo día con el Sprint 19 completo: modelado backend, endpoints de cascada, pantalla móvil con cache local y limpieza de bundles). Adicionalmente se realizó coordinación técnica con el desarrollador del panel web (Brando) mediante un correo formal de onboarding (`docs/correo-brando.md`) que documenta credenciales, endpoints disponibles, procedimiento para solicitar endpoints nuevos y reporte de fallos. *(Sección a complementar por el contratista con las actas firmadas, listados de asistencia y presentaciones formales de cada reunión)*.
+
+## Evidencia que soporta esta actividad
+
+- **Correo de coordinación con frontend (versionado):** `docs/correo-brando.md`.
+- **Integración de trabajo del equipo:** commit de merge `d7c9edb` que integró 5 commits del desarrollador frontend Brando sin pisar su trabajo.
+- **Hallazgos del equipo SRNI atendidos en sprints inmediatos:** Sprint 19 (capítulo Información General de Atención), Sprint 20 (nombres descriptivos de instrumentos), Sprint 20-QA-B (render selector municipio), Sprint 21 (preguntas por miembro + calendario + wizard).
+- **Anexos a aportar por el contratista:**
+  - [ ] Acta de reunión inicial de contrato (abril 2026)
+  - [ ] Acta de reunión de georreferenciación (21/05/2026)
+  - [ ] Listado de asistencia al Taller Aplicativo Tupago (20/05/2026)
+  - [ ] Presentación de avance Mayo (PPTX entregado al supervisor)
+  - [ ] Correos de retroalimentación de Oscar
+  - [ ] Audios o capturas de las reuniones semanales
+
+---
+
 ## Actividades del cronograma
 
 1. Reunión semanal con supervisor Oscar Andrés Manosalva García

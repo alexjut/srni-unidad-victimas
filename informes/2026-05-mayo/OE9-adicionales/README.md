@@ -1,5 +1,25 @@
 # OE9 — Actividades adicionales con supervisor
 
+> **Obligación contractual:** *Cumplir las demás actividades relacionadas con el objeto del contrato que sean acordadas con el supervisor.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se atendieron varias actividades adicionales acordadas con el supervisor, complementarias al objeto del contrato. *(Sección a complementar por el contratista con los siguientes ítems: estado del acuerdo de confidencialidad de aplicativos —firma exigida antes del 1 de mayo—; acreditación mensual al supervisor del pago de aportes a seguridad social del mes, ARL y planilla PILA; estado real de las solicitudes formales a Oscar para obtención de accesos a los servidores SRNI —FTP UARIV, Azure IGPD, Azure Móvil y Sistema Ficha—; gestión de la API key Gemini institucional ante Google Cloud con DPA jurídica firmada y configuración en Azure Key Vault para uso en producción; verificación del snapshot semanal del repositorio en OneDrive del supervisor con permisos restringidos solo al contratista y al supervisor)*. El único acceso operativo a la fecha es el repositorio Azure DevOps oficial UARIV (rama `main` consolidada al commit `7d1a6b9`); los demás accesos siguen pendientes de aprobación formal.
+
+## Evidencia que soporta esta actividad
+
+- **Repositorio Azure DevOps activo:** `tfsunidad.visualstudio.com/...IGED MOVIL 2026-04` (acceso aprobado y operativo).
+- **Checklist de actividades pendientes:** sección "Checklist Mayo 2026" del README.md de esta carpeta con tabla de estado de cada acceso.
+- **Anexos a aportar por el contratista:**
+  - [ ] Acuerdo de confidencialidad firmado (escaneo PDF)
+  - [ ] Comprobantes de aportes a seguridad social de mayo (PILA o planilla)
+  - [ ] Correos de solicitud de accesos UARIV con fechas (FTP, Azure IGPD, Azure Móvil, Ficha)
+  - [ ] Captura de configuración de la API key Gemini (cuando se aprueba)
+  - [ ] Captura de estructura de OneDrive con permisos restringidos
+  - [ ] Reporte ejecutivo a Oscar sobre estado de la API key Gemini institucional
+
+---
+
 ## Actividades del cronograma
 
 1. Firma acuerdo de confidencialidad aplicativos — ANTES del 1 de Mayo 2026

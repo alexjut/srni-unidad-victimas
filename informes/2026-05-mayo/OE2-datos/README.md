@@ -1,5 +1,27 @@
 # OE2 — Captura, procesamiento y calidad de datos
 
+> **Obligación contractual:** *Realizar la captura, el procesamiento, la transformación y la gestión de calidad de datos de las fuentes recibidas por la entidad en el desarrollo de las mediciones para las soluciones tecnológicas y aplicativos móviles.*
+
+## Actividad desarrollada en este periodo
+
+Durante mayo 2026 se implementó la **carga completa de paramétricos oficiales DANE y UARIV** en la base de datos del sistema: 33 departamentos, 1 102 municipios (extraídos de la hoja DIVIPOLA del Excel oficial del Diccionario Territorial V7 UARIV mediante script Python), 21 Direcciones Territoriales UARIV con su mapeo M2M a departamentos, 41 puntos de atención y 3 tipos de documento. Se cargaron también los **8 instrumentos de caracterización** (ASISTENCIA, TERRITORIAL, BUENAVENTURA, SAN_ANDRÉS, TELEFÓNICO, URBANO_ÉTNICO, RURAL_ÉTNICO y VÍCTIMAS_EXTERIOR) con un total de **1 001 preguntas activas** y **2 239 opciones de respuesta** (incluyendo 175 opciones extraídas del Diccionario Excel UARIV oficial para preguntas tipo LISTA que estaban vacías). Se diseñó e implementó el **motor de sincronización automática offline → servidor** en la app móvil con cola persistente en SQLite, backoff exponencial (2, 4, 8, 16, 32 segundos con jitter), 5 tipos de operación (CREAR_HOGAR, CREAR_SESION, RESPONDER_PREGUNTA, RESPONDER_BULK, FINALIZAR_SESION), detección de conectividad por ping a `/health/`, polling cada 60 segundos cuando hay conexión, idempotencia con marcado ENVIADO y propagación automática de IDs del servidor a items dependientes. La gestión de calidad de datos se automatizó mediante el script `qa_perfiles.py` que compara la base de datos con los bundles JSON de la app móvil y genera reporte de discrepancias por instrumento; al cierre del mes el resultado es **0 discrepancias** en los 8 instrumentos, **0 capítulos vacíos** y **0 preguntas obligatorias sin opciones**.
+
+## Evidencia que soporta esta actividad
+
+- **Scripts de carga (versionados):**
+  - `srni-backend/apps/parametricas/management/commands/cargar_departamentos_municipios.py`
+  - `srni-backend/apps/parametricas/management/commands/cargar_direcciones_territoriales.py`
+  - `srni-backend/apps/parametricas/management/commands/cargar_puntos_atencion.py`
+  - `srni-backend/scripts/extraer_municipios_divipola.py`
+- **Dataset oficial generado:** `srni-backend/data/municipios_dane.csv` (1102 municipios DANE).
+- **Comandos de mantenimiento de instrumentos:** `cargar_capitulo_control.py`, `desactivar_preguntas_atencion.py`, `renombrar_instrumentos.py`, `exportar_a_mobile.py`.
+- **Motor de sincronización:** `srni-mobile/src/services/sincronizacion.ts` + DAO de cola `srni-mobile/src/db/colaDao.ts`.
+- **Reporte automatizado de calidad de datos:** `docs/qa-perfiles-sprint20.md` (regenerable con `srni-backend/scripts/qa_perfiles.py`).
+- **Bundles JSON generados:** `srni-mobile/assets/instrumentos/` (8 archivos, ~675 KB).
+- **Copias locales en esta carpeta:** todos los scripts arriba mencionados están en `OE2-datos/` como copia autocontenida.
+
+---
+
 ## Actividades del cronograma
 
 1. Análisis y mapeo de datos del APK (9.4 M registros sin cifrado identificados)
