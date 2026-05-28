@@ -1,0 +1,79 @@
+2026-05-26 81a9e00 chore: limpiar working tree — gitignore + migración 0004 + package-lock
+2026-05-26 0aa818d docs: correo único para Brando (reemplaza sprint20+sprint21)
+2026-05-26 db71a73 docs(sprint21): correo de cierre para Brando con cambios del modelo
+2026-05-26 eab3075 fix(sprint21-D): calendario en agregar miembro y búsqueda RNI
+2026-05-26 be8755e feat(sprint21-F): wizard por miembro con botones Anterior/Siguiente
+2026-05-26 e847990 feat(sprint21-E): headers del formulario muestran nombre del miembro
+2026-05-26 fb75ca2 feat(sprint21-D): SelectorFecha con calendario nativo en preguntas FECHA
+2026-05-26 82e8318 feat(sprint21-C): motor formulario muestra preguntas PERSONA por miembro
+2026-05-26 c9248da feat(sprint21-B): mobile DAO + cola con miembro_id (preguntas PERSONA)
+2026-05-26 1be5470 feat(sprint21-A): RespuestaEncuesta.miembro + validación HOGAR/PERSONA
+2026-05-26 4a0130b feat(sprint20-QA-B): render COMBO_DINAMICO con SelectorMunicipio (DIVIPOLA)
+2026-05-26 53807e3 fix(sprint20-QA): cargar cap T en TERRITORIAL+TELEFONICO + reporte QA
+2026-05-26 771761e fix(sprint20): nombres descriptivos para los 8 instrumentos
+2026-05-26 6af612e docs(sprint20): correo a Brando + mapa estado actual del proyecto
+2026-05-26 74e8ca0 feat(sprint20): backend habilitador panel web (aliases + fix Usuario)
+2026-05-26 2794ff5 feat(sprint19-E): desactivar 4 preguntas obsoletas + regenerar 8 bundles
+2026-05-26 094242f feat(sprint19-D): pantalla mobile ubicacion-atencion con cascada UARIV
+2026-05-26 7f51ff2 feat(sprint19-C): cascada DT->Depto/Punto/Mun via filtros existentes
+2026-05-26 a0e2d7e feat(sprint19-B): 4 FKs de ubicación de atención en SesionEncuesta
+2026-05-26 7aa7940 feat(sprint19-A): puntos de atención placeholder (2 por DT)
+2026-05-26 e88e2ed feat(sprint19-A): cargar 21 DTs UARIV + 1102 municipios DANE
+2026-05-26 d289a7c fix(sprint18-G): redactar PII en logs remotos del interceptor axios
+2026-05-26 e820e32 chore(sprint18-F): migration V4 drop tablas de instrumento obsoletas
+2026-05-26 d5295db chore(sprint18-E): eliminar codigo muerto de descarga de instrumentos
+2026-05-26 7429777 refactor(sprint18-D): pantallas IA leen instrumentos desde memoria
+2026-05-26 31d3477 fix(sprint18-C): un solo perfil en memoria, libera el anterior al cambiar
+2026-05-26 478b305 fix(sprint18-B): instrumento_codigo de la sesion es autoridad unica
+2026-05-26 9feddf8 fix(sprint18-A): desconectar descargarInstrumento del syncStore polling
+2026-05-26 e8b1ef6 feat(sprint18-F1B): instrumentos en memoria, no SQLite - fin del 'database is locked'
+2026-05-26 f71fb1c fix(sprint18): SQLite database is locked - busy_timeout + mutex global guardar
+2026-05-26 2f6811f feat(sprint18-F1): arquitectura offline-first - instrumentos bundled en APK
+2026-05-26 a1c976f fix(sprint17): SQLite database is locked - mutex + reescritura limpia guardar
+2026-05-26 44cd5eb debug(sprint17): logs granulares en descarga + guardado SQLite
+2026-05-26 b515004 feat(sprint17): logger remoto activo + fix descarga cuando instrumento cambia
+2026-05-26 8cd4a3e fix(sprint17): descarga de instrumento - campos backend correctos + auto-recuperacion
+2026-05-26 837519b feat(sprint17): sistema de captura de errores movil (ErrorBoundary + endpoint debug)
+2026-05-26 b1d2fc9 fix(sprint17/qa): repara detalle de hogar con sesiones + mensajes de error claros
+2026-05-26 f967fb1 fix(sprint17): hogares no aparecian en pantalla index — fetch incondicional + useFocusEffect
+2026-05-26 b65188a feat(sprint17): miga de pan + back navegación coherente en flujo móvil
+2026-05-26 890eb83 fix(sprint17): continuar formulario sin instrumento + comando limpiar BD
+2026-05-26 9525ee1 fix(sprint17): formato LISTA_MULTIPLE y BOOLEAN alineado con backend + UX
+2026-05-26 7001b7e fix(sprint17): bug critico SQLite NPE + quitar selector instrumento de busqueda
+2026-05-25 6d2a044 fix(sprint17): bugs criticos sincronizacion offline + multi-instrumento
+2026-05-25 dac0dfe feat(sprint17): cargar 8o instrumento VICTIMAS_EXTERIOR + validacion E2E completa
+2026-05-25 7483184 test(sprint17): validacion E2E backend - 7 instrumentos con 0 bugs
+2026-05-25 4d3678e merge(sprint16): integrar feature/sprint16-fix-flujo-mobile → main
+2026-05-25 b187b3b fix(sprint16): cargar opciones oficiales UARIV en las 34 preguntas LISTA vacias
+2026-05-25 b4b5c62 fix(sprint16): bug Instrumento.perfil y limpieza de busqueda al volver
+2026-05-25 54ac0a8 merge(sprint15): cargar 7 instrumentos completos en BD + scripts arranque
+2026-05-25 27dbe60 chore(sprint15): cargar los 7 instrumentos + scripts de arranque PowerShell
+2026-05-25 dba81ce merge(sprint14): integrar feature/sprint14-mobile-flujo-cosido → main
+2026-05-25 908dc4b feat(sprint14): flujo movil cosido - hub de caracterizaciones por hogar
+2026-05-25 4628697 merge(sprint13): integrar feature/sprint13-backend-habilitador → main
+2026-05-25 f442e1f feat(sprint13): backend habilitador panel web — filtros, supervisor, dashboard, cursor
+2026-05-25 4e14a23 merge(sprint12): integrar feature/sprint12-panel-web → main
+2026-05-25 f6902e7 docs(sprint12): documentar panel web React + modelo Hogar v2 y limpiar raiz
+2026-05-22 bdffdca feat(sprint12): scaffold frontend React + rol miembro en conformar hogar
+2026-05-22 88d7195 feat(sprint12): panel web scaffold + flujo conformar hogar mobile
+2026-05-22 eeb3737 feat(sprint12): flujo autorizado + modelo miembro v2
+2026-05-21 c644593 docs: actualizar api-endpoints y estado-actual hasta Sprint 11
+2026-05-21 189afa2 docs(sprints): documentar Sprints 8-11 en docs/sprints/
+2026-05-21 037a337 Merge feature/sprint11-security-hardening → main
+2026-05-21 5ff906b feat(sprint11): security hardening — throttling, AST eval, input limits, CSP/Nginx
+2026-05-21 031f2a6 merge(sprint10): integrar rama feature/sprint10-reportes-produccion → main
+2026-05-21 9373d0b feat(sprint10): reportes de producción — backend + pantalla móvil
+2026-05-21 c3ec661 merge(sprint9): integrar rama feature/sprint9-sincronizacion-masiva → main
+2026-05-21 6648be8 feat(sprint9): sincronización masiva robusta — backoff, RESPONDER_BULK, polling y pantalla de cola
+2026-05-21 de6a08c merge(sprint8): integrar rama feature/sprint8-motor-formulario → main
+2026-05-21 2c5230c feat(sprint8): motor de formulario end-to-end — carga previa, validación, bulk sync y progreso real
+2026-05-21 64f41fb merge(sprint7): integrar rama feature/sprint7-caracterizar-flujo → main
+2026-05-21 4742167 feat(sprint7): UX rediseño login + búsqueda + flujo caracterización completo
+2026-05-08 e599986 fix(sprint7/mobile): corregir bug — no finalizar sesión al guardar un capítulo
+2026-05-08 6259b08 feat(sprint7/mobile): botón y modal de finalizar sesión desde la lista de capítulos
+2026-05-08 c8d9d37 feat(sprint7): modo Gemini batch — grabacion-entrevista + revision-ia + endpoint procesar-entrevista
+2026-05-07 414e587 docs(sprint7): sprint-07.md + estado-actual móvil + api-endpoints actualizado
+2026-05-07 0266f66 feat(formulario/sprint7): loader data-driven + catálogo opciones compartidas + fixture TERRITORIAL
+2026-05-04 caa8e59 feat(mobile/sprint7): migrar a UUIDs, skip logic V8 y flujo sesión→formulario
+2026-05-04 31b82ba fix(backend): migrar tests y código al modelo Sprint 6 (Diccionario V8)
+2026-05-04 3c67dc1 docs: documentación completa + tab Caracterizar — cierre Sprint 6
