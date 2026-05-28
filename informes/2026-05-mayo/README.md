@@ -38,6 +38,7 @@
 | OE7 | Reuniones y coordinación con supervisor | [`OE7-reuniones/`](OE7-reuniones/README.md) | 📝 Completar con actas |
 | OE8 | Carga mensual de documentos | [`OE8-informes/`](OE8-informes/README.md) | 🔄 Este informe es la entrega |
 | OE9 | Actividades adicionales | [`OE9-adicionales/`](OE9-adicionales/README.md) | 📝 Completar trámites |
+| **EXTRAS** | **Trabajo por fuera del cronograma** (iniciativa del contratista) | [`EXTRAS-actividades-adicionales/`](EXTRAS-actividades-adicionales/README.md) | ✅ Documentado |
 
 ---
 
