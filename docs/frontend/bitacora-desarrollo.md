@@ -74,7 +74,8 @@ Basado en el plan de 7 fases definido para el frontend:
 ### Fase 1 — Componentes base e infraestructura UI
 - [ ] Instalar dependencias: react-hot-toast, @tanstack/react-table, react-hook-form + zod, date-fns
 - [ ] Crear componentes UI reutilizables: Button, Input, Select, Table, Modal, Badge, Card, Spinner, EmptyState, Breadcrumb
-- [ ] Mejorar MainLayout: sidebar colapsable, breadcrumbs, indicador de usuario/rol, responsive
+- [x] ~~Mejorar MainLayout: sidebar colapsable, breadcrumbs, indicador de usuario/rol, responsive~~ (drawer mobile + topbar hecho)
+- [x] ~~Fix perfil usuario al refrescar pagina~~ (RequireAuth carga perfil automaticamente)
 - [ ] Manejo global de errores: Error boundary, toasts en errores API, pagina 404
 
 ### Fase 2 — Vistas de detalle
@@ -106,11 +107,47 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 2 — 2026-05-27 | Responsive y fix perfil usuario
+
+### Actividades realizadas
+
+1. **MainLayout responsive (sidebar → drawer mobile)**
+   - Desktop (>=1024px): sidebar fijo a la izquierda, sin cambios
+   - Mobile/tablet (<1024px): sidebar oculto, topbar azul con hamburguesa, drawer deslizable con overlay
+   - Drawer se cierra al navegar o tocar el overlay
+   - Se extrajo `SidebarContent` como componente interno para no duplicar codigo
+
+2. **Dashboard responsive**
+   - Cards: 1 columna en mobile, 2 en tablet, 4 en desktop (antes era 2 en mobile, quedaban apretadas)
+   - Header: boton "Actualizar" debajo del saludo en mobile, en linea en desktop
+   - Padding y tipografia ajustados por breakpoint
+
+3. **Fix: perfil de usuario no se cargaba al refrescar pagina**
+   - Problema: `usuario` en Zustand se perdia al refrescar (solo tokens se restauran de sessionStorage)
+   - Dashboard mostraba "Hola, — " en vez del nombre real
+   - Solucion: `RequireAuth` ahora llama a `GET /api/auth/perfil/` cuando hay tokens pero no hay usuario
+   - Muestra spinner mientras carga, hace logout si el token expiro
+
+4. **Restriccion de zona de trabajo documentada**
+   - Se agrego aviso en PLAN-FRONTEND-PUBLICO.md, SETUP-BRANDON.md e INFORME-ANALISIS-PROYECTO.md
+   - Solo se trabaja en `srni-frontend/`, no se toca backend, mobile ni infra
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/MainLayout.tsx` | Sidebar responsive: fijo en desktop, drawer en mobile |
+| `src/pages/Dashboard.tsx` | Grid responsive + header responsive |
+| `src/App.tsx` | RequireAuth carga perfil al refrescar pagina |
+
+---
+
 ## Registro de cambios por dia
 
 | Fecha | Que hice | Archivos tocados |
 |-------|----------|-----------------|
 | 2026-05-27 | Setup completo del ambiente local | Ninguno del repo (solo config local) |
+| 2026-05-27 | Responsive layout + dashboard + fix perfil usuario | MainLayout.tsx, Dashboard.tsx, App.tsx |
 
 ---
 
