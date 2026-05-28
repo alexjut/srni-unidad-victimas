@@ -52,12 +52,12 @@ export default function DashboardPage() {
   const primerNombre = nombre.split(' ')[0];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
 
       {/* Encabezado */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-gray-800">
             Hola, {primerNombre} 👋
           </h2>
           <p className="text-gray-500 text-sm mt-0.5">
@@ -68,7 +68,7 @@ export default function DashboardPage() {
         <button
           onClick={cargar}
           disabled={cargando}
-          className="btn-secondary flex items-center gap-2 text-sm"
+          className="btn-secondary flex items-center gap-2 text-sm self-start sm:self-auto"
         >
           <RefreshCw size={15} className={cargando ? 'animate-spin' : ''} />
           Actualizar
@@ -84,13 +84,13 @@ export default function DashboardPage() {
 
       {/* Métricas */}
       {cargando ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1,2,3,4].map((i) => (
             <div key={i} className="card animate-pulse h-24 bg-gray-100" />
           ))}
         </div>
       ) : resumen ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <MetricCard
             icon={ClipboardCheck}
             label="Sesiones finalizadas"

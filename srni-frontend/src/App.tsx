@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { authApi } from '@/api/auth';
 import LoginPage from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import HogaresPage from '@/pages/Hogares';
@@ -8,8 +10,23 @@ import ReportesPage from '@/pages/Reportes';
 import MainLayout from '@/components/MainLayout';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { accessToken } = useAuthStore();
+  const { accessToken, usuario, setUsuario, logout } = useAuthStore();
+  const [cargando, setCargando] = useState(!usuario && !!accessToken);
+
+  useEffect(() => {
+    if (!accessToken || usuario) return;
+    authApi.perfil()
+      .then(({ data }) => setUsuario(data))
+      .catch(() => logout())
+      .finally(() => setCargando(false));
+  }, [accessToken, usuario, setUsuario, logout]);
+
   if (!accessToken) return <Navigate to="/login" replace />;
+  if (cargando) return (
+    <div className="flex h-screen items-center justify-center bg-gov-grisTenue">
+      <div className="animate-spin w-8 h-8 border-4 border-gov-azul border-t-transparent rounded-full" />
+    </div>
+  );
   return <>{children}</>;
 }
 
