@@ -2,10 +2,11 @@
  * Lista de sesiones de encuesta — tabla paginada
  */
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
+import Pagination from '@/components/ui/Pagination';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -124,21 +125,7 @@ export default function EncuestasPage() {
           </table>
         </div>
 
-        {totalPags > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gov-borde">
-            <p className="text-xs text-gray-500">Página {pagina} de {totalPags}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina === 1}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                <ChevronLeft size={14} /> Anterior
-              </button>
-              <button onClick={() => setPagina((p) => Math.min(totalPags, p + 1))} disabled={pagina === totalPags}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                Siguiente <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination pagina={pagina} totalPaginas={totalPags} onChange={setPagina} />
       </div>
     </div>
   );
