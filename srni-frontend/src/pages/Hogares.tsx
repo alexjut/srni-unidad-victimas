@@ -2,9 +2,10 @@
  * Lista de hogares — tabla paginada con filtros
  */
 import { useEffect, useState } from 'react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { hogaresApi, type HogarResumen } from '@/api/hogares';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   ACTIVO:    'verde',
@@ -77,7 +78,17 @@ export default function HogaresPage() {
                       ))}
                     </tr>
                   ))
-                : hogares.map((h) => (
+                : hogares.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>
+                        <EmptyState
+                          icon={Home}
+                          titulo="No hay hogares registrados"
+                          descripcion="Los hogares aparecerán aquí cuando se creen desde la app móvil."
+                        />
+                      </td>
+                    </tr>
+                  ) : hogares.map((h) => (
                     <tr key={h.id} className="hover:bg-gov-azulTenue/30 transition-colors">
                       <td className="px-4 py-3 font-mono text-gov-azul font-medium">{h.codigo}</td>
                       <td className="px-4 py-3 text-gray-800">{h.autorizado_nombre}</td>

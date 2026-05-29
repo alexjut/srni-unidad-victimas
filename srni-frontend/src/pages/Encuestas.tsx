@@ -2,9 +2,10 @@
  * Lista de sesiones de encuesta — tabla paginada
  */
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -90,7 +91,17 @@ export default function EncuestasPage() {
                       ))}
                     </tr>
                   ))
-                : sesiones.map((s) => (
+                : sesiones.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <EmptyState
+                          icon={ClipboardList}
+                          titulo="No hay encuestas registradas"
+                          descripcion="Las sesiones aparecerán aquí cuando se inicien desde la app móvil."
+                        />
+                      </td>
+                    </tr>
+                  ) : sesiones.map((s) => (
                     <tr key={s.id} className="hover:bg-gov-azulTenue/30 transition-colors">
                       <td className="px-4 py-3 font-mono text-gov-azul font-medium">{s.hogar_codigo}</td>
                       <td className="px-4 py-3 text-gray-700 max-w-[140px] truncate">{s.instrumento_nombre}</td>

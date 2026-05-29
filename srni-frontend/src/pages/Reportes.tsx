@@ -2,9 +2,10 @@
  * Reportes del encuestador — resumen + listado paginado + export CSV
  */
 import { useEffect, useState } from 'react';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/reportes';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -133,8 +134,12 @@ export default function ReportesPage() {
                   ))
                 : detalle.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
-                        No hay sesiones registradas aún.
+                      <td colSpan={6}>
+                        <EmptyState
+                          icon={ClipboardList}
+                          titulo="No hay sesiones registradas aún"
+                          descripcion="Las sesiones aparecerán aquí cuando se inicien encuestas."
+                        />
                       </td>
                     </tr>
                   ) : detalle.map((d) => (
