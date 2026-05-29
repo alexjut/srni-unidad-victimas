@@ -2,7 +2,8 @@
  * Lista de sesiones de encuesta — tabla paginada
  */
 import { useEffect, useState } from 'react';
-import { ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ClipboardList, Eye } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -31,6 +32,7 @@ function BarraProgreso({ valor }: { valor: number }) {
 }
 
 export default function EncuestasPage() {
+  const navigate = useNavigate();
   const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
   const [total,    setTotal]    = useState(0);
   const [pagina,   setPagina]   = useState(1);
@@ -72,7 +74,7 @@ export default function EncuestasPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gov-borde">
               <tr>
-                {['Hogar','Instrumento','Ruta','Progreso','Estado','Encuestador','Fecha'].map((h) => (
+                {['Instrumento','DT','Progreso','Estado','Encuestador','Fecha',''].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {h}
                   </th>
@@ -101,21 +103,32 @@ export default function EncuestasPage() {
                       </td>
                     </tr>
                   ) : sesiones.map((s) => (
-                    <tr key={s.id} className="hover:bg-gov-azulTenue/30 transition-colors">
-                      <td className="px-4 py-3 font-mono text-gov-azul font-medium">{s.hogar_codigo}</td>
-                      <td className="px-4 py-3 text-gray-700 max-w-[140px] truncate">{s.instrumento_nombre}</td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{s.ruta_entrevista}</td>
+                    <tr
+                      key={s.id}
+                      onClick={() => navigate(`/encuestas/${s.id}`)}
+                      className="hover:bg-gov-azulTenue/30 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 text-gray-700 max-w-[180px] truncate">{s.instrumento_nombre}</td>
+                      <td className="px-4 py-3 text-gray-600 text-xs">{s.direccion_territorial_nombre ?? '—'}</td>
                       <td className="px-4 py-3 min-w-[120px]">
                         <BarraProgreso valor={s.porcentaje_completado} />
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant={ESTADO_BADGE[s.estado] ?? 'gris'}>
-                          {s.estado.replace('_', ' ')}
+                          {s.estado_display ?? s.estado.replace('_', ' ')}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{s.encuestador_nombre}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {new Date(s.created_at).toLocaleDateString('es-CO')}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/encuestas/${s.id}`); }}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold bg-gov-azul text-white px-3 py-1.5 rounded-md hover:bg-gov-azulOscuro transition-colors"
+                        >
+                          <Eye size={14} /> Ver detalle
+                        </button>
                       </td>
                     </tr>
                   ))}

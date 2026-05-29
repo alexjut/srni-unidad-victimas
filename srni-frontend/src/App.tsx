@@ -9,6 +9,7 @@ import HogaresPage from '@/pages/Hogares';
 import EncuestasPage from '@/pages/Encuestas';
 import ReportesPage from '@/pages/Reportes';
 import HogarDetallePage from '@/pages/HogarDetalle';
+import SesionDetallePage from '@/pages/SesionDetalle';
 import NotFound from '@/pages/NotFound';
 import MainLayout from '@/components/MainLayout';
 
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="hogares"    element={<HogaresPage />} />
         <Route path="hogares/:id" element={<HogarDetallePage />} />
         <Route path="encuestas"  element={<EncuestasPage />} />
+        <Route path="encuestas/:id" element={<SesionDetallePage />} />
         <Route path="reportes"   element={<ReportesPage />} />
       </Route>
 
