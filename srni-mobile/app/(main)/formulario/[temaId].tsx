@@ -107,6 +107,8 @@ export default function CapituloScreen() {
     if (!temaId) return;
 
     (async () => {
+      console.log('[cap useEffect] params:', { temaId, borradorIdParam, sesionServerId, instrumentoId, hogarId });
+
       // Sprint 18 F1B: TODO viene de memoria (bundle), no SQLite.
       const caps = instrumentos.getCapitulos();
       const cap = caps.find((c) => c.id === temaId);
@@ -123,37 +125,48 @@ export default function CapituloScreen() {
       // ── Resolver borrador ─────────────────────────────────────────────────
       const meta = instrumentos.getMeta();
       const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
+      console.log('[cap useEffect] meta:', { meta_codigo: meta?.perfil_codigo, instrId });
 
       if (borradorIdParam) {
         // Ya tenemos un borrador local — cargar sus respuestas (clave compuesta)
+        console.log('[cap useEffect] usando borradorIdParam:', borradorIdParam);
         setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borradorIdParam));
         setBorradorId(borradorIdParam);
 
       } else if (sesionServerId) {
         // Buscar si ya existe un borrador vinculado a esta sesión
         const existente = await borradoresDao.findBySesionId(sesionServerId);
+        console.log('[cap useEffect] findBySesionId:', { sesionServerId, existente: existente ? existente.id : null });
 
         if (existente) {
           setBorradorId(existente.id);
           setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(existente.id));
         } else {
           // Crear nuevo borrador y vincularlo
-          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
-          await borradoresDao.vincularSesionServidor(nuevo.id, sesionServerId);
-          setBorradorId(nuevo.id);
+          let nuevoBorradorId: string | null = null;
+          try {
+            const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+            console.log('[cap useEffect] crearBorrador OK:', { id: nuevo.id, instrId, hogarId });
+            await borradoresDao.vincularSesionServidor(nuevo.id, sesionServerId);
+            console.log('[cap useEffect] vincularSesionServidor OK:', { borrador: nuevo.id, sesion: sesionServerId });
+            setBorradorId(nuevo.id);
+            nuevoBorradorId = nuevo.id;
+          } catch (e) {
+            console.error('[cap useEffect] FALLO al crear/vincular borrador:', e);
+          }
 
           // Si hay conexión, descargar respuestas previas del servidor
-          if (estaOnline) {
+          if (estaOnline && nuevoBorradorId) {
             try {
               const { data: previas } = await encuestasApi.getRespuestas(sesionServerId);
               for (const r of previas) {
                 if (r.valor) {
                   // Sprint 21: r.miembro puede venir del backend; usar para indexar
                   const mid = (r as any).miembro ?? null;
-                  await borradoresDao.upsertRespuesta(nuevo.id, r.pregunta, r.valor, mid);
+                  await borradoresDao.upsertRespuesta(nuevoBorradorId, r.pregunta, r.valor, mid);
                 }
               }
-              setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(nuevo.id));
+              setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(nuevoBorradorId));
             } catch { /* sin red — empieza en blanco */ }
           }
         }
@@ -325,9 +338,14 @@ export default function CapituloScreen() {
     setRespuestasState((prev) => ({ ...prev, [clave]: valor }));
 
     const bid = borradorId ?? borradorIdParam;
-    if (!bid) return;
+    if (!bid) {
+      console.warn('[setRespuesta] borradorId VACÍO — la respuesta NO se guarda en SQLite', { preguntaId, valor: valor.slice(0,30) });
+      return;
+    }
 
-    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId).catch(() => {});
+    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId)
+      .then(() => console.log('[setRespuesta] guardada:', { bid, preguntaId, miembroId }))
+      .catch((e) => console.error('[setRespuesta] ERROR upsertRespuesta:', e));
 
     const borrador = await borradoresDao.getBorrador(bid);
     if (borrador) {
