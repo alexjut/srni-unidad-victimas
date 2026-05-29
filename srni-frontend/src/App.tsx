@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
+import Spinner from '@/components/ui/Spinner';
 import LoginPage from '@/pages/Login';
 import DashboardPage from '@/pages/Dashboard';
 import HogaresPage from '@/pages/Hogares';
@@ -25,7 +26,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   if (!accessToken) return <Navigate to="/login" replace />;
   if (cargando) return (
     <div className="flex h-screen items-center justify-center bg-gov-grisTenue">
-      <div className="animate-spin w-8 h-8 border-4 border-gov-azul border-t-transparent rounded-full" />
+      <Spinner size="lg" />
     </div>
   );
   return <>{children}</>;
