@@ -337,17 +337,43 @@ export default function FormularioIndexScreen() {
   // [sesionServerId] solo corría una vez; al volver del capítulo el
   // contador seguía mostrando '0/N Sin iniciar' aunque hubieras respondido.
   // useFocusEffect se dispara cada vez que la pantalla recupera el foco.
+  //
+  // Sprint 21 fix #2: garantizar que el perfil esté activado en memoria
+  // antes de contar. Si el cache se desactivó (al cambiar de caracterización
+  // o al rotar app), getCapituloIdDePregunta devuelve null para todas las
+  // preguntas y el conteo queda en 0 falsamente. Reactivamos siempre.
   useFocusEffect(
     useCallback(() => {
       if (!sesionServerId) return;
-      let activo = true;
+      let vivo = true;
       (async () => {
-        const borrador = await borradoresDao.findBySesionId(sesionServerId);
-        if (!borrador || !activo) return;
-        const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
-        if (activo) setConteoRespondidas(conteo);
+        try {
+          // 1. Asegurar que el perfil correcto está activo en memoria
+          const metaActual = instrumentos.getMeta();
+          if (metaActual?.perfil_codigo) {
+            try { instrumentos.activarPerfil(metaActual.perfil_codigo); }
+            catch { /* perfil no en bundle — se mantiene el cache previo */ }
+          }
+
+          // 2. Buscar borrador local
+          const borrador = await borradoresDao.findBySesionId(sesionServerId);
+          if (!borrador || !vivo) {
+            console.log('[formulario/index] useFocusEffect: borrador no encontrado',
+              { sesionServerId, borrador });
+            return;
+          }
+
+          // 3. Contar respuestas por capítulo
+          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
+          console.log('[formulario/index] useFocusEffect: conteo recalculado',
+            { borradorId: borrador.id, conteo });
+
+          if (vivo) setConteoRespondidas(conteo);
+        } catch (err) {
+          console.warn('[formulario/index] useFocusEffect ERROR:', err);
+        }
       })();
-      return () => { activo = false; };
+      return () => { vivo = false; };
     }, [sesionServerId]),
   );
 
