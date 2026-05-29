@@ -1,9 +1,9 @@
 // Lista de capítulos — Sprint 8: progreso real por capítulo + estado visual.
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
@@ -332,19 +332,24 @@ export default function FormularioIndexScreen() {
     return () => { activo = false; };
   }, [hogarId]);
 
-  // Recalcular progreso al volver de un capítulo
-  useEffect(() => {
-    if (!sesionServerId) return;
-    const refrescar = async () => {
-      const borrador = await borradoresDao.findBySesionId(sesionServerId);
-      if (borrador) {
-        setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
-      }
-    };
-    // Expo Router no tiene un onFocus nativo fácil aquí; usamos un pequeño delay
-    const t = setTimeout(refrescar, 300);
-    return () => clearTimeout(t);
-  }, [sesionServerId]);
+  // Sprint 21 fix — recalcular progreso al volver al pantalla (no solo
+  // al cambiar sesionServerId). El bug anterior: el useEffect con
+  // [sesionServerId] solo corría una vez; al volver del capítulo el
+  // contador seguía mostrando '0/N Sin iniciar' aunque hubieras respondido.
+  // useFocusEffect se dispara cada vez que la pantalla recupera el foco.
+  useFocusEffect(
+    useCallback(() => {
+      if (!sesionServerId) return;
+      let activo = true;
+      (async () => {
+        const borrador = await borradoresDao.findBySesionId(sesionServerId);
+        if (!borrador || !activo) return;
+        const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
+        if (activo) setConteoRespondidas(conteo);
+      })();
+      return () => { activo = false; };
+    }, [sesionServerId]),
+  );
 
   // ── Progreso global ─────────────────────────────────────────────────────────
   // Sprint 21 fix — obligatorias reales = obligHogar + obligPersona × N miembros.
