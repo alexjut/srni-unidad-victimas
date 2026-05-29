@@ -48,7 +48,7 @@ function CapituloCard({
   hogarId,
   modoIA,
 }: {
-  capitulo: instrumentoDao.CapituloRow;
+  capitulo: CapituloRow;
   index: number;
   progress: CapProgress;
   sesionServerId?: string;
@@ -83,39 +83,81 @@ function CapituloCard({
     }
   }
 
+  const esCompleto    = progress.estado === 'completado';
+  const esEnProgreso  = progress.estado === 'en_progreso';
+  const esPendiente   = progress.estado === 'pendiente';
+  const faltan        = Math.max(0, progress.obligatorias - progress.respondidas);
+
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
+        esCompleto && styles.cardCompletado,
+        esEnProgreso && styles.cardEnProgreso,
         pressed && styles.cardPressed,
-        progress.estado === 'completado' && styles.cardCompletado,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Capítulo ${index + 1}: ${capitulo.nombre}`}
+      accessibilityLabel={
+        `Capítulo ${index + 1}: ${capitulo.nombre}. ` +
+        (esCompleto ? 'Completo' : esEnProgreso ? `Faltan ${faltan} preguntas` : 'Sin iniciar')
+      }
     >
-      {/* Número / estado */}
-      <View style={[styles.numCircle, { borderColor: colorEstado + '88' }]}>
-        {progress.estado === 'pendiente' ? (
-          <Text style={[styles.numTxt, { color: GOV.textoT }]}>{String(index + 1).padStart(2, '0')}</Text>
+      {/* Círculo izquierdo: número o check según estado */}
+      <View style={[
+        styles.numCircle,
+        esCompleto && styles.numCircleCompleto,
+        esEnProgreso && styles.numCircleEnProgreso,
+      ]}>
+        {esCompleto ? (
+          <MaterialCommunityIcons name="check" size={22} color="#FFFFFF" />
+        ) : esEnProgreso ? (
+          <MaterialCommunityIcons name="progress-clock" size={20} color={GOV.naranja} />
         ) : (
-          <MaterialCommunityIcons
-            name={iconoEstado as any}
-            size={20}
-            color={colorEstado}
-          />
+          <Text style={styles.numTxt}>{String(index + 1).padStart(2, '0')}</Text>
         )}
       </View>
 
       <View style={styles.cardTexto}>
-        <Text style={[styles.capNombre, progress.estado === 'completado' && styles.capNombreOk]} numberOfLines={2}>
-          {capitulo.nombre}
-        </Text>
+        {/* Encabezado: nombre + chip de estado */}
+        <View style={styles.cardEncabezado}>
+          <Text
+            style={[styles.capNombre, esCompleto && styles.capNombreOk]}
+            numberOfLines={2}
+          >
+            {capitulo.nombre}
+          </Text>
+          <View style={[
+            styles.chipEstado,
+            esCompleto && styles.chipEstadoOk,
+            esEnProgreso && styles.chipEstadoProgreso,
+            esPendiente && styles.chipEstadoPendiente,
+          ]}>
+            <MaterialCommunityIcons
+              name={iconoEstado as any}
+              size={11}
+              color={
+                esCompleto ? GOV.verde
+                : esEnProgreso ? GOV.naranja
+                : GOV.textoT
+              }
+            />
+            <Text style={[
+              styles.chipEstadoTxt,
+              esCompleto && { color: GOV.verde },
+              esEnProgreso && { color: GOV.naranja },
+              esPendiente && { color: GOV.textoT },
+            ]}>
+              {esCompleto ? 'Completo' : esEnProgreso ? `Faltan ${faltan}` : 'Sin iniciar'}
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.capCodigo}>
           [{capitulo.codigo}]  ·  {capitulo.nivel === 'PERSONA' ? 'Por persona' : 'Por hogar'}
         </Text>
 
-        {/* Mini barra de progreso por capítulo */}
+        {/* Barra de progreso + contador */}
         {progress.obligatorias > 0 && (
           <View style={styles.capProgresoWrap}>
             <ProgressBar
@@ -124,7 +166,7 @@ function CapituloCard({
               color={colorEstado}
             />
             <Text style={[styles.capProgresoPct, { color: colorEstado }]}>
-              {progress.respondidas}/{progress.obligatorias}
+              {progress.respondidas} / {progress.obligatorias}
             </Text>
           </View>
         )}
@@ -133,7 +175,11 @@ function CapituloCard({
       {modoIA ? (
         <MaterialCommunityIcons name="robot" size={16} color={GOV.azul} style={{ marginRight: 4 }} />
       ) : null}
-      <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+      <MaterialCommunityIcons
+        name="chevron-right"
+        size={20}
+        color={esCompleto ? GOV.verde : GOV.borde}
+      />
     </Pressable>
   );
 }
@@ -625,11 +671,27 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     ...SHADOW.card,
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.borde,
   },
-  cardCompletado: { borderLeftColor: GOV.verde },
+  cardCompletado: {
+    borderLeftColor: GOV.verde,
+    backgroundColor: GOV.verdeTenue,
+    borderLeftWidth: 6,
+  },
+  cardEnProgreso: {
+    borderLeftColor: GOV.naranja,
+    borderLeftWidth: 6,
+  },
   cardPressed:    { opacity: 0.9, transform: [{ scale: 0.99 }] },
+
+  // Encabezado: nombre + chip de estado en la misma fila
+  cardEncabezado: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginBottom: 2,
+  },
 
   numCircle: {
     width: 40,
@@ -642,16 +704,39 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: GOV.borde,
   },
+  numCircleCompleto: {
+    backgroundColor: GOV.verde,
+    borderColor: GOV.verde,
+  },
+  numCircleEnProgreso: {
+    backgroundColor: GOV.naranjaTenue,
+    borderColor: GOV.naranja,
+  },
   numTxt: { fontSize: 13, fontWeight: '800', color: GOV.azul },
 
   cardTexto: { flex: 1 },
-  capNombre:   { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: 2 },
+  capNombre:   { ...FONT.body, fontWeight: '600', color: GOV.textoP, flex: 1 },
   capNombreOk: { color: GOV.verde },
   capCodigo:   { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace', marginBottom: 4 },
 
-  capProgresoWrap: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 2 },
+  // Chip de estado: Completo / Faltan N / Sin iniciar
+  chipEstado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  chipEstadoOk:        { backgroundColor: GOV.verdeTenue, borderColor: GOV.verde },
+  chipEstadoProgreso:  { backgroundColor: GOV.naranjaTenue, borderColor: GOV.naranja },
+  chipEstadoPendiente: { backgroundColor: GOV.fondoApp, borderColor: GOV.borde },
+  chipEstadoTxt:       { fontSize: 10, fontWeight: '700' },
+
+  capProgresoWrap: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 4 },
   capProgressBar:  { flex: 1, height: 4, borderRadius: 2 },
-  capProgresoPct:  { fontSize: 10, fontWeight: '700', minWidth: 28, textAlign: 'right' },
+  capProgresoPct:  { fontSize: 10, fontWeight: '700', minWidth: 40, textAlign: 'right' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalCard: {
