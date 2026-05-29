@@ -7,6 +7,7 @@ import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
+import PageHeader from '@/components/ui/PageHeader';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -67,20 +68,20 @@ export default function ReportesPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">Mis reportes</h2>
-          <p className="text-gray-500 text-sm mt-0.5">Producción y estadísticas personales</p>
-        </div>
-        <button
-          onClick={exportarCsv}
-          disabled={descargando}
-          className="btn-primary flex items-center gap-2 text-sm"
-        >
-          <Download size={16} />
-          {descargando ? 'Descargando…' : 'Exportar CSV'}
-        </button>
-      </div>
+      <PageHeader
+        titulo="Mis reportes"
+        subtitulo="Producción y estadísticas personales"
+        acciones={
+          <button
+            onClick={exportarCsv}
+            disabled={descargando}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Download size={16} />
+            {descargando ? 'Descargando…' : 'Exportar CSV'}
+          </button>
+        }
+      />
 
       {error && (
         <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">

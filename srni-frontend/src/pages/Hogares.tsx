@@ -7,6 +7,7 @@ import { hogaresApi, type HogarResumen } from '@/api/hogares';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
+import PageHeader from '@/components/ui/PageHeader';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   ACTIVO:    'verde',
@@ -43,12 +44,7 @@ export default function HogaresPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">Hogares</h2>
-          <p className="text-gray-500 text-sm mt-0.5">{total} registro(s) en total</p>
-        </div>
-      </div>
+      <PageHeader titulo="Hogares" subtitulo={`${total} registro(s) en total`} />
 
       {error && (
         <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">

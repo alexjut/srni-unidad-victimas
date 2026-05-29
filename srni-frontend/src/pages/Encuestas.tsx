@@ -7,6 +7,7 @@ import { encuestasApi, type SesionResumen } from '@/api/encuestas';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
+import PageHeader from '@/components/ui/PageHeader';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -58,10 +59,7 @@ export default function EncuestasPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-gray-800">Encuestas</h2>
-        <p className="text-gray-500 text-sm mt-0.5">{total} sesión(es) registradas</p>
-      </div>
+      <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
 
       {error && (
         <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
