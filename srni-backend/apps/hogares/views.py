@@ -71,21 +71,31 @@ class HogarViewSet(viewsets.ModelViewSet):
         Sprint 21 — validación idempotente: una víctima solo puede ser autorizada
         en UN hogar a la vez (en estado BORRADOR o ACTIVO). Si se intenta crear
         un segundo hogar para la misma víctima, devolvemos el existente con
-        HTTP 200 en lugar de crear duplicado. Esto evita el bug observado en QA
-        donde un mismo encuestador acumulaba 13 hogares para la misma víctima.
+        HTTP 200 en lugar de crear duplicado.
+
+        Excepción para rol de pruebas/admin (`request.user.es_admin = True`):
+        - Usuarios admin (ALEXJUT, ADMIN01) → pueden crear múltiples hogares
+          para la misma víctima. Esto permite probar los 8 instrumentos con un
+          mismo CC sin que el sistema bloquee.
+        - Encuestadores normales (`es_admin = False`) → solo pueden tener 1
+          hogar activo por víctima. Si ya existe, reciben ese hogar como
+          respuesta (idempotente, no crea duplicado).
 
         Solo bloquea contra hogares NO archivados — si el anterior está ARCHIVADO,
-        sí se puede crear uno nuevo.
+        sí se puede crear uno nuevo (caso de cambio definitivo de núcleo familiar).
         """
-        autorizado_id = request.data.get('autorizado')
-        if autorizado_id:
-            existente = Hogar.objects.filter(
-                autorizado_id=autorizado_id,
-            ).exclude(estado='ARCHIVADO').order_by('-created_at').first()
-            if existente:
-                # Devolver el hogar existente con detalle completo
-                detalle = HogarDetalleSerializer(existente, context={'request': request})
-                return Response(detalle.data, status=status.HTTP_200_OK)
+        es_usuario_pruebas = getattr(request.user, 'es_admin', False)
+
+        if not es_usuario_pruebas:
+            autorizado_id = request.data.get('autorizado')
+            if autorizado_id:
+                existente = Hogar.objects.filter(
+                    autorizado_id=autorizado_id,
+                ).exclude(estado='ARCHIVADO').order_by('-created_at').first()
+                if existente:
+                    # Devolver el hogar existente con detalle completo
+                    detalle = HogarDetalleSerializer(existente, context={'request': request})
+                    return Response(detalle.data, status=status.HTTP_200_OK)
 
         return super().create(request, *args, **kwargs)
 
