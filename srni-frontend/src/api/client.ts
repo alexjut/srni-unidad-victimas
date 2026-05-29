@@ -7,6 +7,7 @@
  *                si el refresh falla → logout automático
  */
 import axios from 'axios';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
 
 const apiClient = axios.create({
@@ -76,6 +77,15 @@ apiClient.interceptors.response.use(
       } finally {
         refrescando = false;
       }
+    }
+
+    // Toast para errores de red y errores del servidor (no 401 que ya se maneja arriba)
+    if (!error.response) {
+      toast.error('Sin conexión al servidor. Verifica tu red.');
+    } else if (error.response.status >= 500) {
+      toast.error('Error interno del servidor. Intenta más tarde.');
+    } else if (error.response.status === 403) {
+      toast.error('No tienes permisos para realizar esta acción.');
     }
 
     return Promise.reject(error);

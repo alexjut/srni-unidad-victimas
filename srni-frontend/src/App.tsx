@@ -7,6 +7,7 @@ import DashboardPage from '@/pages/Dashboard';
 import HogaresPage from '@/pages/Hogares';
 import EncuestasPage from '@/pages/Encuestas';
 import ReportesPage from '@/pages/Reportes';
+import NotFound from '@/pages/NotFound';
 import MainLayout from '@/components/MainLayout';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -50,8 +51,8 @@ export default function App() {
         <Route path="reportes"   element={<ReportesPage />} />
       </Route>
 
-      {/* Ruta catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Ruta catch-all → 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

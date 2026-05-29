@@ -76,11 +76,6 @@ export default function LoginPage() {
             de las víctimas del conflicto armado.
           </p>
         </div>
-
-        {/* Contrato */}
-        <p className="text-blue-400 text-xs">
-          Contrato 2226-2026 · Javier Alexander Aguilar Castro
-        </p>
       </div>
 
       {/* ── Panel derecho: formulario ── */}
