@@ -9,6 +9,7 @@ import * as borradoresDao from '../../../src/db/borradoresDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { hogaresApi } from '../../../src/api/hogares';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -200,11 +201,16 @@ export default function FormularioIndexScreen() {
   const [cargando, setCargando] = useState(true);
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
-  // Progreso por capítulo
+  // Progreso por capítulo — Sprint 21 fix: separar obligatorias HOGAR/PERSONA
+  // para multiplicar PERSONA × cantidad de miembros del hogar.
   const [conteoPreguntas, setConteoPreguntas] = useState<
-    Record<string, { total: number; obligatorias: number }>
+    Record<string, { total: number; obligatorias: number; obligHogar: number; obligPersona: number }>
   >({});
   const [conteoRespondidas, setConteoRespondidas] = useState<Record<string, number>>({});
+  // Sprint 21 fix — número de miembros del hogar para calcular bien el progreso.
+  // Sin esto, el contador "0 capítulos completados" nunca avanza porque
+  // espera N respondidas por pregunta PERSONA pero el conteo no las multiplica.
+  const [numMiembros, setNumMiembros] = useState(1);
 
   // Finalizar sesión
   const [modalFinalizar, setModalFinalizar] = useState(false);
@@ -312,6 +318,20 @@ export default function FormularioIndexScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesionServerId]);
 
+  // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
+  useEffect(() => {
+    if (!hogarId) return;
+    let activo = true;
+    hogaresApi.detalle(hogarId)
+      .then(({ data }) => {
+        if (!activo) return;
+        const n = (data.miembros ?? []).length;
+        if (n > 0) setNumMiembros(n);
+      })
+      .catch(() => { /* offline: cae al default 1 */ });
+    return () => { activo = false; };
+  }, [hogarId]);
+
   // Recalcular progreso al volver de un capítulo
   useEffect(() => {
     if (!sesionServerId) return;
@@ -327,28 +347,40 @@ export default function FormularioIndexScreen() {
   }, [sesionServerId]);
 
   // ── Progreso global ─────────────────────────────────────────────────────────
+  // Sprint 21 fix — obligatorias reales = obligHogar + obligPersona × N miembros.
+  // Sin esto, el cálculo le decía 'completado' cuando solo respondiste para el
+  // primer miembro (o nunca, si N miembros > 1 y faltaban PERSONA × (N-1)).
+  function obligatoriasReales(cp: { obligHogar: number; obligPersona: number }): number {
+    return cp.obligHogar + cp.obligPersona * Math.max(numMiembros, 1);
+  }
+
   const { totalObligGlobal, respondidoGlobal, capsCompletados } = useMemo(() => {
     let total = 0, respondido = 0, completados = 0;
     for (const cap of capitulos) {
       const cp = conteoPreguntas[cap.id];
       const cr = conteoRespondidas[cap.id] ?? 0;
       if (!cp) continue;
-      total      += cp.obligatorias;
-      respondido += Math.min(cr, cp.obligatorias);
-      if (cp.obligatorias > 0 && cr >= cp.obligatorias) completados++;
+      const obligReales = obligatoriasReales(cp);
+      total      += obligReales;
+      respondido += Math.min(cr, obligReales);
+      if (obligReales > 0 && cr >= obligReales) completados++;
     }
     return { totalObligGlobal: total, respondidoGlobal: respondido, capsCompletados: completados };
-  }, [capitulos, conteoPreguntas, conteoRespondidas]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capitulos, conteoPreguntas, conteoRespondidas, numMiembros]);
 
   const progresoGlobal = totalObligGlobal > 0 ? respondidoGlobal / totalObligGlobal : 0;
 
   function getCapProgress(capId: string): CapProgress {
     const cp = conteoPreguntas[capId];
     const cr = conteoRespondidas[capId] ?? 0;
-    if (!cp || cp.obligatorias === 0) return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
-    if (cr >= cp.obligatorias) return { estado: 'completado', respondidas: cr, obligatorias: cp.obligatorias };
-    if (cr > 0)                return { estado: 'en_progreso', respondidas: cr, obligatorias: cp.obligatorias };
-    return { estado: 'pendiente', respondidas: 0, obligatorias: cp.obligatorias };
+    if (!cp || (cp.obligHogar === 0 && cp.obligPersona === 0)) {
+      return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
+    }
+    const obligReales = obligatoriasReales(cp);
+    if (cr >= obligReales) return { estado: 'completado', respondidas: cr, obligatorias: obligReales };
+    if (cr > 0)            return { estado: 'en_progreso', respondidas: cr, obligatorias: obligReales };
+    return { estado: 'pendiente', respondidas: 0, obligatorias: obligReales };
   }
 
   async function handleFinalizar() {
