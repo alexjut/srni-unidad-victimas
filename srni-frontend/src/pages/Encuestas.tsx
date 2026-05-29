@@ -4,11 +4,15 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 
-const ESTADO_BADGE: Record<string, string> = {
-  EN_PROCESO: 'badge-azul',
-  FINALIZADA: 'badge-verde',
-  CANCELADA:  'badge-rojo',
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  COMPLETADA:  'verde',
+  FINALIZADA:  'verde',
+  EN_PROGRESO: 'azul',
+  INICIADA:    'naranja',
+  SUSPENDIDA:  'rojo',
+  CANCELADA:   'rojo',
 };
 
 function BarraProgreso({ valor }: { valor: number }) {
@@ -95,9 +99,9 @@ export default function EncuestasPage() {
                         <BarraProgreso valor={s.porcentaje_completado} />
                       </td>
                       <td className="px-4 py-3">
-                        <span className={ESTADO_BADGE[s.estado] ?? 'badge-gris'}>
+                        <Badge variant={ESTADO_BADGE[s.estado] ?? 'gris'}>
                           {s.estado.replace('_', ' ')}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{s.encuestador_nombre}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">

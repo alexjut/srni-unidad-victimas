@@ -4,11 +4,12 @@
 import { useEffect, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { hogaresApi, type HogarResumen } from '@/api/hogares';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 
-const ESTADO_BADGE: Record<string, string> = {
-  ACTIVO:    'badge-verde',
-  INACTIVO:  'badge-gris',
-  ARCHIVADO: 'badge-rojo',
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  ACTIVO:    'verde',
+  BORRADOR:  'naranja',
+  ARCHIVADO: 'gris',
 };
 
 export default function HogaresPage() {
@@ -83,9 +84,9 @@ export default function HogaresPage() {
                       <td className="px-4 py-3 text-gray-600">{h.municipio_nombre ?? '—'}</td>
                       <td className="px-4 py-3 text-center text-gray-700">{h.numero_personas}</td>
                       <td className="px-4 py-3">
-                        <span className={ESTADO_BADGE[h.estado] ?? 'badge-gris'}>
+                        <Badge variant={ESTADO_BADGE[h.estado] ?? 'gris'}>
                           {h.estado}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {new Date(h.created_at).toLocaleDateString('es-CO')}

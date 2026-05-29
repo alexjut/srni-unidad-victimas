@@ -4,6 +4,16 @@
 import { useEffect, useState } from 'react';
 import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/reportes';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  COMPLETADA:  'verde',
+  FINALIZADA:  'verde',
+  EN_PROGRESO: 'azul',
+  INICIADA:    'naranja',
+  SUSPENDIDA:  'rojo',
+  CANCELADA:   'rojo',
+};
 
 export default function ReportesPage() {
   const [resumen,  setResumen]  = useState<ResumenEncuestador | null>(null);
@@ -133,9 +143,9 @@ export default function ReportesPage() {
                       <td className="px-4 py-3 text-gray-700 max-w-[130px] truncate">{d.instrumento}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{d.ruta_entrevista}</td>
                       <td className="px-4 py-3">
-                        <span className={d.estado === 'FINALIZADA' ? 'badge-verde' : d.estado === 'EN_PROCESO' ? 'badge-azul' : 'badge-rojo'}>
-                          {d.estado}
-                        </span>
+                        <Badge variant={ESTADO_BADGE[d.estado] ?? 'gris'}>
+                          {d.estado.replace('_', ' ')}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{d.porcentaje_completado}%</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
