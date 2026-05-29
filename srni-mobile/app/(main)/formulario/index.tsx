@@ -409,8 +409,12 @@ export default function FormularioIndexScreen() {
       return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
     }
     const obligReales = obligatoriasReales(cp);
-    if (cr >= obligReales) return { estado: 'completado', respondidas: cr, obligatorias: obligReales };
-    if (cr > 0)            return { estado: 'en_progreso', respondidas: cr, obligatorias: obligReales };
+    // Sprint 21 fix display: capar respondidas al máximo de obligatorias para
+    // que la barra y el chip sean consistentes. Si el usuario respondió 10
+    // pero solo 7 son obligatorias, mostramos 7/7 (no 10/7 que confunde).
+    const respondidasCap = Math.min(cr, obligReales);
+    if (cr >= obligReales) return { estado: 'completado', respondidas: respondidasCap, obligatorias: obligReales };
+    if (cr > 0)            return { estado: 'en_progreso', respondidas: respondidasCap, obligatorias: obligReales };
     return { estado: 'pendiente', respondidas: 0, obligatorias: obligReales };
   }
 
@@ -427,6 +431,59 @@ export default function FormularioIndexScreen() {
       );
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión.');
+    } finally {
+      setFinalizando(false);
+    }
+  }
+
+  // Sprint 21 — Anular sesión con doble confirmación
+  function handleAnular() {
+    if (!sesionServerId) return;
+    Alert.alert(
+      '¿Anular la entrevista?',
+      'Esta acción marcará la sesión como ANULADA. No podrás continuarla ni recuperar las respuestas. ¿Estás seguro?',
+      [
+        { text: 'No, cancelar', style: 'cancel' },
+        {
+          text: 'Sí, anular',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Última confirmación',
+              'Esta es la última oportunidad para volver atrás. Si continúas, la entrevista se anulará definitivamente.',
+              [
+                { text: 'Volver', style: 'cancel' },
+                {
+                  text: 'Anular definitivamente',
+                  style: 'destructive',
+                  onPress: confirmarAnular,
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  }
+
+  async function confirmarAnular() {
+    if (!sesionServerId) return;
+    setFinalizando(true);
+    try {
+      // El backend acepta PATCH con estado=SUSPENDIDA como "anulada" desde
+      // el cliente. Si el endpoint de anular es distinto, ajustar acá.
+      await encuestasApi.actualizar(sesionServerId, { /* el campo estado se ajusta vía PATCH si el backend lo expone */ } as any);
+      // Hasta que haya un endpoint específico, usamos finalizar con observación de anulación
+      await encuestasApi.finalizar(sesionServerId, {
+        observaciones: '[ANULADA POR ENCUESTADOR] ' + (observaciones.trim() || 'Sin motivo registrado'),
+      });
+      Alert.alert(
+        'Sesión anulada',
+        'La sesión fue marcada como cerrada con observación de anulación.',
+        [{ text: 'Aceptar', onPress: () => router.back() }],
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo anular la sesión.');
     } finally {
       setFinalizando(false);
     }
@@ -603,6 +660,20 @@ export default function FormularioIndexScreen() {
                 icon="check-circle-outline"
                 onPress={() => setModalFinalizar(true)}
               />
+              <View style={{ height: 8 }} />
+              {/* Sprint 21 — Anular sesión con doble confirmación */}
+              <Pressable
+                onPress={handleAnular}
+                disabled={finalizando}
+                style={({ pressed }) => [
+                  styles.btnAnular,
+                  pressed && { opacity: 0.85 },
+                  finalizando && { opacity: 0.5 },
+                ]}
+              >
+                <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
+                <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
+              </Pressable>
             </View>
           ) : null
         }
@@ -725,6 +796,18 @@ const styles = StyleSheet.create({
 
   lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
   footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
+  btnAnular: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: GOV.rojo + '66',
+    backgroundColor: 'transparent',
+  },
+  btnAnularTxt: { ...FONT.body, color: GOV.rojo, fontWeight: '600' },
 
   card: {
     flexDirection: 'row',

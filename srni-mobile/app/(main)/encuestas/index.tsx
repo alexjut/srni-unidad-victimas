@@ -59,7 +59,7 @@ export default function EncuestasIndexScreen() {
   if (cargando) {
     return (
       <View style={styles.root}>
-        <GovHeader title="Encuestas" subtitle="Sesiones PAARI" />
+        <GovHeader title="Encuestas" subtitle="Sesiones de caracterización" />
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
           <Text style={styles.hint}>Cargando encuestas…</Text>
@@ -70,7 +70,7 @@ export default function EncuestasIndexScreen() {
 
   return (
     <View style={styles.root}>
-      <GovHeader title="Encuestas" subtitle="Sesiones PAARI" />
+      <GovHeader title="Encuestas" subtitle="Sesiones de caracterización" />
 
       <SegmentedButtons
         value={filtroEstado}

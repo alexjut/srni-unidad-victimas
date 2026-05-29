@@ -118,23 +118,20 @@ export default function DashboardScreen() {
               <AccionRow
                 icon="home-group"
                 label="Hogares"
-                subtitle="Gestionar unidades familiares"
+                subtitle="Ver y gestionar hogares caracterizados"
                 onPress={() => router.push('/(main)/hogares')}
               />
               <View style={styles.separador} />
               <AccionRow
                 icon="clipboard-list"
-                label="Encuestas"
-                subtitle="Sesiones PAARI en curso"
+                label="Caracterizaciones"
+                subtitle="Sesiones de caracterización en curso"
                 onPress={() => router.push('/(main)/encuestas')}
               />
-              <View style={styles.separador} />
-              <AccionRow
-                icon="form-select"
-                label="Formulario PAARI"
-                subtitle="Nueva sesión de caracterización"
-                onPress={() => router.push('/(main)/formulario')}
-              />
+              {/* Sprint 21: se eliminó el botón 'Formulario PAARI' (instrumento
+                  viejo UARIV que no está en los 8 instrumentos actuales). El
+                  flujo correcto es: Entrevista → buscar víctima → conformar
+                  hogar → hub de caracterizaciones → crear caracterización. */}
             </>
           )}
         </View>
