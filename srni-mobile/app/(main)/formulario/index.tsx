@@ -158,16 +158,16 @@ function CapituloCard({
           [{capitulo.codigo}]  ·  {capitulo.nivel === 'PERSONA' ? 'Por persona' : 'Por hogar'}
         </Text>
 
-        {/* Barra de progreso + contador */}
+        {/* Barra de progreso + contador con % explícito */}
         {progress.obligatorias > 0 && (
           <View style={styles.capProgresoWrap}>
             <ProgressBar
-              progress={progress.respondidas / progress.obligatorias}
+              progress={Math.min(1, progress.respondidas / progress.obligatorias)}
               style={styles.capProgressBar}
               color={colorEstado}
             />
             <Text style={[styles.capProgresoPct, { color: colorEstado }]}>
-              {progress.respondidas} / {progress.obligatorias}
+              {progress.respondidas}/{progress.obligatorias} · {Math.round((progress.respondidas / progress.obligatorias) * 100)}%
             </Text>
           </View>
         )}
