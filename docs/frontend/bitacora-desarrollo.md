@@ -274,7 +274,80 @@ Basado en el plan de 7 fases definido para el frontend:
 
 **COMPLETADA.** Todos los componentes UI del plan estan creados (13 total). Las 6 paginas existentes fueron refactorizadas para usarlos. El layout tiene header desktop y sidebar con indicador activo mejorado.
 
-### Proximo paso: Fase 3 — Busqueda de victimas
+### Proximo paso: Fase 6 — Auditoria y seguridad
+
+---
+
+## Dia 5 — 2026-05-31 | Fases 3, 4 y 5 completadas
+
+### Actividades realizadas
+
+1. **Fase 3 — Busqueda de victimas**
+   - `src/api/victimas.ts` — buscar (POST con hash SHA-256), detalle, registrar desde fuente, tipos documento
+   - `src/pages/Victimas.tsx` — formulario busqueda + resultado enriquecido con DatoCards (genero, etnia, municipio, fecha) + hogar activo con contadores + 3 info cards en estado inicial + busquedas recientes en sessionStorage (max 5)
+   - `src/pages/VictimaDetalle.tsx` — breadcrumb + datos PII + info complementaria + hechos victimizantes + metadata + manejo 403
+   - Rutas `/victimas` y `/victimas/:id` en App.tsx, item "Victimas" en Sidebar
+
+2. **Fase 4 — Panel de supervision**
+   - Instalado `recharts` para graficas
+   - `src/api/supervision.ts` — resumen supervisor + series temporales
+   - `src/pages/Supervision.tsx` — 4 Cards totales + LineChart (actividad diaria) + BarChart horizontal (por instrumento) + tabla encuestadores con barras de progreso + filtros fecha (desde/hasta)
+   - Ruta `/supervision` en App.tsx, item "Supervision" en Sidebar
+
+3. **Fase 5 — Instrumentos y parametricas**
+   - `src/api/formulario.ts` — instrumentos, capitulo detalle con preguntas y opciones
+   - `src/pages/Instrumentos.tsx` — cards expandibles por instrumento, capitulos con carga lazy de preguntas, badges tipo/nivel, indicador obligatoria, preview de opciones (max 6)
+   - Instalado `react-simple-maps` + `@types/react-simple-maps`
+   - `src/api/parametricas.ts` — departamentos, municipios (paginado + todos), DTs, puntos atencion, tipos documento
+   - `src/pages/Parametricas.tsx` — 5 tabs con tabs sticky:
+     - Departamentos: mapa interactivo de Colombia (react-simple-maps) + tabla sincronizada + banner de seleccion + boton limpiar
+     - Municipios: carga todos via `/municipios/todos/`, filtro local por departamento + badge filtro activo
+     - Dir. Territoriales: busqueda por texto (nombre o codigo)
+     - Puntos atencion: carga todos al inicio, filtro opcional por DT
+     - Tipos documento: tabla con badges activo/inactivo
+   - GeoJSON `colombia.json` movido de `src/` a `public/geo/` (1.7MB fuera del bundle)
+   - Botones limpiar con icono papelera y estilo rojo, contenedor max-w-7xl
+   - Rutas `/instrumentos` y `/parametricas` en App.tsx, items en Sidebar
+
+4. **Correcciones durante desarrollo**
+   - Supervision 403: activar `puede_ver_reportes=1` en perfil ENCUESTADOR (SQLite)
+   - Victimas: descifrar documentos de prueba con Fernet para poder buscar
+   - recharts: warning bundle >500KB (normal, optimizar en Fase 7)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/api/victimas.ts` | API victimas: buscar, detalle, registrar, tipos documento |
+| `src/api/supervision.ts` | API supervision: resumen supervisor, series temporales |
+| `src/api/formulario.ts` | API formulario: instrumentos, capitulo detalle |
+| `src/api/parametricas.ts` | API parametricas: deptos, municipios, DTs, puntos, tipos doc |
+| `src/pages/Victimas.tsx` | Busqueda de victimas con resultado enriquecido |
+| `src/pages/VictimaDetalle.tsx` | Detalle completo de victima |
+| `src/pages/Supervision.tsx` | Panel de supervision con graficas recharts |
+| `src/pages/Instrumentos.tsx` | Instrumentos con arbol capitulos/preguntas |
+| `src/pages/Parametricas.tsx` | Parametricas con mapa Colombia + 5 tabs |
+| `public/geo/colombia.json` | GeoJSON departamentos (movido desde src/) |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | 6 rutas nuevas (victimas, victimas/:id, supervision, instrumentos, parametricas) |
+| `src/components/Sidebar.tsx` | 3 items nuevos (Victimas, Supervision, Instrumentos, Parametricas) |
+
+### Estado del frontend
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 15 (13 funcionales + Login + NotFound) |
+| API clients | 9 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 13 + catch-all 404 |
+| Nav items sidebar | 8 |
+
+### Proximo paso: Fase 6 — Auditoria y seguridad
 
 ---
 
@@ -286,6 +359,7 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-27 | Responsive layout + dashboard + fix perfil usuario | MainLayout.tsx, Dashboard.tsx, App.tsx |
 | 2026-05-29 | Fase 1 (componentes UI + errores) + Fase 2 (detalle + filtros) | 9 archivos creados, 8 modificados |
 | 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
+| 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
 
 ---
 
