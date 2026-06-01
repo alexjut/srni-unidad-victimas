@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, LogOut, ChevronRight,
+  FileText, Database, Shield, LogOut, ChevronRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -14,6 +14,7 @@ export const NAV_ITEMS = [
   { to: '/supervision',  icon: Eye,              label: 'Supervisión'  },
   { to: '/instrumentos', icon: FileText,         label: 'Instrumentos' },
   { to: '/parametricas', icon: Database,         label: 'Paramétricas' },
+  { to: '/auditoria',   icon: Shield,           label: 'Auditoría'    },
 ];
 
 interface SidebarProps {

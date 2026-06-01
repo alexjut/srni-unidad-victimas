@@ -15,6 +15,7 @@ import HogarDetallePage from '@/pages/HogarDetalle';
 import SesionDetallePage from '@/pages/SesionDetalle';
 import InstrumentosPage from '@/pages/Instrumentos';
 import ParametricasPage from '@/pages/Parametricas';
+import AuditoriaPage from '@/pages/Auditoria';
 import NotFound from '@/pages/NotFound';
 import MainLayout from '@/components/MainLayout';
 
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="supervision" element={<SupervisionPage />} />
         <Route path="instrumentos" element={<InstrumentosPage />} />
         <Route path="parametricas" element={<ParametricasPage />} />
+        <Route path="auditoria" element={<AuditoriaPage />} />
       </Route>
 
       {/* Ruta catch-all → 404 */}

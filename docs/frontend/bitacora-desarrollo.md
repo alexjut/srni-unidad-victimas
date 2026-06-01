@@ -347,7 +347,61 @@ Basado en el plan de 7 fases definido para el frontend:
 | Rutas | 13 + catch-all 404 |
 | Nav items sidebar | 8 |
 
-### Proximo paso: Fase 6 — Auditoria y seguridad
+### Proximo paso: completar Fase 6 (CambiarPassword + Logout real)
+
+---
+
+## Dia 6 — 2026-05-31 | Fase 6 parcial — Auditoria
+
+### Actividades realizadas
+
+1. **Pagina de Auditoria** (`src/pages/Auditoria.tsx`)
+   - Tabla paginada con columnas: fecha, usuario, accion, recurso, resultado, IP, detalle
+   - Filtros: accion (dropdown con acciones reales del backend), rango de fechas
+   - Badges por tipo de accion (BUSQUEDA_RNI, VER_VICTIMA, LOGIN, etc.) y resultado (EXITO, ERROR, DENEGADO)
+   - Nota de inmutabilidad visible
+   - Boton limpiar filtros (rojo con icono papelera)
+
+2. **API de Auditoria** (`src/api/auditoria.ts`)
+   - Tipos basados en el modelo real `auditoria_logacceso` del backend
+   - Campos: `codigo_usuario`, `accion`, `recurso`, `recurso_id`, `ip_origen`, `user_agent`, `resultado`, `detalle`, `timestamp`
+
+3. **Hallazgo: endpoint no implementado en backend**
+   - El modelo `auditoria_logacceso` existe y tiene 10 registros reales
+   - Pero `serializers.py`, `views.py` y `urls.py` de la app auditoria estan vacios
+   - La pagina muestra warning amigable y esta lista para funcionar cuando se implemente
+   - **Accion requerida de Javier:** implementar `GET /api/auditoria/logs/` (solo lectura, paginado, con filtros)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/api/auditoria.ts` | API auditoria: tipos + endpoint logs con filtros |
+| `src/pages/Auditoria.tsx` | Vista de logs inmutables con tabla, filtros y paginacion |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | Ruta `/auditoria` |
+| `src/components/Sidebar.tsx` | Item "Auditoria" con icono Shield |
+
+### Estado del frontend actualizado
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 16 (14 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 14 + catch-all 404 |
+| Nav items sidebar | 9 |
+
+### Pendiente para continuar
+
+- Fase 6 (restante): CambiarPassword + Logout real
+- Fase 7: Responsive, accesibilidad, testing, build produccion
+- **Solicitud a Javier:** implementar endpoint `GET /api/auditoria/logs/`
 
 ---
 
@@ -360,6 +414,7 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-29 | Fase 1 (componentes UI + errores) + Fase 2 (detalle + filtros) | 9 archivos creados, 8 modificados |
 | 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
 | 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
+| 2026-05-31 | Fase 6 parcial: auditoria (pagina lista, endpoint pendiente en backend) | 2 archivos creados, 2 modificados |
 
 ---
 
