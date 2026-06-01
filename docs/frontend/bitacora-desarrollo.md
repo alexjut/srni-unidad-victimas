@@ -71,17 +71,19 @@
 
 Basado en el plan de 7 fases definido para el frontend:
 
-### Fase 1 — Componentes base e infraestructura UI
-- [ ] Instalar dependencias: react-hot-toast, @tanstack/react-table, react-hook-form + zod, date-fns
-- [ ] Crear componentes UI reutilizables: Button, Input, Select, Table, Modal, Badge, Card, Spinner, EmptyState, Breadcrumb
-- [x] ~~Mejorar MainLayout: sidebar colapsable, breadcrumbs, indicador de usuario/rol, responsive~~ (drawer mobile + topbar hecho)
+### Fase 1 — Componentes base e infraestructura UI — COMPLETADA 2026-05-31
+- [x] ~~Instalar dependencias: sonner, date-fns~~ (react-hook-form y zod pendientes para Fase 6)
+- [x] ~~13 componentes UI: Button, Input, Select, Table, Modal, Card, Alert, Breadcrumb, Badge, Spinner, EmptyState, Pagination, PageHeader~~
+- [x] ~~MainLayout: sidebar independiente, header desktop, indicador activo mejorado, drawer mobile~~
+- [x] ~~Refactor 6 paginas: Dashboard, Hogares, Encuestas, Reportes, HogarDetalle, SesionDetalle~~
 - [x] ~~Fix perfil usuario al refrescar pagina~~ (RequireAuth carga perfil automaticamente)
-- [ ] Manejo global de errores: Error boundary, toasts en errores API, pagina 404
+- [x] ~~Manejo global de errores: Error boundary, toasts en errores API, pagina 404~~
 
-### Fase 2 — Vistas de detalle
-- [ ] HogarDetalle (`/hogares/:hogarId`) — datos + miembros + sesiones
-- [ ] SesionDetalle (`/encuestas/:sesionId`) — info + respuestas por capitulo
-- [ ] Filtros y busqueda en tablas existentes (Hogares, Encuestas)
+### Fase 2 — Vistas de detalle — COMPLETADA 2026-05-29
+- [x] ~~HogarDetalle (`/hogares/:id`) — datos + miembros + sesiones~~
+- [x] ~~SesionDetalle (`/encuestas/:id`) — info + respuestas + link a hogar~~
+- [x] ~~Filtros y busqueda en tablas existentes (Hogares: busqueda + estado, Encuestas: estado)~~
+- [x] ~~Filas clickeables + boton "Ver detalle" en Hogares y Encuestas~~
 
 ### Fase 3 — Busqueda de victimas
 - [ ] Pagina Victimas (`/victimas`) — formulario busqueda + resultado
@@ -142,12 +144,277 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 3 — 2026-05-29 | Fase 1 (bloques A+B) + Fase 2 completa
+
+### Actividades realizadas
+
+1. **Dependencias instaladas**
+   - `sonner` (v2.0.7) — toasts globales
+   - `date-fns` (v4.3.0) — formateo de fechas
+
+2. **Fase 1 — Componentes base e infraestructura**
+   - `ErrorBoundary.tsx` — captura errores React, UI amigable + detalle en DEV
+   - `NotFound.tsx` — pagina 404 con icono y boton volver
+   - `Spinner.tsx` — 3 tamaños (sm/md/lg), role="status" a11y
+   - `Badge.tsx` — 5 variantes (verde, azul, rojo, gris, naranja), tipo exportado
+   - `EmptyState.tsx` — icono + titulo + descripcion, aplicado en Hogares, Encuestas y Reportes
+   - `Pagination.tsx` — anterior/siguiente, se oculta si ≤1 pagina, reemplaza paginacion duplicada
+   - `PageHeader.tsx` — titulo + subtitulo + acciones, responsive
+   - Toasts automaticos en interceptor Axios (sin conexion, 500, 403)
+   - Toaster Sonner agregado en main.tsx
+
+3. **Fase 2 — Vistas de detalle**
+   - `HogarDetalle.tsx` — 4 InfoCards + datos hogar + tabla miembros + tabla sesiones clickeables
+   - `SesionDetalle.tsx` — 4 InfoCards + barra progreso + info sesion + tabla respuestas + link a hogar
+   - Rutas `/hogares/:id` y `/encuestas/:id` agregadas a App.tsx
+
+4. **Fase 2 — Tablas interactivas y filtros**
+   - Hogares: filas clickeables, boton "Ver detalle", filtro por estado, busqueda por codigo
+   - Encuestas: filas clickeables, boton "Ver detalle", filtro por estado
+   - EmptyState adaptativo (mensajes distintos con/sin filtros activos)
+   - Boton "Limpiar" cuando hay filtros activos
+
+5. **Tipos API actualizados con campos reales del backend**
+   - `hogares.ts`: HogarResumen, MiembroResumen, SesionAnidada, HogarDetalle (campos verificados contra serializers)
+   - `encuestas.ts`: SesionResumen, RespuestaEncuesta, SesionDetalle
+   - `codigo_hogar` marcado como opcional (pendiente que Javier lo agregue al serializer)
+
+6. **Datos de prueba variados en SQLite**
+   - Hogares: 3 ACTIVO, 2 BORRADOR, 1 ARCHIVADO (antes todos ACTIVO)
+   - Sesiones ya tenian variacion: 6 COMPLETADA, 4 EN_PROGRESO, 2 INICIADA, 3 SUSPENDIDA
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ErrorBoundary.tsx` | Error boundary React |
+| `src/components/ui/Spinner.tsx` | Spinner con 3 tamaños |
+| `src/components/ui/Badge.tsx` | Badge con 5 variantes |
+| `src/components/ui/EmptyState.tsx` | Estado vacio reutilizable |
+| `src/components/ui/Pagination.tsx` | Paginacion reutilizable |
+| `src/components/ui/PageHeader.tsx` | Header de pagina reutilizable |
+| `src/pages/NotFound.tsx` | Pagina 404 |
+| `src/pages/HogarDetalle.tsx` | Detalle de hogar |
+| `src/pages/SesionDetalle.tsx` | Detalle de sesion de encuesta |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/main.tsx` | Agrego ErrorBoundary + Toaster Sonner |
+| `src/App.tsx` | Rutas /hogares/:id y /encuestas/:id, catch-all → NotFound |
+| `src/api/client.ts` | Toasts automaticos en interceptor (sin conexion, 500, 403) |
+| `src/api/hogares.ts` | Tipos actualizados con campos reales, param busqueda |
+| `src/api/encuestas.ts` | SesionDetalle + RespuestaEncuesta, detalle con respuestas |
+| `src/pages/Hogares.tsx` | Filtros, busqueda, filas clickeables, boton ver detalle |
+| `src/pages/Encuestas.tsx` | Filtro estado, filas clickeables, boton ver detalle |
+| `src/pages/Reportes.tsx` | Badge + EmptyState + Pagination + PageHeader aplicados |
+
+### Nota para Javier
+- `codigo_hogar` no esta en HogarListSerializer ni HogarDetalleSerializer. Se usa `id.slice(0,8)` como fallback. Pendiente agregarlo.
+- No se modifico ningun archivo .py del backend. Solo se leyo/escribio la BD SQLite para variar datos de prueba.
+
+---
+
+## Dia 4 — 2026-05-31 | Fase 1 completada — componentes UI + refactor + layout
+
+### Actividades realizadas
+
+1. **8 componentes UI nuevos** (`src/components/ui/`)
+   - `Button.tsx` — 4 variantes (primary/secondary/danger/ghost), 3 tamaños, loading spinner, icono
+   - `Input.tsx` — forwardRef, label integrado, error, icono izquierdo. Listo para react-hook-form
+   - `Select.tsx` — forwardRef, label, error, opciones tipadas con placeholder
+   - `Table.tsx` — generico `<T>`, columnas declarativas, skeleton, empty state, paginacion, filas clickeables
+   - `Modal.tsx` — overlay, cierre con Escape/click fuera, focus trap, bloqueo scroll body, slot acciones
+   - `Card.tsx` — tarjeta metrica reutilizable (icono + valor + label)
+   - `Alert.tsx` — 4 variantes (error/exito/info/warning) con icono automatico por variante
+   - `Breadcrumb.tsx` — navegacion jerarquica con links y aria-label
+
+2. **Refactor de 6 paginas existentes para usar componentes UI**
+   - Dashboard: `MetricCard` inline → `Card`, error div → `Alert`, boton → `Button`
+   - Hogares: tabla manual (~60 lineas) → `Table` con columnas declarativas, error → `Alert`, botones → `Button`
+   - Encuestas: misma reduccion con `Table`, error → `Alert`, botones → `Button`
+   - Reportes: error → `Alert`, boton exportar → `Button` con loading
+   - HogarDetalle: error → `Alert`, botones → `Button`, agregado `Breadcrumb`
+   - SesionDetalle: error → `Alert`, botones → `Button`, agregado `Breadcrumb`
+
+3. **Layout mejorado**
+   - Header fijo en desktop: barra blanca con seccion actual + nombre usuario + perfil + avatar con inicial
+   - Indicador activo en sidebar: cambiado de `bg-white/15` a `bg-gov-azul shadow-sm` (mucho mas visible)
+   - Sidebar extraido a componente independiente (`src/components/Sidebar.tsx`)
+   - MainLayout simplificado: de ~177 lineas a ~100
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ui/Button.tsx` | Boton reutilizable con variantes, tamaños, loading |
+| `src/components/ui/Input.tsx` | Input con label, error, icono |
+| `src/components/ui/Select.tsx` | Dropdown con label, error, opciones |
+| `src/components/ui/Table.tsx` | Tabla generica con skeleton, empty state, paginacion |
+| `src/components/ui/Modal.tsx` | Dialog reutilizable |
+| `src/components/ui/Card.tsx` | Tarjeta metrica |
+| `src/components/ui/Alert.tsx` | Alerta con 4 variantes |
+| `src/components/ui/Breadcrumb.tsx` | Navegacion jerarquica |
+| `src/components/Sidebar.tsx` | Sidebar independiente (extraido de MainLayout) |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/MainLayout.tsx` | Header desktop, sidebar independiente, simplificado |
+| `src/pages/Dashboard.tsx` | Usa Card, Button, Alert |
+| `src/pages/Hogares.tsx` | Usa Table, Button, Alert |
+| `src/pages/Encuestas.tsx` | Usa Table, Button, Alert |
+| `src/pages/Reportes.tsx` | Usa Button, Alert |
+| `src/pages/HogarDetalle.tsx` | Usa Button, Alert, Breadcrumb |
+| `src/pages/SesionDetalle.tsx` | Usa Button, Alert, Breadcrumb |
+
+### Estado de la Fase 1
+
+**COMPLETADA.** Todos los componentes UI del plan estan creados (13 total). Las 6 paginas existentes fueron refactorizadas para usarlos. El layout tiene header desktop y sidebar con indicador activo mejorado.
+
+### Proximo paso: Fase 6 — Auditoria y seguridad
+
+---
+
+## Dia 5 — 2026-05-31 | Fases 3, 4 y 5 completadas
+
+### Actividades realizadas
+
+1. **Fase 3 — Busqueda de victimas**
+   - `src/api/victimas.ts` — buscar (POST con hash SHA-256), detalle, registrar desde fuente, tipos documento
+   - `src/pages/Victimas.tsx` — formulario busqueda + resultado enriquecido con DatoCards (genero, etnia, municipio, fecha) + hogar activo con contadores + 3 info cards en estado inicial + busquedas recientes en sessionStorage (max 5)
+   - `src/pages/VictimaDetalle.tsx` — breadcrumb + datos PII + info complementaria + hechos victimizantes + metadata + manejo 403
+   - Rutas `/victimas` y `/victimas/:id` en App.tsx, item "Victimas" en Sidebar
+
+2. **Fase 4 — Panel de supervision**
+   - Instalado `recharts` para graficas
+   - `src/api/supervision.ts` — resumen supervisor + series temporales
+   - `src/pages/Supervision.tsx` — 4 Cards totales + LineChart (actividad diaria) + BarChart horizontal (por instrumento) + tabla encuestadores con barras de progreso + filtros fecha (desde/hasta)
+   - Ruta `/supervision` en App.tsx, item "Supervision" en Sidebar
+
+3. **Fase 5 — Instrumentos y parametricas**
+   - `src/api/formulario.ts` — instrumentos, capitulo detalle con preguntas y opciones
+   - `src/pages/Instrumentos.tsx` — cards expandibles por instrumento, capitulos con carga lazy de preguntas, badges tipo/nivel, indicador obligatoria, preview de opciones (max 6)
+   - Instalado `react-simple-maps` + `@types/react-simple-maps`
+   - `src/api/parametricas.ts` — departamentos, municipios (paginado + todos), DTs, puntos atencion, tipos documento
+   - `src/pages/Parametricas.tsx` — 5 tabs con tabs sticky:
+     - Departamentos: mapa interactivo de Colombia (react-simple-maps) + tabla sincronizada + banner de seleccion + boton limpiar
+     - Municipios: carga todos via `/municipios/todos/`, filtro local por departamento + badge filtro activo
+     - Dir. Territoriales: busqueda por texto (nombre o codigo)
+     - Puntos atencion: carga todos al inicio, filtro opcional por DT
+     - Tipos documento: tabla con badges activo/inactivo
+   - GeoJSON `colombia.json` movido de `src/` a `public/geo/` (1.7MB fuera del bundle)
+   - Botones limpiar con icono papelera y estilo rojo, contenedor max-w-7xl
+   - Rutas `/instrumentos` y `/parametricas` en App.tsx, items en Sidebar
+
+4. **Correcciones durante desarrollo**
+   - Supervision 403: activar `puede_ver_reportes=1` en perfil ENCUESTADOR (SQLite)
+   - Victimas: descifrar documentos de prueba con Fernet para poder buscar
+   - recharts: warning bundle >500KB (normal, optimizar en Fase 7)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/api/victimas.ts` | API victimas: buscar, detalle, registrar, tipos documento |
+| `src/api/supervision.ts` | API supervision: resumen supervisor, series temporales |
+| `src/api/formulario.ts` | API formulario: instrumentos, capitulo detalle |
+| `src/api/parametricas.ts` | API parametricas: deptos, municipios, DTs, puntos, tipos doc |
+| `src/pages/Victimas.tsx` | Busqueda de victimas con resultado enriquecido |
+| `src/pages/VictimaDetalle.tsx` | Detalle completo de victima |
+| `src/pages/Supervision.tsx` | Panel de supervision con graficas recharts |
+| `src/pages/Instrumentos.tsx` | Instrumentos con arbol capitulos/preguntas |
+| `src/pages/Parametricas.tsx` | Parametricas con mapa Colombia + 5 tabs |
+| `public/geo/colombia.json` | GeoJSON departamentos (movido desde src/) |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | 6 rutas nuevas (victimas, victimas/:id, supervision, instrumentos, parametricas) |
+| `src/components/Sidebar.tsx` | 3 items nuevos (Victimas, Supervision, Instrumentos, Parametricas) |
+
+### Estado del frontend
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 15 (13 funcionales + Login + NotFound) |
+| API clients | 9 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 13 + catch-all 404 |
+| Nav items sidebar | 8 |
+
+### Proximo paso: completar Fase 6 (CambiarPassword + Logout real)
+
+---
+
+## Dia 6 — 2026-05-31 | Fase 6 parcial — Auditoria
+
+### Actividades realizadas
+
+1. **Pagina de Auditoria** (`src/pages/Auditoria.tsx`)
+   - Tabla paginada con columnas: fecha, usuario, accion, recurso, resultado, IP, detalle
+   - Filtros: accion (dropdown con acciones reales del backend), rango de fechas
+   - Badges por tipo de accion (BUSQUEDA_RNI, VER_VICTIMA, LOGIN, etc.) y resultado (EXITO, ERROR, DENEGADO)
+   - Nota de inmutabilidad visible
+   - Boton limpiar filtros (rojo con icono papelera)
+
+2. **API de Auditoria** (`src/api/auditoria.ts`)
+   - Tipos basados en el modelo real `auditoria_logacceso` del backend
+   - Campos: `codigo_usuario`, `accion`, `recurso`, `recurso_id`, `ip_origen`, `user_agent`, `resultado`, `detalle`, `timestamp`
+
+3. **Hallazgo: endpoint no implementado en backend**
+   - El modelo `auditoria_logacceso` existe y tiene 10 registros reales
+   - Pero `serializers.py`, `views.py` y `urls.py` de la app auditoria estan vacios
+   - La pagina muestra warning amigable y esta lista para funcionar cuando se implemente
+   - **Accion requerida de Javier:** implementar `GET /api/auditoria/logs/` (solo lectura, paginado, con filtros)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/api/auditoria.ts` | API auditoria: tipos + endpoint logs con filtros |
+| `src/pages/Auditoria.tsx` | Vista de logs inmutables con tabla, filtros y paginacion |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | Ruta `/auditoria` |
+| `src/components/Sidebar.tsx` | Item "Auditoria" con icono Shield |
+
+### Estado del frontend actualizado
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 16 (14 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 14 + catch-all 404 |
+| Nav items sidebar | 9 |
+
+### Pendiente para continuar
+
+- Fase 6 (restante): CambiarPassword + Logout real
+- Fase 7: Responsive, accesibilidad, testing, build produccion
+- **Solicitud a Javier:** implementar endpoint `GET /api/auditoria/logs/`
+
+---
+
 ## Registro de cambios por dia
 
 | Fecha | Que hice | Archivos tocados |
 |-------|----------|-----------------|
 | 2026-05-27 | Setup completo del ambiente local | Ninguno del repo (solo config local) |
 | 2026-05-27 | Responsive layout + dashboard + fix perfil usuario | MainLayout.tsx, Dashboard.tsx, App.tsx |
+| 2026-05-29 | Fase 1 (componentes UI + errores) + Fase 2 (detalle + filtros) | 9 archivos creados, 8 modificados |
+| 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
+| 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
+| 2026-05-31 | Fase 6 parcial: auditoria (pagina lista, endpoint pendiente en backend) | 2 archivos creados, 2 modificados |
 
 ---
 
