@@ -1,9 +1,9 @@
 /**
- * Lista de sesiones de encuesta — tabla paginada
+ * Lista de sesiones de encuesta — tabla paginada con filtros server-side
  */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Eye } from 'lucide-react';
+import { ClipboardList, Eye, X } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -18,6 +18,14 @@ const ESTADO_BADGE: Record<string, BadgeVariant> = {
   SUSPENDIDA:  'rojo',
   CANCELADA:   'rojo',
 };
+
+const ESTADOS_SESION = [
+  { value: '', label: 'Todos los estados' },
+  { value: 'COMPLETADA', label: 'Completada' },
+  { value: 'EN_PROGRESO', label: 'En progreso' },
+  { value: 'INICIADA', label: 'Iniciada' },
+  { value: 'SUSPENDIDA', label: 'Suspendida' },
+];
 
 function BarraProgreso({ valor }: { valor: number }) {
   const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
@@ -39,6 +47,9 @@ export default function EncuestasPage() {
   const [cargando, setCargando] = useState(true);
   const [error,    setError]    = useState('');
 
+  // Filtros
+  const [filtroEstado, setFiltroEstado] = useState('');
+
   const porPagina = 20;
   const totalPags = Math.ceil(total / porPagina);
 
@@ -46,7 +57,9 @@ export default function EncuestasPage() {
     setCargando(true);
     setError('');
     try {
-      const { data } = await encuestasApi.listar({ page: pag });
+      const params: Record<string, string | number> = { page: pag };
+      if (filtroEstado) params.estado = filtroEstado;
+      const { data } = await encuestasApi.listar(params);
       setSesiones(data.results);
       setTotal(data.count);
     } catch {
@@ -56,12 +69,42 @@ export default function EncuestasPage() {
     }
   }
 
-  useEffect(() => { cargar(pagina); }, [pagina]);
+  useEffect(() => { cargar(pagina); }, [pagina, filtroEstado]);
+
+  function handleEstadoChange(valor: string) {
+    setFiltroEstado(valor);
+    setPagina(1);
+  }
+
+  function limpiarFiltros() {
+    setFiltroEstado('');
+    setPagina(1);
+  }
+
+  const hayFiltros = !!filtroEstado;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
       <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
+
+      {/* Barra de filtros */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <select
+          value={filtroEstado}
+          onChange={(e) => handleEstadoChange(e.target.value)}
+          className="input w-full sm:w-52"
+        >
+          {ESTADOS_SESION.map((e) => (
+            <option key={e.value} value={e.value}>{e.label}</option>
+          ))}
+        </select>
+        {hayFiltros && (
+          <button onClick={limpiarFiltros} className="btn-secondary flex items-center gap-1 text-sm px-3">
+            <X size={14} /> Limpiar
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
@@ -97,8 +140,8 @@ export default function EncuestasPage() {
                       <td colSpan={7}>
                         <EmptyState
                           icon={ClipboardList}
-                          titulo="No hay encuestas registradas"
-                          descripcion="Las sesiones aparecerán aquí cuando se inicien desde la app móvil."
+                          titulo={hayFiltros ? 'Sin resultados para este filtro' : 'No hay encuestas registradas'}
+                          descripcion={hayFiltros ? 'Intenta con otro estado o limpia el filtro.' : 'Las sesiones aparecerán aquí cuando se inicien desde la app móvil.'}
                         />
                       </td>
                     </tr>

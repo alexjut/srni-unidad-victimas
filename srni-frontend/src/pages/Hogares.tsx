@@ -1,9 +1,9 @@
 /**
- * Lista de hogares — tabla paginada con filtros
+ * Lista de hogares — tabla paginada con filtros server-side
  */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Home, Eye } from 'lucide-react';
+import { Search, Home, Eye, X } from 'lucide-react';
 import { hogaresApi, type HogarResumen } from '@/api/hogares';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -16,6 +16,13 @@ const ESTADO_BADGE: Record<string, BadgeVariant> = {
   ARCHIVADO: 'gris',
 };
 
+const ESTADOS_HOGAR = [
+  { value: '', label: 'Todos los estados' },
+  { value: 'ACTIVO', label: 'Activo' },
+  { value: 'BORRADOR', label: 'Borrador' },
+  { value: 'ARCHIVADO', label: 'Archivado' },
+];
+
 export default function HogaresPage() {
   const navigate = useNavigate();
   const [hogares,  setHogares]  = useState<HogarResumen[]>([]);
@@ -24,6 +31,11 @@ export default function HogaresPage() {
   const [cargando, setCargando] = useState(true);
   const [error,    setError]    = useState('');
 
+  // Filtros
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [busquedaActiva, setBusquedaActiva] = useState('');
+
   const porPagina = 20;
   const totalPags = Math.ceil(total / porPagina);
 
@@ -31,7 +43,10 @@ export default function HogaresPage() {
     setCargando(true);
     setError('');
     try {
-      const { data } = await hogaresApi.listar({ page: pag });
+      const params: Record<string, string | number> = { page: pag };
+      if (filtroEstado) params.estado = filtroEstado;
+      if (busquedaActiva) params.busqueda = busquedaActiva;
+      const { data } = await hogaresApi.listar(params);
       setHogares(data.results);
       setTotal(data.count);
     } catch {
@@ -41,12 +56,65 @@ export default function HogaresPage() {
     }
   }
 
-  useEffect(() => { cargar(pagina); }, [pagina]);
+  useEffect(() => { cargar(pagina); }, [pagina, filtroEstado, busquedaActiva]);
+
+  function handleEstadoChange(valor: string) {
+    setFiltroEstado(valor);
+    setPagina(1);
+  }
+
+  function handleBuscar(e: React.FormEvent) {
+    e.preventDefault();
+    setBusquedaActiva(busqueda.trim());
+    setPagina(1);
+  }
+
+  function limpiarFiltros() {
+    setFiltroEstado('');
+    setBusqueda('');
+    setBusquedaActiva('');
+    setPagina(1);
+  }
+
+  const hayFiltros = !!filtroEstado || !!busquedaActiva;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
       <PageHeader titulo="Hogares" subtitulo={`${total} registro(s) en total`} />
+
+      {/* Barra de filtros */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <form onSubmit={handleBuscar} className="flex-1 flex gap-2">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por código de hogar..."
+              className="input pl-9"
+            />
+          </div>
+          <button type="submit" className="btn-primary text-sm px-4">
+            Buscar
+          </button>
+        </form>
+        <select
+          value={filtroEstado}
+          onChange={(e) => handleEstadoChange(e.target.value)}
+          className="input w-full sm:w-48"
+        >
+          {ESTADOS_HOGAR.map((e) => (
+            <option key={e.value} value={e.value}>{e.label}</option>
+          ))}
+        </select>
+        {hayFiltros && (
+          <button onClick={limpiarFiltros} className="btn-secondary flex items-center gap-1 text-sm px-3">
+            <X size={14} /> Limpiar
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
@@ -82,8 +150,8 @@ export default function HogaresPage() {
                       <td colSpan={7}>
                         <EmptyState
                           icon={Home}
-                          titulo="No hay hogares registrados"
-                          descripcion="Los hogares aparecerán aquí cuando se creen desde la app móvil."
+                          titulo={hayFiltros ? 'Sin resultados para estos filtros' : 'No hay hogares registrados'}
+                          descripcion={hayFiltros ? 'Intenta con otros filtros o limpia la búsqueda.' : 'Los hogares aparecerán aquí cuando se creen desde la app móvil.'}
                         />
                       </td>
                     </tr>

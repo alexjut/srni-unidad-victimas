@@ -71,17 +71,18 @@
 
 Basado en el plan de 7 fases definido para el frontend:
 
-### Fase 1 — Componentes base e infraestructura UI
-- [ ] Instalar dependencias: react-hot-toast, @tanstack/react-table, react-hook-form + zod, date-fns
-- [ ] Crear componentes UI reutilizables: Button, Input, Select, Table, Modal, Badge, Card, Spinner, EmptyState, Breadcrumb
+### Fase 1 — Componentes base e infraestructura UI — COMPLETADA 2026-05-29
+- [x] ~~Instalar dependencias: sonner, date-fns~~ (react-hook-form y zod pendientes para Fase 6)
+- [x] ~~Componentes UI: Badge, Spinner, EmptyState, Pagination, PageHeader~~ (los demas se crean cuando se necesiten)
 - [x] ~~Mejorar MainLayout: sidebar colapsable, breadcrumbs, indicador de usuario/rol, responsive~~ (drawer mobile + topbar hecho)
 - [x] ~~Fix perfil usuario al refrescar pagina~~ (RequireAuth carga perfil automaticamente)
-- [ ] Manejo global de errores: Error boundary, toasts en errores API, pagina 404
+- [x] ~~Manejo global de errores: Error boundary, toasts en errores API, pagina 404~~
 
-### Fase 2 — Vistas de detalle
-- [ ] HogarDetalle (`/hogares/:hogarId`) — datos + miembros + sesiones
-- [ ] SesionDetalle (`/encuestas/:sesionId`) — info + respuestas por capitulo
-- [ ] Filtros y busqueda en tablas existentes (Hogares, Encuestas)
+### Fase 2 — Vistas de detalle — COMPLETADA 2026-05-29
+- [x] ~~HogarDetalle (`/hogares/:id`) — datos + miembros + sesiones~~
+- [x] ~~SesionDetalle (`/encuestas/:id`) — info + respuestas + link a hogar~~
+- [x] ~~Filtros y busqueda en tablas existentes (Hogares: busqueda + estado, Encuestas: estado)~~
+- [x] ~~Filas clickeables + boton "Ver detalle" en Hogares y Encuestas~~
 
 ### Fase 3 — Busqueda de victimas
 - [ ] Pagina Victimas (`/victimas`) — formulario busqueda + resultado
@@ -142,12 +143,85 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 3 — 2026-05-29 | Fase 1 (bloques A+B) + Fase 2 completa
+
+### Actividades realizadas
+
+1. **Dependencias instaladas**
+   - `sonner` (v2.0.7) — toasts globales
+   - `date-fns` (v4.3.0) — formateo de fechas
+
+2. **Fase 1 — Componentes base e infraestructura**
+   - `ErrorBoundary.tsx` — captura errores React, UI amigable + detalle en DEV
+   - `NotFound.tsx` — pagina 404 con icono y boton volver
+   - `Spinner.tsx` — 3 tamaños (sm/md/lg), role="status" a11y
+   - `Badge.tsx` — 5 variantes (verde, azul, rojo, gris, naranja), tipo exportado
+   - `EmptyState.tsx` — icono + titulo + descripcion, aplicado en Hogares, Encuestas y Reportes
+   - `Pagination.tsx` — anterior/siguiente, se oculta si ≤1 pagina, reemplaza paginacion duplicada
+   - `PageHeader.tsx` — titulo + subtitulo + acciones, responsive
+   - Toasts automaticos en interceptor Axios (sin conexion, 500, 403)
+   - Toaster Sonner agregado en main.tsx
+
+3. **Fase 2 — Vistas de detalle**
+   - `HogarDetalle.tsx` — 4 InfoCards + datos hogar + tabla miembros + tabla sesiones clickeables
+   - `SesionDetalle.tsx` — 4 InfoCards + barra progreso + info sesion + tabla respuestas + link a hogar
+   - Rutas `/hogares/:id` y `/encuestas/:id` agregadas a App.tsx
+
+4. **Fase 2 — Tablas interactivas y filtros**
+   - Hogares: filas clickeables, boton "Ver detalle", filtro por estado, busqueda por codigo
+   - Encuestas: filas clickeables, boton "Ver detalle", filtro por estado
+   - EmptyState adaptativo (mensajes distintos con/sin filtros activos)
+   - Boton "Limpiar" cuando hay filtros activos
+
+5. **Tipos API actualizados con campos reales del backend**
+   - `hogares.ts`: HogarResumen, MiembroResumen, SesionAnidada, HogarDetalle (campos verificados contra serializers)
+   - `encuestas.ts`: SesionResumen, RespuestaEncuesta, SesionDetalle
+   - `codigo_hogar` marcado como opcional (pendiente que Javier lo agregue al serializer)
+
+6. **Datos de prueba variados en SQLite**
+   - Hogares: 3 ACTIVO, 2 BORRADOR, 1 ARCHIVADO (antes todos ACTIVO)
+   - Sesiones ya tenian variacion: 6 COMPLETADA, 4 EN_PROGRESO, 2 INICIADA, 3 SUSPENDIDA
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ErrorBoundary.tsx` | Error boundary React |
+| `src/components/ui/Spinner.tsx` | Spinner con 3 tamaños |
+| `src/components/ui/Badge.tsx` | Badge con 5 variantes |
+| `src/components/ui/EmptyState.tsx` | Estado vacio reutilizable |
+| `src/components/ui/Pagination.tsx` | Paginacion reutilizable |
+| `src/components/ui/PageHeader.tsx` | Header de pagina reutilizable |
+| `src/pages/NotFound.tsx` | Pagina 404 |
+| `src/pages/HogarDetalle.tsx` | Detalle de hogar |
+| `src/pages/SesionDetalle.tsx` | Detalle de sesion de encuesta |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/main.tsx` | Agrego ErrorBoundary + Toaster Sonner |
+| `src/App.tsx` | Rutas /hogares/:id y /encuestas/:id, catch-all → NotFound |
+| `src/api/client.ts` | Toasts automaticos en interceptor (sin conexion, 500, 403) |
+| `src/api/hogares.ts` | Tipos actualizados con campos reales, param busqueda |
+| `src/api/encuestas.ts` | SesionDetalle + RespuestaEncuesta, detalle con respuestas |
+| `src/pages/Hogares.tsx` | Filtros, busqueda, filas clickeables, boton ver detalle |
+| `src/pages/Encuestas.tsx` | Filtro estado, filas clickeables, boton ver detalle |
+| `src/pages/Reportes.tsx` | Badge + EmptyState + Pagination + PageHeader aplicados |
+
+### Nota para Javier
+- `codigo_hogar` no esta en HogarListSerializer ni HogarDetalleSerializer. Se usa `id.slice(0,8)` como fallback. Pendiente agregarlo.
+- No se modifico ningun archivo .py del backend. Solo se leyo/escribio la BD SQLite para variar datos de prueba.
+
+---
+
 ## Registro de cambios por dia
 
 | Fecha | Que hice | Archivos tocados |
 |-------|----------|-----------------|
 | 2026-05-27 | Setup completo del ambiente local | Ninguno del repo (solo config local) |
 | 2026-05-27 | Responsive layout + dashboard + fix perfil usuario | MainLayout.tsx, Dashboard.tsx, App.tsx |
+| 2026-05-29 | Fase 1 (componentes UI + errores) + Fase 2 (detalle + filtros) | 9 archivos creados, 8 modificados |
 
 ---
 
