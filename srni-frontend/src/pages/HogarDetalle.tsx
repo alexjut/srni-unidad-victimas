@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Home, Users, ClipboardList, Calendar, MapPin,
 } from 'lucide-react';
@@ -8,6 +8,9 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import PageHeader from '@/components/ui/PageHeader';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 const ESTADO_HOGAR: Record<string, BadgeVariant> = {
   ACTIVO: 'verde',
@@ -49,25 +52,28 @@ export default function HogarDetallePage() {
   if (error || !hogar) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 text-sm">
-          {error || 'Hogar no encontrado.'}
-        </div>
-        <button onClick={() => navigate('/hogares')} className="btn-secondary mt-4 text-sm">
+        <Alert variant="error">{error || 'Hogar no encontrado.'}</Alert>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/hogares')} className="mt-4">
           Volver a Hogares
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <Breadcrumb items={[
+        { label: 'Inicio', to: '/dashboard' },
+        { label: 'Hogares', to: '/hogares' },
+        { label: hogar.codigo_hogar ?? hogar.id.slice(0, 8) },
+      ]} />
       <PageHeader
         titulo={hogar.codigo_hogar ?? `Hogar ${hogar.id.slice(0, 8)}`}
         subtitulo={hogar.municipio_nombre ?? 'Sin municipio'}
         acciones={
-          <button onClick={() => navigate('/hogares')} className="btn-secondary flex items-center gap-2 text-sm">
-            <ArrowLeft size={16} /> Volver
-          </button>
+          <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate('/hogares')}>
+            Volver
+          </Button>
         }
       />
 

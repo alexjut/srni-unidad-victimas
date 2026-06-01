@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, ClipboardList, Calendar, MapPin, User, FileText,
+  ArrowLeft, ClipboardList, Calendar, MapPin, FileText,
   BarChart3,
 } from 'lucide-react';
 import { encuestasApi, type SesionDetalle } from '@/api/encuestas';
@@ -9,6 +9,9 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
 import PageHeader from '@/components/ui/PageHeader';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA: 'verde',
@@ -56,25 +59,28 @@ export default function SesionDetallePage() {
   if (error || !sesion) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
-        <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 text-sm">
-          {error || 'Sesión no encontrada.'}
-        </div>
-        <button onClick={() => navigate('/encuestas')} className="btn-secondary mt-4 text-sm">
+        <Alert variant="error">{error || 'Sesión no encontrada.'}</Alert>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/encuestas')} className="mt-4">
           Volver a Encuestas
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <Breadcrumb items={[
+        { label: 'Inicio', to: '/dashboard' },
+        { label: 'Encuestas', to: '/encuestas' },
+        { label: sesion.instrumento_nombre ?? 'Sesión' },
+      ]} />
       <PageHeader
         titulo={sesion.instrumento_nombre ?? 'Sesión de encuesta'}
         subtitulo={`${sesion.instrumento_codigo ?? ''} ${sesion.instrumento_numero ? `· ${sesion.instrumento_numero}` : ''}`}
         acciones={
-          <button onClick={() => navigate('/encuestas')} className="btn-secondary flex items-center gap-2 text-sm">
-            <ArrowLeft size={16} /> Volver
-          </button>
+          <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate('/encuestas')}>
+            Volver
+          </Button>
         }
       />
 
@@ -122,12 +128,9 @@ export default function SesionDetallePage() {
 
       {/* Botón ir al hogar */}
       <div className="card mb-6">
-        <button
-          onClick={() => navigate(`/hogares/${sesion.hogar}`)}
-          className="inline-flex items-center gap-2 text-sm font-semibold bg-gov-azul text-white px-4 py-2 rounded-md hover:bg-gov-azulOscuro transition-colors"
-        >
-          <MapPin size={16} /> Ver hogar asociado
-        </button>
+        <Button icon={MapPin} onClick={() => navigate(`/hogares/${sesion.hogar}`)}>
+          Ver hogar asociado
+        </Button>
       </div>
 
       {/* Tabla de respuestas */}

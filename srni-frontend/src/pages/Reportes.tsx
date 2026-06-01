@@ -8,6 +8,8 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
 import PageHeader from '@/components/ui/PageHeader';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -72,22 +74,13 @@ export default function ReportesPage() {
         titulo="Mis reportes"
         subtitulo="Producción y estadísticas personales"
         acciones={
-          <button
-            onClick={exportarCsv}
-            disabled={descargando}
-            className="btn-primary flex items-center gap-2 text-sm"
-          >
-            <Download size={16} />
+          <Button icon={Download} loading={descargando} onClick={exportarCsv} size="sm">
             {descargando ? 'Descargando…' : 'Exportar CSV'}
-          </button>
+          </Button>
         }
       />
 
-      {error && (
-        <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
       {/* Resumen */}
       {resumen && (
