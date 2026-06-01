@@ -13,6 +13,7 @@ import VictimaDetallePage from '@/pages/VictimaDetalle';
 import SupervisionPage from '@/pages/Supervision';
 import HogarDetallePage from '@/pages/HogarDetalle';
 import SesionDetallePage from '@/pages/SesionDetalle';
+import InstrumentosPage from '@/pages/Instrumentos';
 import NotFound from '@/pages/NotFound';
 import MainLayout from '@/components/MainLayout';
 
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="encuestas/:id" element={<SesionDetallePage />} />
         <Route path="reportes"   element={<ReportesPage />} />
         <Route path="supervision" element={<SupervisionPage />} />
+        <Route path="instrumentos" element={<InstrumentosPage />} />
       </Route>
 
       {/* Ruta catch-all → 404 */}
