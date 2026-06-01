@@ -71,10 +71,11 @@
 
 Basado en el plan de 7 fases definido para el frontend:
 
-### Fase 1 — Componentes base e infraestructura UI — COMPLETADA 2026-05-29
+### Fase 1 — Componentes base e infraestructura UI — COMPLETADA 2026-05-31
 - [x] ~~Instalar dependencias: sonner, date-fns~~ (react-hook-form y zod pendientes para Fase 6)
-- [x] ~~Componentes UI: Badge, Spinner, EmptyState, Pagination, PageHeader~~ (los demas se crean cuando se necesiten)
-- [x] ~~Mejorar MainLayout: sidebar colapsable, breadcrumbs, indicador de usuario/rol, responsive~~ (drawer mobile + topbar hecho)
+- [x] ~~13 componentes UI: Button, Input, Select, Table, Modal, Card, Alert, Breadcrumb, Badge, Spinner, EmptyState, Pagination, PageHeader~~
+- [x] ~~MainLayout: sidebar independiente, header desktop, indicador activo mejorado, drawer mobile~~
+- [x] ~~Refactor 6 paginas: Dashboard, Hogares, Encuestas, Reportes, HogarDetalle, SesionDetalle~~
 - [x] ~~Fix perfil usuario al refrescar pagina~~ (RequireAuth carga perfil automaticamente)
 - [x] ~~Manejo global de errores: Error boundary, toasts en errores API, pagina 404~~
 
@@ -215,6 +216,68 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 4 — 2026-05-31 | Fase 1 completada — componentes UI + refactor + layout
+
+### Actividades realizadas
+
+1. **8 componentes UI nuevos** (`src/components/ui/`)
+   - `Button.tsx` — 4 variantes (primary/secondary/danger/ghost), 3 tamaños, loading spinner, icono
+   - `Input.tsx` — forwardRef, label integrado, error, icono izquierdo. Listo para react-hook-form
+   - `Select.tsx` — forwardRef, label, error, opciones tipadas con placeholder
+   - `Table.tsx` — generico `<T>`, columnas declarativas, skeleton, empty state, paginacion, filas clickeables
+   - `Modal.tsx` — overlay, cierre con Escape/click fuera, focus trap, bloqueo scroll body, slot acciones
+   - `Card.tsx` — tarjeta metrica reutilizable (icono + valor + label)
+   - `Alert.tsx` — 4 variantes (error/exito/info/warning) con icono automatico por variante
+   - `Breadcrumb.tsx` — navegacion jerarquica con links y aria-label
+
+2. **Refactor de 6 paginas existentes para usar componentes UI**
+   - Dashboard: `MetricCard` inline → `Card`, error div → `Alert`, boton → `Button`
+   - Hogares: tabla manual (~60 lineas) → `Table` con columnas declarativas, error → `Alert`, botones → `Button`
+   - Encuestas: misma reduccion con `Table`, error → `Alert`, botones → `Button`
+   - Reportes: error → `Alert`, boton exportar → `Button` con loading
+   - HogarDetalle: error → `Alert`, botones → `Button`, agregado `Breadcrumb`
+   - SesionDetalle: error → `Alert`, botones → `Button`, agregado `Breadcrumb`
+
+3. **Layout mejorado**
+   - Header fijo en desktop: barra blanca con seccion actual + nombre usuario + perfil + avatar con inicial
+   - Indicador activo en sidebar: cambiado de `bg-white/15` a `bg-gov-azul shadow-sm` (mucho mas visible)
+   - Sidebar extraido a componente independiente (`src/components/Sidebar.tsx`)
+   - MainLayout simplificado: de ~177 lineas a ~100
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ui/Button.tsx` | Boton reutilizable con variantes, tamaños, loading |
+| `src/components/ui/Input.tsx` | Input con label, error, icono |
+| `src/components/ui/Select.tsx` | Dropdown con label, error, opciones |
+| `src/components/ui/Table.tsx` | Tabla generica con skeleton, empty state, paginacion |
+| `src/components/ui/Modal.tsx` | Dialog reutilizable |
+| `src/components/ui/Card.tsx` | Tarjeta metrica |
+| `src/components/ui/Alert.tsx` | Alerta con 4 variantes |
+| `src/components/ui/Breadcrumb.tsx` | Navegacion jerarquica |
+| `src/components/Sidebar.tsx` | Sidebar independiente (extraido de MainLayout) |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/MainLayout.tsx` | Header desktop, sidebar independiente, simplificado |
+| `src/pages/Dashboard.tsx` | Usa Card, Button, Alert |
+| `src/pages/Hogares.tsx` | Usa Table, Button, Alert |
+| `src/pages/Encuestas.tsx` | Usa Table, Button, Alert |
+| `src/pages/Reportes.tsx` | Usa Button, Alert |
+| `src/pages/HogarDetalle.tsx` | Usa Button, Alert, Breadcrumb |
+| `src/pages/SesionDetalle.tsx` | Usa Button, Alert, Breadcrumb |
+
+### Estado de la Fase 1
+
+**COMPLETADA.** Todos los componentes UI del plan estan creados (13 total). Las 6 paginas existentes fueron refactorizadas para usarlos. El layout tiene header desktop y sidebar con indicador activo mejorado.
+
+### Proximo paso: Fase 3 — Busqueda de victimas
+
+---
+
 ## Registro de cambios por dia
 
 | Fecha | Que hice | Archivos tocados |
@@ -222,6 +285,7 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-27 | Setup completo del ambiente local | Ninguno del repo (solo config local) |
 | 2026-05-27 | Responsive layout + dashboard + fix perfil usuario | MainLayout.tsx, Dashboard.tsx, App.tsx |
 | 2026-05-29 | Fase 1 (componentes UI + errores) + Fase 2 (detalle + filtros) | 9 archivos creados, 8 modificados |
+| 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
 
 ---
 
