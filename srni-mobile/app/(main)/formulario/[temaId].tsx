@@ -107,6 +107,8 @@ export default function CapituloScreen() {
     if (!temaId) return;
 
     (async () => {
+      console.log('[cap useEffect] params:', { temaId, borradorIdParam, sesionServerId, instrumentoId, hogarId });
+
       // Sprint 18 F1B: TODO viene de memoria (bundle), no SQLite.
       const caps = instrumentos.getCapitulos();
       const cap = caps.find((c) => c.id === temaId);
@@ -123,37 +125,48 @@ export default function CapituloScreen() {
       // ── Resolver borrador ─────────────────────────────────────────────────
       const meta = instrumentos.getMeta();
       const instrId = instrumentoId ?? meta?.instrumento_id ?? '';
+      console.log('[cap useEffect] meta:', { meta_codigo: meta?.perfil_codigo, instrId });
 
       if (borradorIdParam) {
         // Ya tenemos un borrador local — cargar sus respuestas (clave compuesta)
+        console.log('[cap useEffect] usando borradorIdParam:', borradorIdParam);
         setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borradorIdParam));
         setBorradorId(borradorIdParam);
 
       } else if (sesionServerId) {
         // Buscar si ya existe un borrador vinculado a esta sesión
         const existente = await borradoresDao.findBySesionId(sesionServerId);
+        console.log('[cap useEffect] findBySesionId:', { sesionServerId, existente: existente ? existente.id : null });
 
         if (existente) {
           setBorradorId(existente.id);
           setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(existente.id));
         } else {
           // Crear nuevo borrador y vincularlo
-          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
-          await borradoresDao.vincularSesionServidor(nuevo.id, sesionServerId);
-          setBorradorId(nuevo.id);
+          let nuevoBorradorId: string | null = null;
+          try {
+            const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+            console.log('[cap useEffect] crearBorrador OK:', { id: nuevo.id, instrId, hogarId });
+            await borradoresDao.vincularSesionServidor(nuevo.id, sesionServerId);
+            console.log('[cap useEffect] vincularSesionServidor OK:', { borrador: nuevo.id, sesion: sesionServerId });
+            setBorradorId(nuevo.id);
+            nuevoBorradorId = nuevo.id;
+          } catch (e) {
+            console.error('[cap useEffect] FALLO al crear/vincular borrador:', e);
+          }
 
           // Si hay conexión, descargar respuestas previas del servidor
-          if (estaOnline) {
+          if (estaOnline && nuevoBorradorId) {
             try {
               const { data: previas } = await encuestasApi.getRespuestas(sesionServerId);
               for (const r of previas) {
                 if (r.valor) {
                   // Sprint 21: r.miembro puede venir del backend; usar para indexar
                   const mid = (r as any).miembro ?? null;
-                  await borradoresDao.upsertRespuesta(nuevo.id, r.pregunta, r.valor, mid);
+                  await borradoresDao.upsertRespuesta(nuevoBorradorId, r.pregunta, r.valor, mid);
                 }
               }
-              setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(nuevo.id));
+              setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(nuevoBorradorId));
             } catch { /* sin red — empieza en blanco */ }
           }
         }
@@ -325,9 +338,14 @@ export default function CapituloScreen() {
     setRespuestasState((prev) => ({ ...prev, [clave]: valor }));
 
     const bid = borradorId ?? borradorIdParam;
-    if (!bid) return;
+    if (!bid) {
+      console.warn('[setRespuesta] borradorId VACÍO — la respuesta NO se guarda en SQLite', { preguntaId, valor: valor.slice(0,30) });
+      return;
+    }
 
-    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId).catch(() => {});
+    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId)
+      .then(() => console.log('[setRespuesta] guardada:', { bid, preguntaId, miembroId }))
+      .catch((e) => console.error('[setRespuesta] ERROR upsertRespuesta:', e));
 
     const borrador = await borradoresDao.getBorrador(bid);
     if (borrador) {
@@ -393,7 +411,34 @@ export default function CapituloScreen() {
     }
 
     await refrescarContadores();
-    router.back();
+    volverAListaCapitulos();
+  }
+
+  // Sprint 21 fix — navegación explícita a la lista de capítulos.
+  // Antes usábamos router.back() que con los router.replace() del flujo
+  // cosido (ubicacion-atencion → hub) podía caer al home en lugar de la
+  // lista de capítulos. Ahora pasamos pathname + params explícitos.
+  function volverAListaCapitulos() {
+    if (sesionServerId) {
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          sesionServerId,
+          ...(instrumentoId ? { instrumentoId } : {}),
+          ...(hogarId ? { hogarId } : {}),
+        },
+      });
+    } else {
+      // Fallback: si no tenemos sesionServerId, volver al hub del hogar
+      if (hogarId) {
+        router.replace({
+          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+          params: { hogarId },
+        });
+      } else {
+        router.back();
+      }
+    }
   }
 
   async function finalizarCapitulo() {
@@ -448,7 +493,7 @@ export default function CapituloScreen() {
       <GovHeader
         title={capituloNombre || 'Capítulo'}
         subtitle={`${totalVisible} pregunta${totalVisible !== 1 ? 's' : ''}`}
-        onBack={() => router.back()}
+        onBack={volverAListaCapitulos}
         right={
           <View style={styles.headerActions}>
             {!estaOnline && (
@@ -775,16 +820,19 @@ function PreguntaItem({
         />
       )}
 
-      {/* Controles por tipo */}
+      {/* Controles por tipo — Sprint 21 fix UX: estilo consistente GOV.CO */}
       {(esTexto || esNumerico) && (
         <TextInput
+          mode="outlined"
           value={valor}
           onChangeText={onChange}
           keyboardType={esNumerico ? 'numeric' : 'default'}
           multiline={pregunta.tipo === 'TEXTO_LARGO'}
-          numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 3 : 1}
+          numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 4 : 1}
+          placeholder={esNumerico ? 'Escribe el número' : 'Escribe la respuesta'}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
           style={styles.inputTexto}
-          dense
         />
       )}
 
@@ -798,11 +846,31 @@ function PreguntaItem({
       )}
 
       {esBoolean && (
-        <RadioButton.Group value={leerBooleanGuardado(valor)} onValueChange={onChange}>
-          {BOOLEAN_OPCIONES.map((o) => (
-            <RadioButton.Item key={o.valor} label={o.etiqueta} value={o.valor} />
-          ))}
-        </RadioButton.Group>
+        <View style={styles.opcionesWrap}>
+          {BOOLEAN_OPCIONES.map((o) => {
+            const seleccionado = leerBooleanGuardado(valor) === o.valor;
+            return (
+              <Pressable
+                key={o.valor}
+                onPress={() => onChange(o.valor)}
+                style={({ pressed }) => [
+                  styles.opcionItem,
+                  seleccionado && styles.opcionItemActiva,
+                  pressed && { opacity: 0.85 },
+                ]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: seleccionado }}
+              >
+                <View style={[styles.opcionRadio, seleccionado && styles.opcionRadioActivo]}>
+                  {seleccionado && <View style={styles.opcionRadioInner} />}
+                </View>
+                <Text style={[styles.opcionTxt, seleccionado && styles.opcionTxtActivo]}>
+                  {o.etiqueta}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       )}
 
       {esRadio && (
@@ -811,11 +879,31 @@ function PreguntaItem({
             ⚠ Esta pregunta no tiene opciones cargadas — contacte al administrador.
           </Text>
         ) : (
-          <RadioButton.Group value={valor} onValueChange={onChange}>
-            {opciones.map((o) => (
-              <RadioButton.Item key={o.id} label={o.etiqueta} value={o.valor} />
-            ))}
-          </RadioButton.Group>
+          <View style={styles.opcionesWrap}>
+            {opciones.map((o) => {
+              const seleccionado = valor === o.valor;
+              return (
+                <Pressable
+                  key={o.id}
+                  onPress={() => onChange(o.valor)}
+                  style={({ pressed }) => [
+                    styles.opcionItem,
+                    seleccionado && styles.opcionItemActiva,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: seleccionado }}
+                >
+                  <View style={[styles.opcionRadio, seleccionado && styles.opcionRadioActivo]}>
+                    {seleccionado && <View style={styles.opcionRadioInner} />}
+                  </View>
+                  <Text style={[styles.opcionTxt, seleccionado && styles.opcionTxtActivo]}>
+                    {o.etiqueta}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         )
       )}
 
@@ -842,24 +930,39 @@ function PreguntaItem({
                 Selecciona todas las que apliquen
                 {seleccionados.length > 0 && ` (${seleccionados.length} seleccionada${seleccionados.length !== 1 ? 's' : ''})`}
               </Text>
-              {opciones.map((o) => {
-                const marcado = seleccionados.includes(o.valor);
-                return (
-                  <Checkbox.Item
-                    key={o.id}
-                    label={o.etiqueta}
-                    status={marcado ? 'checked' : 'unchecked'}
-                    onPress={() => {
-                      const sel = [...seleccionados];
-                      const idx = sel.indexOf(o.valor);
-                      if (idx >= 0) sel.splice(idx, 1);
-                      else sel.push(o.valor);
-                      // Sprint 17: guardar como JSON (alineado con backend)
-                      onChange(sel.length > 0 ? JSON.stringify(sel) : '');
-                    }}
-                  />
-                );
-              })}
+              <View style={styles.opcionesWrap}>
+                {opciones.map((o) => {
+                  const marcado = seleccionados.includes(o.valor);
+                  return (
+                    <Pressable
+                      key={o.id}
+                      onPress={() => {
+                        const sel = [...seleccionados];
+                        const idx = sel.indexOf(o.valor);
+                        if (idx >= 0) sel.splice(idx, 1);
+                        else sel.push(o.valor);
+                        onChange(sel.length > 0 ? JSON.stringify(sel) : '');
+                      }}
+                      style={({ pressed }) => [
+                        styles.opcionItem,
+                        marcado && styles.opcionItemActiva,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: marcado }}
+                    >
+                      <View style={[styles.opcionCheck, marcado && styles.opcionCheckActivo]}>
+                        {marcado && (
+                          <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
+                        )}
+                      </View>
+                      <Text style={[styles.opcionTxt, marcado && styles.opcionTxtActivo]}>
+                        {o.etiqueta}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           );
         })()
@@ -1036,7 +1139,7 @@ const styles = StyleSheet.create({
   codigoTxt: { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace' },
   textoPregunta: { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: SPACING.sm },
   ayuda: { ...FONT.small, color: GOV.textoS, marginBottom: SPACING.sm },
-  inputTexto: { backgroundColor: GOV.fondoApp },
+  inputTexto: { backgroundColor: GOV.superficie, marginTop: 2 },
   multiHint: {
     ...FONT.caption,
     color: GOV.azul,
@@ -1044,6 +1147,61 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
     fontStyle: 'italic',
   },
+
+  // Sprint 21 fix UX — opciones como tarjetas tocables (RADIO/LISTA/BOOLEAN/MULTIPLE)
+  opcionesWrap: {
+    gap: SPACING.xs,
+    marginTop: 2,
+  },
+  opcionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+  },
+  opcionItemActiva: {
+    borderColor: GOV.azul,
+    backgroundColor: GOV.azulTenue,
+    borderWidth: 2,
+  },
+  opcionRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: GOV.borde,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: GOV.superficie,
+  },
+  opcionRadioActivo: { borderColor: GOV.azul },
+  opcionRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: GOV.azul,
+  },
+  opcionCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: GOV.borde,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: GOV.superficie,
+  },
+  opcionCheckActivo: {
+    borderColor: GOV.azul,
+    backgroundColor: GOV.azul,
+  },
+  opcionTxt: { ...FONT.body, color: GOV.textoP, flex: 1 },
+  opcionTxtActivo: { color: GOV.azulOscuro, fontWeight: '600' },
   sinOpciones: {
     ...FONT.small,
     color: GOV.naranja,

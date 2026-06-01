@@ -57,7 +57,7 @@ export default function ConsentimientoIAScreen() {
         <Text style={styles.parrafo}>
           El asistente de voz utiliza inteligencia artificial (Google Gemini) para
           interpretar sus respuestas orales y sugerir los valores correspondientes
-          en el formulario PAARI.
+          en el formulario de caracterización.
         </Text>
 
         <Divider style={styles.divisor} />

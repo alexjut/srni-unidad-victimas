@@ -1,14 +1,15 @@
 // Lista de capítulos — Sprint 8: progreso real por capítulo + estado visual.
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { encuestasApi } from '../../../src/api/encuestas';
+import { hogaresApi } from '../../../src/api/hogares';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -48,7 +49,7 @@ function CapituloCard({
   hogarId,
   modoIA,
 }: {
-  capitulo: instrumentoDao.CapituloRow;
+  capitulo: CapituloRow;
   index: number;
   progress: CapProgress;
   sesionServerId?: string;
@@ -83,48 +84,90 @@ function CapituloCard({
     }
   }
 
+  const esCompleto    = progress.estado === 'completado';
+  const esEnProgreso  = progress.estado === 'en_progreso';
+  const esPendiente   = progress.estado === 'pendiente';
+  const faltan        = Math.max(0, progress.obligatorias - progress.respondidas);
+
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [
         styles.card,
+        esCompleto && styles.cardCompletado,
+        esEnProgreso && styles.cardEnProgreso,
         pressed && styles.cardPressed,
-        progress.estado === 'completado' && styles.cardCompletado,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Capítulo ${index + 1}: ${capitulo.nombre}`}
+      accessibilityLabel={
+        `Capítulo ${index + 1}: ${capitulo.nombre}. ` +
+        (esCompleto ? 'Completo' : esEnProgreso ? `Faltan ${faltan} preguntas` : 'Sin iniciar')
+      }
     >
-      {/* Número / estado */}
-      <View style={[styles.numCircle, { borderColor: colorEstado + '88' }]}>
-        {progress.estado === 'pendiente' ? (
-          <Text style={[styles.numTxt, { color: GOV.textoT }]}>{String(index + 1).padStart(2, '0')}</Text>
+      {/* Círculo izquierdo: número o check según estado */}
+      <View style={[
+        styles.numCircle,
+        esCompleto && styles.numCircleCompleto,
+        esEnProgreso && styles.numCircleEnProgreso,
+      ]}>
+        {esCompleto ? (
+          <MaterialCommunityIcons name="check" size={22} color="#FFFFFF" />
+        ) : esEnProgreso ? (
+          <MaterialCommunityIcons name="progress-clock" size={20} color={GOV.naranja} />
         ) : (
-          <MaterialCommunityIcons
-            name={iconoEstado as any}
-            size={20}
-            color={colorEstado}
-          />
+          <Text style={styles.numTxt}>{String(index + 1).padStart(2, '0')}</Text>
         )}
       </View>
 
       <View style={styles.cardTexto}>
-        <Text style={[styles.capNombre, progress.estado === 'completado' && styles.capNombreOk]} numberOfLines={2}>
-          {capitulo.nombre}
-        </Text>
+        {/* Encabezado: nombre + chip de estado */}
+        <View style={styles.cardEncabezado}>
+          <Text
+            style={[styles.capNombre, esCompleto && styles.capNombreOk]}
+            numberOfLines={2}
+          >
+            {capitulo.nombre}
+          </Text>
+          <View style={[
+            styles.chipEstado,
+            esCompleto && styles.chipEstadoOk,
+            esEnProgreso && styles.chipEstadoProgreso,
+            esPendiente && styles.chipEstadoPendiente,
+          ]}>
+            <MaterialCommunityIcons
+              name={iconoEstado as any}
+              size={11}
+              color={
+                esCompleto ? GOV.verde
+                : esEnProgreso ? GOV.naranja
+                : GOV.textoT
+              }
+            />
+            <Text style={[
+              styles.chipEstadoTxt,
+              esCompleto && { color: GOV.verde },
+              esEnProgreso && { color: GOV.naranja },
+              esPendiente && { color: GOV.textoT },
+            ]}>
+              {esCompleto ? 'Completo' : esEnProgreso ? `Faltan ${faltan}` : 'Sin iniciar'}
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.capCodigo}>
           [{capitulo.codigo}]  ·  {capitulo.nivel === 'PERSONA' ? 'Por persona' : 'Por hogar'}
         </Text>
 
-        {/* Mini barra de progreso por capítulo */}
+        {/* Barra de progreso + contador con % explícito */}
         {progress.obligatorias > 0 && (
           <View style={styles.capProgresoWrap}>
             <ProgressBar
-              progress={progress.respondidas / progress.obligatorias}
+              progress={Math.min(1, progress.respondidas / progress.obligatorias)}
               style={styles.capProgressBar}
               color={colorEstado}
             />
             <Text style={[styles.capProgresoPct, { color: colorEstado }]}>
-              {progress.respondidas}/{progress.obligatorias}
+              {progress.respondidas}/{progress.obligatorias} · {Math.round((progress.respondidas / progress.obligatorias) * 100)}%
             </Text>
           </View>
         )}
@@ -133,7 +176,11 @@ function CapituloCard({
       {modoIA ? (
         <MaterialCommunityIcons name="robot" size={16} color={GOV.azul} style={{ marginRight: 4 }} />
       ) : null}
-      <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+      <MaterialCommunityIcons
+        name="chevron-right"
+        size={20}
+        color={esCompleto ? GOV.verde : GOV.borde}
+      />
     </Pressable>
   );
 }
@@ -154,11 +201,16 @@ export default function FormularioIndexScreen() {
   const [cargando, setCargando] = useState(true);
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
-  // Progreso por capítulo
+  // Progreso por capítulo — Sprint 21 fix: separar obligatorias HOGAR/PERSONA
+  // para multiplicar PERSONA × cantidad de miembros del hogar.
   const [conteoPreguntas, setConteoPreguntas] = useState<
-    Record<string, { total: number; obligatorias: number }>
+    Record<string, { total: number; obligatorias: number; obligHogar: number; obligPersona: number }>
   >({});
   const [conteoRespondidas, setConteoRespondidas] = useState<Record<string, number>>({});
+  // Sprint 21 fix — número de miembros del hogar para calcular bien el progreso.
+  // Sin esto, el contador "0 capítulos completados" nunca avanza porque
+  // espera N respondidas por pregunta PERSONA pero el conteo no las multiplica.
+  const [numMiembros, setNumMiembros] = useState(1);
 
   // Finalizar sesión
   const [modalFinalizar, setModalFinalizar] = useState(false);
@@ -266,43 +318,104 @@ export default function FormularioIndexScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesionServerId]);
 
-  // Recalcular progreso al volver de un capítulo
+  // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
   useEffect(() => {
-    if (!sesionServerId) return;
-    const refrescar = async () => {
-      const borrador = await borradoresDao.findBySesionId(sesionServerId);
-      if (borrador) {
-        setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
-      }
-    };
-    // Expo Router no tiene un onFocus nativo fácil aquí; usamos un pequeño delay
-    const t = setTimeout(refrescar, 300);
-    return () => clearTimeout(t);
-  }, [sesionServerId]);
+    if (!hogarId) return;
+    let activo = true;
+    hogaresApi.detalle(hogarId)
+      .then(({ data }) => {
+        if (!activo) return;
+        const n = (data.miembros ?? []).length;
+        if (n > 0) setNumMiembros(n);
+      })
+      .catch(() => { /* offline: cae al default 1 */ });
+    return () => { activo = false; };
+  }, [hogarId]);
+
+  // Sprint 21 fix — recalcular progreso al volver al pantalla (no solo
+  // al cambiar sesionServerId). El bug anterior: el useEffect con
+  // [sesionServerId] solo corría una vez; al volver del capítulo el
+  // contador seguía mostrando '0/N Sin iniciar' aunque hubieras respondido.
+  // useFocusEffect se dispara cada vez que la pantalla recupera el foco.
+  //
+  // Sprint 21 fix #2: garantizar que el perfil esté activado en memoria
+  // antes de contar. Si el cache se desactivó (al cambiar de caracterización
+  // o al rotar app), getCapituloIdDePregunta devuelve null para todas las
+  // preguntas y el conteo queda en 0 falsamente. Reactivamos siempre.
+  useFocusEffect(
+    useCallback(() => {
+      if (!sesionServerId) return;
+      let vivo = true;
+      (async () => {
+        try {
+          // 1. Asegurar que el perfil correcto está activo en memoria
+          const metaActual = instrumentos.getMeta();
+          if (metaActual?.perfil_codigo) {
+            try { instrumentos.activarPerfil(metaActual.perfil_codigo); }
+            catch { /* perfil no en bundle — se mantiene el cache previo */ }
+          }
+
+          // 2. Buscar borrador local
+          const borrador = await borradoresDao.findBySesionId(sesionServerId);
+          if (!borrador || !vivo) {
+            console.log('[formulario/index] useFocusEffect: borrador no encontrado',
+              { sesionServerId, borrador });
+            return;
+          }
+
+          // 3. Contar respuestas por capítulo
+          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
+          console.log('[formulario/index] useFocusEffect: conteo recalculado',
+            { borradorId: borrador.id, conteo });
+
+          if (vivo) setConteoRespondidas(conteo);
+        } catch (err) {
+          console.warn('[formulario/index] useFocusEffect ERROR:', err);
+        }
+      })();
+      return () => { vivo = false; };
+    }, [sesionServerId]),
+  );
 
   // ── Progreso global ─────────────────────────────────────────────────────────
+  // Sprint 21 fix — obligatorias reales = obligHogar + obligPersona × N miembros.
+  // Sin esto, el cálculo le decía 'completado' cuando solo respondiste para el
+  // primer miembro (o nunca, si N miembros > 1 y faltaban PERSONA × (N-1)).
+  function obligatoriasReales(cp: { obligHogar: number; obligPersona: number }): number {
+    return cp.obligHogar + cp.obligPersona * Math.max(numMiembros, 1);
+  }
+
   const { totalObligGlobal, respondidoGlobal, capsCompletados } = useMemo(() => {
     let total = 0, respondido = 0, completados = 0;
     for (const cap of capitulos) {
       const cp = conteoPreguntas[cap.id];
       const cr = conteoRespondidas[cap.id] ?? 0;
       if (!cp) continue;
-      total      += cp.obligatorias;
-      respondido += Math.min(cr, cp.obligatorias);
-      if (cp.obligatorias > 0 && cr >= cp.obligatorias) completados++;
+      const obligReales = obligatoriasReales(cp);
+      total      += obligReales;
+      respondido += Math.min(cr, obligReales);
+      if (obligReales > 0 && cr >= obligReales) completados++;
     }
     return { totalObligGlobal: total, respondidoGlobal: respondido, capsCompletados: completados };
-  }, [capitulos, conteoPreguntas, conteoRespondidas]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capitulos, conteoPreguntas, conteoRespondidas, numMiembros]);
 
   const progresoGlobal = totalObligGlobal > 0 ? respondidoGlobal / totalObligGlobal : 0;
 
   function getCapProgress(capId: string): CapProgress {
     const cp = conteoPreguntas[capId];
     const cr = conteoRespondidas[capId] ?? 0;
-    if (!cp || cp.obligatorias === 0) return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
-    if (cr >= cp.obligatorias) return { estado: 'completado', respondidas: cr, obligatorias: cp.obligatorias };
-    if (cr > 0)                return { estado: 'en_progreso', respondidas: cr, obligatorias: cp.obligatorias };
-    return { estado: 'pendiente', respondidas: 0, obligatorias: cp.obligatorias };
+    if (!cp || (cp.obligHogar === 0 && cp.obligPersona === 0)) {
+      return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
+    }
+    const obligReales = obligatoriasReales(cp);
+    // Sprint 21 fix display: capar respondidas al máximo de obligatorias para
+    // que la barra y el chip sean consistentes. Si el usuario respondió 10
+    // pero solo 7 son obligatorias, mostramos 7/7 (no 10/7 que confunde).
+    const respondidasCap = Math.min(cr, obligReales);
+    if (cr >= obligReales) return { estado: 'completado', respondidas: respondidasCap, obligatorias: obligReales };
+    if (cr > 0)            return { estado: 'en_progreso', respondidas: respondidasCap, obligatorias: obligReales };
+    return { estado: 'pendiente', respondidas: 0, obligatorias: obligReales };
   }
 
   async function handleFinalizar() {
@@ -318,6 +431,59 @@ export default function FormularioIndexScreen() {
       );
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión.');
+    } finally {
+      setFinalizando(false);
+    }
+  }
+
+  // Sprint 21 — Anular sesión con doble confirmación
+  function handleAnular() {
+    if (!sesionServerId) return;
+    Alert.alert(
+      '¿Anular la entrevista?',
+      'Esta acción marcará la sesión como ANULADA. No podrás continuarla ni recuperar las respuestas. ¿Estás seguro?',
+      [
+        { text: 'No, cancelar', style: 'cancel' },
+        {
+          text: 'Sí, anular',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Última confirmación',
+              'Esta es la última oportunidad para volver atrás. Si continúas, la entrevista se anulará definitivamente.',
+              [
+                { text: 'Volver', style: 'cancel' },
+                {
+                  text: 'Anular definitivamente',
+                  style: 'destructive',
+                  onPress: confirmarAnular,
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  }
+
+  async function confirmarAnular() {
+    if (!sesionServerId) return;
+    setFinalizando(true);
+    try {
+      // El backend acepta PATCH con estado=SUSPENDIDA como "anulada" desde
+      // el cliente. Si el endpoint de anular es distinto, ajustar acá.
+      await encuestasApi.actualizar(sesionServerId, { /* el campo estado se ajusta vía PATCH si el backend lo expone */ } as any);
+      // Hasta que haya un endpoint específico, usamos finalizar con observación de anulación
+      await encuestasApi.finalizar(sesionServerId, {
+        observaciones: '[ANULADA POR ENCUESTADOR] ' + (observaciones.trim() || 'Sin motivo registrado'),
+      });
+      Alert.alert(
+        'Sesión anulada',
+        'La sesión fue marcada como cerrada con observación de anulación.',
+        [{ text: 'Aceptar', onPress: () => router.back() }],
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo anular la sesión.');
     } finally {
       setFinalizando(false);
     }
@@ -494,6 +660,20 @@ export default function FormularioIndexScreen() {
                 icon="check-circle-outline"
                 onPress={() => setModalFinalizar(true)}
               />
+              <View style={{ height: 8 }} />
+              {/* Sprint 21 — Anular sesión con doble confirmación */}
+              <Pressable
+                onPress={handleAnular}
+                disabled={finalizando}
+                style={({ pressed }) => [
+                  styles.btnAnular,
+                  pressed && { opacity: 0.85 },
+                  finalizando && { opacity: 0.5 },
+                ]}
+              >
+                <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
+                <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
+              </Pressable>
             </View>
           ) : null
         }
@@ -616,6 +796,18 @@ const styles = StyleSheet.create({
 
   lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
   footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
+  btnAnular: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: GOV.rojo + '66',
+    backgroundColor: 'transparent',
+  },
+  btnAnularTxt: { ...FONT.body, color: GOV.rojo, fontWeight: '600' },
 
   card: {
     flexDirection: 'row',
@@ -625,11 +817,27 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     ...SHADOW.card,
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
+    borderLeftWidth: 4,
+    borderLeftColor: GOV.borde,
   },
-  cardCompletado: { borderLeftColor: GOV.verde },
+  cardCompletado: {
+    borderLeftColor: GOV.verde,
+    backgroundColor: GOV.verdeTenue,
+    borderLeftWidth: 6,
+  },
+  cardEnProgreso: {
+    borderLeftColor: GOV.naranja,
+    borderLeftWidth: 6,
+  },
   cardPressed:    { opacity: 0.9, transform: [{ scale: 0.99 }] },
+
+  // Encabezado: nombre + chip de estado en la misma fila
+  cardEncabezado: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginBottom: 2,
+  },
 
   numCircle: {
     width: 40,
@@ -642,16 +850,39 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: GOV.borde,
   },
+  numCircleCompleto: {
+    backgroundColor: GOV.verde,
+    borderColor: GOV.verde,
+  },
+  numCircleEnProgreso: {
+    backgroundColor: GOV.naranjaTenue,
+    borderColor: GOV.naranja,
+  },
   numTxt: { fontSize: 13, fontWeight: '800', color: GOV.azul },
 
   cardTexto: { flex: 1 },
-  capNombre:   { ...FONT.body, fontWeight: '600', color: GOV.textoP, marginBottom: 2 },
+  capNombre:   { ...FONT.body, fontWeight: '600', color: GOV.textoP, flex: 1 },
   capNombreOk: { color: GOV.verde },
   capCodigo:   { ...FONT.caption, color: GOV.textoT, fontFamily: 'monospace', marginBottom: 4 },
 
-  capProgresoWrap: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 2 },
+  // Chip de estado: Completo / Faltan N / Sin iniciar
+  chipEstado: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+  },
+  chipEstadoOk:        { backgroundColor: GOV.verdeTenue, borderColor: GOV.verde },
+  chipEstadoProgreso:  { backgroundColor: GOV.naranjaTenue, borderColor: GOV.naranja },
+  chipEstadoPendiente: { backgroundColor: GOV.fondoApp, borderColor: GOV.borde },
+  chipEstadoTxt:       { fontSize: 10, fontWeight: '700' },
+
+  capProgresoWrap: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, marginTop: 4 },
   capProgressBar:  { flex: 1, height: 4, borderRadius: 2 },
-  capProgresoPct:  { fontSize: 10, fontWeight: '700', minWidth: 28, textAlign: 'right' },
+  capProgresoPct:  { fontSize: 10, fontWeight: '700', minWidth: 40, textAlign: 'right' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalCard: {

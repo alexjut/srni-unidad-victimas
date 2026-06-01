@@ -53,6 +53,36 @@ apk_work/
 *.apk
 *.db
 
+# ─── Material de referencia local — NO al repo ───────────────────────────────
+# Archivos de UARIV (Excel diccionarios), capturas de pantalla, PDFs de actas.
+# Son contexto local para el desarrollo, pesan mucho y no deben versionarse.
+docs/perfiles/
+imagenes-errores/
+imagenes-errores.zip
+pantallazo*.jpeg
+pantallazo*.png
+*.pptx
+*.pdf
+*.docx
+*.xlsx
+*.ogg
+*.jpeg
+
+# Frontend (Sprint 12) — secretos locales
+srni-frontend/.env.local
+srni-frontend/.env.*.local
+
+# ─── Análisis BD Oracle UARIV — NUNCA al repo ────────────────────────────────
+# Reportes del análisis del esquema Oracle de producción. Pueden contener
+# nombres de tablas, columnas y conteos que en conjunto podrían facilitar
+# inferencia sobre PII. No commitear.
+docs/analisis-bd-oracle.txt
+docs/analisis-bd-oracle-*.txt
+docs/analisis-bd-oracle*.md
+docs/correo-solicitud-servidor.md
+docs/solicitud-acceso-oracle-uariv.md
+srni-backend/scripts/analizar_bd_oracle.py
+
 # ─── Claude Code (contexto local — nunca al repositorio) ────────────────────
 .claude/
 CLAUDE.md

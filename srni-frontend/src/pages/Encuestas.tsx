@@ -1,15 +1,32 @@
 /**
- * Lista de sesiones de encuesta — tabla paginada
+ * Lista de sesiones de encuesta — tabla paginada con filtros server-side
  */
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ClipboardList, Eye, X } from 'lucide-react';
 import { encuestasApi, type SesionResumen } from '@/api/encuestas';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import PageHeader from '@/components/ui/PageHeader';
+import Table, { type Column } from '@/components/ui/Table';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
 
-const ESTADO_BADGE: Record<string, string> = {
-  EN_PROCESO: 'badge-azul',
-  FINALIZADA: 'badge-verde',
-  CANCELADA:  'badge-rojo',
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  COMPLETADA:  'verde',
+  FINALIZADA:  'verde',
+  EN_PROGRESO: 'azul',
+  INICIADA:    'naranja',
+  SUSPENDIDA:  'rojo',
+  CANCELADA:   'rojo',
 };
+
+const ESTADOS_SESION = [
+  { value: '', label: 'Todos los estados' },
+  { value: 'COMPLETADA', label: 'Completada' },
+  { value: 'EN_PROGRESO', label: 'En progreso' },
+  { value: 'INICIADA', label: 'Iniciada' },
+  { value: 'SUSPENDIDA', label: 'Suspendida' },
+];
 
 function BarraProgreso({ valor }: { valor: number }) {
   const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
@@ -24,11 +41,15 @@ function BarraProgreso({ valor }: { valor: number }) {
 }
 
 export default function EncuestasPage() {
+  const navigate = useNavigate();
   const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
   const [total,    setTotal]    = useState(0);
   const [pagina,   setPagina]   = useState(1);
   const [cargando, setCargando] = useState(true);
   const [error,    setError]    = useState('');
+
+  // Filtros
+  const [filtroEstado, setFiltroEstado] = useState('');
 
   const porPagina = 20;
   const totalPags = Math.ceil(total / porPagina);
@@ -37,7 +58,9 @@ export default function EncuestasPage() {
     setCargando(true);
     setError('');
     try {
-      const { data } = await encuestasApi.listar({ page: pag });
+      const params: Record<string, string | number> = { page: pag };
+      if (filtroEstado) params.estado = filtroEstado;
+      const { data } = await encuestasApi.listar(params);
       setSesiones(data.results);
       setTotal(data.count);
     } catch {
@@ -47,84 +70,86 @@ export default function EncuestasPage() {
     }
   }
 
-  useEffect(() => { cargar(pagina); }, [pagina]);
+  useEffect(() => { cargar(pagina); }, [pagina, filtroEstado]);
+
+  function handleEstadoChange(valor: string) {
+    setFiltroEstado(valor);
+    setPagina(1);
+  }
+
+  function limpiarFiltros() {
+    setFiltroEstado('');
+    setPagina(1);
+  }
+
+  const hayFiltros = !!filtroEstado;
+
+  const columnas: Column<SesionResumen>[] = [
+    { key: 'instrumento', header: 'Instrumento', render: (s) => <span className="text-gray-700 max-w-[180px] truncate block">{s.instrumento_nombre}</span> },
+    { key: 'dt', header: 'DT', render: (s) => <span className="text-gray-600 text-xs">{s.direccion_territorial_nombre ?? '—'}</span> },
+    { key: 'progreso', header: 'Progreso', render: (s) => <BarraProgreso valor={s.porcentaje_completado} />, className: 'min-w-[120px]' },
+    {
+      key: 'estado',
+      header: 'Estado',
+      render: (s) => (
+        <Badge variant={ESTADO_BADGE[s.estado] ?? 'gris'}>
+          {s.estado_display ?? s.estado.replace('_', ' ')}
+        </Badge>
+      ),
+    },
+    { key: 'encuestador', header: 'Encuestador', render: (s) => <span className="text-gray-600 text-xs">{s.encuestador_nombre}</span> },
+    { key: 'fecha', header: 'Fecha', render: (s) => <span className="text-gray-500 text-xs">{new Date(s.created_at).toLocaleDateString('es-CO')}</span> },
+    {
+      key: 'acciones',
+      header: '',
+      render: (s) => (
+        <div className="text-right">
+          <Button size="sm" icon={Eye} onClick={(e) => { e.stopPropagation(); navigate(`/encuestas/${s.id}`); }}>
+            Ver detalle
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-gray-800">Encuestas</h2>
-        <p className="text-gray-500 text-sm mt-0.5">{total} sesión(es) registradas</p>
-      </div>
+      <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
 
-      {error && (
-        <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="card overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gov-borde">
-              <tr>
-                {['Hogar','Instrumento','Ruta','Progreso','Estado','Encuestador','Fecha'].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gov-borde">
-              {cargando
-                ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
-                        <td key={j} className="px-4 py-3">
-                          <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : sesiones.map((s) => (
-                    <tr key={s.id} className="hover:bg-gov-azulTenue/30 transition-colors">
-                      <td className="px-4 py-3 font-mono text-gov-azul font-medium">{s.hogar_codigo}</td>
-                      <td className="px-4 py-3 text-gray-700 max-w-[140px] truncate">{s.instrumento_nombre}</td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{s.ruta_entrevista}</td>
-                      <td className="px-4 py-3 min-w-[120px]">
-                        <BarraProgreso valor={s.porcentaje_completado} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={ESTADO_BADGE[s.estado] ?? 'badge-gris'}>
-                          {s.estado.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{s.encuestador_nombre}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {new Date(s.created_at).toLocaleDateString('es-CO')}
-                      </td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
-        </div>
-
-        {totalPags > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gov-borde">
-            <p className="text-xs text-gray-500">Página {pagina} de {totalPags}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina === 1}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                <ChevronLeft size={14} /> Anterior
-              </button>
-              <button onClick={() => setPagina((p) => Math.min(totalPags, p + 1))} disabled={pagina === totalPags}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                Siguiente <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
+      {/* Barra de filtros */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <select
+          value={filtroEstado}
+          onChange={(e) => handleEstadoChange(e.target.value)}
+          className="input w-full sm:w-52"
+        >
+          {ESTADOS_SESION.map((e) => (
+            <option key={e.value} value={e.value}>{e.label}</option>
+          ))}
+        </select>
+        {hayFiltros && (
+          <Button variant="secondary" size="sm" icon={X} onClick={limpiarFiltros}>
+            Limpiar
+          </Button>
         )}
       </div>
+
+      {error && <Alert variant="error" className="mb-4">{error}</Alert>}
+
+      <Table<SesionResumen>
+        columns={columnas}
+        data={sesiones}
+        keyExtractor={(s) => s.id}
+        cargando={cargando}
+        onRowClick={(s) => navigate(`/encuestas/${s.id}`)}
+        emptyIcon={ClipboardList}
+        emptyTitulo={hayFiltros ? 'Sin resultados para este filtro' : 'No hay encuestas registradas'}
+        emptyDescripcion={hayFiltros ? 'Intenta con otro estado o limpia el filtro.' : 'Las sesiones aparecerán aquí cuando se inicien desde la app móvil.'}
+        pagina={pagina}
+        totalPaginas={totalPags}
+        onPaginaChange={setPagina}
+      />
     </div>
   );
 }

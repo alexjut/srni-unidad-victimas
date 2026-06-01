@@ -52,7 +52,12 @@ let _pregsPorCap = new Map<string, PreguntaRow[]>();
 let _opcionesPorPreg = new Map<string, OpcionRow[]>();
 let _reglasActivo: ReglaSkipLogicRow[] = [];
 let _capPorPregId = new Map<string, string>();
-let _conteoPreguntas: Record<string, { total: number; obligatorias: number }> = {};
+let _conteoPreguntas: Record<string, {
+  total: number;
+  obligatorias: number;
+  obligHogar: number;
+  obligPersona: number;
+}> = {};
 let _metaActivo: InstrumentoMeta | null = null;
 let _perfilActivo: string | null = null;
 
@@ -68,7 +73,14 @@ function _cargarPerfilEnMemoria(codigo: string): void {
   const pregsPorCap = new Map<string, PreguntaRow[]>();
   const opcionesPorPreg = new Map<string, OpcionRow[]>();
   const capPorPregId = new Map<string, string>();
-  const conteo: Record<string, { total: number; obligatorias: number }> = {};
+  // Sprint 21 fix — separar obligatorias por nivel para que la pantalla
+  // formulario/index pueda calcular bien el progreso (obligPersona × miembros).
+  const conteo: Record<string, {
+    total: number;
+    obligatorias: number;
+    obligHogar: number;
+    obligPersona: number;
+  }> = {};
 
   for (const cap of data.capitulos ?? []) {
     caps.push({
@@ -82,10 +94,17 @@ function _cargarPerfilEnMemoria(codigo: string): void {
 
     const pregs: PreguntaRow[] = [];
     let obligs = 0;
+    let obligHogar = 0;
+    let obligPersona = 0;
     for (const p of cap.preguntas ?? []) {
       if (!p.activa) continue;
       const obligatoria = p.obligatoria ? 1 : 0;
-      if (obligatoria === 1) obligs++;
+      const nivel = p.nivel ?? cap.nivel ?? 'HOGAR';
+      if (obligatoria === 1) {
+        obligs++;
+        if (nivel === 'PERSONA') obligPersona++;
+        else obligHogar++;
+      }
       pregs.push({
         id: p.id,
         capitulo_id: cap.id,
@@ -116,7 +135,7 @@ function _cargarPerfilEnMemoria(codigo: string): void {
     }
     pregs.sort((a, b) => a.orden - b.orden);
     pregsPorCap.set(cap.id, pregs);
-    conteo[cap.id] = { total: pregs.length, obligatorias: obligs };
+    conteo[cap.id] = { total: pregs.length, obligatorias: obligs, obligHogar, obligPersona };
   }
   caps.sort((a, b) => a.orden - b.orden);
 
@@ -198,7 +217,12 @@ export function getReglasPorCapitulo(capituloId: string): ReglaSkipLogicRow[] {
   return _reglasActivo.filter((r) => r.capitulo_afectado_id === capituloId);
 }
 
-export function contarPreguntasPorCapitulo(): Record<string, { total: number; obligatorias: number }> {
+export function contarPreguntasPorCapitulo(): Record<string, {
+  total: number;
+  obligatorias: number;
+  obligHogar: number;
+  obligPersona: number;
+}> {
   return _conteoPreguntas;
 }
 

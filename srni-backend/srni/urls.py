@@ -56,6 +56,9 @@ def api_root(request, format=None):
                 'produccion_detalle': request.build_absolute_uri('/api/reportes/produccion/detalle/'),
                 'produccion_export':  request.build_absolute_uri('/api/reportes/produccion/export/'),
             },
+            'auditoria': {
+                'logs': request.build_absolute_uri('/api/auditoria/logs/'),
+            },
         },
         'health': request.build_absolute_uri('/health/'),
     })
@@ -85,6 +88,9 @@ urlpatterns = [
 
     # Módulo Sprint 10 — Reportes de producción
     path('api/reportes/', include('apps.reportes.urls')),
+
+    # Auditoría — endpoint de logs para el panel web (Brando, Sprint integración jun-2026)
+    path('api/auditoria/', include('apps.auditoria.urls')),
 
     # Sprint 17 — Endpoint de debug: recibe errores móvil y los printea en consola
     path('api/_debug/log/', log_error_mobile, name='debug-log-mobile'),

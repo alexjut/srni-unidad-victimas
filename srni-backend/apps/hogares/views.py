@@ -66,6 +66,36 @@ class HogarViewSet(viewsets.ModelViewSet):
             return HogarListSerializer
         return HogarDetalleSerializer
 
+    def create(self, request, *args, **kwargs):
+        """
+        Sprint 21 — validación idempotente: una víctima solo puede ser autorizada
+        en UN hogar a la vez (en estado BORRADOR o ACTIVO). Aplica a TODOS los
+        usuarios sin excepción.
+
+        Si se intenta crear un segundo hogar para la misma víctima, devolvemos
+        el existente con HTTP 200 en lugar de crear duplicado. El cliente
+        recibe el mismo flujo que si lo hubiera creado.
+
+        Modelo correcto:
+            1 víctima → 1 hogar → N caracterizaciones (1 por instrumento).
+        Para probar los 8 instrumentos con una víctima, NO se crean 8 hogares
+        sino 1 hogar con 8 sesiones de encuesta (una por instrumento).
+
+        Solo bloquea contra hogares NO archivados — si el anterior está ARCHIVADO,
+        sí se puede crear uno nuevo (caso de cambio definitivo de núcleo familiar).
+        """
+        autorizado_id = request.data.get('autorizado')
+        if autorizado_id:
+            existente = Hogar.objects.filter(
+                autorizado_id=autorizado_id,
+            ).exclude(estado='ARCHIVADO').order_by('-created_at').first()
+            if existente:
+                # Devolver el hogar existente con detalle completo
+                detalle = HogarDetalleSerializer(existente, context={'request': request})
+                return Response(detalle.data, status=status.HTTP_200_OK)
+
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         hogar = serializer.save(creado_por=self.request.user)
 

@@ -2,8 +2,23 @@
  * Reportes del encuestador — resumen + listado paginado + export CSV
  */
 import { useEffect, useState } from 'react';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, ClipboardList } from 'lucide-react';
 import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/reportes';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
+import Pagination from '@/components/ui/Pagination';
+import PageHeader from '@/components/ui/PageHeader';
+import Button from '@/components/ui/Button';
+import Alert from '@/components/ui/Alert';
+
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  COMPLETADA:  'verde',
+  FINALIZADA:  'verde',
+  EN_PROGRESO: 'azul',
+  INICIADA:    'naranja',
+  SUSPENDIDA:  'rojo',
+  CANCELADA:   'rojo',
+};
 
 export default function ReportesPage() {
   const [resumen,  setResumen]  = useState<ResumenEncuestador | null>(null);
@@ -55,26 +70,17 @@ export default function ReportesPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-gray-800">Mis reportes</h2>
-          <p className="text-gray-500 text-sm mt-0.5">Producción y estadísticas personales</p>
-        </div>
-        <button
-          onClick={exportarCsv}
-          disabled={descargando}
-          className="btn-primary flex items-center gap-2 text-sm"
-        >
-          <Download size={16} />
-          {descargando ? 'Descargando…' : 'Exportar CSV'}
-        </button>
-      </div>
+      <PageHeader
+        titulo="Mis reportes"
+        subtitulo="Producción y estadísticas personales"
+        acciones={
+          <Button icon={Download} loading={descargando} onClick={exportarCsv} size="sm">
+            {descargando ? 'Descargando…' : 'Exportar CSV'}
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo rounded-lg p-4 mb-4 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
       {/* Resumen */}
       {resumen && (
@@ -123,8 +129,12 @@ export default function ReportesPage() {
                   ))
                 : detalle.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">
-                        No hay sesiones registradas aún.
+                      <td colSpan={6}>
+                        <EmptyState
+                          icon={ClipboardList}
+                          titulo="No hay sesiones registradas aún"
+                          descripcion="Las sesiones aparecerán aquí cuando se inicien encuestas."
+                        />
                       </td>
                     </tr>
                   ) : detalle.map((d) => (
@@ -133,9 +143,9 @@ export default function ReportesPage() {
                       <td className="px-4 py-3 text-gray-700 max-w-[130px] truncate">{d.instrumento}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{d.ruta_entrevista}</td>
                       <td className="px-4 py-3">
-                        <span className={d.estado === 'FINALIZADA' ? 'badge-verde' : d.estado === 'EN_PROCESO' ? 'badge-azul' : 'badge-rojo'}>
-                          {d.estado}
-                        </span>
+                        <Badge variant={ESTADO_BADGE[d.estado] ?? 'gris'}>
+                          {d.estado.replace('_', ' ')}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{d.porcentaje_completado}%</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
@@ -147,21 +157,7 @@ export default function ReportesPage() {
           </table>
         </div>
 
-        {totalPags > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gov-borde">
-            <p className="text-xs text-gray-500">Página {pagina} de {totalPags}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                <ChevronLeft size={14} /> Anterior
-              </button>
-              <button onClick={() => setPagina(p => Math.min(totalPags, p + 1))} disabled={pagina === totalPags}
-                className="btn-secondary flex items-center gap-1 text-xs py-1 px-2">
-                Siguiente <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination pagina={pagina} totalPaginas={totalPags} onChange={setPagina} />
       </div>
     </div>
   );
