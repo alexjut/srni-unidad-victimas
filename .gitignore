@@ -72,6 +72,17 @@ pantallazo*.png
 srni-frontend/.env.local
 srni-frontend/.env.*.local
 
+# ─── Análisis BD Oracle UARIV — NUNCA al repo ────────────────────────────────
+# Reportes del análisis del esquema Oracle de producción. Pueden contener
+# nombres de tablas, columnas y conteos que en conjunto podrían facilitar
+# inferencia sobre PII. No commitear.
+docs/analisis-bd-oracle.txt
+docs/analisis-bd-oracle-*.txt
+docs/analisis-bd-oracle*.md
+docs/correo-solicitud-servidor.md
+docs/solicitud-acceso-oracle-uariv.md
+srni-backend/scripts/analizar_bd_oracle.py
+
 # ─── Claude Code (contexto local — nunca al repositorio) ────────────────────
 .claude/
 CLAUDE.md

@@ -134,7 +134,8 @@ class HogarListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hogar
         fields = [
-            'id', 'estado', 'estado_display',
+            'id', 'codigo_hogar',
+            'estado', 'estado_display',
             'autorizado', 'autorizado_hash',
             'municipio', 'municipio_nombre',
             'total_miembros', 'numero_personas',
@@ -170,7 +171,7 @@ class HogarDetalleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hogar
         fields = [
-            'id',
+            'id', 'codigo_hogar',
             'autorizado', 'autorizado_hash',
             'municipio', 'municipio_nombre', 'municipio_detalle',
             'tipo_vivienda', 'tipo_vivienda_display',
