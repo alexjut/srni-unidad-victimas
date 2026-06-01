@@ -8,6 +8,8 @@ import DashboardPage from '@/pages/Dashboard';
 import HogaresPage from '@/pages/Hogares';
 import EncuestasPage from '@/pages/Encuestas';
 import ReportesPage from '@/pages/Reportes';
+import VictimasPage from '@/pages/Victimas';
+import VictimaDetallePage from '@/pages/VictimaDetalle';
 import HogarDetallePage from '@/pages/HogarDetalle';
 import SesionDetallePage from '@/pages/SesionDetalle';
 import NotFound from '@/pages/NotFound';
@@ -49,6 +51,8 @@ export default function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard"  element={<DashboardPage />} />
+        <Route path="victimas"   element={<VictimasPage />} />
+        <Route path="victimas/:id" element={<VictimaDetallePage />} />
         <Route path="hogares"    element={<HogaresPage />} />
         <Route path="hogares/:id" element={<HogarDetallePage />} />
         <Route path="encuestas"  element={<EncuestasPage />} />
