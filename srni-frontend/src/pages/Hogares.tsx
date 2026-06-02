@@ -85,7 +85,7 @@ export default function HogaresPage() {
       header: 'Código',
       render: (h) => (
         <span className="font-mono text-gov-azul font-medium">
-          {h.codigo_hogar ?? h.id.slice(0, 8)}
+          {h.codigo_hogar || h.id.slice(0, 8)}
         </span>
       ),
     },

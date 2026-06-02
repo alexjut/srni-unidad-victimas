@@ -65,10 +65,10 @@ export default function HogarDetallePage() {
       <Breadcrumb items={[
         { label: 'Inicio', to: '/dashboard' },
         { label: 'Hogares', to: '/hogares' },
-        { label: hogar.codigo_hogar ?? hogar.id.slice(0, 8) },
+        { label: hogar.codigo_hogar || hogar.id.slice(0, 8) },
       ]} />
       <PageHeader
-        titulo={hogar.codigo_hogar ?? `Hogar ${hogar.id.slice(0, 8)}`}
+        titulo={hogar.codigo_hogar || `Hogar ${hogar.id.slice(0, 8)}`}
         subtitulo={hogar.municipio_nombre ?? 'Sin municipio'}
         acciones={
           <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate('/hogares')}>

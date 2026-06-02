@@ -1,11 +1,9 @@
 /**
  * Auditoría — logs de acceso inmutables (solo lectura)
- * NOTA: El endpoint GET /api/auditoria/logs/ aún no está implementado en el backend.
- * Página lista para funcionar cuando Javier lo implemente.
  */
 import { useEffect, useState } from 'react';
 import { Shield, Trash2 } from 'lucide-react';
-import { auditoriaApi, type LogAuditoria } from '@/api/auditoria';
+import { auditoriaApi, ACCIONES_AUDITORIA, type LogAuditoria } from '@/api/auditoria';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Alert from '@/components/ui/Alert';
@@ -13,13 +11,21 @@ import Alert from '@/components/ui/Alert';
 const PAGE_SIZE = 20;
 
 const ACCION_BADGE: Record<string, string> = {
-  BUSQUEDA_RNI: 'bg-purple-50 text-purple-700',
-  VER_VICTIMA: 'bg-gov-azulTenue text-gov-azul',
   LOGIN: 'bg-gov-verdeTenue text-gov-verde',
   LOGOUT: 'bg-gray-100 text-gray-600',
+  LOGIN_FALLIDO: 'bg-gov-rojoTenue text-gov-rojo',
+  BUSQUEDA_RNI: 'bg-purple-50 text-purple-700',
+  VER_VICTIMA: 'bg-gov-azulTenue text-gov-azul',
   CREAR_HOGAR: 'bg-gov-naranjaTenue text-gov-naranja',
-  CREAR_SESION: 'bg-gov-naranjaTenue text-gov-naranja',
-  FINALIZAR_SESION: 'bg-gov-verdeTenue text-gov-verde',
+  AGREGAR_MIEMBRO: 'bg-gov-naranjaTenue text-gov-naranja',
+  RESPONDER_PREGUNTA: 'bg-gov-azulTenue text-gov-azul',
+  FINALIZAR_ENCUESTA: 'bg-gov-verdeTenue text-gov-verde',
+  EXPORTAR: 'bg-blue-50 text-blue-700',
+  CAMBIO_PASSWORD: 'bg-yellow-50 text-yellow-700',
+  CAMBIO_USUARIO: 'bg-yellow-50 text-yellow-700',
+  ACCESO_DENEGADO: 'bg-gov-rojoTenue text-gov-rojo',
+  LLAMADA_GEMINI: 'bg-purple-50 text-purple-700',
+  CONSENTIMIENTO_IA: 'bg-purple-50 text-purple-700',
 };
 
 const RESULTADO_BADGE: Record<string, string> = {
@@ -37,17 +43,21 @@ export default function AuditoriaPage() {
 
   // Filtros
   const [filtroAccion, setFiltroAccion] = useState('');
+  const [filtroResultado, setFiltroResultado] = useState('');
   const [filtroDesde, setFiltroDesde] = useState('');
   const [filtroHasta, setFiltroHasta] = useState('');
 
-  const hayFiltros = filtroAccion || filtroDesde || filtroHasta;
+  const hayFiltros = filtroAccion || filtroResultado || filtroDesde || filtroHasta;
 
   function cargar(pag: number) {
     setCargando(true);
     setError('');
     auditoriaApi.logs({
       page: pag,
+      page_size: PAGE_SIZE,
+      ordering: '-timestamp',
       ...(filtroAccion && { accion: filtroAccion }),
+      ...(filtroResultado && { resultado: filtroResultado }),
       ...(filtroDesde && { fecha_desde: filtroDesde }),
       ...(filtroHasta && { fecha_hasta: filtroHasta }),
     })
@@ -55,7 +65,7 @@ export default function AuditoriaPage() {
         setLogs(data.results);
         setTotal(data.count);
       })
-      .catch(() => setError('El endpoint de auditoría aún no está disponible. Contacte al administrador del backend.'))
+      .catch(() => setError('No se pudieron cargar los registros de auditoría.'))
       .finally(() => setCargando(false));
   }
 
@@ -70,17 +80,18 @@ export default function AuditoriaPage() {
 
   function limpiarFiltros() {
     setFiltroAccion('');
+    setFiltroResultado('');
     setFiltroDesde('');
     setFiltroHasta('');
     setPagina(1);
     setCargando(true);
     setError('');
-    auditoriaApi.logs({ page: 1 })
+    auditoriaApi.logs({ page: 1, page_size: PAGE_SIZE, ordering: '-timestamp' })
       .then(({ data }) => {
         setLogs(data.results);
         setTotal(data.count);
       })
-      .catch(() => setError('El endpoint de auditoría aún no está disponible. Contacte al administrador del backend.'))
+      .catch(() => setError('No se pudieron cargar los registros de auditoría.'))
       .finally(() => setCargando(false));
   }
 
@@ -119,10 +130,10 @@ export default function AuditoriaPage() {
     {
       key: 'accion',
       header: 'Acción',
-      className: 'w-36',
+      className: 'w-44',
       render: (log) => (
         <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${ACCION_BADGE[log.accion] ?? 'bg-gray-100 text-gray-600'}`}>
-          {log.accion.replace(/_/g, ' ')}
+          {log.accion_display}
         </span>
       ),
     },
@@ -130,7 +141,7 @@ export default function AuditoriaPage() {
       key: 'recurso',
       header: 'Recurso',
       render: (log) => (
-        <span className="text-sm text-gray-700">{log.recurso}</span>
+        <span className="text-sm text-gray-700">{log.recurso || '—'}</span>
       ),
     },
     {
@@ -139,7 +150,7 @@ export default function AuditoriaPage() {
       className: 'w-24',
       render: (log) => (
         <span className={`text-xs font-semibold ${RESULTADO_BADGE[log.resultado] ?? 'text-gray-500'}`}>
-          {log.resultado}
+          {log.resultado_display}
         </span>
       ),
     },
@@ -155,7 +166,9 @@ export default function AuditoriaPage() {
       key: 'detalle',
       header: 'Detalle',
       render: (log) => (
-        <span className="text-xs text-gray-400 line-clamp-2">{log.detalle || '—'}</span>
+        <span className="text-xs text-gray-400 line-clamp-2">
+          {log.detalle ? Object.entries(log.detalle).map(([k, v]) => `${k}: ${v}`).join(', ') : '—'}
+        </span>
       ),
     },
   ];
@@ -180,13 +193,25 @@ export default function AuditoriaPage() {
               className="input"
             >
               <option value="">Todas</option>
-              <option value="LOGIN">Login</option>
-              <option value="LOGOUT">Logout</option>
-              <option value="BUSQUEDA_RNI">Búsqueda RNI</option>
-              <option value="VER_VICTIMA">Ver víctima</option>
-              <option value="CREAR_HOGAR">Crear hogar</option>
-              <option value="CREAR_SESION">Crear sesión</option>
-              <option value="FINALIZAR_SESION">Finalizar sesión</option>
+              {ACCIONES_AUDITORIA.map((a) => (
+                <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:w-40">
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+              Resultado
+            </label>
+            <select
+              value={filtroResultado}
+              onChange={(e) => setFiltroResultado(e.target.value)}
+              className="input"
+            >
+              <option value="">Todos</option>
+              <option value="EXITO">Éxito</option>
+              <option value="ERROR">Error</option>
+              <option value="DENEGADO">Denegado</option>
             </select>
           </div>
 
@@ -248,7 +273,7 @@ export default function AuditoriaPage() {
         cargando={cargando}
         emptyIcon={Shield}
         emptyTitulo="Sin registros de auditoría"
-        emptyDescripcion={hayFiltros ? 'No hay registros que coincidan con los filtros aplicados.' : 'Los registros aparecerán aquí cuando el endpoint esté disponible en el backend.'}
+        emptyDescripcion={hayFiltros ? 'No hay registros que coincidan con los filtros aplicados.' : 'No se encontraron registros de auditoría.'}
         pagina={pagina}
         totalPaginas={totalPaginas}
         onPaginaChange={setPagina}
