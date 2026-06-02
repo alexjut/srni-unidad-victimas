@@ -39,9 +39,9 @@ export default function Modal({ abierto, onCerrar, titulo, children, acciones }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay */}
+      {/* Overlay con blur */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
         onClick={onCerrar}
         aria-hidden="true"
       />
@@ -53,28 +53,28 @@ export default function Modal({ abierto, onCerrar, titulo, children, acciones }:
         aria-modal="true"
         aria-label={titulo}
         tabIndex={-1}
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col outline-none"
+        className="relative bg-white rounded-2xl shadow-soft-xl w-full max-w-lg max-h-[90vh] flex flex-col outline-none animate-scale-in"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gov-borde">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gov-borde/60">
           <h3 className="font-display text-lg font-bold text-gray-800">{titulo}</h3>
           <button
             onClick={onCerrar}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
             aria-label="Cerrar"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4 overflow-y-auto flex-1">
+        <div className="px-6 py-5 overflow-y-auto flex-1">
           {children}
         </div>
 
         {/* Footer / Acciones */}
         {acciones && (
-          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gov-borde">
+          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gov-borde/60">
             {acciones}
           </div>
         )}

@@ -45,7 +45,7 @@ export default function Table<T>({
     <div className="card overflow-hidden p-0">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gov-borde">
+          <thead className="bg-gray-50/80 border-b border-gov-borde/60">
             <tr>
               {columns.map((col) => (
                 <th
@@ -57,13 +57,13 @@ export default function Table<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gov-borde">
+          <tbody className="divide-y divide-gov-borde/40">
             {cargando
               ? Array.from({ length: skeletonRows }).map((_, i) => (
-                  <tr key={i}>
+                  <tr key={i} style={{ animationDelay: `${i * 50}ms` }} className="animate-fade-in">
                     {columns.map((col) => (
-                      <td key={col.key} className={`px-4 py-3 ${col.className ?? ''}`}>
-                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                      <td key={col.key} className={`px-4 py-3.5 ${col.className ?? ''}`}>
+                        <div className="h-4 bg-gray-100 rounded-md animate-pulse" />
                       </td>
                     ))}
                   </tr>
@@ -86,18 +86,19 @@ export default function Table<T>({
                       </td>
                     </tr>
                   )
-                : data.map((item) => (
+                : data.map((item, i) => (
                     <tr
                       key={keyExtractor(item)}
                       onClick={onRowClick ? () => onRowClick(item) : undefined}
-                      className={
+                      style={{ animationDelay: `${i * 30}ms` }}
+                      className={`animate-fade-in ${
                         onRowClick
-                          ? 'hover:bg-gov-azulTenue/30 transition-colors cursor-pointer'
-                          : ''
-                      }
+                          ? 'hover:bg-gov-azulTenue/40 transition-colors duration-150 cursor-pointer'
+                          : 'hover:bg-gray-50/50 transition-colors duration-150'
+                      }`}
                     >
                       {columns.map((col) => (
-                        <td key={col.key} className={`px-4 py-3 ${col.className ?? ''}`}>
+                        <td key={col.key} className={`px-4 py-3.5 ${col.className ?? ''}`}>
                           {col.render(item)}
                         </td>
                       ))}

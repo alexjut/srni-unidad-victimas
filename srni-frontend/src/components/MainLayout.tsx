@@ -118,7 +118,7 @@ export default function MainLayout() {
               aria-hidden="true"
             />
             <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden animate-slide-up">
-              <div className="bg-white rounded-t-2xl shadow-2xl pb-safe">
+              <div className="bg-white rounded-t-2xl shadow-soft-xl pb-safe">
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1">
                   <div className="w-10 h-1 rounded-full bg-gray-300" />
@@ -197,7 +197,7 @@ export default function MainLayout() {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-xl shadow-xl border border-gov-borde py-1 z-50">
+                <div className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-2xl shadow-soft-lg border border-gov-borde/60 py-1 z-50 animate-slide-down">
                   <div className="px-4 py-3 border-b border-gov-borde">
                     <p className="text-xs font-medium text-gov-azul uppercase tracking-wide">Sesión activa</p>
                     <p className="text-sm font-bold text-gov-azulOscuro truncate mt-0.5">{usuario.nombre_completo}</p>
@@ -230,7 +230,9 @@ export default function MainLayout() {
 
         {/* Contenido principal */}
         <main id="main-content" className="flex-1 overflow-y-auto" role="main">
-          <Outlet />
+          <div key={location.pathname} className="page-content">
+            <Outlet />
+          </div>
         </main>
       </div>
 
