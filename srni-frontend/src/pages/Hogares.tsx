@@ -9,6 +9,7 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
+import Select from '@/components/ui/Select';
 import Alert from '@/components/ui/Alert';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
@@ -121,7 +122,7 @@ export default function HogaresPage() {
       <PageHeader titulo="Hogares" subtitulo={`${total} registro(s) en total`} />
 
       {/* Barra de filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="card shadow-soft flex flex-col sm:flex-row gap-3 mb-4">
         <form onSubmit={handleBuscar} className="flex-1 flex gap-2">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -135,15 +136,13 @@ export default function HogaresPage() {
           </div>
           <Button type="submit" size="sm">Buscar</Button>
         </form>
-        <select
-          value={filtroEstado}
-          onChange={(e) => handleEstadoChange(e.target.value)}
-          className="input w-full sm:w-48"
-        >
-          {ESTADOS_HOGAR.map((e) => (
-            <option key={e.value} value={e.value}>{e.label}</option>
-          ))}
-        </select>
+        <div className="w-full sm:w-48">
+          <Select
+            value={filtroEstado}
+            onChange={(e) => handleEstadoChange(e.target.value)}
+            options={ESTADOS_HOGAR}
+          />
+        </div>
         {hayFiltros && (
           <Button variant="secondary" size="sm" icon={X} onClick={limpiarFiltros}>
             Limpiar

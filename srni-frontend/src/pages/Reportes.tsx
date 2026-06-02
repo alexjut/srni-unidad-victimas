@@ -84,13 +84,14 @@ export default function ReportesPage() {
 
       {/* Resumen */}
       {resumen && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6 animate-fade-in-up">
           {[
-            { label: 'Sesiones totales',      valor: resumen.sesiones_total },
-            { label: 'Finalizadas',           valor: resumen.sesiones_finalizadas },
-            { label: 'En proceso',            valor: resumen.sesiones_en_proceso },
-            { label: 'Hogares',               valor: resumen.hogares_total },
-            { label: 'Víctimas caracterizadas', valor: resumen.victimas_caracterizadas },
+            { label: 'Sesiones totales',    valor: resumen.sesiones_total },
+            { label: 'Completadas',         valor: resumen.sesiones_completadas },
+            { label: 'En progreso',         valor: resumen.sesiones_en_progreso },
+            { label: 'Suspendidas',         valor: resumen.sesiones_suspendidas },
+            { label: 'Hogares caracterizados', valor: resumen.hogares_caracterizados },
+            { label: 'Respuestas totales',  valor: resumen.respuestas_total },
           ].map((m) => (
             <div key={m.label} className="card text-center">
               <p className="text-3xl font-display font-bold text-gov-azul">{m.valor}</p>
@@ -101,7 +102,7 @@ export default function ReportesPage() {
       )}
 
       {/* Tabla detalle */}
-      <div className="card overflow-hidden p-0">
+      <div className="card overflow-hidden p-0 animate-fade-in-up" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>
         <div className="px-4 py-3 border-b border-gov-borde">
           <p className="font-semibold text-gray-700 text-sm">Detalle de sesiones</p>
         </div>
@@ -109,7 +110,7 @@ export default function ReportesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gov-borde">
               <tr>
-                {['Hogar','Instrumento','Ruta','Estado','Progreso','Fecha inicio'].map((h) => (
+                {['Hogar','Instrumento','Estado','Progreso','Respuestas','Fecha inicio'].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {h}
                   </th>
@@ -122,7 +123,7 @@ export default function ReportesPage() {
                     <tr key={i}>
                       {Array.from({ length: 6 }).map((_, j) => (
                         <td key={j} className="px-4 py-3">
-                          <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
                         </td>
                       ))}
                     </tr>
@@ -138,16 +139,16 @@ export default function ReportesPage() {
                       </td>
                     </tr>
                   ) : detalle.map((d) => (
-                    <tr key={d.sesion_id} className="hover:bg-gov-azulTenue/30">
-                      <td className="px-4 py-3 font-mono text-gov-azul">{d.hogar_codigo}</td>
-                      <td className="px-4 py-3 text-gray-700 max-w-[130px] truncate">{d.instrumento}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{d.ruta_entrevista}</td>
+                    <tr key={d.sesion_id} className="hover:bg-gov-azulTenue/30 transition-all">
+                      <td className="px-4 py-3 font-mono text-gov-azul text-xs">{d.hogar_id.slice(0, 8)}</td>
+                      <td className="px-4 py-3 text-gray-700 max-w-[160px] truncate">{d.instrumento_nombre}</td>
                       <td className="px-4 py-3">
                         <Badge variant={ESTADO_BADGE[d.estado] ?? 'gris'}>
-                          {d.estado.replace('_', ' ')}
+                          {d.estado_display ?? d.estado.replace('_', ' ')}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{d.porcentaje_completado}%</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{d.respuestas_total}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {new Date(d.fecha_inicio).toLocaleDateString('es-CO')}
                       </td>

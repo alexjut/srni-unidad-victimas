@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod/v4';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Lock, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '@/api/auth';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
@@ -30,6 +30,9 @@ export default function CambiarPasswordPage() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
+  const [showActual, setShowActual] = useState(false);
+  const [showNueva, setShowNueva] = useState(false);
+  const [showConfirmar, setShowConfirmar] = useState(false);
 
   const {
     register,
@@ -87,7 +90,7 @@ export default function CambiarPasswordPage() {
 
       {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
-      <div className="card">
+      <div className="card shadow-soft animate-fade-in-up">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="password_actual" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
@@ -97,11 +100,14 @@ export default function CambiarPasswordPage() {
               <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 id="password_actual"
-                type="password"
+                type={showActual ? 'text' : 'password'}
                 autoComplete="current-password"
-                className={`input pl-9 ${errors.password_actual ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
+                className={`input pl-9 pr-10 ${errors.password_actual ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
                 {...register('password_actual')}
               />
+              <button type="button" onClick={() => setShowActual(!showActual)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-all" aria-label={showActual ? 'Ocultar' : 'Mostrar'}>
+                {showActual ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
             {errors.password_actual && (
               <p className="text-xs text-gov-rojo mt-1">{errors.password_actual.message}</p>
@@ -116,11 +122,14 @@ export default function CambiarPasswordPage() {
               <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 id="password_nueva"
-                type="password"
+                type={showNueva ? 'text' : 'password'}
                 autoComplete="new-password"
-                className={`input pl-9 ${errors.password_nueva ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
+                className={`input pl-9 pr-10 ${errors.password_nueva ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
                 {...register('password_nueva')}
               />
+              <button type="button" onClick={() => setShowNueva(!showNueva)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-all" aria-label={showNueva ? 'Ocultar' : 'Mostrar'}>
+                {showNueva ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
             {errors.password_nueva && (
               <p className="text-xs text-gov-rojo mt-1">{errors.password_nueva.message}</p>
@@ -136,11 +145,14 @@ export default function CambiarPasswordPage() {
               <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 id="confirmar"
-                type="password"
+                type={showConfirmar ? 'text' : 'password'}
                 autoComplete="new-password"
-                className={`input pl-9 ${errors.confirmar ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
+                className={`input pl-9 pr-10 ${errors.confirmar ? 'border-gov-rojo focus:ring-gov-rojo' : ''}`}
                 {...register('confirmar')}
               />
+              <button type="button" onClick={() => setShowConfirmar(!showConfirmar)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-all" aria-label={showConfirmar ? 'Ocultar' : 'Mostrar'}>
+                {showConfirmar ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
             {errors.confirmar && (
               <p className="text-xs text-gov-rojo mt-1">{errors.confirmar.message}</p>

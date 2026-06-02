@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
+import Alert from '@/components/ui/Alert';
 
 export default function LoginPage() {
   const navigate   = useNavigate();
@@ -93,7 +94,7 @@ export default function LoginPage() {
             <p className="text-blue-300 text-sm mt-1">SRNI · Panel Web</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="bg-white rounded-2xl shadow-soft-lg p-8 animate-scale-in">
             <h2 className="font-display text-xl font-bold text-gray-800 mb-1">
               Iniciar sesión
             </h2>
@@ -138,7 +139,7 @@ export default function LoginPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-all"
                     onClick={() => setShowPass(!showPass)}
                     aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
@@ -148,11 +149,7 @@ export default function LoginPage() {
               </div>
 
               {/* Error */}
-              {error && (
-                <div className="bg-gov-rojoTenue border border-red-200 text-gov-rojo text-sm rounded-lg p-3">
-                  {error}
-                </div>
-              )}
+              {error && <Alert variant="error">{error}</Alert>}
 
               {/* Botón */}
               <button

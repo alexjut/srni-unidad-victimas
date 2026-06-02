@@ -184,11 +184,12 @@ export default function VictimasPage() {
       {/* Formulario de búsqueda */}
       <div className="card mb-6">
         <form id="form-busqueda" onSubmit={handleBuscar} className="flex flex-col sm:flex-row gap-3">
-          <div className="sm:w-48">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+          <div className="min-w-0 sm:w-56 sm:shrink-0">
+            <label htmlFor="tipo-documento" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
               Tipo documento
             </label>
             <select
+              id="tipo-documento"
               value={tipoDoc}
               onChange={(e) => setTipoDoc(e.target.value)}
               className="input"
@@ -198,7 +199,9 @@ export default function VictimasPage() {
                 <option>Cargando...</option>
               ) : (
                 tiposDoc.map((t) => (
-                  <option key={t.codigo} value={t.codigo}>{t.codigo} — {t.nombre}</option>
+                  <option key={t.codigo} value={t.codigo} title={t.nombre}>
+                    {t.codigo} — {t.nombre}
+                  </option>
                 ))
               )}
             </select>
@@ -257,7 +260,7 @@ export default function VictimasPage() {
                 </h3>
                 <button
                   onClick={handleLimpiarRecientes}
-                  className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                  className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-all"
                 >
                   <X size={12} /> Limpiar historial
                 </button>
@@ -269,7 +272,7 @@ export default function VictimasPage() {
                     <button
                       key={i}
                       onClick={() => buscarReciente(r)}
-                      className="card text-left hover:border-gov-azul hover:shadow-md transition-all group"
+                      className="card text-left hover:border-gov-azul hover:shadow-soft-md transition-all group"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-sm font-medium text-gov-azul group-hover:underline">
@@ -325,7 +328,7 @@ function ResultadoCard({
   const ruvInfo = ESTADO_RUV_BADGE[resultado.estado_ruv];
 
   return (
-    <div className="card mb-6">
+    <div className="card mb-6 animate-fade-in-up">
       {/* Header del resultado */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div className="flex items-center gap-3">
@@ -386,7 +389,7 @@ function ResultadoCard({
 
       {/* Discapacidad detalle */}
       {resultado.discapacidad && resultado.tipo_discapacidad && (
-        <div className="bg-gov-naranjaTenue border border-orange-200 rounded-lg p-3 mb-4 text-sm text-gov-naranja">
+        <div className="bg-gov-naranjaTenue border border-orange-200 rounded-2xl p-3 mb-4 text-sm text-gov-naranja">
           Tipo de discapacidad: {resultado.tipo_discapacidad}
         </div>
       )}
@@ -445,7 +448,7 @@ function DatoCard({ icon: Icon, label, valor }: {
   valor: string;
 }) {
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
+    <div className="bg-gray-50 rounded-xl p-3">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon size={12} className="text-gray-400" />
         <span className="text-xs text-gray-500">{label}</span>

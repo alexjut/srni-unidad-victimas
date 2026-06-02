@@ -67,20 +67,20 @@ export default function DashboardPage() {
       {cargando ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1,2,3,4].map((i) => (
-            <div key={i} className="card animate-pulse h-24 bg-gray-100" />
+            <div key={i} className="card animate-pulse h-24 bg-gray-200" />
           ))}
         </div>
       ) : resumen ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card icon={ClipboardCheck} label="Sesiones finalizadas" valor={resumen.sesiones_finalizadas} color="bg-gov-verde" />
-          <Card icon={TrendingUp} label="Sesiones en proceso" valor={resumen.sesiones_en_proceso} color="bg-gov-azul" />
-          <Card icon={Home} label="Hogares registrados" valor={resumen.hogares_total} color="bg-gov-naranja" />
-          <Card icon={Users} label="Víctimas caracterizadas" valor={resumen.victimas_caracterizadas} color="bg-purple-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in-up">
+          <Card icon={ClipboardCheck} label="Sesiones completadas" valor={resumen.sesiones_completadas} color="bg-gov-verde" />
+          <Card icon={TrendingUp} label="Sesiones en progreso" valor={resumen.sesiones_en_progreso} color="bg-gov-azul" />
+          <Card icon={Home} label="Hogares caracterizados" valor={resumen.hogares_caracterizados} color="bg-gov-naranja" />
+          <Card icon={Users} label="Respuestas registradas" valor={resumen.respuestas_total} color="bg-purple-600" />
         </div>
       ) : null}
 
       {/* Info adicional */}
-      <div className="card">
+      <div className="card shadow-soft animate-fade-in-up" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-3">
           Accesos rápidos
         </h3>

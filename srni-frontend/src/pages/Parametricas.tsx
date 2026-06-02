@@ -21,6 +21,7 @@ import {
 import PageHeader from '@/components/ui/PageHeader';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 
 const GEO_URL = '/geo/colombia.json';
@@ -56,7 +57,7 @@ export default function ParametricasPage() {
             role="tab"
             aria-selected={tab === key}
             aria-label={label}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
               tab === key
                 ? 'border-gov-azul text-gov-azul'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -118,7 +119,7 @@ function TablaSimple({
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gov-borde/40">
                   {children}
                 </tbody>
               </table>
@@ -179,7 +180,7 @@ function TabDepartamentos() {
           {/* Layout: mapa izq + tabla der */}
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Mapa */}
-            <div className="card p-0 overflow-hidden lg:w-[420px] shrink-0">
+            <div className="card p-0 overflow-hidden lg:w-[420px] shrink-0 shadow-soft">
               <div className="px-4 py-3 bg-gray-50 border-b border-gov-borde">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -205,18 +206,14 @@ function TabDepartamentos() {
 
               {/* Banner de departamento seleccionado */}
               {selectedDepto ? (
-                <div className="mx-3 mt-3 flex items-center justify-between bg-gov-azulTenue border border-blue-200 rounded-lg px-4 py-3">
+                <div className="mx-3 mt-3 flex items-center justify-between bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-3">
                   <div>
                     <p className="text-sm font-semibold text-gov-azul">{selectedDepto.nombre}</p>
                     <p className="text-xs text-gray-500">Código DANE: <span className="font-mono font-medium text-gray-700">{selectedDepto.codigo_dane}</span></p>
                   </div>
-                  <button
-                    onClick={() => setSelectedDepto(null)}
-                    className="flex items-center gap-1 text-xs text-white bg-gov-rojo hover:bg-red-700 border border-gov-rojo rounded-md px-2.5 py-1.5 transition-colors"
-                  >
-                    <Trash2 size={12} />
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => setSelectedDepto(null)}>
                     Limpiar
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <p className="mx-3 mt-3 text-xs text-gray-400 text-center">
@@ -292,11 +289,11 @@ function TabDepartamentos() {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gov-borde/40">
                       {datos.map((d) => (
                         <tr
                           key={d.id}
-                          className={`hover:bg-gov-azulTenue/30 transition-colors cursor-pointer ${
+                          className={`hover:bg-gov-azulTenue/30 transition-all cursor-pointer ${
                             selectedDepto?.id === d.id ? 'bg-gov-azulTenue' : ''
                           }`}
                           onClick={() => setSelectedDepto(selectedDepto?.id === d.id ? null : d)}
@@ -379,19 +376,15 @@ function TabMunicipios() {
           </select>
         </div>
         {deptoSel !== '' && (
-          <button
-            onClick={() => setDeptoSel('')}
-            className="flex items-center gap-1 text-xs text-white bg-gov-rojo hover:bg-red-700 border border-gov-rojo rounded-md px-2.5 py-2 transition-colors h-[38px]"
-          >
-            <Trash2 size={12} />
+          <Button variant="danger" size="md" icon={Trash2} onClick={() => setDeptoSel('')}>
             Limpiar filtro
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Badge de filtro activo */}
       {deptoNombre && (
-        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-200 rounded-lg px-4 py-2.5">
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
           <Building2 size={14} className="text-gov-azul" />
           <span className="text-sm text-gov-azul">
             Mostrando municipios de <strong>{deptoNombre}</strong>
@@ -407,7 +400,7 @@ function TabMunicipios() {
         total={filtrados.length}
       >
         {filtrados.map((m) => (
-          <tr key={m.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+          <tr key={m.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{m.codigo_dane}</td>
             <td className="px-4 py-3 text-gray-700">{m.nombre}</td>
             <td className="px-4 py-3 text-gray-500">{m.departamento_nombre}</td>
@@ -461,19 +454,15 @@ function TabDireccionesTerritoriales() {
           />
         </div>
         {busqueda && (
-          <button
-            onClick={() => setBusqueda('')}
-            className="flex items-center gap-1 text-xs text-white bg-gov-rojo hover:bg-red-700 border border-gov-rojo rounded-md px-2.5 py-2 transition-colors h-[38px]"
-          >
-            <Trash2 size={12} />
+          <Button variant="danger" size="md" icon={Trash2} onClick={() => setBusqueda('')}>
             Limpiar filtro
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Badge de filtro activo */}
       {busqueda.trim() && (
-        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-200 rounded-lg px-4 py-2.5">
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
           <Navigation size={14} className="text-gov-azul" />
           <span className="text-sm text-gov-azul">
             Buscando: <strong>"{busqueda.trim()}"</strong>
@@ -484,7 +473,7 @@ function TabDireccionesTerritoriales() {
 
       <TablaSimple headers={['Código', 'Nombre']} cargando={cargando} error={error} total={filtrados.length}>
         {filtrados.map((d) => (
-          <tr key={d.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+          <tr key={d.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{d.codigo}</td>
             <td className="px-4 py-3 text-gray-700">{d.nombre}</td>
           </tr>
@@ -555,19 +544,15 @@ function TabPuntosAtencion() {
           </select>
         </div>
         {dtSel !== '' && (
-          <button
-            onClick={() => setDtSel('')}
-            className="flex items-center gap-1 text-xs text-white bg-gov-rojo hover:bg-red-700 border border-gov-rojo rounded-md px-2.5 py-2 transition-colors h-[38px]"
-          >
-            <Trash2 size={12} />
+          <Button variant="danger" size="md" icon={Trash2} onClick={() => setDtSel('')}>
             Limpiar filtro
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Badge de filtro activo */}
       {dtNombre && (
-        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-200 rounded-lg px-4 py-2.5">
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
           <Landmark size={14} className="text-gov-azul" />
           <span className="text-sm text-gov-azul">
             Mostrando puntos de <strong>{dtNombre}</strong>
@@ -583,7 +568,7 @@ function TabPuntosAtencion() {
         total={filtrados.length}
       >
         {filtrados.map((p) => (
-          <tr key={p.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+          <tr key={p.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{p.codigo}</td>
             <td className="px-4 py-3 text-gray-700">{p.nombre}</td>
             <td className="px-4 py-3 text-gray-500">{p.direccion_territorial_nombre}</td>
@@ -614,7 +599,7 @@ function TabTiposDocumento() {
   return (
     <TablaSimple headers={['Código', 'Nombre', 'Estado']} cargando={cargando} error={error} total={datos.length}>
       {datos.map((t) => (
-        <tr key={t.codigo} className="hover:bg-gov-azulTenue/30 transition-colors">
+        <tr key={t.codigo} className="hover:bg-gov-azulTenue/30 transition-all">
           <td className="px-4 py-3 font-mono text-gov-azul">{t.codigo}</td>
           <td className="px-4 py-3 text-gray-700">{t.nombre}</td>
           <td className="px-4 py-3">

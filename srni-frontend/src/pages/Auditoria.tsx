@@ -133,7 +133,7 @@ export default function AuditoriaPage() {
       header: 'Acción',
       className: 'w-44',
       render: (log) => (
-        <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${ACCION_BADGE[log.accion] ?? 'bg-gray-100 text-gray-600'}`}>
+        <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-md ${ACCION_BADGE[log.accion] ?? 'bg-gray-100 text-gray-600'}`}>
           {log.accion_display}
         </span>
       ),
@@ -184,7 +184,7 @@ export default function AuditoriaPage() {
       />
 
       {/* Filtros */}
-      <div className="card mb-6">
+      <div className="card mb-6 shadow-soft animate-fade-in-up">
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Filtros — en mobile grid 1col, tablet 2col, desktop se expanden */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">

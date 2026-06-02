@@ -2,7 +2,7 @@
  * Panel de supervisión — métricas por encuestador + gráficas de producción
  */
 import { useEffect, useState } from 'react';
-import { Users, ClipboardCheck, Home, TrendingUp, RefreshCw } from 'lucide-react';
+import { Users, ClipboardCheck, Home, TrendingUp, RefreshCw, Trash2 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -99,9 +99,9 @@ export default function SupervisionPage() {
       header: 'Avance',
       render: (e) => (
         <div className="flex items-center gap-2">
-          <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[80px]">
+          <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[80px]">
             <div
-              className={`h-2 rounded-full ${e.promedio_completado >= 80 ? 'bg-gov-verde' : e.promedio_completado >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
+              className={`h-1.5 rounded-full ${e.promedio_completado >= 80 ? 'bg-gov-verde' : e.promedio_completado >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
               style={{ width: `${Math.min(100, e.promedio_completado)}%` }}
             />
           </div>
@@ -129,7 +129,7 @@ export default function SupervisionPage() {
       />
 
       {/* Barra de filtros */}
-      <form onSubmit={aplicarFiltros} className="card mb-6">
+      <form onSubmit={aplicarFiltros} className="card mb-6 shadow-soft">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desde</label>
@@ -151,6 +151,17 @@ export default function SupervisionPage() {
             >
               Actualizar
             </Button>
+            {(desde || hasta) && (
+              <Button
+                type="button"
+                variant="danger"
+                icon={Trash2}
+                className="h-[38px]"
+                onClick={() => { setDesde(''); setHasta(''); setTimeout(cargar, 0); }}
+              >
+                Limpiar
+              </Button>
+            )}
           </div>
         </div>
       </form>
@@ -159,7 +170,7 @@ export default function SupervisionPage() {
 
       {/* Cards de totales */}
       {supervisor && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
           <Card icon={ClipboardCheck} label="Sesiones totales" valor={supervisor.totales.sesiones_total} color="bg-gov-azul" />
           <Card icon={TrendingUp} label="Completadas" valor={supervisor.totales.sesiones_completadas} color="bg-gov-verde" />
           <Card icon={Home} label="Hogares" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
@@ -171,7 +182,7 @@ export default function SupervisionPage() {
       {series && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* Serie temporal */}
-          <div className="card">
+          <div className="card shadow-soft">
             <h3 className="font-display font-semibold text-gray-700 mb-4 text-sm">
               Actividad diaria
             </h3>
@@ -191,7 +202,7 @@ export default function SupervisionPage() {
           </div>
 
           {/* Distribución por instrumento */}
-          <div className="card">
+          <div className="card shadow-soft">
             <h3 className="font-display font-semibold text-gray-700 mb-4 text-sm">
               Sesiones por instrumento
             </h3>

@@ -104,7 +104,7 @@ export default function VictimaDetallePage() {
       </div>
 
       {/* Datos personales */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in-up">
         <h3 className="font-display font-semibold text-gray-700 mb-4 flex items-center gap-2">
           <User size={18} className="text-gov-azul" />
           Datos personales
@@ -123,7 +123,7 @@ export default function VictimaDetallePage() {
       </div>
 
       {/* Información adicional */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in-up" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4 flex items-center gap-2">
           <Shield size={18} className="text-gov-azul" />
           Información complementaria
@@ -148,7 +148,7 @@ export default function VictimaDetallePage() {
       </div>
 
       {/* Hechos victimizantes */}
-      <div className="card overflow-hidden p-0 mb-6">
+      <div className="card overflow-hidden p-0 mb-6 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
         <div className="px-4 py-3 border-b border-gov-borde flex items-center gap-2">
           <AlertTriangle size={16} className="text-gov-naranja" />
           <p className="font-semibold text-gray-700 text-sm">
@@ -177,7 +177,7 @@ export default function VictimaDetallePage() {
                   </td>
                 </tr>
               ) : victima.hechos_victimizantes.map((hv) => (
-                <tr key={hv.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+                <tr key={hv.id} className="hover:bg-gov-azulTenue/30 transition-all">
                   <td className="px-4 py-3 text-gray-800">{hv.hecho.nombre}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {hv.fecha_hecho ? new Date(hv.fecha_hecho).toLocaleDateString('es-CO') : '—'}
@@ -198,7 +198,7 @@ export default function VictimaDetallePage() {
       </div>
 
       {/* Metadatos */}
-      <div className="card">
+      <div className="card animate-fade-in-up" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4 flex items-center gap-2">
           <Calendar size={18} className="text-gov-azul" />
           Registro
