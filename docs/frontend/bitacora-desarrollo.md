@@ -511,4 +511,61 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 8 — 2026-06-02 | Mejoras UI/UX globales — diseño Apple-style
+
+### Actividades realizadas
+
+1. **Layout: info usuario movida del Sidebar al Header**
+   - Sidebar simplificado: solo logo GOV.CO + 9 nav items (sin info usuario, sin logout, sin cambiar contrasena)
+   - Header desktop: dropdown con avatar + nombre + perfil + chevron animado. Al hacer clic abre menu con "Cambiar contrasena" y "Cerrar sesion"
+   - Header mobile: avatar circular abre bottom sheet (panel desde abajo) con info usuario + acciones + boton cancelar
+   - Bottom sheet con animacion slide-up, overlay, handle visual, touch targets grandes (py-3.5)
+
+2. **Sistema de diseño global — Nivel 1 (base)**
+   - `tailwind.config.ts`: sombras Apple multi-capa (shadow-soft, soft-md, soft-lg, soft-xl), 5 animaciones (fade-in, fade-in-up, scale-in, slide-down, slide-up), easing Apple + spring
+   - `src/index.css`: font smoothing (antialiased), transiciones globales en elementos interactivos (200ms cubic-bezier Apple), focus ring azul suave con offset, scrollbar minimalista (6px), selection color institucional, clase page-content con fade-in-up
+   - Botones: rounded-lg, shadow-soft, efecto press active:scale[0.97], disabled sin scale
+   - Inputs: rounded-lg, hover border-gray-400, focus ring gov-azul/30
+   - Cards: rounded-2xl, shadow-soft, border-gov-borde/60, nueva clase card-hover con lift
+   - Badges: padding horizontal ampliado (px-2.5)
+
+3. **Componentes UI mejorados — Nivel 2**
+   - `Button.tsx`: shadow-soft en primary/danger, hover shadow-soft-md, active scale 0.97
+   - `Card.tsx`: hover lift (-translate-y-0.5 + shadow-soft-md), icono rounded-2xl con shadow-soft
+   - `Modal.tsx`: backdrop blur, animate scale-in, shadow-soft-xl, boton cerrar circular con hover bg-gray-100
+   - `Table.tsx`: filas con animate-fade-in escalonado (delay 30ms por fila), skeletons con delay 50ms, bordes sutiles (/60 y /40), hover en todas las filas
+   - `Alert.tsx`: borde lateral de color de acento (4px izquierda), rounded-xl, animate fade-in
+   - `EmptyState.tsx`: contenedor 64px rounded-2xl, mas espaciado (py-16)
+   - `Pagination.tsx`: botones ghost sin borde, hover azul tenue, numero pagina en bold
+   - `Badge.tsx`: borde sutil semitransparente por variante
+   - `Input.tsx`: icono cambia a azul en focus (peer-focus), input con clase peer
+   - `PageHeader.tsx`: tracking-tight en titulo
+
+4. **Transicion de paginas**
+   - MainLayout: wrapper `<div key={location.pathname} className="page-content">` alrededor de Outlet
+   - Cada cambio de ruta dispara animacion fade-in-up (sube 8px + opacidad 0.35s)
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `tailwind.config.ts` | Sombras soft, keyframes, animaciones, easing Apple/spring |
+| `src/index.css` | Base global: font smoothing, transiciones, focus ring, scrollbar, selection, page-content |
+| `src/components/Sidebar.tsx` | Simplificado: solo logo + nav (sin info usuario, sin logout) |
+| `src/components/MainLayout.tsx` | Dropdown desktop + bottom sheet mobile + page-content wrapper |
+| `src/components/ui/Button.tsx` | Shadow-soft, active scale, rounded-lg |
+| `src/components/ui/Card.tsx` | Hover lift, icono rounded-2xl |
+| `src/components/ui/Modal.tsx` | Backdrop blur, scale-in, shadow-soft-xl |
+| `src/components/ui/Table.tsx` | Fade-in escalonado, bordes sutiles |
+| `src/components/ui/Alert.tsx` | Borde lateral acento, rounded-xl |
+| `src/components/ui/EmptyState.tsx` | Contenedor grande, mas espaciado |
+| `src/components/ui/Pagination.tsx` | Botones ghost, hover azul |
+| `src/components/ui/Badge.tsx` | Borde sutil semitransparente |
+| `src/components/ui/Input.tsx` | Icono peer-focus azul |
+| `src/components/ui/PageHeader.tsx` | Tracking-tight |
+
+### Proximo paso: Nivel 3 — revision UI pagina por pagina
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*
