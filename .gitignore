@@ -79,7 +79,6 @@ srni-frontend/.env.*.local
 docs/analisis-bd-oracle.txt
 docs/analisis-bd-oracle-*.txt
 docs/analisis-bd-oracle*.md
-docs/correo-solicitud-servidor.md
 docs/solicitud-acceso-oracle-uariv.md
 srni-backend/scripts/analizar_bd_oracle.py
 
