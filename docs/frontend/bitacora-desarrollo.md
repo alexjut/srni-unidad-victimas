@@ -568,4 +568,79 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 9 — 2026-06-02 | Fase 7 completada — Nivel 3 UI + fixes API
+
+### Actividades realizadas
+
+1. **Nivel 3 — Revision UI pagina por pagina (15 paginas)**
+   - Batch global aplicado en todas las paginas: `transition-all`, `divide-gov-borde/40`, `shadow-soft`, skeletons `bg-gray-200`
+   - **Alta prioridad** — Parametricas: 4 botones rojos hardcodeados → `Button variant="danger"`, shadow-soft en mapa, bordes sutiles en banners, `divide-gov-borde/40`
+   - **Alta prioridad** — Victimas: `animate-fade-in-up` al resultado, `rounded-xl`/`rounded-2xl` en cards, `hover:shadow-soft-md` en recientes
+   - **Alta prioridad** — HogarDetalle: animaciones escalonadas en 4 secciones (0/50/100/150ms)
+   - **Alta prioridad** — SesionDetalle: animaciones escalonadas, `shadow-soft` en progress card
+   - **Media** — Instrumentos: `rounded-2xl` en icon background, option badges mas sutiles, `animate-fade-in` al expandir
+   - **Media** — Supervision: `shadow-soft` en filtros y chart cards, progress bar `h-1.5`, boton limpiar filtros
+   - **Media** — Reportes: animaciones en cards y tabla
+   - **Media** — VictimaDetalle: animaciones escalonadas en 4 secciones
+   - **Media** — Encuestas: `Select` component, barra progreso `h-1.5` + `transition-all`, filtros en card
+   - **Media** — Auditoria: `shadow-soft` en filtros, action badges `rounded-md`
+   - **Media** — Dashboard: animaciones en grid metricas y card accesos rapidos
+   - **Media** — Login: `Alert` component, `animate-scale-in` en form card, `transition-all` en toggle password
+   - **Baja** — CambiarPassword: `shadow-soft animate-fade-in-up` en card, toggle ojo en los 3 campos
+   - **Baja** — Hogares: `Select` component, filtros en card con shadow
+   - **Baja** — NotFound: `rounded-2xl`, `animate-fade-in`, `hover:scale-105` en boton
+
+2. **Fix API Reportes — campos desalineados con el backend**
+   - `src/api/reportes.ts`: interfaz `ResumenEncuestador` completamente reescrita con campos reales del backend (`sesiones_completadas`, `hogares_caracterizados`, `respuestas_total`, `periodo_desde/hasta`)
+   - `DetalleSesion` actualizada (`instrumento_nombre`, `estado_display`, `respuestas_total`)
+   - Funcion `desdeDefault()`: rango de 3 meses por defecto (evita quedarse sin datos al filtrar por mes actual)
+   - `src/pages/Reportes.tsx`: columnas tabla actualizadas a campos reales, 6 cards de resumen
+   - `src/pages/Dashboard.tsx`: campos de metricas corregidos
+
+3. **Extras durante la sesion**
+   - `Supervision.tsx`: boton "Limpiar" que limpia filtros fecha y recarga sin parametros
+   - `CambiarPassword.tsx`: toggle ver/ocultar contrasena en los 3 campos (estado independiente por campo)
+   - Diagnostico datos de prueba: sesiones de mayo no aparecian en reportes por filtro de mes. Resuelto con rango ampliado en el cliente API
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/api/reportes.ts` | Interfaz y campos alineados con backend real, rango 3 meses por defecto |
+| `src/pages/Dashboard.tsx` | Campos corregidos + animaciones |
+| `src/pages/Reportes.tsx` | Columnas tabla + cards corregidas + animaciones |
+| `src/pages/Login.tsx` | Alert component + animate-scale-in + transition-all toggle |
+| `src/pages/Hogares.tsx` | Select component + filtros en card |
+| `src/pages/HogarDetalle.tsx` | Animaciones escalonadas |
+| `src/pages/Encuestas.tsx` | Select component + barra progreso refinada |
+| `src/pages/SesionDetalle.tsx` | Animaciones escalonadas + shadow-soft |
+| `src/pages/Victimas.tsx` | Animacion resultado + cards refinadas |
+| `src/pages/VictimaDetalle.tsx` | Animaciones escalonadas |
+| `src/pages/Supervision.tsx` | Shadow-soft + boton limpiar filtros |
+| `src/pages/Reportes.tsx` | Animaciones + fix campos |
+| `src/pages/Instrumentos.tsx` | rounded-2xl + option badges + animate-fade-in |
+| `src/pages/Parametricas.tsx` | Button danger + shadow-soft + bordes sutiles |
+| `src/pages/Auditoria.tsx` | Shadow-soft + action badges rounded-md |
+| `src/pages/CambiarPassword.tsx` | Shadow-soft + animacion + toggle ojo x3 |
+| `src/pages/NotFound.tsx` | rounded-2xl + animate-fade-in + hover boton |
+
+### Estado del frontend al cierre del dia
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 (MainLayout, Sidebar, ErrorBoundary) |
+| Rutas | 15 + catch-all 404 |
+| Tests | 9 (5 Button + 4 authStore) |
+| Fases completadas | 1 a 7 (Nivel 3 incluido) |
+
+### Pendiente
+- Build de produccion (`pnpm build`) — validacion TypeScript
+- A11y: revision WCAG AA, roles ARIA en modales, navegacion teclado
+- Testing: expandir cobertura de componentes principales
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

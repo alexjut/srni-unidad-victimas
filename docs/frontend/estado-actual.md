@@ -2,7 +2,7 @@
 
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** 17 paginas funcionales — Fases 1-6 completadas, Fase 7 en progreso
+**Estado:** 17 paginas funcionales — Fases 1-7 completadas (build de produccion pendiente)
 **Ultima actualizacion:** 2026-06-02
 
 ---
@@ -216,4 +216,5 @@ El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite
 - **Sin Redux:** Zustand replica el patron de la app movil.
 - **Sin SSR / sin Next.js:** SPA pura con Vite. El backend Django ya sirve la API.
 - **Lectura solamente:** el panel no edita respuestas. Captura sigue siendo movil.
-- **Diseno Apple-style:** sombras multi-capa, animaciones suaves, transiciones globales, scrollbar minimalista. Mantiene identidad GOV.CO.
+- **Diseno Apple-style:** sombras multi-capa, animaciones suaves (fade-in-up, scale-in, escalonadas), transiciones globales, scrollbar minimalista. Mantiene identidad GOV.CO.
+- **Nivel 3 UI completo:** revision pagina por pagina — botones hardcodeados migrados a componentes, Select reutilizable en filtros, barras de progreso refinadas (h-1.5), toggle ver/ocultar contrasena en CambiarPassword, bordes y sombras consistentes en todo el sistema.
