@@ -9,7 +9,7 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
+import Dropdown from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
@@ -134,15 +134,16 @@ export default function HogaresPage() {
               className="input pl-9"
             />
           </div>
-          <Button type="submit" size="sm">Buscar</Button>
+          
         </form>
         <div className="w-full sm:w-48">
-          <Select
+          <Dropdown
             value={filtroEstado}
-            onChange={(e) => handleEstadoChange(e.target.value)}
+            onChange={handleEstadoChange}
             options={ESTADOS_HOGAR}
           />
         </div>
+        <Button type="submit" size="sm">Buscar</Button>
         {hayFiltros && (
           <Button variant="secondary" size="sm" icon={X} onClick={limpiarFiltros}>
             Limpiar

@@ -7,6 +7,7 @@ import { auditoriaApi, ACCIONES_AUDITORIA, type LogAuditoria } from '@/api/audit
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
+import Dropdown, { type DropdownOption } from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
 
 const PAGE_SIZE = 20;
@@ -189,35 +190,29 @@ export default function AuditoriaPage() {
           {/* Filtros — en mobile grid 1col, tablet 2col, desktop se expanden */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                Acción
-              </label>
-              <select
+              <Dropdown
+                label="Acción"
                 value={filtroAccion}
-                onChange={(e) => setFiltroAccion(e.target.value)}
-                className="input"
-              >
-                <option value="">Todas</option>
-                {ACCIONES_AUDITORIA.map((a) => (
-                  <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
-                ))}
-              </select>
+                onChange={setFiltroAccion}
+                options={[
+                  { value: '', label: 'Todas' },
+                  ...ACCIONES_AUDITORIA.map((a): DropdownOption => ({ value: a, label: a.replace(/_/g, ' ') })),
+                ]}
+              />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                Resultado
-              </label>
-              <select
+              <Dropdown
+                label="Resultado"
                 value={filtroResultado}
-                onChange={(e) => setFiltroResultado(e.target.value)}
-                className="input"
-              >
-                <option value="">Todos</option>
-                <option value="EXITO">Éxito</option>
-                <option value="ERROR">Error</option>
-                <option value="DENEGADO">Denegado</option>
-              </select>
+                onChange={setFiltroResultado}
+                options={[
+                  { value: '', label: 'Todos' },
+                  { value: 'EXITO', label: 'Éxito' },
+                  { value: 'ERROR', label: 'Error' },
+                  { value: 'DENEGADO', label: 'Denegado' },
+                ]}
+              />
             </div>
 
             <div>

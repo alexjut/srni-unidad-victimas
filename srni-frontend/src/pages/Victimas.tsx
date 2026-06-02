@@ -15,6 +15,7 @@ import {
 } from '@/api/victimas';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
+import Dropdown from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 
@@ -185,26 +186,16 @@ export default function VictimasPage() {
       <div className="card mb-6">
         <form id="form-busqueda" onSubmit={handleBuscar} className="flex flex-col sm:flex-row gap-3">
           <div className="min-w-0 sm:w-56 sm:shrink-0">
-            <label htmlFor="tipo-documento" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Tipo documento
-            </label>
-            <select
-              id="tipo-documento"
+            <Dropdown
+              label="Tipo documento"
               value={tipoDoc}
-              onChange={(e) => setTipoDoc(e.target.value)}
-              className="input"
+              onChange={setTipoDoc}
+              options={cargandoTipos
+                ? [{ value: '', label: 'Cargando...' }]
+                : tiposDoc.map((t) => ({ value: t.codigo, label: `${t.codigo} — ${t.nombre}` }))
+              }
               disabled={cargandoTipos || buscando}
-            >
-              {cargandoTipos ? (
-                <option>Cargando...</option>
-              ) : (
-                tiposDoc.map((t) => (
-                  <option key={t.codigo} value={t.codigo} title={t.nombre}>
-                    {t.codigo} — {t.nombre}
-                  </option>
-                ))
-              )}
-            </select>
+            />
           </div>
 
           <div className="flex-1">

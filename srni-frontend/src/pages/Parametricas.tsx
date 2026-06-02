@@ -22,6 +22,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import Dropdown from '@/components/ui/Dropdown';
 import Spinner from '@/components/ui/Spinner';
 
 const GEO_URL = '/geo/colombia.json';
@@ -360,20 +361,16 @@ function TabMunicipios() {
       {/* Filtro por departamento */}
       <div className="flex items-end gap-3 mb-4">
         <div className="flex-1 max-w-sm">
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-            Filtrar por departamento
-          </label>
-          <select
-            value={deptoSel}
-            onChange={(e) => setDeptoSel(e.target.value ? Number(e.target.value) : '')}
-            className="input"
+          <Dropdown
+            label="Filtrar por departamento"
+            value={String(deptoSel)}
+            onChange={(val) => setDeptoSel(val ? Number(val) : '')}
+            options={[
+              { value: '', label: 'Todos los departamentos' },
+              ...deptos.map((d) => ({ value: String(d.id), label: d.nombre })),
+            ]}
             disabled={cargando}
-          >
-            <option value="">Todos los departamentos</option>
-            {deptos.map((d) => (
-              <option key={d.id} value={d.id}>{d.nombre}</option>
-            ))}
-          </select>
+          />
         </div>
         {deptoSel !== '' && (
           <Button variant="danger" size="md" icon={Trash2} onClick={() => setDeptoSel('')}>
@@ -528,20 +525,16 @@ function TabPuntosAtencion() {
       {/* Filtro por DT */}
       <div className="flex items-end gap-3 mb-4">
         <div className="flex-1 max-w-sm">
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-            Filtrar por dirección territorial
-          </label>
-          <select
-            value={dtSel}
-            onChange={(e) => setDtSel(e.target.value ? Number(e.target.value) : '')}
-            className="input"
+          <Dropdown
+            label="Filtrar por dirección territorial"
+            value={String(dtSel)}
+            onChange={(val) => setDtSel(val ? Number(val) : '')}
+            options={[
+              { value: '', label: 'Todas las direcciones territoriales' },
+              ...dts.map((d) => ({ value: String(d.id), label: d.nombre })),
+            ]}
             disabled={cargando}
-          >
-            <option value="">Todas las direcciones territoriales</option>
-            {dts.map((d) => (
-              <option key={d.id} value={d.id}>{d.nombre}</option>
-            ))}
-          </select>
+          />
         </div>
         {dtSel !== '' && (
           <Button variant="danger" size="md" icon={Trash2} onClick={() => setDtSel('')}>

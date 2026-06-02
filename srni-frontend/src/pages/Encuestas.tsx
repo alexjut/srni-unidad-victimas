@@ -9,7 +9,7 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
+import Dropdown from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
@@ -121,9 +121,9 @@ export default function EncuestasPage() {
       {/* Barra de filtros */}
       <div className="card shadow-soft flex flex-col sm:flex-row gap-3 mb-4">
         <div className="w-full sm:w-52">
-          <Select
+          <Dropdown
             value={filtroEstado}
-            onChange={(e) => handleEstadoChange(e.target.value)}
+            onChange={handleEstadoChange}
             options={ESTADOS_SESION}
           />
         </div>
