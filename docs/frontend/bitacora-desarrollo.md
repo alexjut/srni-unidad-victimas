@@ -85,26 +85,29 @@ Basado en el plan de 7 fases definido para el frontend:
 - [x] ~~Filtros y busqueda en tablas existentes (Hogares: busqueda + estado, Encuestas: estado)~~
 - [x] ~~Filas clickeables + boton "Ver detalle" en Hogares y Encuestas~~
 
-### Fase 3 — Busqueda de victimas
-- [ ] Pagina Victimas (`/victimas`) — formulario busqueda + resultado
-- [ ] VictimaDetalle (`/victimas/:id`) — datos PII + hogares + sesiones
+### Fase 3 — Busqueda de victimas — COMPLETADA 2026-05-31
+- [x] ~~Pagina Victimas (`/victimas`) — formulario busqueda + resultado~~
+- [x] ~~VictimaDetalle (`/victimas/:id`) — datos PII + hogares + sesiones~~
 
-### Fase 4 — Panel de supervision
-- [ ] Dashboard de Supervision (`/supervision`) — metricas por encuestador
-- [ ] Graficas de produccion (series temporales)
+### Fase 4 — Panel de supervision — COMPLETADA 2026-05-31
+- [x] ~~Dashboard de Supervision (`/supervision`) — metricas por encuestador~~
+- [x] ~~Graficas de produccion (series temporales)~~
 
-### Fase 5 — Instrumentos y parametricas
-- [ ] Pagina Instrumentos (`/instrumentos`) — arbol capitulos/preguntas
-- [ ] Pagina Parametricas (`/parametricas`) — cascada depto > municipio > vereda
+### Fase 5 — Instrumentos y parametricas — COMPLETADA 2026-05-31
+- [x] ~~Pagina Instrumentos (`/instrumentos`) — arbol capitulos/preguntas~~
+- [x] ~~Pagina Parametricas (`/parametricas`) — cascada depto > municipio > vereda~~
 
-### Fase 6 — Auditoria y seguridad
-- [ ] Pagina Auditoria (`/auditoria`) — logs inmutables
-- [ ] Cambiar contrasena (`/perfil/cambiar-password`)
+### Fase 6 — Auditoria y seguridad — COMPLETADA 2026-06-02
+- [x] ~~Pagina Auditoria (`/auditoria`) — logs inmutables (adaptada a endpoint real de Javier)~~
+- [x] ~~Cambiar contrasena (`/perfil/cambiar-password`) — react-hook-form + zod~~
+- [x] ~~Logout real: POST `/api/auth/logout/` con blacklist de refresh token~~
 
-### Fase 7 — Pulido y calidad
-- [ ] Responsive design
-- [ ] Accesibilidad (WCAG AA)
-- [ ] Testing (Vitest + Playwright)
+### Fase 7 — Pulido y calidad — EN PROGRESO
+- [x] ~~Accesibilidad parcial (skip-to-content, aria-labels, roles, htmlFor)~~
+- [x] ~~Testing setup (Vitest + happy-dom + 9 tests)~~
+- [x] ~~Correccion tsconfig: eliminar baseUrl deprecado~~
+- [x] ~~UI filtros: Supervision y Auditoria con layout responsive correcto~~
+- [ ] Responsive design completo (pendiente revision pagina por pagina)
 - [ ] Build de produccion
 
 ---
@@ -399,9 +402,98 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ### Pendiente para continuar
 
-- Fase 6 (restante): CambiarPassword + Logout real
-- Fase 7: Responsive, accesibilidad, testing, build produccion
-- **Solicitud a Javier:** implementar endpoint `GET /api/auditoria/logs/`
+- Fase 7 (restante): Responsive completo pagina por pagina + build produccion
+
+---
+
+## Dia 7 — 2026-06-02 | Fase 6 completada + Fase 7 parcial (a11y, testing, UI fixes)
+
+### Actividades realizadas
+
+1. **Fase 6 completada — Auditoria adaptada + CambiarPassword + Logout real**
+   - Adaptacion de `src/api/auditoria.ts` al endpoint real de Javier: tipos actualizados (`accion_display`, `resultado_display`, `usuario_nombre`), 15 acciones, filtros resultado/codigo_usuario/search/ordering/page_size
+   - `src/pages/Auditoria.tsx` — badges por accion y resultado, filtro resultado (dropdown), renderizado JSON detalle, columnas responsive
+   - `src/api/auth.ts` — endpoints `logout` (POST con refresh token) y `cambiarPassword`
+   - `src/pages/CambiarPassword.tsx` — formulario con react-hook-form + zod v4: validacion password_actual, password_nueva (min 8 + mayuscula + numero), confirmar (must match). Breadcrumb, Alert exito, manejo errores API
+   - `src/components/MainLayout.tsx` — logout real (fire-and-forget POST antes de limpiar session) + skip-to-content link + `role="main"`
+   - `src/components/Sidebar.tsx` — enlace "Cambiar contrasena" con icono KeyRound + `aria-label` en nav
+   - `src/App.tsx` — ruta `/perfil/cambiar-password`
+   - `src/api/hogares.ts` — `codigo_hogar` cambiado de opcional a requerido (Javier lo agrego al serializer)
+   - `src/pages/Hogares.tsx` y `src/pages/HogarDetalle.tsx` — fallback `??` cambiado a `||` para codigo_hogar
+
+2. **Fase 7 parcial — Accesibilidad**
+   - `src/components/MainLayout.tsx` — skip-to-content (`sr-only focus:not-sr-only`), `<main id="main-content" role="main">`
+   - `src/pages/Login.tsx` — `htmlFor`/`id` en inputs usuario y password, `aria-label` en boton toggle password
+   - `src/pages/Parametricas.tsx` — `role="tablist"`, `role="tab"`, `aria-selected` en tabs
+   - `src/components/Sidebar.tsx` — `aria-label="Menu principal"` en nav
+
+3. **Fase 7 parcial — Testing**
+   - Dependencias: `vitest@^2`, `@testing-library/react@14`, `@testing-library/user-event@14`, `@testing-library/jest-dom@6`, `happy-dom@20`
+   - `vite.config.ts` — configuracion test (globals, happy-dom, setupFiles, css:false)
+   - `src/test/setup.ts` — import jest-dom matchers para vitest
+   - `src/vite-env.d.ts` — referencia tipos Vite (fix `import.meta.env`)
+   - `src/components/ui/Button.test.tsx` — 5 tests (render, click, loading, disabled, variant danger)
+   - `src/stores/authStore.test.ts` — 4 tests (init, setTokens, setUsuario, logout)
+   - 9 tests pasando
+
+4. **Correccion tsconfig.json**
+   - Eliminado `baseUrl: "."` (deprecado en TS 5.9, causa error en TS 7.0)
+   - `paths` cambiado de `"src/*"` a `"./src/*"` (funciona sin baseUrl)
+   - Build limpio sin warnings de deprecacion
+
+5. **UI/UX filtros — Supervision y Auditoria**
+   - `src/pages/Supervision.tsx` — filtros en card dedicada con grid responsive (1/2/4 cols), botones Filtrar + Actualizar alineados a misma altura que inputs (`h-[38px]`), cards totales grid 1/2/4 cols
+   - `src/pages/Auditoria.tsx` — filtros con layout flex (grid de inputs `flex-1` + botones compactos al lado), componente Button reutilizado (antes eran botones manuales), responsive mobile con botones full-width
+   - `src/components/ui/Table.tsx` — skeleton rows respetan className de columna (para hidden responsive)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/pages/CambiarPassword.tsx` | Formulario cambio contrasena con validacion zod |
+| `src/test/setup.ts` | Setup vitest con jest-dom matchers |
+| `src/vite-env.d.ts` | Referencia tipos Vite |
+| `src/components/ui/Button.test.tsx` | 5 tests del componente Button |
+| `src/stores/authStore.test.ts` | 4 tests del auth store |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `package.json` | +react-hook-form, +zod, +@hookform/resolvers, +vitest, +testing-library, +happy-dom |
+| `pnpm-lock.yaml` | Lockfile actualizado |
+| `tsconfig.json` | Eliminado baseUrl deprecado, paths relativo |
+| `vite.config.ts` | Configuracion test vitest |
+| `src/api/auth.ts` | Endpoints logout + cambiarPassword |
+| `src/api/auditoria.ts` | Tipos adaptados a endpoint real, filtros nuevos |
+| `src/api/hogares.ts` | codigo_hogar requerido |
+| `src/App.tsx` | Ruta /perfil/cambiar-password |
+| `src/components/MainLayout.tsx` | Logout real + skip-to-content + role main |
+| `src/components/Sidebar.tsx` | Link cambiar contrasena + aria-label nav |
+| `src/components/ui/Table.tsx` | Skeleton respeta className columna |
+| `src/pages/Auditoria.tsx` | Adaptada a endpoint real + filtros flex layout |
+| `src/pages/Supervision.tsx` | Filtros en card + grid responsive cards |
+| `src/pages/Login.tsx` | htmlFor + aria-labels |
+| `src/pages/Parametricas.tsx` | Tabs con roles ARIA |
+| `src/pages/Hogares.tsx` | Fallback codigo_hogar |
+| `src/pages/HogarDetalle.tsx` | Fallback codigo_hogar |
+
+### Estado del frontend actualizado
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 15 + catch-all 404 |
+| Nav items sidebar | 9 + link cambiar contrasena |
+| Tests | 9 (5 Button + 4 authStore) |
+
+### Nota para Javier
+- Endpoint `GET /api/auditoria/logs/` ya implementado y conectado. Frontend funcional.
+- `codigo_hogar` ya es requerido en el frontend (gracias por agregarlo al serializer).
+- `POST /api/auth/logout/` y `POST /api/auth/cambiar-password/` conectados.
 
 ---
 
@@ -415,6 +507,7 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
 | 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
 | 2026-05-31 | Fase 6 parcial: auditoria (pagina lista, endpoint pendiente en backend) | 2 archivos creados, 2 modificados |
+| 2026-06-02 | Fase 6 completada + Fase 7 parcial (a11y, testing, UI filtros) | 5 archivos creados, 17 modificados |
 
 ---
 
