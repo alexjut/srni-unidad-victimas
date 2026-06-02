@@ -104,10 +104,11 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Usuario */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <label htmlFor="codigo-usuario" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   Código de usuario
                 </label>
                 <input
+                  id="codigo-usuario"
                   type="text"
                   className="input"
                   placeholder="Ej. ALEXJUT"
@@ -121,11 +122,12 @@ export default function LoginPage() {
 
               {/* Contraseña */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <label htmlFor="password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   Contraseña
                 </label>
                 <div className="relative">
                   <input
+                    id="password"
                     type={showPass ? 'text' : 'password'}
                     className="input pr-10"
                     placeholder="••••••••"
@@ -138,7 +140,7 @@ export default function LoginPage() {
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     onClick={() => setShowPass(!showPass)}
-                    tabIndex={-1}
+                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>

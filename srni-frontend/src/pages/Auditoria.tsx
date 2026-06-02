@@ -6,6 +6,7 @@ import { Shield, Trash2 } from 'lucide-react';
 import { auditoriaApi, ACCIONES_AUDITORIA, type LogAuditoria } from '@/api/auditoria';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
+import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 
 const PAGE_SIZE = 20;
@@ -140,6 +141,7 @@ export default function AuditoriaPage() {
     {
       key: 'recurso',
       header: 'Recurso',
+      className: 'hidden md:table-cell',
       render: (log) => (
         <span className="text-sm text-gray-700">{log.recurso || '—'}</span>
       ),
@@ -157,7 +159,7 @@ export default function AuditoriaPage() {
     {
       key: 'ip_origen',
       header: 'IP',
-      className: 'w-32',
+      className: 'hidden lg:table-cell w-32',
       render: (log) => (
         <span className="text-xs font-mono text-gray-500">{log.ip_origen}</span>
       ),
@@ -165,6 +167,7 @@ export default function AuditoriaPage() {
     {
       key: 'detalle',
       header: 'Detalle',
+      className: 'hidden lg:table-cell',
       render: (log) => (
         <span className="text-xs text-gray-400 line-clamp-2">
           {log.detalle ? Object.entries(log.detalle).map(([k, v]) => `${k}: ${v}`).join(', ') : '—'}
@@ -182,79 +185,75 @@ export default function AuditoriaPage() {
 
       {/* Filtros */}
       <div className="card mb-6">
-        <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="sm:w-48">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Acción
-            </label>
-            <select
-              value={filtroAccion}
-              onChange={(e) => setFiltroAccion(e.target.value)}
-              className="input"
-            >
-              <option value="">Todas</option>
-              {ACCIONES_AUDITORIA.map((a) => (
-                <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
+        <div className="flex flex-col lg:flex-row gap-3">
+          {/* Filtros — en mobile grid 1col, tablet 2col, desktop se expanden */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Acción
+              </label>
+              <select
+                value={filtroAccion}
+                onChange={(e) => setFiltroAccion(e.target.value)}
+                className="input"
+              >
+                <option value="">Todas</option>
+                {ACCIONES_AUDITORIA.map((a) => (
+                  <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Resultado
+              </label>
+              <select
+                value={filtroResultado}
+                onChange={(e) => setFiltroResultado(e.target.value)}
+                className="input"
+              >
+                <option value="">Todos</option>
+                <option value="EXITO">Éxito</option>
+                <option value="ERROR">Error</option>
+                <option value="DENEGADO">Denegado</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Desde
+              </label>
+              <input
+                type="date"
+                value={filtroDesde}
+                onChange={(e) => setFiltroDesde(e.target.value)}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Hasta
+              </label>
+              <input
+                type="date"
+                value={filtroHasta}
+                onChange={(e) => setFiltroHasta(e.target.value)}
+                className="input"
+              />
+            </div>
           </div>
 
-          <div className="sm:w-40">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Resultado
-            </label>
-            <select
-              value={filtroResultado}
-              onChange={(e) => setFiltroResultado(e.target.value)}
-              className="input"
-            >
-              <option value="">Todos</option>
-              <option value="EXITO">Éxito</option>
-              <option value="ERROR">Error</option>
-              <option value="DENEGADO">Denegado</option>
-            </select>
+          {/* Botones — en desktop al lado, en mobile/tablet fila completa */}
+          <div className="flex items-end gap-2">
+            <Button onClick={aplicarFiltros} className="h-[38px] flex-1 lg:flex-none">Filtrar</Button>
+            {hayFiltros && (
+              <Button variant="danger" icon={Trash2} onClick={limpiarFiltros} className="h-[38px] flex-1 lg:flex-none">
+                Limpiar
+              </Button>
+            )}
           </div>
-
-          <div className="sm:w-44">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Desde
-            </label>
-            <input
-              type="date"
-              value={filtroDesde}
-              onChange={(e) => setFiltroDesde(e.target.value)}
-              className="input"
-            />
-          </div>
-
-          <div className="sm:w-44">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-              Hasta
-            </label>
-            <input
-              type="date"
-              value={filtroHasta}
-              onChange={(e) => setFiltroHasta(e.target.value)}
-              className="input"
-            />
-          </div>
-
-          <button
-            onClick={aplicarFiltros}
-            className="btn-primary h-[38px] px-4 text-sm"
-          >
-            Filtrar
-          </button>
-
-          {hayFiltros && (
-            <button
-              onClick={limpiarFiltros}
-              className="flex items-center gap-1 text-xs text-white bg-gov-rojo hover:bg-red-700 border border-gov-rojo rounded-md px-2.5 py-2 transition-colors h-[38px]"
-            >
-              <Trash2 size={12} />
-              Limpiar
-            </button>
-          )}
         </div>
       </div>
 

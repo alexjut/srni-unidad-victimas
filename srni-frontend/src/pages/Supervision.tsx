@@ -85,9 +85,15 @@ export default function SupervisionPage() {
     {
       key: 'en_progreso',
       header: 'En progreso',
+      className: 'hidden md:table-cell',
       render: (e) => <Badge variant="azul">{e.sesiones_en_progreso}</Badge>,
     },
-    { key: 'hogares', header: 'Hogares', render: (e) => <span className="text-gray-700">{e.hogares_caracterizados}</span> },
+    {
+      key: 'hogares',
+      header: 'Hogares',
+      className: 'hidden md:table-cell',
+      render: (e) => <span className="text-gray-700">{e.hogares_caracterizados}</span>,
+    },
     {
       key: 'promedio',
       header: 'Avance',
@@ -106,6 +112,7 @@ export default function SupervisionPage() {
     {
       key: 'actividad',
       header: 'Última actividad',
+      className: 'hidden lg:table-cell',
       render: (e) => (
         <span className="text-xs text-gray-500">
           {e.ultima_actividad ? new Date(e.ultima_actividad).toLocaleDateString('es-CO') : '—'}
@@ -119,25 +126,32 @@ export default function SupervisionPage() {
       <PageHeader
         titulo="Supervisión"
         subtitulo={supervisor ? `${supervisor.encuestadores_activos} encuestador(es) activos · ${supervisor.periodo_desde} a ${supervisor.periodo_hasta}` : 'Panel de supervisión'}
-        acciones={
-          <Button variant="secondary" size="sm" icon={RefreshCw} loading={cargando} onClick={cargar}>
-            Actualizar
-          </Button>
-        }
       />
 
-      {/* Filtros de fecha */}
-      <form onSubmit={aplicarFiltros} className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desde</label>
-          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="input" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Hasta</label>
-          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="input" />
-        </div>
-        <div className="flex items-end">
-          <Button type="submit" size="sm">Filtrar</Button>
+      {/* Barra de filtros */}
+      <form onSubmit={aplicarFiltros} className="card mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desde</label>
+            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Hasta</label>
+            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="input" />
+          </div>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
+            <Button type="submit" className="h-[38px]">Filtrar</Button>
+            <Button
+              type="button"
+              variant="secondary"
+              icon={RefreshCw}
+              loading={cargando}
+              onClick={cargar}
+              className="h-[38px]"
+            >
+              Actualizar
+            </Button>
+          </div>
         </div>
       </form>
 
@@ -145,10 +159,10 @@ export default function SupervisionPage() {
 
       {/* Cards de totales */}
       {supervisor && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card icon={ClipboardCheck} label="Sesiones totales" valor={supervisor.totales.sesiones_total} color="bg-gov-azul" />
           <Card icon={TrendingUp} label="Completadas" valor={supervisor.totales.sesiones_completadas} color="bg-gov-verde" />
-          <Card icon={Home} label="Hogares caracterizados" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
+          <Card icon={Home} label="Hogares" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
           <Card icon={Users} label="Encuestadores activos" valor={supervisor.encuestadores_activos} color="bg-purple-600" />
         </div>
       )}

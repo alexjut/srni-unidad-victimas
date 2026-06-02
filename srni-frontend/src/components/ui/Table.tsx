@@ -62,7 +62,7 @@ export default function Table<T>({
               ? Array.from({ length: skeletonRows }).map((_, i) => (
                   <tr key={i}>
                     {columns.map((col) => (
-                      <td key={col.key} className="px-4 py-3">
+                      <td key={col.key} className={`px-4 py-3 ${col.className ?? ''}`}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </td>
                     ))}

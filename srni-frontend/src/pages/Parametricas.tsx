@@ -48,19 +48,22 @@ export default function ParametricasPage() {
       />
 
       {/* Tabs — sticky para no perderlos al scroll */}
-      <div className="flex gap-1 overflow-x-auto border-b border-gov-borde mb-6 pb-px sticky top-0 z-20 bg-gov-grisTenue pt-1 -mt-1">
+      <div className="flex gap-1 overflow-x-auto border-b border-gov-borde mb-6 pb-px sticky top-0 z-20 bg-gov-grisTenue pt-1 -mt-1" role="tablist">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+            role="tab"
+            aria-selected={tab === key}
+            aria-label={label}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               tab === key
                 ? 'border-gov-azul text-gov-azul'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             <Icon size={16} />
-            {label}
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>

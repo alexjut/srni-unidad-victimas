@@ -39,7 +39,7 @@ export default function Sidebar({ onNavigate, onLogout }: SidebarProps) {
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Menú principal">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

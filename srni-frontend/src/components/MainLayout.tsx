@@ -31,6 +31,14 @@ export default function MainLayout() {
   return (
     <div className="flex h-screen bg-gov-grisTenue">
 
+      {/* Skip to content — a11y */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:bg-gov-azul focus:text-white focus:px-4 focus:py-2 focus:rounded-md focus:text-sm focus:font-semibold"
+      >
+        Ir al contenido principal
+      </a>
+
       {/* ── Sidebar fijo: solo visible en desktop (lg+) ── */}
       <aside className="hidden lg:flex w-64 bg-gov-azulOscuro text-white flex-col shadow-xl shrink-0">
         <Sidebar onLogout={handleLogout} />
@@ -96,7 +104,7 @@ export default function MainLayout() {
         </header>
 
         {/* Contenido principal */}
-        <main className="flex-1 overflow-y-auto">
+        <main id="main-content" className="flex-1 overflow-y-auto" role="main">
           <Outlet />
         </main>
       </div>
