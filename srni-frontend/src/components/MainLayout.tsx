@@ -1,9 +1,9 @@
 /**
  * Layout principal — sidebar fijo en desktop, drawer con hamburguesa en mobile/tablet
  */
-import { useState, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
+import { Menu, X, KeyRound, LogOut, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import Sidebar, { NAV_ITEMS } from '@/components/Sidebar';
@@ -13,8 +13,23 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [userMenuOpen]);
 
   function handleLogout() {
     setDrawerOpen(false);
@@ -41,7 +56,7 @@ export default function MainLayout() {
 
       {/* ── Sidebar fijo: solo visible en desktop (lg+) ── */}
       <aside className="hidden lg:flex w-64 bg-gov-azulOscuro text-white flex-col shadow-xl shrink-0">
-        <Sidebar onLogout={handleLogout} />
+        <Sidebar />
       </aside>
 
       {/* ── Drawer mobile: overlay + panel deslizable ── */}
@@ -64,7 +79,7 @@ export default function MainLayout() {
         >
           <X size={22} />
         </button>
-        <Sidebar onNavigate={closeDrawer} onLogout={handleLogout} />
+        <Sidebar onNavigate={closeDrawer} />
       </aside>
 
       {/* ── Columna principal ── */}
@@ -83,22 +98,132 @@ export default function MainLayout() {
             <p className="text-sm font-bold truncate">{currentLabel}</p>
           </div>
           {usuario && (
-            <p className="text-xs text-blue-200 truncate max-w-[120px]">{usuario.nombre_completo}</p>
+            <button
+              onClick={() => setUserMenuOpen(true)}
+              className="w-9 h-9 rounded-full bg-gov-azul flex items-center justify-center text-white text-sm font-bold ring-2 ring-white/20"
+              aria-haspopup="dialog"
+              aria-label="Menú de usuario"
+            >
+              {usuario.nombre_completo?.charAt(0) ?? '?'}
+            </button>
           )}
         </header>
+
+        {/* Bottom sheet mobile — menú de usuario */}
+        {userMenuOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-50 bg-black/40 lg:hidden"
+              onClick={() => setUserMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden animate-slide-up">
+              <div className="bg-white rounded-t-2xl shadow-2xl pb-safe">
+                {/* Handle */}
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-gray-300" />
+                </div>
+
+                {/* Info usuario */}
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-gov-borde">
+                  <div className="w-11 h-11 rounded-full bg-gov-azul flex items-center justify-center text-white text-base font-bold shrink-0">
+                    {usuario?.nombre_completo?.charAt(0) ?? '?'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gov-azulOscuro truncate">{usuario?.nombre_completo}</p>
+                    {usuario?.perfil && (
+                      <p className="text-xs text-gov-gris">{usuario.perfil.nombre}</p>
+                    )}
+                    <p className="text-xs font-medium text-gov-azul mt-0.5">Sesión activa</p>
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                <div className="px-3 py-2">
+                  <NavLink
+                    to="/perfil/cambiar-password"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-gov-azulOscuro active:bg-gov-azulTenue transition-colors"
+                  >
+                    <KeyRound size={18} className="text-gov-azul" />
+                    Cambiar contraseña
+                  </NavLink>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-gov-rojo active:bg-gov-rojoTenue transition-colors w-full"
+                  >
+                    <LogOut size={18} />
+                    Cerrar sesión
+                  </button>
+                </div>
+
+                {/* Botón cancelar */}
+                <div className="px-3 pb-4 pt-1">
+                  <button
+                    onClick={() => setUserMenuOpen(false)}
+                    className="w-full py-3 rounded-xl bg-gray-100 text-sm font-semibold text-gov-gris active:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Header desktop */}
         <header className="hidden lg:flex items-center justify-between bg-white border-b border-gov-borde px-6 py-3 shrink-0">
           <p className="text-sm font-display font-semibold text-gray-800">{currentLabel}</p>
           {usuario && (
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-700">{usuario.nombre_completo}</p>
-                <p className="text-xs text-gray-400">{usuario.perfil?.nombre ?? usuario.codigo_usuario}</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-gov-azul flex items-center justify-center text-white text-xs font-bold">
-                {usuario.nombre_completo?.charAt(0) ?? '?'}
-              </div>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen(prev => !prev)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 border transition-colors ${
+                  userMenuOpen
+                    ? 'bg-gov-azulTenue border-gov-azul/30'
+                    : 'border-transparent hover:bg-gov-azulTenue/50 hover:border-gov-azul/20'
+                }`}
+                aria-haspopup="true"
+                aria-expanded={userMenuOpen}
+              >
+                <div className="w-8 h-8 rounded-full bg-gov-azul flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {usuario.nombre_completo?.charAt(0) ?? '?'}
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-gov-azulOscuro">{usuario.nombre_completo}</p>
+                  <p className="text-xs text-gov-gris">{usuario.perfil?.nombre ?? usuario.codigo_usuario}</p>
+                </div>
+                <ChevronDown size={16} className={`text-gov-azul transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-xl shadow-xl border border-gov-borde py-1 z-50">
+                  <div className="px-4 py-3 border-b border-gov-borde">
+                    <p className="text-xs font-medium text-gov-azul uppercase tracking-wide">Sesión activa</p>
+                    <p className="text-sm font-bold text-gov-azulOscuro truncate mt-0.5">{usuario.nombre_completo}</p>
+                    {usuario.perfil && (
+                      <p className="text-xs text-gov-gris">{usuario.perfil.nombre}</p>
+                    )}
+                  </div>
+                  <div className="py-1">
+                    <NavLink
+                      to="/perfil/cambiar-password"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gov-azulOscuro hover:bg-gov-azulTenue transition-colors"
+                    >
+                      <KeyRound size={16} className="text-gov-azul" />
+                      Cambiar contraseña
+                    </NavLink>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gov-rojo hover:bg-gov-rojoTenue transition-colors w-full"
+                    >
+                      <LogOut size={16} />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </header>

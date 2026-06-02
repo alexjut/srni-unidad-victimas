@@ -40,3 +40,12 @@
   .badge-azul   { @apply bg-gov-azulTenue   text-gov-azul   text-xs font-semibold px-2 py-0.5 rounded-full; }
   .badge-gris   { @apply bg-gray-100        text-gov-gris   text-xs font-semibold px-2 py-0.5 rounded-full; }
 }
+
+/* Animación bottom sheet */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
