@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, Shield, LogOut, ChevronRight,
+  FileText, Database, Shield, LogOut, ChevronRight, KeyRound,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -71,6 +71,14 @@ export default function Sidebar({ onNavigate, onLogout }: SidebarProps) {
             )}
           </div>
         )}
+        <NavLink
+          to="/perfil/cambiar-password"
+          onClick={onNavigate}
+          className="flex items-center gap-2 text-sm text-blue-200 hover:text-white transition-colors w-full mb-2"
+        >
+          <KeyRound size={16} />
+          Cambiar contraseña
+        </NavLink>
         <button
           onClick={onLogout}
           className="flex items-center gap-2 text-sm text-blue-200 hover:text-white transition-colors w-full"

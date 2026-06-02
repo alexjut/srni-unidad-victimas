@@ -16,6 +16,7 @@ import SesionDetallePage from '@/pages/SesionDetalle';
 import InstrumentosPage from '@/pages/Instrumentos';
 import ParametricasPage from '@/pages/Parametricas';
 import AuditoriaPage from '@/pages/Auditoria';
+import CambiarPasswordPage from '@/pages/CambiarPassword';
 import NotFound from '@/pages/NotFound';
 import MainLayout from '@/components/MainLayout';
 
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="instrumentos" element={<InstrumentosPage />} />
         <Route path="parametricas" element={<ParametricasPage />} />
         <Route path="auditoria" element={<AuditoriaPage />} />
+        <Route path="perfil/cambiar-password" element={<CambiarPasswordPage />} />
       </Route>
 
       {/* Ruta catch-all → 404 */}

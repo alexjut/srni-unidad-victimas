@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { authApi } from '@/api/auth';
 import Sidebar, { NAV_ITEMS } from '@/components/Sidebar';
 
 export default function MainLayout() {
@@ -17,6 +18,10 @@ export default function MainLayout() {
 
   function handleLogout() {
     setDrawerOpen(false);
+    const refresh = useAuthStore.getState().refreshToken;
+    if (refresh) {
+      authApi.logout(refresh).catch(() => {});
+    }
     logout();
     navigate('/login');
   }
