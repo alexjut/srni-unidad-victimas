@@ -51,13 +51,13 @@ export default function Modal({ abierto, onCerrar, titulo, children, acciones }:
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={titulo}
+        aria-labelledby="modal-titulo"
         tabIndex={-1}
         className="relative bg-white rounded-2xl shadow-soft-xl w-full max-w-lg max-h-[90vh] flex flex-col outline-none animate-scale-in"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gov-borde/60">
-          <h3 className="font-display text-lg font-bold text-gray-800">{titulo}</h3>
+          <h3 id="modal-titulo" className="font-display text-lg font-bold text-gray-800">{titulo}</h3>
           <button
             onClick={onCerrar}
             className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
