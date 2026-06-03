@@ -681,4 +681,73 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 11 — 2026-06-03 | Code splitting + A11y Modal + Calidad build
+
+### Actividades realizadas
+
+1. **Analisis de pendientes**
+   - Build de produccion validado: sin errores de tipos, bundle de 937KB (gzip 285KB)
+   - Identificados pendientes reales: code splitting, A11y Modal, testing, `"type": "module"` en package.json
+
+2. **Code splitting — bundle 937KB → 116KB**
+   - `src/App.tsx`: 13 paginas convertidas a `React.lazy()` + componente `SuspensePage` wrapper con `<Suspense fallback={<Spinner />}>`
+   - Login y Dashboard se mantienen como imports eager (critical path)
+   - `vite.config.ts`: `build.rollupOptions.output.manualChunks` con 3 vendor chunks:
+     - `vendor-react` (164KB): react, react-dom, react-router-dom
+     - `vendor-charts` (377KB): recharts — solo carga al entrar a Supervision
+     - `vendor-maps` (102KB): react-simple-maps — solo carga al entrar a Parametricas
+   - Resultado: bundle principal 116KB (gzip 38KB), cada pagina en su propio chunk (1-17KB)
+
+3. **A11y — Modal.tsx**
+   - `aria-label={titulo}` → `aria-labelledby="modal-titulo"` (practica correcta WCAG)
+   - `id="modal-titulo"` agregado al `<h3>` del header
+   - Modal ya tenia: `role="dialog"`, `aria-modal="true"`, `tabIndex={-1}`, cierre Escape, overlay `aria-hidden`
+
+4. **Fix package.json — `"type": "module"`**
+   - Eliminado el warning de `MODULE_TYPELESS_PACKAGE_JSON` en postcss.config.js durante el build
+   - Build limpio sin warnings tras el cambio
+
+5. **Migracion de entorno de tests: happy-dom → jsdom**
+   - Instalado `jsdom` como devDependency
+   - `vite.config.ts`: `environment: 'happy-dom'` → `'jsdom'`
+   - 9 tests siguen pasando (5 Button + 4 authStore)
+
+6. **Hallazgo y documentacion: limitacion de tests con hooks**
+   - Componentes React con hooks (useState/useEffect/useRef) no se pueden testear en este entorno
+   - Causa: incompatibilidad entre Node.js v24.15.0 + pnpm virtual store + Vitest 2.1.9 + React 18 (CJS interop)
+   - Vite crea un Proxy ESM para React que no comparte `ReactCurrentDispatcher` con react-dom
+   - Se intentaron 10+ soluciones: dedupe, server.deps.inline, resolve.alias, shamefully-hoist, pool:threads, deps.optimizer — ninguna funciona
+   - Componentes sin hooks (Button) y stores (authStore) SI funcionan
+   - Fix futuro: actualizar a Vitest 3.x
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | 13 paginas → React.lazy() + SuspensePage wrapper |
+| `vite.config.ts` | manualChunks + environment jsdom |
+| `src/components/ui/Modal.tsx` | aria-label → aria-labelledby con id en h3 |
+| `package.json` | "type": "module" + jsdom devDependency |
+| `pnpm-lock.yaml` | lockfile actualizado |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 14 (+ Dropdown) |
+| Componentes layout | 3 |
+| Rutas | 15 + catch-all 404 |
+| Tests | 9 (5 Button + 4 authStore) |
+| Bundle principal | 116KB (antes 937KB) |
+
+### Registro de cambios en el dia
+
+| Fecha | Que hice | Archivos tocados |
+|-------|----------|-----------------|
+| 2026-06-03 | Code splitting lazy + manualChunks + A11y Modal + type module + jsdom | App.tsx, vite.config.ts, Modal.tsx, package.json |
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

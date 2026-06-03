@@ -2,8 +2,8 @@
 
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** 17 paginas funcionales — Fases 1-7 completadas (build de produccion pendiente)
-**Ultima actualizacion:** 2026-06-02
+**Estado:** 17 paginas funcionales — Fases 1-7 completadas — Build produccion validado — Code splitting aplicado
+**Ultima actualizacion:** 2026-06-03
 
 ---
 
@@ -189,7 +189,9 @@ Fuentes: **Montserrat** (display) + **Work Sans** (body)
 |-------|-------|-------------|
 | Button.test.tsx | 5 (render, click, loading, disabled, variant) | Vitest + Testing Library |
 | authStore.test.ts | 4 (init, setTokens, setUsuario, logout) | Vitest |
-| **Total** | **9** | happy-dom |
+| **Total** | **9** | jsdom |
+
+**Nota:** componentes con hooks (useState/useEffect/useRef) no son testeables con la combinacion actual Node.js v24 + Vitest 2.x + pnpm (bug CJS interop). Componentes sin hooks y stores si funcionan. Fix: actualizar a Vitest 3.x.
 
 ---
 
@@ -219,3 +221,6 @@ El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite
 - **Lectura solamente:** el panel no edita respuestas. Captura sigue siendo movil.
 - **Diseno Apple-style:** sombras multi-capa, animaciones suaves (fade-in-up, scale-in, escalonadas), transiciones globales, scrollbar minimalista. Mantiene identidad GOV.CO.
 - **Nivel 3 UI completo:** revision pagina por pagina — botones hardcodeados migrados a componentes, Select reutilizable en filtros, barras de progreso refinadas (h-1.5), toggle ver/ocultar contrasena en CambiarPassword, bordes y sombras consistentes en todo el sistema.
+- **Code splitting:** React.lazy() en 13 paginas + manualChunks. Bundle principal: 937KB → 116KB. recharts y react-simple-maps en chunks separados (solo cargan cuando el usuario navega a esas paginas).
+- **A11y Modal:** aria-labelledby apuntando al h3 del titulo (WCAG AA).
+- **Build produccion:** validado y limpio. Sin errores de tipos. Sin warnings.
