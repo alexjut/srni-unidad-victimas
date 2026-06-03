@@ -57,8 +57,9 @@ srni-frontend/src/
 │   ├── MainLayout.tsx     Sidebar desktop + drawer mobile + header con dropdown usuario + bottom sheet mobile
 │   ├── Sidebar.tsx        Logo GOV.CO + 9 nav items
 │   ├── ErrorBoundary.tsx  Captura errores React
-│   └── ui/                13 componentes reutilizables
+│   └── ui/                14 componentes reutilizables
 │       ├── Button.tsx     4 variantes, 3 tamanos, loading, icon, shadow-soft, press effect
+│       ├── Dropdown.tsx   Dropdown custom Apple-style (desktop) + select nativo (mobile)
 │       ├── Input.tsx      forwardRef, label, error, icono con peer-focus
 │       ├── Select.tsx     forwardRef, label, error, opciones tipadas
 │       ├── Table.tsx      Generico <T>, skeleton escalonado, fade-in filas, paginacion

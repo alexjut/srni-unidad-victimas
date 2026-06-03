@@ -637,9 +637,47 @@ Basado en el plan de 7 fases definido para el frontend:
 | Fases completadas | 1 a 7 (Nivel 3 incluido) |
 
 ### Pendiente
-- Build de produccion (`pnpm build`) — validacion TypeScript
 - A11y: revision WCAG AA, roles ARIA en modales, navegacion teclado
 - Testing: expandir cobertura de componentes principales
+
+---
+
+## Dia 10 — 2026-06-02 | Componente Dropdown personalizado
+
+### Actividades realizadas
+
+1. **Nuevo componente `Dropdown.tsx`** (`src/components/ui/`)
+   - Reemplaza el `<select>` nativo en filtros de UI (no en formularios react-hook-form)
+   - Trigger button estilizado igual que `.input` con chevron rotatorio
+   - Panel flotante: `shadow-soft-md`, `rounded-xl`, `border-gov-borde/60`, `animate-slide-down`
+   - Opcion seleccionada: `bg-gov-azulTenue text-gov-azul` + icono Check
+   - Hover: `bg-gov-azulTenue/40 transition-all`
+   - Cierre con clic fuera y tecla Escape
+   - **Responsive:** desktop → dropdown custom, mobile → `<select>` nativo del OS
+   - Panel con `min-w-full w-max` para adaptarse al texto mas largo sin cortar
+
+2. **Aplicado en 5 paginas**
+   - `Victimas.tsx` — selector tipo documento
+   - `Hogares.tsx` — filtro estado hogar
+   - `Encuestas.tsx` — filtro estado sesion
+   - `Auditoria.tsx` — filtros accion y resultado (2 dropdowns)
+   - `Parametricas.tsx` — filtros por departamento y por DT (2 dropdowns)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ui/Dropdown.tsx` | Dropdown personalizado Apple-style con fallback nativo en mobile |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Victimas.tsx` | Select nativo → Dropdown |
+| `src/pages/Hogares.tsx` | Select component → Dropdown |
+| `src/pages/Encuestas.tsx` | Select component → Dropdown |
+| `src/pages/Auditoria.tsx` | 2 selects nativos → Dropdown |
+| `src/pages/Parametricas.tsx` | 2 selects nativos → Dropdown (con conversion Number↔String) |
 
 ---
 
