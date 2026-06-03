@@ -18,6 +18,17 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-maps':   ['react-simple-maps'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'happy-dom',
