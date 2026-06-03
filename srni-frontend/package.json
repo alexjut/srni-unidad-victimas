@@ -2,6 +2,7 @@
   "name": "srni-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Panel web SRNI — Unidad para las Víctimas",
   "scripts": {
     "dev": "vite",
