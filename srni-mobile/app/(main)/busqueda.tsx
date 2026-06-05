@@ -658,54 +658,33 @@ export default function BusquedaScreen() {
       return <TarjetaNoHabilitado resultado={resultado} />;
     }
 
-    // Sprint 21 — el backend devuelve hogar_activo + es_victima_pruebas
+    // Regla universal: 1 víctima → 1 hogar. El backend devuelve hogar_activo si existe.
     const hogarActivo = (resultado.victima as any)?.hogar_activo as
       | { id: string; estado: string; total_miembros: number; total_sesiones: number }
       | null
       | undefined;
-    const esPruebas = !!(resultado.victima as any)?.es_victima_pruebas;
 
-    // Habilitado: 3 casos según hogar existente y tipo de víctima
+    // Habilitado: 2 casos según haya o no hogar activo previo.
     return (
       <>
         <TarjetaHabilitado resultado={resultado} />
 
         {hogarActivo ? (
-          // CASO A — Ya tiene hogar activo
-          esPruebas ? (
-            // Víctima de pruebas → permitir crear nueva caracterización
-            <Button
-              mode="contained"
-              icon="clipboard-plus"
-              onPress={() => router.push({
-                pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-                params: { hogarId: hogarActivo.id },
-              })}
-              buttonColor={GOV.azul}
-              textColor="#FFFFFF"
-              style={[styles.botonAccion, styles.botonConformar]}
-              contentStyle={styles.botonAccionContent}
-            >
-              Nueva caracterización
-              {hogarActivo.total_sesiones > 0 ? `  (${hogarActivo.total_sesiones} previas)` : ''}
-            </Button>
-          ) : (
-            // Víctima normal → solo ver hogar, no permite duplicar
-            <Button
-              mode="contained"
-              icon="home-search"
-              onPress={() => router.push({
-                pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-                params: { hogarId: hogarActivo.id },
-              })}
-              buttonColor={GOV.naranja}
-              textColor="#FFFFFF"
-              style={[styles.botonAccion, styles.botonConformar]}
-              contentStyle={styles.botonAccionContent}
-            >
-              Ver hogar registrado  ({hogarActivo.total_sesiones} caracterización{hogarActivo.total_sesiones !== 1 ? 'es' : ''})
-            </Button>
-          )
+          // CASO A — Ya tiene hogar activo → continuar caracterización
+          <Button
+            mode="contained"
+            icon="home-search"
+            onPress={() => router.push({
+              pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+              params: { hogarId: hogarActivo.id },
+            })}
+            buttonColor={GOV.naranja}
+            textColor="#FFFFFF"
+            style={[styles.botonAccion, styles.botonConformar]}
+            contentStyle={styles.botonAccionContent}
+          >
+            Ver hogar registrado  ({hogarActivo.total_sesiones} caracterización{hogarActivo.total_sesiones !== 1 ? 'es' : ''})
+          </Button>
         ) : (
           // CASO B — Sin hogar → flujo normal de conformar
           <Button
