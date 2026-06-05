@@ -10,8 +10,7 @@ from apps.parametricas.models import TipoDocumento, Departamento, Municipio
 from apps.victimas.models import Victima
 from apps.hogares.models import Hogar
 from apps.formulario.models import (
-    Perfil as PerfilInstrumento,
-    InstrumentoVersion,
+    Instrumento,
     Capitulo,
     Pregunta,
     OpcionRespuesta,
@@ -70,31 +69,29 @@ def victima(tipo_doc, municipio, encuestador):
 @pytest.fixture
 def hogar(victima, municipio, encuestador):
     return Hogar.objects.create(
-        jefe_hogar=victima, municipio=municipio,
+        autorizado=victima, municipio=municipio,
         tipo_vivienda='APARTAMENTO', condicion_ocupacion='PROPIA',
-        numero_personas=3, creado_por=encuestador,
+        estrato=2, numero_cuartos=3, numero_personas=3,
+        estado='BORRADOR', creado_por=encuestador,
     )
 
 
 @pytest.fixture
 def instrumento():
-    perfil_inst = PerfilInstrumento.objects.create(
-        codigo='PAARI-TEST', nombre='PAARI Test', activo=True,
-    )
-    version = InstrumentoVersion.objects.create(
-        perfil=perfil_inst, numero='V7',
-        vigente_desde=date(2021, 1, 1),
+    inst = Instrumento.objects.create(
+        codigo='PAARI-TEST', nombre='PAARI Test', version='V7',
+        vigente_desde=date(2021, 1, 1), activo=True,
         fuente_documental='Test Encuestas',
     )
     capitulo = Capitulo.objects.create(
-        instrumento=version, codigo='T01', nombre='Identificación',
-        orden=1, nivel='PERSONA',
+        instrumento=inst, codigo='T01', nombre='Identificación',
+        orden=1, nivel='HOGAR',
     )
-    # 3 preguntas obligatorias
+    # 3 preguntas obligatorias — nivel HOGAR (no requieren miembro_id)
     p1 = Pregunta.objects.create(
         capitulo=capitulo, codigo_externo='P01', no_pregunta='P01',
         variable_bd='P01', texto='¿Género?',
-        tipo='RADIO', nivel='PERSONA', orden=1, obligatoria=True,
+        tipo='RADIO', nivel='HOGAR', orden=1, obligatoria=True,
     )
     OpcionRespuesta.objects.bulk_create([
         OpcionRespuesta(pregunta=p1, valor='M', etiqueta='Masculino', orden=1),
@@ -103,14 +100,14 @@ def instrumento():
     Pregunta.objects.create(
         capitulo=capitulo, codigo_externo='P02', no_pregunta='P02',
         variable_bd='P02', texto='¿Edad?',
-        tipo='NUMERICO', nivel='PERSONA', orden=2, obligatoria=True,
+        tipo='NUMERICO', nivel='HOGAR', orden=2, obligatoria=True,
     )
     Pregunta.objects.create(
         capitulo=capitulo, codigo_externo='P03', no_pregunta='P03',
         variable_bd='P03', texto='¿Estrato?',
-        tipo='NUMERICO', nivel='PERSONA', orden=3, obligatoria=True,
+        tipo='NUMERICO', nivel='HOGAR', orden=3, obligatoria=True,
     )
-    return version
+    return inst
 
 
 @pytest.fixture
@@ -142,6 +139,41 @@ class TestCrearSesion:
         assert r.status_code == 201, r.data
         assert r.data['estado'] == 'INICIADA'
         assert r.data['porcentaje_completado'] == 0
+
+    def test_segunda_sesion_con_activa_devuelve_la_existente(
+        self, client_enc, hogar, instrumento
+    ):
+        """
+        Regla universal: 1 víctima → 1 hogar → 1 caracterización activa.
+        Si el hogar ya tiene una sesión no-COMPLETADA, crear otra debe
+        devolver la existente (200), no duplicar (201).
+        """
+        r1 = client_enc.post('/api/encuestas/', {
+            'hogar': str(hogar.id), 'instrumento': str(instrumento.id),
+        }, format='json')
+        assert r1.status_code == 201, r1.data
+
+        r2 = client_enc.post('/api/encuestas/', {
+            'hogar': str(hogar.id), 'instrumento': str(instrumento.id),
+        }, format='json')
+        assert r2.status_code == 200, r2.data
+        assert r2.data['id'] == r1.data['id']
+        assert SesionEncuesta.objects.filter(hogar=hogar).count() == 1
+
+    def test_nueva_sesion_permitida_tras_completar(
+        self, client_enc, hogar, instrumento
+    ):
+        """Tras COMPLETAR la sesión activa, sí se puede crear una nueva."""
+        sesion_previa = SesionEncuesta.objects.create(
+            hogar=hogar, instrumento=instrumento,
+            encuestador=hogar.creado_por, estado='COMPLETADA',
+        )
+        r = client_enc.post('/api/encuestas/', {
+            'hogar': str(hogar.id), 'instrumento': str(instrumento.id),
+        }, format='json')
+        assert r.status_code == 201, r.data
+        assert r.data['id'] != str(sesion_previa.id)
+        assert SesionEncuesta.objects.filter(hogar=hogar).count() == 2
 
     def test_encuestador_solo_ve_sus_sesiones(self, client_enc, sesion, hogar, instrumento):
         # Otro encuestador con otra sesión
@@ -214,15 +246,12 @@ class TestResponderPreguntas:
         assert RespuestaEncuesta.objects.filter(sesion=sesion, pregunta=pregunta).count() == 1
 
     def test_pregunta_de_otro_instrumento_retorna_400(self, client_enc, sesion):
-        otro_perfil = PerfilInstrumento.objects.create(
-            codigo='OTRO-PERF', nombre='Otro Perfil', activo=True,
-        )
-        otra_version = InstrumentoVersion.objects.create(
-            perfil=otro_perfil, numero='V1',
-            vigente_desde=date(2021, 1, 1),
+        otro_inst = Instrumento.objects.create(
+            codigo='OTRO-INST', nombre='Otro Instrumento', version='V1',
+            vigente_desde=date(2021, 1, 1), activo=True,
         )
         otro_cap = Capitulo.objects.create(
-            instrumento=otra_version, codigo='OT1', nombre='Otro',
+            instrumento=otro_inst, codigo='OT1', nombre='Otro',
             orden=1, nivel='HOGAR',
         )
         pregunta_ajena = Pregunta.objects.create(
