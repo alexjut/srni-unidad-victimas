@@ -327,14 +327,72 @@ export default function CapituloScreen() {
 
   const progresoCap = totalOblig > 0 ? respondidoOblig / totalOblig : 0;
 
-  // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
-  // Sprint 21: miembroId es opcional. null/undefined para preguntas HOGAR.
-  const setRespuesta = useCallback(async (
+  // ── Guardar respuesta en SQLite + encolar (con debounce 500 ms) ─────────────
+  // - El estado React se actualiza inmediato (UI fluida).
+  // - SQLite + cola se escriben 500 ms después del último cambio por clave
+  //   pregunta+miembro. Esto evita un job por keystroke en preguntas tipo TEXTO.
+  // - flushPendientes() fuerza la persistencia inmediata (lo usa "Guardar capítulo").
+  type Pendiente = { preguntaId: string; valor: string; miembroId: string | null };
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendientes = useRef<Map<string, Pendiente>>(new Map());
+
+  // Al desmontar: persistir cualquier pendiente para no perderlo si el usuario
+  // sale del capítulo sin tocar "Guardar".
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    const pend = pendientes.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+      const bid = borradorId ?? borradorIdParam;
+      if (!bid) { pend.clear(); return; }
+      const items = Array.from(pend.values());
+      pend.clear();
+      // Persistencia fire-and-forget — el cleanup no puede ser async.
+      for (const p of items) void persistirRespuesta(bid, p);
+    };
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
+
+  const persistirRespuesta = useCallback(async (bid: string, p: Pendiente) => {
+    try {
+      await borradoresDao.upsertRespuesta(bid, p.preguntaId, p.valor, p.miembroId);
+      console.log('[setRespuesta] guardada:', { bid, preguntaId: p.preguntaId, miembroId: p.miembroId });
+      const borrador = await borradoresDao.getBorrador(bid);
+      if (borrador) {
+        await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+          borrador_id: bid,
+          sesion_id: borrador.sesion_id ?? null,
+          pregunta_id: p.preguntaId,
+          miembro_id: p.miembroId,
+          valor: p.valor,
+        });
+        await refrescarContadores();
+      }
+    } catch (e) {
+      console.error('[setRespuesta] ERROR upsertRespuesta:', e);
+    }
+  }, []);
+
+  const flushPendientes = useCallback(async () => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid) return;
+    const timers = debounceTimers.current;
+    const items = Array.from(pendientes.current.values());
+    timers.forEach((t) => clearTimeout(t));
+    timers.clear();
+    pendientes.current.clear();
+    for (const p of items) {
+      await persistirRespuesta(bid, p);
+    }
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
+
+  const setRespuesta = useCallback((
     preguntaId: string,
     valor: string,
     miembroId: string | null = null,
   ) => {
     const clave = claveResp(preguntaId, miembroId);
+    // 1) UI: estado React inmediato
     setRespuestasState((prev) => ({ ...prev, [clave]: valor }));
 
     const bid = borradorId ?? borradorIdParam;
@@ -343,22 +401,20 @@ export default function CapituloScreen() {
       return;
     }
 
-    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId)
-      .then(() => console.log('[setRespuesta] guardada:', { bid, preguntaId, miembroId }))
-      .catch((e) => console.error('[setRespuesta] ERROR upsertRespuesta:', e));
-
-    const borrador = await borradoresDao.getBorrador(bid);
-    if (borrador) {
-      await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
-        borrador_id: bid,
-        sesion_id: borrador.sesion_id ?? null,
-        pregunta_id: preguntaId,
-        miembro_id: miembroId,
-        valor,
-      });
-      await refrescarContadores();
-    }
-  }, [borradorId, borradorIdParam]);
+    // 2) Guardar valor pendiente + reprogramar timer de persistencia
+    pendientes.current.set(clave, { preguntaId, valor, miembroId });
+    const timers = debounceTimers.current;
+    const prev = timers.get(clave);
+    if (prev) clearTimeout(prev);
+    const timer = setTimeout(() => {
+      timers.delete(clave);
+      const p = pendientes.current.get(clave);
+      if (!p) return;
+      pendientes.current.delete(clave);
+      void persistirRespuesta(bid, p);
+    }, 500);
+    timers.set(clave, timer);
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
 
   // ── Asistente IA ────────────────────────────────────────────────────────────
   const handleTextoTranscrito = useCallback(async (preguntaId: string, texto: string) => {
@@ -379,6 +435,10 @@ export default function CapituloScreen() {
   // ── Guardar capítulo: bulk sync (online) o encolar (offline) → volver ─────────
   async function guardarYVolver() {
     const bid = borradorId ?? borradorIdParam;
+
+    // Persistir cualquier respuesta debounceada que aún esté en el aire ANTES
+    // de leer SQLite para el bulk.
+    await flushPendientes();
 
     if (bid && sesionServerId) {
       setSincronizando(true);

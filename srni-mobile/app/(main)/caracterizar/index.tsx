@@ -168,6 +168,7 @@ export default function CaracterizarScreen() {
         params: {
           sesionId: sesion.id,
           hogarId: hId,
+          instrumentoId: seleccionado.id,
           instrumentoCodigo: seleccionado.codigo,
         },
       });
