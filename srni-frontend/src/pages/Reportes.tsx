@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { FileSpreadsheet, ClipboardList } from 'lucide-react';
 import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/reportes';
+import { formularioApi } from '@/api/formulario';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
@@ -37,6 +38,7 @@ export default function ReportesPage() {
   const [filtroHasta,      setFiltroHasta]      = useState(hoy);
   const [filtroEstado,     setFiltroEstado]     = useState('');
   const [filtroInstrumento, setFiltroInstrumento] = useState('');
+  const [instrumentos,     setInstrumentos]     = useState<string[]>([]);
 
   const totalPags = Math.ceil(total / 20);
 
@@ -210,6 +212,14 @@ export default function ReportesPage() {
   }
 
   useEffect(() => { cargar(pagina); }, [pagina]);
+
+  useEffect(() => {
+    formularioApi.instrumentos()
+      .then(r => setInstrumentos(
+        r.data.results.filter(i => i.activo).map(i => i.nombre).sort()
+      ))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -387,10 +397,10 @@ export default function ReportesPage() {
             <div className="flex flex-wrap gap-2">
               {[
                 { value: '', label: 'Todos' },
-                ...[...new Set(detalle.map(d => d.instrumento_nombre))].sort().map(n => ({
-                  value: n,
-                  label: n,
-                })),
+                ...(instrumentos.length > 0
+                  ? instrumentos
+                  : [...new Set(detalle.map(d => d.instrumento_nombre))].sort()
+                ).map(n => ({ value: n, label: n })),
               ].map(opt => (
                 <button
                   key={opt.value}

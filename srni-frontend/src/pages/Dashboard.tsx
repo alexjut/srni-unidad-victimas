@@ -88,7 +88,7 @@ export default function DashboardPage() {
           Utilice el menú lateral para navegar entre Hogares, Encuestas y Reportes.
         </p>
         <p className="text-xs text-gray-400 mt-2">
-          Contrato 2226-2026 · Sistema protegido bajo Ley 1581 de 2012
+          Sistema protegido bajo Ley 1581 de 2012
         </p>
       </div>
 
