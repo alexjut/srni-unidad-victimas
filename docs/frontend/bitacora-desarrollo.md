@@ -750,4 +750,49 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 12 — 2026-06-05 | Exportar Excel con formato + modal de filtros
+
+### Actividades realizadas
+
+1. **Reemplazo de exportación CSV por Excel con formato institucional**
+   - Instalado `exceljs` para generación de `.xlsx` en el cliente (sin dependencia de backend)
+   - Generación completamente client-side: se obtienen todos los datos paginados y se construye el archivo en el navegador
+   - ExcelJS se carga con `dynamic import` (`import('exceljs')`) para code splitting — no afecta el bundle inicial
+   - **Hoja 1 — "Detalle de Sesiones":** 9 columnas, header azul GOV.CO (#1565C0) texto blanco bold, filas alternas blanco/azul tenue (#E3F2FD), bordes internos, fila 1 congelada, anchos ajustados por columna
+   - **Hoja 2 — "Resumen":** métricas del período (sesiones, hogares, respuestas, promedios, fechas) con mismo estilo de tabla
+   - Nombre del archivo: `reporte-srni-YYYY-MM-DD.xlsx`
+
+2. **Modal de filtros antes de la descarga**
+   - Botón "Exportar Excel" abre un modal en lugar de descargar directamente
+   - **Período:** dos date pickers (desde/hasta) con validación cruzada (`max`/`min` cruzados), preconfigurados a los últimos 90 días. Los filtros de fecha se envían al backend vía `reportesApi.detalle({ desde, hasta })`
+   - **Estado:** selector por pills — "Todos", Completada, En progreso, Iniciada, Suspendida, Cancelada. Filtro aplicado client-side sobre los resultados
+   - **Instrumento:** pills derivados de los instrumentos presentes en la página actual. Filtro aplicado client-side
+   - Diseño con pills en lugar de `<Dropdown>` para evitar el problema de clipping de paneles `absolute` dentro del `overflow-y-auto` del Modal
+   - Pills: seleccionado → `bg-gov-azul text-white`; no seleccionado → borde gris con hover azul
+
+3. **Corrección de bugs en la descarga anterior (CSV)**
+   - Eliminada la columna "ID Sesión" (campo vacío en el backend): el Excel ahora empieza por "ID Hogar"
+   - `a.click()` ahora adjunta el anchor al DOM antes y lo remueve después (`appendChild` → `click` → `removeChild`)
+   - `URL.revokeObjectURL()` movido a `setTimeout(..., 1000)` para dar tiempo al browser de leer el blob
+   - `setError('')` al inicio de cada intento de exportar (limpia errores previos)
+   - `console.error(err)` en el catch para trazabilidad
+
+4. **Corrección de helper `fetchTodoDetalle`**
+   - Acepta parámetros `{ desde?, hasta? }` y los propaga a todas las páginas del endpoint de detalle
+   - Obtiene el total de páginas en la primera llamada y hace las restantes en paralelo con `Promise.all`
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Reportes.tsx` | Exportar Excel + modal de filtros con pills + fix bugs descarga + quitar ID Sesión |
+| `package.json` | +exceljs |
+| `pnpm-lock.yaml` | Lockfile actualizado |
+
+### Notas
+- El listado de instrumentos en el modal proviene de la página actual de la tabla (no de todos los registros). Si la sesión con el instrumento deseado está en otra página, se puede navegar antes de abrir el modal. Para una lista completa se necesitaría el endpoint `/api/formulario/instrumentos/`.
+- No se modificó `src/api/reportes.ts` — el endpoint `/exportar/` sigue existiendo pero ya no se usa; la generación del Excel es 100% client-side desde el endpoint `/detalle/`.
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

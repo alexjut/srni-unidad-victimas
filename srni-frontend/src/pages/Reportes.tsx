@@ -2,7 +2,7 @@
  * Reportes del encuestador — resumen + listado paginado + export CSV
  */
 import { useEffect, useState } from 'react';
-import { Download, ClipboardList } from 'lucide-react';
+import { FileSpreadsheet, ClipboardList } from 'lucide-react';
 import { reportesApi, type ResumenEncuestador, type DetalleSesion } from '@/api/reportes';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -10,6 +10,7 @@ import Pagination from '@/components/ui/Pagination';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
+import Modal from '@/components/ui/Modal';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
@@ -28,6 +29,14 @@ export default function ReportesPage() {
   const [cargando, setCargando] = useState(true);
   const [descargando, setDescargando] = useState(false);
   const [error,    setError]    = useState('');
+
+  const hoy        = new Date().toISOString().slice(0, 10);
+  const hace3Meses = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const [modalExportar,    setModalExportar]    = useState(false);
+  const [filtroDesde,      setFiltroDesde]      = useState(hace3Meses);
+  const [filtroHasta,      setFiltroHasta]      = useState(hoy);
+  const [filtroEstado,     setFiltroEstado]     = useState('');
+  const [filtroInstrumento, setFiltroInstrumento] = useState('');
 
   const totalPags = Math.ceil(total / 20);
 
@@ -48,18 +57,153 @@ export default function ReportesPage() {
     }
   }
 
-  async function exportarCsv() {
+  async function fetchTodoDetalle(params?: { desde?: string; hasta?: string }): Promise<DetalleSesion[]> {
+    const first = await reportesApi.detalle({ page: 1, ...params });
+    const { results, pages } = first.data;
+    if (pages <= 1) return results;
+    const rest = await Promise.all(
+      Array.from({ length: pages - 1 }, (_, i) =>
+        reportesApi.detalle({ page: i + 2, ...params })
+      )
+    );
+    return [...results, ...rest.flatMap(r => r.data.results)];
+  }
+
+  async function exportarExcel() {
+    setModalExportar(false);
     setDescargando(true);
+    setError('');
     try {
-      const { data } = await reportesApi.exportarCsv();
-      const url = URL.createObjectURL(new Blob([data as BlobPart]));
+      const todasSesiones = await fetchTodoDetalle({
+        desde: filtroDesde || undefined,
+        hasta: filtroHasta || undefined,
+      });
+
+      const sesiones = todasSesiones
+        .filter(s => !filtroEstado     || s.estado === filtroEstado)
+        .filter(s => !filtroInstrumento || s.instrumento_nombre === filtroInstrumento);
+
+      const { default: ExcelJS } = await import('exceljs');
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'SRNI — Unidad para las Víctimas';
+      wb.created = new Date();
+
+      const headerBorder = {
+        top:    { style: 'thin' as const, color: { argb: 'FF1565C0' } },
+        left:   { style: 'thin' as const, color: { argb: 'FF1565C0' } },
+        bottom: { style: 'thin' as const, color: { argb: 'FF1565C0' } },
+        right:  { style: 'thin' as const, color: { argb: 'FF1565C0' } },
+      };
+      const dataBorder = {
+        top:    { style: 'thin' as const, color: { argb: 'FFE0E0E0' } },
+        left:   { style: 'thin' as const, color: { argb: 'FFE0E0E0' } },
+        bottom: { style: 'thin' as const, color: { argb: 'FFE0E0E0' } },
+        right:  { style: 'thin' as const, color: { argb: 'FFE0E0E0' } },
+      };
+
+      // ── Hoja 1: Detalle de Sesiones ──────────────────────────────────
+      const ws = wb.addWorksheet('Detalle de Sesiones');
+      ws.columns = [
+        { header: 'ID Hogar',         key: 'hogar_id',              width: 38 },
+        { header: 'Instrumento',      key: 'instrumento_nombre',    width: 36 },
+        { header: 'Perfil',           key: 'perfil_codigo',         width: 14 },
+        { header: 'Estado',           key: 'estado_display',        width: 18 },
+        { header: 'Progreso (%)',     key: 'porcentaje_completado', width: 14 },
+        { header: 'Respuestas',       key: 'respuestas_total',      width: 13 },
+        { header: 'Fecha inicio',     key: 'fecha_inicio',          width: 14 },
+        { header: 'Fecha fin',        key: 'fecha_fin',             width: 14 },
+        { header: 'Duración (min)',   key: 'duracion_minutos',      width: 15 },
+      ];
+
+      ws.getRow(1).eachCell((cell) => {
+        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1565C0' } };
+        cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border    = headerBorder;
+      });
+      ws.getRow(1).height = 30;
+
+      sesiones.forEach((s, idx) => {
+        const row = ws.addRow({
+          hogar_id:              s.hogar_id,
+          instrumento_nombre:    s.instrumento_nombre,
+          perfil_codigo:         s.perfil_codigo,
+          estado_display:        s.estado_display ?? s.estado.replace('_', ' '),
+          porcentaje_completado: s.porcentaje_completado,
+          respuestas_total:      s.respuestas_total,
+          fecha_inicio:          new Date(s.fecha_inicio).toLocaleDateString('es-CO'),
+          fecha_fin:             s.fecha_fin ? new Date(s.fecha_fin).toLocaleDateString('es-CO') : '—',
+          duracion_minutos:      s.duracion_minutos ?? '—',
+        });
+        const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFE3F2FD';
+        row.height = 22;
+        row.eachCell((cell) => {
+          cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+          cell.border    = dataBorder;
+          cell.alignment = { vertical: 'middle' };
+          cell.font      = { name: 'Calibri', size: 10 };
+        });
+      });
+
+      ws.views = [{ state: 'frozen', ySplit: 1 }];
+
+      // ── Hoja 2: Resumen ───────────────────────────────────────────────
+      if (resumen) {
+        const wsR = wb.addWorksheet('Resumen');
+        wsR.columns = [
+          { header: 'Métrica', key: 'label', width: 30 },
+          { header: 'Valor',   key: 'valor', width: 20 },
+        ];
+        wsR.getRow(1).eachCell((cell) => {
+          cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1565C0' } };
+          cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.border    = headerBorder;
+        });
+        wsR.getRow(1).height = 30;
+
+        const metricas: [string, string | number][] = [
+          ['Sesiones totales',        resumen.sesiones_total],
+          ['Completadas',             resumen.sesiones_completadas],
+          ['En progreso',             resumen.sesiones_en_progreso],
+          ['Suspendidas',             resumen.sesiones_suspendidas],
+          ['Hogares caracterizados',  resumen.hogares_caracterizados],
+          ['Respuestas totales',      resumen.respuestas_total],
+          ['Promedio completado (%)', resumen.promedio_completado],
+          ['Período desde',           resumen.periodo_desde],
+          ['Período hasta',           resumen.periodo_hasta],
+        ];
+        metricas.forEach(([label, valor], idx) => {
+          const row = wsR.addRow({ label, valor });
+          const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFE3F2FD';
+          row.height = 22;
+          row.eachCell((cell) => {
+            cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+            cell.border    = dataBorder;
+            cell.alignment = { vertical: 'middle' };
+            cell.font      = { name: 'Calibri', size: 10 };
+          });
+        });
+        wsR.views = [{ state: 'frozen', ySplit: 1 }];
+      }
+
+      // ── Descarga ──────────────────────────────────────────────────────
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `reporte-srni-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `reporte-srni-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError('No se pudo descargar el CSV.');
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo generar el Excel.');
     } finally {
       setDescargando(false);
     }
@@ -74,8 +218,8 @@ export default function ReportesPage() {
         titulo="Mis reportes"
         subtitulo="Producción y estadísticas personales"
         acciones={
-          <Button icon={Download} loading={descargando} onClick={exportarCsv} size="sm">
-            {descargando ? 'Descargando…' : 'Exportar CSV'}
+          <Button icon={FileSpreadsheet} loading={descargando} onClick={() => setModalExportar(true)}>
+            {descargando ? 'Generando…' : 'Exportar Excel'}
           </Button>
         }
       />
@@ -160,6 +304,112 @@ export default function ReportesPage() {
 
         <Pagination pagina={pagina} totalPaginas={totalPags} onChange={setPagina} />
       </div>
+
+      {/* Modal filtros de exportación */}
+      <Modal
+        abierto={modalExportar}
+        onCerrar={() => setModalExportar(false)}
+        titulo="Configurar exportación Excel"
+        acciones={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setModalExportar(false)}>
+              Cancelar
+            </Button>
+            <Button icon={FileSpreadsheet} size="sm" onClick={exportarExcel}>
+              Descargar Excel
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-6">
+
+          {/* Período */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Período</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="filtro-desde" className="block text-xs text-gray-400 mb-1">Desde</label>
+                <input
+                  id="filtro-desde"
+                  type="date"
+                  value={filtroDesde}
+                  max={filtroHasta || hoy}
+                  onChange={e => setFiltroDesde(e.target.value)}
+                  className="input w-full text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="filtro-hasta" className="block text-xs text-gray-400 mb-1">Hasta</label>
+                <input
+                  id="filtro-hasta"
+                  type="date"
+                  value={filtroHasta}
+                  min={filtroDesde}
+                  max={hoy}
+                  onChange={e => setFiltroHasta(e.target.value)}
+                  className="input w-full text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Estado — pills */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Estado</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: '',            label: 'Todos' },
+                { value: 'COMPLETADA',  label: 'Completada' },
+                { value: 'EN_PROGRESO', label: 'En progreso' },
+                { value: 'INICIADA',    label: 'Iniciada' },
+                { value: 'SUSPENDIDA',  label: 'Suspendida' },
+                { value: 'CANCELADA',   label: 'Cancelada' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFiltroEstado(opt.value)}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                    filtroEstado === opt.value
+                      ? 'bg-gov-azul border-gov-azul text-white font-medium'
+                      : 'bg-white border-gov-borde text-gray-600 hover:border-gov-azul hover:text-gov-azul'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Instrumento — pills */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Instrumento</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: '', label: 'Todos' },
+                ...[...new Set(detalle.map(d => d.instrumento_nombre))].sort().map(n => ({
+                  value: n,
+                  label: n,
+                })),
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFiltroInstrumento(opt.value)}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                    filtroInstrumento === opt.value
+                      ? 'bg-gov-azul border-gov-azul text-white font-medium'
+                      : 'bg-white border-gov-borde text-gray-600 hover:border-gov-azul hover:text-gov-azul'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </Modal>
     </div>
   );
 }

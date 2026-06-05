@@ -3,7 +3,7 @@
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
 **Estado:** 17 paginas funcionales — Fases 1-7 completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-06-03
+**Ultima actualizacion:** 2026-06-05
 
 ---
 
@@ -31,6 +31,7 @@ El panel web es una capa de visualizacion para supervisores, coordinadores y ope
 | Iconos | Lucide-react | 0.395 |
 | Graficas | Recharts | - |
 | Mapas | react-simple-maps | - |
+| Excel | ExcelJS | - |
 | Formularios | react-hook-form + zod | - |
 | Toasts | Sonner | 2.0 |
 | Fechas | date-fns | 4.3 |
@@ -47,7 +48,7 @@ srni-frontend/src/
 │   ├── auth.ts            login, refresh, perfil, logout, cambiar-password
 │   ├── hogares.ts         listar (paginado + filtros), detalle
 │   ├── encuestas.ts       listar (paginado + filtro estado), detalle con respuestas
-│   ├── reportes.ts        resumen, detalle paginado, exportar CSV
+│   ├── reportes.ts        resumen, detalle paginado (todas las paginas para export), exportar CSV (legacy)
 │   ├── victimas.ts        buscar (POST hash SHA-256), detalle, registrar
 │   ├── supervision.ts     resumen supervisor, series temporales
 │   ├── formulario.ts      instrumentos, capitulo detalle con preguntas
@@ -81,7 +82,7 @@ srni-frontend/src/
 │   ├── HogarDetalle.tsx   Breadcrumb + InfoCards + miembros + sesiones
 │   ├── Encuestas.tsx      Tabla paginada + filtro estado + barra progreso
 │   ├── SesionDetalle.tsx  InfoCards + progreso + respuestas + link hogar
-│   ├── Reportes.tsx       5 tarjetas resumen + tabla + exportar CSV
+│   ├── Reportes.tsx       6 tarjetas resumen + tabla + exportar Excel (.xlsx) con modal de filtros (fecha/estado/instrumento)
 │   ├── Victimas.tsx       Busqueda por documento + resultado + recientes
 │   ├── VictimaDetalle.tsx Datos PII + hechos victimizantes + metadata
 │   ├── Supervision.tsx    LineChart + BarChart + tabla encuestadores + filtros
@@ -224,3 +225,5 @@ El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite
 - **Code splitting:** React.lazy() en 13 paginas + manualChunks. Bundle principal: 937KB → 116KB. recharts y react-simple-maps en chunks separados (solo cargan cuando el usuario navega a esas paginas).
 - **A11y Modal:** aria-labelledby apuntando al h3 del titulo (WCAG AA).
 - **Build produccion:** validado y limpio. Sin errores de tipos. Sin warnings.
+- **Excel client-side:** ExcelJS con dynamic import (code splitting). El archivo .xlsx se genera completamente en el navegador — header GOV.CO azul, filas alternas, bordes, fila congelada, 2 hojas (Detalle + Resumen). El endpoint /exportar/ del backend sigue existiendo pero ya no se usa.
+- **Modal de filtros para exportacion:** pills para estado e instrumento (sin Dropdown para evitar clipping en overflow-y-auto), date pickers con validacion cruzada para el periodo.
