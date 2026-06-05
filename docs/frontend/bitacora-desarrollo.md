@@ -795,4 +795,23 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 13 — 2026-06-05 | Fix instrumentos en modal de exportación
+
+### Actividades realizadas
+
+1. **Instrumentos del modal de exportación desde API real**
+   - El filtro de instrumento en el modal de exportación Excel ahora consume `GET /api/formulario/instrumentos/`
+   - Se carga al montar la página con un `useEffect` independiente (una sola vez)
+   - Solo se muestran instrumentos con `activo === true`, ordenados alfabéticamente
+   - Fallback silencioso: si la llamada falla, usa los instrumentos presentes en la tabla (página actual) — sin error visible
+   - Se eliminó la nota de advertencia "instrumentos de la página actual" del modal
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Reportes.tsx` | Import formularioApi + estado instrumentos + useEffect fetch + pills desde API |
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

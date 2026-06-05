@@ -3,7 +3,7 @@
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
 **Estado:** 17 paginas funcionales — Fases 1-7 completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-06-05
+**Ultima actualizacion:** 2026-06-05 (x2)
 
 ---
 
@@ -226,4 +226,4 @@ El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite
 - **A11y Modal:** aria-labelledby apuntando al h3 del titulo (WCAG AA).
 - **Build produccion:** validado y limpio. Sin errores de tipos. Sin warnings.
 - **Excel client-side:** ExcelJS con dynamic import (code splitting). El archivo .xlsx se genera completamente en el navegador — header GOV.CO azul, filas alternas, bordes, fila congelada, 2 hojas (Detalle + Resumen). El endpoint /exportar/ del backend sigue existiendo pero ya no se usa.
-- **Modal de filtros para exportacion:** pills para estado e instrumento (sin Dropdown para evitar clipping en overflow-y-auto), date pickers con validacion cruzada para el periodo.
+- **Modal de filtros para exportacion:** pills para estado e instrumento (sin Dropdown para evitar clipping en overflow-y-auto), date pickers con validacion cruzada para el periodo. Instrumentos cargados desde `GET /api/formulario/instrumentos/` al montar la pagina, con fallback a instrumentos de la pagina actual si la llamada falla.
