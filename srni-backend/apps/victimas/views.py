@@ -141,9 +141,8 @@ class BuscarVictimaView(APIView):
             detalle={'encontrado': True, 'tipo_documento': tipo_codigo},
         )
 
-        # Sprint 21 — incluir info del hogar activo si ya existe + flag de víctima
-        # de pruebas para que el cliente decida qué botón mostrar.
-        from django.conf import settings
+        # Incluir info del hogar activo si ya existe — el cliente decide
+        # si mostrar "Continuar caracterización" o "Crear hogar".
         from apps.hogares.models import Hogar
 
         hogar_activo = (
@@ -152,9 +151,6 @@ class BuscarVictimaView(APIView):
             .exclude(estado='ARCHIVADO')
             .order_by('-created_at')
             .first()
-        )
-        es_victima_pruebas = (
-            (victima.numero_documento or '').strip() == settings.VICTIMA_PRUEBAS_DOC
         )
 
         data = VictimaListSerializer(victima).data
@@ -167,7 +163,6 @@ class BuscarVictimaView(APIView):
             }
             if hogar_activo else None
         )
-        data['es_victima_pruebas'] = es_victima_pruebas
         return Response(data)
 
 

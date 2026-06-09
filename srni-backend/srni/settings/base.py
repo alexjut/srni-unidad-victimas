@@ -176,13 +176,9 @@ GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Datos de prueba del contratista (excepción a reglas de idempotencia) ---
-# Documento de la víctima de pruebas (Javier Aguilar — contratista 2226-2026).
-# Esta víctima específica puede tener N caracterizaciones bajo su único hogar,
-# para que el contratista valide los 8 instrumentos UARIV sin restricciones.
-# Para cualquier otra víctima real, aplica la regla 1 hogar → 1 caracterización.
-# Configurable por entorno (.env) en producción.
-VICTIMA_PRUEBAS_DOC = config('VICTIMA_PRUEBAS_DOC', default='1030547250')
+# Regla universal vigente: 1 víctima → 1 hogar → 1 caracterización activa.
+# Para probar otro instrumento sobre la misma víctima: completar la sesión actual,
+# archivar el hogar, crear hogar nuevo con la misma víctima.
 
 # --- Cifrado de campos PII ---
 # Clave AES-256 para EncryptedField personalizado (apps/victimas/fields.py)

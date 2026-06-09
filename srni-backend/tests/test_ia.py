@@ -18,8 +18,7 @@ from apps.parametricas.models import TipoDocumento, Departamento, Municipio
 from apps.victimas.models import Victima
 from apps.hogares.models import Hogar
 from apps.formulario.models import (
-    Perfil as PerfilInstrumento,
-    InstrumentoVersion,
+    Instrumento,
     Capitulo,
     Pregunta,
 )
@@ -95,7 +94,7 @@ def victima(tipo_doc, municipio):
 @pytest.fixture
 def hogar(victima, municipio, encuestador):
     return Hogar.objects.create(
-        jefe_hogar=victima,
+        autorizado=victima,
         municipio=municipio,
         creado_por=encuestador,
     )
@@ -103,13 +102,9 @@ def hogar(victima, municipio, encuestador):
 
 @pytest.fixture
 def instrumento():
-    perfil_inst = PerfilInstrumento.objects.create(
-        codigo='PAARI-IA', nombre='Instrumento IA Test', activo=True,
-    )
-    return InstrumentoVersion.objects.create(
-        perfil=perfil_inst,
-        numero='V7',
-        vigente_desde=date(2021, 1, 1),
+    return Instrumento.objects.create(
+        codigo='PAARI-IA', nombre='Instrumento IA Test', version='V7',
+        vigente_desde=date(2021, 1, 1), activo=True,
         fuente_documental='Test IA',
     )
 
