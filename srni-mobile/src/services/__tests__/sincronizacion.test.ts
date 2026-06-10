@@ -177,6 +177,7 @@ describe('intentarSincronizar — CREAR_SESION', () => {
     expect(mockEncuestasApi.crear).toHaveBeenCalledWith({
       hogar: 'hogar-servidor-001',
       instrumento: 1,
+      ruta_entrevista: 'GENERAL',
     });
     expect(mockBorradores.marcarSincronizado).toHaveBeenCalledWith('borrador-001', 'sesion-servidor-001');
     expect(mockCola.marcarEnviado).toHaveBeenCalledWith(2);
@@ -221,6 +222,7 @@ describe('intentarSincronizar — RESPONDER_PREGUNTA', () => {
 
     expect(mockEncuestasApi.responder).toHaveBeenCalledWith('sesion-servidor-001', {
       pregunta_id: 42,
+      miembro_id: null,
       valor: 'SI',
     });
     expect(mockCola.marcarEnviado).toHaveBeenCalledWith(item.id);

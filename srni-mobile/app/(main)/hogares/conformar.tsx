@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   modalTitulo: {
-    ...FONT.subtitle,
+    ...FONT.h3,
     fontWeight: '700',
     color: GOV.azulOscuro,
     marginBottom: SPACING.sm,

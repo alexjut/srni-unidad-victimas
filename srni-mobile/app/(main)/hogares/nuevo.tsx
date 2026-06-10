@@ -112,8 +112,19 @@ export default function NuevoHogarScreen() {
         router.replace({ pathname: '/(main)/hogares/[hogarId]', params: { hogarId: hogarCreado.id } });
         return;
       } else {
-        // Sin red: guardar localmente y encolar
-        const hogarLocal = await hogaresOfflineDao.crearHogarOffline(campos);
+        // Sin red: guardar localmente y encolar.
+        // El DAO usa jefe_hogar_uuid (nombre histórico de la columna SQLite);
+        // en el dominio actual ese UUID es el del autorizado.
+        const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
+          jefe_hogar_uuid: campos.autorizado_uuid,
+          municipio_id: campos.municipio_id,
+          tipo_vivienda: campos.tipo_vivienda,
+          condicion_ocupacion: campos.condicion_ocupacion,
+          estrato: campos.estrato,
+          numero_cuartos: campos.numero_cuartos,
+          numero_personas: campos.numero_personas,
+          observaciones: campos.observaciones,
+        });
         await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
           id_local: hogarLocal.id_local,
           autorizado: campos.autorizado_uuid,

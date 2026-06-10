@@ -427,5 +427,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.md,
   },
-  overlayTxt: { color: '#FFF', ...FONT.body, fontWeight: '600' },
+  overlayTxt: { ...FONT.body, color: '#FFF', fontWeight: '600' },
 });

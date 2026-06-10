@@ -336,23 +336,6 @@ export default function CapituloScreen() {
   const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendientes = useRef<Map<string, Pendiente>>(new Map());
 
-  // Al desmontar: persistir cualquier pendiente para no perderlo si el usuario
-  // sale del capítulo sin tocar "Guardar".
-  useEffect(() => {
-    const timers = debounceTimers.current;
-    const pend = pendientes.current;
-    return () => {
-      timers.forEach((t) => clearTimeout(t));
-      timers.clear();
-      const bid = borradorId ?? borradorIdParam;
-      if (!bid) { pend.clear(); return; }
-      const items = Array.from(pend.values());
-      pend.clear();
-      // Persistencia fire-and-forget — el cleanup no puede ser async.
-      for (const p of items) void persistirRespuesta(bid, p);
-    };
-  }, [borradorId, borradorIdParam, persistirRespuesta]);
-
   const persistirRespuesta = useCallback(async (bid: string, p: Pendiente) => {
     try {
       await borradoresDao.upsertRespuesta(bid, p.preguntaId, p.valor, p.miembroId);
@@ -372,6 +355,23 @@ export default function CapituloScreen() {
       console.error('[setRespuesta] ERROR upsertRespuesta:', e);
     }
   }, []);
+
+  // Al desmontar: persistir cualquier pendiente para no perderlo si el usuario
+  // sale del capítulo sin tocar "Guardar".
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    const pend = pendientes.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+      const bid = borradorId ?? borradorIdParam;
+      if (!bid) { pend.clear(); return; }
+      const items = Array.from(pend.values());
+      pend.clear();
+      // Persistencia fire-and-forget — el cleanup no puede ser async.
+      for (const p of items) void persistirRespuesta(bid, p);
+    };
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
 
   const flushPendientes = useCallback(async () => {
     const bid = borradorId ?? borradorIdParam;
@@ -455,10 +455,17 @@ export default function CapituloScreen() {
           }));
 
         if (arr.length > 0) {
+          let enviado = false;
           if (estaOnline) {
-            await encuestasApi.responderBulk(sesionServerId, arr);
-          } else {
-            // Sin red: encolar para sincronizar cuando vuelva la conexión
+            try {
+              await encuestasApi.responderBulk(sesionServerId, arr);
+              enviado = true;
+            } catch { /* el envío directo falló — cae al encolado de abajo */ }
+          }
+          if (!enviado) {
+            // Sin red (o bulk online fallido): encolar para que la cola lo
+            // reintente cuando vuelva la conexión. Sin este fallback, un 500
+            // o timeout dejaba las respuestas solo en SQLite sin reintento.
             await colaDao.encolar('RESPONDER_BULK', bid, {
               sesion_id: sesionServerId,
               borrador_id: bid,
@@ -466,7 +473,7 @@ export default function CapituloScreen() {
             });
           }
         }
-      } catch { /* silencioso — la cola lo reintentará */ }
+      } catch { /* lectura de SQLite falló — las respuestas siguen en el borrador */ }
       finally { setSincronizando(false); }
     }
 
@@ -1067,7 +1074,7 @@ const styles = StyleSheet.create({
   progressBar: { height: 6, borderRadius: 3, backgroundColor: GOV.borde },
 
   lista: { padding: SPACING.md, paddingBottom: 96 },
-  sinPreguntas: { textAlign: 'center', color: GOV.textoT, marginTop: SPACING.xl, ...FONT.body },
+  sinPreguntas: { textAlign: 'center', ...FONT.body, color: GOV.textoT, marginTop: SPACING.xl },
 
   // Sprint 21 — headers de sección (Datos del hogar / Datos de cada miembro)
   seccionHeader: {
