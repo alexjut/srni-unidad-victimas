@@ -1,10 +1,11 @@
 /**
- * Parametricas — consulta de tablas de referencia (departamentos, municipios, DTs, puntos, tipos doc)
- * Responsive fixes: filtros, tabs, mapa, botones limpiar
+ * Parametricas — consulta de tablas de referencia
+ * 8 tabs: departamentos, municipios, DTs, puntos, tipos doc, veredas, comunidades negras, resguardos indigenas
  */
 import { useEffect, useState } from 'react';
 import {
   MapPin, Building2, Navigation, Landmark, FileText, Trash2,
+  TreePine, Users, Tent,
 } from 'lucide-react';
 import {
   ComposableMap,
@@ -18,6 +19,9 @@ import {
   type DireccionTerritorial,
   type PuntoAtencion,
   type TipoDocumento,
+  type Vereda,
+  type ComunidadNegra,
+  type ResguardoIndigena,
 } from '@/api/parametricas';
 import PageHeader from '@/components/ui/PageHeader';
 import Alert from '@/components/ui/Alert';
@@ -31,11 +35,14 @@ const GEO_URL = '/geo/colombia.json';
 // --- Tabs ---
 
 const TABS = [
-  { key: 'departamentos',  label: 'Departamentos',      labelCorto: 'Deptos.',   icon: MapPin },
-  { key: 'municipios',     label: 'Municipios',          labelCorto: 'Munis.',    icon: Building2 },
-  { key: 'dts',            label: 'Dir. Territoriales',  labelCorto: 'Dir. Ter.', icon: Navigation },
-  { key: 'puntos',         label: 'Puntos atención',     labelCorto: 'Puntos',    icon: Landmark },
-  { key: 'tipos_doc',      label: 'Tipos documento',     labelCorto: 'Tipos doc.',icon: FileText },
+  { key: 'departamentos',  label: 'Departamentos',        labelCorto: 'Deptos.',      icon: MapPin },
+  { key: 'municipios',     label: 'Municipios',            labelCorto: 'Munis.',       icon: Building2 },
+  { key: 'dts',            label: 'Dir. Territoriales',    labelCorto: 'Dir. Ter.',    icon: Navigation },
+  { key: 'puntos',         label: 'Puntos atención',       labelCorto: 'Puntos',       icon: Landmark },
+  { key: 'tipos_doc',      label: 'Tipos documento',       labelCorto: 'Tipos doc.',   icon: FileText },
+  { key: 'veredas',        label: 'Veredas',               labelCorto: 'Veredas',      icon: TreePine },
+  { key: 'comunidades',    label: 'Comunidades Negras',    labelCorto: 'Com. Negras',  icon: Users },
+  { key: 'resguardos',     label: 'Resguardos Indígenas',  labelCorto: 'Resguardos',   icon: Tent },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
@@ -83,6 +90,9 @@ export default function ParametricasPage() {
       {tab === 'dts'           && <TabDireccionesTerritoriales />}
       {tab === 'puntos'        && <TabPuntosAtencion />}
       {tab === 'tipos_doc'     && <TabTiposDocumento />}
+      {tab === 'veredas'       && <TabVeredas />}
+      {tab === 'comunidades'   && <TabComunidadesNegras />}
+      {tab === 'resguardos'    && <TabResguardosIndigenas />}
     </div>
   );
 }
@@ -684,5 +694,306 @@ function TabTiposDocumento() {
         </tr>
       )}
     </TablaSimple>
+  );
+}
+
+// --- Tab: Veredas ---
+
+function TabVeredas() {
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [muniSel, setMuniSel] = useState<number | ''>('');
+  const [datos, setDatos] = useState<Vereda[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      parametricasApi.municipiosTodos(),
+      parametricasApi.veredas(),
+    ])
+      .then(([munisRes, veredasRes]) => {
+        const munis = Array.isArray(munisRes.data)
+          ? munisRes.data
+          : (munisRes.data as any).results ?? [];
+        setMunicipios(munis);
+        setDatos(veredasRes.data.results);
+      })
+      .catch(() => setError('No se pudieron cargar las veredas.'))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const filtrados = muniSel === '' ? datos : datos.filter((v) => v.municipio === muniSel);
+
+  const muniNombre =
+    muniSel !== '' ? municipios.find((m) => m.id === muniSel)?.nombre : null;
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3 mb-4">
+        <div className="w-full sm:flex-1 sm:max-w-sm">
+          <Dropdown
+            label="Filtrar por municipio"
+            value={String(muniSel)}
+            onChange={(val) => setMuniSel(val ? Number(val) : '')}
+            options={[
+              { value: '', label: 'Todos los municipios' },
+              ...municipios.map((m) => ({ value: String(m.id), label: `${m.nombre} (${m.departamento_nombre})` })),
+            ]}
+            disabled={cargando}
+          />
+        </div>
+        {muniSel !== '' && (
+          <Button
+            variant="danger"
+            size="md"
+            icon={Trash2}
+            onClick={() => setMuniSel('')}
+            className="w-full sm:w-auto"
+          >
+            Limpiar filtro
+          </Button>
+        )}
+      </div>
+
+      {muniNombre && (
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
+          <TreePine size={14} className="text-gov-azul shrink-0" />
+          <span className="text-sm text-gov-azul min-w-0">
+            Mostrando veredas de <strong>{muniNombre}</strong>
+          </span>
+          <span className="text-xs text-gray-400 shrink-0">
+            ({filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''})
+          </span>
+        </div>
+      )}
+
+      <TablaSimple
+        headers={['Código DANE', 'Nombre', 'Municipio', 'Estado']}
+        cargando={cargando}
+        error={error}
+        total={filtrados.length}
+      >
+        {filtrados.map((v) => (
+          <tr key={v.id} className="hover:bg-gov-azulTenue/30 transition-all">
+            <td className="px-4 py-3 font-mono text-gov-azul">{v.codigo_dane}</td>
+            <td className="px-4 py-3 text-gray-700">{v.nombre}</td>
+            <td className="px-4 py-3 text-gray-500">{v.municipio_nombre}</td>
+            <td className="px-4 py-3">
+              <Badge variant={v.activo ? 'verde' : 'gris'}>
+                {v.activo ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </td>
+          </tr>
+        ))}
+        {!cargando && filtrados.length === 0 && (
+          <tr>
+            <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+              Sin veredas{muniNombre ? ` para ${muniNombre}` : ''}
+            </td>
+          </tr>
+        )}
+      </TablaSimple>
+    </>
+  );
+}
+
+// --- Tab: Comunidades Negras ---
+
+function TabComunidadesNegras() {
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [muniSel, setMuniSel] = useState<number | ''>('');
+  const [datos, setDatos] = useState<ComunidadNegra[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      parametricasApi.municipiosTodos(),
+      parametricasApi.comunidadesNegras(),
+    ])
+      .then(([munisRes, comunidadesRes]) => {
+        const munis = Array.isArray(munisRes.data)
+          ? munisRes.data
+          : (munisRes.data as any).results ?? [];
+        setMunicipios(munis);
+        setDatos(comunidadesRes.data.results);
+      })
+      .catch(() => setError('No se pudieron cargar las comunidades negras.'))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const filtrados = muniSel === '' ? datos : datos.filter((c) => c.municipio === muniSel);
+
+  const muniNombre =
+    muniSel !== '' ? municipios.find((m) => m.id === muniSel)?.nombre : null;
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3 mb-4">
+        <div className="w-full sm:flex-1 sm:max-w-sm">
+          <Dropdown
+            label="Filtrar por municipio"
+            value={String(muniSel)}
+            onChange={(val) => setMuniSel(val ? Number(val) : '')}
+            options={[
+              { value: '', label: 'Todos los municipios' },
+              ...municipios.map((m) => ({ value: String(m.id), label: `${m.nombre} (${m.departamento_nombre})` })),
+            ]}
+            disabled={cargando}
+          />
+        </div>
+        {muniSel !== '' && (
+          <Button
+            variant="danger"
+            size="md"
+            icon={Trash2}
+            onClick={() => setMuniSel('')}
+            className="w-full sm:w-auto"
+          >
+            Limpiar filtro
+          </Button>
+        )}
+      </div>
+
+      {muniNombre && (
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
+          <Users size={14} className="text-gov-azul shrink-0" />
+          <span className="text-sm text-gov-azul min-w-0">
+            Mostrando comunidades de <strong>{muniNombre}</strong>
+          </span>
+          <span className="text-xs text-gray-400 shrink-0">
+            ({filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''})
+          </span>
+        </div>
+      )}
+
+      <TablaSimple
+        headers={['Código', 'Nombre', 'Municipio', 'Estado']}
+        cargando={cargando}
+        error={error}
+        total={filtrados.length}
+      >
+        {filtrados.map((c) => (
+          <tr key={c.id} className="hover:bg-gov-azulTenue/30 transition-all">
+            <td className="px-4 py-3 font-mono text-gov-azul">{c.codigo}</td>
+            <td className="px-4 py-3 text-gray-700">{c.nombre}</td>
+            <td className="px-4 py-3 text-gray-500">{c.municipio_nombre}</td>
+            <td className="px-4 py-3">
+              <Badge variant={c.activo ? 'verde' : 'gris'}>
+                {c.activo ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </td>
+          </tr>
+        ))}
+        {!cargando && filtrados.length === 0 && (
+          <tr>
+            <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
+              Sin comunidades negras{muniNombre ? ` para ${muniNombre}` : ''}
+            </td>
+          </tr>
+        )}
+      </TablaSimple>
+    </>
+  );
+}
+
+// --- Tab: Resguardos Indígenas ---
+
+function TabResguardosIndigenas() {
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [muniSel, setMuniSel] = useState<number | ''>('');
+  const [datos, setDatos] = useState<ResguardoIndigena[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      parametricasApi.municipiosTodos(),
+      parametricasApi.resguardosIndigenas(),
+    ])
+      .then(([munisRes, resguardosRes]) => {
+        const munis = Array.isArray(munisRes.data)
+          ? munisRes.data
+          : (munisRes.data as any).results ?? [];
+        setMunicipios(munis);
+        setDatos(resguardosRes.data.results);
+      })
+      .catch(() => setError('No se pudieron cargar los resguardos indígenas.'))
+      .finally(() => setCargando(false));
+  }, []);
+
+  const filtrados = muniSel === '' ? datos : datos.filter((r) => r.municipio === muniSel);
+
+  const muniNombre =
+    muniSel !== '' ? municipios.find((m) => m.id === muniSel)?.nombre : null;
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-3 mb-4">
+        <div className="w-full sm:flex-1 sm:max-w-sm">
+          <Dropdown
+            label="Filtrar por municipio"
+            value={String(muniSel)}
+            onChange={(val) => setMuniSel(val ? Number(val) : '')}
+            options={[
+              { value: '', label: 'Todos los municipios' },
+              ...municipios.map((m) => ({ value: String(m.id), label: `${m.nombre} (${m.departamento_nombre})` })),
+            ]}
+            disabled={cargando}
+          />
+        </div>
+        {muniSel !== '' && (
+          <Button
+            variant="danger"
+            size="md"
+            icon={Trash2}
+            onClick={() => setMuniSel('')}
+            className="w-full sm:w-auto"
+          >
+            Limpiar filtro
+          </Button>
+        )}
+      </div>
+
+      {muniNombre && (
+        <div className="mb-4 flex items-center gap-2 bg-gov-azulTenue border border-blue-100 rounded-xl px-4 py-2.5">
+          <Tent size={14} className="text-gov-azul shrink-0" />
+          <span className="text-sm text-gov-azul min-w-0">
+            Mostrando resguardos de <strong>{muniNombre}</strong>
+          </span>
+          <span className="text-xs text-gray-400 shrink-0">
+            ({filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''})
+          </span>
+        </div>
+      )}
+
+      <TablaSimple
+        headers={['Código', 'Nombre', 'Pueblo', 'Municipio', 'Estado']}
+        cargando={cargando}
+        error={error}
+        total={filtrados.length}
+      >
+        {filtrados.map((r) => (
+          <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
+            <td className="px-4 py-3 font-mono text-gov-azul">{r.codigo}</td>
+            <td className="px-4 py-3 text-gray-700">{r.nombre}</td>
+            <td className="px-4 py-3 text-gray-600">{r.pueblo}</td>
+            <td className="px-4 py-3 text-gray-500">{r.municipio_nombre}</td>
+            <td className="px-4 py-3">
+              <Badge variant={r.activo ? 'verde' : 'gris'}>
+                {r.activo ? 'Activo' : 'Inactivo'}
+              </Badge>
+            </td>
+          </tr>
+        ))}
+        {!cargando && filtrados.length === 0 && (
+          <tr>
+            <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+              Sin resguardos indígenas{muniNombre ? ` para ${muniNombre}` : ''}
+            </td>
+          </tr>
+        )}
+      </TablaSimple>
+    </>
   );
 }
