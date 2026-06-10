@@ -1,23 +1,22 @@
 /**
- * Página de Login — estilo GOV.CO
- * Fondo azul oscuro + franja amarilla + logo Unidad para las Víctimas
+ * Página de Login — liquid glass / glassmorphism
+ * Fondo gradiente + orbes decorativos + tarjeta glass con backdrop-blur
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
-import Alert from '@/components/ui/Alert';
+import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
 
 export default function LoginPage() {
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
   const { setTokens, setUsuario } = useAuthStore();
 
-  const [usuario,    setUsuarioField] = useState('');
-  const [password,   setPassword]     = useState('');
-  const [showPass,   setShowPass]     = useState(false);
-  const [cargando,   setCargando]     = useState(false);
-  const [error,      setError]        = useState('');
+  const [usuario, setUsuarioField] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,11 +32,8 @@ export default function LoginPage() {
         password,
       });
       setTokens(tokens.access, tokens.refresh);
-
-      // Cargar perfil del usuario
       const { data: perfil } = await authApi.perfil();
       setUsuario(perfil);
-
       navigate('/dashboard');
     } catch (err: any) {
       const detalle = err?.response?.data?.detail;
@@ -48,129 +44,157 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gov-azulOscuro">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0a1628]">
 
-      {/* ── Panel izquierdo: identidad institucional ── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 text-white">
-        <div>
-          {/* Franja GOV.CO */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-1 h-10 bg-gov-amarillo rounded-full" />
-            <div>
-              <p className="text-gov-amarillo font-bold text-xs tracking-widest uppercase">
-                GOV.CO
-              </p>
-              <p className="text-blue-200 text-xs">
-                Portal del Estado Colombiano
-              </p>
-            </div>
+      {/* ── Fondo gradiente ── */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0d2847] to-[#0a1628]" />
+
+      {/* ── Orbes decorativos ── */}
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gov-azul/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="absolute bottom-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full bg-blue-400/15 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+      <div className="absolute top-[20%] right-[15%] w-[300px] h-[300px] rounded-full bg-gov-amarillo/10 blur-[80px] animate-pulse" style={{ animationDuration: '12s' }} />
+
+      {/* ── Contenido central ── */}
+      <div className="relative z-10 w-full max-w-[440px] px-5 animate-fade-in-up">
+
+        {/* Identidad institucional */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-5">
+            <div className="w-0.5 h-6 bg-gov-amarillo rounded-full" />
+            <span className="text-gov-amarillo font-bold text-[10px] tracking-[0.2em] uppercase">
+              GOV.CO
+            </span>
           </div>
-
-          <h1 className="font-display text-4xl font-bold leading-tight mb-4">
-            Unidad para las<br />Víctimas
+          <h1 className="font-display text-white text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            Unidad para las Víctimas
           </h1>
-          <p className="text-blue-200 text-lg leading-relaxed max-w-sm">
-            Sistema de Registro Nacional de Información — SRNI
-          </p>
-          <p className="text-blue-300 text-sm mt-4 max-w-sm">
-            Panel de supervisión y seguimiento de la caracterización socioeconómica
-            de las víctimas del conflicto armado.
+          <p className="text-white text-sm">
+            Sistema de Registro Nacional de Información
           </p>
         </div>
-      </div>
 
-      {/* ── Panel derecho: formulario ── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        {/* ── Tarjeta glass ── */}
+        <div
+          className="rounded-3xl p-7 sm:p-8 animate-scale-in"
+          style={{
+            background: 'rgba(255, 255, 255, 0.06)',
+            backdropFilter: 'blur(40px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(40px) saturate(1.4)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <h2 className="font-display text-white text-lg font-semibold mb-1">
+            Iniciar sesión
+          </h2>
+          <p className="text-white text-sm mb-6">
+            Credenciales institucionales
+          </p>
 
-          {/* Header móvil */}
-          <div className="lg:hidden mb-8 text-white text-center">
-            <div className="inline-block border-b-4 border-gov-amarillo pb-2 mb-3">
-              <span className="text-gov-amarillo font-bold text-xs tracking-widest uppercase">
-                GOV.CO
-              </span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Usuario */}
+            <div>
+              <label htmlFor="codigo-usuario" className="block text-[11px] font-medium text-white uppercase tracking-wider mb-1.5">
+                Código de usuario
+              </label>
+              <input
+                id="codigo-usuario"
+                type="text"
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:ring-2 focus:ring-white/20"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.07)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+                onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
+                onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                placeholder="Ej. ALEXJUT"
+                value={usuario}
+                onChange={(e) => setUsuarioField(e.target.value.toUpperCase())}
+                autoComplete="username"
+                autoCapitalize="characters"
+                disabled={cargando}
+              />
             </div>
-            <h1 className="font-display text-2xl font-bold">Unidad para las Víctimas</h1>
-            <p className="text-blue-300 text-sm mt-1">SRNI · Panel Web</p>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-soft-lg p-8 animate-scale-in">
-            <h2 className="font-display text-xl font-bold text-gray-800 mb-1">
-              Iniciar sesión
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              Ingrese sus credenciales institucionales
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Usuario */}
-              <div>
-                <label htmlFor="codigo-usuario" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Código de usuario
-                </label>
+            {/* Contraseña */}
+            <div>
+              <label htmlFor="password" className="block text-[11px] font-medium text-white uppercase tracking-wider mb-1.5">
+                Contraseña
+              </label>
+              <div className="relative">
                 <input
-                  id="codigo-usuario"
-                  type="text"
-                  className="input"
-                  placeholder="Ej. ALEXJUT"
-                  value={usuario}
-                  onChange={(e) => setUsuarioField(e.target.value.toUpperCase())}
-                  autoComplete="username"
-                  autoCapitalize="characters"
+                  id="password"
+                  type={showPass ? 'text' : 'password'}
+                  className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:ring-2 focus:ring-white/20"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.07)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
+                  onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   disabled={cargando}
                 />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  onClick={() => setShowPass(!showPass)}
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
+            </div>
 
-              {/* Contraseña */}
-              <div>
-                <label htmlFor="password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPass ? 'text' : 'password'}
-                    className="input pr-10"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    disabled={cargando}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-all"
-                    onClick={() => setShowPass(!showPass)}
-                    aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Error */}
-              {error && <Alert variant="error">{error}</Alert>}
-
-              {/* Botón */}
-              <button
-                type="submit"
-                className="btn-primary w-full flex items-center justify-center gap-2 py-3"
-                disabled={cargando}
+            {/* Error */}
+            {error && (
+              <div
+                className="rounded-xl px-4 py-3 text-sm text-red-200 animate-fade-in"
+                style={{
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '1px solid rgba(220, 38, 38, 0.25)',
+                }}
               >
-                <LogIn size={18} />
-                {cargando ? 'Verificando…' : 'Ingresar al sistema'}
-              </button>
-            </form>
+                {error}
+              </div>
+            )}
 
-            {/* Nota de seguridad */}
-            <p className="text-xs text-gray-400 text-center mt-5">
-              🔒 Acceso restringido a funcionarios autorizados.<br />
-              Datos protegidos por la Ley 1581 de 2012.
+            {/* Botón */}
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-2"
+              style={{
+                background: 'linear-gradient(135deg, #1565C0, #1976D2)',
+                boxShadow: '0 4px 20px rgba(21, 101, 192, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+              }}
+              disabled={cargando}
+            >
+              {cargando ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verificando…
+                </>
+              ) : (
+                <>
+                  Ingresar
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Nota de seguridad */}
+          <div className="flex items-center justify-center gap-1.5 mt-6">
+            <Shield size={12} className="text-white/20" />
+            <p className="text-[11px] text-white">
+              Acceso restringido · Ley 1581 de 2012
             </p>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
