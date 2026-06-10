@@ -1,4 +1,4 @@
-# ─── Arranca el backend Django escuchando en toda la red ────────────────────
+﻿# ─── Arranca el backend Django escuchando en toda la red ────────────────────
 #
 # Uso:
 #   .\arrancar-backend.ps1
