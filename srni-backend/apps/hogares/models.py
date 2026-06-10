@@ -113,6 +113,17 @@ class Hogar(models.Model):
             models.Index(fields=['estado', 'creado_por']),
             models.Index(fields=['autorizado', 'estado']),
         ]
+        constraints = [
+            # Regla universal (Sprint 21): una víctima solo puede ser autorizada
+            # en UN hogar no archivado a la vez. El constraint en BD cierra la
+            # ventana de carrera que la validación de la vista no puede cubrir
+            # (p. ej. reintentos simultáneos del móvil al sincronizar).
+            UniqueConstraint(
+                fields=['autorizado'],
+                condition=~Q(estado='ARCHIVADO'),
+                name='uniq_hogar_no_archivado_por_autorizado',
+            ),
+        ]
 
     def __str__(self):
         return f'Hogar {self.id} — {self.get_estado_display()}'

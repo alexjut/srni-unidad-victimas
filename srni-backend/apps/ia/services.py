@@ -9,9 +9,16 @@ Reglas de seguridad:
 """
 import hashlib
 import logging
+import re
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _sin_credenciales(texto: str) -> str:
+    """Redacta API keys que la librería de Google puede incluir en mensajes
+    de error (p. ej. la URL con ?key=...) antes de loguear o propagar."""
+    return re.sub(r'key=[\w\-]+', 'key=***', texto)
 
 try:
     import google.generativeai as genai
@@ -119,8 +126,9 @@ def mapear_texto_a_campo(
         }
 
     except Exception as exc:
-        logger.error('Error llamando a Gemini: %s', exc, exc_info=True)
-        raise GeminiError(f'Error en Gemini: {exc}') from exc
+        # Sin exc_info: el traceback puede contener la URL con la API key.
+        logger.error('Error llamando a Gemini: %s', _sin_credenciales(str(exc)))
+        raise GeminiError(f'Error en Gemini: {_sin_credenciales(str(exc))}') from exc
 
 
 def hash_texto(texto: str) -> str:
@@ -219,8 +227,9 @@ def procesar_entrevista_batch(
             request_options={'timeout': 30},
         )
     except Exception as exc:
-        logger.error('Error llamando a Gemini (batch): %s', exc, exc_info=True)
-        raise GeminiError(f'Error en Gemini batch: {exc}') from exc
+        # Sin exc_info: el traceback puede contener la URL con la API key.
+        logger.error('Error llamando a Gemini (batch): %s', _sin_credenciales(str(exc)))
+        raise GeminiError(f'Error en Gemini batch: {_sin_credenciales(str(exc))}') from exc
 
     # Parsear JSON de la respuesta
     import json  # noqa: PLC0415 — import local para no contaminar el módulo si json no se usa

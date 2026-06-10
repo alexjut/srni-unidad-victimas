@@ -156,7 +156,7 @@ class TestCrearHogar:
         hogar = Hogar.objects.get(pk=r.data['id'])
         assert hogar.creado_por == encuestador
 
-    def test_encuestador_solo_ve_sus_hogares(self, client_enc, hogar, victima, municipio):
+    def test_encuestador_solo_ve_sus_hogares(self, client_enc, hogar, victima2, municipio):
         perfil2 = Perfil.objects.create(
             codigo='ENC2', nombre='Otro Enc', puede_caracterizar=True, activo=True,
         )
@@ -167,7 +167,7 @@ class TestCrearHogar:
         )
         enc2 = Usuario.objects.select_related('perfil').get(pk=enc2_user.pk)
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio,
+            autorizado=victima2, municipio=municipio,
             numero_personas=1, creado_por=enc2,
         )
         r = client_enc.get('/api/hogares/')
@@ -345,13 +345,14 @@ class TestHogarFilterSet:
     creado_por, rango de fechas y búsqueda de texto.
     """
 
-    def test_filtra_por_estado(self, client_enc, victima, municipio, encuestador):
+    def test_filtra_por_estado(self, client_enc, victima, victima2, municipio, encuestador):
         Hogar.objects.create(
             autorizado=victima, municipio=municipio,
             estado='ACTIVO', creado_por=encuestador,
         )
+        # victima2: una víctima solo puede ser autorizada en UN hogar no archivado
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio,
+            autorizado=victima2, municipio=municipio,
             estado='BORRADOR', creado_por=encuestador,
         )
         r = client_enc.get('/api/hogares/?estado=ACTIVO')
@@ -361,13 +362,13 @@ class TestHogarFilterSet:
         assert all(h['estado'] == 'ACTIVO' for h in resultados)
         assert len(resultados) == 1
 
-    def test_filtra_por_tipo_vivienda(self, client_enc, victima, municipio, encuestador):
+    def test_filtra_por_tipo_vivienda(self, client_enc, victima, victima2, municipio, encuestador):
         Hogar.objects.create(
             autorizado=victima, municipio=municipio,
             tipo_vivienda='CASA', creado_por=encuestador,
         )
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio,
+            autorizado=victima2, municipio=municipio,
             tipo_vivienda='APARTAMENTO', creado_por=encuestador,
         )
         r = client_enc.get('/api/hogares/?tipo_vivienda=CASA')
@@ -376,19 +377,19 @@ class TestHogarFilterSet:
         assert len(resultados) == 1
         assert resultados[0]['tipo_vivienda'] == 'CASA' if 'tipo_vivienda' in resultados[0] else True
 
-    def test_filtra_por_municipio(self, client_enc, victima, municipio, encuestador):
+    def test_filtra_por_municipio(self, client_enc, victima, victima2, municipio, encuestador):
         Hogar.objects.create(
             autorizado=victima, municipio=municipio, creado_por=encuestador,
         )
         Hogar.objects.create(
-            autorizado=victima, municipio=None, creado_por=encuestador,
+            autorizado=victima2, municipio=None, creado_por=encuestador,
         )
         r = client_enc.get(f'/api/hogares/?municipio={municipio.id}')
         assert r.status_code == 200
         resultados = r.data['results'] if 'results' in r.data else r.data
         assert len(resultados) == 1
 
-    def test_filtra_por_rango_fecha(self, client_enc, victima, municipio, encuestador):
+    def test_filtra_por_rango_fecha(self, client_enc, victima, victima2, municipio, encuestador):
         from django.utils import timezone
         from datetime import timedelta
 
@@ -400,7 +401,7 @@ class TestHogarFilterSet:
             created_at=timezone.now() - timedelta(days=60)
         )
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio, creado_por=encuestador,
+            autorizado=victima2, municipio=municipio, creado_por=encuestador,
         )
 
         hoy = timezone.now().date()
@@ -414,14 +415,14 @@ class TestHogarFilterSet:
         # solo el hogar reciente
         assert len(resultados) == 1
 
-    def test_busqueda_libre_en_codigo_y_observaciones(self, client_enc, victima, municipio, encuestador):
+    def test_busqueda_libre_en_codigo_y_observaciones(self, client_enc, victima, victima2, municipio, encuestador):
         Hogar.objects.create(
             autorizado=victima, municipio=municipio, creado_por=encuestador,
             codigo_hogar='H-2026-MEDE-001',
             observaciones='Familia desplazada — caso prioritario',
         )
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio, creado_por=encuestador,
+            autorizado=victima2, municipio=municipio, creado_por=encuestador,
             codigo_hogar='H-2026-MEDE-002',
             observaciones='Caracterización ordinaria',
         )
@@ -430,13 +431,13 @@ class TestHogarFilterSet:
         resultados = r.data['results'] if 'results' in r.data else r.data
         assert len(resultados) == 1
 
-    def test_combinacion_de_filtros(self, client_enc, victima, municipio, encuestador):
+    def test_combinacion_de_filtros(self, client_enc, victima, victima2, municipio, encuestador):
         Hogar.objects.create(
             autorizado=victima, municipio=municipio, creado_por=encuestador,
             estado='ACTIVO', tipo_vivienda='CASA',
         )
         Hogar.objects.create(
-            autorizado=victima, municipio=municipio, creado_por=encuestador,
+            autorizado=victima2, municipio=municipio, creado_por=encuestador,
             estado='ACTIVO', tipo_vivienda='APARTAMENTO',
         )
         r = client_enc.get('/api/hogares/?estado=ACTIVO&tipo_vivienda=CASA')
