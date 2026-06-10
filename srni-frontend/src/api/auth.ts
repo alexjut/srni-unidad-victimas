@@ -31,4 +31,10 @@ export const authApi = {
 
   perfil: () =>
     apiClient.get<PerfilUsuario>('/api/auth/perfil/'),
+
+  logout: (refresh: string) =>
+    apiClient.post('/api/auth/logout/', { refresh }),
+
+  cambiarPassword: (payload: { password_actual: string; password_nueva: string }) =>
+    apiClient.post('/api/auth/cambiar-password/', payload),
 };

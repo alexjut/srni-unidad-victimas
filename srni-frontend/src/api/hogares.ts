@@ -2,7 +2,7 @@ import apiClient from './client';
 
 export interface HogarResumen {
   id: string;
-  codigo_hogar?: string;           // pendiente: Javier debe agregarlo al serializer
+  codigo_hogar: string;
   estado: string;
   estado_display: string;
   autorizado: string;
@@ -52,7 +52,7 @@ export interface SesionAnidada {
 
 export interface HogarDetalle {
   id: string;
-  codigo_hogar?: string;           // pendiente: Javier debe agregarlo al serializer
+  codigo_hogar: string;
   autorizado: string;
   autorizado_hash: string;
   municipio: number | null;

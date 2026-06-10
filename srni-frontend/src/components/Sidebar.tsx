@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, Shield, LogOut, ChevronRight,
+  FileText, Database, Shield, ChevronRight,
 } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
 
 export const NAV_ITEMS = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Inicio'       },
@@ -19,12 +18,9 @@ export const NAV_ITEMS = [
 
 interface SidebarProps {
   onNavigate?: () => void;
-  onLogout: () => void;
 }
 
-export default function Sidebar({ onNavigate, onLogout }: SidebarProps) {
-  const { usuario } = useAuthStore();
-
+export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <>
       {/* Logo + franja amarilla GOV.CO */}
@@ -39,7 +35,7 @@ export default function Sidebar({ onNavigate, onLogout }: SidebarProps) {
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" aria-label="Menú principal">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -59,26 +55,6 @@ export default function Sidebar({ onNavigate, onLogout }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
-
-      {/* Usuario + cerrar sesión */}
-      <div className="border-t border-white/10 px-4 py-4">
-        {usuario && (
-          <div className="mb-3">
-            <p className="text-xs text-blue-300">Encuestador</p>
-            <p className="text-sm font-semibold truncate">{usuario.nombre_completo}</p>
-            {usuario.perfil && (
-              <p className="text-xs text-blue-300">{usuario.perfil.nombre}</p>
-            )}
-          </div>
-        )}
-        <button
-          onClick={onLogout}
-          className="flex items-center gap-2 text-sm text-blue-200 hover:text-white transition-colors w-full"
-        >
-          <LogOut size={16} />
-          Cerrar sesión
-        </button>
-      </div>
     </>
   );
 }

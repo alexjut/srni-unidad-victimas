@@ -22,18 +22,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div className="relative">
-          {Icon && (
-            <Icon
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-            />
-          )}
           <input
             ref={ref}
             id={inputId}
-            className={`input ${Icon ? 'pl-9' : ''} ${error ? 'border-gov-rojo focus:ring-gov-rojo' : ''} ${className}`}
+            className={`input peer ${Icon ? 'pl-9' : ''} ${error ? 'border-gov-rojo focus:ring-gov-rojo' : ''} ${className}`}
             {...rest}
           />
+          {Icon && (
+            <Icon
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors duration-200 peer-focus:text-gov-azul"
+            />
+          )}
         </div>
         {error && (
           <p className="text-xs text-gov-rojo mt-1">{error}</p>

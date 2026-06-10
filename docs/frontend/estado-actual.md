@@ -1,25 +1,25 @@
 # Frontend Web — Panel SRNI
 
-**Tecnología:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
+**Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** Scaffold operativo (Sprint 12) — pantallas pendientes en Sprint 13
-**Última actualización:** 2026-05-25
+**Estado:** 17 paginas funcionales — Fases 1-7 completadas — Build produccion validado — Code splitting aplicado
+**Ultima actualizacion:** 2026-06-05 (x2)
 
 ---
 
-## Qué ES el panel web
+## Que ES el panel web
 
-Aplicación web de supervisión y consulta para la Unidad para las Víctimas (UARIV).
-Lectura del trabajo del encuestador, métricas por usuario y exportación de reportes.
+Aplicacion web de supervision y consulta para la Unidad para las Victimas (UARIV).
+Lectura del trabajo del encuestador, metricas por usuario, busqueda de victimas y exportacion de reportes.
 
-**NO sustituye la app móvil** — la captura de campo sigue siendo móvil offline-first.
-El panel web es una capa de visualización para supervisores, coordinadores y operadores territoriales.
+**NO sustituye la app movil** — la captura de campo sigue siendo movil offline-first.
+El panel web es una capa de visualizacion para supervisores, coordinadores y operadores territoriales.
 
 ---
 
-## Stack técnico
+## Stack tecnico
 
-| Componente | Tecnología | Versión |
+| Componente | Tecnologia | Version |
 |------------|-----------|---------|
 | Framework | React | 18.3 |
 | Lenguaje | TypeScript | 5.4 |
@@ -29,111 +29,201 @@ El panel web es una capa de visualización para supervisores, coordinadores y op
 | HTTP | Axios | 1.7 |
 | Estilos | TailwindCSS | 3.4 |
 | Iconos | Lucide-react | 0.395 |
+| Graficas | Recharts | - |
+| Mapas | react-simple-maps | - |
+| Excel | ExcelJS | - |
+| Formularios | react-hook-form + zod | - |
+| Toasts | Sonner | 2.0 |
+| Fechas | date-fns | 4.3 |
+| Testing | Vitest + Testing Library | - |
 
 ---
 
-## Pantallas implementadas (Sprint 12)
+## Estructura de archivos
 
 ```
 srni-frontend/src/
-├── main.tsx               ← entry point con BrowserRouter
-├── App.tsx                ← rutas con <RequireAuth>
+├── api/
+│   ├── client.ts          Axios + JWT interceptors (auto-refresh, cola, timeout)
+│   ├── auth.ts            login, refresh, perfil, logout, cambiar-password
+│   ├── hogares.ts         listar (paginado + filtros), detalle
+│   ├── encuestas.ts       listar (paginado + filtro estado), detalle con respuestas
+│   ├── reportes.ts        resumen, detalle paginado (todas las paginas para export), exportar CSV (legacy)
+│   ├── victimas.ts        buscar (POST hash SHA-256), detalle, registrar
+│   ├── supervision.ts     resumen supervisor, series temporales
+│   ├── formulario.ts      instrumentos, capitulo detalle con preguntas
+│   ├── parametricas.ts    departamentos, municipios, DTs, puntos, tipos doc
+│   └── auditoria.ts       logs de acceso con filtros
 ├── components/
-│   └── MainLayout.tsx     ✅ Sidebar + topbar GOV.CO
+│   ├── MainLayout.tsx     Sidebar desktop + drawer mobile + header con dropdown usuario + bottom sheet mobile
+│   ├── Sidebar.tsx        Logo GOV.CO + 9 nav items
+│   ├── ErrorBoundary.tsx  Captura errores React
+│   └── ui/                14 componentes reutilizables
+│       ├── Button.tsx     4 variantes, 3 tamanos, loading, icon, shadow-soft, press effect
+│       ├── Dropdown.tsx   Dropdown custom Apple-style (desktop) + select nativo (mobile)
+│       ├── Input.tsx      forwardRef, label, error, icono con peer-focus
+│       ├── Select.tsx     forwardRef, label, error, opciones tipadas
+│       ├── Table.tsx      Generico <T>, skeleton escalonado, fade-in filas, paginacion
+│       ├── Modal.tsx      Backdrop blur, scale-in, focus trap, bloqueo scroll
+│       ├── Card.tsx       Tarjeta metrica con hover lift
+│       ├── Alert.tsx      4 variantes con borde lateral de acento
+│       ├── Breadcrumb.tsx Navegacion jerarquica con aria-label
+│       ├── Badge.tsx      5 variantes con borde sutil
+│       ├── Spinner.tsx    3 tamanos, role="status"
+│       ├── EmptyState.tsx Icono + titulo + descripcion
+│       ├── Pagination.tsx Botones ghost, hover azul
+│       └── PageHeader.tsx Titulo + subtitulo + acciones
+├── stores/
+│   └── authStore.ts       Zustand: tokens en sessionStorage, usuario, logout
 ├── pages/
-│   ├── Login.tsx          ✅ Login JWT con franja GOV.CO
-│   ├── Dashboard.tsx      ✅ 4 métricas + accesos rápidos
-│   ├── Hogares.tsx        ✅ Listado paginado
-│   ├── Encuestas.tsx      ✅ Listado de sesiones
-│   └── Reportes.tsx       ✅ Resumen del encuestador + export CSV
-└── stores/
-    └── authStore.ts       ✅ Zustand con sessionStorage
+│   ├── Login.tsx          Split layout: branding GOV.CO + formulario
+│   ├── Dashboard.tsx      4 Cards metricas + accesos rapidos
+│   ├── Hogares.tsx        Tabla paginada + filtros (busqueda + estado)
+│   ├── HogarDetalle.tsx   Breadcrumb + InfoCards + miembros + sesiones
+│   ├── Encuestas.tsx      Tabla paginada + filtro estado + barra progreso
+│   ├── SesionDetalle.tsx  InfoCards + progreso + respuestas + link hogar
+│   ├── Reportes.tsx       6 tarjetas resumen + tabla + exportar Excel (.xlsx) con modal de filtros (fecha/estado/instrumento)
+│   ├── Victimas.tsx       Busqueda por documento + resultado + recientes
+│   ├── VictimaDetalle.tsx Datos PII + hechos victimizantes + metadata
+│   ├── Supervision.tsx    LineChart + BarChart + tabla encuestadores + filtros
+│   ├── Instrumentos.tsx   Cards expandibles + lazy-load preguntas
+│   ├── Parametricas.tsx   Mapa Colombia + 5 tabs con filtros
+│   ├── Auditoria.tsx      Logs inmutables + filtros accion/resultado/fecha
+│   ├── CambiarPassword.tsx Formulario con react-hook-form + zod
+│   └── NotFound.tsx       Pagina 404
+├── test/
+│   └── setup.ts           Setup vitest con jest-dom
+├── App.tsx                15 rutas + RequireAuth + catch-all 404
+├── main.tsx               Entry: BrowserRouter + ErrorBoundary + Toaster
+└── index.css              Base global: transiciones Apple, scrollbar, focus ring, page-content
 ```
 
 ---
 
 ## API consumida
 
-| Módulo | Archivo | Endpoints |
+| Modulo | Archivo | Endpoints |
 |--------|---------|-----------|
-| Auth | `src/api/auth.ts` | `/api/auth/token/` · `/api/auth/token/refresh/` · `/api/auth/perfil/` |
-| Hogares | `src/api/hogares.ts` | `/api/hogares/` · `/api/hogares/{id}/` |
-| Encuestas | `src/api/encuestas.ts` | `/api/encuestas/` · `/api/encuestas/{id}/` · `/api/encuestas/{id}/respuestas/` |
-| Reportes | `src/api/reportes.ts` | `/api/reportes/encuestador/` · `/detalle/` · `/exportar/` |
+| Auth | `auth.ts` | `/api/auth/token/` · `/token/refresh/` · `/perfil/` · `/logout/` · `/cambiar-password/` |
+| Hogares | `hogares.ts` | `/api/hogares/` · `/api/hogares/{id}/` |
+| Encuestas | `encuestas.ts` | `/api/encuestas/` · `/api/encuestas/{id}/` |
+| Reportes | `reportes.ts` | `/api/reportes/encuestador/` · `/detalle/` · `/exportar/` |
+| Victimas | `victimas.ts` | `/api/victimas/buscar/` · `/api/victimas/{id}/` |
+| Supervision | `supervision.ts` | `/api/reportes/supervisor/` · `/dashboard/series/` |
+| Formulario | `formulario.ts` | `/api/formulario/instrumentos/` · `/capitulos/{id}/` |
+| Parametricas | `parametricas.ts` | `/api/parametricas/departamentos/` · `/municipios/` · `/direcciones-territoriales/` · `/puntos-atencion/` · `/tipos-documento/` |
+| Auditoria | `auditoria.ts` | `/api/auditoria/logs/` |
 
 Todos consumen `apiClient` (`src/api/client.ts`) con interceptor JWT + auto-refresh 401.
 
 ---
 
+## Sistema de diseno
+
+### Paleta GOV.CO (tailwind.config.ts)
+
+| Token | Color | Uso |
+|-------|-------|-----|
+| `gov-azul` | `#1565C0` | Primario, botones, links |
+| `gov-azulOscuro` | `#003A80` | Sidebar, login, header mobile |
+| `gov-azulTenue` | `#E3F2FD` | Hover, fondos sutiles |
+| `gov-amarillo` | `#F5BF04` | Franja GOV.CO |
+| `gov-verde` | `#2E7D32` | Exito, badge finalizada |
+| `gov-rojo` | `#C62828` | Error, badge cancelada |
+| `gov-naranja` | `#E65100` | Advertencia, en proceso |
+| `gov-grisTenue` | `#F5F5F5` | Fondo general |
+| `gov-borde` | `#E0E0E0` | Bordes, divisores |
+
+Fuentes: **Montserrat** (display) + **Work Sans** (body)
+
+### Sombras Apple-style
+
+| Clase | Uso |
+|-------|-----|
+| `shadow-soft` | Cards, botones primarios |
+| `shadow-soft-md` | Hover cards, dropdowns |
+| `shadow-soft-lg` | Modales, bottom sheets |
+| `shadow-soft-xl` | Overlays principales |
+
+### Animaciones
+
+| Clase | Efecto |
+|-------|--------|
+| `animate-fade-in` | Opacidad 0→1 (0.3s) |
+| `animate-fade-in-up` | Sube 8px + opacidad (0.35s) |
+| `animate-scale-in` | Escala 0.96→1 + opacidad (0.25s) |
+| `animate-slide-down` | Baja 4px + opacidad (0.2s) |
+| `animate-slide-up` | Sube desde abajo (0.25s) |
+
+### Clases CSS reutilizables (index.css)
+
+| Clase | Descripcion |
+|-------|-------------|
+| `.btn-primary` | Boton azul GOV.CO con shadow-soft, press effect |
+| `.btn-secondary` | Boton borde azul con hover tenue |
+| `.input` | Input con hover border, focus ring suave |
+| `.card` | Fondo blanco, rounded-2xl, shadow-soft |
+| `.card-hover` | Card con hover lift (-translate-y-0.5) |
+| `.page-content` | Fade-in-up al entrar a pagina |
+| `.badge-verde/rojo/azul/gris` | Badges de estado |
+
+---
+
 ## Seguridad
 
-| Regla | Cómo se aplica |
+| Regla | Como se aplica |
 |-------|---------------|
 | Tokens en `sessionStorage` — nunca `localStorage` | `authStore.ts` lee/escribe directamente |
-| `sessionStorage.clear()` al logout | método `logout()` en el store |
-| Bearer automático en cada request | interceptor request en `client.ts` |
+| `sessionStorage.clear()` al logout | metodo `logout()` en el store |
+| Logout real: blacklist refresh token | POST `/api/auth/logout/` antes de limpiar session |
+| Bearer automatico en cada request | interceptor request en `client.ts` |
 | Refresh transparente al 401 | interceptor response con cola de espera |
 | Refresh fallido → logout + redirect a `/login` | `window.location.href = '/login'` |
-| Sin caché de datos RNI en disco | nunca `localStorage` ni IndexedDB para datos de víctimas |
+| Sin cache de datos RNI en disco | nunca `localStorage` ni IndexedDB para datos de victimas |
 | Cumplimiento Ley 1581 / Habeas Data | datos PII permanecen server-side |
 
 ---
 
-## Paleta GOV.CO
+## Testing
 
-| Token Tailwind | Color | Uso |
-|---------------|-------|-----|
-| `gov-azul` | `#1565C0` | Primario, botones principales |
-| `gov-azulOscuro` | `#003A80` | Headers, navegación |
-| `gov-amarillo` | `#F5BF04` | Franja GOV.CO, énfasis |
-| `gov-verde` | `#2E7D32` | Estados de éxito (sesión finalizada) |
-| `gov-rojo` | `#C62828` | Errores, alertas críticas |
-| `gov-naranja` | `#E65100` | En proceso, alerta media |
-| `bg-fondo` | `#F5F5F5` | Fondo general |
-| Superficie | `#FFFFFF` | Tarjetas |
+| Suite | Tests | Herramienta |
+|-------|-------|-------------|
+| Button.test.tsx | 5 (render, click, loading, disabled, variant) | Vitest + Testing Library |
+| authStore.test.ts | 4 (init, setTokens, setUsuario, logout) | Vitest |
+| **Total** | **9** | jsdom |
 
-Fuentes: **Montserrat** (display) + **Work Sans** (body) — vía Google Fonts.
+**Nota:** componentes con hooks (useState/useEffect/useRef) no son testeables con la combinacion actual Node.js v24 + Vitest 2.x + pnpm (bug CJS interop). Componentes sin hooks y stores si funcionan. Fix: actualizar a Vitest 3.x.
 
 ---
 
-## Cómo levantar el panel web
+## Como levantar el panel web
 
 ```powershell
 cd srni-frontend
-npm install
-Copy-Item .env.example .env.local
-# Editar .env.local → VITE_API_URL=http://localhost:8001
-npm run dev
-# http://localhost:5173
+pnpm install
+pnpm dev          # http://localhost:5173
+pnpm build        # Build produccion (tsc + vite build)
+pnpm preview      # Preview del build
+pnpm test         # Ejecutar tests
 ```
 
-### Conexión al backend
+### Conexion al backend
 
-Por defecto el panel apunta a `VITE_API_URL` definida en `.env.local`.
-Para desarrollo en LAN o ngrok, ajustar al endpoint correspondiente.
-
----
-
-## Backlog Sprint 13 — Panel Web v2
-
-| Funcionalidad | Prioridad |
-|---------------|-----------|
-| Detalle de hogar (miembros + sesiones asociadas) | Alta |
-| Detalle de sesión (respuestas por capítulo, solo lectura) | Alta |
-| Filtros server-side: municipio, estado, fecha, encuestador | Alta |
-| Paginación con cursor en listados grandes | Media |
-| Gráficos del dashboard (sesiones por día, distribución por perfil) | Media |
-| Export CSV / Excel desde panel | Media |
-| Vista supervisor: métricas por encuestador | Alta |
-| Auditoría de accesos (LogAcceso) visible | Media |
-| Mapas georreferenciados de hogares | Baja (Sprint futuro) |
+El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite.config.ts`).
 
 ---
 
-## Decisiones tomadas
+## Decisiones de arquitectura
 
-- **No PWA / sin service worker:** el panel se usa siempre con conexión. Offline-first sigue siendo responsabilidad exclusiva de la app móvil.
-- **Sin Material UI / sin Ant Design:** Tailwind + componentes propios mantienen control fino del diseño GOV.CO y el bundle bajo.
-- **Sin Redux:** Zustand replica el patrón que ya usa la app móvil — minimiza disonancia cognitiva entre proyectos.
-- **Sin SSR / sin Next.js:** SPA pura con Vite. El backend Django ya sirve la API; no se necesita SSR para un panel interno.
-- **Lectura solamente:** el panel no edita respuestas de la encuesta. Captura sigue siendo móvil. Esto reduce drásticamente la superficie de validación y el riesgo de inconsistencia.
+- **No PWA / sin service worker:** el panel se usa siempre con conexion. Offline-first es responsabilidad de la app movil.
+- **Sin Material UI / sin Ant Design:** Tailwind + componentes propios para control del diseno GOV.CO y bundle reducido.
+- **Sin Redux:** Zustand replica el patron de la app movil.
+- **Sin SSR / sin Next.js:** SPA pura con Vite. El backend Django ya sirve la API.
+- **Lectura solamente:** el panel no edita respuestas. Captura sigue siendo movil.
+- **Diseno Apple-style:** sombras multi-capa, animaciones suaves (fade-in-up, scale-in, escalonadas), transiciones globales, scrollbar minimalista. Mantiene identidad GOV.CO.
+- **Nivel 3 UI completo:** revision pagina por pagina — botones hardcodeados migrados a componentes, Select reutilizable en filtros, barras de progreso refinadas (h-1.5), toggle ver/ocultar contrasena en CambiarPassword, bordes y sombras consistentes en todo el sistema.
+- **Code splitting:** React.lazy() en 13 paginas + manualChunks. Bundle principal: 937KB → 116KB. recharts y react-simple-maps en chunks separados (solo cargan cuando el usuario navega a esas paginas).
+- **A11y Modal:** aria-labelledby apuntando al h3 del titulo (WCAG AA).
+- **Build produccion:** validado y limpio. Sin errores de tipos. Sin warnings.
+- **Excel client-side:** ExcelJS con dynamic import (code splitting). El archivo .xlsx se genera completamente en el navegador — header GOV.CO azul, filas alternas, bordes, fila congelada, 2 hojas (Detalle + Resumen). El endpoint /exportar/ del backend sigue existiendo pero ya no se usa.
+- **Modal de filtros para exportacion:** pills para estado e instrumento (sin Dropdown para evitar clipping en overflow-y-auto), date pickers con validacion cruzada para el periodo. Instrumentos cargados desde `GET /api/formulario/instrumentos/` al montar la pagina, con fallback a instrumentos de la pagina actual si la llamada falla.

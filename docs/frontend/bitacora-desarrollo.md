@@ -85,26 +85,29 @@ Basado en el plan de 7 fases definido para el frontend:
 - [x] ~~Filtros y busqueda en tablas existentes (Hogares: busqueda + estado, Encuestas: estado)~~
 - [x] ~~Filas clickeables + boton "Ver detalle" en Hogares y Encuestas~~
 
-### Fase 3 — Busqueda de victimas
-- [ ] Pagina Victimas (`/victimas`) — formulario busqueda + resultado
-- [ ] VictimaDetalle (`/victimas/:id`) — datos PII + hogares + sesiones
+### Fase 3 — Busqueda de victimas — COMPLETADA 2026-05-31
+- [x] ~~Pagina Victimas (`/victimas`) — formulario busqueda + resultado~~
+- [x] ~~VictimaDetalle (`/victimas/:id`) — datos PII + hogares + sesiones~~
 
-### Fase 4 — Panel de supervision
-- [ ] Dashboard de Supervision (`/supervision`) — metricas por encuestador
-- [ ] Graficas de produccion (series temporales)
+### Fase 4 — Panel de supervision — COMPLETADA 2026-05-31
+- [x] ~~Dashboard de Supervision (`/supervision`) — metricas por encuestador~~
+- [x] ~~Graficas de produccion (series temporales)~~
 
-### Fase 5 — Instrumentos y parametricas
-- [ ] Pagina Instrumentos (`/instrumentos`) — arbol capitulos/preguntas
-- [ ] Pagina Parametricas (`/parametricas`) — cascada depto > municipio > vereda
+### Fase 5 — Instrumentos y parametricas — COMPLETADA 2026-05-31
+- [x] ~~Pagina Instrumentos (`/instrumentos`) — arbol capitulos/preguntas~~
+- [x] ~~Pagina Parametricas (`/parametricas`) — cascada depto > municipio > vereda~~
 
-### Fase 6 — Auditoria y seguridad
-- [ ] Pagina Auditoria (`/auditoria`) — logs inmutables
-- [ ] Cambiar contrasena (`/perfil/cambiar-password`)
+### Fase 6 — Auditoria y seguridad — COMPLETADA 2026-06-02
+- [x] ~~Pagina Auditoria (`/auditoria`) — logs inmutables (adaptada a endpoint real de Javier)~~
+- [x] ~~Cambiar contrasena (`/perfil/cambiar-password`) — react-hook-form + zod~~
+- [x] ~~Logout real: POST `/api/auth/logout/` con blacklist de refresh token~~
 
-### Fase 7 — Pulido y calidad
-- [ ] Responsive design
-- [ ] Accesibilidad (WCAG AA)
-- [ ] Testing (Vitest + Playwright)
+### Fase 7 — Pulido y calidad — EN PROGRESO
+- [x] ~~Accesibilidad parcial (skip-to-content, aria-labels, roles, htmlFor)~~
+- [x] ~~Testing setup (Vitest + happy-dom + 9 tests)~~
+- [x] ~~Correccion tsconfig: eliminar baseUrl deprecado~~
+- [x] ~~UI filtros: Supervision y Auditoria con layout responsive correcto~~
+- [ ] Responsive design completo (pendiente revision pagina por pagina)
 - [ ] Build de produccion
 
 ---
@@ -399,9 +402,98 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ### Pendiente para continuar
 
-- Fase 6 (restante): CambiarPassword + Logout real
-- Fase 7: Responsive, accesibilidad, testing, build produccion
-- **Solicitud a Javier:** implementar endpoint `GET /api/auditoria/logs/`
+- Fase 7 (restante): Responsive completo pagina por pagina + build produccion
+
+---
+
+## Dia 7 — 2026-06-02 | Fase 6 completada + Fase 7 parcial (a11y, testing, UI fixes)
+
+### Actividades realizadas
+
+1. **Fase 6 completada — Auditoria adaptada + CambiarPassword + Logout real**
+   - Adaptacion de `src/api/auditoria.ts` al endpoint real de Javier: tipos actualizados (`accion_display`, `resultado_display`, `usuario_nombre`), 15 acciones, filtros resultado/codigo_usuario/search/ordering/page_size
+   - `src/pages/Auditoria.tsx` — badges por accion y resultado, filtro resultado (dropdown), renderizado JSON detalle, columnas responsive
+   - `src/api/auth.ts` — endpoints `logout` (POST con refresh token) y `cambiarPassword`
+   - `src/pages/CambiarPassword.tsx` — formulario con react-hook-form + zod v4: validacion password_actual, password_nueva (min 8 + mayuscula + numero), confirmar (must match). Breadcrumb, Alert exito, manejo errores API
+   - `src/components/MainLayout.tsx` — logout real (fire-and-forget POST antes de limpiar session) + skip-to-content link + `role="main"`
+   - `src/components/Sidebar.tsx` — enlace "Cambiar contrasena" con icono KeyRound + `aria-label` en nav
+   - `src/App.tsx` — ruta `/perfil/cambiar-password`
+   - `src/api/hogares.ts` — `codigo_hogar` cambiado de opcional a requerido (Javier lo agrego al serializer)
+   - `src/pages/Hogares.tsx` y `src/pages/HogarDetalle.tsx` — fallback `??` cambiado a `||` para codigo_hogar
+
+2. **Fase 7 parcial — Accesibilidad**
+   - `src/components/MainLayout.tsx` — skip-to-content (`sr-only focus:not-sr-only`), `<main id="main-content" role="main">`
+   - `src/pages/Login.tsx` — `htmlFor`/`id` en inputs usuario y password, `aria-label` en boton toggle password
+   - `src/pages/Parametricas.tsx` — `role="tablist"`, `role="tab"`, `aria-selected` en tabs
+   - `src/components/Sidebar.tsx` — `aria-label="Menu principal"` en nav
+
+3. **Fase 7 parcial — Testing**
+   - Dependencias: `vitest@^2`, `@testing-library/react@14`, `@testing-library/user-event@14`, `@testing-library/jest-dom@6`, `happy-dom@20`
+   - `vite.config.ts` — configuracion test (globals, happy-dom, setupFiles, css:false)
+   - `src/test/setup.ts` — import jest-dom matchers para vitest
+   - `src/vite-env.d.ts` — referencia tipos Vite (fix `import.meta.env`)
+   - `src/components/ui/Button.test.tsx` — 5 tests (render, click, loading, disabled, variant danger)
+   - `src/stores/authStore.test.ts` — 4 tests (init, setTokens, setUsuario, logout)
+   - 9 tests pasando
+
+4. **Correccion tsconfig.json**
+   - Eliminado `baseUrl: "."` (deprecado en TS 5.9, causa error en TS 7.0)
+   - `paths` cambiado de `"src/*"` a `"./src/*"` (funciona sin baseUrl)
+   - Build limpio sin warnings de deprecacion
+
+5. **UI/UX filtros — Supervision y Auditoria**
+   - `src/pages/Supervision.tsx` — filtros en card dedicada con grid responsive (1/2/4 cols), botones Filtrar + Actualizar alineados a misma altura que inputs (`h-[38px]`), cards totales grid 1/2/4 cols
+   - `src/pages/Auditoria.tsx` — filtros con layout flex (grid de inputs `flex-1` + botones compactos al lado), componente Button reutilizado (antes eran botones manuales), responsive mobile con botones full-width
+   - `src/components/ui/Table.tsx` — skeleton rows respetan className de columna (para hidden responsive)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/pages/CambiarPassword.tsx` | Formulario cambio contrasena con validacion zod |
+| `src/test/setup.ts` | Setup vitest con jest-dom matchers |
+| `src/vite-env.d.ts` | Referencia tipos Vite |
+| `src/components/ui/Button.test.tsx` | 5 tests del componente Button |
+| `src/stores/authStore.test.ts` | 4 tests del auth store |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `package.json` | +react-hook-form, +zod, +@hookform/resolvers, +vitest, +testing-library, +happy-dom |
+| `pnpm-lock.yaml` | Lockfile actualizado |
+| `tsconfig.json` | Eliminado baseUrl deprecado, paths relativo |
+| `vite.config.ts` | Configuracion test vitest |
+| `src/api/auth.ts` | Endpoints logout + cambiarPassword |
+| `src/api/auditoria.ts` | Tipos adaptados a endpoint real, filtros nuevos |
+| `src/api/hogares.ts` | codigo_hogar requerido |
+| `src/App.tsx` | Ruta /perfil/cambiar-password |
+| `src/components/MainLayout.tsx` | Logout real + skip-to-content + role main |
+| `src/components/Sidebar.tsx` | Link cambiar contrasena + aria-label nav |
+| `src/components/ui/Table.tsx` | Skeleton respeta className columna |
+| `src/pages/Auditoria.tsx` | Adaptada a endpoint real + filtros flex layout |
+| `src/pages/Supervision.tsx` | Filtros en card + grid responsive cards |
+| `src/pages/Login.tsx` | htmlFor + aria-labels |
+| `src/pages/Parametricas.tsx` | Tabs con roles ARIA |
+| `src/pages/Hogares.tsx` | Fallback codigo_hogar |
+| `src/pages/HogarDetalle.tsx` | Fallback codigo_hogar |
+
+### Estado del frontend actualizado
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 |
+| Rutas | 15 + catch-all 404 |
+| Nav items sidebar | 9 + link cambiar contrasena |
+| Tests | 9 (5 Button + 4 authStore) |
+
+### Nota para Javier
+- Endpoint `GET /api/auditoria/logs/` ya implementado y conectado. Frontend funcional.
+- `codigo_hogar` ya es requerido en el frontend (gracias por agregarlo al serializer).
+- `POST /api/auth/logout/` y `POST /api/auth/cambiar-password/` conectados.
 
 ---
 
@@ -415,6 +507,310 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-31 | Fase 1 completada: 8 componentes UI + refactor 6 paginas + layout mejorado | 9 archivos creados, 7 modificados |
 | 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
 | 2026-05-31 | Fase 6 parcial: auditoria (pagina lista, endpoint pendiente en backend) | 2 archivos creados, 2 modificados |
+| 2026-06-02 | Fase 6 completada + Fase 7 parcial (a11y, testing, UI filtros) | 5 archivos creados, 17 modificados |
+
+---
+
+## Dia 8 — 2026-06-02 | Mejoras UI/UX globales — diseño Apple-style
+
+### Actividades realizadas
+
+1. **Layout: info usuario movida del Sidebar al Header**
+   - Sidebar simplificado: solo logo GOV.CO + 9 nav items (sin info usuario, sin logout, sin cambiar contrasena)
+   - Header desktop: dropdown con avatar + nombre + perfil + chevron animado. Al hacer clic abre menu con "Cambiar contrasena" y "Cerrar sesion"
+   - Header mobile: avatar circular abre bottom sheet (panel desde abajo) con info usuario + acciones + boton cancelar
+   - Bottom sheet con animacion slide-up, overlay, handle visual, touch targets grandes (py-3.5)
+
+2. **Sistema de diseño global — Nivel 1 (base)**
+   - `tailwind.config.ts`: sombras Apple multi-capa (shadow-soft, soft-md, soft-lg, soft-xl), 5 animaciones (fade-in, fade-in-up, scale-in, slide-down, slide-up), easing Apple + spring
+   - `src/index.css`: font smoothing (antialiased), transiciones globales en elementos interactivos (200ms cubic-bezier Apple), focus ring azul suave con offset, scrollbar minimalista (6px), selection color institucional, clase page-content con fade-in-up
+   - Botones: rounded-lg, shadow-soft, efecto press active:scale[0.97], disabled sin scale
+   - Inputs: rounded-lg, hover border-gray-400, focus ring gov-azul/30
+   - Cards: rounded-2xl, shadow-soft, border-gov-borde/60, nueva clase card-hover con lift
+   - Badges: padding horizontal ampliado (px-2.5)
+
+3. **Componentes UI mejorados — Nivel 2**
+   - `Button.tsx`: shadow-soft en primary/danger, hover shadow-soft-md, active scale 0.97
+   - `Card.tsx`: hover lift (-translate-y-0.5 + shadow-soft-md), icono rounded-2xl con shadow-soft
+   - `Modal.tsx`: backdrop blur, animate scale-in, shadow-soft-xl, boton cerrar circular con hover bg-gray-100
+   - `Table.tsx`: filas con animate-fade-in escalonado (delay 30ms por fila), skeletons con delay 50ms, bordes sutiles (/60 y /40), hover en todas las filas
+   - `Alert.tsx`: borde lateral de color de acento (4px izquierda), rounded-xl, animate fade-in
+   - `EmptyState.tsx`: contenedor 64px rounded-2xl, mas espaciado (py-16)
+   - `Pagination.tsx`: botones ghost sin borde, hover azul tenue, numero pagina en bold
+   - `Badge.tsx`: borde sutil semitransparente por variante
+   - `Input.tsx`: icono cambia a azul en focus (peer-focus), input con clase peer
+   - `PageHeader.tsx`: tracking-tight en titulo
+
+4. **Transicion de paginas**
+   - MainLayout: wrapper `<div key={location.pathname} className="page-content">` alrededor de Outlet
+   - Cada cambio de ruta dispara animacion fade-in-up (sube 8px + opacidad 0.35s)
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `tailwind.config.ts` | Sombras soft, keyframes, animaciones, easing Apple/spring |
+| `src/index.css` | Base global: font smoothing, transiciones, focus ring, scrollbar, selection, page-content |
+| `src/components/Sidebar.tsx` | Simplificado: solo logo + nav (sin info usuario, sin logout) |
+| `src/components/MainLayout.tsx` | Dropdown desktop + bottom sheet mobile + page-content wrapper |
+| `src/components/ui/Button.tsx` | Shadow-soft, active scale, rounded-lg |
+| `src/components/ui/Card.tsx` | Hover lift, icono rounded-2xl |
+| `src/components/ui/Modal.tsx` | Backdrop blur, scale-in, shadow-soft-xl |
+| `src/components/ui/Table.tsx` | Fade-in escalonado, bordes sutiles |
+| `src/components/ui/Alert.tsx` | Borde lateral acento, rounded-xl |
+| `src/components/ui/EmptyState.tsx` | Contenedor grande, mas espaciado |
+| `src/components/ui/Pagination.tsx` | Botones ghost, hover azul |
+| `src/components/ui/Badge.tsx` | Borde sutil semitransparente |
+| `src/components/ui/Input.tsx` | Icono peer-focus azul |
+| `src/components/ui/PageHeader.tsx` | Tracking-tight |
+
+### Proximo paso: Nivel 3 — revision UI pagina por pagina
+
+---
+
+## Dia 9 — 2026-06-02 | Fase 7 completada — Nivel 3 UI + fixes API
+
+### Actividades realizadas
+
+1. **Nivel 3 — Revision UI pagina por pagina (15 paginas)**
+   - Batch global aplicado en todas las paginas: `transition-all`, `divide-gov-borde/40`, `shadow-soft`, skeletons `bg-gray-200`
+   - **Alta prioridad** — Parametricas: 4 botones rojos hardcodeados → `Button variant="danger"`, shadow-soft en mapa, bordes sutiles en banners, `divide-gov-borde/40`
+   - **Alta prioridad** — Victimas: `animate-fade-in-up` al resultado, `rounded-xl`/`rounded-2xl` en cards, `hover:shadow-soft-md` en recientes
+   - **Alta prioridad** — HogarDetalle: animaciones escalonadas en 4 secciones (0/50/100/150ms)
+   - **Alta prioridad** — SesionDetalle: animaciones escalonadas, `shadow-soft` en progress card
+   - **Media** — Instrumentos: `rounded-2xl` en icon background, option badges mas sutiles, `animate-fade-in` al expandir
+   - **Media** — Supervision: `shadow-soft` en filtros y chart cards, progress bar `h-1.5`, boton limpiar filtros
+   - **Media** — Reportes: animaciones en cards y tabla
+   - **Media** — VictimaDetalle: animaciones escalonadas en 4 secciones
+   - **Media** — Encuestas: `Select` component, barra progreso `h-1.5` + `transition-all`, filtros en card
+   - **Media** — Auditoria: `shadow-soft` en filtros, action badges `rounded-md`
+   - **Media** — Dashboard: animaciones en grid metricas y card accesos rapidos
+   - **Media** — Login: `Alert` component, `animate-scale-in` en form card, `transition-all` en toggle password
+   - **Baja** — CambiarPassword: `shadow-soft animate-fade-in-up` en card, toggle ojo en los 3 campos
+   - **Baja** — Hogares: `Select` component, filtros en card con shadow
+   - **Baja** — NotFound: `rounded-2xl`, `animate-fade-in`, `hover:scale-105` en boton
+
+2. **Fix API Reportes — campos desalineados con el backend**
+   - `src/api/reportes.ts`: interfaz `ResumenEncuestador` completamente reescrita con campos reales del backend (`sesiones_completadas`, `hogares_caracterizados`, `respuestas_total`, `periodo_desde/hasta`)
+   - `DetalleSesion` actualizada (`instrumento_nombre`, `estado_display`, `respuestas_total`)
+   - Funcion `desdeDefault()`: rango de 3 meses por defecto (evita quedarse sin datos al filtrar por mes actual)
+   - `src/pages/Reportes.tsx`: columnas tabla actualizadas a campos reales, 6 cards de resumen
+   - `src/pages/Dashboard.tsx`: campos de metricas corregidos
+
+3. **Extras durante la sesion**
+   - `Supervision.tsx`: boton "Limpiar" que limpia filtros fecha y recarga sin parametros
+   - `CambiarPassword.tsx`: toggle ver/ocultar contrasena en los 3 campos (estado independiente por campo)
+   - Diagnostico datos de prueba: sesiones de mayo no aparecian en reportes por filtro de mes. Resuelto con rango ampliado en el cliente API
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/api/reportes.ts` | Interfaz y campos alineados con backend real, rango 3 meses por defecto |
+| `src/pages/Dashboard.tsx` | Campos corregidos + animaciones |
+| `src/pages/Reportes.tsx` | Columnas tabla + cards corregidas + animaciones |
+| `src/pages/Login.tsx` | Alert component + animate-scale-in + transition-all toggle |
+| `src/pages/Hogares.tsx` | Select component + filtros en card |
+| `src/pages/HogarDetalle.tsx` | Animaciones escalonadas |
+| `src/pages/Encuestas.tsx` | Select component + barra progreso refinada |
+| `src/pages/SesionDetalle.tsx` | Animaciones escalonadas + shadow-soft |
+| `src/pages/Victimas.tsx` | Animacion resultado + cards refinadas |
+| `src/pages/VictimaDetalle.tsx` | Animaciones escalonadas |
+| `src/pages/Supervision.tsx` | Shadow-soft + boton limpiar filtros |
+| `src/pages/Reportes.tsx` | Animaciones + fix campos |
+| `src/pages/Instrumentos.tsx` | rounded-2xl + option badges + animate-fade-in |
+| `src/pages/Parametricas.tsx` | Button danger + shadow-soft + bordes sutiles |
+| `src/pages/Auditoria.tsx` | Shadow-soft + action badges rounded-md |
+| `src/pages/CambiarPassword.tsx` | Shadow-soft + animacion + toggle ojo x3 |
+| `src/pages/NotFound.tsx` | rounded-2xl + animate-fade-in + hover boton |
+
+### Estado del frontend al cierre del dia
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 13 |
+| Componentes layout | 3 (MainLayout, Sidebar, ErrorBoundary) |
+| Rutas | 15 + catch-all 404 |
+| Tests | 9 (5 Button + 4 authStore) |
+| Fases completadas | 1 a 7 (Nivel 3 incluido) |
+
+### Pendiente
+- A11y: revision WCAG AA, roles ARIA en modales, navegacion teclado
+- Testing: expandir cobertura de componentes principales
+
+---
+
+## Dia 10 — 2026-06-02 | Componente Dropdown personalizado
+
+### Actividades realizadas
+
+1. **Nuevo componente `Dropdown.tsx`** (`src/components/ui/`)
+   - Reemplaza el `<select>` nativo en filtros de UI (no en formularios react-hook-form)
+   - Trigger button estilizado igual que `.input` con chevron rotatorio
+   - Panel flotante: `shadow-soft-md`, `rounded-xl`, `border-gov-borde/60`, `animate-slide-down`
+   - Opcion seleccionada: `bg-gov-azulTenue text-gov-azul` + icono Check
+   - Hover: `bg-gov-azulTenue/40 transition-all`
+   - Cierre con clic fuera y tecla Escape
+   - **Responsive:** desktop → dropdown custom, mobile → `<select>` nativo del OS
+   - Panel con `min-w-full w-max` para adaptarse al texto mas largo sin cortar
+
+2. **Aplicado en 5 paginas**
+   - `Victimas.tsx` — selector tipo documento
+   - `Hogares.tsx` — filtro estado hogar
+   - `Encuestas.tsx` — filtro estado sesion
+   - `Auditoria.tsx` — filtros accion y resultado (2 dropdowns)
+   - `Parametricas.tsx` — filtros por departamento y por DT (2 dropdowns)
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `src/components/ui/Dropdown.tsx` | Dropdown personalizado Apple-style con fallback nativo en mobile |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Victimas.tsx` | Select nativo → Dropdown |
+| `src/pages/Hogares.tsx` | Select component → Dropdown |
+| `src/pages/Encuestas.tsx` | Select component → Dropdown |
+| `src/pages/Auditoria.tsx` | 2 selects nativos → Dropdown |
+| `src/pages/Parametricas.tsx` | 2 selects nativos → Dropdown (con conversion Number↔String) |
+
+---
+
+## Dia 11 — 2026-06-03 | Code splitting + A11y Modal + Calidad build
+
+### Actividades realizadas
+
+1. **Analisis de pendientes**
+   - Build de produccion validado: sin errores de tipos, bundle de 937KB (gzip 285KB)
+   - Identificados pendientes reales: code splitting, A11y Modal, testing, `"type": "module"` en package.json
+
+2. **Code splitting — bundle 937KB → 116KB**
+   - `src/App.tsx`: 13 paginas convertidas a `React.lazy()` + componente `SuspensePage` wrapper con `<Suspense fallback={<Spinner />}>`
+   - Login y Dashboard se mantienen como imports eager (critical path)
+   - `vite.config.ts`: `build.rollupOptions.output.manualChunks` con 3 vendor chunks:
+     - `vendor-react` (164KB): react, react-dom, react-router-dom
+     - `vendor-charts` (377KB): recharts — solo carga al entrar a Supervision
+     - `vendor-maps` (102KB): react-simple-maps — solo carga al entrar a Parametricas
+   - Resultado: bundle principal 116KB (gzip 38KB), cada pagina en su propio chunk (1-17KB)
+
+3. **A11y — Modal.tsx**
+   - `aria-label={titulo}` → `aria-labelledby="modal-titulo"` (practica correcta WCAG)
+   - `id="modal-titulo"` agregado al `<h3>` del header
+   - Modal ya tenia: `role="dialog"`, `aria-modal="true"`, `tabIndex={-1}`, cierre Escape, overlay `aria-hidden`
+
+4. **Fix package.json — `"type": "module"`**
+   - Eliminado el warning de `MODULE_TYPELESS_PACKAGE_JSON` en postcss.config.js durante el build
+   - Build limpio sin warnings tras el cambio
+
+5. **Migracion de entorno de tests: happy-dom → jsdom**
+   - Instalado `jsdom` como devDependency
+   - `vite.config.ts`: `environment: 'happy-dom'` → `'jsdom'`
+   - 9 tests siguen pasando (5 Button + 4 authStore)
+
+6. **Hallazgo y documentacion: limitacion de tests con hooks**
+   - Componentes React con hooks (useState/useEffect/useRef) no se pueden testear en este entorno
+   - Causa: incompatibilidad entre Node.js v24.15.0 + pnpm virtual store + Vitest 2.1.9 + React 18 (CJS interop)
+   - Vite crea un Proxy ESM para React que no comparte `ReactCurrentDispatcher` con react-dom
+   - Se intentaron 10+ soluciones: dedupe, server.deps.inline, resolve.alias, shamefully-hoist, pool:threads, deps.optimizer — ninguna funciona
+   - Componentes sin hooks (Button) y stores (authStore) SI funcionan
+   - Fix futuro: actualizar a Vitest 3.x
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/App.tsx` | 13 paginas → React.lazy() + SuspensePage wrapper |
+| `vite.config.ts` | manualChunks + environment jsdom |
+| `src/components/ui/Modal.tsx` | aria-label → aria-labelledby con id en h3 |
+| `package.json` | "type": "module" + jsdom devDependency |
+| `pnpm-lock.yaml` | lockfile actualizado |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 (15 funcionales + Login + NotFound) |
+| API clients | 10 |
+| Componentes UI | 14 (+ Dropdown) |
+| Componentes layout | 3 |
+| Rutas | 15 + catch-all 404 |
+| Tests | 9 (5 Button + 4 authStore) |
+| Bundle principal | 116KB (antes 937KB) |
+
+### Registro de cambios en el dia
+
+| Fecha | Que hice | Archivos tocados |
+|-------|----------|-----------------|
+| 2026-06-03 | Code splitting lazy + manualChunks + A11y Modal + type module + jsdom | App.tsx, vite.config.ts, Modal.tsx, package.json |
+
+---
+
+## Dia 12 — 2026-06-05 | Exportar Excel con formato + modal de filtros
+
+### Actividades realizadas
+
+1. **Reemplazo de exportación CSV por Excel con formato institucional**
+   - Instalado `exceljs` para generación de `.xlsx` en el cliente (sin dependencia de backend)
+   - Generación completamente client-side: se obtienen todos los datos paginados y se construye el archivo en el navegador
+   - ExcelJS se carga con `dynamic import` (`import('exceljs')`) para code splitting — no afecta el bundle inicial
+   - **Hoja 1 — "Detalle de Sesiones":** 9 columnas, header azul GOV.CO (#1565C0) texto blanco bold, filas alternas blanco/azul tenue (#E3F2FD), bordes internos, fila 1 congelada, anchos ajustados por columna
+   - **Hoja 2 — "Resumen":** métricas del período (sesiones, hogares, respuestas, promedios, fechas) con mismo estilo de tabla
+   - Nombre del archivo: `reporte-srni-YYYY-MM-DD.xlsx`
+
+2. **Modal de filtros antes de la descarga**
+   - Botón "Exportar Excel" abre un modal en lugar de descargar directamente
+   - **Período:** dos date pickers (desde/hasta) con validación cruzada (`max`/`min` cruzados), preconfigurados a los últimos 90 días. Los filtros de fecha se envían al backend vía `reportesApi.detalle({ desde, hasta })`
+   - **Estado:** selector por pills — "Todos", Completada, En progreso, Iniciada, Suspendida, Cancelada. Filtro aplicado client-side sobre los resultados
+   - **Instrumento:** pills derivados de los instrumentos presentes en la página actual. Filtro aplicado client-side
+   - Diseño con pills en lugar de `<Dropdown>` para evitar el problema de clipping de paneles `absolute` dentro del `overflow-y-auto` del Modal
+   - Pills: seleccionado → `bg-gov-azul text-white`; no seleccionado → borde gris con hover azul
+
+3. **Corrección de bugs en la descarga anterior (CSV)**
+   - Eliminada la columna "ID Sesión" (campo vacío en el backend): el Excel ahora empieza por "ID Hogar"
+   - `a.click()` ahora adjunta el anchor al DOM antes y lo remueve después (`appendChild` → `click` → `removeChild`)
+   - `URL.revokeObjectURL()` movido a `setTimeout(..., 1000)` para dar tiempo al browser de leer el blob
+   - `setError('')` al inicio de cada intento de exportar (limpia errores previos)
+   - `console.error(err)` en el catch para trazabilidad
+
+4. **Corrección de helper `fetchTodoDetalle`**
+   - Acepta parámetros `{ desde?, hasta? }` y los propaga a todas las páginas del endpoint de detalle
+   - Obtiene el total de páginas en la primera llamada y hace las restantes en paralelo con `Promise.all`
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Reportes.tsx` | Exportar Excel + modal de filtros con pills + fix bugs descarga + quitar ID Sesión |
+| `package.json` | +exceljs |
+| `pnpm-lock.yaml` | Lockfile actualizado |
+
+### Notas
+- El listado de instrumentos en el modal proviene de la página actual de la tabla (no de todos los registros). Si la sesión con el instrumento deseado está en otra página, se puede navegar antes de abrir el modal. Para una lista completa se necesitaría el endpoint `/api/formulario/instrumentos/`.
+- No se modificó `src/api/reportes.ts` — el endpoint `/exportar/` sigue existiendo pero ya no se usa; la generación del Excel es 100% client-side desde el endpoint `/detalle/`.
+
+---
+
+## Dia 13 — 2026-06-05 | Fix instrumentos en modal de exportación
+
+### Actividades realizadas
+
+1. **Instrumentos del modal de exportación desde API real**
+   - El filtro de instrumento en el modal de exportación Excel ahora consume `GET /api/formulario/instrumentos/`
+   - Se carga al montar la página con un `useEffect` independiente (una sola vez)
+   - Solo se muestran instrumentos con `activo === true`, ordenados alfabéticamente
+   - Fallback silencioso: si la llamada falla, usa los instrumentos presentes en la tabla (página actual) — sin error visible
+   - Se eliminó la nota de advertencia "instrumentos de la página actual" del modal
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Reportes.tsx` | Import formularioApi + estado instrumentos + useEffect fetch + pills desde API |
 
 ---
 
