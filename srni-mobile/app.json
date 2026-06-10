@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "co.gov.unidadvictimas.srni",
+      "buildNumber": "1",
       "infoPlist": {
         "NSAllowsArbitraryLoads": false
       }
@@ -28,6 +29,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "co.gov.unidadvictimas.srni",
+      "versionCode": 1,
       "allowBackup": false,
       "usesCleartextTraffic": false
     },
