@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: SPACING.sm,
-    color: GOV.textoS,
     ...FONT.small,
+    color: GOV.textoS,
   },
   filtro: {
     marginHorizontal: SPACING.md,

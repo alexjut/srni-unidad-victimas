@@ -234,22 +234,27 @@ export async function intentarSincronizar(): Promise<ResultadoSync> {
       await colaDao.marcarEnviado(item.id);
       procesados++;
     } catch (err: any) {
+      errores++;
       const status = err?.response?.status as number | undefined;
       const mensaje = err?.message ?? 'Error desconocido';
 
-      if (status === undefined || status === 0) {
-        await colaDao.marcarError(item.id, 'Sin conexión');
-        sinRed = true;
-        errores++;
-      } else if (status >= 400 && status < 500 && status !== 429) {
+      if (status !== undefined && status !== 0 && status >= 400 && status < 500 && status !== 429) {
         // Error de cliente — no reintentable (datos inválidos)
         const detalle = JSON.stringify(err?.response?.data ?? mensaje).slice(0, 300);
         await colaDao.marcarError(item.id, `${status}: ${detalle}`);
-        errores++;
-      } else {
+      } else if (status !== undefined && status !== 0) {
         // 5xx o 429 — reintentable con backoff
-        await colaDao.marcarError(item.id, `${status ?? 'red'}: ${mensaje}`);
-        errores++;
+        await colaDao.marcarError(item.id, `${status}: ${mensaje}`);
+      } else if (err?.isAxiosError || err?.request) {
+        // Error de red real (petición salió pero no hubo respuesta del servidor):
+        // frenar la pasada entera — los demás items también fallarían.
+        await colaDao.marcarError(item.id, 'Sin conexión');
+        sinRed = true;
+      } else {
+        // Error local (JSON.parse de payload corrupto, bug del procesador, etc.).
+        // NO es falta de red: marcar solo este item y seguir con los demás,
+        // de lo contrario un único item corrupto bloquearía la cola para siempre.
+        await colaDao.marcarError(item.id, `Dato local inválido: ${mensaje}`.slice(0, 500));
       }
     }
   }

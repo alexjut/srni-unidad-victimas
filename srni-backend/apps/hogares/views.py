@@ -2,6 +2,7 @@
 Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
+from django.db import IntegrityError, transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -85,16 +86,33 @@ class HogarViewSet(viewsets.ModelViewSet):
         sí se puede crear uno nuevo (caso de cambio definitivo de núcleo familiar).
         """
         autorizado_id = request.data.get('autorizado')
-        if autorizado_id:
-            existente = Hogar.objects.filter(
+
+        def _existente():
+            if not autorizado_id:
+                return None
+            return Hogar.objects.filter(
                 autorizado_id=autorizado_id,
             ).exclude(estado='ARCHIVADO').order_by('-created_at').first()
+
+        existente = _existente()
+        if existente:
+            # Devolver el hogar existente con detalle completo
+            detalle = HogarDetalleSerializer(existente, context={'request': request})
+            return Response(detalle.data, status=status.HTTP_200_OK)
+
+        try:
+            with transaction.atomic():
+                return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            # Carrera: otro request (p. ej. reintento del móvil) creó el hogar
+            # entre la verificación de arriba y el INSERT. El constraint
+            # uniq_hogar_no_archivado_por_autorizado lo rechazó — devolvemos
+            # el hogar ganador, mismo contrato idempotente.
+            existente = _existente()
             if existente:
-                # Devolver el hogar existente con detalle completo
                 detalle = HogarDetalleSerializer(existente, context={'request': request})
                 return Response(detalle.data, status=status.HTTP_200_OK)
-
-        return super().create(request, *args, **kwargs)
+            raise
 
     def perform_create(self, serializer):
         hogar = serializer.save(creado_por=self.request.user)

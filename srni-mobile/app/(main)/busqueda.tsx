@@ -272,7 +272,7 @@ function TarjetaNoHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente
       <View style={styles.chipsFila}>
         <Chip
           style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
-          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+          textStyle={{ ...FONT.label, color: colorEstadoRuv(v.estado_ruv) }}
         >
           {v.estado_ruv.replace('_', ' ')}
         </Chip>
@@ -303,14 +303,14 @@ function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }
       <View style={styles.chipsFila}>
         <Chip
           style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
-          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+          textStyle={{ ...FONT.label, color: colorEstadoRuv(v.estado_ruv) }}
         >
           {v.estado_ruv.replace('_', ' ')}
         </Chip>
         {v.discapacidad && (
           <Chip
             style={[styles.chip, { backgroundColor: GOV.rojoTenue }]}
-            textStyle={{ color: GOV.rojo, ...FONT.label }}
+            textStyle={{ ...FONT.label, color: GOV.rojo }}
             icon="wheelchair-accessibility"
           >
             Discapacidad
@@ -319,7 +319,7 @@ function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }
         {mostrarEtnia && (
           <Chip
             style={[styles.chip, { backgroundColor: GOV.azulTenue }]}
-            textStyle={{ color: GOV.azul, ...FONT.label }}
+            textStyle={{ ...FONT.label, color: GOV.azul }}
           >
             {v.pertenencia_etnica}
           </Chip>

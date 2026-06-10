@@ -7,8 +7,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// En desarrollo apunta al backend local. En producción se sobreescribe con variable de entorno.
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001';
+// En desarrollo apunta al backend local. En producción la variable de entorno
+// es OBLIGATORIA (la inyecta eas.json por perfil de build): un build de tienda
+// sin URL configurada debe fallar al arrancar, no conectarse a localhost.
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? 'http://localhost:8001' : '');
+if (!BASE_URL) {
+  throw new Error('EXPO_PUBLIC_API_URL no está configurada — build de producción inválido.');
+}
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
