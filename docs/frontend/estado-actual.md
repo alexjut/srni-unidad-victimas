@@ -2,8 +2,8 @@
 
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** 17 paginas funcionales — Fases 1-7 completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-06-05 (x2)
+**Estado:** 17 paginas funcionales — Fases 1-8 completadas — Build produccion validado — Code splitting aplicado
+**Ultima actualizacion:** 2026-06-10
 
 ---
 
@@ -52,7 +52,7 @@ srni-frontend/src/
 │   ├── victimas.ts        buscar (POST hash SHA-256), detalle, registrar
 │   ├── supervision.ts     resumen supervisor, series temporales
 │   ├── formulario.ts      instrumentos, capitulo detalle con preguntas
-│   ├── parametricas.ts    departamentos, municipios, DTs, puntos, tipos doc
+│   ├── parametricas.ts    departamentos, municipios, DTs, puntos, tipos doc, veredas, comunidades negras, resguardos indigenas
 │   └── auditoria.ts       logs de acceso con filtros
 ├── components/
 │   ├── MainLayout.tsx     Sidebar desktop + drawer mobile + header con dropdown usuario + bottom sheet mobile
@@ -87,7 +87,7 @@ srni-frontend/src/
 │   ├── VictimaDetalle.tsx Datos PII + hechos victimizantes + metadata
 │   ├── Supervision.tsx    LineChart + BarChart + tabla encuestadores + filtros
 │   ├── Instrumentos.tsx   Cards expandibles + lazy-load preguntas
-│   ├── Parametricas.tsx   Mapa Colombia + 5 tabs con filtros
+│   ├── Parametricas.tsx   Mapa Colombia + 8 tabs con filtros
 │   ├── Auditoria.tsx      Logs inmutables + filtros accion/resultado/fecha
 │   ├── CambiarPassword.tsx Formulario con react-hook-form + zod
 │   └── NotFound.tsx       Pagina 404
@@ -111,7 +111,7 @@ srni-frontend/src/
 | Victimas | `victimas.ts` | `/api/victimas/buscar/` · `/api/victimas/{id}/` |
 | Supervision | `supervision.ts` | `/api/reportes/supervisor/` · `/dashboard/series/` |
 | Formulario | `formulario.ts` | `/api/formulario/instrumentos/` · `/capitulos/{id}/` |
-| Parametricas | `parametricas.ts` | `/api/parametricas/departamentos/` · `/municipios/` · `/direcciones-territoriales/` · `/puntos-atencion/` · `/tipos-documento/` |
+| Parametricas | `parametricas.ts` | `/api/parametricas/departamentos/` · `/municipios/` · `/direcciones-territoriales/` · `/puntos-atencion/` · `/tipos-documento/` · `/veredas/` · `/comunidades-negras/` · `/resguardos-indigenas/` |
 | Auditoria | `auditoria.ts` | `/api/auditoria/logs/` |
 
 Todos consumen `apiClient` (`src/api/client.ts`) con interceptor JWT + auto-refresh 401.
@@ -227,3 +227,21 @@ El proxy de Vite redirige `/api` a `http://localhost:8001` (configurado en `vite
 - **Build produccion:** validado y limpio. Sin errores de tipos. Sin warnings.
 - **Excel client-side:** ExcelJS con dynamic import (code splitting). El archivo .xlsx se genera completamente en el navegador — header GOV.CO azul, filas alternas, bordes, fila congelada, 2 hojas (Detalle + Resumen). El endpoint /exportar/ del backend sigue existiendo pero ya no se usa.
 - **Modal de filtros para exportacion:** pills para estado e instrumento (sin Dropdown para evitar clipping en overflow-y-auto), date pickers con validacion cruzada para el periodo. Instrumentos cargados desde `GET /api/formulario/instrumentos/` al montar la pagina, con fallback a instrumentos de la pagina actual si la llamada falla.
+
+---
+
+## Fase 8 — Completada 2026-06-10
+
+### Parametricas completas (8/8 catalogos del backend cubiertos)
+
+Analisis cruzado backend vs frontend realizado el 2026-06-10. Se agregaron las 3 tabs faltantes:
+
+| Tab | Endpoint | Columnas | Filtro |
+|-----|----------|----------|--------|
+| Veredas | `GET /api/parametricas/veredas/` | codigo DANE, nombre, municipio, estado | por municipio |
+| Comunidades Negras | `GET /api/parametricas/comunidades-negras/` | codigo, nombre, municipio, estado | por municipio |
+| Resguardos Indigenas | `GET /api/parametricas/resguardos-indigenas/` | codigo, nombre, pueblo, municipio, estado | por municipio |
+
+Datos de prueba: 30 veredas, 20 comunidades negras, 25 resguardos indigenas (solo en db.sqlite3 local).
+
+**No hace falta para el frontend (son exclusivos de mobile):** crear hogares, responder encuestas, IA Gemini, sync offline, skip logic.

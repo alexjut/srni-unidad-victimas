@@ -95,7 +95,7 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ### Fase 5 — Instrumentos y parametricas — COMPLETADA 2026-05-31
 - [x] ~~Pagina Instrumentos (`/instrumentos`) — arbol capitulos/preguntas~~
-- [x] ~~Pagina Parametricas (`/parametricas`) — cascada depto > municipio > vereda~~
+- [x] ~~Pagina Parametricas (`/parametricas`) — 5 tabs (deptos, municipios, DTs, puntos, tipos doc)~~
 
 ### Fase 6 — Auditoria y seguridad — COMPLETADA 2026-06-02
 - [x] ~~Pagina Auditoria (`/auditoria`) — logs inmutables (adaptada a endpoint real de Javier)~~
@@ -109,6 +109,11 @@ Basado en el plan de 7 fases definido para el frontend:
 - [x] ~~UI filtros: Supervision y Auditoria con layout responsive correcto~~
 - [ ] Responsive design completo (pendiente revision pagina por pagina)
 - [ ] Build de produccion
+
+### Fase 8 — Parametricas completas — COMPLETADA 2026-06-10
+- [x] ~~3 endpoints nuevos en `parametricas.ts`: veredas, comunidades negras, resguardos indigenas~~
+- [x] ~~3 tabs nuevas en `Parametricas.tsx` (mismo patron que las 5 existentes)~~
+- [x] ~~Validacion: endpoints responden OK + `pnpm build` limpio~~
 
 ---
 
@@ -508,6 +513,13 @@ Basado en el plan de 7 fases definido para el frontend:
 | 2026-05-31 | Fases 3-5: victimas + supervision + instrumentos + parametricas con mapa | 10 archivos creados, 2 modificados |
 | 2026-05-31 | Fase 6 parcial: auditoria (pagina lista, endpoint pendiente en backend) | 2 archivos creados, 2 modificados |
 | 2026-06-02 | Fase 6 completada + Fase 7 parcial (a11y, testing, UI filtros) | 5 archivos creados, 17 modificados |
+| 2026-06-02 | Mejoras UI/UX Apple-style (Nivel 1 base + Nivel 2 componentes) | 14 archivos modificados |
+| 2026-06-02 | Nivel 3 UI (15 paginas revisadas) + fix API reportes | 17 archivos modificados |
+| 2026-06-02 | Componente Dropdown personalizado Apple-style, aplicado en 5 paginas | 1 archivo creado, 5 modificados |
+| 2026-06-03 | Code splitting lazy + manualChunks + A11y Modal + jsdom | 5 archivos modificados |
+| 2026-06-05 | Exportar Excel con formato institucional + modal filtros | 1 archivo modificado, +exceljs |
+| 2026-06-05 | Fix instrumentos en modal exportacion desde API real | 1 archivo modificado |
+| 2026-06-10 | Analisis cruzado backend vs frontend + Fase 8 completada (3 tabs parametricas) | parametricas.ts, Parametricas.tsx, docs |
 
 ---
 
@@ -811,6 +823,104 @@ Basado en el plan de 7 fases definido para el frontend:
 | Archivo | Cambio |
 |---------|--------|
 | `src/pages/Reportes.tsx` | Import formularioApi + estado instrumentos + useEffect fetch + pills desde API |
+
+---
+
+## Dia 14 — 2026-06-10 | Analisis cruzado backend vs frontend
+
+### Actividades realizadas
+
+1. **Analisis exhaustivo del backend completo**
+   - Revisados todos los endpoints, modelos, serializers, vistas y permisos de `srni-backend/`
+   - Mapeados 40+ endpoints en 10 modulos (auth, victimas, hogares, encuestas, formulario, parametricas, reportes, ia, auditoria, sincronizacion)
+
+2. **Analisis completo del frontend**
+   - Verificados los 27 endpoints que el frontend consume actualmente
+   - Confirmadas las 17 paginas funcionales y 10 API clients
+
+3. **Cruce backend vs frontend — hallazgos**
+   - **3 endpoints parametricos no consumidos:**
+     - `GET /api/parametricas/veredas/` — veredas/corregimientos (filtrable por municipio)
+     - `GET /api/parametricas/comunidades-negras/` — comunidades negras (filtrable por municipio)
+     - `GET /api/parametricas/resguardos-indigenas/` — resguardos indigenas (filtrable por municipio, campo extra `pueblo`)
+   - **20+ endpoints son exclusivos de mobile** (crear hogares, responder encuestas, IA Gemini, sync, skip logic) — confirmado que NO deben implementarse en el panel web
+   - El panel web cubre correctamente su alcance de supervision/consulta/reportes
+
+4. **Documentacion actualizada**
+   - `PLAN-FRONTEND-PUBLICO.md` — agregada Fase 8 con detalle completo de las 3 tabs faltantes
+   - `docs/frontend/estado-actual.md` — marcados los 3 endpoints pendientes, seccion "Pendiente — Fase 8"
+   - `docs/frontend/bitacora-desarrollo.md` — esta entrada + registro de cambios actualizado
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `PLAN-FRONTEND-PUBLICO.md` | Fase 8 agregada, tabla endpoints actualizada, resumen actualizado |
+| `docs/frontend/estado-actual.md` | Endpoints pendientes marcados, seccion Fase 8 |
+| `docs/frontend/bitacora-desarrollo.md` | Dia 14 + registro de cambios |
+
+### Estado del frontend
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 |
+| API clients | 10 (parametricas.ts pendiente de 3 endpoints nuevos) |
+| Componentes UI | 14 |
+| Componentes layout | 3 |
+| Rutas | 15 + catch-all 404 |
+| Tests | 9 (5 Button + 4 authStore) |
+| Tabs Parametricas | 5/8 (3 pendientes) |
+| Bundle principal | 116KB |
+
+### Proximo paso: Fase 8 implementada en esta misma sesion (ver abajo)
+
+---
+
+## Dia 14 (cont.) — 2026-06-10 | Fase 8 completada — Parametricas 8/8
+
+### Actividades realizadas
+
+1. **API: 3 tipos + 3 endpoints nuevos en `parametricas.ts`**
+   - `Vereda` — `{ id, codigo_dane, nombre, municipio, municipio_nombre, activo }`
+   - `ComunidadNegra` — `{ id, codigo, nombre, municipio, municipio_nombre, activo }`
+   - `ResguardoIndigena` — `{ id, codigo, nombre, municipio, municipio_nombre, pueblo, activo }`
+   - `parametricasApi.veredas()`, `.comunidadesNegras()`, `.resguardosIndigenas()` — todos con filtro por municipio
+
+2. **UI: 3 tabs nuevas en `Parametricas.tsx`**
+   - Tab Veredas: tabla (codigo DANE, nombre, municipio, estado) + filtro Dropdown por municipio + icono TreePine
+   - Tab Comunidades Negras: tabla (codigo, nombre, municipio, estado) + filtro Dropdown por municipio + icono Users
+   - Tab Resguardos Indigenas: tabla (codigo, nombre, pueblo, municipio, estado) + filtro Dropdown por municipio + icono Tent
+   - Array TABS actualizado de 5 a 8 — tabs responsive con scroll horizontal en mobile
+   - Mismo patron Apple-style de las tabs existentes: banner filtro activo, boton limpiar, badges, hover filas
+
+3. **Datos de prueba cargados en SQLite**
+   - 30 veredas (11 municipios: Medellin, Bogota, Cali, Quibdo, Popayan, Riohacha, Santa Marta, Florencia, Bucaramanga, Pasto, Villavicencio)
+   - 20 comunidades negras (12 municipios: Quibdo, Cali, Cartagena, Barranquilla, Popayan, Santa Marta, Riohacha, Florencia, Monteria, Sincelejo, Valledupar, Neiva)
+   - 25 resguardos indigenas (13 municipios, 15 pueblos: Wayuu, Misak, Nasa, Arhuaco, Kogui, Inga, Tikuna, Huitoto, Embera, Puinave, Curripaco, Kamentsa, Tucano, Nukak, U'wa)
+
+4. **Validacion**
+   - TypeScript: 0 errores
+   - Build produccion: limpio (chunk Parametricas 24KB)
+   - Las 3 tabs muestran datos correctamente con filtros por municipio
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/api/parametricas.ts` | 3 tipos + 3 endpoints (veredas, comunidadesNegras, resguardosIndigenas) |
+| `src/pages/Parametricas.tsx` | 3 tabs nuevas + TABS 5→8 + imports tipos + iconos (TreePine, Users, Tent) |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 17 |
+| API clients | 10 (parametricas.ts ahora con 9 endpoints) |
+| Componentes UI | 14 |
+| Tabs Parametricas | 8/8 (100% catalogos backend) |
+| Tests | 9 |
+| Bundle principal | 116KB |
+| Fases completadas | 1 a 8 |
 
 ---
 
