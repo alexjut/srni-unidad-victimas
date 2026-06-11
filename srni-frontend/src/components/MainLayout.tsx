@@ -82,7 +82,7 @@ export default function MainLayout() {
       >
         <button
           onClick={closeDrawer}
-          className="absolute top-4 right-3 text-white/40 hover:text-white transition-colors"
+          className="absolute top-4 right-3 text-white hover:text-white transition-colors"
           aria-label="Cerrar menú"
         >
           <X size={22} />
@@ -99,7 +99,7 @@ export default function MainLayout() {
         >
           <button
             onClick={() => setDrawerOpen(true)}
-            className="text-white/60 hover:text-white transition-colors"
+            className="text-white hover:text-white transition-colors"
             aria-label="Abrir menú"
           >
             <Menu size={24} />
@@ -146,7 +146,7 @@ export default function MainLayout() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-white truncate">{usuario?.nombre_completo}</p>
                     {usuario?.perfil && (
-                      <p className="text-xs text-white/50">{usuario.perfil.nombre}</p>
+                      <p className="text-xs text-white">{usuario.perfil.nombre}</p>
                     )}
                     <p className="text-xs font-medium text-blue-300 mt-0.5">Sesión activa</p>
                   </div>
@@ -157,7 +157,7 @@ export default function MainLayout() {
                   <NavLink
                     to="/perfil/cambiar-password"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/[0.08] hover:text-white transition-colors"
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-white hover:bg-white/[0.08] hover:text-white transition-colors"
                   >
                     <KeyRound size={18} className="text-blue-300" />
                     Cambiar contraseña
@@ -175,7 +175,7 @@ export default function MainLayout() {
                 <div className="px-3 pb-4 pt-1">
                   <button
                     onClick={() => setUserMenuOpen(false)}
-                    className="w-full py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-sm font-semibold text-white/50 hover:bg-white/[0.10] hover:text-white/80 transition-colors"
+                    className="w-full py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-sm font-semibold text-white hover:bg-white/[0.10] hover:text-white transition-colors"
                   >
                     Cancelar
                   </button>
@@ -189,7 +189,7 @@ export default function MainLayout() {
         <header
           className="hidden lg:flex items-center justify-between bg-gov-azulOscuro px-6 py-3 shrink-0"
         >
-          <p className="text-sm font-display font-semibold text-white/70">{currentLabel}</p>
+          <p className="text-sm font-display font-semibold text-white">{currentLabel}</p>
 
           {usuario && (
             <div className="relative" ref={userMenuRef}>
@@ -208,11 +208,11 @@ export default function MainLayout() {
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-semibold text-white leading-tight">{usuario.nombre_completo}</p>
-                  <p className="text-[11px] text-white/45 leading-tight mt-0.5">{usuario.perfil?.nombre ?? usuario.codigo_usuario}</p>
+                  <p className="text-[11px] text-white leading-tight mt-0.5">{usuario.perfil?.nombre ?? usuario.codigo_usuario}</p>
                 </div>
                 <ChevronDown
                   size={15}
-                  className={`text-white/40 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
+                  className={`text-white transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
@@ -225,14 +225,14 @@ export default function MainLayout() {
                     <p className="text-[10px] font-medium text-blue-300 uppercase tracking-wider">Sesión activa</p>
                     <p className="text-sm font-bold text-white truncate mt-0.5">{usuario.nombre_completo}</p>
                     {usuario.perfil && (
-                      <p className="text-xs text-white/45">{usuario.perfil.nombre}</p>
+                      <p className="text-xs text-white">{usuario.perfil.nombre}</p>
                     )}
                   </div>
                   <div className="py-1">
                     <NavLink
                       to="/perfil/cambiar-password"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-white/75 hover:bg-white/[0.08] hover:text-white transition-colors"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-white hover:bg-white/[0.08] hover:text-white transition-colors"
                     >
                       <KeyRound size={16} className="text-blue-300" />
                       Cambiar contraseña

@@ -34,7 +34,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         <h1 className="font-display text-[15px] font-bold leading-tight text-white">
           Unidad para las Víctimas
         </h1>
-        <p className="text-[11px] text-white/35 mt-1 tracking-wide">SRNI · Panel Web</p>
+        <p className="text-[11px] text-white mt-1 tracking-wide">SRNI · Panel Web</p>
       </div>
 
       {/* Navegación */}
@@ -48,7 +48,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border ${
                 isActive
                   ? 'bg-gov-azul/20 border-gov-azul/30 text-white'
-                  : 'border-transparent text-white/50 hover:bg-white/[0.07] hover:text-white'
+                  : 'border-transparent text-white hover:bg-white/[0.07] hover:text-white'
               }`
             }
           >
@@ -61,7 +61,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Versión */}
       <div className="px-5 py-3 border-t border-white/[0.06]">
-        <p className="text-[10px] text-white/20 font-mono">v2026.06</p>
+        <p className="text-[10px] text-white font-mono">v2026.01</p>
       </div>
     </>
   );
