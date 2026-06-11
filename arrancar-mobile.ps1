@@ -1,4 +1,4 @@
-# ─── Arranca la app móvil Expo con la IP correcta detectada automáticamente ──
+﻿# ─── Arranca la app móvil Expo con la IP correcta detectada automáticamente ──
 #
 # Uso:
 #   .\arrancar-mobile.ps1
