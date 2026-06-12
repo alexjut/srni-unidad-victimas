@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://CAMBIAR-URL-STAGING.unidadvictimas.gov.co"
+        "EXPO_PUBLIC_API_URL": "https://prod-caracterizacion.ngrok.app"
       }
     },
     "production": {

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Descargar APK — Caracterización SRNI</title>
+  <style>
+    :root { --azul:#0a4595; --azul2:#1565c0; --gris:#5b6470; }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(160deg,#eef3fb 0%, #dbe7f7 100%);
+      color:#1c2530; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .card {
+      background:#fff; border-radius:20px; box-shadow:0 12px 40px rgba(10,69,149,.15);
+      max-width:460px; width:100%; padding:32px 28px; text-align:center;
+    }
+    h1 { font-size:1.35rem; margin:0 0 4px; color:var(--azul); }
+    .sub { color:var(--gris); font-size:.92rem; margin:0 0 22px; }
+    .badge { display:inline-block; background:#fff3cd; color:#8a6d00; border:1px solid #ffe69c;
+      font-size:.78rem; padding:4px 12px; border-radius:999px; margin-bottom:20px; }
+    #qr { display:flex; justify-content:center; margin:8px auto 20px; min-height:200px; align-items:center; }
+    #qr img, #qr canvas { border:8px solid #fff; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .btn {
+      display:block; background:var(--azul); color:#fff; text-decoration:none; font-weight:600;
+      padding:15px 20px; border-radius:12px; font-size:1.05rem; transition:.15s;
+    }
+    .btn:hover { background:var(--azul2); }
+    .ver { color:var(--gris); font-size:.8rem; margin-top:14px; }
+    .pasos { text-align:left; background:#f6f9fe; border-radius:12px; padding:16px 18px; margin-top:22px; }
+    .pasos h2 { font-size:.95rem; margin:0 0 10px; color:var(--azul); }
+    .pasos ol { margin:0; padding-left:20px; color:#36404c; font-size:.88rem; line-height:1.7; }
+    .foot { color:var(--gris); font-size:.72rem; margin-top:22px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Distribución provisional — mientras está en revisión en las tiendas</div>
+    <h1>Caracterización SRNI</h1>
+    <p class="sub">Aplicación móvil para encuestadores · Unidad para las Víctimas</p>
+
+    <div id="qr">Generando código QR…</div>
+
+    <a class="btn" id="btn" href="/movil/app.apk" download>⬇️ Descargar APK</a>
+    <div class="ver" id="url"></div>
+
+    <div class="pasos">
+      <h2>Cómo instalar</h2>
+      <ol>
+        <li>Escaneá el QR con la cámara del celular (o tocá «Descargar APK»).</li>
+        <li>Cuando Android lo pida, permití «Instalar apps de fuentes desconocidas».</li>
+        <li>Abrí el archivo descargado e instalá la app.</li>
+        <li>Ingresá con tu usuario asignado.</li>
+      </ol>
+    </div>
+
+    <div class="foot">Solo para uso institucional autorizado. No compartir fuera de la entidad.</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    // QR domain-agnostic: usa el dominio actual (ngrok hoy, dominio OTI mañana).
+    var apkUrl = window.location.origin + '/movil/app.apk';
+    document.getElementById('url').textContent = apkUrl;
+    var cont = document.getElementById('qr');
+    try {
+      cont.innerHTML = '';
+      new QRCode(cont, { text: apkUrl, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+    } catch (e) {
+      cont.innerHTML = '<span style="color:#5b6470;font-size:.85rem">Usá el botón «Descargar APK» de abajo.</span>';
+    }
+  </script>
+</body>
+</html>

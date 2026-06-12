@@ -106,7 +106,7 @@ class TipoDocumento(models.Model):
 
 
 class DireccionTerritorial(models.Model):
-    codigo = models.CharField(max_length=10, unique=True, db_index=True)
+    codigo = models.CharField(max_length=30, unique=True, db_index=True)
     nombre = models.CharField(max_length=150)
     departamentos = models.ManyToManyField(Departamento, related_name='direcciones_territoriales')
     activo = models.BooleanField(default=True)
@@ -121,7 +121,7 @@ class DireccionTerritorial(models.Model):
 
 
 class PuntoAtencion(models.Model):
-    codigo = models.CharField(max_length=20, unique=True, db_index=True)
+    codigo = models.CharField(max_length=40, unique=True, db_index=True)
     nombre = models.CharField(max_length=200)
     direccion_territorial = models.ForeignKey(
         DireccionTerritorial, on_delete=models.PROTECT, related_name='puntos_atencion'
