@@ -120,6 +120,35 @@ $C down               # detener el stack (NO afecta a NPM ni al auth-service)
 
 ---
 
+## Automatización del build/deploy de la APK (Opción A)
+
+Para no compilar/desplegar la APK a mano cada vez. **Cualquier desarrollador** con el
+repo, el token de Expo, la llave SSH y la VPN puede ejecutarlo (con el OK del líder).
+
+**Configuración (una sola vez en la máquina del dev):**
+```bash
+# Token de Expo (https://expo.dev/settings/access-tokens)
+printf 'TU_TOKEN_EXPO' > ~/.eas-token        # queda fuera de git, en el equipo del dev
+# Llave SSH del servidor en ~/.ssh/id_srni_servidor (o exportar SSH_KEY=ruta)
+```
+
+**Cada vez que se quiera publicar una nueva APK (con el OK):**
+```bash
+bash infra/deploy/scripts/deploy-apk.sh        # perfil preview (APK)
+```
+Hace: build en EAS (cloud) → descarga el `.apk` → respaldo de la anterior → sube a
+`/movil/app.apk` en el servidor. El **QR no cambia** (sirve siempre la última).
+El `versionCode` sube solo (autoIncrement) → se instala encima **sin desinstalar**.
+
+> La APK de **campo/producción** debe construirse con la **URL de la OTI** (no ngrok):
+> cambiar `EXPO_PUBLIC_API_URL` del perfil en `srni-mobile/eas.json` y reconstruir.
+>
+> **Opción B (CI/CD en la nube)** no aplica directo: el servidor es de red privada
+> (VPN) y los runners en la nube no lo alcanzan por SSH. Requeriría un *runner propio*
+> dentro de la red UARIV — pendiente para cuando crezca el equipo.
+
+---
+
 ## Estado verificado (12-jun-2026)
 
 Desplegado y probado funcionando en `30.0.1.109:8090`:

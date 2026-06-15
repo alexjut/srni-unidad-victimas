@@ -2,15 +2,17 @@
 
 > **Ambiente:** https://prod-caracterizacion.ngrok.app (panel web) · APK de pruebas
 > **Importante:** credenciales de **PRUEBA** sobre datos ficticios. Cambiar antes de producción.
-> El login normaliza el código a mayúsculas (podés escribir `alexjut` o `ALEXJUT`).
+> ⚠️ **Usar SIEMPRE el código en MAYÚSCULAS.** Así están guardados. El panel web y la APK
+> toleran minúsculas (normalizan), pero el panel `/admin/` de Django **exige mayúsculas**.
+> Para evitar confusiones: escribir todo en mayúsculas en todos lados.
 
 ## Usuarios creados
 
-| Código | Contraseña | Nombre | Rol / Perfil | Usa |
+| Código (MAYÚSCULAS) | Contraseña | Nombre | Rol / Perfil | Usa |
 |--------|-----------|--------|--------------|-----|
-| **alexjut** | `alexjut1030` | Javier Alexander Aguilar Castro | **Administrador** | Panel web (todo + administración) + APK |
-| **brando** | `Brando2026*` | Brando — Líder Frontend | **Coordinador / Líder** | Panel web + APK |
-| **supervisor** | `Supervisor2026*` | Oscar A. Manosalva (Supervisor) | **Supervisor** | Panel web (ve todo / reportes) |
+| **ALEXJUT** | `alexjut1030` | Javier Alexander Aguilar Castro | **Administrador** | Panel web (todo + administración) + APK |
+| **BRANDO** | `Brando2026*` | Brando — Líder Frontend | **Coordinador / Líder** | Panel web + APK |
+| **SUPERVISOR** | `Supervisor2026*` | Oscar A. Manosalva (Supervisor) | **Supervisor** | Panel web (ve todo / reportes) |
 | **ENC001** | `SrniTest2026!` | Encuestador de Prueba 1 | Encuestador | APK |
 | **ENC002** | `SrniTest2026!` | Encuestador de Prueba 2 | Encuestador | APK |
 | **ENC003** | `SrniTest2026!` | Encuestador de Prueba 3 | Encuestador | APK |
