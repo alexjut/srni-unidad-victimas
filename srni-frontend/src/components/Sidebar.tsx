@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, Shield, ChevronRight,
+  FileText, Database, Shield, ChevronRight, UserCog,
 } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 
 export const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
@@ -14,6 +15,7 @@ export const NAV_ITEMS = [
   { to: '/instrumentos', icon: FileText,        label: 'Instrumentos'  },
   { to: '/parametricas', icon: Database,        label: 'Paramétricas'  },
   { to: '/auditoria',    icon: Shield,          label: 'Auditoría'     },
+  { to: '/usuarios',     icon: UserCog,         label: 'Usuarios',      adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -21,6 +23,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
+  const usuario = useAuthStore((s) => s.usuario);
+  const esAdmin = !!usuario?.perfil?.puede_administrar;
+  const items = NAV_ITEMS.filter((i) => !('adminOnly' in i && i.adminOnly) || esAdmin);
   return (
     <>
       {/* Logo + identidad GOV.CO */}
@@ -39,7 +44,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Navegación */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Menú principal">
-        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+        {items.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}

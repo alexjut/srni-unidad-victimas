@@ -18,6 +18,7 @@ const SupervisionPage     = lazy(() => import('@/pages/Supervision'));
 const InstrumentosPage    = lazy(() => import('@/pages/Instrumentos'));
 const ParametricasPage    = lazy(() => import('@/pages/Parametricas'));
 const AuditoriaPage       = lazy(() => import('@/pages/Auditoria'));
+const UsuariosPage        = lazy(() => import('@/pages/Usuarios'));
 const CambiarPasswordPage = lazy(() => import('@/pages/CambiarPassword'));
 const NotFound            = lazy(() => import('@/pages/NotFound'));
 
@@ -80,6 +81,7 @@ export default function App() {
         <Route path="instrumentos" element={<SuspensePage><InstrumentosPage /></SuspensePage>} />
         <Route path="parametricas" element={<SuspensePage><ParametricasPage /></SuspensePage>} />
         <Route path="auditoria"   element={<SuspensePage><AuditoriaPage /></SuspensePage>} />
+        <Route path="usuarios"    element={<SuspensePage><UsuariosPage /></SuspensePage>} />
         <Route path="perfil/cambiar-password" element={<SuspensePage><CambiarPasswordPage /></SuspensePage>} />
       </Route>
 

@@ -3,6 +3,11 @@
 **De:** Javier
 **Asunto:** Backend listo para que armes la tabla + formulario de usuarios en el panel
 
+> **ACTUALIZACIÓN (15-jun):** por urgencia armé una **página base funcional** del módulo
+> (`src/pages/Usuarios.tsx` + `src/api/usuarios.ts` + ruta en `App.tsx` + ítem en `Sidebar.tsx`,
+> visible solo para admins). Ya está desplegada. Si querés, **mejorala con tu estilo/UX** —
+> no la rehagas desde cero. Abajo queda la referencia del API por si necesitás más.
+
 Hola Brando,
 
 Dejé listo el **API CRUD de usuarios** para que construyas el módulo de administración
