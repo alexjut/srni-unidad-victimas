@@ -96,6 +96,9 @@ urlpatterns = [
     # Distribución móvil — versión y descarga auditada de la APK
     path('api/movil/', include('apps.movil.urls')),
 
+    # Administración de usuarios (panel web — solo administradores)
+    path('api/usuarios/', include('apps.autenticacion.urls_admin')),
+
     # Documentación OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
