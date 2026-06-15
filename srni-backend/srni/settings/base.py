@@ -45,9 +45,15 @@ LOCAL_APPS = [
     'apps.auditoria',
     'apps.reportes',
     'apps.ia',
+    'apps.movil',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# ─── Distribución móvil (APK) ────────────────────────────────────────────────
+MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
+MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)
+MOVIL_ACTUALIZACION_OBLIGATORIA = config('MOVIL_ACTUALIZACION_OBLIGATORIA', default=False, cast=bool)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

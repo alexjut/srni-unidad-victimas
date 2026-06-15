@@ -31,6 +31,7 @@ class LogAcceso(models.Model):
         ('ACCESO_DENEGADO', 'Acceso denegado'),
         ('LLAMADA_GEMINI', 'Llamada al asistente IA Gemini'),
         ('CONSENTIMIENTO_IA', 'Consentimiento de uso de IA'),
+        ('DESCARGA_APK', 'Descarga de APK móvil'),
     ]
 
     RESULTADOS = [

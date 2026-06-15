@@ -42,7 +42,7 @@
 
     <div id="qr">Generando código QR…</div>
 
-    <a class="btn" id="btn" href="/movil/app.apk" download>⬇️ Descargar APK</a>
+    <a class="btn" id="btn" href="/api/movil/descargar/">⬇️ Descargar APK</a>
     <div class="ver" id="url"></div>
 
     <div class="pasos">
@@ -61,7 +61,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     // QR domain-agnostic: usa el dominio actual (ngrok hoy, dominio OTI mañana).
-    var apkUrl = window.location.origin + '/movil/app.apk';
+    // Apunta al endpoint auditado, que registra la descarga y redirige al archivo.
+    var apkUrl = window.location.origin + '/api/movil/descargar/';
     document.getElementById('url').textContent = apkUrl;
     var cont = document.getElementById('qr');
     try {
