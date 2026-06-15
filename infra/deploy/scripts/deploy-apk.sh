@@ -41,10 +41,10 @@ echo "  Build EAS — perfil '$PROFILE'  (tarda ~10-15 min)"
 echo "============================================================"
 npx eas-cli build --platform android --profile "$PROFILE" --non-interactive --wait --json > /tmp/eas-build.json
 
-# URL del artefacto (.apk). Soporta varias claves según versión de EAS.
-APK_URL="$(grep -o '"applicationArchiveUrl":"[^"]*"' /tmp/eas-build.json | head -1 | sed 's/.*:"//;s/"$//')"
-[ -z "$APK_URL" ] && APK_URL="$(grep -o '"buildUrl":"[^"]*"' /tmp/eas-build.json | head -1 | sed 's/.*:"//;s/"$//')"
-[ -z "$APK_URL" ] && { echo "ERROR: no se encontró la URL del .apk en la respuesta de EAS"; exit 1; }
+# URL del artefacto (.apk). El JSON de EAS viene formateado (con espacios), así que
+# extraemos directamente la primera URL https://...apk (robusto ante el formato).
+APK_URL="$(grep -oE 'https://[^"]*\.apk' /tmp/eas-build.json | head -1)"
+[ -z "$APK_URL" ] && { echo "ERROR: no se encontró la URL del .apk en la respuesta de EAS"; cat /tmp/eas-build.json; exit 1; }
 echo "Artefacto: $APK_URL"
 
 echo "Descargando .apk..."
