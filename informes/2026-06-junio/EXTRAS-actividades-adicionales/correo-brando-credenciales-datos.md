@@ -1,41 +1,42 @@
-# Correo 2 — Para Brando: credenciales + datos para la presentación
+# Correo 2 — Para Brando: credenciales + lo nuevo en el panel
 
 **Para:** Brando
 **De:** Javier
-**Asunto:** Tu acceso al ambiente + datos de ejemplo para la presentación
+**Asunto:** Tu acceso al ambiente + lo que creamos en el panel
 
 ---
 
 Hola Brando,
 
-Te dejo todo listo para que entres al ambiente desplegado y para que el panel se vea
-**con datos** en la presentación.
+Te dejo tu acceso al ambiente desplegado y te cuento lo nuevo que quedó en el front.
 
 ## Tu acceso
 - **URL:** https://prod-caracterizacion.ngrok.app
-- **Usuario:** `BRANDO`  (en mayúsculas)
+- **Usuario:** `BRANDO`  (mayúsculas; también acepta minúscula)
 - **Contraseña:** `Brando2026*`
 - **Rol:** Coordinador / Líder (buscar RNI, caracterizar, ver reportes)
 
-> El login también acepta `brando` en minúscula (se normaliza). El usuario admin es
-> `ALEXJUT`; el módulo de **Administración de usuarios** ya quedó en el panel (solo lo ve
-> el admin). Le di una página base — si querés, la mejorás con tu estilo (no la rehagas).
+## Lo que creamos en el panel (front)
+Por la urgencia de la presentación, dejé una **página base del módulo de
+Administración de usuarios** en el panel (es tu área, así que **mejorala con tu estilo —
+no la rehagas desde cero**):
 
-## Sobre los datos “dummy” que pediste
-El ambiente ya trae cargado:
-- Paramétricas completas (33 departamentos, 1.102 municipios, DT, puntos de atención)
-- 7 instrumentos con sus capítulos y preguntas
-- 10 víctimas de prueba (cédulas `999…`) para buscar y caracterizar
-- Los usuarios (admin, líder, supervisor, 5 encuestadores)
+- Nueva ruta **`/usuarios`** + ítem **“Usuarios”** en el menú (visible **solo para admin**,
+  vía `puede_administrar`).
+- `src/pages/Usuarios.tsx`: **tabla** de usuarios + **crear/editar**, **resetear contraseña**
+  y **activar/desactivar**.
+- `src/api/usuarios.ts`: cliente del API CRUD (`/api/usuarios/`).
+- Ajuste en `authStore` (el perfil ahora incluye `puede_administrar` / `puede_ver_reportes`).
 
-Lo que **todavía sale vacío** son las pantallas que dependen de caracterizaciones hechas
-(Hogares, Encuestas, Reportes, Dashboard). Para que **no se vean vacías** en la presentación,
-**estoy generando datos de ejemplo** (hogares y encuestas ficticios) para poblarlas.
+Todo está en `main` (Azure + GitHub) → hacé `git pull` para traerlo.
 
-👉 Decime **qué pantallas son las clave** para la demo (Dashboard, Reportes, Hogares…) y las
-dejo con datos suficientes para que se vean bien.
+## Datos para que el panel no se vea vacío
+El ambiente ya trae paramétricas, instrumentos, 10 víctimas de prueba y los usuarios.
+Las pantallas que dependen de caracterizaciones (Hogares, Encuestas, Reportes, Dashboard)
+hoy salen vacías; **estoy generando datos de ejemplo** para poblarlas de cara a la
+presentación. Decime qué pantallas son las clave y las dejo con datos.
 
-Cualquier cosa que necesites del backend (algún campo extra, un endpoint), me escribís.
+Cualquier campo o endpoint extra que necesites, me escribís.
 
 Saludos,
 Javier

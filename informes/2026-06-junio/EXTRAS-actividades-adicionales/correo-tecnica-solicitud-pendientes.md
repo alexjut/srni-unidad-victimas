@@ -1,36 +1,32 @@
-# Correo 1 — Solicitud al área técnica (OTI) · tono administrativo/humano
+# Correo 1 — Para la OTI: lo que nos falta (resumen fácil)
 
 **Para:** Oficina de Tecnologías de la Información (OTI) / Infraestructura UARIV
 **CC:** Oscar Andrés Manosalva García — Supervisor SRNI
-**Asunto:** Solicitud de apoyo para publicar el sistema de caracterización (URL oficial)
+**Asunto:** Apoyo para publicar el sistema de caracterización — resumen de lo pendiente
 
 ---
 
 Buen día,
 
-Espero que se encuentren muy bien. En el marco del proyecto de la nueva solución de
-**caracterización de víctimas** (panel web + aplicación móvil), les cuento que la
-herramienta **ya está instalada y funcionando** en el servidor que amablemente nos
-asignaron, y la estamos dejando lista para mostrarla a los directivos.
+Espero que estén muy bien. Les escribo para resumirles **de forma sencilla lo único que
+nos falta** para dejar publicado el nuevo sistema de caracterización (ya está instalado y
+funcionando en el servidor que nos asignaron):
 
-Para esa presentación y para iniciar las pruebas con el equipo, **nos haría falta su
-apoyo con lo siguiente:**
+**1. Una dirección web oficial con seguridad (HTTPS / candado).**
+Hoy entramos por un enlace temporal de pruebas. Necesitaríamos una dirección institucional
+—por ejemplo *caracterizacion.unidadvictimas.gov.co*— con su certificado de seguridad.
+> *Para el equipo técnico:* crear el “proxy host” en el Nginx Proxy Manager del servidor
+> apuntando a `30.0.1.109:8090` y emitir el certificado TLS del dominio.
 
-1. **Una dirección web oficial con seguridad (HTTPS / “candado”).**
-   Hoy estamos entrando por un enlace temporal de pruebas. Nos gustaría contar con una
-   dirección institucional —por ejemplo algo como *caracterizacion.unidadvictimas.gov.co*—
-   con su certificado de seguridad, para que el acceso sea estable y confiable.
-   *(Técnicamente: crear el “proxy host” en el Nginx Proxy Manager del servidor apuntando
-   a `30.0.1.109` puerto `8090`, y emitir el certificado TLS del dominio.)*
+**2. (Para más adelante, no urgente) Acceso a la base de datos del RNI (Oracle).**
+Por ahora trabajamos con datos de prueba, así que esto puede esperar; lo dejo anotado solo
+para irlo previendo cuando la Subdirección lo autorice.
 
-2. **Más adelante (cuando la Subdirección lo autorice):** la conexión a la base de datos
-   del **RNI (Oracle)** para trabajar con información real. Por ahora la herramienta opera
-   con datos de prueba, así que esto **no es urgente**, pero lo dejo mencionado para irlo
-   previendo.
+Con el **punto 1** ya podríamos mostrar el sistema a los directivos con una dirección
+estable. Quedo atento a cualquier dato o formato que deba diligenciar, y con gusto les hago
+una demostración corta del avance.
 
-Quedo muy atento a lo que necesiten de mi parte (datos, una reunión corta para mostrarles
-el avance, o cualquier requisito que deba diligenciar). Sé que tienen bastante trabajo, así
-que de antemano **mil gracias** por la colaboración.
+Mil gracias por su apoyo.
 
 Cordialmente,
 
