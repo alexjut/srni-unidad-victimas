@@ -30,7 +30,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/[0.08]">
+      <div className="px-5 py-5">
         <img src={LogoHorizontalColor} alt="Unidad para las Víctimas" className="h-10 w-auto" />
       
         </div>
