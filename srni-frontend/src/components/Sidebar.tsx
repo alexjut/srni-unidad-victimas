@@ -32,10 +32,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/[0.08]">
         <img src={LogoHorizontalColor} alt="Unidad para las Víctimas" className="h-10 w-auto" />
-        <span className="inline-flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-white/10 border border-white/[0.12] text-xs font-semibold text-white tracking-wide">
-          <span className="w-2 h-2 rounded-full bg-gov-amarillo shrink-0" />
-          SRNI · Panel Web
-        </span>
+      
         </div>
 
       {/* Navegación */}
