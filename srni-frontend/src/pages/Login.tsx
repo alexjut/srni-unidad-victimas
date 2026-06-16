@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import LogoHorizontal from '@/assets/LogoHorizontalColor.svg';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -58,17 +59,9 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-[440px] px-5 animate-fade-in-up">
 
         {/* Identidad institucional */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-5">
-            <div className="w-0.5 h-6 bg-gov-amarillo rounded-full" />
-            <span className="text-gov-amarillo font-bold text-[10px] tracking-[0.2em] uppercase">
-              GOV.CO
-            </span>
-          </div>
-          <h1 className="font-display text-white text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-            Unidad para las Víctimas
-          </h1>
-          <p className="text-white text-sm">
+        <div className="text-center mb-7">
+          <img src={LogoHorizontal} alt="Logo institucional" className="h-20 mx-auto mb-4" />
+          <p className="text-white text-[15px] tracking-wide">
             Sistema de Registro Nacional de Información
           </p>
         </div>
@@ -84,11 +77,8 @@ export default function LoginPage() {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
           }}
         >
-          <h2 className="font-display text-white text-lg font-semibold mb-1">
+          <p className="text-white text-xs font-semibold uppercase tracking-widest mb-5">
             Iniciar sesión
-          </h2>
-          <p className="text-white text-sm mb-6">
-            Credenciales institucionales
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,7 +130,7 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
                   onClick={() => setShowPass(!showPass)}
                   aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
@@ -188,7 +178,7 @@ export default function LoginPage() {
 
           {/* Nota de seguridad */}
           <div className="flex items-center justify-center gap-1.5 mt-6">
-            <Shield size={12} className="text-white/20" />
+            <Shield size={12} className="text-white" />
             <p className="text-[11px] text-white">
               Acceso restringido · Ley 1581 de 2012
             </p>
