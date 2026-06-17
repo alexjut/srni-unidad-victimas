@@ -17,7 +17,7 @@ import {
   ScrollView, StatusBar, Pressable, Image,
   Animated, ImageBackground, AppState, Dimensions,
 } from 'react-native';
-import { Text, TextInput, HelperText } from 'react-native-paper';
+import { Text, TextInput, HelperText, Checkbox } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -79,6 +79,7 @@ export default function LoginScreen() {
   const [codigo, setCodigo]       = useState('');
   const [password, setPassword]   = useState('');
   const [verPassword, setVerPassword] = useState(false);
+  const [recordar, setRecordar] = useState(true);
   const [biometricoListo, setBiometricoListo] = useState(false);
   const [idxActivo, setIdxActivo] = useState(0);
   const insets = useSafeAreaInsets();
@@ -190,6 +191,15 @@ export default function LoginScreen() {
     };
   }, []); // solo al montar — todas las dependencias son refs estables
 
+  // ── Recordar código de usuario (solo el código, nunca la contraseña) ─────────
+  useEffect(() => {
+    SecureStore.getItemAsync('codigo_recordado')
+      .then((c) => {
+        if (c) { setCodigo(c); setRecordar(true); } else { setRecordar(false); }
+      })
+      .catch(() => { /* silencioso */ });
+  }, []);
+
   // ── Biometría ──────────────────────────────────────────────────────────────
   useEffect(() => {
     async function verificar() {
@@ -209,7 +219,12 @@ export default function LoginScreen() {
   async function handleLogin() {
     if (!codigo.trim() || !password) return;
     limpiarError();
-    try { await login(codigo, password); } catch { /* error ya en store */ }
+    try {
+      await login(codigo, password);
+      // Persistir (o borrar) solo el código de usuario según preferencia.
+      if (recordar) await SecureStore.setItemAsync('codigo_recordado', codigo.trim().toUpperCase());
+      else await SecureStore.deleteItemAsync('codigo_recordado');
+    } catch { /* error ya en store */ }
   }
 
   async function handleBiometrico() {
@@ -348,6 +363,17 @@ export default function LoginScreen() {
               activeOutlineColor={GOV.azul}
               accessibilityLabel="Contraseña"
             />
+
+            <Pressable
+              style={styles.recordarRow}
+              onPress={() => setRecordar((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: recordar }}
+              accessibilityLabel="Recordar mi código de usuario"
+            >
+              <Checkbox status={recordar ? 'checked' : 'unchecked'} color={GOV.azul} />
+              <Text style={styles.recordarTxt}>Recordar mi código de usuario</Text>
+            </Pressable>
 
             {error ? (
               <HelperText type="error" visible style={styles.errorTxt}>
@@ -499,6 +525,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     lineHeight: 17,
     letterSpacing: 0.2,
+  },
+  recordarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    marginLeft: -8,
+  },
+  recordarTxt: {
+    fontSize: 13,
+    color: GOV.textoP,
   },
 
   // Card de login

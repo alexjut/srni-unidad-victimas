@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import {
-  Text, TextInput, Button, SegmentedButtons,
+  Text, TextInput, Button,
   HelperText, Divider, ActivityIndicator, Chip, Surface,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,20 +16,59 @@ import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStor
 
 const TIPOS_VIVIENDA = [
   { value: 'CASA', label: 'Casa' },
-  { value: 'APARTAMENTO', label: 'Apto.' },
+  { value: 'APARTAMENTO', label: 'Apartamento' },
   { value: 'CUARTO', label: 'Cuarto' },
-  { value: 'CAMBUCHE', label: 'Cambuche' },
+  { value: 'CAMBUCHE', label: 'Cambuche / refugio' },
   { value: 'OTRO', label: 'Otro' },
 ];
 
 const CONDICIONES = [
   { value: 'PROPIA', label: 'Propia' },
-  { value: 'PROPIA_PAGANDO', label: 'Pagando' },
+  { value: 'PROPIA_PAGANDO', label: 'Propia (pagando)' },
   { value: 'ARRIENDO', label: 'Arriendo' },
   { value: 'FAMILIAR', label: 'Familiar' },
-  { value: 'INVASION', label: 'Invasión' },
+  { value: 'INVASION', label: 'Ocupación / invasión' },
   { value: 'OTRO', label: 'Otro' },
 ];
+
+const ESTRATOS = [
+  { value: '1', label: 'Estrato 1' },
+  { value: '2', label: 'Estrato 2' },
+  { value: '3', label: 'Estrato 3' },
+  { value: '4', label: 'Estrato 4' },
+  { value: '5', label: 'Estrato 5' },
+  { value: '6', label: 'Estrato 6' },
+];
+
+/** Selector de opciones en chips que envuelven (sin cortar labels largos). */
+function ChipSelector({
+  value, onChange, options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <View style={styles.chipsWrap}>
+      {options.map((o) => {
+        const sel = value === o.value;
+        return (
+          <Chip
+            key={o.value}
+            mode="outlined"
+            selected={sel}
+            showSelectedCheck={false}
+            onPress={() => onChange(o.value)}
+            style={[styles.chip, sel && styles.chipSel]}
+            textStyle={sel ? styles.chipTxtSel : styles.chipTxt}
+          >
+            {o.label}
+          </Chip>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function NuevoHogarScreen() {
   const { estaOnline, refrescarContadores } = useSyncStore();
@@ -224,32 +263,16 @@ export default function NuevoHogarScreen() {
 
       <Divider style={styles.divider} />
       <Text variant="titleMedium" style={styles.seccion}>Tipo de vivienda</Text>
-      <SegmentedButtons
-        value={tipoVivienda}
-        onValueChange={setTipoVivienda}
-        buttons={TIPOS_VIVIENDA}
-        style={styles.segmented}
-      />
+      <ChipSelector value={tipoVivienda} onChange={setTipoVivienda} options={TIPOS_VIVIENDA} />
 
       <Text variant="titleMedium" style={[styles.seccion, { marginTop: 16 }]}>Condición de ocupación</Text>
-      <SegmentedButtons
-        value={condicion}
-        onValueChange={setCondicion}
-        buttons={CONDICIONES}
-        style={styles.segmented}
-      />
+      <ChipSelector value={condicion} onChange={setCondicion} options={CONDICIONES} />
 
       <Divider style={styles.divider} />
       <Text variant="titleMedium" style={styles.seccion}>Características</Text>
-      <View style={styles.fila}>
-        <TextInput
-          label="Estrato"
-          value={estrato}
-          onChangeText={setEstrato}
-          mode="outlined"
-          keyboardType="numeric"
-          style={styles.inputMitad}
-        />
+      <Text style={styles.subLabel}>Estrato</Text>
+      <ChipSelector value={estrato} onChange={setEstrato} options={ESTRATOS} />
+      <View style={[styles.fila, { marginTop: 12 }]}>
         <TextInput
           label="N.º cuartos"
           value={cuartos}
@@ -258,15 +281,16 @@ export default function NuevoHogarScreen() {
           keyboardType="numeric"
           style={styles.inputMitad}
         />
+        <TextInput
+          label="Personas en la vivienda *"
+          value={personas}
+          onChangeText={setPersonas}
+          mode="outlined"
+          keyboardType="numeric"
+          error={!!errores.personas}
+          style={styles.inputMitad}
+        />
       </View>
-      <TextInput
-        label="Personas en la vivienda *"
-        value={personas}
-        onChangeText={setPersonas}
-        mode="outlined"
-        keyboardType="numeric"
-        error={!!errores.personas}
-      />
       {errores.personas && <HelperText type="error">{errores.personas}</HelperText>}
 
       <Divider style={styles.divider} />
@@ -306,8 +330,13 @@ const styles = StyleSheet.create({
   offlineBanner: { marginBottom: 16, backgroundColor: '#FFF3E0' },
   offlineTxt: { color: '#E65100', fontSize: 12 },
   seccion: { fontWeight: '600', color: '#1565C0', marginBottom: 8 },
+  subLabel: { fontSize: 13, color: '#616161', marginBottom: 6 },
   divider: { marginVertical: 16 },
-  segmented: { marginBottom: 4 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  chip: { backgroundColor: '#FFFFFF', borderColor: '#E0E0E0' },
+  chipSel: { backgroundColor: '#E3F2FD', borderColor: '#1565C0' },
+  chipTxt: { color: '#424242' },
+  chipTxtSel: { color: '#1565C0', fontWeight: '700' },
   fila: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   inputMitad: { flex: 1 },
   boton: { marginTop: 24 },
