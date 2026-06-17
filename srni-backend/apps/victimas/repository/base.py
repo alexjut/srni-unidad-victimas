@@ -152,6 +152,23 @@ class VictimaRepository(ABC):
         """
 
     @abstractmethod
+    def listar_todas(self) -> list[VictimaResumen]:
+        """
+        Devuelve TODAS las víctimas conocidas por la fuente (padrón completo).
+
+        Pensado para la precarga offline: la APK descarga de una sola vez el
+        padrón con el que el encuestador trabajará sin conexión.
+
+        En el mock retorna los ~11 casos ficticios. En Oracle/producción esta
+        operación debe acotarse (por jornada, punto de atención o territorial)
+        antes de exponerse — un padrón nacional completo no debe materializarse.
+
+        Returns:
+            Lista de VictimaResumen (puede ser vacía)
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def verificar_habilitacion(
         self,
         tipo_documento: str,

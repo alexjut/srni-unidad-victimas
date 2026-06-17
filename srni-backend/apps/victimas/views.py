@@ -8,6 +8,7 @@ Seguridad:
 - Los listados usan VictimaListSerializer (sin PII).
 - El detalle usa VictimaDetalleSerializer solo con permiso puede_caracterizar.
 """
+from django.utils import timezone
 from rest_framework import mixins, viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,7 +22,7 @@ from .models import Victima
 from .serializers import (
     VictimaListSerializer, VictimaDetalleSerializer, BusquedaDocumentoSerializer,
     ConsultarFuenteInputSerializer, ResultadoBusquedaSerializer,
-    RegistrarDesdeFuenteSerializer,
+    RegistrarDesdeFuenteSerializer, VictimaResumenSerializer, PadronItemSerializer,
 )
 from .fields import sha256_hash
 from .repository import get_repository
@@ -366,3 +367,122 @@ class RegistrarDesdeFuenteView(APIView):
             {'victima_id': str(victima.id), 'created': created},
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+def _nombre_completo(v) -> str:
+    """Arma el nombre completo de un VictimaResumen omitiendo partes vacías."""
+    partes = [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
+    return ' '.join(p for p in partes if p)
+
+
+@extend_schema(
+    summary='Precarga de datos para trabajo offline',
+    description=(
+        'Devuelve en UNA sola llamada todo lo que la APK necesita para operar sin '
+        'conexión durante una jornada: el padrón resumido de víctimas, el detalle '
+        'completo (resumen-fuente) de cada víctima para precargar el formulario, y '
+        'las paramétricas (municipios, direcciones territoriales, puntos de atención). '
+        'Fuente: VictimaRepository configurado (Mock en Fase 0). Requiere permiso de '
+        'caracterización.'
+    ),
+    tags=['Víctimas'],
+    responses={200: {'type': 'object', 'properties': {
+        'version': {'type': 'string'},
+        'padron': {'type': 'array', 'items': {'type': 'object'}},
+        'jornada': {'type': 'array', 'items': {'type': 'object'}},
+        'parametricas': {'type': 'object'},
+    }}},
+)
+class PrecargaOfflineView(APIView):
+    """
+    GET /api/victimas/precarga/
+
+    Habilitador del modo offline. Requiere permiso puede_caracterizar.
+    En Fase 0 la fuente es el MockVictimaRepository (padrón pequeño).
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    def get(self, request):
+        repo = get_repository()
+        victimas = repo.listar_todas()
+
+        # --- padron: resumen mínimo, sin detalle de hechos ---
+        padron = [
+            {
+                'tipo_documento': v.tipo_documento,
+                'documento': v.numero_documento,
+                'nombre': _nombre_completo(v),
+                'ubicacion': v.municipio_residencia_nombre,
+                'cantidad_hechos': len(v.hechos_victimizantes or []),
+                'en_ruv': v.estado_ruv == 'INCLUIDO',
+                'habilitada': v.habilitado_para_caracterizacion,
+                # Fase 0: la caracterización no está en la fuente externa, así que no
+                # podemos derivarla barato desde el repo. Se reporta False; la APK
+                # tratará 'habilitada' como la señal operativa. Cuando exista Oracle se
+                # poblará desde fecha_ult_caracterizacion.
+                'ya_caracterizada': bool(v.fecha_ult_caracterizacion),
+                'cons_persona': v.cons_persona,
+            }
+            for v in victimas
+        ]
+
+        padron = PadronItemSerializer(padron, many=True).data
+
+        # --- jornada: resumen-fuente COMPLETO de cada víctima (mismo shape que .victima) ---
+        jornada = VictimaResumenSerializer(victimas, many=True).data
+
+        # --- parametricas: tablas de referencia desde la BD local ---
+        from apps.parametricas.models import (
+            Municipio, DireccionTerritorial, PuntoAtencion,
+        )
+        from apps.parametricas.serializers import (
+            DireccionTerritorialSerializer, PuntoAtencionSerializer,
+        )
+
+        municipios = [
+            {
+                'codigo_dane': m.codigo_dane,
+                'nombre': m.nombre,
+                'departamento': m.departamento.nombre,
+            }
+            for m in Municipio.objects.select_related('departamento').filter(activo=True)
+        ]
+        direcciones = DireccionTerritorialSerializer(
+            DireccionTerritorial.objects.prefetch_related('departamentos').filter(activo=True),
+            many=True,
+        ).data
+        puntos = PuntoAtencionSerializer(
+            PuntoAtencion.objects.select_related('municipio', 'direccion_territorial').filter(activo=True),
+            many=True,
+        ).data
+
+        payload = {
+            # version: ISO con tz (no datetime.now sin tz). Sirve a la APK para saber
+            # si su copia local está vigente frente al servidor.
+            'version': timezone.now().isoformat(),
+            'padron': padron,
+            'jornada': jornada,
+            'parametricas': {
+                'municipios': municipios,
+                'direcciones_territoriales': direcciones,
+                'puntos_atencion': puntos,
+            },
+        }
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='PRECARGA_OFFLINE',
+            recurso='VictimaRepository',
+            recurso_id=None,
+            ip=_ip_de_request(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={
+                'total_padron': len(padron),
+                'total_jornada': len(jornada),
+                'total_municipios': len(municipios),
+                'fuente': getattr(repo, 'FUENTE', 'DESCONOCIDA'),
+            },
+        )
+
+        return Response(payload)

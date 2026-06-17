@@ -190,3 +190,24 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
 
     def validate_numero_documento(self, value):
         return value.strip().upper()
+
+
+# ---------------------------------------------------------------------------
+# Serializers para la precarga offline (GET /api/victimas/precarga/)
+# ---------------------------------------------------------------------------
+
+class PadronItemSerializer(serializers.Serializer):
+    """
+    Resumen mínimo de una víctima para el padrón offline.
+    NO incluye el detalle de los hechos — solo la cantidad. Esto reduce el
+    tamaño de la descarga y limita la PII en reposo en el dispositivo.
+    """
+    tipo_documento = serializers.CharField()
+    documento = serializers.CharField()
+    nombre = serializers.CharField()
+    ubicacion = serializers.CharField(allow_null=True, allow_blank=True)
+    cantidad_hechos = serializers.IntegerField()
+    en_ruv = serializers.BooleanField()
+    habilitada = serializers.BooleanField()
+    ya_caracterizada = serializers.BooleanField()
+    cons_persona = serializers.IntegerField(allow_null=True)

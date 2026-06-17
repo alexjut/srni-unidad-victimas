@@ -36,6 +36,7 @@ class LogAcceso(models.Model):
         ('REGISTRAR_VICTIMA_FUENTE_EXTERNA', 'Registro de víctima desde fuente externa'),
         ('CAMBIAR_AUTORIZADO', 'Cambio de autorizado del hogar'),
         ('HABILITAR', 'Verificación de habilitación'),
+        ('PRECARGA_OFFLINE', 'Precarga de datos para trabajo offline'),
     ]
 
     RESULTADOS = [

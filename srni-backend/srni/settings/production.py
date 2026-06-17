@@ -1,7 +1,21 @@
 """Configuración de producción — seguridad máxima."""
+from datetime import timedelta
+
 from .base import *   # noqa: F401, F403
 
 DEBUG = False
+
+# ─── JWT — refresh largo para captura offline (entrevistas de varias horas) ───
+# El access token sigue siendo CORTO (15 min, heredado de base) porque durante la
+# captura offline NO se renueva nada contra el servidor: la entrevista se guarda
+# localmente en la APK y solo se sincroniza al recuperar conexión. Lo que debe
+# sobrevivir es el REFRESH token, que es lo que permite reanudar la sesión y subir
+# los datos tras horas sin red. Por eso lo subimos de 8h a 7 días en producción.
+# Mantenemos ROTATE_REFRESH_TOKENS=True (heredado): cada uso rota y revoca el anterior.
+SIMPLE_JWT = {
+    **SIMPLE_JWT,  # noqa: F405  (hereda ACCESS_TOKEN_LIFETIME=15min y demás de base)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
 
 # ─── Base de datos (requerida en producción) ──────────────────────────────────
 DATABASES = {
