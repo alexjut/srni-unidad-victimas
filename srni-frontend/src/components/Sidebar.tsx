@@ -4,7 +4,7 @@ import {
   FileText, Database, Shield, ChevronRight, UserCog,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import LogoHorizontalColor from '@/assets/LogoHorizontalNegativo.svg';
+import LogoHorizontalNegativo from '@/assets/LogoHorizontalnegativo.svg';
 
 export const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
@@ -31,7 +31,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
     <>
       {/* Logo */}
       <div className="px-5 py-5">
-        <img src={LogoHorizontalColor} alt="Unidad para las Víctimas" className="h-10 w-auto" />
+        <img src={LogoHorizontalNegativo} alt="Unidad para las Víctimas" className="h-10 w-auto" />
       
         </div>
 
