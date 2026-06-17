@@ -32,16 +32,38 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         for pk, codigo, nombre, version in INSTRUMENTOS:
-            _, created = Instrumento.objects.get_or_create(
-                pk=pk,
-                defaults={
-                    "codigo": codigo,
-                    "nombre": nombre,
-                    "version": version,
-                    "vigente_desde": date(2021, 10, 7),
-                    "activo": True,
-                },
+            # Idempotente: si ya existe el instrumento con el PK fijo, no se toca.
+            if Instrumento.objects.filter(pk=pk).exists():
+                self.stdout.write(f"  {codigo}-{version}: existente")
+                continue
+
+            # DB inconsistente: mismo (codigo, version) con OTRO pk (p. ej. cargas
+            # previas o el fixture antiguo). Evita el IntegrityError de la
+            # constraint UNIQUE(codigo, version) al reintentar el despliegue.
+            conflicto = (
+                Instrumento.objects
+                .filter(codigo=codigo, version=version)
+                .exclude(pk=pk)
+                .first()
             )
-            estado = "creado" if created else "existente"
-            self.stdout.write(f"  {codigo}-{version}: {estado}")
+            if conflicto is not None:
+                if conflicto.capitulos.exists():
+                    self.stdout.write(self.style.WARNING(
+                        f"  {codigo}-{version}: ya existe con pk distinto ({conflicto.pk}) "
+                        f"y tiene capítulos; se conserva. Revisar si los cargadores no "
+                        f"lo encuentran por PK."
+                    ))
+                    continue
+                # Aún sin capítulos → realinear al PK fijo que esperan los cargadores.
+                conflicto.delete()
+
+            Instrumento.objects.create(
+                pk=pk,
+                codigo=codigo,
+                nombre=nombre,
+                version=version,
+                vigente_desde=date(2021, 10, 7),
+                activo=True,
+            )
+            self.stdout.write(f"  {codigo}-{version}: creado")
         self.stdout.write(self.style.SUCCESS("Instrumentos base listos."))

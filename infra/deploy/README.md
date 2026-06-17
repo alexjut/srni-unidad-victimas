@@ -180,19 +180,26 @@ docker compose --env-file .env -f infra/deploy/docker-compose.caracterizacion.ym
 docker compose --env-file .env -f infra/deploy/docker-compose.caracterizacion.yml restart cz_nginx
 ```
 
-### Deuda técnica conocida (código de la app, NO del despliegue)
+### Deuda técnica — RESUELTA (17-jun-2026)
 
-Pendiente de resolver por el flujo de desarrollo (git):
+La deuda que figuraba aquí (cargadores de instrumentos con `ImportError:
+InstrumentoVersion` y `cargar_direcciones_territoriales` fallando) **ya no
+existe**. Verificado ejecutando la secuencia completa sobre una BD limpia:
 
-- **Cargadores de instrumentos antiguos** (`cargar_territorial_v7`, `cargar_buenaventura_v7`,
-  `cargar_san_andres_v7`, `cargar_telefonico_v8`, `cargar_rural_etnico_v1`,
-  `cargar_urbano_etnico_v1`) fallan con `ImportError: cannot import name 'InstrumentoVersion'`
-  — referencian un modelo **renombrado a `Instrumento`**. Por eso solo carga 1 de ~8 instrumentos.
-  El cargador vigente basado en fixtures (`cargar_diccionario_v8`) sí funciona.
-- **`cargar_direcciones_territoriales`** falla (`DireccionTerritorial.DoesNotExist`) →
-  DTs y puntos de atención quedan incompletos.
+- Los **7 instrumentos** cargan completos (ASISTENCIA-V8, Territorial,
+  Buenaventura, San Andrés, Telefónico, Rural Étnico, Urbano Étnico) →
+  **1.319 preguntas** en total, todos `activo` + `vigente`.
+- El prerequisito de los cargadores de perfil es `crear_instrumentos_base`
+  (crea los `Instrumento` con PK fijo), que `40-cargar-datos.sh` ya ejecuta
+  primero. Ese comando ahora es **idempotente** (re-ejecutarlo en un redespliegue
+  no lanza `IntegrityError`).
+- `cargar_direcciones_territoriales` y demás paramétricas cargan sin error.
 
-Estos no bloquean el despliegue ni el login; son tareas de mantenimiento del backend.
+> ⚠️ Si un servidor fue poblado **antes** de este fix, tendrá solo 1 instrumento.
+> Solución: re-ejecutar `bash infra/deploy/scripts/40-cargar-datos.sh` (o el
+> `deploy-all.sh`) para cargar los instrumentos faltantes. Tras cargar, la app
+> muestra todos los tipos de caracterización en "Selecciona el tipo de
+> caracterización".
 
 ---
 

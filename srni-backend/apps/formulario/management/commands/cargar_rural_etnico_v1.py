@@ -291,7 +291,7 @@ class Command(BaseCommand):
             instrumento = Instrumento.objects.get(pk=INSTRUMENTO_PK)
         except Instrumento.DoesNotExist:
             self.stderr.write(
-                "Error: ejecuta primero: python manage.py loaddata perfiles_iniciales"
+                "Error: ejecuta primero: python manage.py crear_instrumentos_base"
             )
             return
 
