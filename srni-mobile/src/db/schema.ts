@@ -10,11 +10,12 @@
  *  2 → Sprint 7: tablas de instrumento migradas a UUID (capitulos, reglas_skip_logic)
  *               borradores.instrumento_id TEXT, respuestas.pregunta_id TEXT
  *  3 → Sprint 9: cola_sincronizacion.retry_after TEXT (backoff exponencial)
+ *  6 → Fase 0 Offline: padron, jornada, parametricas_cache, meta_offline
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -227,6 +228,51 @@ const MIGRATION_V5 = `
     ON respuestas(borrador_id, pregunta_id, miembro_id);
 `;
 
+// ─── Migración v6 — almacén OFFLINE de precarga (Fase 0) ─────────────────────
+// Tablas para trabajar offline desde el login:
+//   - padron: índice ligero de personas (documento HASHEADO, sin PII fuerte).
+//             Se busca por documento_hash; documento_display = últimos 4 dígitos.
+//   - jornada: VictimaResumenFuente COMPLETO por documento (json) para continuar
+//              el flujo offline cuando la persona viene en la jornada del día.
+//   - parametricas_cache: municipios / DT / puntos serializados como json por tipo.
+//   - meta_offline: clave/valor para guardar la "version" del padrón y timestamps.
+//
+// TODO(cifrado-en-reposo): Fase 0 NO cifra. Para una fase posterior con PII real
+// se debe migrar a SQLCipher (expo-sqlite con `enableChangeListener` + libsql/
+// op-sqlite, o expo-sqlite-storage cifrado) y derivar la llave desde SecureStore.
+// El padron ya guarda el documento HASHEADO (no reversible) como mitigación parcial.
+const MIGRATION_V6 = `
+  CREATE TABLE IF NOT EXISTS padron (
+    documento_hash    TEXT    PRIMARY KEY,
+    tipo_documento    TEXT    NOT NULL DEFAULT '',
+    documento_display TEXT    NOT NULL DEFAULT '',
+    nombre            TEXT    NOT NULL DEFAULT '',
+    ubicacion         TEXT    NOT NULL DEFAULT '',
+    cantidad_hechos   INTEGER NOT NULL DEFAULT 0,
+    en_ruv            INTEGER NOT NULL DEFAULT 0,
+    habilitada        INTEGER NOT NULL DEFAULT 0,
+    ya_caracterizada  INTEGER NOT NULL DEFAULT 0,
+    cons_persona      INTEGER
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_padron_hash ON padron(documento_hash);
+
+  CREATE TABLE IF NOT EXISTS jornada (
+    documento_hash TEXT PRIMARY KEY,
+    json           TEXT NOT NULL DEFAULT '{}'
+  );
+
+  CREATE TABLE IF NOT EXISTS parametricas_cache (
+    tipo TEXT PRIMARY KEY,
+    json TEXT NOT NULL DEFAULT '[]'
+  );
+
+  CREATE TABLE IF NOT EXISTS meta_offline (
+    clave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL DEFAULT ''
+  );
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -298,6 +344,11 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
           ON respuestas(borrador_id, pregunta_id, miembro_id);
       `);
     }
+  }
+
+  if (currentVersion < 6) {
+    // Fase 0: tablas del almacén offline de precarga. Idempotente (IF NOT EXISTS).
+    await db.execAsync(MIGRATION_V6);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

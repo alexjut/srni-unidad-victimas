@@ -12,6 +12,7 @@
  */
 import apiClient from './client';
 import type { PaginatedResponse } from '../types';
+import * as precargaDao from '../db/precargaDao';
 
 export interface DireccionTerritorial {
   id: number;
@@ -103,44 +104,130 @@ const paramCache: ParamCache = {
   muniTodos: null,
 };
 
+// ── Fallback OFFLINE (Fase 0) ───────────────────────────────────────────────
+// Lee de parametricas_cache (persistido por la precarga al login) cuando la red
+// falla. Las listas se persisten "tal cual" las da el endpoint de precarga;
+// aquí se coercen defensivamente a los tipos del cliente.
+
+async function dtOffline(): Promise<DireccionTerritorial[]> {
+  const raw = await precargaDao.leerParametrica<any>('direcciones_territoriales');
+  return raw.map((d, i) => ({
+    id: Number(d.id ?? i),
+    codigo: String(d.codigo ?? ''),
+    nombre: String(d.nombre ?? ''),
+    activo: d.activo !== false,
+  }));
+}
+
+async function muniOffline(): Promise<Municipio[]> {
+  const raw = await precargaDao.leerParametrica<any>('municipios');
+  return raw.map((m, i) => ({
+    id: Number(m.id ?? i),
+    codigo_dane: String(m.codigo_dane ?? ''),
+    nombre: String(m.nombre ?? ''),
+    departamento: Number(m.departamento_id ?? m.departamento ?? 0),
+    departamento_nombre:
+      typeof m.departamento === 'string' ? m.departamento : m.departamento_nombre,
+    activo: m.activo !== false,
+  }));
+}
+
+async function puntosOffline(): Promise<PuntoAtencion[]> {
+  const raw = await precargaDao.leerParametrica<any>('puntos_atencion');
+  return raw.map((p, i) => ({
+    id: Number(p.id ?? i),
+    codigo: String(p.codigo ?? ''),
+    nombre: String(p.nombre ?? ''),
+    direccion_territorial: Number(p.direccion_territorial ?? 0),
+    municipio: Number(p.municipio ?? 0),
+    activo: p.activo !== false,
+  }));
+}
+
 export const parametricasCacheado = {
   async getDirecciones(): Promise<DireccionTerritorial[]> {
     if (paramCache.direcciones) return paramCache.direcciones;
-    const { data } = await parametricasApi.listarDirecciones();
-    paramCache.direcciones = data.results;
-    return data.results;
+    try {
+      const { data } = await parametricasApi.listarDirecciones();
+      paramCache.direcciones = data.results;
+      return data.results;
+    } catch (e) {
+      const off = await dtOffline();
+      if (off.length > 0) { paramCache.direcciones = off; return off; }
+      throw e;
+    }
   },
 
   async getDeptosPorDT(dtId: number): Promise<Departamento[]> {
     const hit = paramCache.deptosPorDT.get(dtId);
     if (hit) return hit;
-    const { data } = await parametricasApi.listarDeptosPorDT(dtId);
-    paramCache.deptosPorDT.set(dtId, data.results);
-    return data.results;
+    try {
+      const { data } = await parametricasApi.listarDeptosPorDT(dtId);
+      paramCache.deptosPorDT.set(dtId, data.results);
+      return data.results;
+    } catch (e) {
+      // Offline: derivar los departamentos de los municipios cacheados.
+      const muns = await muniOffline();
+      const vistos = new Map<string, Departamento>();
+      for (const m of muns) {
+        const nombre = m.departamento_nombre ?? '';
+        if (!nombre || vistos.has(nombre)) continue;
+        vistos.set(nombre, {
+          id: m.departamento,
+          codigo_dane: m.codigo_dane.slice(0, 2),
+          nombre,
+          activo: true,
+        });
+      }
+      const off = Array.from(vistos.values());
+      if (off.length > 0) { paramCache.deptosPorDT.set(dtId, off); return off; }
+      throw e;
+    }
   },
 
   async getMunicipiosPorDepto(deptoId: number): Promise<Municipio[]> {
     const hit = paramCache.muniPorDepto.get(deptoId);
     if (hit) return hit;
-    const { data } = await parametricasApi.listarMunicipiosPorDepto(deptoId);
-    paramCache.muniPorDepto.set(deptoId, data.results);
-    return data.results;
+    try {
+      const { data } = await parametricasApi.listarMunicipiosPorDepto(deptoId);
+      paramCache.muniPorDepto.set(deptoId, data.results);
+      return data.results;
+    } catch (e) {
+      const muns = await muniOffline();
+      const off = muns.filter((m) => m.departamento === deptoId);
+      if (off.length > 0) { paramCache.muniPorDepto.set(deptoId, off); return off; }
+      throw e;
+    }
   },
 
   async getPuntosPorDT(dtId: number): Promise<PuntoAtencion[]> {
     const hit = paramCache.puntosPorDT.get(dtId);
     if (hit) return hit;
-    const { data } = await parametricasApi.listarPuntosPorDT(dtId);
-    paramCache.puntosPorDT.set(dtId, data.results);
-    return data.results;
+    try {
+      const { data } = await parametricasApi.listarPuntosPorDT(dtId);
+      paramCache.puntosPorDT.set(dtId, data.results);
+      return data.results;
+    } catch (e) {
+      const off = (await puntosOffline()).filter(
+        (p) => !p.direccion_territorial || p.direccion_territorial === dtId,
+      );
+      if (off.length > 0) { paramCache.puntosPorDT.set(dtId, off); return off; }
+      throw e;
+    }
   },
 
   /** Sprint 20 — los 1102 municipios DANE para los COMBO_DINAMICO del formulario. */
   async getMunicipiosTodos(): Promise<Municipio[]> {
     if (paramCache.muniTodos) return paramCache.muniTodos;
-    const { data } = await parametricasApi.listarMunicipiosTodos();
-    paramCache.muniTodos = data;
-    return data;
+    try {
+      const { data } = await parametricasApi.listarMunicipiosTodos();
+      paramCache.muniTodos = data;
+      return data;
+    } catch (e) {
+      const off = await muniOffline();
+      if (off.length > 0) { paramCache.muniTodos = off; return off; }
+      throw e;
+    }
   },
 
   /** Limpia toda la caché (útil al cerrar sesión). */

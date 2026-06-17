@@ -185,6 +185,35 @@ export function listaPerfiles(): PerfilCodigo[] {
   return Object.keys(BUNDLED) as PerfilCodigo[];
 }
 
+/** Resumen de un instrumento para los selectores de UI (mismo shape que la API). */
+export interface InstrumentoResumenBundle {
+  id: string;
+  codigo: string;
+  nombre: string;
+  version: string;
+  activo: boolean;
+  vigente: boolean;
+  total_capitulos: number;
+}
+
+/**
+ * Fase 0 offline — arma la lista de instrumentos disponibles DESDE EL BUNDLE
+ * local, con el mismo shape que devuelve GET /api/formulario/instrumentos/.
+ * Permite que el selector de instrumento funcione 100% offline (los JSON ya
+ * están empaquetados). No carga los perfiles en memoria, solo lee metadata.
+ */
+export function listaInstrumentosBundle(): InstrumentoResumenBundle[] {
+  return Object.entries(BUNDLED).map(([codigo, data]) => ({
+    id: String(data?.id ?? codigo),
+    codigo: String(data?.codigo ?? codigo),
+    nombre: String(data?.nombre ?? data?.codigo ?? codigo),
+    version: String(data?.version ?? data?.numero ?? ''),
+    activo: true,
+    vigente: true,
+    total_capitulos: Array.isArray(data?.capitulos) ? data.capitulos.length : 0,
+  }));
+}
+
 export function getMeta(): InstrumentoMeta | null {
   return _metaActivo;
 }

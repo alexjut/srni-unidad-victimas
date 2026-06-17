@@ -11,7 +11,7 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
-import { activarPerfil } from '../../../src/services/instrumentos';
+import { activarPerfil, listaInstrumentosBundle } from '../../../src/services/instrumentos';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -109,22 +109,29 @@ export default function CaracterizarScreen() {
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
 
   const [paso, setPaso] = useState<'instrumento' | 'hogar'>('instrumento');
-  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
+  // Fase 0 offline: la lista arranca DESDE EL BUNDLE local — funciona 100% sin
+  // red. La API solo refresca nombres/versiones cuando hay conexión.
+  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>(
+    () => listaInstrumentosBundle(),
+  );
   const [hogares, setHogares] = useState<HogarResumen[]>([]);
-  const [cargandoPerfiles, setCargandoPerfiles] = useState(true);
+  const [cargandoPerfiles, setCargandoPerfiles] = useState(false);
   const [cargandoHogares, setCargandoHogares] = useState(false);
   const [seleccionado, setSeleccionado] = useState<InstrumentoResumen | null>(null);
   const [creando, setCreando] = useState(false);
 
+  // Refresco opcional online: si el server responde, reemplaza la lista del
+  // bundle con la del backend (mismo shape). Si falla, se queda con el bundle.
   useEffect(() => {
     apiClient
       .get<{ results: InstrumentoResumen[] }>('/api/formulario/instrumentos/')
       .then((r) => {
         const activos = r.data.results.filter((i) => i.activo && i.vigente);
-        setInstrumentos(activos);
+        if (activos.length > 0) setInstrumentos(activos);
       })
-      .catch(() => {})
-      .finally(() => setCargandoPerfiles(false));
+      .catch(() => {
+        /* offline o server caído → mantener la lista del bundle */
+      });
   }, []);
 
   const cargarHogares = useCallback(async () => {

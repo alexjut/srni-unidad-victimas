@@ -7,6 +7,8 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { authApi, type UsuarioMe } from '../api/auth';
+import { precargarEnSegundoPlano } from '../services/precarga';
+import * as precargaDao from '../db/precargaDao';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
 
@@ -53,6 +55,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const { data: me } = await authApi.me();
       set({ usuario: me, cargando: false });
+
+      // Fase 0 offline: precargar el padrón/jornada/paramétricas en segundo
+      // plano. NO bloquea el login ni lo hace fallar si la precarga falla.
+      precargarEnSegundoPlano();
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
@@ -92,6 +98,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const { data: me } = await authApi.me();
       set({ usuario: me, cargando: false });
+
+      // Fase 0 offline: refrescar la precarga tras re-autenticación biométrica
+      // (con red). NO bloquea ni hace fallar el flujo.
+      precargarEnSegundoPlano();
     } catch (err: unknown) {
       if ((err as Error).message !== 'SIN_TOKEN') {
         set({ error: 'No se pudo autenticar. Intenta de nuevo.', cargando: false });
@@ -108,6 +118,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
       await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
+      // Fase 0: limpiar el almacén offline al cerrar sesión (privacidad).
+      try { await precargaDao.limpiarPrecarga(); } catch { /* best-effort */ }
       set({ usuario: null, error: null });
     }
   },
