@@ -21,13 +21,15 @@ const ESTADO_BADGE: Record<string, BadgeVariant> = {
 };
 
 function BarraProgreso({ valor }: { valor: number }) {
-  const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
+  // Clamp 0–100 + redondeo: evita que el relleno o el % desborden el riel.
+  const pct = Math.max(0, Math.min(100, Math.round(valor || 0)));
+  const color = pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 bg-gray-100 rounded-full h-3">
-        <div className={`h-3 rounded-full transition-all ${color}`} style={{ width: `${valor}%` }} />
+      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+        <div className={`h-3 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold text-gray-700 w-12 text-right">{valor}%</span>
+      <span className="text-sm font-semibold text-gray-700 w-12 text-right shrink-0">{pct}%</span>
     </div>
   );
 }

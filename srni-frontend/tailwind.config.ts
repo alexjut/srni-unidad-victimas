@@ -23,8 +23,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Work Sans', 'system-ui', 'sans-serif'],
-        display: ['Montserrat', 'system-ui', 'sans-serif'],
+        sans: ['Nunito Sans', 'system-ui', 'sans-serif'],
+        display: ['Nunito Sans', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         // Sombras Apple-style (multi-capa, difusas)

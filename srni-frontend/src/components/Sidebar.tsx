@@ -4,6 +4,7 @@ import {
   FileText, Database, Shield, ChevronRight, UserCog,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import LogoHorizontalColor from '@/assets/LogoHorizontalNegativo.svg';
 
 export const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
@@ -28,19 +29,11 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   const items = NAV_ITEMS.filter((i) => !('adminOnly' in i && i.adminOnly) || esAdmin);
   return (
     <>
-      {/* Logo + identidad GOV.CO */}
-      <div className="px-5 py-5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-2 mb-2.5">
-          <div className="w-1 h-4 rounded-full bg-gov-amarillo shrink-0" />
-          <p className="text-[11px] font-semibold text-gov-amarillo tracking-widest uppercase">
-            GOV.CO
-          </p>
+      {/* Logo */}
+      <div className="px-5 py-5">
+        <img src={LogoHorizontalColor} alt="Unidad para las Víctimas" className="h-10 w-auto" />
+      
         </div>
-        <h1 className="font-display text-[15px] font-bold leading-tight text-white">
-          Unidad para las Víctimas
-        </h1>
-        <p className="text-[11px] text-white mt-1 tracking-wide">SRNI · Panel Web</p>
-      </div>
 
       {/* Navegación */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Menú principal">

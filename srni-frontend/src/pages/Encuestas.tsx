@@ -30,13 +30,16 @@ const ESTADOS_SESION = [
 ];
 
 function BarraProgreso({ valor }: { valor: number }) {
-  const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
+  // Clamp 0–100 para que el relleno nunca se salga del riel y redondeo para que
+  // el % no desborde la caja de ancho fijo (causaba que la barra "se saliera").
+  const pct = Math.max(0, Math.min(100, Math.round(valor || 0)));
+  const color = pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div className={`h-1.5 rounded-full transition-all ${color}`} style={{ width: `${valor}%` }} />
+      <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        <div className={`h-1.5 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-gray-500 w-8 text-right">{valor}%</span>
+      <span className="text-xs text-gray-500 w-10 text-right shrink-0">{pct}%</span>
     </div>
   );
 }

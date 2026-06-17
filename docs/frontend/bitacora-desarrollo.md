@@ -924,4 +924,68 @@ Basado en el plan de 7 fases definido para el frontend:
 
 ---
 
+## Dia 15 — 2026-06-16 | Pagina Usuarios + identidad visual + tipografia
+
+### Contexto
+
+Javier desplego el ambiente en produccion (`prod-caracterizacion.ngrok.app`) y dejo la estructura base del modulo de Administracion de usuarios (`src/pages/Usuarios.tsx`, `src/api/usuarios.ts`, ruta `/usuarios`, item en sidebar) integrada en `main`. Se hizo `git pull` y se trabajo sobre esa base.
+
+### Actividades realizadas
+
+1. **Pagina Usuarios — mejora UX/UI completa sobre la base de Javier**
+   - Filtros server-side de perfil (`perfil__codigo`) y estado (`activo`) junto a la busqueda — se envian directamente al endpoint `/api/usuarios/`
+   - Columna Estado reemplazada de texto crudo a `Badge` (verde = activo, gris = inactivo), consistente con el resto del panel
+   - Columna Codigo muestra badge "Admin Django" cuando `es_admin = true`
+   - Columna Nombre incluye `fecha_ultimo_login` formateada con `date-fns`
+   - Boton activar/desactivar con color contextual: `PowerOff` rojo para desactivar, `Power` verde para activar
+   - Toggles en el modal reemplazan checkboxes desnudos por pills animados (azul = activo, naranja = admin Django) con descripcion de cada opcion
+   - Modal de reset de contrasena muestra avatar + nombre + codigo del usuario afectado
+
+2. **Login — identidad visual**
+   - Reemplazado badge "GOV.CO" por `LogoHorizontalColor.svg`
+   - Eliminado `h1` "Unidad para las Victimas" redundante (el logo ya lo dice)
+   - Logo aumentado a `h-20`, subtitulo a `text-[15px]`
+   - Etiqueta "Iniciar sesion" reducida a label pequeño uppercase dentro de la tarjeta
+
+3. **Sidebar — identidad visual**
+   - Reemplazado bloque GOV.CO + h1 + subtitulo por `LogoHorizontalNegativo.svg` (`h-10`)
+   - Eliminada la linea separadora (`border-b`) entre logo y navegacion
+
+4. **Tipografia global**
+   - Migrada de **Work Sans** (body) + **Montserrat** (headings) a **Nunito Sans** en toda la interfaz
+   - `index.html`: nueva URL Google Fonts con pesos 400/500/600/700/800
+   - `tailwind.config.ts`: `font-sans` y `font-display` → `'Nunito Sans'`
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `SESION-2026-06-16.md` | Correo de avance para Javier + solicitud usuario administrador |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Usuarios.tsx` | Mejora UX/UI completa (filtros, badges, fecha ultimo acceso, toggles pill, modal reset mejorado) |
+| `src/pages/Login.tsx` | Logo institucional + jerarquia visual limpia |
+| `src/components/Sidebar.tsx` | Logo institucional + sin separador |
+| `index.html` | Nunito Sans (Google Fonts) |
+| `tailwind.config.ts` | font-sans y font-display → Nunito Sans |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 18 (16 funcionales + Login + NotFound) |
+| API clients | 11 (+ usuarios.ts) |
+| Componentes UI | 14 |
+| Componentes layout | 3 |
+| Rutas | 16 + catch-all 404 |
+| Nav items sidebar | 10 (9 + Usuarios adminOnly) |
+| Tests | 9 (5 Button + 4 authStore) |
+| Fases completadas | 1 a 8 + Usuarios |
+| Bundle principal | 116KB |
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

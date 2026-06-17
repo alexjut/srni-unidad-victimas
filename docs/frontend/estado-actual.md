@@ -2,8 +2,8 @@
 
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** 17 paginas funcionales — Fases 1-8 completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-06-11
+**Estado:** 18 paginas funcionales — Fases 1-8 + Usuarios completadas — Build produccion validado — Code splitting aplicado
+**Ultima actualizacion:** 2026-06-16
 
 ---
 
@@ -53,10 +53,11 @@ srni-frontend/src/
 │   ├── supervision.ts     resumen supervisor, series temporales
 │   ├── formulario.ts      instrumentos, capitulo detalle con preguntas
 │   ├── parametricas.ts    departamentos, municipios, DTs, puntos, tipos doc, veredas, comunidades negras, resguardos indigenas
-│   └── auditoria.ts       logs de acceso con filtros
+│   ├── auditoria.ts       logs de acceso con filtros
+│   └── usuarios.ts        CRUD usuarios + perfiles + activar/desactivar + reset password
 ├── components/
 │   ├── MainLayout.tsx     Sidebar desktop + drawer mobile + header con dropdown usuario + bottom sheet mobile
-│   ├── Sidebar.tsx        Logo GOV.CO + 9 nav items
+│   ├── Sidebar.tsx        Logo institucional (LogoHorizontalNegativo.svg) + 10 nav items (Usuarios adminOnly)
 │   ├── ErrorBoundary.tsx  Captura errores React
 │   └── ui/                14 componentes reutilizables
 │       ├── Button.tsx     4 variantes, 3 tamanos, loading, icon, shadow-soft, press effect
@@ -76,7 +77,7 @@ srni-frontend/src/
 ├── stores/
 │   └── authStore.ts       Zustand: tokens en sessionStorage, usuario, logout
 ├── pages/
-│   ├── Login.tsx          Split layout: branding GOV.CO + formulario
+│   ├── Login.tsx          Logo institucional (LogoHorizontalColor.svg) + formulario glass
 │   ├── Dashboard.tsx      4 Cards metricas + accesos rapidos
 │   ├── Hogares.tsx        Tabla paginada + filtros (busqueda + estado)
 │   ├── HogarDetalle.tsx   Breadcrumb + InfoCards + miembros + sesiones
@@ -90,6 +91,7 @@ srni-frontend/src/
 │   ├── Parametricas.tsx   Mapa Colombia + 8 tabs con filtros
 │   ├── Auditoria.tsx      Logs inmutables + filtros accion/resultado/fecha
 │   ├── CambiarPassword.tsx Formulario con react-hook-form + zod
+│   ├── Usuarios.tsx       Tabla usuarios + filtros perfil/estado + modales crear/editar/reset (solo puede_administrar)
 │   └── NotFound.tsx       Pagina 404
 ├── test/
 │   └── setup.ts           Setup vitest con jest-dom
@@ -113,6 +115,7 @@ srni-frontend/src/
 | Formulario | `formulario.ts` | `/api/formulario/instrumentos/` · `/capitulos/{id}/` |
 | Parametricas | `parametricas.ts` | `/api/parametricas/departamentos/` · `/municipios/` · `/direcciones-territoriales/` · `/puntos-atencion/` · `/tipos-documento/` · `/veredas/` · `/comunidades-negras/` · `/resguardos-indigenas/` |
 | Auditoria | `auditoria.ts` | `/api/auditoria/logs/` |
+| Usuarios | `usuarios.ts` | `/api/usuarios/` · `/{id}/activar/` · `/{id}/desactivar/` · `/{id}/reset_password/` · `/perfiles/` |
 
 Todos consumen `apiClient` (`src/api/client.ts`) con interceptor JWT + auto-refresh 401.
 
@@ -134,7 +137,7 @@ Todos consumen `apiClient` (`src/api/client.ts`) con interceptor JWT + auto-refr
 | `gov-grisTenue` | `#F5F5F5` | Fondo general |
 | `gov-borde` | `#E0E0E0` | Bordes, divisores |
 
-Fuentes: **Montserrat** (display) + **Work Sans** (body)
+Fuentes: **Nunito Sans** (display + body) — pesos 400/500/600/700/800
 
 ### Sombras Apple-style
 
