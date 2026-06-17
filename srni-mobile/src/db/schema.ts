@@ -11,11 +11,12 @@
  *               borradores.instrumento_id TEXT, respuestas.pregunta_id TEXT
  *  3 → Sprint 9: cola_sincronizacion.retry_after TEXT (backoff exponencial)
  *  6 → Fase 0 Offline: padron, jornada, parametricas_cache, meta_offline
+ *  7 → Fase A Offline: victimas_offline, miembros_offline (conformación 100% offline)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -273,6 +274,45 @@ const MIGRATION_V6 = `
   );
 `;
 
+// ─── Migración v7 — conformación 100% OFFLINE (Fase A) ───────────────────────
+// Permite registrar víctima + conformar hogar + agregar miembros SIN red, igual
+// que hogares_offline ya hace para el hogar. Cada fila lleva id_local (UUID),
+// id_servidor (NULL hasta sincronizar) y estado_sync.
+//
+//   - victimas_offline: la víctima "autorizada" registrada offline. Guarda el
+//       VictimaResumenFuente COMPLETO en `payload_json` para re-registrarlo en el
+//       servidor al recuperar red (POST registrar-desde-fuente). El id_local es
+//       el UUID que se usa como `autorizado` del hogar mientras no haya red.
+//   - miembros_offline: integrantes agregados al hogar sin red. hogar_id_local
+//       apunta al hogar (id_local) y se remapea a id_servidor al sincronizar.
+//
+// SEGURIDAD: payload_json SÍ contiene PII (nombre, documento) de la persona —
+// es el mismo dato que ya viaja en memoria por el flujo online. Queda pendiente
+// el cifrado en reposo (ver docs/offline-cifrado-reposo.md y TODO en MIGRATION_V6).
+const MIGRATION_V7 = `
+  CREATE TABLE IF NOT EXISTS victimas_offline (
+    id_local      TEXT    PRIMARY KEY,
+    id_servidor   TEXT,
+    payload_json  TEXT    NOT NULL DEFAULT '{}',
+    estado_sync   TEXT    NOT NULL DEFAULT 'pendiente',
+    created_at    TEXT    NOT NULL,
+    updated_at    TEXT    NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS miembros_offline (
+    id_local         TEXT    PRIMARY KEY,
+    id_servidor      TEXT,
+    hogar_id_local   TEXT    NOT NULL,
+    payload_json     TEXT    NOT NULL DEFAULT '{}',
+    estado_sync      TEXT    NOT NULL DEFAULT 'pendiente',
+    created_at       TEXT    NOT NULL,
+    updated_at       TEXT    NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_victimas_off_sync ON victimas_offline(estado_sync);
+  CREATE INDEX IF NOT EXISTS idx_miembros_off_hogar ON miembros_offline(hogar_id_local);
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -349,6 +389,12 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (currentVersion < 6) {
     // Fase 0: tablas del almacén offline de precarga. Idempotente (IF NOT EXISTS).
     await db.execAsync(MIGRATION_V6);
+  }
+
+  if (currentVersion < 7) {
+    // Fase A: víctimas y miembros offline para conformación 100% sin red.
+    // Idempotente (IF NOT EXISTS).
+    await db.execAsync(MIGRATION_V7);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

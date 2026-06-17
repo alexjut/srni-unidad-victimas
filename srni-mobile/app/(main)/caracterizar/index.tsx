@@ -11,6 +11,7 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 import { activarPerfil, listaInstrumentosBundle } from '../../../src/services/instrumentos';
 import type { HogarResumen } from '../../../src/types';
 
@@ -107,6 +108,7 @@ function TarjetaHogar({ hogar, onPress }: { hogar: HogarResumen; onPress: () => 
 export default function CaracterizarScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId?: string }>();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
+  const estaOnline = useSyncStore((s) => s.estaOnline);
 
   const [paso, setPaso] = useState<'instrumento' | 'hogar'>('instrumento');
   // Fase 0 offline: la lista arranca DESDE EL BUNDLE local — funciona 100% sin
@@ -149,23 +151,40 @@ export default function CaracterizarScreen() {
   async function crearSesion(hId: string) {
     if (!seleccionado) return;
     setCreando(true);
+
+    // Sprint 18 F1B: activar el perfil en el cache de memoria. Cero escritura
+    // a SQLite — el formulario lee directo de los JSON empaquetados. Aplica a
+    // ambos caminos (online y offline).
+    try {
+      activarPerfil(seleccionado.codigo);
+    } catch (e) {
+      Alert.alert(
+        'Aviso',
+        `El perfil ${seleccionado.codigo} no está disponible en el bundle local. Reinstala la app.`,
+      );
+    }
+
+    // Fase A — sin red: NO se crea la sesión en el servidor. Vamos directo al
+    // formulario SIN sesionServerId: la primera pantalla de capítulo creará un
+    // borrador local y encolará CREAR_SESION (patrón ya existente en
+    // formulario/[temaId].tsx). La captura de respuestas ya es 100% offline.
+    if (!estaOnline) {
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          hogarId: hId,
+          instrumentoId: seleccionado.id,
+        },
+      });
+      return;
+    }
+
     try {
       const { data: sesion } = await encuestasApi.crear({
         hogar: hId,
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
-
-      // Sprint 18 F1B: activar el perfil en el cache de memoria. Cero escritura
-      // a SQLite — el formulario lee directo de los JSON empaquetados.
-      try {
-        activarPerfil(seleccionado.codigo);
-      } catch (e) {
-        Alert.alert(
-          'Aviso',
-          `El perfil ${seleccionado.codigo} no está disponible en el bundle local. Reinstala la app.`,
-        );
-      }
 
       // Sprint 19: tras crear la caracterización, pedir la ubicación de
       // atención (DT / Depto / Mun / Punto) antes de devolver al hub. Si el

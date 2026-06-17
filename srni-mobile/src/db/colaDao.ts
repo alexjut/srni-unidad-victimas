@@ -2,11 +2,13 @@
  * DAO para la cola de sincronización.
  *
  * Tipos de operación en orden de precedencia:
- *   1. CREAR_HOGAR        — debe ir primero; las sesiones dependen del hogar_id servidor
- *   2. CREAR_SESION       — depende de hogar_id servidor
- *   3. RESPONDER_BULK     — bulk de N respuestas de un capítulo (reemplaza RESPONDER_PREGUNTA individual)
- *   4. RESPONDER_PREGUNTA — legado; se migra a bulk en el procesador
- *   5. FINALIZAR_SESION   — debe ir al final
+ *   0. REGISTRAR_VICTIMA  — Fase A: registra la víctima autorizada; el hogar depende de su UUID servidor
+ *   1. CREAR_HOGAR        — depende del autorizado (víctima); las sesiones/miembros dependen del hogar_id servidor
+ *   2. AGREGAR_MIEMBRO    — Fase A: integrante del hogar; depende del hogar_id servidor
+ *   3. CREAR_SESION       — depende de hogar_id servidor
+ *   4. RESPONDER_BULK     — bulk de N respuestas de un capítulo (reemplaza RESPONDER_PREGUNTA individual)
+ *   5. RESPONDER_PREGUNTA — legado; se migra a bulk en el procesador
+ *   6. FINALIZAR_SESION   — debe ir al final
  *
  * Estados: pendiente → enviando → enviado
  *                                ↘ error (tras MAX_INTENTOS fallos)
@@ -22,7 +24,9 @@
 import { openDb } from './schema';
 
 export type TipoOperacion =
+  | 'REGISTRAR_VICTIMA'
   | 'CREAR_HOGAR'
+  | 'AGREGAR_MIEMBRO'
   | 'CREAR_SESION'
   | 'RESPONDER_BULK'
   | 'RESPONDER_PREGUNTA'
@@ -50,11 +54,13 @@ const BACKOFF_SEGUNDOS = [30, 120];
 
 // Orden de procesamiento por tipo
 const ORDEN_TIPO: Record<TipoOperacion, number> = {
+  REGISTRAR_VICTIMA:  0,
   CREAR_HOGAR:        1,
-  CREAR_SESION:       2,
-  RESPONDER_BULK:     3,
-  RESPONDER_PREGUNTA: 3,
-  FINALIZAR_SESION:   4,
+  AGREGAR_MIEMBRO:    2,
+  CREAR_SESION:       3,
+  RESPONDER_BULK:     4,
+  RESPONDER_PREGUNTA: 4,
+  FINALIZAR_SESION:   5,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

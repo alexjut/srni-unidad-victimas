@@ -7,9 +7,14 @@ import apiClient from '../api/client';
 import { hogaresApi } from '../api/hogares';
 import { encuestasApi } from '../api/encuestas';
 import type { ResponderPayload } from '../api/encuestas';
+import { victimasApi } from '../api/victimas';
+import type { AgregarMiembroPayload } from '../api/hogares';
+import type { VictimaResumenFuente } from '../types';
 import * as borradoresDao from '../db/borradoresDao';
 import { openDb } from '../db/schema';
 import * as hogaresOfflineDao from '../db/hogaresOfflineDao';
+import * as victimasOfflineDao from '../db/victimasOfflineDao';
+import * as miembrosOfflineDao from '../db/miembrosOfflineDao';
 import * as colaDao from '../db/colaDao';
 import type { TipoOperacion } from '../db/colaDao';
 
@@ -28,6 +33,35 @@ export async function estaOnline(): Promise<boolean> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Procesadores por tipo de operación
 // ─────────────────────────────────────────────────────────────────────────────
+
+async function procesarRegistrarVictima(item: colaDao.ColaItem): Promise<void> {
+  // Fase A: registra en el servidor la víctima autorizada creada offline y
+  // remapea su UUID local → victima_id servidor en los CREAR_HOGAR pendientes.
+  const payload = JSON.parse(item.payload) as {
+    id_local: string;
+    victima: VictimaResumenFuente;
+  };
+
+  const { data } = await victimasApi.registrarDesdeFuente(payload.victima);
+
+  await victimasOfflineDao.marcarSincronizado(payload.id_local, data.victima_id);
+
+  const db = await openDb();
+  // Actualizar el `autorizado` en CREAR_HOGAR pendientes que apuntan al UUID local.
+  const itemsHogar = await db.getAllAsync<{ id: number; payload: string }>(
+    "SELECT id, payload FROM cola_sincronizacion WHERE tipo = 'CREAR_HOGAR' AND estado = 'pendiente'",
+  );
+  for (const h of itemsHogar) {
+    const p = JSON.parse(h.payload);
+    if (p.autorizado === payload.id_local) {
+      p.autorizado = data.victima_id;
+      await db.runAsync(
+        'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
+        [JSON.stringify(p), h.id],
+      );
+    }
+  }
+}
 
 async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
   // Sprint 12: el backend renombró 'jefe_hogar' → 'autorizado'.
@@ -51,6 +85,19 @@ async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
     throw new Error('Payload sin autorizado/jefe_hogar — hogar inválido');
   }
 
+  const db = await openDb();
+
+  // Fase A: si el autorizado sigue siendo un UUID local (la víctima aún no se
+  // registró en el servidor), esperar a que corra REGISTRAR_VICTIMA primero.
+  // El error es reintentable (no es 4xx), así que la cola lo reintenta con backoff.
+  const victimaLocal = await db.getFirstAsync<{ id_local: string }>(
+    "SELECT id_local FROM victimas_offline WHERE id_local = ? AND estado_sync != 'enviado'",
+    [autorizado],
+  );
+  if (victimaLocal) {
+    throw new Error('autorizado aún no registrado en servidor — esperando REGISTRAR_VICTIMA');
+  }
+
   const { data } = await hogaresApi.crear({
     autorizado,
     municipio: payload.municipio,
@@ -64,26 +111,51 @@ async function procesarCrearHogar(item: colaDao.ColaItem): Promise<void> {
 
   await hogaresOfflineDao.marcarSincronizado(payload.id_local, data.id);
 
-  const db = await openDb();
   await db.runAsync(
     'UPDATE borradores SET hogar_id = ? WHERE hogar_id = ?',
     [data.id, payload.id_local],
   );
 
-  // Actualizar referencias en CREAR_SESION pendientes
-  const itemsSesion = await db.getAllAsync<{ id: number; payload: string }>(
-    "SELECT id, payload FROM cola_sincronizacion WHERE tipo = 'CREAR_SESION' AND estado = 'pendiente'",
-  );
-  for (const s of itemsSesion) {
-    const p = JSON.parse(s.payload);
-    if (p.hogar === payload.id_local) {
-      p.hogar = data.id;
-      await db.runAsync(
-        'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
-        [JSON.stringify(p), s.id],
-      );
+  // Actualizar referencias hogar local → servidor en CREAR_SESION y
+  // AGREGAR_MIEMBRO pendientes (ambos llevan el hogar por su id_local).
+  for (const tipo of ['CREAR_SESION', 'AGREGAR_MIEMBRO']) {
+    const items = await db.getAllAsync<{ id: number; payload: string }>(
+      "SELECT id, payload FROM cola_sincronizacion WHERE tipo = ? AND estado = 'pendiente'",
+      [tipo],
+    );
+    for (const s of items) {
+      const p = JSON.parse(s.payload);
+      if (p.hogar === payload.id_local) {
+        p.hogar = data.id;
+        await db.runAsync(
+          'UPDATE cola_sincronizacion SET payload = ? WHERE id = ?',
+          [JSON.stringify(p), s.id],
+        );
+      }
     }
   }
+}
+
+async function procesarAgregarMiembro(item: colaDao.ColaItem): Promise<void> {
+  // Fase A: agrega un integrante al hogar. `hogar` ya fue remapeado a su id de
+  // servidor por procesarCrearHogar; si aún es un id_local, esperamos al hogar.
+  const payload = JSON.parse(item.payload) as {
+    id_local: string;
+    hogar: string;
+    miembro: AgregarMiembroPayload;
+  };
+
+  const db = await openDb();
+  const hogarLocal = await db.getFirstAsync<{ id_local: string }>(
+    "SELECT id_local FROM hogares_offline WHERE id_local = ? AND estado_sync != 'enviado'",
+    [payload.hogar],
+  );
+  if (hogarLocal) {
+    throw new Error('hogar aún no creado en servidor — esperando CREAR_HOGAR');
+  }
+
+  const { data } = await hogaresApi.agregarMiembro(payload.hogar, payload.miembro);
+  await miembrosOfflineDao.marcarSincronizado(payload.id_local, data.id);
 }
 
 async function procesarCrearSesion(item: colaDao.ColaItem): Promise<void> {
@@ -183,7 +255,9 @@ async function procesarFinalizar(item: colaDao.ColaItem): Promise<void> {
 }
 
 const PROCESADORES: Record<TipoOperacion, (item: colaDao.ColaItem) => Promise<void>> = {
+  REGISTRAR_VICTIMA:  procesarRegistrarVictima,
   CREAR_HOGAR:        procesarCrearHogar,
+  AGREGAR_MIEMBRO:    procesarAgregarMiembro,
   CREAR_SESION:       procesarCrearSesion,
   RESPONDER_BULK:     procesarResponderBulk,
   RESPONDER_PREGUNTA: procesarResponder,

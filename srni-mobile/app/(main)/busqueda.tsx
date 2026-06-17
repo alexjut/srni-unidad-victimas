@@ -33,6 +33,8 @@ import { useCaracterizacionStore } from '../../src/stores/caracterizacionStore';
 import { useSyncStore } from '../../src/stores/syncStore';
 import * as precargaDao from '../../src/db/precargaDao';
 import type { PadronRow } from '../../src/db/precargaDao';
+import * as victimasOfflineDao from '../../src/db/victimasOfflineDao';
+import * as colaDao from '../../src/db/colaDao';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
 // ── Tipos de documento ───────────────────────────────────────────────────────
@@ -553,6 +555,7 @@ export default function BusquedaScreen() {
   const { rutaEntrevista, setRutaEntrevista, victimaFuente } = useCaracterizacionStore();
   const rutaLabel = RUTAS.find((r) => r.value === rutaEntrevista)?.label ?? 'General';
   const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
   const [noIncluidaRegistrada, setNoIncluidaRegistrada] = useState(false);
 
@@ -646,15 +649,34 @@ export default function BusquedaScreen() {
     if (!v) return;
     setCargandoRegistro(true);
     try {
-      const { data } = await victimasApi.registrarDesdeFuente(v);
-      useCaracterizacionStore.getState().setVictimaFuente(v);
-      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      if (estaOnline) {
+        const { data } = await victimasApi.registrarDesdeFuente(v);
+        useCaracterizacionStore.getState().setVictimaFuente(v);
+        useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      } else {
+        // Sin red: registrar la víctima OFFLINE. El id_local actúa como
+        // `autorizado` del hogar; REGISTRAR_VICTIMA la creará en el servidor al
+        // recuperar señal y remapeará el UUID en el CREAR_HOGAR pendiente.
+        await registrarVictimaOffline(v);
+      }
       router.push('/(main)/hogares/conformar');
     } catch {
       setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
     } finally {
       setCargandoRegistro(false);
     }
+  }
+
+  /** Crea la víctima offline + encola REGISTRAR_VICTIMA y deja el store listo. */
+  async function registrarVictimaOffline(v: VictimaResumenFuente) {
+    const victimaLocal = await victimasOfflineDao.crearVictimaOffline(v);
+    await colaDao.encolar('REGISTRAR_VICTIMA', victimaLocal.id_local, {
+      id_local: victimaLocal.id_local,
+      victima: v,
+    });
+    useCaracterizacionStore.getState().setVictimaFuente(v);
+    useCaracterizacionStore.getState().setVictimaLocalId(victimaLocal.id_local);
+    await refrescarContadores();
   }
 
   // Víctima ya registrada (no incluida) — directo a conformar hogar
@@ -687,9 +709,14 @@ export default function BusquedaScreen() {
         municipio_residencia_nombre: null,
         fuente_origen: 'NO_INCLUIDA',
       };
-      const { data } = await victimasApi.registrarDesdeFuente(payload);
-      useCaracterizacionStore.getState().setVictimaFuente(payload);
-      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      if (estaOnline) {
+        const { data } = await victimasApi.registrarDesdeFuente(payload);
+        useCaracterizacionStore.getState().setVictimaFuente(payload);
+        useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      } else {
+        // Sin red: registrar la víctima no incluida OFFLINE (id_local + cola).
+        await registrarVictimaOffline(payload);
+      }
       setNoIncluidaRegistrada(true);
     } catch {
       setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
@@ -829,6 +856,17 @@ export default function BusquedaScreen() {
 
           {/* Tarjeta flotante con el formulario */}
           <View style={styles.cardBusqueda}>
+            {!estaOnline && (
+              <Chip
+                icon="wifi-off"
+                mode="flat"
+                style={styles.offlineBanner}
+                textStyle={styles.offlineBannerTxt}
+              >
+                Sin conexión — se buscará en los datos offline y se sincronizará al recuperar señal
+              </Chip>
+            )}
+
             {/* Tipo de documento */}
             <SelectTipoDoc valor={tipoDoc} onChange={setTipoDoc} />
 
@@ -954,6 +992,9 @@ const styles = StyleSheet.create({
   },
 
   input: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie },
+
+  offlineBanner: { marginBottom: SPACING.sm, backgroundColor: '#FFF3E0' },
+  offlineBannerTxt: { color: '#E65100', fontSize: 12 },
 
   botonRuta: {
     marginBottom: SPACING.sm,
