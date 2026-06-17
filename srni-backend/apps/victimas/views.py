@@ -145,13 +145,19 @@ class BuscarVictimaView(APIView):
         # si mostrar "Continuar caracterización" o "Crear hogar".
         from apps.hogares.models import Hogar
 
-        hogar_activo = (
+        # Solo adjuntamos como hogar_activo uno que el usuario PUEDA abrir.
+        # Para no-admin filtramos por creado_por: un hogar de otro encuestador
+        # daría 404 al intentar abrirlo (get_queryset filtra creado_por), así
+        # que no lo exponemos aquí como si fuera navegable.
+        hogares_qs = (
             Hogar.objects
             .filter(autorizado=victima)
             .exclude(estado='ARCHIVADO')
-            .order_by('-created_at')
-            .first()
         )
+        if not request.user.puede('administrar'):
+            hogares_qs = hogares_qs.filter(creado_por=request.user)
+
+        hogar_activo = hogares_qs.order_by('-created_at').first()
 
         data = VictimaListSerializer(victima).data
         data['hogar_activo'] = (
