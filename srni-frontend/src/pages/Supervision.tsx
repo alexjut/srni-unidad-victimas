@@ -97,17 +97,20 @@ export default function SupervisionPage() {
     {
       key: 'promedio',
       header: 'Avance',
-      render: (e) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[80px]">
-            <div
-              className={`h-1.5 rounded-full ${e.promedio_completado >= 80 ? 'bg-gov-verde' : e.promedio_completado >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
-              style={{ width: `${Math.min(100, e.promedio_completado)}%` }}
-            />
+      render: (e) => {
+        const pct = Math.max(0, Math.min(100, Math.round(e.promedio_completado || 0)));
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[80px] overflow-hidden">
+              <div
+                className={`h-1.5 rounded-full ${pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 w-10 text-right shrink-0">{pct}%</span>
           </div>
-          <span className="text-xs text-gray-500 w-10 text-right">{e.promedio_completado}%</span>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'actividad',
