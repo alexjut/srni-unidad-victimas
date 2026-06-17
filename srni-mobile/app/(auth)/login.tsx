@@ -2,8 +2,9 @@
  * Pantalla de inicio de sesión — GOV.CO institucional.
  *
  * Fondo: 5 fotos reales de regiones colombianas que ciclan automáticamente
- * cada 30 s usando crossfade + efecto Ken Burns (zoom suave). Sin controles
- * manuales de carrusel (sin dots, sin swipe, sin botones de navegación).
+ * cada 5 s en orden ALEATORIO (sin repetir la actual) usando crossfade +
+ * efecto Ken Burns (zoom suave). Sin controles manuales de carrusel
+ * (sin dots, sin swipe, sin botones de navegación).
  *
  * Rendimiento:
  *   - Imágenes empaquetadas como assets locales (bundled, sin prefetch necesario).
@@ -13,7 +14,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, StyleSheet, KeyboardAvoidingView, Platform,
-  ScrollView, StatusBar, Pressable,
+  ScrollView, StatusBar, Pressable, Image,
   Animated, ImageBackground, AppState, Dimensions,
 } from 'react-native';
 import { Text, TextInput, HelperText } from 'react-native-paper';
@@ -27,7 +28,7 @@ import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
 // ── Constantes de animación ───────────────────────────────────────────────────
-const DURACION_MS  = 30_000;   // tiempo visible de cada foto
+const DURACION_MS  =  5_000;   // tiempo visible de cada foto
 const FADE_MS      =  2_000;   // duración del crossfade entre fotos
 const KB_MITAD_MS  = 40_000;   // Ken Burns: 1.0→1.08 en 40 s, luego 1.08→1.0
 
@@ -160,8 +161,17 @@ export default function LoginScreen() {
     // ── Arranque ─────────────────────────────────────────────────────────────
     iniciarKB(0);
 
+    // Elige un índice aleatorio distinto al actual (para que se vean todas
+    // las regiones sin repetir la que está en pantalla).
+    function siguienteAleatorio(actual: number): number {
+      if (N <= 1) return actual;
+      let n = Math.floor(Math.random() * (N - 1));
+      if (n >= actual) n += 1; // salta el índice actual
+      return n;
+    }
+
     const timer = setInterval(() => {
-      transicionarA((idxRef.current + 1) % N);
+      transicionarA(siguienteAleatorio(idxRef.current));
     }, DURACION_MS);
 
     // Pausa KB cuando la app va a background para ahorrar batería
@@ -279,19 +289,17 @@ export default function LoginScreen() {
               </View>
             </Animated.View>
 
-            {/* Logo institucional SRNI */}
+            {/* Logo institucional — Unidad para las Víctimas */}
             <View style={styles.logoWrap}>
-              <View style={styles.escudoCirculo}>
-                <MaterialCommunityIcons name="shield-account" size={38} color="#FFFFFF" />
-              </View>
-              <Text style={styles.appTitle}>SRNI</Text>
+              <Image
+                source={require('../../assets/logos/logo-unidad-vertical-negativo.png')}
+                style={styles.logoImg}
+                resizeMode="contain"
+                accessibilityLabel="Unidad para las Víctimas"
+              />
               <Text style={styles.appSubtitulo}>
-                Sistema de Caracterización de Víctimas
+                Sistema de Caracterización de Víctimas · SRNI
               </Text>
-              <View style={styles.entidadBadge}>
-                <MaterialCommunityIcons name="domain" size={11} color={GOV.amarillo} />
-                <Text style={styles.entidadTxt}>Unidad para las Víctimas — Colombia</Text>
-              </View>
             </View>
           </View>
 
@@ -479,48 +487,18 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     gap: 4,
   },
-  escudoCirculo: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.42)',
+  logoImg: {
+    width: 210,
+    height: 200,
     marginBottom: SPACING.xs,
-  },
-  appTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 7,
-    textShadowColor: 'rgba(0,0,0,0.55)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
   },
   appSubtitulo: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
     paddingHorizontal: SPACING.lg,
     lineHeight: 17,
-  },
-  entidadBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.pill,
-    marginTop: SPACING.xs,
-  },
-  entidadTxt: {
-    fontSize: 10,
-    color: GOV.amarillo,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 
   // Card de login
