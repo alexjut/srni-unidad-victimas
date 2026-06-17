@@ -183,7 +183,7 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
         max_length=10, allow_null=True, required=False,
         help_text='Código DIVIPOLA 5 dígitos del municipio de residencia.',
     )
-    fuente_origen = serializers.CharField(max_length=10, default='RUV')
+    fuente_origen = serializers.CharField(max_length=20, default='RUV')
 
     def validate_tipo_documento(self, value):
         return value.strip().upper()
