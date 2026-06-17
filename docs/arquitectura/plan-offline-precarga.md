@@ -12,14 +12,20 @@ riesgo legal grave bajo la Ley 1581). Se separan dos cosas:
 
 | Capa | Qué guarda | Para qué | Tamaño aprox. (10M) |
 |---|---|---|---|
-| **Padrón offline** | `hash(documento)` + banderas (`en_ruv`, `habilitada`, `ya_caracterizada`) + `cons_persona` | Verificar a **cualquiera** de los 10M offline | **~150 MB**, cifrado |
-| **Jornada** | Datos completos (nombres, hechos, grupo familiar) de **los pocos** del día | Precargar el formulario de los que se van a entrevistar | KB–pocos MB |
+| **Padrón offline** | por víctima: **documento, nombre, ubicación (municipio), CANTIDAD de hechos** + banderas (`en_ruv`, `habilitada`, `ya_caracterizada`) + `cons_persona`. **NO** guarda el detalle de los hechos. | Buscar/identificar (por cédula o nombre) y verificar a **cualquiera** de los 10M offline | **~700 MB – 1 GB**, cifrado |
+| **Jornada** | Datos completos (incluye **detalle de hechos** y grupo familiar) de **los pocos** del día | Precargar el formulario de los que se van a entrevistar | KB–pocos MB |
 | **Instrumentos** | Preguntas de los 7 instrumentos | Responder la encuesta offline | Ya empaquetados en el APK |
 | **Paramétricas** | Municipios, DT, puntos de atención | Cascada de ubicación offline | ~1 MB |
 
-Documentos **hasheados** en el padrón → si se pierde el celular no queda una lista
-legible de las cédulas de todas las víctimas. Todo el almacenamiento local va
-**cifrado en reposo** y se borra al cerrar sesión / cerrar jornada.
+**Campos del padrón (decisión):** nombre + documento + ubicación + **cantidad** de
+hechos + estado (en RUV / habilitada / ya caracterizada). El **detalle de los hechos**
+(códigos HV, fechas, municipios del hecho) NO va en el padrón — solo en la **jornada**.
+
+**Implicación de tamaño/seguridad:** incluir nombre+documento+ubicación de 10M sube el
+padrón a ~700 MB–1 GB (vs ~150 MB si solo fuera documento hasheado). Sigue cabiendo en
+el celular y se baja por WiFi, pero **es una lista de identidad de las víctimas** → va
+**cifrado en reposo** (obligatorio, Ley 1581), se borra al cerrar sesión / cerrar jornada,
+y el documento se indexa **hasheado** para la búsqueda por cédula.
 
 ## 2. Flujo
 
@@ -35,10 +41,23 @@ CAMPO (sin internet)
   - Verificar cédula -> hash -> lookup local en el padrón -> está / no está / ya caracterizada.
   - Conformar hogar + responder encuesta -> SQLite local + cola de sincronización.
 
-RECONEXIÓN
-  - Refrescar token, vaciar la cola (crear hogar/sesión, respuestas, finalizar).
-  - El servidor reconcilia `ya_caracterizada` y bloquea duplicados (constraint + 409).
+RECONEXIÓN (online = "actualiza y verifica TODO")
+  SUBIR  -> vaciar la cola: crear hogar/sesión, respuestas, finalizar.
+  BAJAR  -> refrescar padrón (si cambió de versión), paramétricas/geográfico y listas.
+  VERIFICAR -> el servidor reconcilia `ya_caracterizada` y bloquea duplicados (constraint + 409).
+  TOKEN  -> se refresca aquí (la captura offline nunca lo necesitó).
 ```
+
+**Quién es el "master":** mientras está **offline, el dispositivo es la fuente de lo
+que capturó** (hogares, respuestas) — nadie más lo tiene. Al reconectar, esa captura
+**sube** al servidor (que pasa a ser la fuente de verdad consolidada) y el dispositivo
+**baja** las actualizaciones (padrón, estados, geográfico, listas). Nada se pierde por
+trabajar sin señal.
+
+**Datos de referencia que también van offline (precargados al login):**
+- **Geográfico:** departamentos, municipios, direcciones territoriales, puntos de atención.
+- **Listas/catálogos:** las opciones de respuesta de cada pregunta (vienen con los
+  instrumentos empaquetados) + cualquier catálogo compartido que use el formulario.
 
 ## 3. Componentes a construir
 
