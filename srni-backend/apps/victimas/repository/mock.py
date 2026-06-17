@@ -390,6 +390,24 @@ class MockVictimaRepository(VictimaRepository):
         # propia en _VICTIMAS (esos se obtienen vía obtener_grupo_familiar).
         return list(_VICTIMAS.values())
 
+    def iterar_padron(self, batch_size: int = 1000):
+        """
+        Itera el padrón del mock en streaming (yield por registro).
+
+        En el mock el dataset es minúsculo, así que iteramos ``_VICTIMAS`` y
+        hacemos yield uno por uno — el ``batch_size`` es irrelevante aquí pero
+        se respeta la firma.
+
+        EN ORACLE (producción) este método NO debe materializar todo: debe
+        ejecutar la consulta del padrón con un **server-side cursor** y un bucle
+        ``while True: rows = cursor.fetchmany(batch_size); if not rows: break``,
+        haciendo ``yield`` de cada fila convertida a ``VictimaResumen``. Así el
+        command ``generar_padron`` escribe el archivo en streaming sin cargar
+        10M registros en RAM. Este es el único punto que cambia al enchufar Oracle.
+        """
+        for victima in _VICTIMAS.values():
+            yield victima
+
     def obtener_grupo_familiar(
         self,
         cons_persona: int,

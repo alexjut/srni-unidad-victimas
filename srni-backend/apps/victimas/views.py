@@ -8,6 +8,11 @@ Seguridad:
 - Los listados usan VictimaListSerializer (sin PII).
 - El detalle usa VictimaDetalleSerializer solo con permiso puede_caracterizar.
 """
+import json
+import os
+
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.utils import timezone
 from rest_framework import mixins, viewsets, status
 from rest_framework.views import APIView
@@ -33,6 +38,33 @@ def _ip_de_request(request) -> str:
     if xff:
         return xff.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR', '')
+
+
+# ---------------------------------------------------------------------------
+# Padrón offline descargable (Fase B) — helpers
+# ---------------------------------------------------------------------------
+# El archivo y el manifiesto los genera el command `generar_padron`
+# (apps/victimas/management/commands/generar_padron.py). Estas vistas solo
+# LEEN ese resultado; no consultan el repositorio en cada request.
+
+_PADRON_DIRNAME = 'padron'
+_MANIFIESTO_NOMBRE = 'padron-latest.json'
+
+
+def _padron_dir() -> str:
+    return os.path.join(str(settings.MEDIA_ROOT), _PADRON_DIRNAME)
+
+
+def _leer_manifiesto():
+    """Lee padron-latest.json. Devuelve dict o None si aún no se ha generado."""
+    ruta = os.path.join(_padron_dir(), _MANIFIESTO_NOMBRE)
+    if not os.path.exists(ruta):
+        return None
+    try:
+        with open(ruta, 'r', encoding='utf-8') as fh:
+            return json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return None
 
 
 @extend_schema_view(
@@ -456,11 +488,29 @@ class PrecargaOfflineView(APIView):
             many=True,
         ).data
 
+        # Fase B: si ya existe un padrón-archivo generado (command generar_padron),
+        # adjuntamos su referencia SIN quitar el `padron` inline. La app mobile
+        # ACTUAL sigue usando el inline; en una fase posterior migrará a descargar
+        # el archivo vía /padron/download/ usando esta referencia para decidir si
+        # debe re-descargar (compara `version`/`checksum` con su copia local).
+        manifiesto = _leer_manifiesto()
+        padron_archivo = None
+        if manifiesto:
+            padron_archivo = {
+                'version': manifiesto.get('version'),
+                'checksum': manifiesto.get('checksum'),
+                'total_registros': manifiesto.get('total_registros'),
+                'formato': manifiesto.get('formato'),
+                'url': request.build_absolute_uri('/api/victimas/padron/download/'),
+            }
+
         payload = {
             # version: ISO con tz (no datetime.now sin tz). Sirve a la APK para saber
             # si su copia local está vigente frente al servidor.
             'version': timezone.now().isoformat(),
             'padron': padron,
+            # Referencia al padrón descargable (Fase B). None si aún no se generó.
+            'padron_archivo': padron_archivo,
             'jornada': jornada,
             'parametricas': {
                 'municipios': municipios,
@@ -486,3 +536,158 @@ class PrecargaOfflineView(APIView):
         )
 
         return Response(payload)
+
+
+# ---------------------------------------------------------------------------
+# Fase B — Padrón offline descargable, versionado y con ETag
+# ---------------------------------------------------------------------------
+
+@extend_schema(
+    summary='Versión/manifiesto del padrón offline descargable',
+    description=(
+        'Devuelve el manifiesto del padrón offline generado por el command '
+        '`generar_padron`: version, checksum (sha256 del archivo), total de '
+        'registros, formato y URL de descarga. La APK lo consulta para decidir '
+        'si debe re-descargar el archivo (compara version/checksum con su copia '
+        'local). Requiere permiso de caracterización.'
+    ),
+    tags=['Víctimas'],
+    responses={200: {'type': 'object', 'properties': {
+        'version': {'type': 'string'},
+        'checksum': {'type': 'string'},
+        'total_registros': {'type': 'integer'},
+        'generado_en': {'type': 'string', 'format': 'date-time'},
+        'formato': {'type': 'string'},
+        'archivo': {'type': 'string'},
+        'url': {'type': 'string'},
+    }}},
+)
+class PadronVersionView(APIView):
+    """
+    GET /api/victimas/padron/version/
+
+    Lee el manifiesto generado por `generar_padron`. Si aún no se ha generado,
+    responde 404 con un mensaje explicativo (no es un error de servidor).
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    def get(self, request):
+        manifiesto = _leer_manifiesto()
+        if manifiesto is None:
+            return Response(
+                {'detail': 'El padrón offline aún no ha sido generado. '
+                           'Ejecute el command generar_padron.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        data = dict(manifiesto)
+        data['url'] = request.build_absolute_uri('/api/victimas/padron/download/')
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='PRECARGA_OFFLINE',
+            recurso='PadronOffline',
+            recurso_id=manifiesto.get('version', ''),
+            ip=_ip_de_request(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'operacion': 'version', 'checksum': manifiesto.get('checksum')},
+        )
+        return Response(data)
+
+
+@extend_schema(
+    summary='Descargar el archivo del padrón offline',
+    description=(
+        'Sirve el archivo del padrón offline (SQLite indexado por doc_hash). '
+        'Soporta caché condicional vía ETag = checksum sha256 del archivo: si el '
+        'cliente envía If-None-Match con el checksum actual, responde 304 sin '
+        'cuerpo. Requiere permiso de caracterización.'
+    ),
+    tags=['Víctimas'],
+    responses={
+        200: {'description': 'Archivo del padrón (application/octet-stream).'},
+        304: {'description': 'No modificado — el ETag coincide.'},
+        404: {'description': 'El padrón aún no ha sido generado.'},
+    },
+)
+class PadronDownloadView(APIView):
+    """
+    GET /api/victimas/padron/download/
+
+    Entrega el archivo del padrón con ETag = checksum. Responde 304 si el
+    If-None-Match del cliente coincide con el checksum actual.
+
+    Nota despliegue: el archivo del mock es pequeño y se sirve con FileResponse.
+    Para padrones grandes (Oracle) conviene delegar el envío del archivo a Nginx
+    (X-Accel-Redirect) tras esta misma verificación de permisos/ETag — ver
+    apps/movil/views.descargar como referencia del patrón de redirección.
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    def get(self, request):
+        manifiesto = _leer_manifiesto()
+        if manifiesto is None:
+            return Response(
+                {'detail': 'El padrón offline aún no ha sido generado. '
+                           'Ejecute el command generar_padron.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        checksum = manifiesto.get('checksum', '')
+        archivo_nombre = manifiesto.get('archivo', '')
+        archivo_path = os.path.join(_padron_dir(), archivo_nombre)
+
+        if not archivo_nombre or not os.path.exists(archivo_path):
+            return Response(
+                {'detail': 'El archivo del padrón referenciado por el manifiesto no existe.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # ETag entre comillas (RFC 7232). Comparamos contra If-None-Match.
+        etag = f'"{checksum}"'
+        if_none_match = request.META.get('HTTP_IF_NONE_MATCH', '')
+        # El cliente puede mandar varios ETags separados por coma; normalizamos.
+        enviados = {t.strip() for t in if_none_match.split(',')} if if_none_match else set()
+        no_modificado = etag in enviados or checksum in enviados
+
+        ip = _ip_de_request(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+
+        if no_modificado:
+            LogAcceso.registrar(
+                usuario=request.user,
+                accion='PRECARGA_OFFLINE',
+                recurso='PadronOffline',
+                recurso_id=manifiesto.get('version', ''),
+                ip=ip,
+                user_agent=ua,
+                resultado='EXITO',
+                detalle={'operacion': 'download', 'status': 304, 'checksum': checksum},
+            )
+            resp = Response(status=status.HTTP_304_NOT_MODIFIED)
+            resp['ETag'] = etag
+            return resp
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='PRECARGA_OFFLINE',
+            recurso='PadronOffline',
+            recurso_id=manifiesto.get('version', ''),
+            ip=ip,
+            user_agent=ua,
+            resultado='EXITO',
+            detalle={
+                'operacion': 'download', 'status': 200,
+                'checksum': checksum, 'total_registros': manifiesto.get('total_registros'),
+            },
+        )
+
+        resp = FileResponse(
+            open(archivo_path, 'rb'),
+            content_type='application/octet-stream',
+            as_attachment=True,
+            filename=archivo_nombre,
+        )
+        resp['ETag'] = etag
+        return resp
