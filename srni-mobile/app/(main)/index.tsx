@@ -10,6 +10,7 @@ import { useSyncStore, getEstadoSync } from '../../src/stores/syncStore';
 import { GovHeader } from '../../src/components/GovHeader';
 import { GovButton } from '../../src/components/GovButton';
 import { NextStepCard } from '../../src/components/NextStepCard';
+import { EstadoCampoBanner } from '../../src/components/EstadoCampoBanner';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 
 // ─── Chip de sincronización ────────────────────────────────────────────────────
@@ -88,6 +89,9 @@ export default function DashboardScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
+
+        {/* Indicador de conexión + datos precargados (listo para campo) */}
+        <EstadoCampoBanner />
 
         {/* ── Botón principal: iniciar caracterización ── */}
         {perfil?.puede_caracterizar && (

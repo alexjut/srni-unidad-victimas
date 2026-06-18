@@ -220,6 +220,14 @@ export async function hayPrecarga(): Promise<boolean> {
   return (row?.n ?? 0) > 0;
 }
 
+/** Cuenta de registros precargados — para el indicador de "listo para campo". */
+export async function contarPrecarga(): Promise<{ padron: number; jornada: number }> {
+  const db = await openDb();
+  const p = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM padron');
+  const j = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM jornada');
+  return { padron: p?.n ?? 0, jornada: j?.n ?? 0 };
+}
+
 /** Limpia el almacén offline (al cerrar sesión, por privacidad). */
 export async function limpiarPrecarga(): Promise<void> {
   const db = await openDb();
