@@ -1,0 +1,85 @@
+{% extends 'admin/base.html' %}
+
+{% load i18n unfold %}
+
+{% comment %}
+  Dashboard de presentación SRNI.
+
+  Extiende admin/base.html (el de django-unfold). NO extiende admin/index.html
+  para evitar recursión: este archivo ES admin/index.html (el loader DIRS lo
+  resuelve antes que el de unfold).
+
+  Orden requerido: fila de cards (KPIs), chart de líneas, chart de barras, tabla,
+  y al final el listado de aplicaciones/historial estándar del admin.
+  Datos: context enriquecido por srni.dashboard.dashboard_callback.
+  Componentes reales de unfold: card.html, chart/line.html, chart/bar.html, table.html.
+{% endcomment %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+    <div class="flex flex-col gap-8">
+
+        {# ── Fila de cards (KPIs) ───────────────────────────────────────── #}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {% component "unfold/components/card.html" with class="!p-4" icon="shield_person" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Víctimas" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.total_victimas }}</span>
+            {% endcomponent %}
+
+            {% component "unfold/components/card.html" with class="!p-4" icon="today" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Capturas de hoy" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.capturas_hoy }}</span>
+            {% endcomponent %}
+
+            {% component "unfold/components/card.html" with class="!p-4" icon="home" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Hogares" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.total_hogares }}</span>
+            {% endcomponent %}
+
+            {% component "unfold/components/card.html" with class="!p-4" icon="check_circle" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Hogares activos" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.hogares_activos }}</span>
+            {% endcomponent %}
+
+            {% component "unfold/components/card.html" with class="!p-4" icon="fact_check" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Entrevistas (total)" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.total_sesiones }}</span>
+            {% endcomponent %}
+
+            {% component "unfold/components/card.html" with class="!p-4" icon="task_alt" %}
+                <span class="block text-xs font-medium text-font-subtle-light dark:text-font-subtle-dark">{% trans "Entrevistas completadas" %}</span>
+                <span class="block mt-1 text-2xl font-semibold text-font-important-light dark:text-font-important-dark">{{ kpis.sesiones_completadas }}</span>
+            {% endcomponent %}
+        </div>
+
+        {# ── Chart de líneas: capturas por día (últimos 30 días) ─────────── #}
+        {% component "unfold/components/card.html" with title=_("Capturas por día — últimos 30 días") %}
+            {% component "unfold/components/chart/line.html" with data=chart_capturas_30d height="320" %}{% endcomponent %}
+        {% endcomponent %}
+
+        {# ── Chart de barras: entrevistas por instrumento ───────────────── #}
+        {% component "unfold/components/card.html" with title=_("Entrevistas por instrumento") %}
+            {% component "unfold/components/chart/bar.html" with data=chart_por_instrumento height="320" %}{% endcomponent %}
+        {% endcomponent %}
+
+        {# ── Tabla: últimas sesiones de encuesta ────────────────────────── #}
+        {% component "unfold/components/card.html" with title=_("Últimas sesiones de encuesta") %}
+            {% component "unfold/components/table.html" with table=tabla_ultimas_sesiones card_included=1 striped=1 %}{% endcomponent %}
+        {% endcomponent %}
+
+        {# ── Listado de aplicaciones e historial estándar del admin ─────── #}
+        <div class="flex flex-col lg:flex-row lg:gap-8">
+            <div class="grow">
+                {% include "unfold/helpers/app_list_default.html" %}
+            </div>
+
+            {% include "unfold/helpers/history.html" %}
+        </div>
+
+    </div>
+{% endblock %}

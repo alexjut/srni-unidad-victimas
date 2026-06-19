@@ -176,6 +176,10 @@ UNFOLD = {
     },
 }
 
+# Dashboard personalizado del panel (solo presentación — KPIs, gráficos, tabla).
+# Enriquece el context del index del admin. Ver srni/dashboard.py.
+UNFOLD['DASHBOARD_CALLBACK'] = 'srni.dashboard.dashboard_callback'
+
 # ─── Distribución móvil (APK) ────────────────────────────────────────────────
 MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
 MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)
