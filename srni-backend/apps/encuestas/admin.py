@@ -1,8 +1,9 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 from .models import SesionEncuesta, RespuestaEncuesta
 
 
-class RespuestaInline(admin.TabularInline):
+class RespuestaInline(TabularInline):
     model = RespuestaEncuesta
     extra = 0
     fields = ('pregunta', 'valor', 'updated_at')
@@ -11,7 +12,7 @@ class RespuestaInline(admin.TabularInline):
 
 
 @admin.register(SesionEncuesta)
-class SesionEncuestaAdmin(admin.ModelAdmin):
+class SesionEncuestaAdmin(ModelAdmin):
     list_display = (
         'id_corto', 'hogar', 'instrumento', 'encuestador',
         'estado', 'porcentaje_completado', 'fecha_inicio',
@@ -29,7 +30,7 @@ class SesionEncuestaAdmin(admin.ModelAdmin):
 
 
 @admin.register(RespuestaEncuesta)
-class RespuestaEncuestaAdmin(admin.ModelAdmin):
+class RespuestaEncuestaAdmin(ModelAdmin):
     list_display = ('id', 'sesion', 'pregunta', 'valor_corto', 'updated_at')
     raw_id_fields = ('sesion', 'pregunta')
     readonly_fields = ('created_at', 'updated_at')

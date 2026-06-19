@@ -1,8 +1,9 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 from .models import Hogar, MiembroHogar
 
 
-class MiembroHogarInline(admin.TabularInline):
+class MiembroHogarInline(TabularInline):
     model = MiembroHogar
     extra = 0
     fields = (
@@ -15,7 +16,7 @@ class MiembroHogarInline(admin.TabularInline):
 
 
 @admin.register(Hogar)
-class HogarAdmin(admin.ModelAdmin):
+class HogarAdmin(ModelAdmin):
     list_display = ('id_corto', 'estado', 'municipio', 'numero_personas', 'creado_por', 'created_at')
     list_filter = ('estado', 'tipo_vivienda', 'condicion_ocupacion')
     search_fields = ('id',)
@@ -30,7 +31,7 @@ class HogarAdmin(admin.ModelAdmin):
 
 
 @admin.register(MiembroHogar)
-class MiembroHogarAdmin(admin.ModelAdmin):
+class MiembroHogarAdmin(ModelAdmin):
     list_display = ('id', 'hogar', 'rol', 'es_autorizado', 'estado_inclusion', 'genero', 'tiene_discapacidad')
     list_filter = ('rol', 'es_autorizado', 'estado_inclusion', 'genero', 'tiene_discapacidad')
     raw_id_fields = ('hogar', 'victima', 'tipo_documento', 'creado_por')

@@ -1,8 +1,9 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 from .models import Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic
 
 
-class CapituloInline(admin.TabularInline):
+class CapituloInline(TabularInline):
     model = Capitulo
     fields = ("codigo", "nombre", "orden", "poblacion_objetivo", "aplicabilidad")
     extra = 0
@@ -10,7 +11,7 @@ class CapituloInline(admin.TabularInline):
 
 
 @admin.register(Instrumento)
-class InstrumentoAdmin(admin.ModelAdmin):
+class InstrumentoAdmin(ModelAdmin):
     list_display = ("codigo", "version", "nombre", "activo", "vigente_desde", "vigente_hasta")
     list_filter = ("activo", "codigo")
     search_fields = ("codigo", "nombre", "fuente_documental")
@@ -18,21 +19,21 @@ class InstrumentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Capitulo)
-class CapituloAdmin(admin.ModelAdmin):
+class CapituloAdmin(ModelAdmin):
     list_display = ("codigo", "nombre", "instrumento", "orden", "poblacion_objetivo")
     list_filter = ("instrumento", "poblacion_objetivo")
     search_fields = ("codigo", "nombre")
     ordering = ("instrumento", "orden")
 
 
-class OpcionInline(admin.TabularInline):
+class OpcionInline(TabularInline):
     model = OpcionRespuesta
     extra = 0
     fields = ("orden", "valor", "etiqueta", "id_resp_vivanto", "finaliza_capitulo")
 
 
 @admin.register(Pregunta)
-class PreguntaAdmin(admin.ModelAdmin):
+class PreguntaAdmin(ModelAdmin):
     list_display = (
         "codigo_externo", "capitulo", "texto_corto", "tipo", "nivel", "obligatoria", "activa"
     )
@@ -47,7 +48,7 @@ class PreguntaAdmin(admin.ModelAdmin):
 
 
 @admin.register(ReglaSkipLogic)
-class ReglaSkipLogicAdmin(admin.ModelAdmin):
+class ReglaSkipLogicAdmin(ModelAdmin):
     list_display = (
         "pregunta_origen", "valor_trigger", "accion",
         "pregunta_afectada", "capitulo_afectado", "descripcion",

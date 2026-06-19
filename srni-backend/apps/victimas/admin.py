@@ -3,11 +3,12 @@ Admin de Víctimas — NUNCA mostrar PII descifrado en el panel.
 El admin muestra solo el hash del documento para identificación interna.
 """
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from .models import Victima
 
 
 @admin.register(Victima)
-class VictimaAdmin(admin.ModelAdmin):
+class VictimaAdmin(ModelAdmin):
     # Solo campos que no revelan PII
     list_display = (
         'hash_corto', 'tipo_documento', 'genero',

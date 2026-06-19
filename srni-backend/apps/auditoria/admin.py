@@ -5,12 +5,13 @@ consultar/filtrar/buscar la traza de seguridad (logins, accesos denegados,
 bloqueos por intentos fallidos, búsquedas RNI, etc.), pero NO crear/editar/borrar.
 """
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import LogAcceso
 
 
 @admin.register(LogAcceso)
-class LogAccesoAdmin(admin.ModelAdmin):
+class LogAccesoAdmin(ModelAdmin):
     list_display = (
         'timestamp', 'codigo_usuario', 'accion', 'resultado',
         'ip_origen', 'recurso', 'recurso_id',
