@@ -199,6 +199,26 @@ export default function CaracterizarScreen() {
         },
       });
     } catch (err: any) {
+      // Robustez offline/online. Dos fallos NO deben mostrar "no se pudo
+      // iniciar la sesión" — la captura debe poder arrancar igual:
+      //   1) Sin red (err.response undefined): el flag estaOnline puede estar
+      //      desactualizado (se refresca cada ~60s), así que el camino online
+      //      se intentó estando offline.
+      //   2) Hogar 400/404: el hogar se creó OFFLINE y su id aún es local, el
+      //      servidor no lo conoce todavía.
+      // En ambos casos caemos al flujo offline: el formulario crea el borrador
+      // local y encola CREAR_SESION; la sincronización remapea los IDs
+      // local→servidor al reconectar (mismo patrón de formulario/[temaId].tsx).
+      const sinRed = !err?.response;
+      const hogarNoSincronizado = err?.response?.status === 400 || err?.response?.status === 404;
+      if (sinRed || hogarNoSincronizado) {
+        router.replace({
+          pathname: '/(main)/formulario',
+          params: { hogarId: hId, instrumentoId: seleccionado.id },
+        });
+        return;
+      }
+      // Conflictos reales (409 hogar de otro encuestador, 500, etc.) sí se informan.
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
       setCreando(false);
     }
