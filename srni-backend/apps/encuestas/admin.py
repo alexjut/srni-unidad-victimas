@@ -1,5 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
+from unfold.decorators import display
 from .models import SesionEncuesta, RespuestaEncuesta
 
 
@@ -15,7 +16,7 @@ class RespuestaInline(TabularInline):
 class SesionEncuestaAdmin(ModelAdmin):
     list_display = (
         'id_corto', 'hogar', 'instrumento', 'encuestador',
-        'estado', 'porcentaje_completado', 'fecha_inicio',
+        'estado_badge', 'porcentaje_completado', 'fecha_inicio',
     )
     list_filter = ('estado', 'instrumento')
     search_fields = ('id',)
@@ -27,6 +28,15 @@ class SesionEncuestaAdmin(ModelAdmin):
     @admin.display(description='ID (corto)')
     def id_corto(self, obj):
         return str(obj.id)[:8] + '…'
+
+    @display(description='Estado', ordering='estado', label={
+        'Iniciada': 'info',
+        'En progreso': 'warning',
+        'Completada': 'success',
+        'Suspendida — sin finalizar': 'danger',
+    })
+    def estado_badge(self, obj):
+        return obj.get_estado_display()
 
 
 @admin.register(RespuestaEncuesta)
