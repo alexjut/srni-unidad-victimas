@@ -171,6 +171,29 @@ export async function findBySesionId(sesionId: string): Promise<BorradorRow | nu
 }
 
 /**
+ * Busca el borrador OFFLINE (aún sin sesion_id de servidor) de un hogar +
+ * instrumento. Sirve para que el flujo offline gire sobre UN ÚNICO borrador:
+ * la lista de capítulos lo resuelve una sola vez y se lo pasa a cada capítulo.
+ *
+ * Se restringe a `sesion_id IS NULL` para no colisionar con borradores ya
+ * sincronizados/vinculados a una sesión (camino online). Si hay varios
+ * (no debería), devuelve el más reciente.
+ */
+export async function findBorradorOfflinePorHogarInstrumento(
+  hogarId: string,
+  instrumentoId: string,
+): Promise<BorradorRow | null> {
+  const db = await openDb();
+  return db.getFirstAsync<BorradorRow>(
+    `SELECT * FROM borradores
+       WHERE sesion_id IS NULL AND hogar_id = ? AND instrumento_id = ?
+       ORDER BY updated_at DESC
+       LIMIT 1`,
+    [hogarId, instrumentoId],
+  );
+}
+
+/**
  * Cuenta respuestas no vacías por capítulo para un borrador dado.
  * Sprint 18: las preguntas viven en memoria (no SQLite), así que el JOIN
  * lo hacemos en JS usando el cache de instrumentos.

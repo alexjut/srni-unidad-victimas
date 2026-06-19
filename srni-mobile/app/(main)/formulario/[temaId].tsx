@@ -172,17 +172,29 @@ export default function CapituloScreen() {
         }
 
       } else {
-        // Sesión sin id de servidor — borrador completamente nuevo
-        const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
-        setBorradorId(nuevo.id);
-        if (hogarId && instrId) {
-          await colaDao.encolar('CREAR_SESION', nuevo.id, {
-            borrador_id: nuevo.id,
-            hogar: hogarId,
-            instrumento: instrId,
-            ruta_entrevista: rutaEntrevista,
-          });
-          await refrescarContadores();
+        // Sesión sin id de servidor (OFFLINE). Reutilizar el borrador único de
+        // este (hogar, instrumento) para que TODOS los capítulos compartan el
+        // mismo. Solo crear (y encolar CREAR_SESION) si aún no existe ninguno.
+        let borrador =
+          hogarId && instrId
+            ? await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrId)
+            : null;
+
+        if (borrador) {
+          setBorradorId(borrador.id);
+          setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
+        } else {
+          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+          setBorradorId(nuevo.id);
+          if (hogarId && instrId) {
+            await colaDao.encolar('CREAR_SESION', nuevo.id, {
+              borrador_id: nuevo.id,
+              hogar: hogarId,
+              instrumento: instrId,
+              ruta_entrevista: rutaEntrevista,
+            });
+            await refrescarContadores();
+          }
         }
       }
 
@@ -495,16 +507,24 @@ export default function CapituloScreen() {
           ...(hogarId ? { hogarId } : {}),
         },
       });
+    } else if (borradorId || borradorIdParam || (hogarId && instrumentoId)) {
+      // OFFLINE: volver a la LISTA de capítulos local (índice del formulario),
+      // que es 100% offline-friendly. NUNCA al hub del servidor
+      // (hogares/[hogarId]/caracterizaciones hace hogaresApi.detalle y, con un
+      // id de hogar local + sin red, revienta el flujo). Mantenemos el MISMO
+      // borrador para que el progreso y las respuestas se conserven.
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          ...(borradorId ?? borradorIdParam
+            ? { borradorId: (borradorId ?? borradorIdParam) as string }
+            : {}),
+          ...(instrumentoId ? { instrumentoId } : {}),
+          ...(hogarId ? { hogarId } : {}),
+        },
+      });
     } else {
-      // Fallback: si no tenemos sesionServerId, volver al hub del hogar
-      if (hogarId) {
-        router.replace({
-          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-          params: { hogarId },
-        });
-      } else {
-        router.back();
-      }
+      router.back();
     }
   }
 

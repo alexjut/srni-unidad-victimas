@@ -8,6 +8,7 @@ import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { reportarError } from '../../../src/services/errorReporter';
@@ -47,6 +48,7 @@ function CapituloCard({
   sesionServerId,
   instrumentoId,
   hogarId,
+  borradorId,
   modoIA,
 }: {
   capitulo: CapituloRow;
@@ -55,6 +57,7 @@ function CapituloCard({
   sesionServerId?: string;
   instrumentoId?: string;
   hogarId?: string;
+  borradorId?: string;
   modoIA: boolean;
 }) {
   const colorEstado = ESTADO_COLOR[progress.estado];
@@ -69,6 +72,7 @@ function CapituloCard({
           capituloNombre: capitulo.nombre,
           ...(sesionServerId ? { sesionServerId } : {}),
           ...(instrumentoId  ? { instrumentoId }  : {}),
+          ...(borradorId     ? { borradorId }     : {}),
         },
       });
     } else {
@@ -79,6 +83,7 @@ function CapituloCard({
           ...(sesionServerId ? { sesionServerId } : {}),
           ...(instrumentoId  ? { instrumentoId }  : {}),
           ...(hogarId        ? { hogarId }         : {}),
+          ...(borradorId     ? { borradorId }     : {}),
         },
       });
     }
@@ -188,13 +193,18 @@ function CapituloCard({
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function FormularioIndexScreen() {
-  const { sesionServerId, instrumentoId, hogarId } = useLocalSearchParams<{
+  const { sesionServerId, instrumentoId, hogarId, borradorId: borradorIdParam } = useLocalSearchParams<{
     sesionServerId?: string;
     instrumentoId?: string;
     hogarId?: string;
+    borradorId?: string;
   }>();
 
   const { activo: iaActivo } = useIAStore();
+
+  // Borrador local que hila todo el flujo OFFLINE. Online (con sesionServerId)
+  // no lo necesita: el capítulo resuelve su borrador por findBySesionId.
+  const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
 
   const [capitulos, setCapitulos] = useState<CapituloRow[]>([]);
   const [meta, setMeta] = useState<InstrumentoMeta | null>(null);
@@ -299,6 +309,22 @@ export default function FormularioIndexScreen() {
         if (borrador) {
           setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
         }
+      } else if (hogarId && instrumentoId) {
+        // ── OFFLINE: resolver UN ÚNICO borrador para (hogar, instrumento) ──────
+        // Reutilizar el que llegó por param, o el existente para ese hogar+
+        // instrumento, o crear uno nuevo. Así todos los capítulos comparten el
+        // mismo borrador y el progreso se lee localmente (sin servidor).
+        let bid = borradorIdParam ?? null;
+        if (!bid) {
+          const existente = await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrumentoId);
+          bid = existente?.id ?? null;
+        }
+        if (!bid) {
+          const nuevo = await borradoresDao.crearBorrador(instrumentoId, hogarId);
+          bid = nuevo.id;
+        }
+        setBorradorId(bid);
+        setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(bid));
       }
     } catch (e) {
       reportarError({
@@ -316,19 +342,31 @@ export default function FormularioIndexScreen() {
   useEffect(() => {
     cargarTodo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesionServerId]);
+  }, [sesionServerId, hogarId, instrumentoId]);
 
   // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
+  // Online: hogaresApi.detalle. Offline (o si falla la red): contar los
+  // miembros guardados localmente para ese hogar; si no hay, default 1.
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    hogaresApi.detalle(hogarId)
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await hogaresApi.detalle(hogarId);
         if (!activo) return;
         const n = (data.miembros ?? []).length;
-        if (n > 0) setNumMiembros(n);
-      })
-      .catch(() => { /* offline: cae al default 1 */ });
+        if (n > 0) { setNumMiembros(n); return; }
+      } catch {
+        /* offline o id de hogar local: usar conteo local abajo */
+      }
+      try {
+        const locales = await miembrosOfflineDao.listarPorHogar(hogarId);
+        if (activo && locales.length > 0) setNumMiembros(locales.length);
+        // si no hay miembros locales, se mantiene el default 1
+      } catch {
+        /* sin datos locales: queda en default 1 */
+      }
+    })();
     return () => { activo = false; };
   }, [hogarId]);
 
@@ -344,7 +382,6 @@ export default function FormularioIndexScreen() {
   // preguntas y el conteo queda en 0 falsamente. Reactivamos siempre.
   useFocusEffect(
     useCallback(() => {
-      if (!sesionServerId) return;
       let vivo = true;
       (async () => {
         try {
@@ -355,18 +392,25 @@ export default function FormularioIndexScreen() {
             catch { /* perfil no en bundle — se mantiene el cache previo */ }
           }
 
-          // 2. Buscar borrador local
-          const borrador = await borradoresDao.findBySesionId(sesionServerId);
-          if (!borrador || !vivo) {
+          // 2. Resolver borrador local
+          //    Online: por sesion del servidor. Offline: el borrador único de
+          //    este (hogar, instrumento) que ya resolvió cargarTodo.
+          let borradorRef: borradoresDao.BorradorRow | null = null;
+          if (sesionServerId) {
+            borradorRef = await borradoresDao.findBySesionId(sesionServerId);
+          } else if (borradorId) {
+            borradorRef = await borradoresDao.getBorrador(borradorId);
+          }
+          if (!borradorRef || !vivo) {
             console.log('[formulario/index] useFocusEffect: borrador no encontrado',
-              { sesionServerId, borrador });
+              { sesionServerId, borradorId });
             return;
           }
 
           // 3. Contar respuestas por capítulo
-          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
+          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borradorRef.id);
           console.log('[formulario/index] useFocusEffect: conteo recalculado',
-            { borradorId: borrador.id, conteo });
+            { borradorId: borradorRef.id, conteo });
 
           if (vivo) setConteoRespondidas(conteo);
         } catch (err) {
@@ -374,7 +418,7 @@ export default function FormularioIndexScreen() {
         }
       })();
       return () => { vivo = false; };
-    }, [sesionServerId]),
+    }, [sesionServerId, borradorId]),
   );
 
   // ── Progreso global ─────────────────────────────────────────────────────────
@@ -647,6 +691,7 @@ export default function FormularioIndexScreen() {
             sesionServerId={sesionServerId}
             instrumentoId={instrumentoId}
             hogarId={hogarId}
+            borradorId={borradorId ?? undefined}
             modoIA={modoIA === true}
           />
         )}
