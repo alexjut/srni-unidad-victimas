@@ -83,6 +83,10 @@ UNFOLD = {
         'light': lambda request: static('marca/logo-unidad-vertical-color.svg'),
         'dark': lambda request: static('marca/logo-unidad-vertical-bn-negativo.svg'),
     },
+    # CSS propio para compactar el panel (se ve "muy grande" por defecto).
+    'STYLES': [
+        lambda request: static('marca/admin-extra.css'),
+    ],
     'SHOW_HISTORY': True,
     'SHOW_VIEW_ON_SITE': True,
     'SHOW_THEME_SWITCHER': True,   # selector claro/oscuro (dark mode disponible)
