@@ -53,6 +53,15 @@ export async function crearVictimaOffline(
   return row;
 }
 
+export async function obtenerPorIdLocal(idLocal: string): Promise<VictimaOfflineRow | null> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<VictimaOfflineRow>(
+    'SELECT * FROM victimas_offline WHERE id_local = ?',
+    [idLocal],
+  );
+  return row ?? null;
+}
+
 export async function marcarSincronizado(
   idLocal: string,
   idServidor: string,

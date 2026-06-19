@@ -6,8 +6,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
+import * as colaDao from '../../../src/db/colaDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
@@ -201,6 +203,8 @@ export default function FormularioIndexScreen() {
   }>();
 
   const { activo: iaActivo } = useIAStore();
+  const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
   // Borrador local que hila todo el flujo OFFLINE. Online (con sesionServerId)
   // no lo necesita: el capítulo resuelve su borrador por findBySesionId.
@@ -360,7 +364,9 @@ export default function FormularioIndexScreen() {
         /* offline o id de hogar local: usar conteo local abajo */
       }
       try {
-        const locales = await miembrosOfflineDao.listarPorHogar(hogarId);
+        // construirMiembrosOffline incluye al autorizado + integrantes, así el
+        // progreso PERSONA × N miembros cuadra con lo que se captura offline.
+        const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
         if (activo && locales.length > 0) setNumMiembros(locales.length);
         // si no hay miembros locales, se mantiene el default 1
       } catch {
@@ -463,16 +469,58 @@ export default function FormularioIndexScreen() {
   }
 
   async function handleFinalizar() {
-    if (!sesionServerId) return;
+    const bid = borradorId ?? borradorIdParam ?? null;
+    // Online (con sesión de servidor) intentamos cerrar directo. Offline, o si el
+    // borrador aún no tiene sesión en el servidor, encolamos FINALIZAR_SESION: la
+    // sincronización inyecta el sesion_id tras CREAR_SESION y cierra la encuesta.
+    if (!sesionServerId && !bid) return;
     setFinalizando(true);
-    try {
-      await encuestasApi.finalizar(sesionServerId, { observaciones: observaciones.trim() || undefined });
+
+    const observ = observaciones.trim() || undefined;
+    const cerrarOk = (offline: boolean) => {
       setModalFinalizar(false);
       Alert.alert(
-        'Sesión finalizada',
-        'La sesión ha sido cerrada exitosamente.',
+        offline ? 'Caracterización finalizada (offline)' : 'Sesión finalizada',
+        offline
+          ? 'La caracterización quedó cerrada en el dispositivo. Se enviará al servidor automáticamente cuando recuperes conexión.'
+          : 'La sesión ha sido cerrada exitosamente.',
         [{ text: 'Aceptar', onPress: () => router.back() }],
       );
+    };
+
+    // Encola la finalización para que la cola la procese (offline o tras fallo online).
+    const encolarFinalizar = async () => {
+      if (!bid) return false;
+      const borrador = await borradoresDao.getBorrador(bid);
+      await colaDao.encolar('FINALIZAR_SESION', bid, {
+        borrador_id: bid,
+        sesion_id: sesionServerId ?? borrador?.sesion_id ?? null,
+        observaciones: observ,
+      });
+      await borradoresDao.marcarCompletado(bid);
+      await refrescarContadores();
+      return true;
+    };
+
+    try {
+      if (sesionServerId && estaOnline) {
+        try {
+          await encuestasApi.finalizar(sesionServerId, { observaciones: observ });
+          if (bid) { try { await borradoresDao.marcarCompletado(bid); } catch { /* no-op */ } }
+          cerrarOk(false);
+          return;
+        } catch (err: any) {
+          // Error real del servidor (4xx) → informar. Error de red → caer a la cola.
+          if (err?.response) {
+            Alert.alert('Error', err.response.data?.detail ?? 'No se pudo finalizar la sesión.');
+            return;
+          }
+        }
+      }
+      // Offline (o red caída en el intento online): encolar.
+      const encolado = await encolarFinalizar();
+      if (encolado) cerrarOk(true);
+      else Alert.alert('Error', 'No se pudo finalizar la caracterización.');
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión.');
     } finally {
@@ -697,28 +745,34 @@ export default function FormularioIndexScreen() {
         )}
         contentContainerStyle={styles.lista}
         ListFooterComponent={
-          sesionServerId ? (
+          // Finalizar disponible online (sesión de servidor) Y offline (borrador
+          // local) — sin esto no se podía cerrar la caracterización sin red.
+          (sesionServerId || borradorId) ? (
             <View style={styles.footerFinalizar}>
               <GovButton
-                label="Finalizar sesión"
+                label="Finalizar caracterización"
                 variant="secondary"
                 icon="check-circle-outline"
                 onPress={() => setModalFinalizar(true)}
               />
-              <View style={{ height: 8 }} />
-              {/* Sprint 21 — Anular sesión con doble confirmación */}
-              <Pressable
-                onPress={handleAnular}
-                disabled={finalizando}
-                style={({ pressed }) => [
-                  styles.btnAnular,
-                  pressed && { opacity: 0.85 },
-                  finalizando && { opacity: 0.5 },
-                ]}
-              >
-                <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
-                <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
-              </Pressable>
+              {/* Anular requiere servidor (PATCH/finalizar online) → solo online. */}
+              {sesionServerId ? (
+                <>
+                  <View style={{ height: 8 }} />
+                  <Pressable
+                    onPress={handleAnular}
+                    disabled={finalizando}
+                    style={({ pressed }) => [
+                      styles.btnAnular,
+                      pressed && { opacity: 0.85 },
+                      finalizando && { opacity: 0.5 },
+                    ]}
+                  >
+                    <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
+                    <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           ) : null
         }

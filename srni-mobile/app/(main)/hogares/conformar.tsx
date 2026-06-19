@@ -348,23 +348,50 @@ export default function ConformarHogarScreen() {
       fecha_nacimiento: fechaNac || undefined,
     };
 
+    // Guarda el integrante offline (SQLite + cola). Reutilizado por el camino
+    // offline directo y por el fallback cuando se cae la red en el camino online.
+    const guardarOffline = async () => {
+      const miembroLocal = await miembrosOfflineDao.crearMiembroOffline(hogarId, miembroPayload);
+      await colaDao.encolar('AGREGAR_MIEMBRO', miembroLocal.id_local, {
+        id_local: miembroLocal.id_local,
+        hogar: hogarId,
+        miembro: miembroPayload,
+      });
+      await refrescarContadores();
+    };
+
+    let guardado = false;
     try {
       if (hogarEsLocal) {
-        // Fase A — sin red: guarda el integrante OFFLINE + encola AGREGAR_MIEMBRO.
-        // `hogar` se referencia por el id_local; procesarCrearHogar lo remapea a
-        // su id de servidor antes de procesar este AGREGAR_MIEMBRO.
-        const miembroLocal = await miembrosOfflineDao.crearMiembroOffline(hogarId, miembroPayload);
-        await colaDao.encolar('AGREGAR_MIEMBRO', miembroLocal.id_local, {
-          id_local: miembroLocal.id_local,
-          hogar: hogarId,
-          miembro: miembroPayload,
-        });
-        await refrescarContadores();
+        // Fase A — sin red: el `hogar` se referencia por su id_local;
+        // procesarCrearHogar lo remapea a su id de servidor antes de procesar
+        // este AGREGAR_MIEMBRO.
+        await guardarOffline();
       } else {
         // Online: POST directo al servidor.
         await hogaresApi.agregarMiembro(hogarId, miembroPayload);
       }
+      guardado = true;
+    } catch (err: any) {
+      // El hogar es de servidor pero perdimos la red (o el id aún no propagó):
+      // guardar el integrante offline en vez de bloquear al encuestador en campo.
+      const sinRed = !err?.response;
+      const hogarNoEnServidor = err?.response?.status === 400 || err?.response?.status === 404;
+      if (!hogarEsLocal && (sinRed || hogarNoEnServidor)) {
+        try {
+          await guardarOffline();
+          guardado = true;
+        } catch { /* fallo de SQLite — se informa abajo */ }
+      }
+      if (!guardado) {
+        Alert.alert(
+          'Error al agregar',
+          err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
+        );
+      }
+    }
 
+    if (guardado) {
       const parentescoLabel = PARENTESCOS.find(p => p.value === parentesco)?.label ?? parentesco;
       const rolLabel        = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
       setIntegrantes(prev => [
@@ -386,14 +413,8 @@ export default function ConformarHogarScreen() {
       setTipoDoc('CC'); setNumDoc(''); setPrimerNombre(''); setSegNombre('');
       setPrimerApell(''); setSegApell(''); setFechaNac('');
       setParentesco(''); setGenero(''); setRolMiembro('MIEMBRO'); setErroresForm({});
-    } catch (err: any) {
-      Alert.alert(
-        'Error al agregar',
-        err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
-      );
-    } finally {
-      setAgregando(false);
     }
+    setAgregando(false);
   }
 
   // ── Continuar al hub de caracterizaciones (Sprint 14) ─────────────────────

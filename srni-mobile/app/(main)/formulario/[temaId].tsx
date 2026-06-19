@@ -10,6 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -217,8 +218,14 @@ export default function CapituloScreen() {
         });
         setMiembros(ordenados);
       })
-      .catch(() => {
-        // Offline o sin permisos — degradación: queda en [] y solo HOGAR funciona.
+      .catch(async () => {
+        // OFFLINE o id de hogar local: reconstruir los miembros desde SQLite
+        // (autorizado + integrantes). Sin esto, las preguntas PERSONA NO se
+        // renderizaban sin red y se perdía media caracterización.
+        try {
+          const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
+          if (activo && locales.length > 0) setMiembros(locales);
+        } catch { /* sin datos locales: queda en [] (degradación a solo HOGAR) */ }
       });
     return () => { activo = false; };
   }, [hogarId]);

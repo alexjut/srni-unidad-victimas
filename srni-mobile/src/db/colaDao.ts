@@ -170,6 +170,20 @@ export async function marcarError(id: number, mensaje: string): Promise<void> {
 }
 
 /**
+ * Devuelve un item a 'pendiente' SIN penalizar (no incrementa intentos ni fija
+ * backoff). Lo usa la sincronización cuando un item espera a que se procese su
+ * dependencia (p.ej. RESPONDER_BULK antes de CREAR_SESION). Así un item diferido
+ * no agota sus 3 intentos ni traba la cadena en 'error' permanente.
+ */
+export async function reencolar(id: number): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    "UPDATE cola_sincronizacion SET estado = 'pendiente', retry_after = NULL, updated_at = ? WHERE id = ?",
+    [new Date().toISOString(), id],
+  );
+}
+
+/**
  * Resetea items en estado 'error' a 'pendiente' para reintentar manualmente.
  */
 export async function reintentarErrores(): Promise<void> {

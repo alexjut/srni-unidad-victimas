@@ -76,6 +76,15 @@ export async function crearHogarOffline(
   return row;
 }
 
+export async function obtenerPorIdLocal(idLocal: string): Promise<HogarOfflineRow | null> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<HogarOfflineRow>(
+    'SELECT * FROM hogares_offline WHERE id_local = ?',
+    [idLocal],
+  );
+  return row ?? null;
+}
+
 export async function listarPendientes(): Promise<HogarOfflineRow[]> {
   const db = await openDb();
   return db.getAllAsync<HogarOfflineRow>(

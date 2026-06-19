@@ -13,6 +13,9 @@
 import { openDb } from './schema';
 import { uuidv4 } from '../utils/uuid';
 import type { AgregarMiembroPayload } from '../api/hogares';
+import type { MiembroHogarResumen } from '../types';
+import * as hogaresOfflineDao from './hogaresOfflineDao';
+import * as victimasOfflineDao from './victimasOfflineDao';
 
 export interface MiembroOfflineRow {
   id_local: string;
@@ -82,4 +85,95 @@ export async function marcarError(idLocal: string): Promise<void> {
     "UPDATE miembros_offline SET estado_sync = 'error', updated_at = ? WHERE id_local = ?",
     [new Date().toISOString(), idLocal],
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reconstrucción de la lista de miembros SIN RED (Fase A)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PARENTESCO_LABEL: Record<string, string> = {
+  CONYUGE: 'Cónyuge / Compañero/a', HIJO_A: 'Hijo/a', YERNO_NUERA: 'Yerno / Nuera',
+  NIETO_A: 'Nieto/a', PADRE_MADRE: 'Padre / Madre', HERMANO_A: 'Hermano/a',
+  OTRO_PARIENTE: 'Otro pariente', NO_PARIENTE: 'No pariente',
+};
+const ROL_LABEL: Record<string, string> = {
+  MIEMBRO: 'Miembro del hogar', TUTOR: 'Tutor', CUIDADOR_PERMANENTE: 'Cuidador permanente',
+};
+
+/** Construye un MiembroHogarResumen completo a partir de campos parciales. */
+function resumen(parcial: Partial<MiembroHogarResumen> & { id: string }): MiembroHogarResumen {
+  return {
+    id: parcial.id,
+    nombre_completo: parcial.nombre_completo ?? '',
+    parentesco: (parcial.parentesco ?? '') as MiembroHogarResumen['parentesco'],
+    parentesco_display: parcial.parentesco_display ?? '',
+    genero: (parcial.genero ?? 'ND') as MiembroHogarResumen['genero'],
+    fecha_nacimiento: parcial.fecha_nacimiento ?? null,
+    rol: (parcial.rol ?? 'MIEMBRO') as MiembroHogarResumen['rol'],
+    rol_display: parcial.rol_display ?? '',
+    es_autorizado: parcial.es_autorizado ?? false,
+    estado_inclusion: (parcial.estado_inclusion ?? 'NO_INCLUIDO') as MiembroHogarResumen['estado_inclusion'],
+    estado_inclusion_display: parcial.estado_inclusion_display ?? '',
+    tipo_persona: parcial.tipo_persona ?? '',
+    incluido_ruv: parcial.incluido_ruv ?? false,
+    tiene_discapacidad: parcial.tiene_discapacidad ?? false,
+    victima: parcial.victima ?? null,
+    victima_hash: parcial.victima_hash ?? null,
+  };
+}
+
+/**
+ * Reconstruye la lista COMPLETA de miembros de un hogar creado offline, leyendo
+ * solo de SQLite (sin red). Incluye:
+ *   - el AUTORIZADO (desde hogares_offline.jefe_hogar_uuid + victimas_offline),
+ *     usando su id_local de víctima como id de miembro — la sincronización lo
+ *     remapea al id de MiembroHogar del servidor (procesarCrearHogar).
+ *   - los INTEGRANTES adicionales (miembros_offline), usando su id_local —
+ *     remapeado por procesarAgregarMiembro.
+ *
+ * Así las preguntas PERSONA se pueden capturar 100% offline y las respuestas
+ * quedan ligadas a un miembro_id que el servidor reconoce tras sincronizar.
+ */
+export async function construirMiembrosOffline(
+  hogarIdLocal: string,
+): Promise<MiembroHogarResumen[]> {
+  const out: MiembroHogarResumen[] = [];
+
+  const hogar = await hogaresOfflineDao.obtenerPorIdLocal(hogarIdLocal);
+  if (hogar) {
+    let nombre = '';
+    try {
+      const vic = await victimasOfflineDao.obtenerPorIdLocal(hogar.jefe_hogar_uuid);
+      if (vic) {
+        const v = JSON.parse(vic.payload_json) as Record<string, string>;
+        nombre = [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
+          .filter(Boolean).join(' ');
+      }
+    } catch { /* sin datos de víctima offline (autorizado del RNI): nombre vacío */ }
+    out.push(resumen({
+      id: hogar.jefe_hogar_uuid,
+      nombre_completo: nombre,
+      es_autorizado: true,
+      rol_display: 'Autorizado',
+    }));
+  }
+
+  const adicionales = await listarPorHogar(hogarIdLocal);
+  for (const m of adicionales) {
+    let p: Record<string, string> = {};
+    try { p = JSON.parse(m.payload_json); } catch { /* payload corrupto */ }
+    out.push(resumen({
+      id: m.id_local,
+      nombre_completo: p.nombre_completo ?? '',
+      parentesco: p.parentesco as MiembroHogarResumen['parentesco'],
+      parentesco_display: PARENTESCO_LABEL[p.parentesco] ?? p.parentesco ?? '',
+      genero: p.genero as MiembroHogarResumen['genero'],
+      fecha_nacimiento: p.fecha_nacimiento ?? null,
+      rol: p.rol as MiembroHogarResumen['rol'],
+      rol_display: ROL_LABEL[p.rol] ?? 'Miembro del hogar',
+      estado_inclusion: p.estado_inclusion as MiembroHogarResumen['estado_inclusion'],
+    }));
+  }
+
+  return out;
 }
