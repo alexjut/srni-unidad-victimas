@@ -48,7 +48,30 @@ LOCAL_APPS = [
     'apps.movil',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+# 'jazzmin' debe ir ANTES de django.contrib.admin (que vive en DJANGO_APPS).
+INSTALLED_APPS = ['jazzmin'] + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# ─── Tema del panel de administración (django-jazzmin) ────────────────────────
+JAZZMIN_SETTINGS = {
+    'site_title': 'SRNI — Administración',
+    'site_header': 'SRNI · Unidad para las Víctimas',
+    'site_brand': 'SRNI',
+    'welcome_sign': 'Panel de administración — Sistema de Caracterización (SRNI)',
+    'copyright': 'Unidad para la Atención y Reparación Integral a las Víctimas',
+    'show_ui_builder': False,
+    'icons': {
+        'auditoria.LogAcceso': 'fas fa-shield-alt',
+        'victimas.Victima': 'fas fa-user-shield',
+        'hogares.Hogar': 'fas fa-home',
+        'encuestas.SesionEncuesta': 'fas fa-clipboard-list',
+        'formulario.Instrumento': 'fas fa-file-alt',
+    },
+}
+JAZZMIN_UI_TWEAKS = {
+    'theme': 'flatly',          # tema claro, moderno e institucional
+    'navbar': 'navbar-dark',
+    'sidebar': 'sidebar-dark-primary',
+}
 
 # ─── Distribución móvil (APK) ────────────────────────────────────────────────
 MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')

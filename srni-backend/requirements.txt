@@ -10,6 +10,7 @@ djangorestframework-simplejwt==5.4.0
 drf-spectacular==0.28.0             # Esquema OpenAPI (referenciado en INSTALLED_APPS)
 django-cors-headers==4.4.0
 django-filter==24.3
+django-jazzmin==3.0.4               # Tema moderno del panel de administración
 
 # --- Base de datos ---
 # NOTA: psycopg2-binary no tiene wheels para Python 3.14.
