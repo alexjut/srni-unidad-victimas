@@ -246,34 +246,42 @@ export default function ConformarHogarScreen() {
         setCreandoHogar(false);
         return;
       }
+      // Sin red: crea el hogar OFFLINE (id_local) + encola CREAR_HOGAR, igual que
+      // hogares/nuevo.tsx. El autorizado es el victimaLocalId (UUID local o servidor).
+      const crearOffline = async () => {
+        const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
+          jefe_hogar_uuid: victimaLocalId,
+          numero_personas: 1,
+        });
+        await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
+          id_local: hogarLocal.id_local,
+          autorizado: victimaLocalId,
+          numero_personas: 1,
+        });
+        await refrescarContadores();
+        setHogarIdLocal(hogarLocal.id_local);
+        setHogarId(hogarLocal.id_local);
+        setHogarEsLocal(true);
+      };
+
       try {
         if (estaOnline) {
-          // Camino feliz online: crea el hogar en el servidor. El backend
-          // auto-inserta al autorizado como primer MiembroHogar.
-          const { data } = await hogaresApi.crear({
-            autorizado: victimaLocalId,
-            numero_personas: 1,
-          });
-          setHogarIdLocal(data.id);
-          setHogarId(data.id);
-          setHogarEsLocal(false);
+          try {
+            // Camino feliz online: el backend auto-inserta al autorizado.
+            const { data } = await hogaresApi.crear({
+              autorizado: victimaLocalId,
+              numero_personas: 1,
+            });
+            setHogarIdLocal(data.id);
+            setHogarId(data.id);
+            setHogarEsLocal(false);
+          } catch (err: any) {
+            if (err?.response) throw err; // error real del servidor → propagar
+            // Sin respuesta = red caída aunque la bandera dijera online → offline.
+            await crearOffline();
+          }
         } else {
-          // Fase A — sin red: crea el hogar OFFLINE (id_local) + encola CREAR_HOGAR
-          // exactamente como hogares/nuevo.tsx. El autorizado es el victimaLocalId
-          // (UUID local de la víctima registrada offline o UUID servidor si lo era).
-          const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
-            jefe_hogar_uuid: victimaLocalId,
-            numero_personas: 1,
-          });
-          await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
-            id_local: hogarLocal.id_local,
-            autorizado: victimaLocalId,
-            numero_personas: 1,
-          });
-          await refrescarContadores();
-          setHogarIdLocal(hogarLocal.id_local);
-          setHogarId(hogarLocal.id_local);
-          setHogarEsLocal(true);
+          await crearOffline();
         }
 
         // Autorizado como primer integrante (online lo agrega el backend; offline
@@ -299,7 +307,8 @@ export default function ConformarHogarScreen() {
         if (typeof detalle === 'object') {
           setErrorHogar(JSON.stringify(detalle));
         } else {
-          setErrorHogar('No se pudo crear el hogar. Verifique la conexión.');
+          const msg = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
+          setErrorHogar(`No se pudo crear el hogar.${msg}`);
         }
       } finally {
         setCreandoHogar(false);

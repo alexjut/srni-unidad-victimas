@@ -644,15 +644,28 @@ export default function BusquedaScreen() {
     }
   }
 
+  // true si el error es de RED (el servidor no respondió: timeout / sin conexión).
+  // axios deja err.response indefinido en errores de red. Sirve para caer a offline
+  // aunque la bandera `estaOnline` esté desactualizada (modo avión reciente).
+  function esErrorDeRed(err: any): boolean {
+    return !err?.response;
+  }
+
   async function conformarHogar() {
     const v = resultado?.victima;
     if (!v) return;
     setCargandoRegistro(true);
     try {
       if (estaOnline) {
-        const { data } = await victimasApi.registrarDesdeFuente(v);
-        useCaracterizacionStore.getState().setVictimaFuente(v);
-        useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        try {
+          const { data } = await victimasApi.registrarDesdeFuente(v);
+          useCaracterizacionStore.getState().setVictimaFuente(v);
+          useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        } catch (err) {
+          if (!esErrorDeRed(err)) throw err; // error real del servidor → propagar
+          // La bandera estaba desactualizada: el servidor no respondió → offline.
+          await registrarVictimaOffline(v);
+        }
       } else {
         // Sin red: registrar la víctima OFFLINE. El id_local actúa como
         // `autorizado` del hogar; REGISTRAR_VICTIMA la creará en el servidor al
@@ -660,8 +673,9 @@ export default function BusquedaScreen() {
         await registrarVictimaOffline(v);
       }
       router.push('/(main)/hogares/conformar');
-    } catch {
-      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } catch (err: any) {
+      const detalle = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
+      setErrorBusqueda(`No se pudo registrar la víctima.${detalle}`);
     } finally {
       setCargandoRegistro(false);
     }
@@ -710,16 +724,22 @@ export default function BusquedaScreen() {
         fuente_origen: 'NO_INCLUIDA',
       };
       if (estaOnline) {
-        const { data } = await victimasApi.registrarDesdeFuente(payload);
-        useCaracterizacionStore.getState().setVictimaFuente(payload);
-        useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        try {
+          const { data } = await victimasApi.registrarDesdeFuente(payload);
+          useCaracterizacionStore.getState().setVictimaFuente(payload);
+          useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        } catch (err) {
+          if (!esErrorDeRed(err)) throw err;
+          await registrarVictimaOffline(payload);
+        }
       } else {
         // Sin red: registrar la víctima no incluida OFFLINE (id_local + cola).
         await registrarVictimaOffline(payload);
       }
       setNoIncluidaRegistrada(true);
-    } catch {
-      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } catch (err: any) {
+      const detalle = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
+      setErrorBusqueda(`No se pudo registrar la víctima.${detalle}`);
     } finally {
       setCargandoRegistro(false);
     }
