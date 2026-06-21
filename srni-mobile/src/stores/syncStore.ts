@@ -14,6 +14,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import * as sincronizacionService from '../services/sincronizacion';
 import * as colaDao from '../db/colaDao';
 import * as instrumentoDao from '../db/instrumentoDao';
+import { reconciliarColaOffline } from '../services/reconciliacionOffline';
 
 export type EstadoSync =
   | 'sincronizado'
@@ -54,6 +55,16 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   /** Llamar una vez al inicio de la app (en RootLayout). */
   inicializar: async () => {
     await colaDao.resetearBloqueados();
+
+    // #14 — reconciliar recursos offline huérfanos: si la app se cerró entre el
+    // INSERT en *_offline y el encolar(), la fila quedó 'pendiente' sin item de
+    // cola. Re-encolarlos aquí (antes de sincronizar) evita perderlos en silencio.
+    try {
+      const reparados = await reconciliarColaOffline();
+      if (reparados > 0) console.log(`[sync] reconciliación: ${reparados} recurso(s) offline re-encolados`);
+    } catch (e) {
+      console.warn('[sync] reconciliación offline falló:', e);
+    }
 
     // Sprint 18 F1B: los instrumentos viven en memoria (bundle).
     // instrumentoDescargado siempre true porque el bundle siempre está disponible.
