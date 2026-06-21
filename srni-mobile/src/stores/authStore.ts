@@ -21,7 +21,7 @@ interface AuthState {
   error: string | null;
 
   // Acciones
-  login: (codigo: string, password: string) => Promise<void>;
+  login: (codigo: string, password: string, activarBiometria?: boolean) => Promise<void>;
   loginBiometrico: () => Promise<void>;
   logout: () => Promise<void>;
   cargarPerfil: () => Promise<void>;
@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   perfilCargado: false,
   error: null,
 
-  login: async (codigo, password) => {
+  login: async (codigo, password, activarBiometria = false) => {
     set({ cargando: true, error: null });
     try {
       const { data } = await authApi.login({
@@ -45,12 +45,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.setItemAsync('access_token', data.access);
       await SecureStore.setItemAsync('refresh_token', data.refresh);
 
-      // Auto-habilitar biometría si el dispositivo la tiene
+      // #22 — biometría OPT-IN: solo se habilita si el usuario lo eligió
+      // explícitamente (checkbox del login) y el dispositivo la soporta. Antes
+      // se auto-activaba en silencio, registrando la huella sin consentimiento.
       try {
-        const hw = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hw && enrolled) {
-          await SecureStore.setItemAsync(KEY_BIOMETRICO, 'true');
+        if (activarBiometria) {
+          const hw = await LocalAuthentication.hasHardwareAsync();
+          const enrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hw && enrolled) await SecureStore.setItemAsync(KEY_BIOMETRICO, 'true');
+        } else {
+          // No eligió biometría → asegurar que quede deshabilitada (toggle off).
+          await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
         }
       } catch { /* silencioso — la biometría es opcional */ }
 
