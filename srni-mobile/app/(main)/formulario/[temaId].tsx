@@ -1,5 +1,5 @@
 // Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
 import { View, FlatList, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
@@ -368,8 +368,10 @@ export default function CapituloScreen() {
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
-    const totalGlobal =
-      visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 0);
+    // #27 — el badge "N de TOTAL" debe contar lo que está EN PANTALLA: solo se
+    // renderiza un miembro a la vez, así que el total es HOGAR + PERSONA (1×).
+    // La dimensión "por persona" la comunica el pie "Persona X de N".
+    const totalGlobal = visiblesHogar.length + visiblesPersona.length;
 
     if (visiblesHogar.length > 0) {
       out.push({ type: 'header-hogar', key: 'hdr-hogar' });
@@ -950,7 +952,7 @@ function parseMultiValor(valor: string): string[] {
   return trimmed.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-function PreguntaItem({
+function PreguntaItemBase({
   pregunta,
   index,
   total,
@@ -1186,6 +1188,23 @@ function PreguntaItem({
     </View>
   );
 }
+
+// #23/#34 — memoizar evita re-renderizar TODAS las tarjetas en cada pulsación de
+// tecla (setRespuestasState re-renderiza el padre). Las callbacks envoltorio
+// cambian de identidad cada render pero solo reenvían a useCallbacks estables
+// (setRespuesta, handleAceptarSugerencia…), así que se comparan solo las props
+// de DATOS. La presencia (no la identidad) de las callbacks IA sí importa.
+const PreguntaItem = memo(PreguntaItemBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.valor === next.valor &&
+  prev.index === next.index &&
+  prev.total === next.total &&
+  prev.opciones === next.opciones &&
+  prev.iaActivo === next.iaActivo &&
+  prev.sugerenciaActiva === next.sugerenciaActiva &&
+  !!prev.onTextoIA === !!next.onTextoIA &&
+  !!prev.onAceptarIA === !!next.onAceptarIA,
+);
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 
