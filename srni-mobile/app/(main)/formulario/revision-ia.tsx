@@ -197,10 +197,15 @@ export default function RevisionIAScreen() {
   const {
     temaId,
     sesionServerId,
+    instrumentoId,
+    hogarId,
     borradorId: borradorIdParam,
   } = useLocalSearchParams<{
     temaId: string;
     sesionServerId?: string;
+    // #15 — contexto propagado desde el flujo IA para resolver bien el borrador.
+    instrumentoId?: string;
+    hogarId?: string;
     borradorId?: string;
   }>();
 
@@ -286,11 +291,17 @@ export default function RevisionIAScreen() {
 
     setGuardando(true);
     try {
-      // Obtener o crear borrador
+      // Obtener o crear borrador. #15 — preferir el borradorId propagado por el
+      // flujo IA; resolver el instrumento desde el param o el cache de memoria.
       let bid = borradorIdParam ?? null;
+      const instrId = instrumentoId || instrumentos.getMeta()?.instrumento_id || '';
+      if (!bid && hogarId && instrId) {
+        // OFFLINE: reutilizar el borrador único de (hogar, instrumento) que ya
+        // resolvió el hub, o crear uno ligado al hogar (igual que formulario/index).
+        const existente = await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrId);
+        bid = existente?.id ?? (await borradoresDao.crearBorrador(instrId, hogarId)).id;
+      }
       if (!bid && sesionServerId) {
-        const meta = instrumentos.getMeta();
-        const instrId = meta?.instrumento_id ?? '';
         const borrador = await borradoresDao.crearBorrador(instrId);
         bid = borrador.id;
         await borradoresDao.vincularSesionServidor(bid, sesionServerId);

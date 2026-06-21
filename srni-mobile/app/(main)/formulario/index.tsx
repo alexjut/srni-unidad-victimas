@@ -74,6 +74,9 @@ function CapituloCard({
           capituloNombre: capitulo.nombre,
           ...(sesionServerId ? { sesionServerId } : {}),
           ...(instrumentoId  ? { instrumentoId }  : {}),
+          // #15 — hogarId/borradorId deben viajar por TODO el flujo IA para que
+          // al caer a manual se carguen los miembros y el borrador offline.
+          ...(hogarId        ? { hogarId }         : {}),
           ...(borradorId     ? { borradorId }     : {}),
         },
       });

@@ -39,11 +39,16 @@ export default function GrabacionEntrevistaScreen() {
     capituloNombre,
     sesionServerId,
     instrumentoId,
+    hogarId,
+    borradorId,
   } = useLocalSearchParams<{
     temaId: string;
     capituloNombre?: string;
     sesionServerId?: string;
     instrumentoId?: string;
+    // #15 — necesarios para que la caída a manual cargue miembros + borrador offline.
+    hogarId?: string;
+    borradorId?: string;
   }>();
 
   const { estado, procesarEntrevista, errorMensaje, resultadosBatch } = useIAStore();
@@ -79,6 +84,10 @@ export default function GrabacionEntrevistaScreen() {
         params: {
           temaId,
           sesionServerId: sesionServerId ?? '',
+          // #15 — propagar para que revisión y la caída a manual conserven contexto.
+          ...(instrumentoId ? { instrumentoId } : {}),
+          ...(hogarId       ? { hogarId }       : {}),
+          ...(borradorId    ? { borradorId }    : {}),
         },
       });
     }
@@ -100,6 +109,10 @@ export default function GrabacionEntrevistaScreen() {
                   temaId,
                   ...(sesionServerId ? { sesionServerId } : {}),
                   ...(instrumentoId  ? { instrumentoId }  : {}),
+                  // #15 — sin hogarId no se cargan miembros (preguntas PERSONA);
+                  // sin borradorId no se resuelve el borrador offline.
+                  ...(hogarId        ? { hogarId }        : {}),
+                  ...(borradorId     ? { borradorId }     : {}),
                 },
               });
             },
