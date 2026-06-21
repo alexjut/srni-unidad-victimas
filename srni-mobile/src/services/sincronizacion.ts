@@ -393,26 +393,35 @@ async function ejecutarSincronizacion(): Promise<ResultadoSync> {
         continue;
       }
 
-      errores++;
       const status = err?.response?.status as number | undefined;
       const mensaje = err?.message ?? 'Error desconocido';
 
-      if (status !== undefined && status !== 0 && status >= 400 && status < 500 && status !== 429) {
-        // Error de cliente — no reintentable (datos inválidos)
+      // Transitorios de infraestructura — NUNCA gastar intentos ni mandar a
+      // 'error': red caída (sin respuesta) o 429/502/503/504 (servidor saturado/
+      // caído). Se DIFIERE con reencolar() (no incrementa intentos) y se frena la
+      // pasada (los demás items fallarían igual). Sin esto, una jornada offline
+      // larga agota los 3 intentos y manda CREAR_HOGAR/respuestas a 'error'
+      // definitivo = pérdida de la cadena entera de un hogar.
+      const esRedCaida = (status === undefined || status === 0) && (err?.isAxiosError || err?.request);
+      const esInfraTransitoria = status === 429 || status === 502 || status === 503 || status === 504;
+      if (esRedCaida || esInfraTransitoria) {
+        await colaDao.reencolar(item.id);
+        sinRed = true;
+        continue;
+      }
+
+      errores++;
+      if (status !== undefined && status >= 400 && status < 500) {
+        // 4xx (datos inválidos) — no reintentable.
         const detalle = JSON.stringify(err?.response?.data ?? mensaje).slice(0, 300);
         await colaDao.marcarError(item.id, `${status}: ${detalle}`);
-      } else if (status !== undefined && status !== 0) {
-        // 5xx o 429 — reintentable con backoff
+      } else if (status !== undefined && status >= 500) {
+        // 500 — puede ser dato específico o transitorio: reintentable con backoff
+        // (consume intentos para no loopear infinito ante un dato realmente malo).
         await colaDao.marcarError(item.id, `${status}: ${mensaje}`);
-      } else if (err?.isAxiosError || err?.request) {
-        // Error de red real (petición salió pero no hubo respuesta del servidor):
-        // frenar la pasada entera — los demás items también fallarían.
-        await colaDao.marcarError(item.id, 'Sin conexión');
-        sinRed = true;
       } else {
         // Error local (JSON.parse de payload corrupto, bug del procesador, etc.).
-        // NO es falta de red: marcar solo este item y seguir con los demás,
-        // de lo contrario un único item corrupto bloquearía la cola para siempre.
+        // NO es falta de red: marcar solo este item y seguir con los demás.
         await colaDao.marcarError(item.id, `Dato local inválido: ${mensaje}`.slice(0, 500));
       }
     }
@@ -424,5 +433,35 @@ async function ejecutarSincronizacion(): Promise<ResultadoSync> {
   }
 
   const pendientesRestantes = await colaDao.contarPendientes();
+
+  // Purga de datos ya sincronizados SOLO cuando la cola quedó totalmente vacía
+  // (sin pendientes ni errores): así nunca se borra trabajo aún por enviar.
+  if (pendientesRestantes === 0 && procesados > 0) {
+    await purgarSincronizados();
+  }
+
   return { procesados, errores, pendientes: pendientesRestantes };
+}
+
+/**
+ * Libera espacio borrando lo ya sincronizado: borradores COMPLETADOS con sus
+ * respuestas y las filas offline (víctima/hogar/miembro) en estado 'enviado'.
+ * Solo debe llamarse con la cola vacía. Evita el crecimiento ilimitado del .db
+ * y reduce PII en reposo tras sincronizar.
+ */
+async function purgarSincronizados(): Promise<void> {
+  const db = await openDb();
+  try {
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
+        "DELETE FROM respuestas WHERE borrador_id IN (SELECT id FROM borradores WHERE estado = 'COMPLETADO')",
+      );
+      await db.runAsync("DELETE FROM borradores WHERE estado = 'COMPLETADO'");
+      await db.runAsync("DELETE FROM victimas_offline WHERE estado_sync = 'enviado'");
+      await db.runAsync("DELETE FROM miembros_offline WHERE estado_sync = 'enviado'");
+      await db.runAsync("DELETE FROM hogares_offline WHERE estado_sync = 'enviado'");
+    });
+  } catch {
+    /* purga best-effort: si falla, no afecta la sincronización */
+  }
 }

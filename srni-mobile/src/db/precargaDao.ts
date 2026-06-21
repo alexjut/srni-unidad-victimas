@@ -235,3 +235,20 @@ export async function limpiarPrecarga(): Promise<void> {
     'DELETE FROM padron; DELETE FROM jornada; DELETE FROM parametricas_cache; DELETE FROM meta_offline;',
   );
 }
+
+/**
+ * Borra TODO el almacén offline, incluida la PII capturada (víctimas, miembros,
+ * hogares, borradores, respuestas) y la cola. Lo usa logout() SOLO cuando no hay
+ * nada pendiente de sincronizar, para que el dispositivo no quede con datos de
+ * víctimas del usuario anterior en claro. NUNCA llamar con la cola con pendientes
+ * (se perdería trabajo de campo).
+ */
+export async function limpiarTodoOffline(): Promise<void> {
+  const db = await openDb();
+  await db.execAsync(
+    'DELETE FROM respuestas; DELETE FROM borradores;' +
+    ' DELETE FROM victimas_offline; DELETE FROM miembros_offline; DELETE FROM hogares_offline;' +
+    ' DELETE FROM cola_sincronizacion;' +
+    ' DELETE FROM padron; DELETE FROM jornada; DELETE FROM parametricas_cache; DELETE FROM meta_offline;',
+  );
+}

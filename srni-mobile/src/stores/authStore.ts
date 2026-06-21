@@ -9,6 +9,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { authApi, type UsuarioMe } from '../api/auth';
 import { precargarEnSegundoPlano } from '../services/precarga';
 import * as precargaDao from '../db/precargaDao';
+import * as colaDao from '../db/colaDao';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
 
@@ -118,8 +119,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
       await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
-      // Fase 0: limpiar el almacén offline al cerrar sesión (privacidad).
-      try { await precargaDao.limpiarPrecarga(); } catch { /* best-effort */ }
+      // Privacidad: borrar el almacén offline al cerrar sesión. Si NO hay nada
+      // pendiente de sincronizar, se borra TODO (incluida la PII capturada de
+      // víctimas/hogares) para que no quede para el siguiente usuario. Si hay
+      // pendientes, solo se limpia la precarga (no se pierde el trabajo de campo).
+      try {
+        const pendientes = await colaDao.contarPendientes();
+        if (pendientes === 0) {
+          await precargaDao.limpiarTodoOffline();
+        } else {
+          await precargaDao.limpiarPrecarga();
+        }
+      } catch { /* best-effort */ }
       set({ usuario: null, error: null });
     }
   },

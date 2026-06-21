@@ -21,6 +21,10 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    // El APK de pruebas (perfil preview) apunta a la URL pública de ngrok, que
+    // sirve una página de advertencia HTML a clientes sin este header → axios
+    // recibe HTML en vez de JSON y rompe hasta el login. Inocuo en la URL final.
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -35,10 +39,18 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 
 // ── Response interceptor — manejo de 401 + refresh ──────────────────────────
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+interface ColaRefresh { resolve: (token: string) => void; reject: (err: unknown) => void; }
+let refreshQueue: ColaRefresh[] = [];
 
 function processQueue(newToken: string) {
-  refreshQueue.forEach((resolve) => resolve(newToken));
+  refreshQueue.forEach(({ resolve }) => resolve(newToken));
+  refreshQueue = [];
+}
+
+// Si el refresh falla, hay que RECHAZAR las peticiones encoladas; de lo
+// contrario quedan colgadas para siempre (su promesa nunca se resuelve).
+function rejectQueue(err: unknown) {
+  refreshQueue.forEach(({ reject }) => reject(err));
   refreshQueue = [];
 }
 
@@ -110,11 +122,15 @@ apiClient.interceptors.response.use(
     }
 
     if (isRefreshing) {
-      // Encolar requests que lleguen mientras se refresca
-      return new Promise((resolve) => {
-        refreshQueue.push((token: string) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          resolve(apiClient(original));
+      // Encolar requests que lleguen mientras se refresca. Se resuelven cuando el
+      // refresh tiene éxito, o se RECHAZAN si falla (no quedan colgadas).
+      return new Promise((resolve, reject) => {
+        refreshQueue.push({
+          resolve: (token: string) => {
+            original.headers.Authorization = `Bearer ${token}`;
+            resolve(apiClient(original));
+          },
+          reject,
         });
       });
     }
@@ -126,7 +142,11 @@ apiClient.interceptors.response.use(
       const refresh = await SecureStore.getItemAsync('refresh_token');
       if (!refresh) throw new Error('No refresh token');
 
-      const { data } = await axios.post(`${BASE_URL}/api/auth/refresh/`, { refresh });
+      const { data } = await axios.post(
+        `${BASE_URL}/api/auth/refresh/`,
+        { refresh },
+        { headers: { 'ngrok-skip-browser-warning': 'true' } },
+      );
       const newAccess: string = data.access;
 
       await SecureStore.setItemAsync('access_token', newAccess);
@@ -137,8 +157,10 @@ apiClient.interceptors.response.use(
       processQueue(newAccess);
       original.headers.Authorization = `Bearer ${newAccess}`;
       return apiClient(original);
-    } catch {
-      // Refresh falló — limpiar tokens y dejar que el guard redirija al login
+    } catch (refreshErr) {
+      // Refresh falló — rechazar las peticiones encoladas (no dejarlas colgadas),
+      // limpiar tokens y dejar que el guard redirija al login.
+      rejectQueue(refreshErr);
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
       return Promise.reject(error);

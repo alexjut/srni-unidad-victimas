@@ -41,6 +41,7 @@ interface SyncState {
 // ─────────────────────────────────────────────────────────────────────────────
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
+let appStateSub: { remove: () => void } | null = null;
 
 export const useSyncStore = create<SyncState>((set, get) => ({
   estaOnline: false,
@@ -61,8 +62,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     await get().refrescarContadores();
     await get().checkConnectivity();
 
-    // Listener de AppState: disparar check al volver al primer plano
-    AppState.addEventListener('change', (estado: AppStateStatus) => {
+    // Listener de AppState: disparar check al volver al primer plano.
+    // inicializar() se re-invoca al cambiar de usuario; removemos el handler
+    // anterior antes de re-suscribir para no acumular handlers duplicados (que
+    // disparaban sync en cascada y causaban 'database is locked').
+    if (appStateSub) appStateSub.remove();
+    appStateSub = AppState.addEventListener('change', (estado: AppStateStatus) => {
       if (estado === 'active') {
         get().checkConnectivity();
       }

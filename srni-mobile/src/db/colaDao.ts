@@ -47,10 +47,12 @@ export interface ColaItem {
   updated_at: string;
 }
 
-const MAX_INTENTOS = 3;
+const MAX_INTENTOS = 6;
 
-// Delays de backoff en segundos: intento 1 → 30s, intento 2 → 120s
-const BACKOFF_SEGUNDOS = [30, 120];
+// Delays de backoff en segundos por intento (1→30s ... 5→30min). El intento 6
+// agota y pasa a 'error'. Una jornada offline larga necesita reintentos amplios.
+// (Los errores de red/infra ya NO consumen intentos — se difieren con reencolar.)
+const BACKOFF_SEGUNDOS = [30, 120, 300, 900, 1800];
 
 // Orden de procesamiento por tipo
 const ORDEN_TIPO: Record<TipoOperacion, number> = {
@@ -72,6 +74,23 @@ export async function encolar(
 ): Promise<number> {
   const db = await openDb();
   const now = new Date().toISOString();
+
+  // Dedup de RESPONDER_PREGUNTA: una sola fila pendiente/errada por
+  // (recurso, pregunta, miembro). Editar una respuesta N veces NO debe inflar la
+  // cola ni dejar valores viejos que pisen el bulk al reintentar. Se borra la
+  // fila previa antes de insertar la nueva (último valor gana).
+  if (tipo === 'RESPONDER_PREGUNTA') {
+    const p = payload as { pregunta_id?: string; miembro_id?: string | null };
+    await db.runAsync(
+      `DELETE FROM cola_sincronizacion
+         WHERE tipo = 'RESPONDER_PREGUNTA' AND estado IN ('pendiente', 'error')
+           AND recurso_local_id = ?
+           AND json_extract(payload, '$.pregunta_id') = ?
+           AND IFNULL(json_extract(payload, '$.miembro_id'), '') = IFNULL(?, '')`,
+      [recursoLocalId, p.pregunta_id ?? '', p.miembro_id ?? null],
+    );
+  }
+
   const result = await db.runAsync(
     `INSERT INTO cola_sincronizacion
        (tipo, recurso_local_id, payload, estado, intentos, ultimo_error, retry_after, created_at, updated_at)
