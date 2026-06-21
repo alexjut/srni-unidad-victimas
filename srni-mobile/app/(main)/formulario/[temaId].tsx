@@ -57,6 +57,8 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
   const m: Record<string, string> = {};
   if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
   if (v.segundo_nombre)   m.A2 = v.segundo_nombre;
+  if (v.primer_apellido)  m.APELLIDO_1 = v.primer_apellido;
+  if (v.segundo_apellido) m.APELLIDO_2 = v.segundo_apellido;
   if (v.fecha_nacimiento) {
     m.A6 = v.fecha_nacimiento;
     const edad = calcularEdad(v.fecha_nacimiento);
