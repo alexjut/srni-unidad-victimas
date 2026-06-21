@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
+import { calcularProgresoOffline, type MiembroRef } from '../../../src/services/progreso';
 import * as colaDao from '../../../src/db/colaDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -215,16 +216,13 @@ export default function FormularioIndexScreen() {
   const [cargando, setCargando] = useState(true);
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
-  // Progreso por capítulo — Sprint 21 fix: separar obligatorias HOGAR/PERSONA
-  // para multiplicar PERSONA × cantidad de miembros del hogar.
-  const [conteoPreguntas, setConteoPreguntas] = useState<
-    Record<string, { total: number; obligatorias: number; obligHogar: number; obligPersona: number }>
-  >({});
-  const [conteoRespondidas, setConteoRespondidas] = useState<Record<string, number>>({});
-  // Sprint 21 fix — número de miembros del hogar para calcular bien el progreso.
-  // Sin esto, el contador "0 capítulos completados" nunca avanza porque
-  // espera N respondidas por pregunta PERSONA pero el conteo no las multiplica.
-  const [numMiembros, setNumMiembros] = useState(1);
+  // Progreso por capítulo — fix #8/#18: el denominador ahora es OBLIGATORIAS
+  // VISIBLES (evaluando skip-logic), no el conteo estático que inflaba el total
+  // con obligatorias ocultas y dejaba el progreso atascado bajo 100%.
+  //   - respuestasCompuesto: mapa `pregunta_id|miembro_id` → valor del borrador.
+  //   - miembrosRef: miembros del hogar (PERSONA se cuenta por miembro).
+  const [respuestasCompuesto, setRespuestasCompuesto] = useState<Record<string, string>>({});
+  const [miembrosRef, setMiembrosRef] = useState<MiembroRef[]>([]);
 
   // Finalizar sesión
   const [modalFinalizar, setModalFinalizar] = useState(false);
@@ -306,12 +304,12 @@ export default function FormularioIndexScreen() {
       // Leer de memoria — instantáneo
       setCapitulos(instrumentos.getCapitulos());
       setMeta(instrumentos.getMeta());
-      setConteoPreguntas(instrumentos.contarPreguntasPorCapitulo());
 
       if (sesionServerId) {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {
-          setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
+          setBorradorId(borrador.id);
+          setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
         }
       } else if (hogarId && instrumentoId) {
         // ── OFFLINE: resolver UN ÚNICO borrador para (hogar, instrumento) ──────
@@ -328,7 +326,7 @@ export default function FormularioIndexScreen() {
           bid = nuevo.id;
         }
         setBorradorId(bid);
-        setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(bid));
+        setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(bid));
       }
     } catch (e) {
       reportarError({
@@ -349,8 +347,11 @@ export default function FormularioIndexScreen() {
   }, [sesionServerId, hogarId, instrumentoId]);
 
   // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
-  // Online: hogaresApi.detalle. Offline (o si falla la red): contar los
-  // miembros guardados localmente para ese hogar; si no hay, default 1.
+  // Online: hogaresApi.detalle. Offline (o si falla la red): reconstruir los
+  // miembros guardados localmente para ese hogar; si no hay, queda vacío y el
+  // servicio de progreso usa un miembro fantasma (≡ Math.max(N, 1)).
+  // Se guardan los IDS (no solo el conteo) porque el progreso PERSONA lee la
+  // respuesta de cada miembro por su clave `pregunta_id|miembro_id`.
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
@@ -358,19 +359,19 @@ export default function FormularioIndexScreen() {
       try {
         const { data } = await hogaresApi.detalle(hogarId);
         if (!activo) return;
-        const n = (data.miembros ?? []).length;
-        if (n > 0) { setNumMiembros(n); return; }
+        const ms = (data.miembros ?? []) as MiembroRef[];
+        if (ms.length > 0) { setMiembrosRef(ms.map((m) => ({ id: m.id }))); return; }
       } catch {
-        /* offline o id de hogar local: usar conteo local abajo */
+        /* offline o id de hogar local: usar miembros locales abajo */
       }
       try {
         // construirMiembrosOffline incluye al autorizado + integrantes, así el
         // progreso PERSONA × N miembros cuadra con lo que se captura offline.
         const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
-        if (activo && locales.length > 0) setNumMiembros(locales.length);
-        // si no hay miembros locales, se mantiene el default 1
+        if (activo && locales.length > 0) setMiembrosRef(locales.map((m) => ({ id: m.id })));
+        // si no hay miembros locales, queda vacío (miembro fantasma en el cálculo)
       } catch {
-        /* sin datos locales: queda en default 1 */
+        /* sin datos locales: queda vacío */
       }
     })();
     return () => { activo = false; };
@@ -413,12 +414,14 @@ export default function FormularioIndexScreen() {
             return;
           }
 
-          // 3. Contar respuestas por capítulo
-          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borradorRef.id);
-          console.log('[formulario/index] useFocusEffect: conteo recalculado',
-            { borradorId: borradorRef.id, conteo });
+          // 3. Releer respuestas del borrador (clave pregunta_id|miembro_id).
+          //    El progreso real (obligatorias VISIBLES respondidas) se calcula
+          //    en el memo de abajo con calcularProgresoOffline.
+          const mapa = await borradoresDao.getRespuestaMapCompuesto(borradorRef.id);
+          console.log('[formulario/index] useFocusEffect: respuestas recargadas',
+            { borradorId: borradorRef.id, respuestas: Object.keys(mapa).length });
 
-          if (vivo) setConteoRespondidas(conteo);
+          if (vivo) setRespuestasCompuesto(mapa);
         } catch (err) {
           console.warn('[formulario/index] useFocusEffect ERROR:', err);
         }
@@ -428,44 +431,41 @@ export default function FormularioIndexScreen() {
   );
 
   // ── Progreso global ─────────────────────────────────────────────────────────
-  // Sprint 21 fix — obligatorias reales = obligHogar + obligPersona × N miembros.
-  // Sin esto, el cálculo le decía 'completado' cuando solo respondiste para el
-  // primer miembro (o nunca, si N miembros > 1 y faltaban PERSONA × (N-1)).
-  function obligatoriasReales(cp: { obligHogar: number; obligPersona: number }): number {
-    return cp.obligHogar + cp.obligPersona * Math.max(numMiembros, 1);
-  }
-
-  const { totalObligGlobal, respondidoGlobal, capsCompletados } = useMemo(() => {
-    let total = 0, respondido = 0, completados = 0;
-    for (const cap of capitulos) {
-      const cp = conteoPreguntas[cap.id];
-      const cr = conteoRespondidas[cap.id] ?? 0;
-      if (!cp) continue;
-      const obligReales = obligatoriasReales(cp);
-      total      += obligReales;
-      respondido += Math.min(cr, obligReales);
-      if (obligReales > 0 && cr >= obligReales) completados++;
-    }
-    return { totalObligGlobal: total, respondidoGlobal: respondido, capsCompletados: completados };
+  // Fix #8/#18 — el denominador son las obligatorias VISIBLES (evaluando
+  // skip-logic contra el estado actual del borrador), no el conteo estático.
+  // Antes, una obligatoria oculta por una regla HABILITAR no disparada inflaba
+  // el total y el progreso se atascaba sin llegar nunca a 100%.
+  // El cálculo (HOGAR 1×, PERSONA por miembro) es el MISMO que el de la
+  // pantalla de capítulo, centralizado en services/progreso para que coincidan.
+  const progresoData = useMemo(
+    () => calcularProgresoOffline(
+      capitulos,
+      instrumentos.getPreguntas,
+      instrumentos.getReglas(),
+      miembrosRef,
+      respuestasCompuesto,
+    ),
+    // getPreguntas/getReglas leen el perfil activo en memoria; `capitulos`
+    // cambia al activarlo, así que basta con depender de él aquí.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capitulos, conteoPreguntas, conteoRespondidas, numMiembros]);
+    [capitulos, miembrosRef, respuestasCompuesto],
+  );
 
-  const progresoGlobal = totalObligGlobal > 0 ? respondidoGlobal / totalObligGlobal : 0;
+  const progresoGlobal = progresoData.progreso;
+  const capsCompletados = progresoData.capsCompletados;
 
   function getCapProgress(capId: string): CapProgress {
-    const cp = conteoPreguntas[capId];
-    const cr = conteoRespondidas[capId] ?? 0;
-    if (!cp || (cp.obligHogar === 0 && cp.obligPersona === 0)) {
+    const pc = progresoData.porCapitulo[capId];
+    if (!pc || pc.obligVisibles === 0) {
       return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
     }
-    const obligReales = obligatoriasReales(cp);
-    // Sprint 21 fix display: capar respondidas al máximo de obligatorias para
-    // que la barra y el chip sean consistentes. Si el usuario respondió 10
-    // pero solo 7 son obligatorias, mostramos 7/7 (no 10/7 que confunde).
-    const respondidasCap = Math.min(cr, obligReales);
-    if (cr >= obligReales) return { estado: 'completado', respondidas: respondidasCap, obligatorias: obligReales };
-    if (cr > 0)            return { estado: 'en_progreso', respondidas: respondidasCap, obligatorias: obligReales };
-    return { estado: 'pendiente', respondidas: 0, obligatorias: obligReales };
+    // Capar respondidas al máximo de obligatorias para que la barra y el chip
+    // sean consistentes (mostrar 7/7, nunca 10/7).
+    return {
+      estado: pc.estado,
+      respondidas: Math.min(pc.obligRespondidas, pc.obligVisibles),
+      obligatorias: pc.obligVisibles,
+    };
   }
 
   async function handleFinalizar() {
