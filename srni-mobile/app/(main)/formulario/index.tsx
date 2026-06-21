@@ -11,9 +11,8 @@ import * as colaDao from '../../../src/db/colaDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
-import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { hogaresApi } from '../../../src/api/hogares';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -347,33 +346,17 @@ export default function FormularioIndexScreen() {
   }, [sesionServerId, hogarId, instrumentoId]);
 
   // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
-  // Online: hogaresApi.detalle. Offline (o si falla la red): reconstruir los
-  // miembros guardados localmente para ese hogar; si no hay, queda vacío y el
-  // servicio de progreso usa un miembro fantasma (≡ Math.max(N, 1)).
-  // Se guardan los IDS (no solo el conteo) porque el progreso PERSONA lee la
-  // respuesta de cada miembro por su clave `pregunta_id|miembro_id`.
+  // Tolerante a red (fix #4/#38): online → caché; offline-local →
+  // construirMiembrosOffline; online caído → caché del servidor. Se guardan los
+  // IDS (no solo el conteo) porque el progreso PERSONA lee la respuesta de cada
+  // miembro por su clave `pregunta_id|miembro_id`. Si no hay miembros, queda
+  // vacío y el servicio de progreso usa un miembro fantasma (≡ Math.max(N, 1)).
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    (async () => {
-      try {
-        const { data } = await hogaresApi.detalle(hogarId);
-        if (!activo) return;
-        const ms = (data.miembros ?? []) as MiembroRef[];
-        if (ms.length > 0) { setMiembrosRef(ms.map((m) => ({ id: m.id }))); return; }
-      } catch {
-        /* offline o id de hogar local: usar miembros locales abajo */
-      }
-      try {
-        // construirMiembrosOffline incluye al autorizado + integrantes, así el
-        // progreso PERSONA × N miembros cuadra con lo que se captura offline.
-        const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
-        if (activo && locales.length > 0) setMiembrosRef(locales.map((m) => ({ id: m.id })));
-        // si no hay miembros locales, queda vacío (miembro fantasma en el cálculo)
-      } catch {
-        /* sin datos locales: queda vacío */
-      }
-    })();
+    cargarMiembrosHogar(hogarId)
+      .then((ms) => { if (activo) setMiembrosRef(ms.map((m) => ({ id: m.id }))); })
+      .catch(() => { /* sin datos: queda vacío (miembro fantasma en el cálculo) */ });
     return () => { activo = false; };
   }, [hogarId]);
 

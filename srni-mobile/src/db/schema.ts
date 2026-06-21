@@ -13,11 +13,13 @@
  *  6 → Fase 0 Offline: padron, jornada, parametricas_cache, meta_offline
  *  7 → Fase A Offline: victimas_offline, miembros_offline (conformación 100% offline)
  *  8 → hogares_offline.ultimo_error TEXT (motivo del fallo de sincronización)
+ *  9 → hogares_cache: espejo de la lista de miembros del servidor para que un
+ *      hogar creado ONLINE siga capturable si cae la red (fix #4/#38)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -314,6 +316,26 @@ const MIGRATION_V7 = `
   CREATE INDEX IF NOT EXISTS idx_miembros_off_hogar ON miembros_offline(hogar_id_local);
 `;
 
+// ─── Migración v9 — caché de miembros de hogares creados ONLINE (fix #4/#38) ──
+// Un hogar conformado ONLINE vive en el servidor, no en hogares_offline/
+// miembros_offline. Si la red cae a mitad de captura, construirMiembrosOffline
+// no encuentra nada y las preguntas PERSONA dejan de poderse capturar.
+// Esta tabla espeja la respuesta de GET hogares/{id}/ (la lista de miembros con
+// sus IDs de SERVIDOR) cada vez que se carga online, para releerla sin red. Al
+// usar los mismos IDs del servidor, las respuestas (clave pregunta_id|miembro_id)
+// quedan consistentes entre el camino online y el offline.
+//
+// SEGURIDAD: miembros_json contiene PII (nombre, fecha de nacimiento) — el mismo
+// dato que ya guarda miembros_offline.payload_json y que viaja en memoria en el
+// flujo online. Cifrado en reposo (SQLCipher) sigue pendiente para Fase 1 (#21).
+const MIGRATION_V9 = `
+  CREATE TABLE IF NOT EXISTS hogares_cache (
+    hogar_id      TEXT    PRIMARY KEY,
+    miembros_json TEXT    NOT NULL DEFAULT '[]',
+    actualizado   TEXT    NOT NULL
+  );
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -408,6 +430,11 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     } catch (e: any) {
       if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
     }
+  }
+
+  if (currentVersion < 9) {
+    // Fix #4/#38: caché de miembros de hogares creados online. Idempotente.
+    await db.execAsync(MIGRATION_V9);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

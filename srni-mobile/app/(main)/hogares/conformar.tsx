@@ -27,6 +27,7 @@ import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
 import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
 import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import * as colaDao from '../../../src/db/colaDao';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { useSyncStore } from '../../../src/stores/syncStore';
@@ -440,6 +441,11 @@ export default function ConformarHogarScreen() {
           params: { hogarId },
         });
       } else {
+        // Warm-up de la caché de miembros (fix #4/#38): si la red cae justo
+        // después de continuar, la caracterización ya tendrá los miembros del
+        // servidor para capturar offline. Best-effort, no bloquea el flujo.
+        try { await cargarMiembrosHogar(hogarId); }
+        catch { /* la caché se poblará al cargar el hub/capítulo online */ }
         router.replace({
           pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
           params: { hogarId },

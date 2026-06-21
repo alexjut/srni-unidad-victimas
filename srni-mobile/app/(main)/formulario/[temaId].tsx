@@ -10,13 +10,12 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
-import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { hogaresApi } from '../../../src/api/hogares';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -246,29 +245,15 @@ export default function CapituloScreen() {
   }, [temaId]);
 
   // ── Sprint 21 — cargar miembros del hogar ──────────────────────────────────
+  // Tolerante a red (fix #4/#38): online → caché; offline-local →
+  // construirMiembrosOffline; online caído → caché del servidor. Sin esto las
+  // preguntas PERSONA NO se renderizaban sin red y se perdía media caracterización.
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    hogaresApi.detalle(hogarId)
-      .then(({ data }) => {
-        if (!activo) return;
-        // Ordenar: autorizado primero, después por parentesco/orden natural.
-        const ordenados = [...(data.miembros ?? [])].sort((a, b) => {
-          if (a.es_autorizado && !b.es_autorizado) return -1;
-          if (!a.es_autorizado && b.es_autorizado) return 1;
-          return 0;
-        });
-        setMiembros(ordenados);
-      })
-      .catch(async () => {
-        // OFFLINE o id de hogar local: reconstruir los miembros desde SQLite
-        // (autorizado + integrantes). Sin esto, las preguntas PERSONA NO se
-        // renderizaban sin red y se perdía media caracterización.
-        try {
-          const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
-          if (activo && locales.length > 0) setMiembros(locales);
-        } catch { /* sin datos locales: queda en [] (degradación a solo HOGAR) */ }
-      });
+    cargarMiembrosHogar(hogarId)
+      .then((ms) => { if (activo) setMiembros(ms); })
+      .catch(() => { /* queda en [] (degradación a solo HOGAR) */ });
     return () => { activo = false; };
   }, [hogarId]);
 
