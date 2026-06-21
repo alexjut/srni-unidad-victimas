@@ -104,14 +104,20 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.execAsync('DELETE FROM padron; DELETE FROM jornada;');
 
-    for (const p of payload.padron ?? []) {
-      const hash = hashDocumento(p.documento);
-      await db.runAsync(
-        `INSERT OR REPLACE INTO padron
-           (documento_hash, tipo_documento, documento_display, nombre, ubicacion,
-            cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
+    // Inserción por LOTES con statement preparado: una sola preparación del
+    // INSERT reutilizada por fila (executeAsync). Evita N round-trips de parseo
+    // a SQLite, crítico al login con miles de filas. Sigue siendo transaccional
+    // y el resultado es idéntico (mismo orden de columnas, mismos hash/display).
+    const stmtPadron = await db.prepareAsync(
+      `INSERT OR REPLACE INTO padron
+         (documento_hash, tipo_documento, documento_display, nombre, ubicacion,
+          cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    try {
+      for (const p of payload.padron ?? []) {
+        const hash = hashDocumento(p.documento);
+        await stmtPadron.executeAsync([
           hash,
           p.tipo_documento ?? '',
           displayDocumento(p.documento),
@@ -122,16 +128,22 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
           p.habilitada ? 1 : 0,
           p.ya_caracterizada ? 1 : 0,
           p.cons_persona ?? null,
-        ],
-      );
+        ]);
+      }
+    } finally {
+      await stmtPadron.finalizeAsync();
     }
 
-    for (const v of payload.jornada ?? []) {
-      const hash = hashDocumento(v.numero_documento);
-      await db.runAsync(
-        `INSERT OR REPLACE INTO jornada (documento_hash, json) VALUES (?, ?)`,
-        [hash, JSON.stringify(v)],
-      );
+    const stmtJornada = await db.prepareAsync(
+      `INSERT OR REPLACE INTO jornada (documento_hash, json) VALUES (?, ?)`,
+    );
+    try {
+      for (const v of payload.jornada ?? []) {
+        const hash = hashDocumento(v.numero_documento);
+        await stmtJornada.executeAsync([hash, JSON.stringify(v)]);
+      }
+    } finally {
+      await stmtJornada.finalizeAsync();
     }
 
     const param = payload.parametricas ?? {};

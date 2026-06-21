@@ -1,6 +1,6 @@
 // Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { View, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
+import { View, FlatList, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
   ActivityIndicator, Chip, IconButton, ProgressBar,
@@ -136,6 +136,8 @@ export default function CapituloScreen() {
   const flatRef = useRef<FlatList | null>(null);
   // Prellenado: guarda el borrador para el que ya se intentó sembrar (una vez).
   const prefillRef = useRef<string | null>(null);
+  // Evita repetir la alerta de "no hay borrador" en cada tecla.
+  const alertaBorradorRef = useRef(false);
 
   // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
   // encuestador vea desde la primera pregunta del nuevo miembro.
@@ -334,28 +336,23 @@ export default function CapituloScreen() {
   }, [borradorId, borradorIdParam, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
 
   // ── Skip logic ──────────────────────────────────────────────────────────────
-  // Sprint 21: la skip logic evalúa a nivel de pregunta (no por miembro).
-  // Para HOGAR usamos su única respuesta. Para PERSONA usamos la primera
-  // respuesta no vacía como representante — suficiente para reglas globales
-  // del tipo "si el hogar tiene X, mostrar Y". Reglas por miembro quedarían
-  // para iteración futura.
+  // La skip-logic PERSONA se evalúa con las respuestas del MIEMBRO ACTIVO (el
+  // wizard renderiza un miembro a la vez). Antes se colapsaba a "la primera
+  // respuesta no vacía entre miembros", lo que mostraba/ocultaba preguntas en
+  // personas equivocadas. Al cambiar de miembro, este memo se recalcula y las
+  // preguntas visibles se ajustan a ESE miembro. HOGAR usa su única respuesta.
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
+    const activo = miembros[miembroIdx] ?? null;
     const m: Record<string, string> = {};
     for (const p of preguntas) {
-      const claveHogar = claveResp(p.id, null);
-      if (respuestas[claveHogar]) {
-        m[p.codigo_externo] = respuestas[claveHogar];
-        continue;
+      if (p.nivel === 'PERSONA') {
+        m[p.codigo_externo] = activo ? (respuestas[claveResp(p.id, activo.id)] ?? '') : '';
+      } else {
+        m[p.codigo_externo] = respuestas[claveResp(p.id, null)] ?? '';
       }
-      // PERSONA: buscar primera respuesta no vacía entre miembros
-      for (const miembro of miembros) {
-        const val = respuestas[claveResp(p.id, miembro.id)];
-        if (val) { m[p.codigo_externo] = val; break; }
-      }
-      if (!m[p.codigo_externo]) m[p.codigo_externo] = '';
     }
     return m;
-  }, [preguntas, respuestas, miembros]);
+  }, [preguntas, respuestas, miembros, miembroIdx]);
 
   const { visibles } = useMemo(
     () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
@@ -519,7 +516,15 @@ export default function CapituloScreen() {
 
     const bid = borradorId ?? borradorIdParam;
     if (!bid) {
-      console.warn('[setRespuesta] borradorId VACÍO — la respuesta NO se guarda en SQLite', { preguntaId, valor: valor.slice(0,30) });
+      // Sin borrador NO se puede persistir: avisar de forma visible (una vez) en
+      // lugar de descartar en silencio. Evita capturar "a ciegas" y perder todo.
+      if (!alertaBorradorRef.current) {
+        alertaBorradorRef.current = true;
+        Alert.alert(
+          'No se pudo guardar',
+          'No se preparó el borrador de esta caracterización. Vuelve atrás y entra de nuevo al capítulo; si continúa, reinicia la app.',
+        );
+      }
       return;
     }
 
@@ -679,6 +684,25 @@ export default function CapituloScreen() {
     );
   }
 
+  // Guarda #6 — sin borrador resuelto NO se puede persistir nada. Bloquear la
+  // captura con un estado de error en vez de pintar el formulario y descartar
+  // cada respuesta en silencio (pérdida total a ciegas).
+  if (!(borradorId ?? borradorIdParam)) {
+    return (
+      <View style={styles.root}>
+        <GovHeader title={capituloNombre || 'Capítulo'} onBack={volverAListaCapitulos} />
+        <View style={styles.centrado}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={GOV.rojo} />
+          <Text style={{ ...FONT.body, color: GOV.textoP, textAlign: 'center', marginTop: SPACING.sm, marginBottom: SPACING.md }}>
+            No se pudo preparar el borrador de esta caracterización. No es posible
+            capturar respuestas en este capítulo.
+          </Text>
+          <GovButton label="Volver a capítulos" variant="secondary" onPress={volverAListaCapitulos} />
+        </View>
+      </View>
+    );
+  }
+
   // Sprint 21 — total visible incluye HOGAR (1×) + PERSONA (N miembros)
   const totalVisible = visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 1);
   const migaContexto = hogarId
@@ -745,10 +769,19 @@ export default function CapituloScreen() {
         />
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <FlatList
         ref={flatRef}
         data={items}
         keyExtractor={(it) => it.key}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         renderItem={({ item }) => {
           if (item.type === 'header-hogar') {
             return (
@@ -893,6 +926,7 @@ export default function CapituloScreen() {
           onPress={finalizarCapitulo}
         />
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

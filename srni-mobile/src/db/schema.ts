@@ -12,11 +12,12 @@
  *  3 → Sprint 9: cola_sincronizacion.retry_after TEXT (backoff exponencial)
  *  6 → Fase 0 Offline: padron, jornada, parametricas_cache, meta_offline
  *  7 → Fase A Offline: victimas_offline, miembros_offline (conformación 100% offline)
+ *  8 → hogares_offline.ultimo_error TEXT (motivo del fallo de sincronización)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -395,6 +396,18 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     // Fase A: víctimas y miembros offline para conformación 100% sin red.
     // Idempotente (IF NOT EXISTS).
     await db.execAsync(MIGRATION_V7);
+  }
+
+  if (currentVersion < 8) {
+    // hogares_offline.ultimo_error: guarda el motivo del fallo de sincronización.
+    // ALTER TABLE ADD COLUMN no es idempotente en SQLite si la columna ya existe.
+    try {
+      await db.execAsync(
+        "ALTER TABLE hogares_offline ADD COLUMN ultimo_error TEXT NOT NULL DEFAULT ''",
+      );
+    } catch (e: any) {
+      if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
+    }
   }
 
   if (currentVersion < SCHEMA_VERSION) {

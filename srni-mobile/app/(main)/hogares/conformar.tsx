@@ -341,6 +341,11 @@ export default function ConformarHogarScreen() {
 
     const miembroPayload = {
       nombre_completo: nombreCompleto,
+      // #3 — el número de documento se capturaba pero NUNCA se enviaba ni se
+      // encolaba (se perdía). El backend lo acepta (write-only, sin exigir el
+      // tipo). El tipo_documento es FK por id numérico y el form usa códigos,
+      // así que se omite hasta tener el mapeo código→id (paramétrica).
+      numero_documento: numDoc.trim() || undefined,
       parentesco,
       genero,
       rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',

@@ -35,6 +35,7 @@ import * as precargaDao from '../../src/db/precargaDao';
 import type { PadronRow } from '../../src/db/precargaDao';
 import * as victimasOfflineDao from '../../src/db/victimasOfflineDao';
 import * as colaDao from '../../src/db/colaDao';
+import { reportarError } from '../../src/services/errorReporter';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
 // ── Tipos de documento ───────────────────────────────────────────────────────
@@ -674,8 +675,14 @@ export default function BusquedaScreen() {
       }
       router.push('/(main)/hogares/conformar');
     } catch (err: any) {
-      const detalle = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
-      setErrorBusqueda(`No se pudo registrar la víctima.${detalle}`);
+      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'conformarHogar — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        stack: err?.stack,
+        pantalla: 'busqueda',
+      });
+      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
     } finally {
       setCargandoRegistro(false);
     }
@@ -738,8 +745,14 @@ export default function BusquedaScreen() {
       }
       setNoIncluidaRegistrada(true);
     } catch (err: any) {
-      const detalle = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
-      setErrorBusqueda(`No se pudo registrar la víctima.${detalle}`);
+      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'registrarNoIncluida — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        stack: err?.stack,
+        pantalla: 'busqueda',
+      });
+      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
     } finally {
       setCargandoRegistro(false);
     }

@@ -528,25 +528,28 @@ export default function FormularioIndexScreen() {
     }
   }
 
-  // Sprint 21 — Anular sesión con doble confirmación
+  // Sprint 21 — Cerrar con nota de anulación, con doble confirmación.
+  // #17 — Honestidad: el backend NO tiene aún un estado "ANULADA"; esta acción
+  // CIERRA la entrevista como COMPLETADA con una observación de anulación, así
+  // que SÍ queda registrada. El texto lo deja claro para no engañar al encuestador.
   function handleAnular() {
     if (!sesionServerId) return;
     Alert.alert(
-      '¿Anular la entrevista?',
-      'Esta acción marcará la sesión como ANULADA. No podrás continuarla ni recuperar las respuestas. ¿Estás seguro?',
+      '¿Cerrar con anulación?',
+      'No se podrá continuar ni recuperar las respuestas. La entrevista quedará CERRADA (completada) con una nota de anulación — seguirá registrada para auditoría. ¿Continuar?',
       [
         { text: 'No, cancelar', style: 'cancel' },
         {
-          text: 'Sí, anular',
+          text: 'Sí, cerrar',
           style: 'destructive',
           onPress: () => {
             Alert.alert(
               'Última confirmación',
-              'Esta es la última oportunidad para volver atrás. Si continúas, la entrevista se anulará definitivamente.',
+              'Última oportunidad para volver atrás. Si continúas, la entrevista se cerrará con la nota de anulación.',
               [
                 { text: 'Volver', style: 'cancel' },
                 {
-                  text: 'Anular definitivamente',
+                  text: 'Cerrar definitivamente',
                   style: 'destructive',
                   onPress: confirmarAnular,
                 },

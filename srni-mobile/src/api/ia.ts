@@ -89,12 +89,12 @@ export const iaApi = {
    * NUNCA se envía el audio crudo.
    */
   mapearAudio: (payload: MapearAudioPayload) =>
-    apiClient.post<MapearAudioResponse>('/api/ia/mapear-audio/', payload),
+    apiClient.post<MapearAudioResponse>('/api/ia/mapear-audio/', payload, { timeout: 30000 }),
 
   /**
    * Procesar entrevista completa en modo batch: una sola llamada a Gemini
    * para todas las preguntas del capítulo.
    */
   procesarEntrevista: (payload: ProcesarEntrevistaPayload) =>
-    apiClient.post<ProcesarEntrevistaResponse>('/api/ia/procesar-entrevista/', payload),
+    apiClient.post<ProcesarEntrevistaResponse>('/api/ia/procesar-entrevista/', payload, { timeout: 60000 }),
 };

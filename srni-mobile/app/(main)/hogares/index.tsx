@@ -72,7 +72,12 @@ function HogarServidorCard({ data }: { data: HogarResumen }) {
 
 function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
   return (
-    <View style={[styles.card, styles.cardOffline]}>
+    <Pressable
+      onPress={() => router.push({ pathname: '/(main)/caracterizar', params: { hogarId: data.id_local } })}
+      style={({ pressed }) => [styles.card, styles.cardOffline, pressed && styles.cardPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Hogar offline ${data.id_local.slice(0, 8)} — pendiente de sincronizar`}
+    >
       <View style={[styles.cardLeft, { backgroundColor: GOV.naranja }]} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
@@ -86,7 +91,10 @@ function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
         </Text>
         <Text style={styles.metaTxt}>{new Date(data.created_at).toLocaleDateString('es-CO')}</Text>
       </View>
-    </View>
+      <View style={styles.chevron}>
+        <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -308,7 +316,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   cardOffline: {
-    // sin onPress — solo visual
+    // tocable: navega al flujo offline de caracterización con su id_local
   },
   cardLeft: {
     width: 4,
