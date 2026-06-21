@@ -117,3 +117,13 @@ export async function marcarError(idLocal: string, mensaje: string): Promise<voi
     [new Date().toISOString(), idLocal],
   );
 }
+
+/**
+ * Elimina definitivamente una fila de hogares_offline. Lo usa la lista de hogares
+ * para purgar copias locales ya sincronizadas que el servidor ya no devuelve
+ * (p.ej. el hogar se borró desde el admin) y así no quedan "fantasmas".
+ */
+export async function eliminarPorIdLocal(idLocal: string): Promise<void> {
+  const db = await openDb();
+  await db.runAsync('DELETE FROM hogares_offline WHERE id_local = ?', [idLocal]);
+}

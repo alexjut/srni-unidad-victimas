@@ -25,12 +25,47 @@ import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
-import type { MiembroHogarResumen } from '../../../src/types';
+import type { MiembroHogarResumen, VictimaResumenFuente } from '../../../src/types';
 
 // Sprint 21 — clave compuesta para indexar respuestas por (pregunta, miembro).
 // Miembro vacío = pregunta nivel HOGAR (única para toda la sesión).
 function claveResp(preguntaId: string, miembroId: string | null | undefined): string {
   return `${preguntaId}|${miembroId ?? ''}`;
+}
+
+/** Edad en años cumplidos a hoy, derivada de una fecha ISO 'YYYY-MM-DD'. */
+function calcularEdad(fechaISO: string): string {
+  if (!fechaISO) return '';
+  const nac = new Date(fechaISO);
+  if (isNaN(nac.getTime())) return '';
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad >= 0 && edad < 130 ? String(edad) : '';
+}
+
+/**
+ * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
+ * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
+ * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
+ * instrumento no tiene esa pregunta (decisión de instrumento/UARIV). Los códigos
+ * de tipo LISTA (A3 doc, A8 sexo) solo se siembran si el valor coincide con una
+ * opción real (validado en runtime), así nunca se inyecta un valor inválido.
+ */
+function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
+  const m: Record<string, string> = {};
+  if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
+  if (v.segundo_nombre)   m.A2 = v.segundo_nombre;
+  if (v.fecha_nacimiento) {
+    m.A6 = v.fecha_nacimiento;
+    const edad = calcularEdad(v.fecha_nacimiento);
+    if (edad) m.B9 = edad;
+  }
+  if (v.numero_documento) m.A5 = v.numero_documento;
+  if (v.tipo_documento)   m.A3 = v.tipo_documento;
+  if (v.genero)           m.A8 = v.genero;
+  return m;
 }
 
 interface ItemLista {
@@ -66,6 +101,7 @@ export default function CapituloScreen() {
 
   const { estaOnline, refrescarContadores } = useSyncStore();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
+  const victimaFuente = useCaracterizacionStore((s) => s.victimaFuente);
   const {
     activo: iaActivo,
     estado: estadoIA,
@@ -96,6 +132,8 @@ export default function CapituloScreen() {
   // Solo se renderiza el miembro en este índice (no todos en scroll).
   const [miembroIdx, setMiembroIdx] = useState(0);
   const flatRef = useRef<FlatList | null>(null);
+  // Prellenado: guarda el borrador para el que ya se intentó sembrar (una vez).
+  const prefillRef = useRef<string | null>(null);
 
   // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
   // encuestador vea desde la primera pregunta del nuevo miembro.
@@ -229,6 +267,69 @@ export default function CapituloScreen() {
       });
     return () => { activo = false; };
   }, [hogarId]);
+
+  // ── Prellenado de "Datos básicos" del autorizado ────────────────────────────
+  // Siembra UNA sola vez por borrador las respuestas que ya conocemos de la
+  // víctima (nombres, documento, fecha de nacimiento, EDAD derivada, sexo), solo
+  // en celdas VACÍAS (nunca pisa lo capturado). Encola cada valor para que
+  // sincronice igual que una respuesta normal. Si el capítulo no tiene preguntas
+  // mapeables, no hace nada.
+  useEffect(() => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid || !victimaFuente || preguntas.length === 0) return;
+    if (prefillRef.current === bid) return;
+
+    const map = construirPrefillVictima(victimaFuente);
+    if (Object.keys(map).length === 0) { prefillRef.current = bid; return; }
+
+    // Las preguntas de datos básicos son PERSONA → se siembran contra el miembro
+    // autorizado. Si aún no se resolvió, esperar (no marcar como hecho).
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? null;
+    const hayPersonaMapeable = preguntas.some(
+      (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
+    );
+    if (hayPersonaMapeable && !autorizado) return;
+
+    let cancelado = false;
+    (async () => {
+      try {
+        const existentes = await borradoresDao.getRespuestaMapCompuesto(bid);
+        const borrador = await borradoresDao.getBorrador(bid);
+        const nuevos: Record<string, string> = {};
+        for (const p of preguntas) {
+          const valor = map[p.codigo_externo];
+          if (!valor) continue;
+          const miembroId = p.nivel === 'PERSONA' ? (autorizado?.id ?? null) : null;
+          if (p.nivel === 'PERSONA' && !miembroId) continue;
+          const clave = claveResp(p.id, miembroId);
+          if (existentes[clave]?.trim()) continue; // no pisar lo ya capturado
+          // Tipos de opción: solo sembrar si el valor coincide con una opción real.
+          const esOpcion = p.tipo === 'LISTA' || p.tipo === 'RADIO'
+            || p.tipo === 'BOOLEAN' || p.tipo === 'LISTA_MULTIPLE';
+          if (esOpcion) {
+            const ops = opciones[p.id] ?? [];
+            if (!ops.some((o) => o.valor === valor)) continue;
+          }
+          await borradoresDao.upsertRespuesta(bid, p.id, valor, miembroId);
+          await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+            borrador_id: bid,
+            sesion_id: borrador?.sesion_id ?? null,
+            pregunta_id: p.id,
+            miembro_id: miembroId,
+            valor,
+          });
+          nuevos[clave] = valor;
+        }
+        if (cancelado) return;
+        prefillRef.current = bid;
+        if (Object.keys(nuevos).length > 0) {
+          setRespuestasState((prev) => ({ ...prev, ...nuevos }));
+          await refrescarContadores();
+        }
+      } catch { /* prellenado best-effort: si falla, el usuario captura a mano */ }
+    })();
+    return () => { cancelado = true; };
+  }, [borradorId, borradorIdParam, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
 
   // ── Skip logic ──────────────────────────────────────────────────────────────
   // Sprint 21: la skip logic evalúa a nivel de pregunta (no por miembro).
