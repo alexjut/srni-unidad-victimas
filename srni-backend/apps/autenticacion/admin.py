@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from .models import Usuario, Perfil
 
 
 @admin.register(Perfil)
-class PerfilAdmin(admin.ModelAdmin):
+class PerfilAdmin(UnfoldModelAdmin):
     list_display = ['codigo', 'nombre', 'puede_buscar_rni', 'puede_caracterizar',
                     'puede_ver_reportes', 'puede_administrar', 'activo']
     list_filter = ['activo']
@@ -12,7 +13,7 @@ class PerfilAdmin(admin.ModelAdmin):
 
 
 @admin.register(Usuario)
-class UsuarioAdmin(UserAdmin):
+class UsuarioAdmin(UserAdmin, UnfoldModelAdmin):
     list_display = ['codigo_usuario', 'nombre_completo', 'email', 'perfil', 'activo', 'es_admin']
     list_filter = ['activo', 'es_admin', 'perfil']
     search_fields = ['codigo_usuario', 'nombre_completo', 'email']

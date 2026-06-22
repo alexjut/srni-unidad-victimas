@@ -6,10 +6,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
+import { calcularProgresoOffline, type MiembroRef } from '../../../src/services/progreso';
+import * as colaDao from '../../../src/db/colaDao';
 import type { CapituloRow, InstrumentoMeta } from '../../../src/db/instrumentoDao';
 import { useIAStore } from '../../../src/stores/iaStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { hogaresApi } from '../../../src/api/hogares';
 import { reportarError } from '../../../src/services/errorReporter';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
@@ -47,6 +50,7 @@ function CapituloCard({
   sesionServerId,
   instrumentoId,
   hogarId,
+  borradorId,
   modoIA,
 }: {
   capitulo: CapituloRow;
@@ -55,6 +59,7 @@ function CapituloCard({
   sesionServerId?: string;
   instrumentoId?: string;
   hogarId?: string;
+  borradorId?: string;
   modoIA: boolean;
 }) {
   const colorEstado = ESTADO_COLOR[progress.estado];
@@ -69,6 +74,10 @@ function CapituloCard({
           capituloNombre: capitulo.nombre,
           ...(sesionServerId ? { sesionServerId } : {}),
           ...(instrumentoId  ? { instrumentoId }  : {}),
+          // #15 — hogarId/borradorId deben viajar por TODO el flujo IA para que
+          // al caer a manual se carguen los miembros y el borrador offline.
+          ...(hogarId        ? { hogarId }         : {}),
+          ...(borradorId     ? { borradorId }     : {}),
         },
       });
     } else {
@@ -79,6 +88,7 @@ function CapituloCard({
           ...(sesionServerId ? { sesionServerId } : {}),
           ...(instrumentoId  ? { instrumentoId }  : {}),
           ...(hogarId        ? { hogarId }         : {}),
+          ...(borradorId     ? { borradorId }     : {}),
         },
       });
     }
@@ -188,29 +198,33 @@ function CapituloCard({
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function FormularioIndexScreen() {
-  const { sesionServerId, instrumentoId, hogarId } = useLocalSearchParams<{
+  const { sesionServerId, instrumentoId, hogarId, borradorId: borradorIdParam } = useLocalSearchParams<{
     sesionServerId?: string;
     instrumentoId?: string;
     hogarId?: string;
+    borradorId?: string;
   }>();
 
   const { activo: iaActivo } = useIAStore();
+  const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
+
+  // Borrador local que hila todo el flujo OFFLINE. Online (con sesionServerId)
+  // no lo necesita: el capítulo resuelve su borrador por findBySesionId.
+  const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
 
   const [capitulos, setCapitulos] = useState<CapituloRow[]>([]);
   const [meta, setMeta] = useState<InstrumentoMeta | null>(null);
   const [cargando, setCargando] = useState(true);
   const [modoIA, setModoIA] = useState<boolean | null>(null);
 
-  // Progreso por capítulo — Sprint 21 fix: separar obligatorias HOGAR/PERSONA
-  // para multiplicar PERSONA × cantidad de miembros del hogar.
-  const [conteoPreguntas, setConteoPreguntas] = useState<
-    Record<string, { total: number; obligatorias: number; obligHogar: number; obligPersona: number }>
-  >({});
-  const [conteoRespondidas, setConteoRespondidas] = useState<Record<string, number>>({});
-  // Sprint 21 fix — número de miembros del hogar para calcular bien el progreso.
-  // Sin esto, el contador "0 capítulos completados" nunca avanza porque
-  // espera N respondidas por pregunta PERSONA pero el conteo no las multiplica.
-  const [numMiembros, setNumMiembros] = useState(1);
+  // Progreso por capítulo — fix #8/#18: el denominador ahora es OBLIGATORIAS
+  // VISIBLES (evaluando skip-logic), no el conteo estático que inflaba el total
+  // con obligatorias ocultas y dejaba el progreso atascado bajo 100%.
+  //   - respuestasCompuesto: mapa `pregunta_id|miembro_id` → valor del borrador.
+  //   - miembrosRef: miembros del hogar (PERSONA se cuenta por miembro).
+  const [respuestasCompuesto, setRespuestasCompuesto] = useState<Record<string, string>>({});
+  const [miembrosRef, setMiembrosRef] = useState<MiembroRef[]>([]);
 
   // Finalizar sesión
   const [modalFinalizar, setModalFinalizar] = useState(false);
@@ -292,13 +306,29 @@ export default function FormularioIndexScreen() {
       // Leer de memoria — instantáneo
       setCapitulos(instrumentos.getCapitulos());
       setMeta(instrumentos.getMeta());
-      setConteoPreguntas(instrumentos.contarPreguntasPorCapitulo());
 
       if (sesionServerId) {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {
-          setConteoRespondidas(await borradoresDao.contarRespuestasPorCapitulo(borrador.id));
+          setBorradorId(borrador.id);
+          setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
         }
+      } else if (hogarId && instrumentoId) {
+        // ── OFFLINE: resolver UN ÚNICO borrador para (hogar, instrumento) ──────
+        // Reutilizar el que llegó por param, o el existente para ese hogar+
+        // instrumento, o crear uno nuevo. Así todos los capítulos comparten el
+        // mismo borrador y el progreso se lee localmente (sin servidor).
+        let bid = borradorIdParam ?? null;
+        if (!bid) {
+          const existente = await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrumentoId);
+          bid = existente?.id ?? null;
+        }
+        if (!bid) {
+          const nuevo = await borradoresDao.crearBorrador(instrumentoId, hogarId);
+          bid = nuevo.id;
+        }
+        setBorradorId(bid);
+        setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(bid));
       }
     } catch (e) {
       reportarError({
@@ -316,19 +346,20 @@ export default function FormularioIndexScreen() {
   useEffect(() => {
     cargarTodo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sesionServerId]);
+  }, [sesionServerId, hogarId, instrumentoId]);
 
   // Sprint 21 fix — cargar miembros del hogar para calcular bien el progreso.
+  // Tolerante a red (fix #4/#38): online → caché; offline-local →
+  // construirMiembrosOffline; online caído → caché del servidor. Se guardan los
+  // IDS (no solo el conteo) porque el progreso PERSONA lee la respuesta de cada
+  // miembro por su clave `pregunta_id|miembro_id`. Si no hay miembros, queda
+  // vacío y el servicio de progreso usa un miembro fantasma (≡ Math.max(N, 1)).
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    hogaresApi.detalle(hogarId)
-      .then(({ data }) => {
-        if (!activo) return;
-        const n = (data.miembros ?? []).length;
-        if (n > 0) setNumMiembros(n);
-      })
-      .catch(() => { /* offline: cae al default 1 */ });
+    cargarMiembrosHogar(hogarId)
+      .then((ms) => { if (activo) setMiembrosRef(ms.map((m) => ({ id: m.id }))); })
+      .catch(() => { /* sin datos: queda vacío (miembro fantasma en el cálculo) */ });
     return () => { activo = false; };
   }, [hogarId]);
 
@@ -344,7 +375,6 @@ export default function FormularioIndexScreen() {
   // preguntas y el conteo queda en 0 falsamente. Reactivamos siempre.
   useFocusEffect(
     useCallback(() => {
-      if (!sesionServerId) return;
       let vivo = true;
       (async () => {
         try {
@@ -355,80 +385,128 @@ export default function FormularioIndexScreen() {
             catch { /* perfil no en bundle — se mantiene el cache previo */ }
           }
 
-          // 2. Buscar borrador local
-          const borrador = await borradoresDao.findBySesionId(sesionServerId);
-          if (!borrador || !vivo) {
+          // 2. Resolver borrador local
+          //    Online: por sesion del servidor. Offline: el borrador único de
+          //    este (hogar, instrumento) que ya resolvió cargarTodo.
+          let borradorRef: borradoresDao.BorradorRow | null = null;
+          if (sesionServerId) {
+            borradorRef = await borradoresDao.findBySesionId(sesionServerId);
+          } else if (borradorId) {
+            borradorRef = await borradoresDao.getBorrador(borradorId);
+          }
+          if (!borradorRef || !vivo) {
             console.log('[formulario/index] useFocusEffect: borrador no encontrado',
-              { sesionServerId, borrador });
+              { sesionServerId, borradorId });
             return;
           }
 
-          // 3. Contar respuestas por capítulo
-          const conteo = await borradoresDao.contarRespuestasPorCapitulo(borrador.id);
-          console.log('[formulario/index] useFocusEffect: conteo recalculado',
-            { borradorId: borrador.id, conteo });
+          // 3. Releer respuestas del borrador (clave pregunta_id|miembro_id).
+          //    El progreso real (obligatorias VISIBLES respondidas) se calcula
+          //    en el memo de abajo con calcularProgresoOffline.
+          const mapa = await borradoresDao.getRespuestaMapCompuesto(borradorRef.id);
+          console.log('[formulario/index] useFocusEffect: respuestas recargadas',
+            { borradorId: borradorRef.id, respuestas: Object.keys(mapa).length });
 
-          if (vivo) setConteoRespondidas(conteo);
+          if (vivo) setRespuestasCompuesto(mapa);
         } catch (err) {
           console.warn('[formulario/index] useFocusEffect ERROR:', err);
         }
       })();
       return () => { vivo = false; };
-    }, [sesionServerId]),
+    }, [sesionServerId, borradorId]),
   );
 
   // ── Progreso global ─────────────────────────────────────────────────────────
-  // Sprint 21 fix — obligatorias reales = obligHogar + obligPersona × N miembros.
-  // Sin esto, el cálculo le decía 'completado' cuando solo respondiste para el
-  // primer miembro (o nunca, si N miembros > 1 y faltaban PERSONA × (N-1)).
-  function obligatoriasReales(cp: { obligHogar: number; obligPersona: number }): number {
-    return cp.obligHogar + cp.obligPersona * Math.max(numMiembros, 1);
-  }
-
-  const { totalObligGlobal, respondidoGlobal, capsCompletados } = useMemo(() => {
-    let total = 0, respondido = 0, completados = 0;
-    for (const cap of capitulos) {
-      const cp = conteoPreguntas[cap.id];
-      const cr = conteoRespondidas[cap.id] ?? 0;
-      if (!cp) continue;
-      const obligReales = obligatoriasReales(cp);
-      total      += obligReales;
-      respondido += Math.min(cr, obligReales);
-      if (obligReales > 0 && cr >= obligReales) completados++;
-    }
-    return { totalObligGlobal: total, respondidoGlobal: respondido, capsCompletados: completados };
+  // Fix #8/#18 — el denominador son las obligatorias VISIBLES (evaluando
+  // skip-logic contra el estado actual del borrador), no el conteo estático.
+  // Antes, una obligatoria oculta por una regla HABILITAR no disparada inflaba
+  // el total y el progreso se atascaba sin llegar nunca a 100%.
+  // El cálculo (HOGAR 1×, PERSONA por miembro) es el MISMO que el de la
+  // pantalla de capítulo, centralizado en services/progreso para que coincidan.
+  const progresoData = useMemo(
+    () => calcularProgresoOffline(
+      capitulos,
+      instrumentos.getPreguntas,
+      instrumentos.getReglas(),
+      miembrosRef,
+      respuestasCompuesto,
+    ),
+    // getPreguntas/getReglas leen el perfil activo en memoria; `capitulos`
+    // cambia al activarlo, así que basta con depender de él aquí.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capitulos, conteoPreguntas, conteoRespondidas, numMiembros]);
+    [capitulos, miembrosRef, respuestasCompuesto],
+  );
 
-  const progresoGlobal = totalObligGlobal > 0 ? respondidoGlobal / totalObligGlobal : 0;
+  const progresoGlobal = progresoData.progreso;
+  const capsCompletados = progresoData.capsCompletados;
 
   function getCapProgress(capId: string): CapProgress {
-    const cp = conteoPreguntas[capId];
-    const cr = conteoRespondidas[capId] ?? 0;
-    if (!cp || (cp.obligHogar === 0 && cp.obligPersona === 0)) {
+    const pc = progresoData.porCapitulo[capId];
+    if (!pc || pc.obligVisibles === 0) {
       return { estado: 'pendiente', respondidas: 0, obligatorias: 0 };
     }
-    const obligReales = obligatoriasReales(cp);
-    // Sprint 21 fix display: capar respondidas al máximo de obligatorias para
-    // que la barra y el chip sean consistentes. Si el usuario respondió 10
-    // pero solo 7 son obligatorias, mostramos 7/7 (no 10/7 que confunde).
-    const respondidasCap = Math.min(cr, obligReales);
-    if (cr >= obligReales) return { estado: 'completado', respondidas: respondidasCap, obligatorias: obligReales };
-    if (cr > 0)            return { estado: 'en_progreso', respondidas: respondidasCap, obligatorias: obligReales };
-    return { estado: 'pendiente', respondidas: 0, obligatorias: obligReales };
+    // Capar respondidas al máximo de obligatorias para que la barra y el chip
+    // sean consistentes (mostrar 7/7, nunca 10/7).
+    return {
+      estado: pc.estado,
+      respondidas: Math.min(pc.obligRespondidas, pc.obligVisibles),
+      obligatorias: pc.obligVisibles,
+    };
   }
 
   async function handleFinalizar() {
-    if (!sesionServerId) return;
+    const bid = borradorId ?? borradorIdParam ?? null;
+    // Online (con sesión de servidor) intentamos cerrar directo. Offline, o si el
+    // borrador aún no tiene sesión en el servidor, encolamos FINALIZAR_SESION: la
+    // sincronización inyecta el sesion_id tras CREAR_SESION y cierra la encuesta.
+    if (!sesionServerId && !bid) return;
     setFinalizando(true);
-    try {
-      await encuestasApi.finalizar(sesionServerId, { observaciones: observaciones.trim() || undefined });
+
+    const observ = observaciones.trim() || undefined;
+    const cerrarOk = (offline: boolean) => {
       setModalFinalizar(false);
       Alert.alert(
-        'Sesión finalizada',
-        'La sesión ha sido cerrada exitosamente.',
+        offline ? 'Caracterización finalizada (offline)' : 'Sesión finalizada',
+        offline
+          ? 'La caracterización quedó cerrada en el dispositivo. Se enviará al servidor automáticamente cuando recuperes conexión.'
+          : 'La sesión ha sido cerrada exitosamente.',
         [{ text: 'Aceptar', onPress: () => router.back() }],
       );
+    };
+
+    // Encola la finalización para que la cola la procese (offline o tras fallo online).
+    const encolarFinalizar = async () => {
+      if (!bid) return false;
+      const borrador = await borradoresDao.getBorrador(bid);
+      await colaDao.encolar('FINALIZAR_SESION', bid, {
+        borrador_id: bid,
+        sesion_id: sesionServerId ?? borrador?.sesion_id ?? null,
+        observaciones: observ,
+      });
+      await borradoresDao.marcarCompletado(bid);
+      await refrescarContadores();
+      return true;
+    };
+
+    try {
+      if (sesionServerId && estaOnline) {
+        try {
+          await encuestasApi.finalizar(sesionServerId, { observaciones: observ });
+          if (bid) { try { await borradoresDao.marcarCompletado(bid); } catch { /* no-op */ } }
+          cerrarOk(false);
+          return;
+        } catch (err: any) {
+          // Error real del servidor (4xx) → informar. Error de red → caer a la cola.
+          if (err?.response) {
+            Alert.alert('Error', err.response.data?.detail ?? 'No se pudo finalizar la sesión.');
+            return;
+          }
+        }
+      }
+      // Offline (o red caída en el intento online): encolar.
+      const encolado = await encolarFinalizar();
+      if (encolado) cerrarOk(true);
+      else Alert.alert('Error', 'No se pudo finalizar la caracterización.');
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo finalizar la sesión.');
     } finally {
@@ -436,25 +514,28 @@ export default function FormularioIndexScreen() {
     }
   }
 
-  // Sprint 21 — Anular sesión con doble confirmación
+  // Sprint 21 — Cerrar con nota de anulación, con doble confirmación.
+  // #17 — Honestidad: el backend NO tiene aún un estado "ANULADA"; esta acción
+  // CIERRA la entrevista como COMPLETADA con una observación de anulación, así
+  // que SÍ queda registrada. El texto lo deja claro para no engañar al encuestador.
   function handleAnular() {
     if (!sesionServerId) return;
     Alert.alert(
-      '¿Anular la entrevista?',
-      'Esta acción marcará la sesión como ANULADA. No podrás continuarla ni recuperar las respuestas. ¿Estás seguro?',
+      '¿Cerrar con anulación?',
+      'No se podrá continuar ni recuperar las respuestas. La entrevista quedará CERRADA (completada) con una nota de anulación — seguirá registrada para auditoría. ¿Continuar?',
       [
         { text: 'No, cancelar', style: 'cancel' },
         {
-          text: 'Sí, anular',
+          text: 'Sí, cerrar',
           style: 'destructive',
           onPress: () => {
             Alert.alert(
               'Última confirmación',
-              'Esta es la última oportunidad para volver atrás. Si continúas, la entrevista se anulará definitivamente.',
+              'Última oportunidad para volver atrás. Si continúas, la entrevista se cerrará con la nota de anulación.',
               [
                 { text: 'Volver', style: 'cancel' },
                 {
-                  text: 'Anular definitivamente',
+                  text: 'Cerrar definitivamente',
                   style: 'destructive',
                   onPress: confirmarAnular,
                 },
@@ -647,33 +728,40 @@ export default function FormularioIndexScreen() {
             sesionServerId={sesionServerId}
             instrumentoId={instrumentoId}
             hogarId={hogarId}
+            borradorId={borradorId ?? undefined}
             modoIA={modoIA === true}
           />
         )}
         contentContainerStyle={styles.lista}
         ListFooterComponent={
-          sesionServerId ? (
+          // Finalizar disponible online (sesión de servidor) Y offline (borrador
+          // local) — sin esto no se podía cerrar la caracterización sin red.
+          (sesionServerId || borradorId) ? (
             <View style={styles.footerFinalizar}>
               <GovButton
-                label="Finalizar sesión"
+                label="Finalizar caracterización"
                 variant="secondary"
                 icon="check-circle-outline"
                 onPress={() => setModalFinalizar(true)}
               />
-              <View style={{ height: 8 }} />
-              {/* Sprint 21 — Anular sesión con doble confirmación */}
-              <Pressable
-                onPress={handleAnular}
-                disabled={finalizando}
-                style={({ pressed }) => [
-                  styles.btnAnular,
-                  pressed && { opacity: 0.85 },
-                  finalizando && { opacity: 0.5 },
-                ]}
-              >
-                <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
-                <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
-              </Pressable>
+              {/* Anular requiere servidor (PATCH/finalizar online) → solo online. */}
+              {sesionServerId ? (
+                <>
+                  <View style={{ height: 8 }} />
+                  <Pressable
+                    onPress={handleAnular}
+                    disabled={finalizando}
+                    style={({ pressed }) => [
+                      styles.btnAnular,
+                      pressed && { opacity: 0.85 },
+                      finalizando && { opacity: 0.5 },
+                    ]}
+                  >
+                    <MaterialCommunityIcons name="close-circle-outline" size={18} color={GOV.rojo} />
+                    <Text style={styles.btnAnularTxt}>Anular entrevista</Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           ) : null
         }

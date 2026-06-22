@@ -9,7 +9,7 @@
  *   │   [subtítulo]                   │
  *   └─────────────────────────────────┘
  */
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOV } from '../theme/govTheme';
@@ -50,6 +50,13 @@ export function GovHeader({ title, subtitle, onBack, right }: GovHeaderProps) {
           ) : null}
         </View>
         {right ? <View style={styles.rightSlot}>{right}</View> : null}
+        {/* Logo institucional (blanco) — presencia de marca en todas las secciones */}
+        <Image
+          source={require('../../assets/logos/logo-unidad-horizontal-negativo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="Unidad para las Víctimas"
+        />
       </View>
     </View>
   );
@@ -105,5 +112,11 @@ const styles = StyleSheet.create({
   rightSlot: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  logo: {
+    height: 24,
+    width: 96,
+    marginLeft: 8,
+    marginRight: 4,
   },
 });

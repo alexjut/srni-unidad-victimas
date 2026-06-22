@@ -22,17 +22,20 @@ from apps.parametricas.models import TipoDocumento, Municipio
 from apps.autenticacion.models import Usuario
 
 # cons, documento, p1, p2, a1, a2, fnac, genero, mpio_dane, estado_hogar, estado_sesion, pct
+# Documentos en rango 99950000xx — NO colisionan con las cédulas del mock
+# (99901000xx titulares, 99902000xx miembros, 1030547250 real). Nombres
+# ficticios distintos de los del mock para evitar confusión en la demo.
 TITULARES = [
-    (90001, '9990100001', 'María',  'Esperanza',  'Rojas',    'Mendoza',  date(1980, 5, 15), 'F', '05001', 'ACTIVO',   'COMPLETADA',  100),
-    (90002, '9990100005', 'Rosario','del Carmen', 'Valencia', 'Ríos',     date(1955, 1, 30), 'F', '54001', 'ACTIVO',   'COMPLETADA',  100),
-    (90003, '9990100006', 'Héctor', 'Fabio',      'Quintero', 'Ossa',     date(1968, 7,  4), 'M', '05001', 'ACTIVO',   'EN_PROGRESO',  60),
-    (90004, '9990100009', 'Gloria', 'Isabel',     'Mosquera', 'Cerón',    date(1972, 9,  7), 'F', '27001', 'BORRADOR', 'EN_PROGRESO',  35),
-    (90005, '9990100010', 'Lucía',  'Neiza',      'Yule',     'Tombé',    date(1990, 11, 25),'F', '19001', 'ACTIVO',   'COMPLETADA',  100),
-    (90006, '9991000011', 'Pedro',  'José',       'Gómez',    'Lara',     date(1975, 2, 10), 'M', '11001', 'ACTIVO',   'COMPLETADA',  100),
-    (90007, '9991000012', 'Ana',    'María',      'Suárez',   'Peña',     date(1988, 6,  3), 'F', '76001', 'BORRADOR', 'INICIADA',     10),
-    (90008, '9991000013', 'Carlos', 'Andrés',     'Díaz',     'Mora',     date(1969, 12, 20),'M', '08001', 'ACTIVO',   'COMPLETADA',  100),
-    (90009, '9991000014', 'Luz',    'Marina',     'Castro',   'Vega',     date(1982, 3, 28), 'F', '13001', 'ACTIVO',   'EN_PROGRESO',  75),
-    (90010, '9991000015', 'Jorge',  'Eliécer',    'Ramírez',  'Soto',     date(1991, 8,  8), 'M', '50001', 'BORRADOR', 'SUSPENDIDA',   45),
+    (90001, '9995000001', 'Beatriz', 'Helena',   'Cuéllar',   'Naranjo',  date(1980, 5, 15), 'F', '05001', 'ACTIVO',   'COMPLETADA',  100),
+    (90002, '9995000002', 'Mariela', 'Antonia',  'Bermúdez',  'Galvis',   date(1955, 1, 30), 'F', '54001', 'ACTIVO',   'COMPLETADA',  100),
+    (90003, '9995000003', 'Ernesto', 'Iván',     'Pabón',     'Lozada',   date(1968, 7,  4), 'M', '05001', 'ACTIVO',   'EN_PROGRESO',  60),
+    (90004, '9995000004', 'Yolanda', 'Patricia', 'Arboleda',  'Quiroz',   date(1972, 9,  7), 'F', '27001', 'BORRADOR', 'EN_PROGRESO',  35),
+    (90005, '9995000005', 'Diana',   'Carolina', 'Zambrano',  'Idárraga', date(1990, 11, 25),'F', '19001', 'ACTIVO',   'COMPLETADA',  100),
+    (90006, '9995000006', 'Wilmar',  'Esteban',  'Granados',  'Carvajal', date(1975, 2, 10), 'M', '11001', 'ACTIVO',   'COMPLETADA',  100),
+    (90007, '9995000007', 'Sandra',  'Liliana',  'Montenegro','Acuña',    date(1988, 6,  3), 'F', '76001', 'BORRADOR', 'INICIADA',     10),
+    (90008, '9995000008', 'Reinaldo','Octavio',  'Villalba',  'Forero',   date(1969, 12, 20),'M', '08001', 'ACTIVO',   'COMPLETADA',  100),
+    (90009, '9995000009', 'Adriana', 'Consuelo', 'Espinosa',  'Tafur',    date(1982, 3, 28), 'F', '13001', 'ACTIVO',   'EN_PROGRESO',  75),
+    (90010, '9995000010', 'Gustavo', 'Adolfo',   'Murillo',   'Bedoya',   date(1991, 8,  8), 'M', '50001', 'BORRADOR', 'SUSPENDIDA',   45),
 ]
 
 TIPO_VIVIENDA = ['CASA', 'APARTAMENTO', 'CUARTO']

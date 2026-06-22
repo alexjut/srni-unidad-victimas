@@ -88,6 +88,21 @@ export async function upsertRespuesta(
   await db.runAsync('UPDATE borradores SET updated_at = ? WHERE id = ?', [now, borradorId]);
 }
 
+/**
+ * Remapea el miembro_id local → id de servidor en las respuestas ya guardadas.
+ * Lo usa la sincronización tras crear el hogar/miembro en el servidor: las
+ * respuestas PERSONA capturadas offline quedan ligadas al id de MiembroHogar real,
+ * para que un guardado posterior (online) no envíe un miembro_id que el backend
+ * rechazaría con 400.
+ */
+export async function remapMiembro(idLocal: string, idServidor: string): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    'UPDATE respuestas SET miembro_id = ? WHERE miembro_id = ?',
+    [idServidor, idLocal],
+  );
+}
+
 export async function getRespuestas(borradorId: string): Promise<RespuestaRow[]> {
   const db = await openDb();
   return db.getAllAsync<RespuestaRow>(
@@ -167,6 +182,29 @@ export async function findBySesionId(sesionId: string): Promise<BorradorRow | nu
   return db.getFirstAsync<BorradorRow>(
     'SELECT * FROM borradores WHERE sesion_id = ?',
     [sesionId],
+  );
+}
+
+/**
+ * Busca el borrador OFFLINE (aún sin sesion_id de servidor) de un hogar +
+ * instrumento. Sirve para que el flujo offline gire sobre UN ÚNICO borrador:
+ * la lista de capítulos lo resuelve una sola vez y se lo pasa a cada capítulo.
+ *
+ * Se restringe a `sesion_id IS NULL` para no colisionar con borradores ya
+ * sincronizados/vinculados a una sesión (camino online). Si hay varios
+ * (no debería), devuelve el más reciente.
+ */
+export async function findBorradorOfflinePorHogarInstrumento(
+  hogarId: string,
+  instrumentoId: string,
+): Promise<BorradorRow | null> {
+  const db = await openDb();
+  return db.getFirstAsync<BorradorRow>(
+    `SELECT * FROM borradores
+       WHERE sesion_id IS NULL AND hogar_id = ? AND instrumento_id = ?
+       ORDER BY updated_at DESC
+       LIMIT 1`,
+    [hogarId, instrumentoId],
   );
 }
 

@@ -81,6 +81,10 @@ export default function LoginScreen() {
   const [verPassword, setVerPassword] = useState(false);
   const [recordar, setRecordar] = useState(true);
   const [biometricoListo, setBiometricoListo] = useState(false);
+  // #22 — biometría OPT-IN: el dispositivo soporta huella/rostro (para mostrar
+  // el checkbox) y la preferencia explícita del usuario (default false).
+  const [dispositivoBiometrico, setDispositivoBiometrico] = useState(false);
+  const [activarBiometria, setActivarBiometria] = useState(false);
   const [idxActivo, setIdxActivo] = useState(0);
   const insets = useSafeAreaInsets();
 
@@ -208,8 +212,11 @@ export default function LoginScreen() {
         if (!hw) return;
         const enrolled = await LocalAuthentication.isEnrolledAsync();
         if (!enrolled) return;
+        setDispositivoBiometrico(true); // soportada → mostrar el checkbox opt-in
         const habilitado = await SecureStore.getItemAsync('biometrico_habilitado');
         const token = await SecureStore.getItemAsync('refresh_token');
+        // Pre-marcar el checkbox si el usuario ya la había activado antes.
+        setActivarBiometria(habilitado === 'true');
         setBiometricoListo(habilitado === 'true' && !!token);
       } catch { /* silencioso */ }
     }
@@ -220,7 +227,7 @@ export default function LoginScreen() {
     if (!codigo.trim() || !password) return;
     limpiarError();
     try {
-      await login(codigo, password);
+      await login(codigo, password, dispositivoBiometrico && activarBiometria);
       // Persistir (o borrar) solo el código de usuario según preferencia.
       if (recordar) await SecureStore.setItemAsync('codigo_recordado', codigo.trim().toUpperCase());
       else await SecureStore.deleteItemAsync('codigo_recordado');
@@ -374,6 +381,20 @@ export default function LoginScreen() {
               <Checkbox status={recordar ? 'checked' : 'unchecked'} color={GOV.azul} />
               <Text style={styles.recordarTxt}>Recordar mi código de usuario</Text>
             </Pressable>
+
+            {/* #22 — opt-in de biometría: solo si el dispositivo la soporta. */}
+            {dispositivoBiometrico && (
+              <Pressable
+                style={styles.recordarRow}
+                onPress={() => setActivarBiometria((v) => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: activarBiometria }}
+                accessibilityLabel="Activar ingreso con huella o rostro"
+              >
+                <Checkbox status={activarBiometria ? 'checked' : 'unchecked'} color={GOV.azul} />
+                <Text style={styles.recordarTxt}>Activar ingreso con huella o rostro</Text>
+              </Pressable>
+            )}
 
             {error ? (
               <HelperText type="error" visible style={styles.errorTxt}>

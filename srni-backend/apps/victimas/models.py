@@ -69,10 +69,11 @@ class Victima(models.Model):
     ]
 
     FUENTE_ORIGEN = [
-        ('RUV',     'Registro Único de Víctimas'),
-        ('SNARIV',  'SNARIV — sistema interinstitucional'),
-        ('LEGADO',  'Migración del sistema legado (IgedEncuesta)'),
-        ('MANUAL',  'Registro manual por funcionario'),
+        ('RUV',           'Registro Único de Víctimas'),
+        ('SNARIV',        'SNARIV — sistema interinstitucional'),
+        ('LEGADO',        'Migración del sistema legado (IgedEncuesta)'),
+        ('MANUAL',        'Registro manual por funcionario'),
+        ('REGISTRADURIA', 'Registraduría Nacional del Estado Civil'),
     ]
 
     ESTADO_VALORACION = [
@@ -134,7 +135,7 @@ class Victima(models.Model):
         help_text='Fecha/hora de la última sesión de caracterización completada.',
     )
     fuente_origen = models.CharField(
-        max_length=10, choices=FUENTE_ORIGEN, default='RUV', db_index=True,
+        max_length=20, choices=FUENTE_ORIGEN, default='RUV', db_index=True,
     )
     estado_valoracion = models.CharField(
         max_length=15, choices=ESTADO_VALORACION, default='PENDIENTE', db_index=True,

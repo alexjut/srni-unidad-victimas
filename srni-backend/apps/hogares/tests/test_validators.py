@@ -12,7 +12,10 @@ from apps.hogares.validators import HogarValidator
 def make_miembro(**kwargs):
     """Factory ligera de MiembroHogar con MagicMock."""
     defaults = {
-        "tipo_persona": "OTRO",
+        # Campos reales del modelo MiembroHogar (post Sprint 21):
+        # rol ∈ MIEMBRO/TUTOR/CUIDADOR_PERMANENTE, es_autorizado bool.
+        "rol": "MIEMBRO",
+        "es_autorizado": False,
         "fecha_nacimiento": date(1990, 1, 1),
         "incluido_ruv": False,
         "tiene_discapacidad": False,
@@ -51,20 +54,20 @@ def make_hogar(miembros):
 class TestValidarTutorTieneMenores:
 
     def test_tutor_sin_menores_falla(self):
-        adulto_tutor = make_miembro(tipo_persona="TUTOR", fecha_nacimiento=date(1985, 1, 1))
-        adulto_otro = make_miembro(tipo_persona="OTRO", fecha_nacimiento=date(1990, 1, 1))
+        adulto_tutor = make_miembro(rol="TUTOR", fecha_nacimiento=date(1985, 1, 1))
+        adulto_otro = make_miembro(rol="MIEMBRO", fecha_nacimiento=date(1990, 1, 1))
         hogar = make_hogar([adulto_tutor, adulto_otro])
         with pytest.raises(ValidationError, match="TUTOR"):
             HogarValidator.validar_tutor_tiene_menores(hogar)
 
     def test_tutor_con_menor_pasa(self):
-        tutor = make_miembro(tipo_persona="TUTOR", fecha_nacimiento=date(1985, 1, 1))
-        menor = make_miembro(tipo_persona="OTRO", fecha_nacimiento=date(2015, 6, 1))
+        tutor = make_miembro(rol="TUTOR", fecha_nacimiento=date(1985, 1, 1))
+        menor = make_miembro(rol="MIEMBRO", fecha_nacimiento=date(2015, 6, 1))
         hogar = make_hogar([tutor, menor])
         HogarValidator.validar_tutor_tiene_menores(hogar)  # no debe levantar
 
     def test_sin_tutor_no_valida(self):
-        adulto = make_miembro(tipo_persona="OTRO", fecha_nacimiento=date(1990, 1, 1))
+        adulto = make_miembro(rol="MIEMBRO", fecha_nacimiento=date(1990, 1, 1))
         hogar = make_hogar([adulto])
         HogarValidator.validar_tutor_tiene_menores(hogar)  # no debe levantar
 
@@ -72,21 +75,21 @@ class TestValidarTutorTieneMenores:
 class TestValidarAutorizado:
 
     def test_autorizado_menor_edad_falla(self):
-        m = make_miembro(tipo_persona="AUTORIZADO", fecha_nacimiento=date(2010, 1, 1))
+        m = make_miembro(es_autorizado=True, fecha_nacimiento=date(2010, 1, 1))
         with pytest.raises(ValidationError, match="mayor de edad"):
             HogarValidator.validar_autorizado(m)
 
     def test_autorizado_sin_ruv_falla(self):
-        m = make_miembro(tipo_persona="AUTORIZADO", fecha_nacimiento=date(1990, 1, 1), incluido_ruv=False)
+        m = make_miembro(es_autorizado=True, fecha_nacimiento=date(1990, 1, 1), incluido_ruv=False)
         with pytest.raises(ValidationError, match="RUV"):
             HogarValidator.validar_autorizado(m)
 
     def test_autorizado_valido_pasa(self):
-        m = make_miembro(tipo_persona="AUTORIZADO", fecha_nacimiento=date(1990, 1, 1), incluido_ruv=True)
+        m = make_miembro(es_autorizado=True, fecha_nacimiento=date(1990, 1, 1), incluido_ruv=True)
         HogarValidator.validar_autorizado(m)  # no debe levantar
 
     def test_no_autorizado_no_valida(self):
-        m = make_miembro(tipo_persona="TUTOR", fecha_nacimiento=date(2010, 1, 1))
+        m = make_miembro(es_autorizado=False, rol="TUTOR", fecha_nacimiento=date(2010, 1, 1))
         HogarValidator.validar_autorizado(m)  # no debe levantar aunque sea menor
 
 
@@ -128,9 +131,9 @@ class TestValidarJefe:
 class TestValidarCuidador:
 
     def test_cuidador_sin_dependientes_falla(self):
-        cuidador = make_miembro(tipo_persona="CUIDADOR", fecha_nacimiento=date(1980, 1, 1))
+        cuidador = make_miembro(rol="CUIDADOR_PERMANENTE", fecha_nacimiento=date(1980, 1, 1))
         adulto_sano = make_miembro(
-            tipo_persona="OTRO", fecha_nacimiento=date(1970, 1, 1),
+            rol="MIEMBRO", fecha_nacimiento=date(1970, 1, 1),
             tiene_discapacidad=False, tiene_enfermedad_ruinosa=False,
         )
         hogar = make_hogar([cuidador, adulto_sano])
@@ -138,16 +141,16 @@ class TestValidarCuidador:
             HogarValidator.validar_cuidador_tiene_dependientes(hogar)
 
     def test_cuidador_con_dependiente_discapacidad_pasa(self):
-        cuidador = make_miembro(tipo_persona="CUIDADOR", fecha_nacimiento=date(1980, 1, 1))
+        cuidador = make_miembro(rol="CUIDADOR_PERMANENTE", fecha_nacimiento=date(1980, 1, 1))
         dependiente = make_miembro(
-            tipo_persona="OTRO", fecha_nacimiento=date(1960, 1, 1),
+            rol="MIEMBRO", fecha_nacimiento=date(1960, 1, 1),
             tiene_discapacidad=True, tiene_enfermedad_ruinosa=False,
         )
         hogar = make_hogar([cuidador, dependiente])
         HogarValidator.validar_cuidador_tiene_dependientes(hogar)  # no debe levantar
 
     def test_sin_cuidador_no_valida(self):
-        adulto = make_miembro(tipo_persona="OTRO", fecha_nacimiento=date(1990, 1, 1))
+        adulto = make_miembro(rol="MIEMBRO", fecha_nacimiento=date(1990, 1, 1))
         hogar = make_hogar([adulto])
         HogarValidator.validar_cuidador_tiene_dependientes(hogar)  # no debe levantar
 

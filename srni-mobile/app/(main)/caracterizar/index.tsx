@@ -11,7 +11,8 @@ import apiClient from '../../../src/api/client';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
-import { activarPerfil } from '../../../src/services/instrumentos';
+import { useSyncStore } from '../../../src/stores/syncStore';
+import { activarPerfil, listaInstrumentosBundle } from '../../../src/services/instrumentos';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -107,24 +108,32 @@ function TarjetaHogar({ hogar, onPress }: { hogar: HogarResumen; onPress: () => 
 export default function CaracterizarScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId?: string }>();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
+  const estaOnline = useSyncStore((s) => s.estaOnline);
 
   const [paso, setPaso] = useState<'instrumento' | 'hogar'>('instrumento');
-  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
+  // Fase 0 offline: la lista arranca DESDE EL BUNDLE local — funciona 100% sin
+  // red. La API solo refresca nombres/versiones cuando hay conexión.
+  const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>(
+    () => listaInstrumentosBundle(),
+  );
   const [hogares, setHogares] = useState<HogarResumen[]>([]);
-  const [cargandoPerfiles, setCargandoPerfiles] = useState(true);
+  const [cargandoPerfiles, setCargandoPerfiles] = useState(false);
   const [cargandoHogares, setCargandoHogares] = useState(false);
   const [seleccionado, setSeleccionado] = useState<InstrumentoResumen | null>(null);
   const [creando, setCreando] = useState(false);
 
+  // Refresco opcional online: si el server responde, reemplaza la lista del
+  // bundle con la del backend (mismo shape). Si falla, se queda con el bundle.
   useEffect(() => {
     apiClient
       .get<{ results: InstrumentoResumen[] }>('/api/formulario/instrumentos/')
       .then((r) => {
         const activos = r.data.results.filter((i) => i.activo && i.vigente);
-        setInstrumentos(activos);
+        if (activos.length > 0) setInstrumentos(activos);
       })
-      .catch(() => {})
-      .finally(() => setCargandoPerfiles(false));
+      .catch(() => {
+        /* offline o server caído → mantener la lista del bundle */
+      });
   }, []);
 
   const cargarHogares = useCallback(async () => {
@@ -142,23 +151,40 @@ export default function CaracterizarScreen() {
   async function crearSesion(hId: string) {
     if (!seleccionado) return;
     setCreando(true);
+
+    // Sprint 18 F1B: activar el perfil en el cache de memoria. Cero escritura
+    // a SQLite — el formulario lee directo de los JSON empaquetados. Aplica a
+    // ambos caminos (online y offline).
+    try {
+      activarPerfil(seleccionado.codigo);
+    } catch (e) {
+      Alert.alert(
+        'Aviso',
+        `El perfil ${seleccionado.codigo} no está disponible en el bundle local. Reinstala la app.`,
+      );
+    }
+
+    // Fase A — sin red: NO se crea la sesión en el servidor. Vamos directo al
+    // formulario SIN sesionServerId: la primera pantalla de capítulo creará un
+    // borrador local y encolará CREAR_SESION (patrón ya existente en
+    // formulario/[temaId].tsx). La captura de respuestas ya es 100% offline.
+    if (!estaOnline) {
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          hogarId: hId,
+          instrumentoId: seleccionado.id,
+        },
+      });
+      return;
+    }
+
     try {
       const { data: sesion } = await encuestasApi.crear({
         hogar: hId,
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
-
-      // Sprint 18 F1B: activar el perfil en el cache de memoria. Cero escritura
-      // a SQLite — el formulario lee directo de los JSON empaquetados.
-      try {
-        activarPerfil(seleccionado.codigo);
-      } catch (e) {
-        Alert.alert(
-          'Aviso',
-          `El perfil ${seleccionado.codigo} no está disponible en el bundle local. Reinstala la app.`,
-        );
-      }
 
       // Sprint 19: tras crear la caracterización, pedir la ubicación de
       // atención (DT / Depto / Mun / Punto) antes de devolver al hub. Si el
@@ -173,6 +199,26 @@ export default function CaracterizarScreen() {
         },
       });
     } catch (err: any) {
+      // Robustez offline/online. Dos fallos NO deben mostrar "no se pudo
+      // iniciar la sesión" — la captura debe poder arrancar igual:
+      //   1) Sin red (err.response undefined): el flag estaOnline puede estar
+      //      desactualizado (se refresca cada ~60s), así que el camino online
+      //      se intentó estando offline.
+      //   2) Hogar 400/404: el hogar se creó OFFLINE y su id aún es local, el
+      //      servidor no lo conoce todavía.
+      // En ambos casos caemos al flujo offline: el formulario crea el borrador
+      // local y encola CREAR_SESION; la sincronización remapea los IDs
+      // local→servidor al reconectar (mismo patrón de formulario/[temaId].tsx).
+      const sinRed = !err?.response;
+      const hogarNoSincronizado = err?.response?.status === 400 || err?.response?.status === 404;
+      if (sinRed || hogarNoSincronizado) {
+        router.replace({
+          pathname: '/(main)/formulario',
+          params: { hogarId: hId, instrumentoId: seleccionado.id },
+        });
+        return;
+      }
+      // Conflictos reales (409 hogar de otro encuestador, 500, etc.) sí se informan.
       Alert.alert('Error', err?.response?.data?.detail ?? 'No se pudo iniciar la sesión.');
       setCreando(false);
     }

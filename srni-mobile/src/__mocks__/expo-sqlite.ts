@@ -7,6 +7,12 @@ const mockDb = {
   getFirstAsync: jest.fn().mockResolvedValue(null),
   getAllAsync: jest.fn().mockResolvedValue([]),
   withTransactionAsync: jest.fn().mockImplementation((fn: () => Promise<void>) => fn()),
+  // Statement preparado (inserción por lotes): prepareAsync devuelve un statement
+  // reutilizable con executeAsync por fila y finalizeAsync al terminar.
+  prepareAsync: jest.fn().mockResolvedValue({
+    executeAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 1, changes: 1 }),
+    finalizeAsync: jest.fn().mockResolvedValue(undefined),
+  }),
 };
 
 export const openDatabaseAsync = jest.fn().mockResolvedValue(mockDb);

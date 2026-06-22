@@ -120,9 +120,29 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         """
         hogar_id = request.data.get('hogar')
         if hogar_id:
-            sesion_activa = SesionEncuesta.objects.filter(
+            es_admin = request.user.puede('administrar')
+            base = SesionEncuesta.objects.filter(
                 hogar_id=hogar_id,
-            ).exclude(estado='COMPLETADA').order_by('-created_at').first()
+            ).exclude(estado='COMPLETADA').order_by('-created_at')
+
+            if es_admin:
+                sesion_activa = base.first()
+            else:
+                # Para no-admin la idempotencia debe filtrar encuestador: una
+                # sesión activa de OTRO encuestador no es navegable (get_queryset
+                # filtra encuestador=user → 404 en responder/finalizar). En ese
+                # caso respondemos 409 en lugar de exponer un id inaccesible.
+                sesion_activa = base.filter(encuestador=request.user).first()
+                if not sesion_activa and base.exists():
+                    return Response(
+                        {'detail': (
+                            'Este hogar ya tiene una sesión de encuesta activa '
+                            'iniciada por otro encuestador. Solicita su '
+                            'reasignación al supervisor.'
+                        )},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
             if sesion_activa:
                 from .serializers import SesionEncuestaDetalleSerializer
                 detalle = SesionEncuestaDetalleSerializer(

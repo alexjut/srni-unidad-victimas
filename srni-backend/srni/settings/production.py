@@ -1,7 +1,41 @@
 """Configuración de producción — seguridad máxima."""
+import os
+from datetime import timedelta
+
 from .base import *   # noqa: F401, F403
 
 DEBUG = False
+
+# ─── Caché Redis (compartida entre workers de gunicorn) ───────────────────────
+# Necesaria para que el throttle/rate-limit de DRF y el bloqueo de cuenta cuenten
+# de forma CONSISTENTE entre workers. Con caché local (por defecto) cada worker
+# lleva su propio contador y la protección anti-fuerza-bruta se diluye.
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://cz_redis:6379/0'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            # Resiliencia: si Redis no responde, la caché degrada (get→None,
+            # set→no-op) en vez de lanzar excepción. Así un hipo de Redis NO
+            # tumba el login (el throttle/bloqueo simplemente no cuentan ese rato).
+            'IGNORE_EXCEPTIONS': True,
+        },
+    }
+}
+DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
+
+# ─── JWT — refresh largo para captura offline (entrevistas de varias horas) ───
+# El access token sigue siendo CORTO (15 min, heredado de base) porque durante la
+# captura offline NO se renueva nada contra el servidor: la entrevista se guarda
+# localmente en la APK y solo se sincroniza al recuperar conexión. Lo que debe
+# sobrevivir es el REFRESH token, que es lo que permite reanudar la sesión y subir
+# los datos tras horas sin red. Por eso lo subimos de 8h a 7 días en producción.
+# Mantenemos ROTATE_REFRESH_TOKENS=True (heredado): cada uso rota y revoca el anterior.
+SIMPLE_JWT = {
+    **SIMPLE_JWT,  # noqa: F405  (hereda ACCESS_TOKEN_LIFETIME=15min y demás de base)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
 
 # ─── Base de datos (requerida en producción) ──────────────────────────────────
 DATABASES = {

@@ -1,0 +1,26 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Ajustes de presentación del admin (django-unfold) — SRNI.
+   Feedback: "se ve todo muy grande". Unfold/Tailwind usan rem, así que reducir
+   el font-size base de :root escala TODO el panel proporcionalmente.
+   Subir/bajar este valor (13–15px) ajusta qué tan compacto se ve.
+   ─────────────────────────────────────────────────────────────────────────── */
+html {
+    font-size: 14px;            /* base 16 → 14 (~12% más compacto) */
+}
+
+/* Tablas y formularios un poco más densos */
+#content table th,
+#content table td {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
+
+/* ── Menú INCRUSTADO desde 1024px (unfold lo incrusta solo desde 1280px/xl) ──
+   Por debajo de 1280px el wrapper del sidebar queda `fixed` y se SOBREPONE al
+   contenido. Lo forzamos a `relative` desde 1024px para que quede incrustado
+   (la barra a la izquierda y el contenido al lado). */
+@media (min-width: 1024px) {
+    .fixed.xl\:relative {
+        position: relative !important;
+    }
+}

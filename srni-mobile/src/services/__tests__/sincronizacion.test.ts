@@ -228,7 +228,10 @@ describe('intentarSincronizar — RESPONDER_PREGUNTA', () => {
     expect(mockCola.marcarEnviado).toHaveBeenCalledWith(item.id);
   });
 
-  it('lanza error si sesion_id es null (CREAR_SESION aún no procesado)', async () => {
+  it('difiere (reencolar) sin error si sesion_id es null (CREAR_SESION aún no procesado)', async () => {
+    // C4 — esperar una dependencia NO es un fallo: el item se devuelve a
+    // 'pendiente' sin gastar intentos ni marcarse como error, para no trabar la
+    // cadena. Antes esto consumía los 3 intentos y mataba la respuesta.
     const item = crearItem({
       tipo: 'RESPONDER_PREGUNTA',
       payload: JSON.stringify({
@@ -243,8 +246,9 @@ describe('intentarSincronizar — RESPONDER_PREGUNTA', () => {
 
     const resultado = await intentarSincronizar();
 
-    expect(mockCola.marcarError).toHaveBeenCalled();
-    expect(resultado.errores).toBe(1);
+    expect(mockCola.reencolar).toHaveBeenCalledWith(item.id);
+    expect(mockCola.marcarError).not.toHaveBeenCalled();
+    expect(resultado.errores).toBe(0);
   });
 });
 

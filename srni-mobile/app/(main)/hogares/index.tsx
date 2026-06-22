@@ -72,7 +72,12 @@ function HogarServidorCard({ data }: { data: HogarResumen }) {
 
 function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
   return (
-    <View style={[styles.card, styles.cardOffline]}>
+    <Pressable
+      onPress={() => router.push({ pathname: '/(main)/caracterizar', params: { hogarId: data.id_local } })}
+      style={({ pressed }) => [styles.card, styles.cardOffline, pressed && styles.cardPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Hogar offline ${data.id_local.slice(0, 8)} — pendiente de sincronizar`}
+    >
       <View style={[styles.cardLeft, { backgroundColor: GOV.naranja }]} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
@@ -86,7 +91,10 @@ function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
         </Text>
         <Text style={styles.metaTxt}>{new Date(data.created_at).toLocaleDateString('es-CO')}</Text>
       </View>
-    </View>
+      <View style={styles.chevron}>
+        <MaterialCommunityIcons name="chevron-right" size={20} color={GOV.borde} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -105,29 +113,53 @@ export default function HogaresIndexScreen() {
     else setCargando(true);
     setError(null);
 
-    const resultado: ItemLista[] = [];
+    const servidorItems: ItemLista[] = [];
+    const offlineItems: ItemLista[] = [];
 
+    // Leer TODAS las filas offline (no solo pendientes) para poder reconciliar
+    // las ya sincronizadas contra el servidor.
+    let offlineRows: HogarOfflineRow[] = [];
     try {
-      const offline = await hogaresOfflineDao.listarPendientes();
-      for (const h of offline) resultado.push({ tipo: 'offline', data: h });
+      offlineRows = await hogaresOfflineDao.listarTodos();
     } catch {
       // SQLite no disponible
     }
 
     // Sprint 17 fix: NO condicionar la llamada a `estaOnline`. El flag se actualiza
-    // con polling cada 60 s y puede estar desincronizado al montar la pantalla
-    // (queda en false hasta que el primer checkConnectivity resuelva). El try/catch
-    // ya maneja el caso sin red. Esto evita el bug en el que el usuario no veía
-    // los hogares creados en el servidor.
+    // con polling cada 60 s y puede estar desincronizado al montar la pantalla.
+    // El try/catch ya maneja el caso sin red.
+    let servidorOk = false;
+    const idsServidor = new Set<string>();
     try {
       const res = await hogaresApi.listar(filtroEstado ? { estado: filtroEstado } : undefined);
-      for (const h of res.data.results) resultado.push({ tipo: 'servidor', data: h });
+      servidorOk = true;
+      for (const h of res.data.results) {
+        idsServidor.add(h.id);
+        servidorItems.push({ tipo: 'servidor', data: h });
+      }
     } catch {
       if (estaOnline) setError('No se pudo cargar hogares del servidor.');
       // Sin red: silenciosamente solo mostramos los offline.
     }
 
-    setItems(resultado);
+    // Reconciliación local ↔ servidor (arregla el "hogar fantasma"):
+    //  - Fila ya sincronizada (id_servidor != null): es autoridad del servidor.
+    //      · Si hay red y el servidor YA NO la devuelve → se borró en el backend
+    //        → purgar la copia local huérfana (no volver a mostrarla).
+    //      · Si no, NO se muestra como tarjeta offline (ya aparece como servidor).
+    //  - Fila aún sin sincronizar (id_servidor == null): mostrar como offline
+    //      (pendiente/error) — funciona sin red y no rompe el flujo offline.
+    for (const h of offlineRows) {
+      if (h.id_servidor) {
+        if (servidorOk && !idsServidor.has(h.id_servidor)) {
+          try { await hogaresOfflineDao.eliminarPorIdLocal(h.id_local); } catch { /* no-op */ }
+        }
+        continue;
+      }
+      offlineItems.push({ tipo: 'offline', data: h });
+    }
+
+    setItems([...offlineItems, ...servidorItems]);
     setCargando(false);
     setRefrescando(false);
   }, [estaOnline, filtroEstado]);
@@ -284,7 +316,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   cardOffline: {
-    // sin onPress — solo visual
+    // tocable: navega al flujo offline de caracterización con su id_local
   },
   cardLeft: {
     width: 4,

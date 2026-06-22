@@ -61,7 +61,7 @@ describe('iaApi', () => {
       sesion_encuesta_id: 's-1',
       pregunta_id: 'pregunta-uuid-1',
       texto_transcrito: 'Vivimos en una casa propia',
-    });
+    }, { timeout: 30000 });
     expect(resultado.data.sugerencia).toBe('CASA');
   });
 

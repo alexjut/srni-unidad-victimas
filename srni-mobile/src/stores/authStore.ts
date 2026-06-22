@@ -7,6 +7,9 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { authApi, type UsuarioMe } from '../api/auth';
+import { precargarEnSegundoPlano } from '../services/precarga';
+import * as precargaDao from '../db/precargaDao';
+import * as colaDao from '../db/colaDao';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
 
@@ -18,7 +21,7 @@ interface AuthState {
   error: string | null;
 
   // Acciones
-  login: (codigo: string, password: string) => Promise<void>;
+  login: (codigo: string, password: string, activarBiometria?: boolean) => Promise<void>;
   loginBiometrico: () => Promise<void>;
   logout: () => Promise<void>;
   cargarPerfil: () => Promise<void>;
@@ -31,7 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   perfilCargado: false,
   error: null,
 
-  login: async (codigo, password) => {
+  login: async (codigo, password, activarBiometria = false) => {
     set({ cargando: true, error: null });
     try {
       const { data } = await authApi.login({
@@ -42,17 +45,26 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.setItemAsync('access_token', data.access);
       await SecureStore.setItemAsync('refresh_token', data.refresh);
 
-      // Auto-habilitar biometría si el dispositivo la tiene
+      // #22 — biometría OPT-IN: solo se habilita si el usuario lo eligió
+      // explícitamente (checkbox del login) y el dispositivo la soporta. Antes
+      // se auto-activaba en silencio, registrando la huella sin consentimiento.
       try {
-        const hw = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hw && enrolled) {
-          await SecureStore.setItemAsync(KEY_BIOMETRICO, 'true');
+        if (activarBiometria) {
+          const hw = await LocalAuthentication.hasHardwareAsync();
+          const enrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hw && enrolled) await SecureStore.setItemAsync(KEY_BIOMETRICO, 'true');
+        } else {
+          // No eligió biometría → asegurar que quede deshabilitada (toggle off).
+          await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
         }
       } catch { /* silencioso — la biometría es opcional */ }
 
       const { data: me } = await authApi.me();
       set({ usuario: me, cargando: false });
+
+      // Fase 0 offline: precargar el padrón/jornada/paramétricas en segundo
+      // plano. NO bloquea el login ni lo hace fallar si la precarga falla.
+      precargarEnSegundoPlano();
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
@@ -92,6 +104,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const { data: me } = await authApi.me();
       set({ usuario: me, cargando: false });
+
+      // Fase 0 offline: refrescar la precarga tras re-autenticación biométrica
+      // (con red). NO bloquea ni hace fallar el flujo.
+      precargarEnSegundoPlano();
     } catch (err: unknown) {
       if ((err as Error).message !== 'SIN_TOKEN') {
         set({ error: 'No se pudo autenticar. Intenta de nuevo.', cargando: false });
@@ -108,6 +124,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
       await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
+      // Privacidad: borrar el almacén offline al cerrar sesión. Si NO hay nada
+      // pendiente de sincronizar, se borra TODO (incluida la PII capturada de
+      // víctimas/hogares) para que no quede para el siguiente usuario. Si hay
+      // pendientes, solo se limpia la precarga (no se pierde el trabajo de campo).
+      try {
+        const pendientes = await colaDao.contarPendientes();
+        if (pendientes === 0) {
+          await precargaDao.limpiarTodoOffline();
+        } else {
+          await precargaDao.limpiarPrecarga();
+        }
+      } catch { /* best-effort */ }
       set({ usuario: null, error: null });
     }
   },

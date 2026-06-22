@@ -25,7 +25,12 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
+import * as colaDao from '../../../src/db/colaDao';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GovButton } from '../../../src/components/GovButton';
@@ -195,9 +200,14 @@ export default function ConformarHogarScreen() {
     setHogarId,
     limpiar,
   } = useCaracterizacionStore();
+  const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
   // Estado del hogar
   const [hogarId, setHogarIdLocal]    = useState<string | null>(null);
+  // Fase A: true si el hogar se creó OFFLINE (hogarId es un id_local, no servidor).
+  // Determina si agregarIntegrante encola o hace POST directo.
+  const [hogarEsLocal, setHogarEsLocal] = useState(false);
   const [creandoHogar, setCreandoHogar] = useState(true);
   const [errorHogar, setErrorHogar]   = useState('');
 
@@ -237,15 +247,46 @@ export default function ConformarHogarScreen() {
         setCreandoHogar(false);
         return;
       }
-      try {
-        const { data } = await hogaresApi.crear({
+      // Sin red: crea el hogar OFFLINE (id_local) + encola CREAR_HOGAR, igual que
+      // hogares/nuevo.tsx. El autorizado es el victimaLocalId (UUID local o servidor).
+      const crearOffline = async () => {
+        const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
+          jefe_hogar_uuid: victimaLocalId,
+          numero_personas: 1,
+        });
+        await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
+          id_local: hogarLocal.id_local,
           autorizado: victimaLocalId,
           numero_personas: 1,
         });
-        setHogarIdLocal(data.id);
-        setHogarId(data.id);
+        await refrescarContadores();
+        setHogarIdLocal(hogarLocal.id_local);
+        setHogarId(hogarLocal.id_local);
+        setHogarEsLocal(true);
+      };
 
-        // Autorizado como primer integrante (lo agrega el backend, lo mostramos acá)
+      try {
+        if (estaOnline) {
+          try {
+            // Camino feliz online: el backend auto-inserta al autorizado.
+            const { data } = await hogaresApi.crear({
+              autorizado: victimaLocalId,
+              numero_personas: 1,
+            });
+            setHogarIdLocal(data.id);
+            setHogarId(data.id);
+            setHogarEsLocal(false);
+          } catch (err: any) {
+            if (err?.response) throw err; // error real del servidor → propagar
+            // Sin respuesta = red caída aunque la bandera dijera online → offline.
+            await crearOffline();
+          }
+        } else {
+          await crearOffline();
+        }
+
+        // Autorizado como primer integrante (online lo agrega el backend; offline
+        // se mostrará y se incluye en numero_personas). Solo es presentación local.
         const v = victimaFuente;
         const nombreAutorizado = v
           ? [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
@@ -267,7 +308,8 @@ export default function ConformarHogarScreen() {
         if (typeof detalle === 'object') {
           setErrorHogar(JSON.stringify(detalle));
         } else {
-          setErrorHogar('No se pudo crear el hogar. Verifique la conexión.');
+          const msg = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
+          setErrorHogar(`No se pudo crear el hogar.${msg}`);
         }
       } finally {
         setCreandoHogar(false);
@@ -298,16 +340,64 @@ export default function ConformarHogarScreen() {
     const nombreCompleto = [primerNombre, segNombre, primerApell, segApell]
       .map(s => s.trim()).filter(Boolean).join(' ');
 
-    try {
-      await hogaresApi.agregarMiembro(hogarId, {
-        nombre_completo: nombreCompleto,
-        parentesco,
-        genero,
-        rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
-        estado_inclusion: 'NO_INCLUIDO',
-        fecha_nacimiento: fechaNac || undefined,
-      });
+    const miembroPayload = {
+      nombre_completo: nombreCompleto,
+      // #3 — el número de documento se capturaba pero NUNCA se enviaba ni se
+      // encolaba (se perdía). El backend lo acepta (write-only, sin exigir el
+      // tipo). El tipo_documento es FK por id numérico y el form usa códigos,
+      // así que se omite hasta tener el mapeo código→id (paramétrica).
+      numero_documento: numDoc.trim() || undefined,
+      parentesco,
+      genero,
+      rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
+      estado_inclusion: 'NO_INCLUIDO' as const,
+      fecha_nacimiento: fechaNac || undefined,
+    };
 
+    // Guarda el integrante offline (SQLite + cola). Reutilizado por el camino
+    // offline directo y por el fallback cuando se cae la red en el camino online.
+    const guardarOffline = async () => {
+      const miembroLocal = await miembrosOfflineDao.crearMiembroOffline(hogarId, miembroPayload);
+      await colaDao.encolar('AGREGAR_MIEMBRO', miembroLocal.id_local, {
+        id_local: miembroLocal.id_local,
+        hogar: hogarId,
+        miembro: miembroPayload,
+      });
+      await refrescarContadores();
+    };
+
+    let guardado = false;
+    try {
+      if (hogarEsLocal) {
+        // Fase A — sin red: el `hogar` se referencia por su id_local;
+        // procesarCrearHogar lo remapea a su id de servidor antes de procesar
+        // este AGREGAR_MIEMBRO.
+        await guardarOffline();
+      } else {
+        // Online: POST directo al servidor.
+        await hogaresApi.agregarMiembro(hogarId, miembroPayload);
+      }
+      guardado = true;
+    } catch (err: any) {
+      // El hogar es de servidor pero perdimos la red (o el id aún no propagó):
+      // guardar el integrante offline en vez de bloquear al encuestador en campo.
+      const sinRed = !err?.response;
+      const hogarNoEnServidor = err?.response?.status === 400 || err?.response?.status === 404;
+      if (!hogarEsLocal && (sinRed || hogarNoEnServidor)) {
+        try {
+          await guardarOffline();
+          guardado = true;
+        } catch { /* fallo de SQLite — se informa abajo */ }
+      }
+      if (!guardado) {
+        Alert.alert(
+          'Error al agregar',
+          err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
+        );
+      }
+    }
+
+    if (guardado) {
       const parentescoLabel = PARENTESCOS.find(p => p.value === parentesco)?.label ?? parentesco;
       const rolLabel        = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
       setIntegrantes(prev => [
@@ -329,14 +419,8 @@ export default function ConformarHogarScreen() {
       setTipoDoc('CC'); setNumDoc(''); setPrimerNombre(''); setSegNombre('');
       setPrimerApell(''); setSegApell(''); setFechaNac('');
       setParentesco(''); setGenero(''); setRolMiembro('MIEMBRO'); setErroresForm({});
-    } catch (err: any) {
-      Alert.alert(
-        'Error al agregar',
-        err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
-      );
-    } finally {
-      setAgregando(false);
     }
+    setAgregando(false);
   }
 
   // ── Continuar al hub de caracterizaciones (Sprint 14) ─────────────────────
@@ -348,10 +432,25 @@ export default function ConformarHogarScreen() {
     setContinuando(true);
     setErrorInicio('');
     try {
-      router.replace({
-        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-        params: { hogarId },
-      });
+      if (hogarEsLocal) {
+        // Fase A — sin red: el hub de caracterizaciones requiere GET /hogares/{id}/
+        // (404 con un id_local). Vamos directo a seleccionar instrumento y crear
+        // la sesión OFFLINE (borrador + cola), saltando el hub que necesita servidor.
+        router.replace({
+          pathname: '/(main)/caracterizar',
+          params: { hogarId },
+        });
+      } else {
+        // Warm-up de la caché de miembros (fix #4/#38): si la red cae justo
+        // después de continuar, la caracterización ya tendrá los miembros del
+        // servidor para capturar offline. Best-effort, no bloquea el flujo.
+        try { await cargarMiembrosHogar(hogarId); }
+        catch { /* la caché se poblará al cargar el hub/capítulo online */ }
+        router.replace({
+          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+          params: { hogarId },
+        });
+      }
     } catch (err: any) {
       setErrorInicio('No se pudo continuar. Intente nuevamente.');
     } finally {
@@ -373,7 +472,9 @@ export default function ConformarHogarScreen() {
         </View>
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
-          <Text style={styles.cargandoTxt}>Registrando hogar…</Text>
+          <Text style={styles.cargandoTxt}>
+            {estaOnline ? 'Registrando hogar…' : 'Guardando hogar offline…'}
+          </Text>
         </View>
       </View>
     );
@@ -423,6 +524,17 @@ export default function ConformarHogarScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+
+          {hogarEsLocal && (
+            <Chip
+              icon="wifi-off"
+              mode="flat"
+              style={styles.offlineBanner}
+              textStyle={styles.offlineBannerTxt}
+            >
+              Sin conexión — hogar e integrantes se guardan localmente y se sincronizan al recuperar señal
+            </Chip>
+          )}
 
           {/* ── Ruta de entrevista ── */}
           <Text style={styles.secTitulo}>Ruta de entrevista</Text>
@@ -694,6 +806,8 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingBottom: 48,
   },
+  offlineBanner: { marginBottom: SPACING.md, backgroundColor: '#FFF3E0' },
+  offlineBannerTxt: { color: '#E65100', fontSize: 12 },
   secTitulo: {
     ...FONT.label,
     color: GOV.textoT,

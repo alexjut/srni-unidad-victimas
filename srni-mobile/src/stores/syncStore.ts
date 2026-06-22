@@ -14,6 +14,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import * as sincronizacionService from '../services/sincronizacion';
 import * as colaDao from '../db/colaDao';
 import * as instrumentoDao from '../db/instrumentoDao';
+import { reconciliarColaOffline } from '../services/reconciliacionOffline';
 
 export type EstadoSync =
   | 'sincronizado'
@@ -41,6 +42,7 @@ interface SyncState {
 // ─────────────────────────────────────────────────────────────────────────────
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
+let appStateSub: { remove: () => void } | null = null;
 
 export const useSyncStore = create<SyncState>((set, get) => ({
   estaOnline: false,
@@ -54,6 +56,16 @@ export const useSyncStore = create<SyncState>((set, get) => ({
   inicializar: async () => {
     await colaDao.resetearBloqueados();
 
+    // #14 — reconciliar recursos offline huérfanos: si la app se cerró entre el
+    // INSERT en *_offline y el encolar(), la fila quedó 'pendiente' sin item de
+    // cola. Re-encolarlos aquí (antes de sincronizar) evita perderlos en silencio.
+    try {
+      const reparados = await reconciliarColaOffline();
+      if (reparados > 0) console.log(`[sync] reconciliación: ${reparados} recurso(s) offline re-encolados`);
+    } catch (e) {
+      console.warn('[sync] reconciliación offline falló:', e);
+    }
+
     // Sprint 18 F1B: los instrumentos viven en memoria (bundle).
     // instrumentoDescargado siempre true porque el bundle siempre está disponible.
     set({ instrumentoDescargado: true });
@@ -61,8 +73,12 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     await get().refrescarContadores();
     await get().checkConnectivity();
 
-    // Listener de AppState: disparar check al volver al primer plano
-    AppState.addEventListener('change', (estado: AppStateStatus) => {
+    // Listener de AppState: disparar check al volver al primer plano.
+    // inicializar() se re-invoca al cambiar de usuario; removemos el handler
+    // anterior antes de re-suscribir para no acumular handlers duplicados (que
+    // disparaban sync en cascada y causaban 'database is locked').
+    if (appStateSub) appStateSub.remove();
+    appStateSub = AppState.addEventListener('change', (estado: AppStateStatus) => {
       if (estado === 'active') {
         get().checkConnectivity();
       }

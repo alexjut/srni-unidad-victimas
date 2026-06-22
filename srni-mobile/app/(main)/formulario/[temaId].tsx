@@ -1,6 +1,6 @@
 // Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { View, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
+import { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
+import { View, FlatList, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import {
   Text, TextInput, RadioButton, Checkbox,
   ActivityIndicator, Chip, IconButton, ProgressBar,
@@ -11,11 +11,11 @@ import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import { calcularVisibles } from '../../../src/services/skipLogic';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { hogaresApi } from '../../../src/api/hogares';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -24,12 +24,49 @@ import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
-import type { MiembroHogarResumen } from '../../../src/types';
+import type { MiembroHogarResumen, VictimaResumenFuente } from '../../../src/types';
 
 // Sprint 21 — clave compuesta para indexar respuestas por (pregunta, miembro).
 // Miembro vacío = pregunta nivel HOGAR (única para toda la sesión).
 function claveResp(preguntaId: string, miembroId: string | null | undefined): string {
   return `${preguntaId}|${miembroId ?? ''}`;
+}
+
+/** Edad en años cumplidos a hoy, derivada de una fecha ISO 'YYYY-MM-DD'. */
+function calcularEdad(fechaISO: string): string {
+  if (!fechaISO) return '';
+  const nac = new Date(fechaISO);
+  if (isNaN(nac.getTime())) return '';
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad >= 0 && edad < 130 ? String(edad) : '';
+}
+
+/**
+ * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
+ * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
+ * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
+ * instrumento no tiene esa pregunta (decisión de instrumento/UARIV). Los códigos
+ * de tipo LISTA (A3 doc, A8 sexo) solo se siembran si el valor coincide con una
+ * opción real (validado en runtime), así nunca se inyecta un valor inválido.
+ */
+function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
+  const m: Record<string, string> = {};
+  if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
+  if (v.segundo_nombre)   m.A2 = v.segundo_nombre;
+  if (v.primer_apellido)  m.APELLIDO_1 = v.primer_apellido;
+  if (v.segundo_apellido) m.APELLIDO_2 = v.segundo_apellido;
+  if (v.fecha_nacimiento) {
+    m.A6 = v.fecha_nacimiento;
+    const edad = calcularEdad(v.fecha_nacimiento);
+    if (edad) m.B9 = edad;
+  }
+  if (v.numero_documento) m.A5 = v.numero_documento;
+  if (v.tipo_documento)   m.A3 = v.tipo_documento;
+  if (v.genero)           m.A8 = v.genero;
+  return m;
 }
 
 interface ItemLista {
@@ -65,6 +102,7 @@ export default function CapituloScreen() {
 
   const { estaOnline, refrescarContadores } = useSyncStore();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
+  const victimaFuente = useCaracterizacionStore((s) => s.victimaFuente);
   const {
     activo: iaActivo,
     estado: estadoIA,
@@ -95,6 +133,10 @@ export default function CapituloScreen() {
   // Solo se renderiza el miembro en este índice (no todos en scroll).
   const [miembroIdx, setMiembroIdx] = useState(0);
   const flatRef = useRef<FlatList | null>(null);
+  // Prellenado: guarda el borrador para el que ya se intentó sembrar (una vez).
+  const prefillRef = useRef<string | null>(null);
+  // Evita repetir la alerta de "no hay borrador" en cada tecla.
+  const alertaBorradorRef = useRef(false);
 
   // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
   // encuestador vea desde la primera pregunta del nuevo miembro.
@@ -172,17 +214,29 @@ export default function CapituloScreen() {
         }
 
       } else {
-        // Sesión sin id de servidor — borrador completamente nuevo
-        const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
-        setBorradorId(nuevo.id);
-        if (hogarId && instrId) {
-          await colaDao.encolar('CREAR_SESION', nuevo.id, {
-            borrador_id: nuevo.id,
-            hogar: hogarId,
-            instrumento: instrId,
-            ruta_entrevista: rutaEntrevista,
-          });
-          await refrescarContadores();
+        // Sesión sin id de servidor (OFFLINE). Reutilizar el borrador único de
+        // este (hogar, instrumento) para que TODOS los capítulos compartan el
+        // mismo. Solo crear (y encolar CREAR_SESION) si aún no existe ninguno.
+        let borrador =
+          hogarId && instrId
+            ? await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrId)
+            : null;
+
+        if (borrador) {
+          setBorradorId(borrador.id);
+          setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
+        } else {
+          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+          setBorradorId(nuevo.id);
+          if (hogarId && instrId) {
+            await colaDao.encolar('CREAR_SESION', nuevo.id, {
+              borrador_id: nuevo.id,
+              hogar: hogarId,
+              instrumento: instrId,
+              ruta_entrevista: rutaEntrevista,
+            });
+            await refrescarContadores();
+          }
         }
       }
 
@@ -191,49 +245,99 @@ export default function CapituloScreen() {
   }, [temaId]);
 
   // ── Sprint 21 — cargar miembros del hogar ──────────────────────────────────
+  // Tolerante a red (fix #4/#38): online → caché; offline-local →
+  // construirMiembrosOffline; online caído → caché del servidor. Sin esto las
+  // preguntas PERSONA NO se renderizaban sin red y se perdía media caracterización.
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    hogaresApi.detalle(hogarId)
-      .then(({ data }) => {
-        if (!activo) return;
-        // Ordenar: autorizado primero, después por parentesco/orden natural.
-        const ordenados = [...(data.miembros ?? [])].sort((a, b) => {
-          if (a.es_autorizado && !b.es_autorizado) return -1;
-          if (!a.es_autorizado && b.es_autorizado) return 1;
-          return 0;
-        });
-        setMiembros(ordenados);
-      })
-      .catch(() => {
-        // Offline o sin permisos — degradación: queda en [] y solo HOGAR funciona.
-      });
+    cargarMiembrosHogar(hogarId)
+      .then((ms) => { if (activo) setMiembros(ms); })
+      .catch(() => { /* queda en [] (degradación a solo HOGAR) */ });
     return () => { activo = false; };
   }, [hogarId]);
 
+  // ── Prellenado de "Datos básicos" del autorizado ────────────────────────────
+  // Siembra UNA sola vez por borrador las respuestas que ya conocemos de la
+  // víctima (nombres, documento, fecha de nacimiento, EDAD derivada, sexo), solo
+  // en celdas VACÍAS (nunca pisa lo capturado). Encola cada valor para que
+  // sincronice igual que una respuesta normal. Si el capítulo no tiene preguntas
+  // mapeables, no hace nada.
+  useEffect(() => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid || !victimaFuente || preguntas.length === 0) return;
+    if (prefillRef.current === bid) return;
+
+    const map = construirPrefillVictima(victimaFuente);
+    if (Object.keys(map).length === 0) { prefillRef.current = bid; return; }
+
+    // Las preguntas de datos básicos son PERSONA → se siembran contra el miembro
+    // autorizado. Si aún no se resolvió, esperar (no marcar como hecho).
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? null;
+    const hayPersonaMapeable = preguntas.some(
+      (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
+    );
+    if (hayPersonaMapeable && !autorizado) return;
+
+    let cancelado = false;
+    (async () => {
+      try {
+        const existentes = await borradoresDao.getRespuestaMapCompuesto(bid);
+        const borrador = await borradoresDao.getBorrador(bid);
+        const nuevos: Record<string, string> = {};
+        for (const p of preguntas) {
+          const valor = map[p.codigo_externo];
+          if (!valor) continue;
+          const miembroId = p.nivel === 'PERSONA' ? (autorizado?.id ?? null) : null;
+          if (p.nivel === 'PERSONA' && !miembroId) continue;
+          const clave = claveResp(p.id, miembroId);
+          if (existentes[clave]?.trim()) continue; // no pisar lo ya capturado
+          // Tipos de opción: solo sembrar si el valor coincide con una opción real.
+          const esOpcion = p.tipo === 'LISTA' || p.tipo === 'RADIO'
+            || p.tipo === 'BOOLEAN' || p.tipo === 'LISTA_MULTIPLE';
+          if (esOpcion) {
+            const ops = opciones[p.id] ?? [];
+            if (!ops.some((o) => o.valor === valor)) continue;
+          }
+          await borradoresDao.upsertRespuesta(bid, p.id, valor, miembroId);
+          await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+            borrador_id: bid,
+            sesion_id: borrador?.sesion_id ?? null,
+            pregunta_id: p.id,
+            miembro_id: miembroId,
+            valor,
+          });
+          nuevos[clave] = valor;
+        }
+        if (cancelado) return;
+        prefillRef.current = bid;
+        if (Object.keys(nuevos).length > 0) {
+          setRespuestasState((prev) => ({ ...prev, ...nuevos }));
+          await refrescarContadores();
+        }
+      } catch { /* prellenado best-effort: si falla, el usuario captura a mano */ }
+    })();
+    return () => { cancelado = true; };
+  }, [borradorId, borradorIdParam, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
+
   // ── Skip logic ──────────────────────────────────────────────────────────────
-  // Sprint 21: la skip logic evalúa a nivel de pregunta (no por miembro).
-  // Para HOGAR usamos su única respuesta. Para PERSONA usamos la primera
-  // respuesta no vacía como representante — suficiente para reglas globales
-  // del tipo "si el hogar tiene X, mostrar Y". Reglas por miembro quedarían
-  // para iteración futura.
+  // La skip-logic PERSONA se evalúa con las respuestas del MIEMBRO ACTIVO (el
+  // wizard renderiza un miembro a la vez). Antes se colapsaba a "la primera
+  // respuesta no vacía entre miembros", lo que mostraba/ocultaba preguntas en
+  // personas equivocadas. Al cambiar de miembro, este memo se recalcula y las
+  // preguntas visibles se ajustan a ESE miembro. HOGAR usa su única respuesta.
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
+    const activo = miembros[miembroIdx] ?? null;
     const m: Record<string, string> = {};
     for (const p of preguntas) {
-      const claveHogar = claveResp(p.id, null);
-      if (respuestas[claveHogar]) {
-        m[p.codigo_externo] = respuestas[claveHogar];
-        continue;
+      if (p.nivel === 'PERSONA') {
+        m[p.codigo_externo] = activo ? (respuestas[claveResp(p.id, activo.id)] ?? '') : '';
+      } else {
+        m[p.codigo_externo] = respuestas[claveResp(p.id, null)] ?? '';
       }
-      // PERSONA: buscar primera respuesta no vacía entre miembros
-      for (const miembro of miembros) {
-        const val = respuestas[claveResp(p.id, miembro.id)];
-        if (val) { m[p.codigo_externo] = val; break; }
-      }
-      if (!m[p.codigo_externo]) m[p.codigo_externo] = '';
     }
     return m;
-  }, [preguntas, respuestas, miembros]);
+  }, [preguntas, respuestas, miembros, miembroIdx]);
 
   const { visibles } = useMemo(
     () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
@@ -264,8 +368,10 @@ export default function CapituloScreen() {
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
-    const totalGlobal =
-      visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 0);
+    // #27 — el badge "N de TOTAL" debe contar lo que está EN PANTALLA: solo se
+    // renderiza un miembro a la vez, así que el total es HOGAR + PERSONA (1×).
+    // La dimensión "por persona" la comunica el pie "Persona X de N".
+    const totalGlobal = visiblesHogar.length + visiblesPersona.length;
 
     if (visiblesHogar.length > 0) {
       out.push({ type: 'header-hogar', key: 'hdr-hogar' });
@@ -397,7 +503,15 @@ export default function CapituloScreen() {
 
     const bid = borradorId ?? borradorIdParam;
     if (!bid) {
-      console.warn('[setRespuesta] borradorId VACÍO — la respuesta NO se guarda en SQLite', { preguntaId, valor: valor.slice(0,30) });
+      // Sin borrador NO se puede persistir: avisar de forma visible (una vez) en
+      // lugar de descartar en silencio. Evita capturar "a ciegas" y perder todo.
+      if (!alertaBorradorRef.current) {
+        alertaBorradorRef.current = true;
+        Alert.alert(
+          'No se pudo guardar',
+          'No se preparó el borrador de esta caracterización. Vuelve atrás y entra de nuevo al capítulo; si continúa, reinicia la app.',
+        );
+      }
       return;
     }
 
@@ -495,16 +609,24 @@ export default function CapituloScreen() {
           ...(hogarId ? { hogarId } : {}),
         },
       });
+    } else if (borradorId || borradorIdParam || (hogarId && instrumentoId)) {
+      // OFFLINE: volver a la LISTA de capítulos local (índice del formulario),
+      // que es 100% offline-friendly. NUNCA al hub del servidor
+      // (hogares/[hogarId]/caracterizaciones hace hogaresApi.detalle y, con un
+      // id de hogar local + sin red, revienta el flujo). Mantenemos el MISMO
+      // borrador para que el progreso y las respuestas se conserven.
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          ...(borradorId ?? borradorIdParam
+            ? { borradorId: (borradorId ?? borradorIdParam) as string }
+            : {}),
+          ...(instrumentoId ? { instrumentoId } : {}),
+          ...(hogarId ? { hogarId } : {}),
+        },
+      });
     } else {
-      // Fallback: si no tenemos sesionServerId, volver al hub del hogar
-      if (hogarId) {
-        router.replace({
-          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-          params: { hogarId },
-        });
-      } else {
-        router.back();
-      }
+      router.back();
     }
   }
 
@@ -544,6 +666,25 @@ export default function CapituloScreen() {
         <GovHeader title="Cargando…" onBack={() => router.back()} />
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
+        </View>
+      </View>
+    );
+  }
+
+  // Guarda #6 — sin borrador resuelto NO se puede persistir nada. Bloquear la
+  // captura con un estado de error en vez de pintar el formulario y descartar
+  // cada respuesta en silencio (pérdida total a ciegas).
+  if (!(borradorId ?? borradorIdParam)) {
+    return (
+      <View style={styles.root}>
+        <GovHeader title={capituloNombre || 'Capítulo'} onBack={volverAListaCapitulos} />
+        <View style={styles.centrado}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={GOV.rojo} />
+          <Text style={{ ...FONT.body, color: GOV.textoP, textAlign: 'center', marginTop: SPACING.sm, marginBottom: SPACING.md }}>
+            No se pudo preparar el borrador de esta caracterización. No es posible
+            capturar respuestas en este capítulo.
+          </Text>
+          <GovButton label="Volver a capítulos" variant="secondary" onPress={volverAListaCapitulos} />
         </View>
       </View>
     );
@@ -615,10 +756,19 @@ export default function CapituloScreen() {
         />
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <FlatList
         ref={flatRef}
         data={items}
         keyExtractor={(it) => it.key}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         renderItem={({ item }) => {
           if (item.type === 'header-hogar') {
             return (
@@ -763,6 +913,7 @@ export default function CapituloScreen() {
           onPress={finalizarCapitulo}
         />
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -801,7 +952,7 @@ function parseMultiValor(valor: string): string[] {
   return trimmed.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-function PreguntaItem({
+function PreguntaItemBase({
   pregunta,
   index,
   total,
@@ -1037,6 +1188,23 @@ function PreguntaItem({
     </View>
   );
 }
+
+// #23/#34 — memoizar evita re-renderizar TODAS las tarjetas en cada pulsación de
+// tecla (setRespuestasState re-renderiza el padre). Las callbacks envoltorio
+// cambian de identidad cada render pero solo reenvían a useCallbacks estables
+// (setRespuesta, handleAceptarSugerencia…), así que se comparan solo las props
+// de DATOS. La presencia (no la identidad) de las callbacks IA sí importa.
+const PreguntaItem = memo(PreguntaItemBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.valor === next.valor &&
+  prev.index === next.index &&
+  prev.total === next.total &&
+  prev.opciones === next.opciones &&
+  prev.iaActivo === next.iaActivo &&
+  prev.sugerenciaActiva === next.sugerenciaActiva &&
+  !!prev.onTextoIA === !!next.onTextoIA &&
+  !!prev.onAceptarIA === !!next.onAceptarIA,
+);
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 

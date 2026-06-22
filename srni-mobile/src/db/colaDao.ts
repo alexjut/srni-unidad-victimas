@@ -2,11 +2,13 @@
  * DAO para la cola de sincronización.
  *
  * Tipos de operación en orden de precedencia:
- *   1. CREAR_HOGAR        — debe ir primero; las sesiones dependen del hogar_id servidor
- *   2. CREAR_SESION       — depende de hogar_id servidor
- *   3. RESPONDER_BULK     — bulk de N respuestas de un capítulo (reemplaza RESPONDER_PREGUNTA individual)
- *   4. RESPONDER_PREGUNTA — legado; se migra a bulk en el procesador
- *   5. FINALIZAR_SESION   — debe ir al final
+ *   0. REGISTRAR_VICTIMA  — Fase A: registra la víctima autorizada; el hogar depende de su UUID servidor
+ *   1. CREAR_HOGAR        — depende del autorizado (víctima); las sesiones/miembros dependen del hogar_id servidor
+ *   2. AGREGAR_MIEMBRO    — Fase A: integrante del hogar; depende del hogar_id servidor
+ *   3. CREAR_SESION       — depende de hogar_id servidor
+ *   4. RESPONDER_BULK     — bulk de N respuestas de un capítulo (reemplaza RESPONDER_PREGUNTA individual)
+ *   5. RESPONDER_PREGUNTA — legado; se migra a bulk en el procesador
+ *   6. FINALIZAR_SESION   — debe ir al final
  *
  * Estados: pendiente → enviando → enviado
  *                                ↘ error (tras MAX_INTENTOS fallos)
@@ -22,7 +24,9 @@
 import { openDb } from './schema';
 
 export type TipoOperacion =
+  | 'REGISTRAR_VICTIMA'
   | 'CREAR_HOGAR'
+  | 'AGREGAR_MIEMBRO'
   | 'CREAR_SESION'
   | 'RESPONDER_BULK'
   | 'RESPONDER_PREGUNTA'
@@ -43,18 +47,22 @@ export interface ColaItem {
   updated_at: string;
 }
 
-const MAX_INTENTOS = 3;
+const MAX_INTENTOS = 6;
 
-// Delays de backoff en segundos: intento 1 → 30s, intento 2 → 120s
-const BACKOFF_SEGUNDOS = [30, 120];
+// Delays de backoff en segundos por intento (1→30s ... 5→30min). El intento 6
+// agota y pasa a 'error'. Una jornada offline larga necesita reintentos amplios.
+// (Los errores de red/infra ya NO consumen intentos — se difieren con reencolar.)
+const BACKOFF_SEGUNDOS = [30, 120, 300, 900, 1800];
 
 // Orden de procesamiento por tipo
 const ORDEN_TIPO: Record<TipoOperacion, number> = {
+  REGISTRAR_VICTIMA:  0,
   CREAR_HOGAR:        1,
-  CREAR_SESION:       2,
-  RESPONDER_BULK:     3,
-  RESPONDER_PREGUNTA: 3,
-  FINALIZAR_SESION:   4,
+  AGREGAR_MIEMBRO:    2,
+  CREAR_SESION:       3,
+  RESPONDER_BULK:     4,
+  RESPONDER_PREGUNTA: 4,
+  FINALIZAR_SESION:   5,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,6 +74,23 @@ export async function encolar(
 ): Promise<number> {
   const db = await openDb();
   const now = new Date().toISOString();
+
+  // Dedup de RESPONDER_PREGUNTA: una sola fila pendiente/errada por
+  // (recurso, pregunta, miembro). Editar una respuesta N veces NO debe inflar la
+  // cola ni dejar valores viejos que pisen el bulk al reintentar. Se borra la
+  // fila previa antes de insertar la nueva (último valor gana).
+  if (tipo === 'RESPONDER_PREGUNTA') {
+    const p = payload as { pregunta_id?: string; miembro_id?: string | null };
+    await db.runAsync(
+      `DELETE FROM cola_sincronizacion
+         WHERE tipo = 'RESPONDER_PREGUNTA' AND estado IN ('pendiente', 'error')
+           AND recurso_local_id = ?
+           AND json_extract(payload, '$.pregunta_id') = ?
+           AND IFNULL(json_extract(payload, '$.miembro_id'), '') = IFNULL(?, '')`,
+      [recursoLocalId, p.pregunta_id ?? '', p.miembro_id ?? null],
+    );
+  }
+
   const result = await db.runAsync(
     `INSERT INTO cola_sincronizacion
        (tipo, recurso_local_id, payload, estado, intentos, ultimo_error, retry_after, created_at, updated_at)
@@ -161,6 +186,20 @@ export async function marcarError(id: number, mensaje: string): Promise<void> {
       [intentos, mensaje.slice(0, 500), retryAfter, new Date().toISOString(), id],
     );
   }
+}
+
+/**
+ * Devuelve un item a 'pendiente' SIN penalizar (no incrementa intentos ni fija
+ * backoff). Lo usa la sincronización cuando un item espera a que se procese su
+ * dependencia (p.ej. RESPONDER_BULK antes de CREAR_SESION). Así un item diferido
+ * no agota sus 3 intentos ni traba la cadena en 'error' permanente.
+ */
+export async function reencolar(id: number): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    "UPDATE cola_sincronizacion SET estado = 'pendiente', retry_after = NULL, updated_at = ? WHERE id = ?",
+    [new Date().toISOString(), id],
+  );
 }
 
 /**
