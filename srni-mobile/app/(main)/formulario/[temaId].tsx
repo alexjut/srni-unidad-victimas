@@ -45,6 +45,23 @@ function calcularEdad(fechaISO: string): string {
 }
 
 /**
+ * Grupo etario (pregunta B10) derivado de la edad, según los rangos del
+ * instrumento (B10_GRUPO_ETARIO). Se autocompleta desde la fecha de nacimiento
+ * que ya tiene la víctima → ahorra tramitología, no se vuelve a preguntar.
+ *   0-5: Primera infancia · 6-11: Niñez · 12-17: Adolescencia
+ *   18-28: Jóvenes · 29-59: Adulto · 60+: Persona mayor
+ */
+function edadAGrupoEtario(edad: number): string {
+  if (!Number.isFinite(edad) || edad < 0) return '';
+  if (edad <= 5) return '1';
+  if (edad <= 11) return '2';
+  if (edad <= 17) return '3';
+  if (edad <= 28) return '4';
+  if (edad <= 59) return '5';
+  return '6';
+}
+
+/**
  * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
  * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
  * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
@@ -61,7 +78,13 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
   if (v.fecha_nacimiento) {
     m.A6 = v.fecha_nacimiento;
     const edad = calcularEdad(v.fecha_nacimiento);
-    if (edad) m.B9 = edad;
+    if (edad) {
+      m.B9 = edad;
+      // Grupo etario (B10) derivado de la edad — se autocompleta desde la data
+      // que ya tiene la víctima (B10_GRUPO_ETARIO valida la opción en runtime).
+      const grupo = edadAGrupoEtario(Number(edad));
+      if (grupo) m.B10 = grupo;
+    }
   }
   if (v.numero_documento) m.A5 = v.numero_documento;
   if (v.tipo_documento)   m.A3 = v.tipo_documento;

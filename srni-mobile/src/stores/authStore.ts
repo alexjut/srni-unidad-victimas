@@ -117,13 +117,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    // #22b — si el ingreso biométrico está activo, "cerrar sesión" CONSERVA el
+    // refresh_token y la preferencia de huella para volver a entrar con huella
+    // sin contraseña (celular personal del encuestador). Si NO está activo, se
+    // limpia todo como antes (más seguro para celular compartido).
+    const biometricoActivo = (await SecureStore.getItemAsync(KEY_BIOMETRICO)) === 'true';
     try {
       const refresh = await SecureStore.getItemAsync('refresh_token');
-      if (refresh) await authApi.logout(refresh);
+      // Con biometría activa NO invalidamos el refresh en el servidor: debe
+      // seguir sirviendo para la re-autenticación por huella.
+      if (refresh && !biometricoActivo) await authApi.logout(refresh);
     } finally {
       await SecureStore.deleteItemAsync('access_token');
-      await SecureStore.deleteItemAsync('refresh_token');
-      await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
+      if (!biometricoActivo) {
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
+      }
       // Privacidad: borrar el almacén offline al cerrar sesión. Si NO hay nada
       // pendiente de sincronizar, se borra TODO (incluida la PII capturada de
       // víctimas/hogares) para que no quede para el siguiente usuario. Si hay
