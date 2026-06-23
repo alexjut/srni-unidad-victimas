@@ -26,6 +26,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuthStore } from '../../src/stores/authStore';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
+import { APP_NAME, SUBDIRECTION_NAME } from '../../src/config/marca';
 
 // ── Constantes de animación ───────────────────────────────────────────────────
 const DURACION_MS  =  5_000;   // tiempo visible de cada foto
@@ -319,8 +320,10 @@ export default function LoginScreen() {
                 resizeMode="contain"
                 accessibilityLabel="Unidad para las Víctimas"
               />
+              {/* Nombre de la APK */}
+              <Text style={styles.appTitulo}>{APP_NAME}</Text>
               <Text style={styles.appSubtitulo}>
-                Sistema de Caracterización de Víctimas · SRNI
+                Sistema de Caracterización de Víctimas
               </Text>
             </View>
           </View>
@@ -444,6 +447,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Pie de página */}
+          <Text style={styles.pieInstitucional}>{SUBDIRECTION_NAME}</Text>
           <Text style={styles.pie}>
             Sistema protegido — Ley 1581 de 2012 · Datos de víctimas confidenciales
           </Text>
@@ -538,6 +542,16 @@ const styles = StyleSheet.create({
     width: 210,
     height: 200,
     marginBottom: SPACING.xs,
+  },
+  appTitulo: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   appSubtitulo: {
     fontSize: 12,
@@ -637,11 +651,20 @@ const styles = StyleSheet.create({
   },
 
   // Pie
+  pieInstitucional: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    letterSpacing: 0.2,
+  },
   pie: {
     ...FONT.caption,
     color: 'rgba(255,255,255,0.68)',
     textAlign: 'center',
-    marginTop: SPACING.md,
+    marginTop: 4,
     paddingHorizontal: SPACING.md,
     lineHeight: 16,
   },
