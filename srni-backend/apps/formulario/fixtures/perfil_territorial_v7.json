@@ -1,7 +1,7 @@
 {
   "perfil": {
     "codigo": "TERRITORIAL",
-    "nombre": "Perfil Territorial"
+    "nombre": "Caracterización territorial"
   },
   "instrumento_version": {
     "numero": "V7",
@@ -542,7 +542,7 @@
       "codigo_externo": "D8A",
       "id_preg": 318,
       "capitulo_codigo": "C",
-      "texto": "¿Con cuáles servicios cuenta el hogar? Energía eléctrica",
+      "texto": "¿El hogar cuenta con el servicio de energía eléctrica?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
@@ -557,22 +557,7 @@
       "codigo_externo": "D8B",
       "id_preg": 319,
       "capitulo_codigo": "C",
-      "texto": "¿Con cuáles servicios cuenta el hogar? Alcantarillado",
-      "tipo": "BOOLEAN",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 8,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": []
-    },
-    {
-      "no_pregunta": "C9",
-      "codigo_externo": "D8C",
-      "id_preg": 320,
-      "capitulo_codigo": "C",
-      "texto": "¿Con cuáles servicios cuenta el hogar? Acueducto",
+      "texto": "¿El hogar cuenta con el servicio de alcantarillado?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
@@ -583,11 +568,11 @@
       "opciones": []
     },
     {
-      "no_pregunta": "C10",
-      "codigo_externo": "D8D",
-      "id_preg": 796,
+      "no_pregunta": "C9",
+      "codigo_externo": "D8C",
+      "id_preg": 320,
       "capitulo_codigo": "C",
-      "texto": "¿Con cuáles servicios cuenta el hogar? Gas natural conectado a red pública",
+      "texto": "¿El hogar cuenta con el servicio de acueducto?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
@@ -598,15 +583,30 @@
       "opciones": []
     },
     {
-      "no_pregunta": "C11",
-      "codigo_externo": "D8E",
-      "id_preg": 797,
+      "no_pregunta": "C10",
+      "codigo_externo": "D8D",
+      "id_preg": 796,
       "capitulo_codigo": "C",
-      "texto": "¿Con cuáles servicios cuenta el hogar? Recolección de basuras",
+      "texto": "¿El hogar cuenta con el servicio de gas natural conectado a red pública?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
       "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": []
+    },
+    {
+      "no_pregunta": "C11",
+      "codigo_externo": "D8E",
+      "id_preg": 797,
+      "capitulo_codigo": "C",
+      "texto": "¿El hogar cuenta con el servicio de recolección de basuras?",
+      "tipo": "BOOLEAN",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -621,7 +621,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 12,
+      "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -636,7 +636,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 13,
+      "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -651,7 +651,7 @@
       "tipo": "LISTA_MULTIPLE",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 14,
+      "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -666,7 +666,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 15,
+      "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -681,7 +681,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 16,
+      "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {
@@ -699,7 +699,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 17,
+      "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {
@@ -717,7 +717,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 18,
+      "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {
@@ -734,7 +734,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 19,
+      "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -749,7 +749,7 @@
       "tipo": "LISTA_MULTIPLE",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 20,
+      "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -815,11 +815,11 @@
       "codigo_externo": "C17A",
       "id_preg": null,
       "capitulo_codigo": "C",
-      "texto": "¿La zona se ha visto afectada por factores del conflicto armado?",
+      "texto": "En los últimos dos años, ¿por cuáles de los siguientes factores se ha visto afectada esta zona?",
       "tipo": "LISTA_MULTIPLE",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 21,
+      "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -913,7 +913,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 22,
+      "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {
@@ -934,7 +934,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "activa": false
     },
     {
       "no_pregunta": "D3",
@@ -949,7 +950,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "activa": false
     },
     {
       "no_pregunta": "D4",
@@ -2840,7 +2842,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 4,
+      "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2855,7 +2857,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 5,
+      "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2870,7 +2872,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 6,
+      "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2885,7 +2887,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 7,
+      "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2900,7 +2902,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 8,
+      "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2915,7 +2917,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 9,
+      "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2930,7 +2932,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 10,
+      "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2945,7 +2947,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 11,
+      "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2960,7 +2962,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 12,
+      "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2975,7 +2977,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 13,
+      "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2990,7 +2992,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 14,
+      "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3005,7 +3007,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 15,
+      "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3020,7 +3022,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 16,
+      "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3035,7 +3037,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 17,
+      "orden": 31,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {
@@ -3644,7 +3646,7 @@
       "codigo_externo": "PL14",
       "id_preg": 833,
       "capitulo_codigo": "K",
-      "texto": "¿Alguna vez ha llevado a cabo una iniciativa de negocio propio?",
+      "texto": "¿Alguna vez ha llevado a cabo una iniciativa de negocio propio o ha participado en alguna?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
       "obligatoria": true,
@@ -4142,6 +4144,411 @@
         "max_length": 1000
       },
       "opciones": []
+    },
+    {
+      "no_pregunta": "B48",
+      "codigo_externo": "A_NOVEDAD_RUV",
+      "id_preg": null,
+      "capitulo_codigo": "B",
+      "texto": "Novedades en el RUV",
+      "tipo": "LISTA",
+      "nivel": "PERSONA",
+      "obligatoria": false,
+      "orden": 47,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "activa": true,
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Ninguno",
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Actualización fecha de nacimiento",
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Actualización de documento de identidad",
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Actualización de nombres y/o Apellidos",
+          "orden": 4
+        }
+      ]
+    },
+    {
+      "no_pregunta": "B49",
+      "codigo_externo": "B_ANIOS_MPIO",
+      "id_preg": null,
+      "capitulo_codigo": "B",
+      "texto": "¿Hace cuántos años vive en el municipio? (Si lleva menos de 1 año registre 00)",
+      "tipo": "NUMERICO",
+      "nivel": "PERSONA",
+      "obligatoria": false,
+      "orden": 48,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 0,
+        "max": 120
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "C7E",
+      "codigo_externo": "D8A_ESTRATO",
+      "id_preg": null,
+      "capitulo_codigo": "C",
+      "texto": "¿Estrato?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 0,
+        "max": 6
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "D1N",
+      "codigo_externo": "D_OBS_INI",
+      "id_preg": null,
+      "capitulo_codigo": "D",
+      "texto": "Observaciones iniciales",
+      "tipo": "TEXTO_LARGO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "D2N",
+      "codigo_externo": "D_RETORNO_ACT",
+      "id_preg": null,
+      "capitulo_codigo": "D",
+      "texto": "¿En la actualidad, respecto al derecho del retorno o reubicación?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "activa": true,
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Ya regresó al municipio que abandonó a causa del desplazamiento forzado",
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Ya se reubicó en un municipio diferente al que abandonó a causa del desplazamiento forzado",
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Ninguna de las anteriores",
+          "orden": 3
+        }
+      ]
+    },
+    {
+      "no_pregunta": "G8",
+      "codigo_externo": "G_IPS_PRIMARIA",
+      "id_preg": null,
+      "capitulo_codigo": "G",
+      "texto": "¿Su IPS primaria le brinda atención en salud en el municipio de residencia?",
+      "tipo": "BOOLEAN",
+      "nivel": "PERSONA",
+      "obligatoria": false,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I4D",
+      "codigo_externo": "J1A_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I5D",
+      "codigo_externo": "J1B_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I6D",
+      "codigo_externo": "J1C_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I7D",
+      "codigo_externo": "J1D_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I8D",
+      "codigo_externo": "J1E_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I9D",
+      "codigo_externo": "J1F_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 14,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I10D",
+      "codigo_externo": "J1T_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 16,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I11D",
+      "codigo_externo": "J1G_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 18,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I12D",
+      "codigo_externo": "J1H_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 20,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I13D",
+      "codigo_externo": "J1J_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 22,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I14D",
+      "codigo_externo": "J1K_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 24,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I15D",
+      "codigo_externo": "J1L_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 26,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I16D",
+      "codigo_externo": "J1M_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 28,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
+    },
+    {
+      "no_pregunta": "I17D",
+      "codigo_externo": "J1N_DIAS",
+      "id_preg": null,
+      "capitulo_codigo": "JA",
+      "texto": "¿Cuántos días fueron?",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 30,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "min": 1,
+        "max": 7
+      },
+      "activa": true,
+      "opciones": []
     }
   ],
   "reglas_skip_logic": [
@@ -4169,6 +4576,111 @@
       "accion": "DESHABILITAR",
       "afecta_capitulo": "F",
       "descripcion": "Educación solo víctimas RUV de 3+ años"
+    },
+    {
+      "origen": "D8A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "D8A_ESTRATO",
+      "descripcion": "Estrato visible solo si el hogar tiene energía eléctrica"
+    },
+    {
+      "origen": "J1A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1A_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1A)"
+    },
+    {
+      "origen": "J1B",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1B_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1B)"
+    },
+    {
+      "origen": "J1C",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1C_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1C)"
+    },
+    {
+      "origen": "J1D",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1D_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1D)"
+    },
+    {
+      "origen": "J1E",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1E_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1E)"
+    },
+    {
+      "origen": "J1F",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1F_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1F)"
+    },
+    {
+      "origen": "J1T",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1T_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1T)"
+    },
+    {
+      "origen": "J1G",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1G_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1G)"
+    },
+    {
+      "origen": "J1H",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1H_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1H)"
+    },
+    {
+      "origen": "J1J",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1J_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1J)"
+    },
+    {
+      "origen": "J1K",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1K_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1K)"
+    },
+    {
+      "origen": "J1L",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1L_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1L)"
+    },
+    {
+      "origen": "J1M",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1M_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1M)"
+    },
+    {
+      "origen": "J1N",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1N_DIAS",
+      "descripcion": "Días de consumo visibles solo si consumió (J1N)"
     }
   ]
 }
