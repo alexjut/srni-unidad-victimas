@@ -89,8 +89,25 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
   if (v.numero_documento) m.A5 = v.numero_documento;
   if (v.tipo_documento)   m.A3 = v.tipo_documento;
   if (v.genero)           m.A8 = v.genero;
+  // Hecho victimizante: NO se pregunta en la entrevista (dato sensible que el RUV
+  // ya tiene). Se prellena "por debajo" desde el hecho principal de la víctima.
+  // A21 = hecho (LISTA, valida opción) · A22 = fecha · A23A = municipio ocurrencia.
+  const hecho = v.hechos_victimizantes?.[0];
+  if (hecho) {
+    if (hecho.codigo)         m.A21  = hecho.codigo;
+    if (hecho.fecha_hecho)    m.A22  = hecho.fecha_hecho;
+    if (hecho.municipio_hecho) m.A23A = hecho.municipio_hecho;
+  }
   return m;
 }
+
+/**
+ * Preguntas que NO se muestran en la entrevista porque son datos sensibles que el
+ * RUV ya tiene (hecho victimizante, fecha y municipio de ocurrencia). Se capturan
+ * "por debajo" vía prellenado y se sincronizan, pero no se le preguntan al
+ * encuestador. La caracterización es posterior a la victimización → ya se conoce.
+ */
+const PREGUNTAS_OCULTAS_RUV = new Set(['A21', 'A22', 'A23A']);
 
 interface ItemLista {
   type: 'header-hogar' | 'header-miembro' | 'pregunta';
@@ -368,7 +385,9 @@ export default function CapituloScreen() {
   );
 
   const preguntasVisibles = useMemo(
-    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
+    // Se excluyen las preguntas precargadas sensibles del RUV (hecho victimizante)
+    // — se prellenan por debajo pero NO se muestran ni se preguntan.
+    () => preguntas.filter((p) => visibles.has(p.codigo_externo) && !PREGUNTAS_OCULTAS_RUV.has(p.codigo_externo)),
     [preguntas, visibles],
   );
 
