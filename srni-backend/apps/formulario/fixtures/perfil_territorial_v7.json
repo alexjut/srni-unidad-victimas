@@ -20,7 +20,7 @@
     {
       "codigo": "C",
       "nombre": "C. VIVIENDA",
-      "orden": 2,
+      "orden": 3,
       "nivel": "HOGAR",
       "poblacion_objetivo": "TODOS_MIEMBROS",
       "objetivo": "Caracterizar las condiciones de la vivienda: tipo, materiales, servicios públicos y tenencia."
@@ -28,7 +28,7 @@
     {
       "codigo": "D",
       "nombre": "D. RETORNOS Y REUBICACIONES",
-      "orden": 3,
+      "orden": 4,
       "nivel": "HOGAR",
       "poblacion_objetivo": "TODOS_MIEMBROS",
       "objetivo": "Identificar si el hogar se encuentra en proceso de retorno o reubicación y sus condiciones."
@@ -36,7 +36,7 @@
     {
       "codigo": "E",
       "nombre": "E. REUNIFICACIÓN FAMILIAR",
-      "orden": 4,
+      "orden": 5,
       "nivel": "HOGAR",
       "poblacion_objetivo": "TODOS_MIEMBROS",
       "objetivo": "Identificar si algún miembro del hogar se separó del núcleo familiar y gestiones para reunificarse."
@@ -68,7 +68,7 @@
     {
       "codigo": "B",
       "nombre": "B. DATOS BÁSICOS",
-      "orden": 5,
+      "orden": 2,
       "nivel": "PERSONA",
       "poblacion_objetivo": "TODOS_MIEMBROS",
       "objetivo": "Caracterizar sociodemográficamente a cada miembro del hogar: datos personales, documento, sexo, pertenencia étnica e inclusión en RUV."
