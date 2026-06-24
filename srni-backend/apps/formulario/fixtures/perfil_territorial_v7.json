@@ -3104,7 +3104,7 @@
       "id": "ce11e8e9-fb9e-5f23-a9bd-4908fdede899"
     },
     {
-      "no_pregunta": "NOMBRE_1_RUV",
+      "no_pregunta": "NOMBRE_1_R",
       "codigo_externo": "NOMBRE_1_RUV",
       "id_preg": null,
       "capitulo_codigo": "A",
@@ -3120,7 +3120,7 @@
       "id": "0e2cebc5-9a1b-57e5-9ecf-c566f5bcba9f"
     },
     {
-      "no_pregunta": "NOMBRE_2_RUV",
+      "no_pregunta": "NOMBRE_2_R",
       "codigo_externo": "NOMBRE_2_RUV",
       "id_preg": null,
       "capitulo_codigo": "A",
@@ -3136,7 +3136,7 @@
       "id": "e9245542-12c2-5de3-92e3-48eaa2f61161"
     },
     {
-      "no_pregunta": "APELLIDO_1_RUV",
+      "no_pregunta": "APELLIDO_1",
       "codigo_externo": "APELLIDO_1_RUV",
       "id_preg": null,
       "capitulo_codigo": "A",
@@ -3152,7 +3152,7 @@
       "id": "3983d9a6-0af4-52fd-b89a-2105bf769838"
     },
     {
-      "no_pregunta": "APELLIDO_2_RUV",
+      "no_pregunta": "APELLIDO_2",
       "codigo_externo": "APELLIDO_2_RUV",
       "id_preg": null,
       "capitulo_codigo": "A",
