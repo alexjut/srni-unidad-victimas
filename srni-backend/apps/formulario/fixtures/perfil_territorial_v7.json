@@ -8503,16 +8503,16 @@
       "descripcion": "[demográfico/étnico] libreta militar: hombres 18-50"
     },
     {
-      "origen_expr": "sexo == '2'",
+      "origen_expr": "sexo == '2' and edad >= 12 and edad <= 50",
       "accion": "HABILITAR",
       "afecta": "B2",
-      "descripcion": "[demográfico/étnico] embarazo: solo mujeres"
+      "descripcion": "[B manual] mujer 12-50 años"
     },
     {
-      "origen_expr": "sexo == '2'",
+      "origen_expr": "sexo == '2' and edad >= 12 and edad <= 50",
       "accion": "HABILITAR",
       "afecta": "B2A",
-      "descripcion": "[demográfico/étnico] lactancia: solo mujeres"
+      "descripcion": "[B manual] mujer 12-50 años"
     },
     {
       "origen_expr": "etnia == 'indigena'",
@@ -8916,6 +8916,54 @@
       "accion": "HABILITAR",
       "afecta": "PL24",
       "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen_expr": "edad >= 18",
+      "accion": "HABILITAR",
+      "afecta": "B8",
+      "descripcion": "[B15 manual] fuerza pública: mayores de 18"
+    },
+    {
+      "origen": "A21",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "A22",
+      "descripcion": "[B46 manual] solicitó RUV si víctima del conflicto"
+    },
+    {
+      "origen": "A22",
+      "valor_trigger": "5",
+      "accion": "HABILITAR",
+      "afecta": "A23A",
+      "descripcion": "[B47 manual] razones no declarar si NO declaró"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "98",
+      "accion": "FINALIZAR",
+      "afecta_capitulo": "C",
+      "descripcion": "[C1 manual] finaliza si otro tipo de vivienda"
+    },
+    {
+      "origen": "F1",
+      "valor_trigger": "false",
+      "accion": "FINALIZAR",
+      "afecta_capitulo": "E",
+      "descripcion": "[E1 manual] finaliza si el hogar NO se separó"
+    },
+    {
+      "origen": "I6",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "I11A",
+      "descripcion": "[H3 manual] atención psicosocial si tiene discapacidad (cross-cap)"
+    },
+    {
+      "origen": "L5",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L6",
+      "descripcion": "[J6 manual] qué hizo para conseguir trabajo si hizo diligencias"
     }
   ]
 }

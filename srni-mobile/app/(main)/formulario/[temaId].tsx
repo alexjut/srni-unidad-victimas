@@ -378,10 +378,17 @@ export default function CapituloScreen() {
   // respuesta no vacía entre miembros", lo que mostraba/ocultaba preguntas en
   // personas equivocadas. Al cambiar de miembro, este memo se recalcula y las
   // preguntas visibles se ajustan a ESE miembro. HOGAR usa su única respuesta.
+  // Todas las preguntas del instrumento (todos los capítulos) — para que el
+  // skip-logic CROSS-CAPÍTULO funcione (ej. H3 rehabilitación depende de B16
+  // discapacidad, que está en otro capítulo). `respuestas` ya trae todo el borrador.
+  const todasPreguntasInstrumento = useMemo(
+    () => instrumentos.getCapitulos().flatMap((c) => instrumentos.getPreguntas(c.id)),
+    [temaId],
+  );
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
     const activo = miembros[miembroIdx] ?? null;
     const m: Record<string, string> = {};
-    for (const p of preguntas) {
+    for (const p of todasPreguntasInstrumento) {
       if (p.nivel === 'PERSONA') {
         m[p.codigo_externo] = activo ? (respuestas[claveResp(p.id, activo.id)] ?? '') : '';
       } else {
@@ -389,7 +396,7 @@ export default function CapituloScreen() {
       }
     }
     return m;
-  }, [preguntas, respuestas, miembros, miembroIdx]);
+  }, [todasPreguntasInstrumento, respuestas, miembros, miembroIdx]);
 
   // Contexto de la víctima para evaluar condiciones demográficas/étnicas offline
   // (edad/sexo/etnia/RUV). Prioriza lo capturado del miembro activo (A6 fecha,
