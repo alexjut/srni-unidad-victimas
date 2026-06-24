@@ -142,14 +142,141 @@
       "id_preg": 1161,
       "capitulo_codigo": "A",
       "texto": "Dirección Territorial",
-      "tipo": "TEXTO",
+      "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACIÓN",
       "validaciones": {},
-      "opciones": [],
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "DIRECCION TERRITORIAL ANTIOQUIA",
+          "id_resp_vivanto": null,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "DIRECCION TERRITORIAL ATLANTICO",
+          "id_resp_vivanto": null,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "DIRECCION TERRITORIAL BOLIVAR",
+          "id_resp_vivanto": null,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "DIRECCION TERRITORIAL CAQUETA Y HUILA",
+          "id_resp_vivanto": null,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "DIRECCION TERRITORIAL CAUCA",
+          "id_resp_vivanto": null,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "DIRECCION TERRITORIAL CENTRAL",
+          "id_resp_vivanto": null,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "DIRECCION TERRITORIAL CESAR Y GUAJIRA",
+          "id_resp_vivanto": null,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "DIRECCION TERRITORIAL CHOCO",
+          "id_resp_vivanto": null,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "DIRECCION TERRITORIAL CORDOBA",
+          "id_resp_vivanto": null,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "DIRECCION TERRITORIAL EJE CAFETERO",
+          "id_resp_vivanto": null,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "DIRECCION TERRITORIAL MAGDALENA",
+          "id_resp_vivanto": null,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "DIRECCION TERRITORIAL MAGDALENA MEDIO",
+          "id_resp_vivanto": null,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "DIRECCION TERRITORIAL META Y LLANOS ORIENTALES",
+          "id_resp_vivanto": null,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "DIRECCION TERRITORIAL NARIÑO",
+          "id_resp_vivanto": null,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "DIRECCION TERRITORIAL NORTE DE SANTANDER Y ARAUCA",
+          "id_resp_vivanto": null,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "DIRECCION TERRITORIAL PUTUMAYO",
+          "id_resp_vivanto": null,
+          "orden": 16
+        },
+        {
+          "valor": "17",
+          "etiqueta": "DIRECCION TERRITORIAL SANTANDER",
+          "id_resp_vivanto": null,
+          "orden": 17
+        },
+        {
+          "valor": "18",
+          "etiqueta": "DIRECCION TERRITORIAL SUCRE",
+          "id_resp_vivanto": null,
+          "orden": 18
+        },
+        {
+          "valor": "19",
+          "etiqueta": "DIRECCION TERRITORIAL URABA",
+          "id_resp_vivanto": null,
+          "orden": 19
+        },
+        {
+          "valor": "20",
+          "etiqueta": "DIRECCION TERRITORIAL VALLE",
+          "id_resp_vivanto": null,
+          "orden": 20
+        },
+        {
+          "valor": "21",
+          "etiqueta": "ESQUEMA NO PRESENCIAL",
+          "id_resp_vivanto": null,
+          "orden": 21
+        }
+      ],
       "id": "18618ad8-b8ec-516e-a856-62348bec92aa"
     },
     {
@@ -160,7 +287,7 @@
       "texto": "Método de recolección:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -207,7 +334,7 @@
       "texto": "Lugar de Residencia",
       "tipo": "COMBO_DINAMICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -230,7 +357,7 @@
       "texto": "Zona de residencia",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -265,7 +392,7 @@
       "texto": "Dirección de la vivienda o nombre de la finca/predio",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -281,7 +408,7 @@
       "texto": "Barrio, centro poblado o vereda:",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -297,7 +424,7 @@
       "texto": "Ingrese el Nombre de la Vereda",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -313,7 +440,7 @@
       "texto": "Teléfono fijo",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -332,7 +459,7 @@
       "texto": "Otro teléfono de contacto",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -351,7 +478,7 @@
       "texto": "Correo electrónico",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -367,7 +494,7 @@
       "texto": "El lugar de correspondencia es el mismo de residencia?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -396,7 +523,7 @@
       "texto": "Dirección de correspondencia",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -412,7 +539,7 @@
       "texto": "Lugar de Correspondencia",
       "tipo": "COMBO_DINAMICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -435,7 +562,7 @@
       "texto": "Zona de Correspondencia",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -470,7 +597,7 @@
       "texto": "Barrio, centro poblado o vereda:",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -486,7 +613,7 @@
       "texto": "Ingrese el Nombre de la Vereda",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -502,7 +629,7 @@
       "texto": "Supervisor de la Encuesta",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -518,7 +645,7 @@
       "texto": "¿En qué tipo de vivienda habita el hogar?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACIÓN",
@@ -601,7 +728,7 @@
       "texto": "La vivienda ocupada por este hogar es:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -678,7 +805,7 @@
       "texto": "¿Cuál?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -694,7 +821,7 @@
       "texto": "¿Cuál es el material predominante de las paredes exteriores de la vivienda?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -765,7 +892,7 @@
       "texto": "¿Cuál es el material predominante de los pisos de la vivienda?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -824,7 +951,7 @@
       "texto": "De acuerdo con sus usos y costumbres considera que: ¿la vivienda es adecuada para su hogar?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -853,7 +980,7 @@
       "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Energía Eléctrica",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -882,7 +1009,7 @@
       "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Alcantarillado",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -911,7 +1038,7 @@
       "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Acueducto",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -940,7 +1067,7 @@
       "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Gas Natural conectado a red pública",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -969,7 +1096,7 @@
       "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Recolección de basuras",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -998,7 +1125,7 @@
       "texto": "¿Su hogar tiene acceso a servicios públicos a través de vecinos?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1027,7 +1154,7 @@
       "texto": "¿De donde proviene principalmente el agua que utilizan para beber?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1104,7 +1231,7 @@
       "texto": "¿Cómo eliminan principalmente las basuras en este hogar?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1115,6 +1242,42 @@
           "etiqueta": "Por recolecion pública o privada",
           "id_resp_vivanto": 176,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "La reciclan ( producir energía, alimentar animales, abono)",
+          "id_resp_vivanto": 178,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "La tiran a un rio, mar, quebrada, caño o laguna",
+          "id_resp_vivanto": 182,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "La tiran a un patio, lote, zanja o baldío",
+          "id_resp_vivanto": 2793,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "la queman o entierran",
+          "id_resp_vivanto": 179,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "La eliminan de otra forma",
+          "id_resp_vivanto": 2794,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Disposición a campo abierto",
+          "id_resp_vivanto": 3752,
+          "orden": 7
         }
       ],
       "id": "cc89ebba-c69d-5e49-9e0a-1a3c7f5fd057"
@@ -1127,7 +1290,7 @@
       "texto": "¿Cuál es el principal servicio sanitario con el que cuenta el hogar?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1186,7 +1349,7 @@
       "texto": "Incluyendo sala-comedor, ¿de cuántos cuartos en total dispone este hogar? (Excluya cocinas, baños, garajes y cuartos destinados a negocio)",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1202,7 +1365,7 @@
       "texto": "¿En cuántos de esos cuartos que usted mencionó duermen las personas de este hogar?\nMenor o Igual (<=) a dato de arriba",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1218,7 +1381,7 @@
       "texto": "¿Cuánto cobraría usted por el arriendo del lugar que ocupa su hogar?",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1234,7 +1397,7 @@
       "texto": "¿La vivienda donde habita se encuentra ubicada en zona de alto riesgo de desastre natural declarada por alguna autoridad?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1269,7 +1432,7 @@
       "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1280,6 +1443,54 @@
           "etiqueta": "Inundaciones, desbordamientos, crecientes, arroyos",
           "id_resp_vivanto": 149,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Avalanchas",
+          "id_resp_vivanto": 150,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Vientos fuertes",
+          "id_resp_vivanto": 151,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Derrumbes o deslizamientos de tierra",
+          "id_resp_vivanto": 152,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Basura o contaminantes",
+          "id_resp_vivanto": 153,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Zona de riesgo por electricidad o gas",
+          "id_resp_vivanto": 154,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 156,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otra, ¿cuál? __________________________",
+          "id_resp_vivanto": 155,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "No sabe/No responde",
+          "id_resp_vivanto": 157,
+          "orden": 9
         }
       ],
       "id": "07677319-e23d-5275-84f6-45c4ff11821e"
@@ -1292,7 +1503,7 @@
       "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por factores como:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1303,6 +1514,78 @@
           "etiqueta": "Minería Ilegal",
           "id_resp_vivanto": 2641,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Exploración y exploración minero-energética (petróleo, gas etc)",
+          "id_resp_vivanto": 2642,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+          "id_resp_vivanto": 2643,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Combares o bombardeos",
+          "id_resp_vivanto": 2644,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Restricción a la movilidad - Confinamiento",
+          "id_resp_vivanto": 2645,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Presencia de MAP, MUSE, etc.",
+          "id_resp_vivanto": 2646,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+          "id_resp_vivanto": 2647,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Ganadería extensiva",
+          "id_resp_vivanto": 2648,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Presencia de cultivos ilícitos",
+          "id_resp_vivanto": 2649,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos de uso ilícito",
+          "id_resp_vivanto": 2650,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Rutas de tránsito de estupefacientes y/o armas",
+          "id_resp_vivanto": 2651,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Actividades de explotación maderera",
+          "id_resp_vivanto": 2652,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2791,
+          "orden": 13
         }
       ],
       "id": "8c8a32fe-3fff-502b-9c19-ad97fe70f907"
@@ -1331,7 +1614,7 @@
       "texto": "¿En la actualidad … respecto al derecho del retorno o reubicación?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACION",
@@ -1366,7 +1649,7 @@
       "texto": "¿Cuál ha sido su decisión en relación con el derecho del retorno o reubicación?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1407,7 +1690,7 @@
       "texto": "¿Solicitó apoyo del Gobierno para retornar o reubicarse?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1436,7 +1719,7 @@
       "texto": "¿En su proceso de retorno o reubicación lo acompañó alguna entidad o algún funcionario del Estado?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1465,7 +1748,7 @@
       "texto": "¿Cuál fue el departamento y municipio en el cuál se retornó o se reubicó?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1481,7 +1764,7 @@
       "texto": "¿A qué Resguardo indígena se retornó o se reubicó?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1497,7 +1780,7 @@
       "texto": "¿A qué comunidad indígena se retornó o se reubicó?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1513,7 +1796,7 @@
       "texto": "¿A qué Territorio Colectivo de Comunidades Negras se retornó o se reubicó?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1529,7 +1812,7 @@
       "texto": "¿A qué Kumpania se retornó o se reubicó?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1612,7 +1895,7 @@
       "texto": "¿A qué departamento y municipio quiere retornar o reubicarse?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1628,7 +1911,7 @@
       "texto": "¿A qué Resguardo indígena desea retornar o reubicarse?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1644,7 +1927,7 @@
       "texto": "¿A qué comunidad indígena desea retornar o reubicarse?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1660,7 +1943,7 @@
       "texto": "¿A qué Territorio Colectivo de Comunidades Negras desea retornar o reubicarse?",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1676,7 +1959,7 @@
       "texto": "¿A qué Kumpania desea retornar o reubicarse?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1759,7 +2042,7 @@
       "texto": "¿Cuáles son las razónes por las que residen en este municipio?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1836,7 +2119,7 @@
       "texto": "A causa del desplazamiento forzado, ¿algún miembro del hogar se vio obligado a separarse?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACION",
@@ -1865,7 +2148,7 @@
       "texto": "¿El hogar solicitó apoyo del gobierno u otra entidad privada para la reunificación familiar?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1894,7 +2177,7 @@
       "texto": "¿El hogar recibió el apoyo para la reunificación familiar?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1923,7 +2206,7 @@
       "texto": "¿El hogar logró reunificarse?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1952,7 +2235,7 @@
       "texto": "¿Por que no ha solicitado apoyo para la reunificación familiar?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -1987,7 +2270,7 @@
       "texto": "¿Está interesado en iniciar un proceso de reunificación familiar?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2044,7 +2327,7 @@
       "texto": "¿Generalmente como se aprovisiona el hogar de alimentos?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACIÓN",
@@ -2055,6 +2338,54 @@
           "etiqueta": "Donación",
           "id_resp_vivanto": 2681,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Atención humanitaria",
+          "id_resp_vivanto": 2682,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Compra",
+          "id_resp_vivanto": 2683,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Actividades tradicionales: caza",
+          "id_resp_vivanto": 2684,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Actividades tradicionales: pesca",
+          "id_resp_vivanto": 2685,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Actividades tradicionales: recolección",
+          "id_resp_vivanto": 2686,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Actividades tradicionales: trueque",
+          "id_resp_vivanto": 2687,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Produccion en pancoger (Chagra, conuco, roza, monte, patio, colino, tul, tambo o parcela)",
+          "id_resp_vivanto": 2688,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Producción para vender  y comprar otros productos",
+          "id_resp_vivanto": 2689,
+          "orden": 9
         }
       ],
       "id": "a4c75ed3-59b9-5b86-976b-79695a5081f2"
@@ -2067,7 +2398,7 @@
       "texto": "¿Ha tenido dificultades para adquirir los alimentos en el último mes?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2096,7 +2427,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió:  (Leguminosas (fríjol,lentejas, garbanzos,arvejas...) ?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2113,6 +2444,12 @@
           "etiqueta": "No",
           "id_resp_vivanto": 361,
           "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 360,
+          "orden": 3
         }
       ],
       "id": "98c18565-7bc3-566f-9dde-e41153cd80a1"
@@ -2125,7 +2462,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Cereales (arroz, harina  de trigo, avena)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2136,6 +2473,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 362,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 363,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 362,
+          "orden": 3
         }
       ],
       "id": "8b139117-c8d2-5619-8c6d-18d6fdf83a9f"
@@ -2148,7 +2497,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió:Tubérculos y plátanos (yuca, ñame, arracacha, plátano, papa, holluco, calabaza, ahuyama, papa china, banano verde, banano chivo, batata)?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2159,6 +2508,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 364,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 365,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 364,
+          "orden": 3
         }
       ],
       "id": "ab703a33-18f3-5e5d-9150-8ab6cb168076"
@@ -2171,7 +2532,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Verduras y hortalizas (tomate, cebolla, habichuela, arveja verde, zanahoria, col, etc.)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2182,6 +2543,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 366,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 367,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 366,
+          "orden": 3
         }
       ],
       "id": "d23b3b41-1eec-5d0e-92e3-719f8f31372b"
@@ -2194,7 +2567,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Frutas (papaya, guayaba, piña, borojo, caimito, guama, pomarrosa, zapote, pepepan, chontaduro, etc.)?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2205,6 +2578,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 368,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 369,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 368,
+          "orden": 3
         }
       ],
       "id": "d17b189f-3ba2-59ef-8268-57a2da581c16"
@@ -2217,7 +2602,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Carnes (res, pollo, cerdo, cabra)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2228,6 +2613,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 370,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 371,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 370,
+          "orden": 3
         }
       ],
       "id": "0441f5ed-161b-55b3-93f9-0182dcb44d66"
@@ -2240,7 +2637,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Pescados y/o mariscos",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2257,6 +2654,12 @@
           "etiqueta": "No",
           "id_resp_vivanto": 3886,
           "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 3885,
+          "orden": 3
         }
       ],
       "id": "67fff564-68f0-5902-9218-42d633871940"
@@ -2269,7 +2672,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Otras carnes (Patos, tortugas, ranas, insectos, reptiles, aves)aves)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2280,6 +2683,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 1211,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 1212,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 1211,
+          "orden": 3
         }
       ],
       "id": "832072a5-5f8b-59e1-a325-5fb4c08d3808"
@@ -2292,7 +2707,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Huevo?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2303,6 +2718,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 983,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 984,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 983,
+          "orden": 3
         }
       ],
       "id": "e03a392b-b13b-51b0-8a98-a0bdc512cb7d"
@@ -2315,7 +2742,7 @@
       "texto": "Lácteos (leche, queso, kumis, yogur, etc.)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2326,6 +2753,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 372,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 373,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 372,
+          "orden": 3
         }
       ],
       "id": "407080de-04b9-5e40-874b-af828ea23e41"
@@ -2338,7 +2777,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Grasas (aceites, mantequilla, margarina, mayonesa, manteca, etc.)",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2349,6 +2788,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 374,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 375,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 374,
+          "orden": 3
         }
       ],
       "id": "b1bea6fe-7447-55c9-92a5-c4d081fb5438"
@@ -2361,7 +2812,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Azúcar o panela",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2372,6 +2823,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 376,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 377,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 376,
+          "orden": 3
         }
       ],
       "id": "ad815b26-811d-58e2-b59a-017954ad6707"
@@ -2384,7 +2847,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Bienestarina",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2395,6 +2858,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 985,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 986,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 985,
+          "orden": 3
         }
       ],
       "id": "6390b88a-4447-5899-bd45-f85f0d893a8f"
@@ -2407,7 +2882,7 @@
       "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Otros: (condimentos y especias, sal, cebolla, ajo, tomillo, laurel, cilantro, cimarron, oregano, albahaca)?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2418,6 +2893,18 @@
           "etiqueta": "Si",
           "id_resp_vivanto": 987,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 988,
+          "orden": 2
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor (1 a 7)",
+          "id_resp_vivanto": 987,
+          "orden": 3
         }
       ],
       "id": "ad5ff82a-dce2-5a8f-9576-ec30817970d4"
@@ -2430,7 +2917,7 @@
       "texto": "¿Considera que la alimentación en su hogar es adecuada?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2447,6 +2934,12 @@
           "etiqueta": "No Por qué",
           "id_resp_vivanto": 2705,
           "orden": 2
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "Campo Abierto",
+          "id_resp_vivanto": 2705,
+          "orden": 3
         }
       ],
       "id": "fb59de23-994c-5792-9fe2-07cbd0878c59"
@@ -2459,7 +2952,7 @@
       "texto": "¿Dónde se encuentra su negocio?",
       "tipo": "COMBO_DINAMICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACIÓN",
@@ -2482,7 +2975,7 @@
       "texto": "¿Por cuáles de los siguientes motivos mantiene una relación urbano - rural?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2493,6 +2986,30 @@
           "etiqueta": "Para lograr el abastecimiento de alimentos",
           "id_resp_vivanto": 3974,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Para mantener los vínculos familiares y sociales",
+          "id_resp_vivanto": 3975,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Por motivos culturales y espirituales",
+          "id_resp_vivanto": 3976,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Otros motivos",
+          "id_resp_vivanto": 3977,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No mantiene relación urbano - rural",
+          "id_resp_vivanto": 3978,
+          "orden": 5
         }
       ],
       "id": "ac5fadef-4c46-5d75-ab46-18e65b95d7d2"
@@ -2505,7 +3022,7 @@
       "texto": "¿A su hogar se le ha adjudicado materialmente terreno/lote/predio/habitación?.",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2522,6 +3039,12 @@
           "etiqueta": "No dispongo de terreno/lote/predio de manera formal ni informal",
           "id_resp_vivanto": 2743,
           "orden": 2
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "Por qué (Histórico)",
+          "id_resp_vivanto": 2743,
+          "orden": 3
         }
       ],
       "id": "509fea34-c205-56af-9295-7b5a1872cc31"
@@ -2534,7 +3057,7 @@
       "texto": "Este terreno o predio es parte de un:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2593,7 +3116,7 @@
       "texto": "¿Cuál es la forma de tenencia de la tierra de este predio?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2676,7 +3199,7 @@
       "texto": "¿Cuáles son las principales actividades que se realizan en el predio o lugar con el que mantiene la relación urbano - rural?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2687,6 +3210,24 @@
           "etiqueta": "Actividades agrícolas productivas.",
           "id_resp_vivanto": 2761,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Actividades pecuarias productivas",
+          "id_resp_vivanto": 2762,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Actividades agropecuarias productivas",
+          "id_resp_vivanto": 2763,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Actividades tradicionales (caza, pesca y recolección)",
+          "id_resp_vivanto": 2764,
+          "orden": 4
         }
       ],
       "id": "9f0f2c6d-b4e0-5b01-9d99-9467840da692"
@@ -2699,7 +3240,7 @@
       "texto": "¿El principal destino de la producción final es?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2710,6 +3251,66 @@
           "etiqueta": "Autoconsumo",
           "id_resp_vivanto": 2765,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Intercambio o trueque",
+          "id_resp_vivanto": 2766,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Venta de producto en el lote",
+          "id_resp_vivanto": 2767,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Venta a cooperativa",
+          "id_resp_vivanto": 2768,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Venta a central de abastos",
+          "id_resp_vivanto": 2769,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Venta directa en plaza de mercado",
+          "id_resp_vivanto": 2770,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Venta a comercializador",
+          "id_resp_vivanto": 2771,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Venta a tienda, supermercado o grandes superficies",
+          "id_resp_vivanto": 2772,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Venta a mercado internacional",
+          "id_resp_vivanto": 2773,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Para la industria",
+          "id_resp_vivanto": 2774,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Otros destinos",
+          "id_resp_vivanto": 2775,
+          "orden": 11
         }
       ],
       "id": "697072f6-ed22-5aad-88a3-c51a1fe4751f"
@@ -2722,7 +3323,7 @@
       "texto": "¿Cuál es la extensión del predio?",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2738,7 +3339,7 @@
       "texto": "¿En el predio en el que usted produce y/o habita existen alguno(s) de los siguientes a factores de riesgos?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -2749,6 +3350,78 @@
           "etiqueta": "Contaminación por minería ilegal",
           "id_resp_vivanto": 2777,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Exploración y explotación minero-energética (petróleo, gas etc.) (minería legal)",
+          "id_resp_vivanto": 2778,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+          "id_resp_vivanto": 2779,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Combates o bombardeos",
+          "id_resp_vivanto": 2780,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Restricciones a la movilidad – Confinamiento",
+          "id_resp_vivanto": 2781,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Presencia de Minas antipersonales MAP, Municiones sin explotar -MUSE artefactos improvisados explosivos AIE, etc.",
+          "id_resp_vivanto": 2782,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Megaproyectos de infraestructura y/o turísticos (represas, hotelería etc.)",
+          "id_resp_vivanto": 2783,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Ganadería extensiva",
+          "id_resp_vivanto": 2784,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Presencia de cultivos ilícitos",
+          "id_resp_vivanto": 2785,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos ilícitos",
+          "id_resp_vivanto": 2786,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Rutas de tránsito de drogas y/o armas",
+          "id_resp_vivanto": 2787,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Actividades de explotación maderera",
+          "id_resp_vivanto": 2788,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Otro ¿Cuál?",
+          "id_resp_vivanto": 2789,
+          "orden": 13
         }
       ],
       "id": "1a1c5e64-1a0f-58d3-a8a2-8f7bfa8e439f"
@@ -3015,7 +3688,7 @@
       "texto": "Estado de la Entrevista",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3056,7 +3729,7 @@
       "texto": "Acción social o la Unidad para las Víctimas incluyó a … en el RUPD/RUV",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "RUV",
@@ -3117,7 +3790,7 @@
       "texto": "Primer Nombre RUV",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "RUV",
@@ -3133,7 +3806,7 @@
       "texto": "Segundo nombre RUV",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3149,7 +3822,7 @@
       "texto": "Primer apellido RUV",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3165,7 +3838,7 @@
       "texto": "Segundo apellido RUV",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3181,7 +3854,7 @@
       "texto": "Tipo de Persona",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3222,7 +3895,7 @@
       "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... Se autoreconoce como:",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "CARACTERIZACIÓN",
@@ -3275,7 +3948,7 @@
       "texto": "Telefono Celular",
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3294,7 +3967,7 @@
       "texto": "Primer Nombre",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3310,7 +3983,7 @@
       "texto": "Segundo nombre",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3326,7 +3999,7 @@
       "texto": "Primer apellido",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3342,7 +4015,7 @@
       "texto": "Segundo apellido",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3358,7 +4031,7 @@
       "texto": "¿… está presente en esta entrevista?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3387,7 +4060,7 @@
       "texto": "¿Cuál es la fecha de nacimiento de … ?",
       "tipo": "FECHA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3403,7 +4076,7 @@
       "texto": "¿Cuántos años cumplidos tiene …?",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3419,7 +4092,7 @@
       "texto": "Grupo Etario",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3472,7 +4145,7 @@
       "texto": "¿Qué tipo de documento de identificación tiene ...?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3555,7 +4228,7 @@
       "texto": "¿… cuenta con el documento de identificación?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3584,7 +4257,7 @@
       "texto": "Número de documento de identificación",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3600,7 +4273,7 @@
       "texto": "Novedades en el RUV",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3641,7 +4314,7 @@
       "texto": "Sexo",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3682,7 +4355,7 @@
       "texto": "¿Cuál es su orientación sexual?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3735,7 +4408,7 @@
       "texto": "¿Cuál es su identidad de género?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3776,7 +4449,7 @@
       "texto": "¿… tiene libreta militar?\nLey 43-1993",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3811,7 +4484,7 @@
       "texto": "¿Cuenta con libreta militar en físico?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3840,7 +4513,7 @@
       "texto": "¿Pertenece o ha pertenecido a la Fuerza Pública?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3869,7 +4542,7 @@
       "texto": "¿Presenta alguna discapacidad?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3898,7 +4571,7 @@
       "texto": "¿Qué tipo de discapacidad presenta?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3909,6 +4582,36 @@
           "etiqueta": "Física",
           "id_resp_vivanto": 317,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Visual",
+          "id_resp_vivanto": 2807,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Auditiva",
+          "id_resp_vivanto": 2808,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Intelectual",
+          "id_resp_vivanto": 319,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Mental",
+          "id_resp_vivanto": 320,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Sordoceguera",
+          "id_resp_vivanto": 2809,
+          "orden": 6
         }
       ],
       "id": "e05291eb-b8ef-57c0-8ebf-8a0b2ca2ac8d"
@@ -3921,7 +4624,7 @@
       "texto": "¿Cuál es el origen de su discapacidad?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3932,6 +4635,36 @@
           "etiqueta": "Enfermedad Congénita",
           "id_resp_vivanto": 1397,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "A causa de un accidente",
+          "id_resp_vivanto": 1398,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Porque ya está muy mayor",
+          "id_resp_vivanto": 1399,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "A causa del conflicto armado (minas, cambates, otros)",
+          "id_resp_vivanto": 1400,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Porque fue víctima de otros hechos",
+          "id_resp_vivanto": 1401,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "No sabe/No responde",
+          "id_resp_vivanto": 1402,
+          "orden": 6
         }
       ],
       "id": "19e44825-e590-578b-8554-8626b6b22a2a"
@@ -3944,7 +4677,7 @@
       "texto": "¿Presenta diagnóstico de enfermedades ruinosas, catastróficas y de alto costo?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3973,7 +4706,7 @@
       "texto": "Cuál enfermedad",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -3984,6 +4717,84 @@
           "etiqueta": "Trasplante renal",
           "id_resp_vivanto": 3865,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Diálisis peritoneal y hemodiálisis",
+          "id_resp_vivanto": 3866,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Trasplante renal, corazón, hígado, médula ósea y córnea",
+          "id_resp_vivanto": 3876,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Manejo quirúrgico para enfermedades del sistema nervioso central",
+          "id_resp_vivanto": 3867,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Manejo quirúrgico para enfermedades del corazón",
+          "id_resp_vivanto": 3868,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Reemplazos articulares",
+          "id_resp_vivanto": 3869,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Manejo médico quirúrgico del paciente gran quemado",
+          "id_resp_vivanto": 3870,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Manejo del trauma mayor",
+          "id_resp_vivanto": 3871,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+          "id_resp_vivanto": 3872,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Quimioterapia y radioterapia para el cáncer",
+          "id_resp_vivanto": 3873,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Manejo de pacientes en Unidad de Cuidados Intensivos",
+          "id_resp_vivanto": 3874,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Manejo quirúrgico de enfermedades congénitas",
+          "id_resp_vivanto": 3875,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Corrección quirúrgica de la hernia de núcleo pulposo",
+          "id_resp_vivanto": 3877,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Otra (EPOC, anemia falciforme, etc)",
+          "id_resp_vivanto": 3878,
+          "orden": 14
         }
       ],
       "id": "cd05102d-58eb-52b6-96c7-e5e1d3910b05"
@@ -3996,7 +4807,7 @@
       "texto": "¿Se encuentra alguna de las mujeres del hogar en estado de embarazo?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4013,6 +4824,12 @@
           "etiqueta": "No",
           "id_resp_vivanto": 77,
           "orden": 2
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "Campo Abierto",
+          "id_resp_vivanto": 76,
+          "orden": 3
         }
       ],
       "id": "d7ae65cc-affd-51db-9c92-153024bbd5db"
@@ -4025,7 +4842,7 @@
       "texto": "¿En la actualidad es madre lactante?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4054,7 +4871,7 @@
       "texto": "El parentesco … frente al jefe del hogar es:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4107,7 +4924,7 @@
       "texto": "Siente … que vive en un entorno cultural acorde con sus usos y costumbres?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4136,7 +4953,7 @@
       "texto": "¿Se encuentra habitando algún terriorio colectivo?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4165,7 +4982,7 @@
       "texto": "¿En que tipo de territorio se encuentra ?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4212,7 +5029,7 @@
       "texto": "¿… A qué pueblo indígena pertenece?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 30,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4228,7 +5045,7 @@
       "texto": "¿… A qué comunidad indígena pertenece?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 31,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4244,7 +5061,7 @@
       "texto": "¿… A qué cabildo indígena pertenece?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 32,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4260,7 +5077,7 @@
       "texto": "¿Pertenece a un Consejo Comunitario?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 33,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4289,7 +5106,7 @@
       "texto": "A qué consejo comunitario pertenece?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 34,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4305,7 +5122,7 @@
       "texto": "¿… A qué Vitsa pertenece?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 35,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4370,7 +5187,7 @@
       "texto": "¿… A qué Kumpania pertenece?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 36,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4453,7 +5270,7 @@
       "texto": "En el actual sitio de residencia, reconoce … alguna autoridad, líder o alguien que lo represente?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 37,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4482,7 +5299,7 @@
       "texto": "Adicional, reconoce … la autoridad del Resguardo, comunidad, pueblo o territorio colectivo del que proviene?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 38,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4511,7 +5328,7 @@
       "texto": "¿Su comunidad o pueblo tiene un idioma propio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 39,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4540,7 +5357,7 @@
       "texto": "En cuanto a su propio idioma usted:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 40,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4587,7 +5404,7 @@
       "texto": "En cuanto al idioma español usted:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 41,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4628,7 +5445,7 @@
       "texto": "¿Pertenece a alguna organización?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 42,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4657,7 +5474,7 @@
       "texto": "¿Qué tipo de organización?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 43,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4668,6 +5485,30 @@
           "etiqueta": "Étnica",
           "id_resp_vivanto": 3760,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "De Víctimas",
+          "id_resp_vivanto": 3761,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Campesina",
+          "id_resp_vivanto": 3762,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Defensoras de Derechos",
+          "id_resp_vivanto": 3763,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 3764,
+          "orden": 5
         }
       ],
       "id": "c793a378-1b30-5943-a7a2-d4eed6596a57"
@@ -4680,7 +5521,7 @@
       "texto": "¿Hace cuántos años vive en el municipio?",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 44,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4696,7 +5537,7 @@
       "texto": "¿En los últimos seis meses, usted ha declarado nuevos hechos victimizantes para ser incluidos en el RUV?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 45,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4725,7 +5566,7 @@
       "texto": "¿Cuáles hechos victimizantes ha declarado usted para ser incluido en el RUV en los últimos 6 meses?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 46,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4736,6 +5577,90 @@
           "etiqueta": "Acto terrorista / atentados / combates /enfrentamientos / hostigamientos",
           "id_resp_vivanto": 4505,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Amenaza",
+          "id_resp_vivanto": 4506,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Delitos contra la libertad y la integridad sexual en desarrollo del conflicto armado",
+          "id_resp_vivanto": 4507,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Desaparición forzada",
+          "id_resp_vivanto": 4508,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Desplazamiento forzado",
+          "id_resp_vivanto": 4509,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Homicidio",
+          "id_resp_vivanto": 4510,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Minas antipersonal, munición sin explotar y artefacto explosivo improvisado",
+          "id_resp_vivanto": 4511,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Secuestro",
+          "id_resp_vivanto": 4512,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Tortura",
+          "id_resp_vivanto": 4513,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Vinculación de niños niñas y adolescentes a actividades relacionadas con grupos armados",
+          "id_resp_vivanto": 4514,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Abandono o despojo forzado de tierras",
+          "id_resp_vivanto": 4515,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Perdida de bienes muebles o inmuebles",
+          "id_resp_vivanto": 4516,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Lesiones personales físicas",
+          "id_resp_vivanto": 4517,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Lesiones personales psicológicas",
+          "id_resp_vivanto": 4518,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Confinamiento",
+          "id_resp_vivanto": 4519,
+          "orden": 15
         }
       ],
       "id": "b0e2494a-c6be-5728-a672-5d0a1d7aff7f"
@@ -4748,7 +5673,7 @@
       "texto": "¿… es víctima del conflicto armado?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 47,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4777,7 +5702,7 @@
       "texto": "¿… solicitó ser incluido en el RUPD/RUV por alguna de las siguientes formas?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 48,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4824,7 +5749,7 @@
       "texto": "¿Cuáles son las razones para no haber declarado?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 49,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4835,6 +5760,48 @@
           "etiqueta": "Amenaza o miedo",
           "id_resp_vivanto": 33,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Falta de confianza en el gobierno",
+          "id_resp_vivanto": 34,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No confía en los funcionarios que reciben la información",
+          "id_resp_vivanto": 35,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Por falta de información",
+          "id_resp_vivanto": 36,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "No ha querido",
+          "id_resp_vivanto": 37,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Acceso",
+          "id_resp_vivanto": 2361,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Traslado",
+          "id_resp_vivanto": 2362,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 38,
+          "orden": 8
         }
       ],
       "id": "a3d410e1-d73c-5ce6-bcd4-fcf9d4422894"
@@ -4847,7 +5814,7 @@
       "texto": "¿Actualmente … está matriculado(a) al preescolar, escuela, colegio o universidad?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4876,7 +5843,7 @@
       "texto": "¿… sabe leer y escribir?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4905,7 +5872,7 @@
       "texto": "¿Está… interesado en acceder a programas de alfabetización?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4934,7 +5901,7 @@
       "texto": "¿Dentro de su educación recibe enseñanza acerca de las prácticas de su grupo étnico (idioma propio, usos y costumbres, etc.) / etnoeducación? Nota: para el caso de comunidades étnicas, hay que aclarar que es educación formal).",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4963,7 +5930,7 @@
       "texto": "¿su profesor u orientador hace parte de su grupo étnico?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -4992,7 +5959,7 @@
       "texto": "¿Cuál es la razón principal para que... no estudie?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5111,7 +6078,7 @@
       "texto": "¿Cuál es el nivel educativo más alto alcanzado ... ? y\n¿Cuál es el último año o grado aprobado en este nivel?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5122,6 +6089,90 @@
           "etiqueta": "Preescolar",
           "id_resp_vivanto": 262,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Básica_primaria_1°_a_5°",
+          "id_resp_vivanto": 263,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Básica_Secundaria_6°_a_9°",
+          "id_resp_vivanto": 264,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Media_10°_a_13°",
+          "id_resp_vivanto": 265,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Técnica",
+          "id_resp_vivanto": 266,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Tecnológica",
+          "id_resp_vivanto": 1367,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Profesional",
+          "id_resp_vivanto": 1368,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Especialización técnica",
+          "id_resp_vivanto": 1369,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Especialización tecnológica",
+          "id_resp_vivanto": 1370,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Especialización profesional",
+          "id_resp_vivanto": 1371,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Maestría",
+          "id_resp_vivanto": 1372,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Doctorado",
+          "id_resp_vivanto": 1373,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Posdoctorado",
+          "id_resp_vivanto": 1374,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 261,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "No sabe/No responde",
+          "id_resp_vivanto": 267,
+          "orden": 15
         }
       ],
       "id": "29e621e5-3b29-5b95-900a-8e83a6a13fe4"
@@ -5134,7 +6185,7 @@
       "texto": "Actualmente requiere acceder a los niveles de educación preescolar, básica primaria, secundaria o media",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5163,7 +6214,7 @@
       "texto": "¿ ... está afiliado, es cotizante o es beneficiario en alguna de los siguientes regímenes de seguridad social en salud ?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5210,7 +6261,7 @@
       "texto": "El servicio que recibe de salud, esta de acuerdo con sus usos y costumbres",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5239,7 +6290,7 @@
       "texto": "¿Para tratar sus problemas de salud, ¿qué hizo principalmente…?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5298,7 +6349,7 @@
       "texto": "¿Cuando asistió a la entidad de salud (IPS) ¿fue atendido oportuna y efectivamente?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5327,7 +6378,7 @@
       "texto": "¿Cuáles son las razones por las que no asiste a su Entidad Prestadora de Salud?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5338,6 +6389,48 @@
           "etiqueta": "Distancia",
           "id_resp_vivanto": 2673,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Recursos económicos para el desplazamiento hasta el centro de salud",
+          "id_resp_vivanto": 2674,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Edad, requiere acompañamiento",
+          "id_resp_vivanto": 2675,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Demoras en la atención",
+          "id_resp_vivanto": 2676,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Enfermedades propias del territorio",
+          "id_resp_vivanto": 2677,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2678,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Otro  ¿Cuál?",
+          "id_resp_vivanto": 2679,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Otro  ¿Cuál?",
+          "id_resp_vivanto": 2679,
+          "orden": 8
         }
       ],
       "id": "4b1c453e-ad93-5746-8146-41f84dfee130"
@@ -5350,7 +6443,7 @@
       "texto": "Su IPS primaria le brinda atención en salud en el municipio de residencia?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5379,7 +6472,7 @@
       "texto": "La persona tiene el esquema de vacunación al día?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5414,7 +6507,7 @@
       "texto": "Recibe actualmente algun tipo de rehabilitación",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5443,7 +6536,7 @@
       "texto": "¿Qué tipo de rehabilitación ha recibido?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5454,6 +6547,72 @@
           "etiqueta": "Fisioterapia (ejercicio fisico para caminar, mover algun miembro del cuerpo)",
           "id_resp_vivanto": 342,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Fonoaudiología (por ejemplo, ejercicios para escuchar o hablar mejor)",
+          "id_resp_vivanto": 343,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Terapia Ocupacional ( por ejemplo, ejercicios para poder concentrarse  o estudiar, lectura o escritura, ejerciciospara actividades de la vida diaria)",
+          "id_resp_vivanto": 344,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Aprendizaje de lengua de señas",
+          "id_resp_vivanto": 345,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Aprendizaje de braile, entrenamiento para la orientación y movilidad asi como para el desarrollo de las actividades de la vida diaria",
+          "id_resp_vivanto": 346,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Oftalmologia o ejercicios para ver mejor",
+          "id_resp_vivanto": 347,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Psiquiatria (médico que ha examinado y/o ha enviado medicamentos para sentirse mejor, para poder dormir, para la depresión o angustia)",
+          "id_resp_vivanto": 348,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Psicología (consultas para mejorar el estado de ánimo, para entender mejor las emociones)",
+          "id_resp_vivanto": 349,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Consultas de trabajo social (un profesional que te ayude a identificar las necesidades del hogar, economicas, otras)",
+          "id_resp_vivanto": 350,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Medicamentos permanentes",
+          "id_resp_vivanto": 1405,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 352,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 351,
+          "orden": 12
         }
       ],
       "id": "20f9bc32-b5ef-5a11-80c6-1e6507779c76"
@@ -5466,7 +6625,7 @@
       "texto": "¿…ha recibido atención psicosocial (para su recuperación emocional) en alguno de estos ambitos?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5477,6 +6636,30 @@
           "etiqueta": "Individual",
           "id_resp_vivanto": 354,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Familiar",
+          "id_resp_vivanto": 355,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Grupal",
+          "id_resp_vivanto": 356,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Comunitaria",
+          "id_resp_vivanto": 357,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 353,
+          "orden": 5
         }
       ],
       "id": "83332283-3af8-5764-84ad-eca47edf8d74"
@@ -5489,7 +6672,7 @@
       "texto": "¿Por parte de que entidad?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5500,6 +6683,24 @@
           "etiqueta": "Unidad para las Víctimas",
           "id_resp_vivanto": 2404,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "PAPSIVI",
+          "id_resp_vivanto": 2405,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Otra",
+          "id_resp_vivanto": 2406,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Otro ¿cual?",
+          "id_resp_vivanto": 2406,
+          "orden": 4
         }
       ],
       "id": "c4e25dcc-870c-5448-9cf0-7b4d7431f8e0"
@@ -5512,7 +6713,7 @@
       "texto": "En relación con el acompañamiento psicosocial, ¿…considera que la atención recibida ha contribuido a su recuperación emocional?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5541,7 +6742,7 @@
       "texto": "¿Considera que … requiere acompañamiento psicosocial?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5570,7 +6771,7 @@
       "texto": "Desea que el acompañamiento sea",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5581,6 +6782,24 @@
           "etiqueta": "Individual",
           "id_resp_vivanto": 2411,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Familiar",
+          "id_resp_vivanto": 2412,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Grupal",
+          "id_resp_vivanto": 2413,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Comunitaria",
+          "id_resp_vivanto": 2414,
+          "orden": 4
         }
       ],
       "id": "1e5c0fbb-f8fd-5d47-bbb8-c8210525de26"
@@ -5593,7 +6812,7 @@
       "texto": "¿Ha habido coordinación de las entidades del Estado encargadas de la rehabilitación con las autoridades tradicionales?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5622,7 +6841,7 @@
       "texto": "El proceso de rehabilitación contó con intérpretes y/o traductores",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5651,7 +6870,7 @@
       "texto": "¿En qué actividad ocupó ... la mayor parte del tiempo la semana pasada?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5710,7 +6929,7 @@
       "texto": "Ademas de lo anterior, ¿… realizó la semana pasada alguna actividad paga por una hora o más?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5739,7 +6958,7 @@
       "texto": "Aunque … no trabajó la semana pasada, por una hora o más en forma remunerada, ¿tenía durante esa semana algún trabajo o negocio por el que recibe ingresos?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5768,7 +6987,7 @@
       "texto": "¿… trabajó la semana pasada en un negocio por una hora o más sin que le pagaran?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5797,7 +7016,7 @@
       "texto": "En las últimas 4 semanas ¿… hizo alguna diligencia para conseguir un trabajo o instalar un negocio? (pidió ayuda a amigos, familiares, etc.; consultó una agencia de empleo; puso o contestó anuncios; llenó una solicitud; buscó recursos para instalar un negocio, jornalero en finca)",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5826,7 +7045,7 @@
       "texto": "¿Qué hizo ... principalmente en las ùltimas cuatro  semanas  para conseguir un trabajo o instalar un negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5897,7 +7116,7 @@
       "texto": "¿... desea conseguir un trabajo remunerado o instalar un negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -5926,7 +7145,7 @@
       "texto": "Aunque ... desea trabajar, ¿por qué motivo principal no hizo diligencias para buscar un trabajo o instalar un negocio en las ÚLTIMAS 4 SEMANAS?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6027,7 +7246,7 @@
       "texto": "Durante los últimos 12 meses ¿ … trabajó por lo menos 2 semanas consecutivas?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6056,7 +7275,7 @@
       "texto": "Después de su último empleo, ¿ … ha hecho alguna diligencia para conseguir trabajo o instalar un negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6085,7 +7304,7 @@
       "texto": "Durante los últimos 12 meses ¿ … ha hecho alguna diligencia para conseguir trabajo o instalar un negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6114,7 +7333,7 @@
       "texto": "¿Cuántos meses hace que … dejó de buscar trabajo por última vez?",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6130,7 +7349,7 @@
       "texto": "Si le hubiera resultado algún trabajo a ... ¿estaba disponible la semana pasada para empezar a trabajar?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6159,7 +7378,7 @@
       "texto": "En este trabajo… es",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6224,7 +7443,7 @@
       "texto": "¿Qué oficio o profesión DESEMPEÑA …actualmente?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6240,7 +7459,7 @@
       "texto": "¿El contrato de trabajo es a término indefinido o a término fijo?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6275,7 +7494,7 @@
       "texto": "¿… tiene experiencia laboral o conocimientos que le permitan realizar un trabajo u oficio diferente al actual?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6304,7 +7523,7 @@
       "texto": "Antes de descuentos ¿cuánto ganó … el mes pasado en este empleo?\n(Incluya propinas y comisiones, y excluya viáticos y pagos en especie)",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6320,7 +7539,7 @@
       "texto": "¿El mes pasado recibió ingresos por concepto de horas extras?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6355,7 +7574,7 @@
       "texto": "Incluyó este valor en los ingresos del mes pasado que me declaro anteriormente?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6384,7 +7603,7 @@
       "texto": "Además del salario en dinero, ¿el mes pasado recibió alimentos como parte de pago por su trabajo?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6419,7 +7638,7 @@
       "texto": "Además del salario en dinero, ¿el mes pasado recibió vivienda como parte de pago por su trabajo?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6454,7 +7673,7 @@
       "texto": "¿En los últimos 12 meses recibió: Prima de servicios?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6483,7 +7702,7 @@
       "texto": "¿Cuánto recibió? $",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6499,7 +7718,7 @@
       "texto": "¿En los últimos 12 meses recibió: Pagos por accidentes de trabajo  ?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6528,7 +7747,7 @@
       "texto": "¿Cuál fue la ganancia neta o los honorarios netos de ... en esa actividad, negocio, profesión o finca, el mes pasado?",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6544,7 +7763,7 @@
       "texto": "¿Está … cotizando actualmente a un fondo de pensiones?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6579,7 +7798,7 @@
       "texto": "El mes pasado, ¿recibió pagos por concepto de arriendos y/o pensiones?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6608,7 +7827,7 @@
       "texto": "¿El mes pasado recibio pagos por: Arriendos de casas, apartamentos, fincas, lotes, vehículos, equipos, etc.?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6643,7 +7862,7 @@
       "texto": "¿El mes pasado recibio pagos por: ? Pensiones o jubilaciones por vejez, invalides o sustitución pensional?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 30,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6678,7 +7897,7 @@
       "texto": "¿El mes pasado recibio pagos por: Pensión alimenticia por paternidad, divorcio o separación?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 31,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6713,7 +7932,7 @@
       "texto": "El mes pasado , ¿recibió dinero de otros hogares, personas o instituciones; dinero por intereses, dividendos, utilidades o cesantías?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 32,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6736,6 +7955,12 @@
           "etiqueta": "No Sabe/No Responde",
           "id_resp_vivanto": 3787,
           "orden": 3
+        },
+        {
+          "valor": "NUMÉRICO",
+          "etiqueta": "Valor",
+          "id_resp_vivanto": 525,
+          "orden": 4
         }
       ],
       "id": "d8f37c62-ff7c-5be1-9fb0-15f1cfb24557"
@@ -6748,7 +7973,7 @@
       "texto": "El mes pasado recibio pagos por: ¿Dinero de otros hogares o personas residentes en el país?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 33,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6783,7 +8008,7 @@
       "texto": "El mes pasado recibio pagos por:¿Dinero de otros hogares o personas residentes fuera del país?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 34,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6818,7 +8043,7 @@
       "texto": "El mes pasado recibio pagos por: ¿Ayudas en dinero de instituciones del país o de fuera del país?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 35,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6853,7 +8078,7 @@
       "texto": "El mes pasado recibio pagos por: ¿Dinero por intereses de préstamos o por CDT, depósitos de ahorro, utilidades, ganancias o dividendos por inversiones?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 36,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6888,7 +8113,7 @@
       "texto": "El mes pasado recibio pagos por:¿Ingresos por concepto de cesantías y/o intereses a las cesantías?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 37,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6923,7 +8148,7 @@
       "texto": "El mes pasado recibio pagos por: Dinero de otras fuentes diferentes a las anteriores (loterias, indemnizaciones, venta de propiedades, acciones,  dinero de regalias o transferencias de resguardo constituido…)",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 38,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -6958,12 +8183,31 @@
       "texto": "Las ayudas en dinero fueron de:",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 39,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": [],
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Entidades del gobierno",
+          "id_resp_vivanto": 546,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entidades fuera del país",
+          "id_resp_vivanto": 547,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "No sabe, no responde",
+          "id_resp_vivanto": 548,
+          "orden": 3
+        }
+      ],
       "id": "5c3039fb-d657-5a45-b077-0486bbd8dc31"
     },
     {
@@ -6974,7 +8218,7 @@
       "texto": "¿Usted considera que la formación académica recibida ha contribuido en su desempeño laboral?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7003,7 +8247,7 @@
       "texto": "¿Usted maneja otro idioma diferente al propio y español?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7032,7 +8276,7 @@
       "texto": "¿Cuál es el nivel de su segundo idioma?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7067,7 +8311,7 @@
       "texto": "Cuantos cargos u oficios ha ocupado en su vida laboral?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7108,7 +8352,7 @@
       "texto": "Nombre del CARGO 1",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7124,7 +8368,7 @@
       "texto": "Duración en el CARGO 1\nmeses",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7140,7 +8384,7 @@
       "texto": "Posición Ocupacional en el CARGO 1",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7205,6 +8449,12 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2811,
           "orden": 10
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "¿Cuál?",
+          "id_resp_vivanto": 2811,
+          "orden": 11
         }
       ],
       "id": "b29ac9a1-3b45-5ea2-82b2-88106e690e69"
@@ -7217,7 +8467,7 @@
       "texto": "Nombre del CARGO 2",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7233,7 +8483,7 @@
       "texto": "Duración en el CARGO 2\nmeses",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7249,7 +8499,7 @@
       "texto": "Posición Ocupacional en el CARGO 2",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7314,6 +8564,12 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2813,
           "orden": 10
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "¿Cuál?",
+          "id_resp_vivanto": 2813,
+          "orden": 11
         }
       ],
       "id": "1e0caa2e-97d9-519d-a1ad-2ed08580954a"
@@ -7326,7 +8582,7 @@
       "texto": "Nombre del CARGO 3",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7342,7 +8598,7 @@
       "texto": "Duración en el CARGO 3\nmeses",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7358,7 +8614,7 @@
       "texto": "Posición Ocupacional en el CARGO 3",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7423,6 +8679,12 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2815,
           "orden": 10
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "¿Cuál?",
+          "id_resp_vivanto": 2815,
+          "orden": 11
         }
       ],
       "id": "13498496-b952-5bd4-ae6e-5dc3df322118"
@@ -7435,7 +8697,7 @@
       "texto": "¿En cuáles de los siguientes sectores económicos usted ha trabajado?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7446,6 +8708,132 @@
           "etiqueta": "Agricultura, ganadería, caza, silvicultura y pesca",
           "id_resp_vivanto": 2488,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Explotación de minas y canteras",
+          "id_resp_vivanto": 2489,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Industrias manufactureras",
+          "id_resp_vivanto": 2490,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Suministro de electricidad, gas, vapor y aire acondicionado",
+          "id_resp_vivanto": 2491,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Distribución de agua; evacuación y tratamiento de aguas residuales, gestión de desechos y actividades de saneamiento ambiental",
+          "id_resp_vivanto": 2492,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Construcción",
+          "id_resp_vivanto": 2493,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Comercio al por mayor y al por menor; reparación de vehículos automotores y motocicletas",
+          "id_resp_vivanto": 2494,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Transporte y almacenamiento",
+          "id_resp_vivanto": 2495,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Alojamiento y servicios de comida",
+          "id_resp_vivanto": 2496,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Información y comunicaciones",
+          "id_resp_vivanto": 2497,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Actividades financieras y de seguros",
+          "id_resp_vivanto": 2498,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Actividades inmobiliarias",
+          "id_resp_vivanto": 2499,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Actividades profesionales, científicas y técnicas",
+          "id_resp_vivanto": 2500,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Actividades de servicios administrativos y de apoyo",
+          "id_resp_vivanto": 2501,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Administración pública y defensa; planes de seguridad social de afiliación obligatoria",
+          "id_resp_vivanto": 2502,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "Educación",
+          "id_resp_vivanto": 2503,
+          "orden": 16
+        },
+        {
+          "valor": "17",
+          "etiqueta": "Actividades de atención de la salud humana y de asistencia social",
+          "id_resp_vivanto": 2504,
+          "orden": 17
+        },
+        {
+          "valor": "18",
+          "etiqueta": "Actividades artísticas, de entretenimiento y recreación",
+          "id_resp_vivanto": 2505,
+          "orden": 18
+        },
+        {
+          "valor": "19",
+          "etiqueta": "Otras actividades de servicios",
+          "id_resp_vivanto": 2506,
+          "orden": 19
+        },
+        {
+          "valor": "20",
+          "etiqueta": "Actividades de los hogares individuales en calidad de empleadores; actividades no diferenciadas de los hogares individuales como productores de bienes y servicios para uso propio",
+          "id_resp_vivanto": 2507,
+          "orden": 20
+        },
+        {
+          "valor": "21",
+          "etiqueta": "Actividades de organizaciones y entidades extraterritoriales",
+          "id_resp_vivanto": 2508,
+          "orden": 21
+        },
+        {
+          "valor": "22",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2509,
+          "orden": 22
         }
       ],
       "id": "d2e48622-2494-5efc-8354-e14c65cdf7f8"
@@ -7458,7 +8846,7 @@
       "texto": "¿Ha recibido cursos de capacitación para desempeñar los trabajos que usted relacionó anteriormente?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7499,7 +8887,7 @@
       "texto": "CURSO 1\nNombre del curso",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7515,7 +8903,7 @@
       "texto": "CURSO 2\nNombre del curso",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7531,7 +8919,7 @@
       "texto": "CURSO 3\nNombre del curso",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7547,7 +8935,7 @@
       "texto": "¿En cuál de los siguientes sectores económicos le gustaría trabajar?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7558,6 +8946,132 @@
           "etiqueta": "Agricultura, ganadería, caza, silvicultura y pesca",
           "id_resp_vivanto": 2466,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Explotación de minas y canteras",
+          "id_resp_vivanto": 2467,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Industrias manufactureras",
+          "id_resp_vivanto": 2468,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Suministro de electricidad, gas, vapor y aire acondicionado",
+          "id_resp_vivanto": 2469,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Distribución de agua; evacuación y tratamiento de aguas residuales, gestión de desechos y actividades de saneamiento ambiental",
+          "id_resp_vivanto": 2470,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Construcción",
+          "id_resp_vivanto": 2471,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Comercio al por mayor y al por menor; reparación de vehículos automotores y motocicletas",
+          "id_resp_vivanto": 2472,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Transporte y almacenamiento",
+          "id_resp_vivanto": 2473,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Alojamiento y servicios de comida",
+          "id_resp_vivanto": 2474,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Información y comunicaciones",
+          "id_resp_vivanto": 2475,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Actividades financieras y de seguros",
+          "id_resp_vivanto": 2476,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Actividades inmobiliarias",
+          "id_resp_vivanto": 2477,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Actividades profesionales, científicas y técnicas",
+          "id_resp_vivanto": 2478,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Actividades de servicios administrativos y de apoyo",
+          "id_resp_vivanto": 2479,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Administración pública y defensa; planes de seguridad social de afiliación obligatoria",
+          "id_resp_vivanto": 2480,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "Educación",
+          "id_resp_vivanto": 2481,
+          "orden": 16
+        },
+        {
+          "valor": "17",
+          "etiqueta": "Actividades de atención de la salud humana y de asistencia social",
+          "id_resp_vivanto": 2482,
+          "orden": 17
+        },
+        {
+          "valor": "18",
+          "etiqueta": "Actividades artísticas, de entretenimiento y recreación",
+          "id_resp_vivanto": 2483,
+          "orden": 18
+        },
+        {
+          "valor": "19",
+          "etiqueta": "Otras actividades de servicios",
+          "id_resp_vivanto": 2484,
+          "orden": 19
+        },
+        {
+          "valor": "20",
+          "etiqueta": "Actividades de los hogares individuales en calidad de empleadores; actividades no diferenciadas de los hogares individuales como productores de bienes y servicios para uso propio",
+          "id_resp_vivanto": 2485,
+          "orden": 20
+        },
+        {
+          "valor": "21",
+          "etiqueta": "Actividades de organizaciones y entidades extraterritoriales",
+          "id_resp_vivanto": 2486,
+          "orden": 21
+        },
+        {
+          "valor": "22",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 2487,
+          "orden": 22
         }
       ],
       "id": "dc9a2c52-477c-5478-948b-ce08ef6bd96e"
@@ -7570,7 +9084,7 @@
       "texto": "¿En qué tipo de cargo u oficio le gustaría desempeñarse laboralmente?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7586,7 +9100,7 @@
       "texto": "¿Cuál de los siguientes motivos considera que han sido una razón que le ha impedido capacitarse?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7597,6 +9111,108 @@
           "etiqueta": "Considera que no está en edad escolar",
           "id_resp_vivanto": 2510,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Considera que ya terminó",
+          "id_resp_vivanto": 2511,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Falta de dinero o costos educativos elevados",
+          "id_resp_vivanto": 2512,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Debe encargarse de los oficios del hogar (cuidado de niños y de otras personas del hogar:ancianos, personas discapacitadas, etc.)",
+          "id_resp_vivanto": 2513,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Por embarazo",
+          "id_resp_vivanto": 2514,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Por inseguridad o malos tratos en el establecimiento educativo; inseguridad en el entorno del centro educativo o del lugar de residencia",
+          "id_resp_vivanto": 2515,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Falta de cupo",
+          "id_resp_vivanto": 2516,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "No existe un centro educativo cercano o el establecimiento asignado es muy lejano",
+          "id_resp_vivanto": 2517,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Necesita trabajar",
+          "id_resp_vivanto": 2518,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "No le gusta o no le interesa el estudio",
+          "id_resp_vivanto": 2519,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Por enfermedad",
+          "id_resp_vivanto": 2520,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Necesita educación especial",
+          "id_resp_vivanto": 2521,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Tuvieron que abandonar el lugar de residencia habitual",
+          "id_resp_vivanto": 2522,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Sus padres o la persona encargada de su cuidado no lo considera importante",
+          "id_resp_vivanto": 2523,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Por situaciones académicas (bajos resultados en el periodo académico, repetición de cursos)",
+          "id_resp_vivanto": 2524,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "A causa del hecho victimizante",
+          "id_resp_vivanto": 3844,
+          "orden": 16
+        },
+        {
+          "valor": "17",
+          "etiqueta": "Dificultades de Conectividad",
+          "id_resp_vivanto": 3845,
+          "orden": 17
+        },
+        {
+          "valor": "18",
+          "etiqueta": "Otra razón",
+          "id_resp_vivanto": 2525,
+          "orden": 18
         }
       ],
       "id": "bf28354f-a4e4-539e-b750-e744bb174284"
@@ -7609,7 +9225,7 @@
       "texto": "¿Alguna vez ha llevado a cabo una iniacitiva de negocio propio o ha participado en alguna?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7638,7 +9254,7 @@
       "texto": "¿Actualmente se encuentra activo su negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7667,7 +9283,7 @@
       "texto": "Describa brevemente la actividad económica que realiza el negocio",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7683,7 +9299,7 @@
       "texto": "¿Cuánto tiempo ha estado activo su negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7724,7 +9340,7 @@
       "texto": "¿durante este periodo su negocio se ha visto afectado por un cierre temporal?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7753,7 +9369,7 @@
       "texto": "¿Cuál es su vinculación con el negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7794,7 +9410,7 @@
       "texto": "¿Recibió apoyo económico de alguna insitución para iniciar su negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7811,6 +9427,12 @@
           "etiqueta": "No",
           "id_resp_vivanto": 2540,
           "orden": 2
+        },
+        {
+          "valor": "TEXTO",
+          "etiqueta": "Cuál",
+          "id_resp_vivanto": 2539,
+          "orden": 3
         }
       ],
       "id": "cbef2160-3f56-5aa6-b6ae-93e345ab6d40"
@@ -7823,7 +9445,7 @@
       "texto": "¿Cuál de las siguientes actividades económicas desempeña su negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 30,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7834,6 +9456,132 @@
           "etiqueta": "Agricultura, ganadería, caza, silvicultura y pesca",
           "id_resp_vivanto": 2541,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Explotación de minas y canteras",
+          "id_resp_vivanto": 2542,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Industrias manufactureras",
+          "id_resp_vivanto": 2543,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Suministro de electricidad, gas, vapor y aire acondicionado",
+          "id_resp_vivanto": 2544,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Distribución de agua; evacuación y tratamiento de aguas residuales, gestión de desechos y actividades de saneamiento ambiental",
+          "id_resp_vivanto": 2545,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Construcción",
+          "id_resp_vivanto": 2546,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Comercio al por mayor y al por menor; reparación de vehículos automotores y motocicletas",
+          "id_resp_vivanto": 2547,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Transporte y almacenamiento",
+          "id_resp_vivanto": 2548,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Alojamiento y servicios de comida",
+          "id_resp_vivanto": 2549,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Información y comunicaciones",
+          "id_resp_vivanto": 2550,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Actividades financieras y de seguros",
+          "id_resp_vivanto": 2551,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Actividades inmobiliarias",
+          "id_resp_vivanto": 2552,
+          "orden": 12
+        },
+        {
+          "valor": "13",
+          "etiqueta": "Actividades profesionales, científicas y técnicas",
+          "id_resp_vivanto": 2553,
+          "orden": 13
+        },
+        {
+          "valor": "14",
+          "etiqueta": "Actividades de servicios administrativos y de apoyo",
+          "id_resp_vivanto": 2554,
+          "orden": 14
+        },
+        {
+          "valor": "15",
+          "etiqueta": "Administración pública y defensa; planes de seguridad social de afiliación obligatoria",
+          "id_resp_vivanto": 2555,
+          "orden": 15
+        },
+        {
+          "valor": "16",
+          "etiqueta": "Educación",
+          "id_resp_vivanto": 2556,
+          "orden": 16
+        },
+        {
+          "valor": "17",
+          "etiqueta": "Actividades de atención de la salud humana y de asistencia social",
+          "id_resp_vivanto": 2557,
+          "orden": 17
+        },
+        {
+          "valor": "18",
+          "etiqueta": "Actividades artísticas, de entretenimiento y recreación",
+          "id_resp_vivanto": 2558,
+          "orden": 18
+        },
+        {
+          "valor": "19",
+          "etiqueta": "Otras actividades de servicios",
+          "id_resp_vivanto": 2559,
+          "orden": 19
+        },
+        {
+          "valor": "20",
+          "etiqueta": "Actividades de los hogares individuales en calidad de empleadores; actividades no diferenciadas de los hogares individuales como productores de bienes y servicios para uso propio",
+          "id_resp_vivanto": 2560,
+          "orden": 20
+        },
+        {
+          "valor": "21",
+          "etiqueta": "Actividades de organizaciones y entidades extraterritoriales",
+          "id_resp_vivanto": 2561,
+          "orden": 21
+        },
+        {
+          "valor": "22",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 3792,
+          "orden": 22
         }
       ],
       "id": "40475941-6964-5ed6-9d35-cd2f716a17bb"
@@ -7846,7 +9594,7 @@
       "texto": "¿Dónde se encuentra su negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 31,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7875,7 +9623,7 @@
       "texto": "¿Cuáles fueron los motivos por los que usted tuvo que cerrar su negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 32,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7886,6 +9634,72 @@
           "etiqueta": "Falta de recursos económicos",
           "id_resp_vivanto": 2568,
           "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Falta de tiempo",
+          "id_resp_vivanto": 2569,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Traslado de domicilio",
+          "id_resp_vivanto": 2570,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Enfermedad",
+          "id_resp_vivanto": 2571,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Dificultades en la comercialización y venta de los productos",
+          "id_resp_vivanto": 2572,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Pago de impuestos",
+          "id_resp_vivanto": 2573,
+          "orden": 6
+        },
+        {
+          "valor": "7",
+          "etiqueta": "Falta de conocimiento en algún área del negocio",
+          "id_resp_vivanto": 2574,
+          "orden": 7
+        },
+        {
+          "valor": "8",
+          "etiqueta": "Diferencias entre socios y/o familiares",
+          "id_resp_vivanto": 2575,
+          "orden": 8
+        },
+        {
+          "valor": "9",
+          "etiqueta": "Labores de cuidado (hijos, adulto mayor, entre otros)",
+          "id_resp_vivanto": 2576,
+          "orden": 9
+        },
+        {
+          "valor": "10",
+          "etiqueta": "Paga diarios",
+          "id_resp_vivanto": 3753,
+          "orden": 10
+        },
+        {
+          "valor": "11",
+          "etiqueta": "Extorsión",
+          "id_resp_vivanto": 3754,
+          "orden": 11
+        },
+        {
+          "valor": "12",
+          "etiqueta": "Otro",
+          "id_resp_vivanto": 2577,
+          "orden": 12
         }
       ],
       "id": "dd435f55-e6cd-533c-91b8-5569e541e131"
@@ -7898,7 +9712,7 @@
       "texto": "Pensando en su experiencia personal, ¿Qué lo motivó a crear su negocio?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 33,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7963,7 +9777,7 @@
       "texto": "¿Conoce servicios ofrecidos por alguna insititución para apoyar su negocio?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 34,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -7992,7 +9806,7 @@
       "texto": "¿Ha utilizado alguno de los servicios que acaba de mencionar?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 35,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8021,7 +9835,7 @@
       "texto": "¿De qué insititución?",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 36,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8037,7 +9851,7 @@
       "texto": "Por cuanto tiempo (expresar en meses)",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 37,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8053,7 +9867,7 @@
       "texto": "¿… hace parte de una organización productiva?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 38,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8100,7 +9914,7 @@
       "texto": "Por favor indique cual es su vinculacion actual dentro de la Fuerza Pública:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 1,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8141,7 +9955,7 @@
       "texto": "¿Actualmente usted se encuentra en:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 2,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8182,7 +9996,7 @@
       "texto": "¿En el momento del hecho victimizante usted era parte de:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8229,7 +10043,7 @@
       "texto": "¿Prestó servicio militar?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 4,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8258,7 +10072,7 @@
       "texto": "¿Usted presto el servicio obligatorio en:",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8287,7 +10101,7 @@
       "texto": "¿Cuál fue la fecha de incorporación para la prestación del servicio obligatorio de las fuerzas militares o policía nacional?",
       "tipo": "FECHA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8303,7 +10117,7 @@
       "texto": "¿Cuál es la fecha de licenciamiento del servicio obligatorio de la fuerza Militar o la Policía Nacional?",
       "tipo": "FECHA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8319,7 +10133,7 @@
       "texto": "¿Cuál es la fecha de ingreso de la carrera Militar o Policial?",
       "tipo": "FECHA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8335,7 +10149,7 @@
       "texto": "¿Fecha de retiro de carrera Militar o Policial?",
       "tipo": "FECHA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
@@ -8351,7 +10165,7 @@
       "texto": "¿Usted es retirado de cual de la siguientes instituciones?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
-      "obligatoria": false,
+      "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",

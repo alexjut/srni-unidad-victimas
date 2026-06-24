@@ -116,14 +116,26 @@ def parsear_hoja(ws, nivel_default):
                     'orden': 1,
                 })
             preguntas.append(actual)
-        elif actual is not None and desc and not var and not preg_txt:
-            # fila de opción adicional (sin código, sin pregunta)
+        elif actual is not None and desc and not preg_txt:
+            # fila de opción adicional: tiene etiqueta (Descripción) y NO es una
+            # pregunta nueva (sin texto). Puede traer su PROPIO código de
+            # sub-respuesta en multi-respuesta (I7K, I7L...) — antes se descartaba
+            # por tener código; ese era el bug que dejaba las listas con 1 opción.
             actual['opciones'].append({
                 'valor': str(val).strip() if val is not None else '',
                 'etiqueta': str(desc).strip(),
                 'id_resp_vivanto': int(idresp) if isinstance(idresp, (int, float)) else None,
                 'orden': len(actual['opciones']) + 1,
             })
+    # Multi-respuesta: el diccionario pone valor=1 en todas las opciones. Para que
+    # los valores sean ÚNICOS (necesario en LISTA), renumerar 1..N solo si hay
+    # colisión; las que ya traen valores únicos del diccionario se respetan.
+    for q in preguntas:
+        ops = q['opciones']
+        valores = [o['valor'] for o in ops]
+        if len(set(valores)) < len(valores):
+            for i, o in enumerate(ops, 1):
+                o['valor'] = str(i)
     return preguntas
 
 
