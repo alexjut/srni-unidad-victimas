@@ -8213,6 +8213,102 @@
       "accion": "FINALIZAR",
       "descripcion": "[Retornos/módulo] ninguna de las anteriores → finaliza capítulo",
       "afecta_capitulo": "D"
+    },
+    {
+      "origen_expr": "sexo == '1' and edad >= 18 and edad <= 50",
+      "accion": "HABILITAR",
+      "afecta": "B6",
+      "descripcion": "[demográfico/étnico] libreta militar: hombres 18-50"
+    },
+    {
+      "origen_expr": "sexo == '2'",
+      "accion": "HABILITAR",
+      "afecta": "B2",
+      "descripcion": "[demográfico/étnico] embarazo: solo mujeres"
+    },
+    {
+      "origen_expr": "sexo == '2'",
+      "accion": "HABILITAR",
+      "afecta": "B2A",
+      "descripcion": "[demográfico/étnico] lactancia: solo mujeres"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "A12",
+      "descripcion": "[demográfico/étnico] pueblo indígena: solo indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "A13",
+      "descripcion": "[demográfico/étnico] comunidad indígena: solo indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "A13A",
+      "descripcion": "[demográfico/étnico] cabildo indígena: solo indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "A13C",
+      "descripcion": "[demográfico/étnico] Vitsa: solo indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'rom'",
+      "accion": "HABILITAR",
+      "afecta": "A13E",
+      "descripcion": "[demográfico/étnico] Kumpania: solo Rom"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "RR2",
+      "descripcion": "[demográfico/étnico] resguardo retornó: indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "RR3",
+      "descripcion": "[demográfico/étnico] comunidad retornó: indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'negro_afro'",
+      "accion": "HABILITAR",
+      "afecta": "RR4",
+      "descripcion": "[demográfico/étnico] territorio colectivo retornó: negro/afro"
+    },
+    {
+      "origen_expr": "etnia == 'rom'",
+      "accion": "HABILITAR",
+      "afecta": "RR5A",
+      "descripcion": "[demográfico/étnico] Kumpania retornó: Rom"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "RR7",
+      "descripcion": "[demográfico/étnico] resguardo desea: indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'indigena'",
+      "accion": "HABILITAR",
+      "afecta": "RR8",
+      "descripcion": "[demográfico/étnico] comunidad desea: indígenas"
+    },
+    {
+      "origen_expr": "etnia == 'negro_afro'",
+      "accion": "HABILITAR",
+      "afecta": "RR9",
+      "descripcion": "[demográfico/étnico] territorio colectivo desea: negro/afro"
+    },
+    {
+      "origen_expr": "etnia == 'rom'",
+      "accion": "HABILITAR",
+      "afecta": "RR10A",
+      "descripcion": "[demográfico/étnico] Kumpania desea: Rom"
     }
   ]
 }

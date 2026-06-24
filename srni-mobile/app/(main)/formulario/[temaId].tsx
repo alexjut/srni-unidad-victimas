@@ -10,7 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
-import { calcularVisibles } from '../../../src/services/skipLogic';
+import { calcularVisibles, type ContextoVictima } from '../../../src/services/skipLogic';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -51,6 +51,19 @@ function calcularEdad(fechaISO: string): string {
  *   0-5: Primera infancia · 6-11: Niñez · 12-17: Adolescencia
  *   18-28: Jóvenes · 29-59: Adulto · 60+: Persona mayor
  */
+/**
+ * Mapea la pertenencia étnica de la víctima al grupo que usa el skip-logic
+ * (indigena · negro_afro · rom · ninguno). Heurística por palabra clave.
+ */
+function mapearEtnia(pertenencia?: string): string {
+  const p = (pertenencia ?? '').toLowerCase();
+  if (!p) return 'ninguno';
+  if (p.includes('ind') || p.includes('resguardo')) return 'indigena';
+  if (p.includes('negr') || p.includes('afro') || p.includes('palenq') || p.includes('raizal')) return 'negro_afro';
+  if (p.includes('rom') || p.includes('gitan') || p.includes('kumpa')) return 'rom';
+  return 'ninguno';
+}
+
 function edadAGrupoEtario(edad: number): string {
   if (!Number.isFinite(edad) || edad < 0) return '';
   if (edad <= 5) return '1';
@@ -378,9 +391,27 @@ export default function CapituloScreen() {
     return m;
   }, [preguntas, respuestas, miembros, miembroIdx]);
 
+  // Contexto de la víctima para evaluar condiciones demográficas/étnicas offline
+  // (edad/sexo/etnia/RUV). Prioriza lo capturado del miembro activo (A6 fecha,
+  // A8 sexo); cae a los datos de la víctima fuente para etnia/RUV.
+  const contextoVictima = useMemo<ContextoVictima>(() => {
+    const fechaNac = respuestasParaSkip.A6 || victimaFuente?.fecha_nacimiento || '';
+    const edadResp = respuestasParaSkip.B9 ? Number(respuestasParaSkip.B9) : NaN;
+    const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
+    // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae a genero de la víctima (M/F).
+    let sexo = respuestasParaSkip.A8 || '';
+    if (!sexo && victimaFuente?.genero) sexo = victimaFuente.genero === 'M' ? '1' : victimaFuente.genero === 'F' ? '2' : '';
+    return {
+      edad: Number.isFinite(edad) ? edad : undefined,
+      sexo: sexo || undefined,
+      etnia: mapearEtnia(victimaFuente?.pertenencia_etnica),
+      ruvIncluido: victimaFuente?.estado_ruv === 'INCLUIDO',
+    };
+  }, [respuestasParaSkip, victimaFuente]);
+
   const { visibles } = useMemo(
-    () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
-    [preguntas, reglas, respuestasParaSkip],
+    () => calcularVisibles(preguntas, reglas, respuestasParaSkip, contextoVictima),
+    [preguntas, reglas, respuestasParaSkip, contextoVictima],
   );
 
   const preguntasVisibles = useMemo(
