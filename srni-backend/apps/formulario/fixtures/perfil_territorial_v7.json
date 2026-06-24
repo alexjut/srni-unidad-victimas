@@ -8309,6 +8309,93 @@
       "accion": "HABILITAR",
       "afecta": "RR10A",
       "descripcion": "[demográfico/étnico] Kumpania desea: Rom"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G11",
+      "descripcion": "[F] etnoeducación si matriculado",
+      "origen": "G2",
+      "valor_trigger": "true"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G17",
+      "descripcion": "[F] profesor étnico si recibe etnoeducación",
+      "origen": "G11",
+      "valor_trigger": "true"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G15",
+      "descripcion": "[F] sabe leer si NO matriculado",
+      "origen": "G2",
+      "valor_trigger": "false"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G16",
+      "descripcion": "[F] interesado alfabetización si NO matriculado",
+      "origen": "G2",
+      "valor_trigger": "false"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G4",
+      "descripcion": "[F] razón no estudia: edad escolar 5-17",
+      "origen_expr": "edad >= 5 and edad <= 17"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "G7B_GRADO",
+      "descripcion": "[F] nivel educativo: 3 años o más",
+      "origen_expr": "edad >= 3"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "H9",
+      "descripcion": "[G] usos y costumbres salud: solo étnicos",
+      "origen_expr": "etnia != 'ninguno'"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "H11",
+      "descripcion": "[G] atención oportuna si acudió a seguridad social",
+      "origen": "H10",
+      "valor_trigger": "1"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "H12A",
+      "descripcion": "[G] razones no asiste si NO acudió a seguridad social",
+      "origen": "H10",
+      "valor_trigger": "2,3,4,5,6,7"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "H13",
+      "descripcion": "[G] IPS primaria solo si afiliado",
+      "origen": "H8",
+      "valor_trigger": "1,2,3"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "I10A",
+      "descripcion": "[H] tipo rehabilitación si recibe rehabilitación",
+      "origen": "I8",
+      "valor_trigger": "true"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "I28A",
+      "descripcion": "[H] desea acompañamiento si requiere",
+      "origen": "I27",
+      "valor_trigger": "true"
+    },
+    {
+      "accion": "HABILITAR",
+      "afecta": "I29",
+      "descripcion": "[H] coordinación autoridades: solo étnicos",
+      "origen_expr": "etnia != 'ninguno'"
     }
   ]
 }
