@@ -8150,6 +8150,69 @@
       "accion": "HABILITAR",
       "afecta": "B12",
       "descripcion": "[Datos Básicos validado] libreta física visible si tiene libreta militar"
+    },
+    {
+      "origen": "D5",
+      "valor_trigger": "98",
+      "accion": "HABILITAR",
+      "afecta": "D5A",
+      "descripcion": "[Vivienda validado] ¿Cuál? visible si tipo de tenencia = Otra"
+    },
+    {
+      "origen": "F1",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "F3",
+      "descripcion": "[Reunif validado] si se separó miembro → solicitó apoyo (y resto cap)"
+    },
+    {
+      "origen": "F3",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "F3A",
+      "descripcion": "[Reunif validado] recibió apoyo visible si solicitó"
+    },
+    {
+      "origen": "F3",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "F5",
+      "descripcion": "[Reunif validado] logró reunificarse visible si solicitó"
+    },
+    {
+      "origen": "F3",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "F4",
+      "descripcion": "[Reunif validado] por qué no solicitó visible si NO solicitó"
+    },
+    {
+      "origen": "F3",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "F6",
+      "descripcion": "[Reunif validado] interesado visible si NO solicitó"
+    },
+    {
+      "origen": "E1B",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "E1",
+      "descripcion": "[Retornos/módulo] quiere retornar/reubicar → solicitó apoyo (bloque retorno)"
+    },
+    {
+      "origen": "E1B",
+      "valor_trigger": "3",
+      "accion": "HABILITAR",
+      "afecta": "E1C",
+      "descripcion": "[Retornos/módulo] quiere instalarse aquí → razones por las que reside"
+    },
+    {
+      "origen": "E1B",
+      "valor_trigger": "4",
+      "accion": "FINALIZAR",
+      "descripcion": "[Retornos/módulo] ninguna de las anteriores → finaliza capítulo",
+      "afecta_capitulo": "D"
     }
   ]
 }
