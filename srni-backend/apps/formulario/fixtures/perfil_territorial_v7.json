@@ -317,7 +317,10 @@
       "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {},
+      "validaciones": {
+        "max_length": 10,
+        "solo_numerico": true
+      },
       "opciones": [],
       "id": "5f02c049-0687-5a0e-b28a-fc5aba2cd2c1"
     },
@@ -333,7 +336,10 @@
       "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {},
+      "validaciones": {
+        "max_length": 10,
+        "solo_numerico": true
+      },
       "opciones": [],
       "id": "6a1a5670-e7b7-527d-a814-2ad12841269c"
     },
@@ -3273,7 +3279,10 @@
       "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
-      "validaciones": {},
+      "validaciones": {
+        "longitud_exacta": 10,
+        "solo_numerico": true
+      },
       "opciones": [],
       "id": "73fe8d8e-a47c-5f1e-8c50-9df3ad21d875"
     },

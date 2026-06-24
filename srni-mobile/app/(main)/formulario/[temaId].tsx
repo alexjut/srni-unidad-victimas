@@ -1058,6 +1058,16 @@ function PreguntaItemBase({
 }) {
   const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
   const esNumerico = pregunta.tipo === 'NUMERICO';
+  // Validaciones del instrumento (longitud/numérico) — ej. celular = 10 dígitos.
+  const validaciones = useMemo<{ longitud_exacta?: number; max_length?: number; solo_numerico?: boolean }>(() => {
+    try { return JSON.parse(pregunta.validaciones || '{}'); } catch { return {}; }
+  }, [pregunta.validaciones]);
+  const maxLen = validaciones.longitud_exacta ?? validaciones.max_length;
+  const onChangeValidado = (t: string) => {
+    let v = validaciones.solo_numerico ? t.replace(/[^0-9]/g, '') : t;
+    if (maxLen) v = v.slice(0, maxLen);
+    onChange(v);
+  };
   const esFecha    = pregunta.tipo === 'FECHA';
   // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — se renderiza con
   // SelectorMunicipio (consume /api/parametricas/municipios/todos/).
@@ -1122,8 +1132,9 @@ function PreguntaItemBase({
         <TextInput
           mode="outlined"
           value={valor}
-          onChangeText={onChange}
+          onChangeText={onChangeValidado}
           keyboardType={esNumerico ? 'numeric' : 'default'}
+          maxLength={maxLen}
           multiline={pregunta.tipo === 'TEXTO_LARGO'}
           numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 4 : 1}
           placeholder={esNumerico ? 'Escribe el número' : 'Escribe la respuesta'}
