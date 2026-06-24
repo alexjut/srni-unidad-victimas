@@ -70,33 +70,32 @@ function edadAGrupoEtario(edad: number): string {
  * opción real (validado en runtime), así nunca se inyecta un valor inválido.
  */
 function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
+  // Códigos del instrumento Territorial reconstruido desde el diccionario oficial.
   const m: Record<string, string> = {};
   if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
-  if (v.segundo_nombre)   m.A2 = v.segundo_nombre;
+  if (v.segundo_nombre)   m.NOMBRE_2 = v.segundo_nombre;
   if (v.primer_apellido)  m.APELLIDO_1 = v.primer_apellido;
   if (v.segundo_apellido) m.APELLIDO_2 = v.segundo_apellido;
   if (v.fecha_nacimiento) {
-    m.A6 = v.fecha_nacimiento;
+    m.A6 = v.fecha_nacimiento;              // fecha de nacimiento (FECHA)
     const edad = calcularEdad(v.fecha_nacimiento);
     if (edad) {
-      m.B9 = edad;
+      m.B9 = edad;                          // años cumplidos (NUMERICO)
       // Grupo etario (B10) derivado de la edad — se autocompleta desde la data
-      // que ya tiene la víctima (B10_GRUPO_ETARIO valida la opción en runtime).
+      // que ya tiene la víctima (valida la opción en runtime).
       const grupo = edadAGrupoEtario(Number(edad));
       if (grupo) m.B10 = grupo;
     }
   }
-  if (v.numero_documento) m.A5 = v.numero_documento;
-  if (v.tipo_documento)   m.A3 = v.tipo_documento;
-  if (v.genero)           m.A8 = v.genero;
-  // Hecho victimizante: NO se pregunta en la entrevista (dato sensible que el RUV
-  // ya tiene). Se prellena "por debajo" desde el hecho principal de la víctima.
-  // A21 = hecho (LISTA, valida opción) · A22 = fecha · A23A = municipio ocurrencia.
+  if (v.numero_documento) m.A5 = v.numero_documento;  // número de documento (TEXTO)
+  if (v.tipo_documento)   m.A3 = v.tipo_documento;    // tipo de documento (LISTA)
+  if (v.genero)           m.A8 = v.genero;            // sexo (LISTA)
+  // Hecho victimizante: NO se pregunta (dato sensible que el RUV ya tiene). Se
+  // prellena "por debajo" desde el hecho principal. H_V = hecho · Ocur_HV = fecha.
   const hecho = v.hechos_victimizantes?.[0];
   if (hecho) {
-    if (hecho.codigo)         m.A21  = hecho.codigo;
-    if (hecho.fecha_hecho)    m.A22  = hecho.fecha_hecho;
-    if (hecho.municipio_hecho) m.A23A = hecho.municipio_hecho;
+    if (hecho.codigo || hecho.nombre) m.H_V = hecho.nombre || hecho.codigo;
+    if (hecho.fecha_hecho)            m.Ocur_HV = hecho.fecha_hecho;
   }
   return m;
 }
@@ -107,7 +106,7 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
  * "por debajo" vía prellenado y se sincronizan, pero no se le preguntan al
  * encuestador. La caracterización es posterior a la victimización → ya se conoce.
  */
-const PREGUNTAS_OCULTAS_RUV = new Set(['A21', 'A22', 'A23A']);
+const PREGUNTAS_OCULTAS_RUV = new Set(['H_V', 'Ocur_HV']);
 
 interface ItemLista {
   type: 'header-hogar' | 'header-miembro' | 'pregunta';
