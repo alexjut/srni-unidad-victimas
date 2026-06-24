@@ -8678,6 +8678,244 @@
       "afecta": "I29",
       "descripcion": "[H] coordinación autoridades: solo étnicos",
       "origen_expr": "etnia != 'ninguno'"
+    },
+    {
+      "origen": "FP2",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "FP3",
+      "descripcion": "[L validado] momento del hecho si carrera militar/policía"
+    },
+    {
+      "origen": "FP1",
+      "valor_trigger": "4",
+      "accion": "HABILITAR",
+      "afecta": "FP6",
+      "descripcion": "[L validado] fecha incorporación si licenciamiento"
+    },
+    {
+      "origen": "AT1A",
+      "valor_trigger": "5",
+      "accion": "FINALIZAR",
+      "afecta_capitulo": "M",
+      "descripcion": "[M validado] finaliza si NO mantiene relación urbano-rural"
+    },
+    {
+      "origen": "AT2",
+      "valor_trigger": "2",
+      "accion": "FINALIZAR",
+      "afecta_capitulo": "M",
+      "descripcion": "[M validado] finaliza si no dispone de terreno"
+    },
+    {
+      "origen": "Z6",
+      "valor_trigger": "3",
+      "accion": "HABILITAR",
+      "afecta": "VEREDA",
+      "descripcion": "[A] vereda si zona residencia rural disperso"
+    },
+    {
+      "origen": "Z11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "Z12",
+      "descripcion": "[A] correspondencia si NO es misma residencia"
+    },
+    {
+      "origen": "Z11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "Z15",
+      "descripcion": "[A] correspondencia si NO es misma residencia"
+    },
+    {
+      "origen": "Z11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "Z16",
+      "descripcion": "[A] correspondencia si NO es misma residencia"
+    },
+    {
+      "origen": "Z11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "Z17",
+      "descripcion": "[A] correspondencia si NO es misma residencia"
+    },
+    {
+      "origen": "Z16",
+      "valor_trigger": "3",
+      "accion": "HABILITAR",
+      "afecta": "Z18",
+      "descripcion": "[A] vereda correspondencia si zona rural disperso"
+    },
+    {
+      "origen": "PL2",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL3",
+      "descripcion": "[K] nivel 2do idioma si maneja idioma"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "PL6A",
+      "descripcion": "[K] cargo 2 si dos o más cargos"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "PL6B",
+      "descripcion": "[K] cargo 2 si dos o más cargos"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "PL6C",
+      "descripcion": "[K] cargo 2 si dos o más cargos"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "PL7A",
+      "descripcion": "[K] cargo 3 si tres o más cargos"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "PL7B",
+      "descripcion": "[K] cargo 3 si tres o más cargos"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "PL7C",
+      "descripcion": "[K] cargo 3 si tres o más cargos"
+    },
+    {
+      "origen": "PL25",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "PL10A",
+      "descripcion": "[K] curso 2 si dos o más cursos"
+    },
+    {
+      "origen": "PL25",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "PL11A",
+      "descripcion": "[K] curso 3 si tres o más cursos"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL15",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL16",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL17",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL18",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL19",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL20",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL26A",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL29",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL21A",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL22",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL23",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL23B",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL23D",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL23E",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
+    },
+    {
+      "origen": "PL14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL24",
+      "descripcion": "[K] bloque negocio si tuvo iniciativa de negocio"
     }
   ]
 }
