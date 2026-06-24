@@ -10787,6 +10787,20 @@
       "accion": "HABILITAR",
       "afecta": "L6",
       "descripcion": "[J6 manual] qué hizo para conseguir trabajo si hizo diligencias"
+    },
+    {
+      "origen": "I11A",
+      "valor_trigger": "1,2,3,4",
+      "accion": "HABILITAR",
+      "afecta": "I25B",
+      "descripcion": "[H5/H6 manual] entidad visible si recibió atención psicosocial (≠Ninguna)"
+    },
+    {
+      "origen": "I11A",
+      "valor_trigger": "1,2,3,4",
+      "accion": "HABILITAR",
+      "afecta": "I26",
+      "descripcion": "[H5/H6 manual] contribuyó visible si recibió atención psicosocial (≠Ninguna)"
     }
   ]
 }
