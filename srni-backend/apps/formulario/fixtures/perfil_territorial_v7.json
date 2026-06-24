@@ -8094,5 +8094,62 @@
       ]
     }
   ],
-  "reglas_skip_logic": []
+  "reglas_skip_logic": [
+    {
+      "origen": "I6",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "I7A",
+      "descripcion": "[Datos Básicos validado] tipo discapacidad visible si presenta discapacidad"
+    },
+    {
+      "origen": "I6",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "I7E",
+      "descripcion": "[Datos Básicos validado] origen discapacidad visible si presenta discapacidad"
+    },
+    {
+      "origen": "I13",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "B13A",
+      "descripcion": "[Datos Básicos validado] cuál enfermedad visible si tiene diagnóstico ruinosas"
+    },
+    {
+      "origen": "A30",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "B17",
+      "descripcion": "[Datos Básicos validado] tipo territorio visible si habita territorio colectivo"
+    },
+    {
+      "origen": "A25",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "A13B",
+      "descripcion": "[Datos Básicos validado] cuál consejo visible si pertenece a consejo comunitario"
+    },
+    {
+      "origen": "A16A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "B18B",
+      "descripcion": "[Datos Básicos validado] tipo organización visible si pertenece a organización"
+    },
+    {
+      "origen": "A20A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "A26A",
+      "descripcion": "[Datos Básicos validado] cuáles hechos visible si declaró nuevos hechos"
+    },
+    {
+      "origen": "B6",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "B12",
+      "descripcion": "[Datos Básicos validado] libreta física visible si tiene libreta militar"
+    }
+  ]
 }
