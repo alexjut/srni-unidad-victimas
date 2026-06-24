@@ -43,31 +43,31 @@ const REGIONES = [
     nombre: 'Caribe',
     subtitulo: 'Mar, playas y cultura vallenata',
     icono: 'palm-tree' as const,
-    imagen: require('../../assets/regiones/caribe.png'),
+    imagen: require('../../assets/regiones/caribe.jpg'),
   },
   {
     nombre: 'Andes',
     subtitulo: 'Montañas, café y memoria',
     icono: 'image-filter-hdr' as const,
-    imagen: require('../../assets/regiones/andina.png'),
+    imagen: require('../../assets/regiones/andina.jpg'),
   },
   {
     nombre: 'Amazonia',
     subtitulo: 'Selva tropical y grandes ríos',
     icono: 'leaf' as const,
-    imagen: require('../../assets/regiones/amazonia.png'),
+    imagen: require('../../assets/regiones/amazonia.jpg'),
   },
   {
     nombre: 'Orinoquía',
     subtitulo: 'Llanos orientales y sabanas',
     icono: 'grass' as const,
-    imagen: require('../../assets/regiones/orinoca.png'),
+    imagen: require('../../assets/regiones/orinoca.jpg'),
   },
   {
     nombre: 'Insular',
     subtitulo: 'San Andrés, Providencia y Santa Catalina',
     icono: 'island' as const,
-    imagen: require('../../assets/regiones/insular.png'),
+    imagen: require('../../assets/regiones/insular.jpg'),
   },
 ];
 
