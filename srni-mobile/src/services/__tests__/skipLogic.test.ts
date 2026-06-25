@@ -189,17 +189,53 @@ describe('calcularVisibles — triggers', () => {
     expect(r.visibles.has('P2')).toBe(true);
   });
 
-  it('regla con expresion_origen (sin pregunta origen) no se evalúa offline', () => {
+  it('expresion_origen sin contexto: variable desconocida → no se dispara', () => {
     const reglas = [
-      regla({
-        accion: 'HABILITAR',
-        pregunta_origen_codigo: null,
-        expresion_origen: 'EDAD > 18',
-        pregunta_afectada_codigo: 'P2',
-      }),
+      regla({ accion: 'HABILITAR', pregunta_origen_codigo: null,
+        expresion_origen: 'edad > 18', pregunta_afectada_codigo: 'P2' }),
     ];
-    const r = calcularVisibles([pregunta('P2')], reglas, {});
+    const r = calcularVisibles([pregunta('P2')], reglas, {}, {});
     expect(r.visibles.has('P2')).toBe(false);
+  });
+});
+
+describe('calcularVisibles — expresion_origen con ContextoVictima', () => {
+  function reglaExpr(expr: string) {
+    return [regla({ accion: 'HABILITAR', pregunta_origen_codigo: null,
+      expresion_origen: expr, pregunta_afectada_codigo: 'P2' })];
+  }
+
+  it('edad en rango (18-50) muestra la pregunta', () => {
+    const reglas = reglaExpr('edad >= 18 and edad <= 50');
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { edad: 30 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { edad: 60 }).visibles.has('P2')).toBe(false);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { edad: 10 }).visibles.has('P2')).toBe(false);
+  });
+
+  it('sexo == 2 (mujer) muestra la pregunta', () => {
+    const reglas = reglaExpr("sexo == '2'");
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { sexo: '2' }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { sexo: '1' }).visibles.has('P2')).toBe(false);
+  });
+
+  it('etnia == indigena muestra la pregunta (fan-out étnico)', () => {
+    const reglas = reglaExpr("etnia == 'indigena'");
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { etnia: 'indigena' }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { etnia: 'rom' }).visibles.has('P2')).toBe(false);
+  });
+
+  it('combinación and: hombre 18-50 (libreta militar)', () => {
+    const reglas = reglaExpr("sexo == '1' and edad >= 18 and edad <= 50");
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { sexo: '1', edad: 30 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { sexo: '2', edad: 30 }).visibles.has('P2')).toBe(false);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { sexo: '1', edad: 60 }).visibles.has('P2')).toBe(false);
+  });
+
+  it('combinación or: ruv no incluido o menor de 3', () => {
+    const reglas = reglaExpr('ruv_incluido == false or edad < 3');
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: false, edad: 40 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 2 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 40 }).visibles.has('P2')).toBe(false);
   });
 });
 

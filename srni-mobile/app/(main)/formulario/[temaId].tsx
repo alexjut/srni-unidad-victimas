@@ -10,7 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
-import { calcularVisibles } from '../../../src/services/skipLogic';
+import { calcularVisibles, type ContextoVictima } from '../../../src/services/skipLogic';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -45,6 +45,36 @@ function calcularEdad(fechaISO: string): string {
 }
 
 /**
+ * Grupo etario (pregunta B10) derivado de la edad, según los rangos del
+ * instrumento (B10_GRUPO_ETARIO). Se autocompleta desde la fecha de nacimiento
+ * que ya tiene la víctima → ahorra tramitología, no se vuelve a preguntar.
+ *   0-5: Primera infancia · 6-11: Niñez · 12-17: Adolescencia
+ *   18-28: Jóvenes · 29-59: Adulto · 60+: Persona mayor
+ */
+/**
+ * Mapea la pertenencia étnica de la víctima al grupo que usa el skip-logic
+ * (indigena · negro_afro · rom · ninguno). Heurística por palabra clave.
+ */
+function mapearEtnia(pertenencia?: string): string {
+  const p = (pertenencia ?? '').toLowerCase();
+  if (!p) return 'ninguno';
+  if (p.includes('ind') || p.includes('resguardo')) return 'indigena';
+  if (p.includes('negr') || p.includes('afro') || p.includes('palenq') || p.includes('raizal')) return 'negro_afro';
+  if (p.includes('rom') || p.includes('gitan') || p.includes('kumpa')) return 'rom';
+  return 'ninguno';
+}
+
+function edadAGrupoEtario(edad: number): string {
+  if (!Number.isFinite(edad) || edad < 0) return '';
+  if (edad <= 5) return '1';
+  if (edad <= 11) return '2';
+  if (edad <= 17) return '3';
+  if (edad <= 28) return '4';
+  if (edad <= 59) return '5';
+  return '6';
+}
+
+/**
  * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
  * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
  * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
@@ -53,21 +83,43 @@ function calcularEdad(fechaISO: string): string {
  * opción real (validado en runtime), así nunca se inyecta un valor inválido.
  */
 function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
+  // Códigos del instrumento Territorial reconstruido desde el diccionario oficial.
   const m: Record<string, string> = {};
   if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
-  if (v.segundo_nombre)   m.A2 = v.segundo_nombre;
+  if (v.segundo_nombre)   m.NOMBRE_2 = v.segundo_nombre;
   if (v.primer_apellido)  m.APELLIDO_1 = v.primer_apellido;
   if (v.segundo_apellido) m.APELLIDO_2 = v.segundo_apellido;
   if (v.fecha_nacimiento) {
-    m.A6 = v.fecha_nacimiento;
+    m.A6 = v.fecha_nacimiento;              // fecha de nacimiento (FECHA)
     const edad = calcularEdad(v.fecha_nacimiento);
-    if (edad) m.B9 = edad;
+    if (edad) {
+      m.B9 = edad;                          // años cumplidos (NUMERICO)
+      // Grupo etario (B10) derivado de la edad — se autocompleta desde la data
+      // que ya tiene la víctima (valida la opción en runtime).
+      const grupo = edadAGrupoEtario(Number(edad));
+      if (grupo) m.B10 = grupo;
+    }
   }
-  if (v.numero_documento) m.A5 = v.numero_documento;
-  if (v.tipo_documento)   m.A3 = v.tipo_documento;
-  if (v.genero)           m.A8 = v.genero;
+  if (v.numero_documento) m.A5 = v.numero_documento;  // número de documento (TEXTO)
+  if (v.tipo_documento)   m.A3 = v.tipo_documento;    // tipo de documento (LISTA)
+  if (v.genero)           m.A8 = v.genero;            // sexo (LISTA)
+  // Hecho victimizante: NO se pregunta (dato sensible que el RUV ya tiene). Se
+  // prellena "por debajo" desde el hecho principal. H_V = hecho · Ocur_HV = fecha.
+  const hecho = v.hechos_victimizantes?.[0];
+  if (hecho) {
+    if (hecho.codigo || hecho.nombre) m.H_V = hecho.nombre || hecho.codigo;
+    if (hecho.fecha_hecho)            m.Ocur_HV = hecho.fecha_hecho;
+  }
   return m;
 }
+
+/**
+ * Preguntas que NO se muestran en la entrevista porque son datos sensibles que el
+ * RUV ya tiene (hecho victimizante, fecha y municipio de ocurrencia). Se capturan
+ * "por debajo" vía prellenado y se sincronizan, pero no se le preguntan al
+ * encuestador. La caracterización es posterior a la victimización → ya se conoce.
+ */
+const PREGUNTAS_OCULTAS_RUV = new Set(['H_V', 'Ocur_HV']);
 
 interface ItemLista {
   type: 'header-hogar' | 'header-miembro' | 'pregunta';
@@ -326,10 +378,17 @@ export default function CapituloScreen() {
   // respuesta no vacía entre miembros", lo que mostraba/ocultaba preguntas en
   // personas equivocadas. Al cambiar de miembro, este memo se recalcula y las
   // preguntas visibles se ajustan a ESE miembro. HOGAR usa su única respuesta.
+  // Todas las preguntas del instrumento (todos los capítulos) — para que el
+  // skip-logic CROSS-CAPÍTULO funcione (ej. H3 rehabilitación depende de B16
+  // discapacidad, que está en otro capítulo). `respuestas` ya trae todo el borrador.
+  const todasPreguntasInstrumento = useMemo(
+    () => instrumentos.getCapitulos().flatMap((c) => instrumentos.getPreguntas(c.id)),
+    [temaId],
+  );
   const respuestasParaSkip = useMemo<Record<string, string>>(() => {
     const activo = miembros[miembroIdx] ?? null;
     const m: Record<string, string> = {};
-    for (const p of preguntas) {
+    for (const p of todasPreguntasInstrumento) {
       if (p.nivel === 'PERSONA') {
         m[p.codigo_externo] = activo ? (respuestas[claveResp(p.id, activo.id)] ?? '') : '';
       } else {
@@ -337,15 +396,35 @@ export default function CapituloScreen() {
       }
     }
     return m;
-  }, [preguntas, respuestas, miembros, miembroIdx]);
+  }, [todasPreguntasInstrumento, respuestas, miembros, miembroIdx]);
+
+  // Contexto de la víctima para evaluar condiciones demográficas/étnicas offline
+  // (edad/sexo/etnia/RUV). Prioriza lo capturado del miembro activo (A6 fecha,
+  // A8 sexo); cae a los datos de la víctima fuente para etnia/RUV.
+  const contextoVictima = useMemo<ContextoVictima>(() => {
+    const fechaNac = respuestasParaSkip.A6 || victimaFuente?.fecha_nacimiento || '';
+    const edadResp = respuestasParaSkip.B9 ? Number(respuestasParaSkip.B9) : NaN;
+    const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
+    // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae a genero de la víctima (M/F).
+    let sexo = respuestasParaSkip.A8 || '';
+    if (!sexo && victimaFuente?.genero) sexo = victimaFuente.genero === 'M' ? '1' : victimaFuente.genero === 'F' ? '2' : '';
+    return {
+      edad: Number.isFinite(edad) ? edad : undefined,
+      sexo: sexo || undefined,
+      etnia: mapearEtnia(victimaFuente?.pertenencia_etnica),
+      ruvIncluido: victimaFuente?.estado_ruv === 'INCLUIDO',
+    };
+  }, [respuestasParaSkip, victimaFuente]);
 
   const { visibles } = useMemo(
-    () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
-    [preguntas, reglas, respuestasParaSkip],
+    () => calcularVisibles(preguntas, reglas, respuestasParaSkip, contextoVictima),
+    [preguntas, reglas, respuestasParaSkip, contextoVictima],
   );
 
   const preguntasVisibles = useMemo(
-    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
+    // Se excluyen las preguntas precargadas sensibles del RUV (hecho victimizante)
+    // — se prellenan por debajo pero NO se muestran ni se preguntan.
+    () => preguntas.filter((p) => visibles.has(p.codigo_externo) && !PREGUNTAS_OCULTAS_RUV.has(p.codigo_externo)),
     [preguntas, visibles],
   );
 
@@ -979,6 +1058,16 @@ function PreguntaItemBase({
 }) {
   const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
   const esNumerico = pregunta.tipo === 'NUMERICO';
+  // Validaciones del instrumento (longitud/numérico) — ej. celular = 10 dígitos.
+  const validaciones = useMemo<{ longitud_exacta?: number; max_length?: number; solo_numerico?: boolean }>(() => {
+    try { return JSON.parse(pregunta.validaciones || '{}'); } catch { return {}; }
+  }, [pregunta.validaciones]);
+  const maxLen = validaciones.longitud_exacta ?? validaciones.max_length;
+  const onChangeValidado = (t: string) => {
+    let v = validaciones.solo_numerico ? t.replace(/[^0-9]/g, '') : t;
+    if (maxLen) v = v.slice(0, maxLen);
+    onChange(v);
+  };
   const esFecha    = pregunta.tipo === 'FECHA';
   // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — se renderiza con
   // SelectorMunicipio (consume /api/parametricas/municipios/todos/).
@@ -1043,8 +1132,9 @@ function PreguntaItemBase({
         <TextInput
           mode="outlined"
           value={valor}
-          onChangeText={onChange}
+          onChangeText={onChangeValidado}
           keyboardType={esNumerico ? 'numeric' : 'default'}
+          maxLength={maxLen}
           multiline={pregunta.tipo === 'TEXTO_LARGO'}
           numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 4 : 1}
           placeholder={esNumerico ? 'Escribe el número' : 'Escribe la respuesta'}

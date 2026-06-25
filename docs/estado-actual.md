@@ -1,10 +1,27 @@
 # Estado actual del proyecto — SRNI / Unidad para las Víctimas
 
-**Fecha de corte:** 2026-05-26
-**Sprint vigente:** 20 (cerrado)
+**Fecha de corte:** 2026-06-23
+**Sprint vigente:** post-Sprint 20 (trabajo continuo en `main`)
 **Contratista:** Javier Alexander Aguilar Castro · CC 1.030.547.250
 **Contrato:** 2226-2026
 **Supervisor UARIV:** Oscar Andrés Manosalva García
+
+> Para el panorama consolidado de arquitectura y stack, ver
+> [`INFORME-ARQUITECTURA-ESTADO.md`](INFORME-ARQUITECTURA-ESTADO.md).
+> Las secciones 1–8 de abajo conservan el detalle histórico hasta el Sprint 20.
+
+---
+
+## 0. Actualización — Junio 2026 (hitos recientes)
+
+| Frente | Avance |
+|---|---|
+| **Auditoría APK** (3 oleadas) | 31 hallazgos corregidos: integridad de cola, login, privacidad, progreso con skip-logic, hogar online capturable offline, flujo IA, degradación offline, reconciliación de cola al arranque, **biometría opt-in**. 57 tests verdes. |
+| **Instrumento Territorial V7** | Nuevas preguntas (Novedades RUV, años en municipio, IPS), **sub-campos condicionales** (Estrato, "¿cuántos días?") con primer uso de reglas `HABILITAR`, ajustes de texto. Cargado a BD + exportado al bundle móvil. |
+| **Marca "Vínculo Colombiano"** | Nombre en login y launcher de la APK + constantes de marca centralizadas (`src/config/marca.ts`). El rediseño del panel web lo lleva Brando. |
+| **Base de datos móvil** | Migración v9: tabla `hogares_cache` (captura offline de hogares creados online). |
+| **Despliegue** | Backend operando en `30.0.1.109:8090`; **APK builds #15 y #16** compilados (EAS) y publicados al servidor con QR estable (cascada `deploy-apk.sh`). |
+| **Documentación** | Informe de arquitectura ([`INFORME-ARQUITECTURA-ESTADO.md`](INFORME-ARQUITECTURA-ESTADO.md)) + informe mensual de junio diligenciado por obligación. |
 
 ---
 

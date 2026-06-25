@@ -45,7 +45,7 @@
     "nombre": "Caracterización territorial",
     "archivo": "territorial_v7.json",
     "capitulos": 14,
-    "preguntas": 200
+    "preguntas": 219
   },
   {
     "codigo": "URBANO_ETNICO",
