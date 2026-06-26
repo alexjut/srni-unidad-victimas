@@ -75,12 +75,37 @@ function edadAGrupoEtario(edad: number): string {
 }
 
 /**
+ * Traducción del tipo de documento de la víctima (códigos del RUV/Oracle) al
+ * valor de la opción A3 del instrumento (LISTA con códigos numéricos). Sin esto,
+ * sembrar 'CC' nunca coincidía con la opción '1' y el dato se descartaba en silencio.
+ */
+const MAP_TIPO_DOC_A3: Record<string, string> = {
+  CC: '1',   // Cédula de Ciudadanía
+  CE: '2',   // Cédula de Extranjería
+  TI: '3',   // Tarjeta de Identidad
+  RC: '4',   // Registro Civil/NUIP
+  PEP: '9',  // Permiso especial de permanencia
+  PTP: '10', PPT: '10', // Permiso temporal de permanencia
+  PA: '11',  PAS: '11', PASAPORTE: '11', // Pasaporte
+};
+
+/**
+ * Traducción del género de la víctima (M/F/NB/ND) al valor de la opción A8 "Sexo"
+ * del instrumento (1=Hombre, 2=Mujer, 3=Intersexual, 4=Indeterminado). NB/ND no
+ * tienen equivalente directo en SEXO biológico → no se siembran (se capturan a mano).
+ */
+const MAP_GENERO_A8: Record<string, string> = {
+  M: '1', // Hombre
+  F: '2', // Mujer
+};
+
+/**
  * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
  * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
  * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
  * instrumento no tiene esa pregunta (decisión de instrumento/UARIV). Los códigos
- * de tipo LISTA (A3 doc, A8 sexo) solo se siembran si el valor coincide con una
- * opción real (validado en runtime), así nunca se inyecta un valor inválido.
+ * de tipo LISTA (A3 doc, A8 sexo) se traducen al código de opción del instrumento
+ * y solo se siembran si coinciden con una opción real (validado en runtime).
  */
 function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
   // Códigos del instrumento Territorial reconstruido desde el diccionario oficial.
@@ -101,10 +126,15 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
     }
   }
   if (v.numero_documento) m.A5 = v.numero_documento;  // número de documento (TEXTO)
-  if (v.tipo_documento)   m.A3 = v.tipo_documento;    // tipo de documento (LISTA)
-  if (v.genero)           m.A8 = v.genero;            // sexo (LISTA)
-  // Hecho victimizante: NO se pregunta (dato sensible que el RUV ya tiene). Se
-  // prellena "por debajo" desde el hecho principal. H_V = hecho · Ocur_HV = fecha.
+  // Tipo de documento y sexo son LISTA con códigos numéricos: traducir desde el
+  // código del RUV (CC/CE…, M/F) al valor de la opción del instrumento.
+  const docA3 = v.tipo_documento ? MAP_TIPO_DOC_A3[v.tipo_documento.toUpperCase()] : undefined;
+  if (docA3) m.A3 = docA3;                            // tipo de documento (LISTA)
+  const sexoA8 = v.genero ? MAP_GENERO_A8[v.genero.toUpperCase()] : undefined;
+  if (sexoA8) m.A8 = sexoA8;                          // sexo (LISTA)
+  // Hecho victimizante: NO se pregunta (el RUV ya lo tiene). Se prellena desde el
+  // hecho principal y se MUESTRA en modo solo-lectura (PREGUNTAS_RUV_READONLY) para
+  // que el encuestador lo confirme. H_V = hecho · Ocur_HV = fecha de ocurrencia.
   const hecho = v.hechos_victimizantes?.[0];
   if (hecho) {
     if (hecho.codigo || hecho.nombre) m.H_V = hecho.nombre || hecho.codigo;
@@ -114,12 +144,13 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
 }
 
 /**
- * Preguntas que NO se muestran en la entrevista porque son datos sensibles que el
- * RUV ya tiene (hecho victimizante, fecha y municipio de ocurrencia). Se capturan
- * "por debajo" vía prellenado y se sincronizan, pero no se le preguntan al
- * encuestador. La caracterización es posterior a la victimización → ya se conoce.
+ * Preguntas que el RUV ya tiene (hecho victimizante y su fecha de ocurrencia). NO
+ * se le preguntan al encuestador: se prellenan desde el RUV y se muestran en modo
+ * SOLO LECTURA, para que el encuestador VEA el dato que vino del RUV (confirmación
+ * visual) sin poder editarlo. La caracterización es posterior a la victimización →
+ * el hecho ya se conoce; capturarlo de nuevo introduciría inconsistencias.
  */
-const PREGUNTAS_OCULTAS_RUV = new Set(['H_V', 'Ocur_HV']);
+const PREGUNTAS_RUV_READONLY = new Set(['H_V', 'Ocur_HV']);
 
 interface ItemLista {
   type: 'header-hogar' | 'header-miembro' | 'pregunta';
@@ -324,8 +355,11 @@ export default function CapituloScreen() {
     if (Object.keys(map).length === 0) { prefillRef.current = bid; return; }
 
     // Las preguntas de datos básicos son PERSONA → se siembran contra el miembro
-    // autorizado. Si aún no se resolvió, esperar (no marcar como hecho).
-    const autorizado = miembros.find((m) => m.es_autorizado) ?? null;
+    // autorizado. `miembros` ya viene ordenado con el autorizado primero
+    // (ordenarMiembros), así que si ninguno trae el flag es_autorizado marcado
+    // (p.ej. el backend no lo seteó), caemos al primero como autorizado de facto
+    // en vez de bloquear TODO el prellenado. Si aún no hay miembros, esperar.
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
     const hayPersonaMapeable = preguntas.some(
       (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
     );
@@ -422,9 +456,10 @@ export default function CapituloScreen() {
   );
 
   const preguntasVisibles = useMemo(
-    // Se excluyen las preguntas precargadas sensibles del RUV (hecho victimizante)
-    // — se prellenan por debajo pero NO se muestran ni se preguntan.
-    () => preguntas.filter((p) => visibles.has(p.codigo_externo) && !PREGUNTAS_OCULTAS_RUV.has(p.codigo_externo)),
+    // Las preguntas del RUV (hecho victimizante) SÍ se muestran, pero en modo
+    // solo-lectura (ver PREGUNTAS_RUV_READONLY): el encuestador ve el dato
+    // precargado del RUV sin poder editarlo.
+    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
     [preguntas, visibles],
   );
 
@@ -902,6 +937,7 @@ export default function CapituloScreen() {
               total={item.totalGlobal ?? 0}
               opciones={opciones[p.id] ?? []}
               valor={valor}
+              soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo)}
               onChange={(v) => setRespuesta(p.id, v, miembroId)}
               iaActivo={iaActivo && !miembroId}
               onTextoIA={iaPreguntaKey ? (texto) => handleTextoTranscrito(p.id, texto) : undefined}
@@ -1037,6 +1073,7 @@ function PreguntaItemBase({
   total,
   opciones,
   valor,
+  soloLectura,
   onChange,
   iaActivo,
   onTextoIA,
@@ -1049,6 +1086,7 @@ function PreguntaItemBase({
   total: number;
   opciones: OpcionRow[];
   valor: string;
+  soloLectura?: boolean;
   onChange: (v: string) => void;
   iaActivo?: boolean;
   onTextoIA?: (texto: string) => void;
@@ -1078,6 +1116,33 @@ function PreguntaItemBase({
 
   const tieneRespuesta = !!valor?.trim();
   const esObligatoria  = pregunta.obligatoria === 1;
+
+  // Modo SOLO LECTURA — datos del RUV (hecho victimizante). Se muestra el valor
+  // precargado, sin controles editables ni asistente de voz. Si el RUV no trajo
+  // el dato, se indica explícitamente en vez de mostrar un campo vacío.
+  if (soloLectura) {
+    const etiqueta = (esRadio || esBoolean || esMultiple)
+      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
+      : valor;
+    return (
+      <View style={[styles.preguntaCard, styles.preguntaCardRuv]}>
+        <View style={styles.preguntaHeader}>
+          <MaterialCommunityIcons name="shield-check" size={16} color={GOV.azul} />
+          <Text style={styles.ruvBadgeTxt}>Dato del RUV</Text>
+          {pregunta.no_pregunta ? (
+            <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+          ) : null}
+        </View>
+        <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+        <View style={styles.ruvValorBox}>
+          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
+          <Text style={styles.ruvValorTxt}>
+            {etiqueta?.trim() ? etiqueta : 'Sin dato registrado en el RUV'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[
@@ -1287,6 +1352,7 @@ function PreguntaItemBase({
 const PreguntaItem = memo(PreguntaItemBase, (prev, next) =>
   prev.pregunta === next.pregunta &&
   prev.valor === next.valor &&
+  prev.soloLectura === next.soloLectura &&
   prev.index === next.index &&
   prev.total === next.total &&
   prev.opciones === next.opciones &&
@@ -1434,6 +1500,25 @@ const styles = StyleSheet.create({
   preguntaCardRespondida: {
     borderLeftColor: GOV.verde,
   },
+  // Tarjeta de pregunta en modo solo-lectura (dato precargado del RUV).
+  preguntaCardRuv: {
+    borderLeftColor: GOV.azul,
+    backgroundColor: GOV.azulTenue,
+  },
+  ruvBadgeTxt: { ...FONT.label, color: GOV.azulOscuro },
+  ruvValorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: GOV.superficie,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 10,
+    marginTop: 2,
+  },
+  ruvValorTxt: { ...FONT.body, fontWeight: '600', color: GOV.textoP, flex: 1 },
   preguntaHeader: {
     flexDirection: 'row',
     alignItems: 'center',
