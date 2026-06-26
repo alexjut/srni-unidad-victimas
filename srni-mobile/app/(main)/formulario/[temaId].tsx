@@ -10,6 +10,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
+import * as victimasOfflineDao from '../../../src/db/victimasOfflineDao';
 import { calcularVisibles, type ContextoVictima } from '../../../src/services/skipLogic';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
@@ -216,8 +217,10 @@ export default function CapituloScreen() {
   // Solo se renderiza el miembro en este índice (no todos en scroll).
   const [miembroIdx, setMiembroIdx] = useState(0);
   const flatRef = useRef<FlatList | null>(null);
-  // Prellenado: guarda el borrador para el que ya se intentó sembrar (una vez).
-  const prefillRef = useRef<string | null>(null);
+  // Prellenado: guarda las claves (borrador|capítulo) ya sembradas. ANTES era solo
+  // el borrador, lo que causaba que tras precargar el capítulo 1 NO se precargara
+  // ningún otro capítulo (mismo borrador → se saltaba). Ahora es por capítulo.
+  const prefillRef = useRef<Set<string>>(new Set());
   // Evita repetir la alerta de "no hay borrador" en cada tecla.
   const alertaBorradorRef = useRef(false);
 
@@ -348,26 +351,48 @@ export default function CapituloScreen() {
   // mapeables, no hace nada.
   useEffect(() => {
     const bid = borradorId ?? borradorIdParam;
-    if (!bid || !victimaFuente || preguntas.length === 0) return;
-    if (prefillRef.current === bid) return;
-
-    const map = construirPrefillVictima(victimaFuente);
-    if (Object.keys(map).length === 0) { prefillRef.current = bid; return; }
+    if (!bid || preguntas.length === 0) return;
+    const claveCap = `${bid}|${temaId}`; // por capítulo, no por borrador
+    if (prefillRef.current.has(claveCap)) return;
 
     // Las preguntas de datos básicos son PERSONA → se siembran contra el miembro
     // autorizado. `miembros` ya viene ordenado con el autorizado primero
     // (ordenarMiembros), así que si ninguno trae el flag es_autorizado marcado
     // (p.ej. el backend no lo seteó), caemos al primero como autorizado de facto
-    // en vez de bloquear TODO el prellenado. Si aún no hay miembros, esperar.
+    // en vez de bloquear TODO el prellenado.
     const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
-    const hayPersonaMapeable = preguntas.some(
-      (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
-    );
-    if (hayPersonaMapeable && !autorizado) return;
 
     let cancelado = false;
     (async () => {
       try {
+        // Fuente de datos del prellenado. `victimaFuente` vive solo en memoria
+        // (store volátil) y se pierde al reabrir la caracterización, cerrar la
+        // app o re-enfocar la búsqueda. Cuando no esté (o llegue incompleta), la
+        // recuperamos PERSISTIDA desde victimas_offline por el id del autorizado
+        // (que offline ES el id_local de la víctima). Así la precarga sobrevive.
+        let fuente = victimaFuente;
+        if ((!fuente || !fuente.fecha_nacimiento) && autorizado?.id) {
+          try {
+            const row = await victimasOfflineDao.obtenerPorIdLocal(autorizado.id);
+            if (row) {
+              const persistida = JSON.parse(row.payload_json) as VictimaResumenFuente;
+              if (persistida?.fecha_nacimiento || !fuente) fuente = persistida;
+            }
+          } catch { /* sin víctima persistida: seguimos con lo que haya */ }
+        }
+        if (cancelado) return;
+        if (!fuente) return; // ni store ni SQLite → esperar (re-corre si llega)
+
+        const map = construirPrefillVictima(fuente);
+        if (Object.keys(map).length === 0) { prefillRef.current.add(claveCap); return; }
+
+        const hayPersonaMapeable = preguntas.some(
+          (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
+        );
+        // Si hay preguntas PERSONA por sembrar pero aún no hay miembro, esperar
+        // (el effect re-corre cuando lleguen los miembros).
+        if (hayPersonaMapeable && !autorizado) return;
+
         const existentes = await borradoresDao.getRespuestaMapCompuesto(bid);
         const borrador = await borradoresDao.getBorrador(bid);
         const nuevos: Record<string, string> = {};
@@ -396,7 +421,7 @@ export default function CapituloScreen() {
           nuevos[clave] = valor;
         }
         if (cancelado) return;
-        prefillRef.current = bid;
+        prefillRef.current.add(claveCap);
         if (Object.keys(nuevos).length > 0) {
           setRespuestasState((prev) => ({ ...prev, ...nuevos }));
           await refrescarContadores();
@@ -404,7 +429,7 @@ export default function CapituloScreen() {
       } catch { /* prellenado best-effort: si falla, el usuario captura a mano */ }
     })();
     return () => { cancelado = true; };
-  }, [borradorId, borradorIdParam, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
+  }, [borradorId, borradorIdParam, temaId, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
 
   // ── Skip logic ──────────────────────────────────────────────────────────────
   // La skip-logic PERSONA se evalúa con las respuestas del MIEMBRO ACTIVO (el
