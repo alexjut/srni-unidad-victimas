@@ -26,7 +26,12 @@ run cargar_puntos_atencion
 echo "===== INSTRUMENTOS ====="
 run crear_instrumentos_base
 run cargar_capitulo_control
-run cargar_territorial_v7
+# Territorial V7: cargar desde el FIXTURE (UUIDs deterministas uuid5 que coinciden
+# con el bundle del APK), NO desde cargar_territorial_v7 (comando hardcodeado con
+# uuid4 aleatorio). Si se siembra con el comando viejo en una BD limpia, los UUIDs
+# del backend no coinciden con los del APK y el backend rechaza TODAS las respuestas
+# del móvil con HTTP 400. Ver docs/sprints/sprint-15.md.
+run cargar_perfil --instrumento TERRITORIAL
 run cargar_buenaventura_v7
 run cargar_san_andres_v7
 run cargar_telefonico_v8

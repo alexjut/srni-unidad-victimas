@@ -168,12 +168,38 @@ Subidos a ambos remotes (`origin` GitHub + `azure` DevOps).
 
 ---
 
+## Deploy a producción (26-jun) — realizado
+
+Desplegado al servidor `30.0.1.109` (`git archive` + `deploy-all.sh`) y APK al QR
+estable (`deploy-apk.sh`, perfil `preview`, versionCode 29). Backup de BD previo.
+Verificado: panel web 200, API 200, login ENC001 200.
+
+### Hallazgo crítico durante el deploy — corregido
+
+El script `infra/deploy/scripts/40-cargar-datos.sh` sembraba el Territorial con
+`cargar_territorial_v7` (comando **hardcodeado**, UUIDs `uuid4` aleatorios), mientras
+el APK usa el bundle con UUIDs **deterministas `uuid5`** que vienen del fixture. El
+móvil sincroniza respuestas **por UUID** y el backend rechaza con **HTTP 400** si el
+UUID no existe.
+
+- En la BD actual los UUIDs **sí coinciden** (se sembró históricamente con el
+  fixture vía `cargar_perfil`, y `update_or_create` por `codigo_externo` preserva el
+  `id`), así que **la sincronización funciona** — verificado: las 268 preguntas del
+  bundle existen en el backend con UUID idéntico.
+- Riesgo latente: una siembra en **BD limpia** con el comando viejo habría roto el
+  100% de la sincronización territorial.
+- **Fix:** `40-cargar-datos.sh` ahora usa `cargar_perfil --instrumento TERRITORIAL`
+  (fixture, fuente de verdad). Además se recargó el Territorial en prod con
+  `cargar_perfil` para alinear la obligatoriedad (Z9A/Z9C/Z10 → opcionales).
+
 ## Pendientes para el próximo sprint
 
 | Pendiente | Prioridad |
 |-----------|-----------|
-| Deploy a producción — servidor `30.0.1.109` (`git archive` + `deploy-all.sh`) | Alta |
-| Deploy a producción — APK EAS (`deploy-apk.sh`) con la URL de la OTI | Alta |
+| Limpiar 3 preguntas huérfanas en prod (`T1_te`, `T2_te`, `T3_te`) que el comando viejo dejó — el APK no las usa | Media |
+| Retirar el comando obsoleto `cargar_territorial_v7.py` del repo (reemplazado por `cargar_perfil`) | Media |
+| Verificar si los otros instrumentos (Buenaventura, San Andrés, etc.) tienen el mismo patrón comando-hardcodeado vs fixture | Media |
+| APK de campo/producción con la URL de la OTI (hoy `preview` apunta a ngrok) | Alta |
 | Persistir `victimaFuente` (hoy en memoria) para que el prellenado sobreviva reinicios / re-foco de búsqueda | Media |
 | Mapear `municipio_hecho` del RUV a su pregunta destino en el prellenado | Baja |
 | Decidir destino de `srni-mobile/assets/regiones/loguin/` (fuentes de diseño sin trackear) | Baja |
