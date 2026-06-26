@@ -137,6 +137,490 @@
   ],
   "preguntas": [
     {
+      "no_pregunta": "A2",
+      "codigo_externo": "Z2",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Lugar de la Encuesta (Departamento y municipio)",
+      "tipo": "COMBO_DINAMICO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 1,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "a9e1100a-0000-4000-8000-0000000000a2"
+    },
+    {
+      "no_pregunta": "A3",
+      "codigo_externo": "Z3",
+      "id_preg": 2,
+      "capitulo_codigo": "A",
+      "texto": "Método de recolección:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Vivienda de residencia",
+          "id_resp_vivanto": 2,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Entrevista presencial (en un lugar distinto de la vivienda)",
+          "id_resp_vivanto": 4,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Entrevista telefónica",
+          "id_resp_vivanto": 3,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Jornada de atención",
+          "id_resp_vivanto": 2334,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Otro",
+          "id_resp_vivanto": 5,
+          "orden": 5
+        }
+      ],
+      "id": "0daa222e-3805-561f-b9f2-d4c06c69b335"
+    },
+    {
+      "no_pregunta": "A4",
+      "codigo_externo": "Z4",
+      "id_preg": 35,
+      "capitulo_codigo": "A",
+      "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... Se autoreconoce como:",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 3,
+      "es_precargada": false,
+      "fuente_precarga": "CARACTERIZACIÓN",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Indígena",
+          "id_resp_vivanto": 112,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Gitano(a), Rrom",
+          "id_resp_vivanto": 113,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina",
+          "id_resp_vivanto": 114,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Palenquero(a)",
+          "id_resp_vivanto": 115,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Negro(a), afrocolombiano(a)",
+          "id_resp_vivanto": 116,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Ninguna",
+          "id_resp_vivanto": 117,
+          "orden": 6
+        }
+      ],
+      "id": "8fb8c7ba-3f8d-5439-adca-f9c544abbccd"
+    },
+    {
+      "no_pregunta": "A5",
+      "codigo_externo": "Z5A",
+      "id_preg": 3,
+      "capitulo_codigo": "A",
+      "texto": "Lugar de Residencia",
+      "tipo": "COMBO_DINAMICO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "",
+          "etiqueta": "Departamento",
+          "id_resp_vivanto": null,
+          "orden": 1
+        }
+      ],
+      "id": "c1c8fa23-4ca5-589b-82db-579c370cd602"
+    },
+    {
+      "no_pregunta": "A6",
+      "codigo_externo": "Z6",
+      "id_preg": 5,
+      "capitulo_codigo": "A",
+      "texto": "Zona de residencia",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cabecera municipal (donde está la alcaldía)",
+          "id_resp_vivanto": 8,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
+          "id_resp_vivanto": 9,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Rural disperso (vereda,)",
+          "id_resp_vivanto": 10,
+          "orden": 3
+        }
+      ],
+      "id": "6a936693-59d0-5aab-9708-c02211fc70ee"
+    },
+    {
+      "no_pregunta": "A7",
+      "codigo_externo": "Z7",
+      "id_preg": 4,
+      "capitulo_codigo": "A",
+      "texto": "¿El lugar es barrio, centro poblado o vereda?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 6,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Barrio",
+          "id_resp_vivanto": null,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Centro poblado",
+          "id_resp_vivanto": null,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Vereda",
+          "id_resp_vivanto": null,
+          "orden": 3
+        }
+      ],
+      "id": "7428d1de-c666-5493-a813-4ec62995615d"
+    },
+    {
+      "no_pregunta": "A8",
+      "codigo_externo": "VEREDA",
+      "id_preg": 882,
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es el nombre del barrio/centro poblado/vereda?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "3632ce8e-4ca9-5e2a-a754-ce39533b98a7"
+    },
+    {
+      "no_pregunta": "A9",
+      "codigo_externo": "Z8",
+      "id_preg": 6,
+      "capitulo_codigo": "A",
+      "texto": "Dirección de la vivienda o nombre de la finca/predio",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 8,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "0b78250b-e069-51b2-adc8-f08109166604"
+    },
+    {
+      "no_pregunta": "A10",
+      "codigo_externo": "Z9A",
+      "id_preg": 7,
+      "capitulo_codigo": "A",
+      "texto": "Teléfono fijo",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "max_length": 10,
+        "solo_numerico": true
+      },
+      "opciones": [],
+      "id": "5f02c049-0687-5a0e-b28a-fc5aba2cd2c1"
+    },
+    {
+      "no_pregunta": "A11",
+      "codigo_externo": "Z9B",
+      "id_preg": 8,
+      "capitulo_codigo": "A",
+      "texto": "Telefono Celular",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 10,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "longitud_exacta": 10,
+        "solo_numerico": true
+      },
+      "opciones": [],
+      "id": "73fe8d8e-a47c-5f1e-8c50-9df3ad21d875"
+    },
+    {
+      "no_pregunta": "A12",
+      "codigo_externo": "Z9C",
+      "id_preg": 788,
+      "capitulo_codigo": "A",
+      "texto": "Otro teléfono de contacto",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "max_length": 10,
+        "solo_numerico": true
+      },
+      "opciones": [],
+      "id": "6a1a5670-e7b7-527d-a814-2ad12841269c"
+    },
+    {
+      "no_pregunta": "A13",
+      "codigo_externo": "Z10",
+      "id_preg": 389,
+      "capitulo_codigo": "A",
+      "texto": "Correo electrónico",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "8be188e5-c429-541b-80aa-0d8ee6164214"
+    },
+    {
+      "no_pregunta": "A14",
+      "codigo_externo": "Z11",
+      "id_preg": 789,
+      "capitulo_codigo": "A",
+      "texto": "El lugar de correspondencia es el mismo de residencia?",
+      "tipo": "BOOLEAN",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 13,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Si",
+          "id_resp_vivanto": 2340,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "No",
+          "id_resp_vivanto": 2341,
+          "orden": 2
+        }
+      ],
+      "id": "4f64f6c6-917b-5bcb-9063-814a246ebb9b"
+    },
+    {
+      "no_pregunta": "A15",
+      "codigo_externo": "Z15",
+      "id_preg": 1163,
+      "capitulo_codigo": "A",
+      "texto": "Lugar de Correspondencia",
+      "tipo": "COMBO_DINAMICO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 14,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "DIVIPOLA",
+          "etiqueta": "Departamento",
+          "id_resp_vivanto": null,
+          "orden": 1
+        }
+      ],
+      "id": "236e71f0-74f7-55f0-89ab-696999e22445"
+    },
+    {
+      "no_pregunta": "A16",
+      "codigo_externo": "Z16",
+      "id_preg": 1164,
+      "capitulo_codigo": "A",
+      "texto": "Zona de Correspondencia",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 15,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Cabecera municipal (donde está la alcaldía)",
+          "id_resp_vivanto": 3809,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
+          "id_resp_vivanto": 3810,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Rural disperso (vereda,)",
+          "id_resp_vivanto": 3811,
+          "orden": 3
+        }
+      ],
+      "id": "dce4c4fb-8bc6-574e-857a-d6e10756929c"
+    },
+    {
+      "no_pregunta": "A17",
+      "codigo_externo": "Z17",
+      "id_preg": 1165,
+      "capitulo_codigo": "A",
+      "texto": "¿El lugar de correspondencia es barrio, centro poblado o vereda?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 16,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Barrio",
+          "id_resp_vivanto": null,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Centro poblado",
+          "id_resp_vivanto": null,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Vereda",
+          "id_resp_vivanto": null,
+          "orden": 3
+        }
+      ],
+      "id": "bb88e5c8-93a6-5867-9116-432bbcebb197"
+    },
+    {
+      "no_pregunta": "A18",
+      "codigo_externo": "Z18",
+      "id_preg": 1166,
+      "capitulo_codigo": "A",
+      "texto": "¿Cuál es el nombre del barrio/centro poblado/vereda? (correspondencia)",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 17,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "db26a1a3-7402-58dd-b5bd-18455eaed009"
+    },
+    {
+      "no_pregunta": "A19",
+      "codigo_externo": "Z12",
+      "id_preg": 790,
+      "capitulo_codigo": "A",
+      "texto": "Dirección de correspondencia",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 18,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "9e8d790f-fbb1-575f-846a-dbd2353854ea"
+    },
+    {
+      "no_pregunta": "A20",
+      "codigo_externo": "T6",
+      "id_preg": 10,
+      "capitulo_codigo": "A",
+      "texto": "Supervisor de la Encuesta",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 19,
+      "es_precargada": true,
+      "fuente_precarga": "TABLA_USUARIOS",
+      "validaciones": {},
+      "opciones": [],
+      "id": "45817cae-ab3f-59ae-8cdb-0cf26282ee3a"
+    },
+    {
       "no_pregunta": "A1",
       "codigo_externo": "DT_ATENCION",
       "id_preg": 1161,
@@ -144,10 +628,10 @@
       "texto": "Dirección Territorial",
       "tipo": "LISTA",
       "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 1,
-      "es_precargada": false,
-      "fuente_precarga": "CARACTERIZACIÓN",
+      "obligatoria": false,
+      "orden": 20,
+      "es_precargada": true,
+      "fuente_precarga": "TABLA_USUARIOS",
       "validaciones": {},
       "opciones": [
         {
@@ -280,362 +764,211 @@
       "id": "18618ad8-b8ec-516e-a856-62348bec92aa"
     },
     {
-      "no_pregunta": "A3",
-      "codigo_externo": "Z3",
-      "id_preg": 2,
+      "no_pregunta": "Estado_",
+      "codigo_externo": "Estado_",
+      "id_preg": null,
       "capitulo_codigo": "A",
-      "texto": "Método de recolección:",
+      "texto": "Estado de la Entrevista",
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 2,
-      "es_precargada": false,
-      "fuente_precarga": "",
+      "orden": 21,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
       "validaciones": {},
       "opciones": [
         {
           "valor": "1",
-          "etiqueta": "Vivienda de residencia",
-          "id_resp_vivanto": 2,
+          "etiqueta": "Activa",
+          "id_resp_vivanto": null,
           "orden": 1
         },
         {
           "valor": "2",
-          "etiqueta": "Entrevista presencial (en un lugar distinto de la vivienda)",
-          "id_resp_vivanto": 4,
+          "etiqueta": "Aplazada",
+          "id_resp_vivanto": null,
           "orden": 2
         },
         {
           "valor": "3",
-          "etiqueta": "Entrevista telefónica",
-          "id_resp_vivanto": 3,
+          "etiqueta": "Cerrada",
+          "id_resp_vivanto": null,
           "orden": 3
         },
         {
           "valor": "4",
-          "etiqueta": "Jornada de atención",
-          "id_resp_vivanto": 2334,
+          "etiqueta": "Anulada",
+          "id_resp_vivanto": null,
           "orden": 4
-        },
-        {
-          "valor": "5",
-          "etiqueta": "Otro",
-          "id_resp_vivanto": 5,
-          "orden": 5
         }
       ],
-      "id": "0daa222e-3805-561f-b9f2-d4c06c69b335"
+      "id": "b5e126d9-d7de-5d32-9315-9128b7075c5a"
     },
     {
-      "no_pregunta": "A5",
-      "codigo_externo": "Z5A",
-      "id_preg": 3,
+      "no_pregunta": "ESTADO_RUV",
+      "codigo_externo": "ESTADO_RUV",
+      "id_preg": null,
       "capitulo_codigo": "A",
-      "texto": "Lugar de Residencia",
-      "tipo": "COMBO_DINAMICO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 3,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "",
-          "etiqueta": "Departamento",
-          "id_resp_vivanto": null,
-          "orden": 1
-        }
-      ],
-      "id": "c1c8fa23-4ca5-589b-82db-579c370cd602"
-    },
-    {
-      "no_pregunta": "A6",
-      "codigo_externo": "Z6",
-      "id_preg": 5,
-      "capitulo_codigo": "A",
-      "texto": "Zona de residencia",
+      "texto": "Acción social o la Unidad para las Víctimas incluyó a … en el RUPD/RUV",
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 4,
-      "es_precargada": false,
-      "fuente_precarga": "",
+      "orden": 22,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
       "validaciones": {},
       "opciones": [
         {
           "valor": "1",
-          "etiqueta": "Cabecera municipal (donde está la alcaldía)",
-          "id_resp_vivanto": 8,
+          "etiqueta": "Incluido",
+          "id_resp_vivanto": null,
           "orden": 1
         },
         {
           "valor": "2",
-          "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
-          "id_resp_vivanto": 9,
+          "etiqueta": "No incluido",
+          "id_resp_vivanto": null,
+          "orden": 2
+        }
+      ],
+      "id": "e74312e9-c5dd-5c16-82fa-3498126724ed"
+    },
+    {
+      "no_pregunta": "N/A",
+      "codigo_externo": "H_V",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Hecho Victimizante",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 23,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "e06a709f-1cc8-53c2-9ca7-3be0ca775793"
+    },
+    {
+      "no_pregunta": "N/A",
+      "codigo_externo": "Ocur_HV",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Fecha de Ocurrencia",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 24,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "ce11e8e9-fb9e-5f23-a9bd-4908fdede899"
+    },
+    {
+      "no_pregunta": "NOMBRE_1_R",
+      "codigo_externo": "NOMBRE_1_RUV",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Primer Nombre RUV",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 25,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "0e2cebc5-9a1b-57e5-9ecf-c566f5bcba9f"
+    },
+    {
+      "no_pregunta": "NOMBRE_2_R",
+      "codigo_externo": "NOMBRE_2_RUV",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Segundo nombre RUV",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 26,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "e9245542-12c2-5de3-92e3-48eaa2f61161"
+    },
+    {
+      "no_pregunta": "APELLIDO_1",
+      "codigo_externo": "APELLIDO_1_RUV",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Primer apellido RUV",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 27,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "3983d9a6-0af4-52fd-b89a-2105bf769838"
+    },
+    {
+      "no_pregunta": "APELLIDO_2",
+      "codigo_externo": "APELLIDO_2_RUV",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Segundo apellido RUV",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 28,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [],
+      "id": "4fa0929f-ef40-592c-bea7-a6789236612c"
+    },
+    {
+      "no_pregunta": "N/A",
+      "codigo_externo": "Tip_Persona",
+      "id_preg": null,
+      "capitulo_codigo": "A",
+      "texto": "Tipo de Persona",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 29,
+      "es_precargada": true,
+      "fuente_precarga": "RUV",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Autorizado",
+          "id_resp_vivanto": null,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Tutor",
+          "id_resp_vivanto": null,
           "orden": 2
         },
         {
           "valor": "3",
-          "etiqueta": "Rural disperso (vereda,)",
-          "id_resp_vivanto": 10,
-          "orden": 3
-        }
-      ],
-      "id": "6a936693-59d0-5aab-9708-c02211fc70ee"
-    },
-    {
-      "no_pregunta": "A9",
-      "codigo_externo": "Z8",
-      "id_preg": 6,
-      "capitulo_codigo": "A",
-      "texto": "Dirección de la vivienda o nombre de la finca/predio",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 5,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "0b78250b-e069-51b2-adc8-f08109166604"
-    },
-    {
-      "no_pregunta": "A7",
-      "codigo_externo": "Z7",
-      "id_preg": 4,
-      "capitulo_codigo": "A",
-      "texto": "Barrio, centro poblado o vereda:",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 6,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "7428d1de-c666-5493-a813-4ec62995615d"
-    },
-    {
-      "no_pregunta": "A8",
-      "codigo_externo": "VEREDA",
-      "id_preg": 882,
-      "capitulo_codigo": "A",
-      "texto": "Ingrese el Nombre de la Vereda",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 7,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "3632ce8e-4ca9-5e2a-a754-ce39533b98a7"
-    },
-    {
-      "no_pregunta": "A10",
-      "codigo_externo": "Z9A",
-      "id_preg": 7,
-      "capitulo_codigo": "A",
-      "texto": "Teléfono fijo",
-      "tipo": "NUMERICO",
-      "nivel": "HOGAR",
-      "obligatoria": false,
-      "orden": 8,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {
-        "max_length": 10,
-        "solo_numerico": true
-      },
-      "opciones": [],
-      "id": "5f02c049-0687-5a0e-b28a-fc5aba2cd2c1"
-    },
-    {
-      "no_pregunta": "A12",
-      "codigo_externo": "Z9C",
-      "id_preg": 788,
-      "capitulo_codigo": "A",
-      "texto": "Otro teléfono de contacto",
-      "tipo": "NUMERICO",
-      "nivel": "HOGAR",
-      "obligatoria": false,
-      "orden": 9,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {
-        "max_length": 10,
-        "solo_numerico": true
-      },
-      "opciones": [],
-      "id": "6a1a5670-e7b7-527d-a814-2ad12841269c"
-    },
-    {
-      "no_pregunta": "A13",
-      "codigo_externo": "Z10",
-      "id_preg": 389,
-      "capitulo_codigo": "A",
-      "texto": "Correo electrónico",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": false,
-      "orden": 10,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "8be188e5-c429-541b-80aa-0d8ee6164214"
-    },
-    {
-      "no_pregunta": "A14",
-      "codigo_externo": "Z11",
-      "id_preg": 789,
-      "capitulo_codigo": "A",
-      "texto": "El lugar de correspondencia es el mismo de residencia?",
-      "tipo": "BOOLEAN",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 11,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Si",
-          "id_resp_vivanto": 2340,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "No",
-          "id_resp_vivanto": 2341,
-          "orden": 2
-        }
-      ],
-      "id": "4f64f6c6-917b-5bcb-9063-814a246ebb9b"
-    },
-    {
-      "no_pregunta": "A19",
-      "codigo_externo": "Z12",
-      "id_preg": 790,
-      "capitulo_codigo": "A",
-      "texto": "Dirección de correspondencia",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 12,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "9e8d790f-fbb1-575f-846a-dbd2353854ea"
-    },
-    {
-      "no_pregunta": "A15",
-      "codigo_externo": "Z15",
-      "id_preg": 1163,
-      "capitulo_codigo": "A",
-      "texto": "Lugar de Correspondencia",
-      "tipo": "COMBO_DINAMICO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 13,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "DIVIPOLA",
-          "etiqueta": "Departamento",
+          "etiqueta": "Cuidador Permanente",
           "id_resp_vivanto": null,
-          "orden": 1
-        }
-      ],
-      "id": "236e71f0-74f7-55f0-89ab-696999e22445"
-    },
-    {
-      "no_pregunta": "A16",
-      "codigo_externo": "Z16",
-      "id_preg": 1164,
-      "capitulo_codigo": "A",
-      "texto": "Zona de Correspondencia",
-      "tipo": "LISTA",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 14,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Cabecera municipal (donde está la alcaldía)",
-          "id_resp_vivanto": 3809,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
-          "id_resp_vivanto": 3810,
-          "orden": 2
-        },
-        {
-          "valor": "3",
-          "etiqueta": "Rural disperso (vereda,)",
-          "id_resp_vivanto": 3811,
           "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Miembro de Hogar",
+          "id_resp_vivanto": null,
+          "orden": 4
         }
       ],
-      "id": "dce4c4fb-8bc6-574e-857a-d6e10756929c"
-    },
-    {
-      "no_pregunta": "A17",
-      "codigo_externo": "Z17",
-      "id_preg": 1165,
-      "capitulo_codigo": "A",
-      "texto": "Barrio, centro poblado o vereda:",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 15,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "bb88e5c8-93a6-5867-9116-432bbcebb197"
-    },
-    {
-      "no_pregunta": "A18",
-      "codigo_externo": "Z18",
-      "id_preg": 1166,
-      "capitulo_codigo": "A",
-      "texto": "Ingrese el Nombre de la Vereda",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 16,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "db26a1a3-7402-58dd-b5bd-18455eaed009"
-    },
-    {
-      "no_pregunta": "A20",
-      "codigo_externo": "T6",
-      "id_preg": 10,
-      "capitulo_codigo": "A",
-      "texto": "Supervisor de la Encuesta",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 17,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "45817cae-ab3f-59ae-8cdb-0cf26282ee3a"
+      "id": "dece6c59-1bbc-5a0d-bd27-532e97c39066"
     },
     {
       "no_pregunta": "C1",
@@ -3679,285 +4012,6 @@
         }
       ],
       "id": "a49ec9f3-b3db-5f8f-887e-7b442f90ed17"
-    },
-    {
-      "no_pregunta": "Estado_",
-      "codigo_externo": "Estado_",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Estado de la Entrevista",
-      "tipo": "LISTA",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 18,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Activa",
-          "id_resp_vivanto": null,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "Aplazada",
-          "id_resp_vivanto": null,
-          "orden": 2
-        },
-        {
-          "valor": "3",
-          "etiqueta": "Cerrada",
-          "id_resp_vivanto": null,
-          "orden": 3
-        },
-        {
-          "valor": "4",
-          "etiqueta": "Anulada",
-          "id_resp_vivanto": null,
-          "orden": 4
-        }
-      ],
-      "id": "b5e126d9-d7de-5d32-9315-9128b7075c5a"
-    },
-    {
-      "no_pregunta": "ESTADO_RUV",
-      "codigo_externo": "ESTADO_RUV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Acción social o la Unidad para las Víctimas incluyó a … en el RUPD/RUV",
-      "tipo": "LISTA",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 19,
-      "es_precargada": false,
-      "fuente_precarga": "RUV",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Incluido",
-          "id_resp_vivanto": null,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "No incluido",
-          "id_resp_vivanto": null,
-          "orden": 2
-        }
-      ],
-      "id": "e74312e9-c5dd-5c16-82fa-3498126724ed"
-    },
-    {
-      "no_pregunta": "N/A",
-      "codigo_externo": "H_V",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Hecho Victimizante",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": false,
-      "orden": 20,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "e06a709f-1cc8-53c2-9ca7-3be0ca775793"
-    },
-    {
-      "no_pregunta": "N/A",
-      "codigo_externo": "Ocur_HV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Fecha de Ocurrencia",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": false,
-      "orden": 21,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "ce11e8e9-fb9e-5f23-a9bd-4908fdede899"
-    },
-    {
-      "no_pregunta": "NOMBRE_1_R",
-      "codigo_externo": "NOMBRE_1_RUV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Primer Nombre RUV",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 22,
-      "es_precargada": false,
-      "fuente_precarga": "RUV",
-      "validaciones": {},
-      "opciones": [],
-      "id": "0e2cebc5-9a1b-57e5-9ecf-c566f5bcba9f"
-    },
-    {
-      "no_pregunta": "NOMBRE_2_R",
-      "codigo_externo": "NOMBRE_2_RUV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Segundo nombre RUV",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 23,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "e9245542-12c2-5de3-92e3-48eaa2f61161"
-    },
-    {
-      "no_pregunta": "APELLIDO_1",
-      "codigo_externo": "APELLIDO_1_RUV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Primer apellido RUV",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 24,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "3983d9a6-0af4-52fd-b89a-2105bf769838"
-    },
-    {
-      "no_pregunta": "APELLIDO_2",
-      "codigo_externo": "APELLIDO_2_RUV",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Segundo apellido RUV",
-      "tipo": "TEXTO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 25,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [],
-      "id": "4fa0929f-ef40-592c-bea7-a6789236612c"
-    },
-    {
-      "no_pregunta": "N/A",
-      "codigo_externo": "Tip_Persona",
-      "id_preg": null,
-      "capitulo_codigo": "A",
-      "texto": "Tipo de Persona",
-      "tipo": "LISTA",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 26,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Autorizado",
-          "id_resp_vivanto": null,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "Tutor",
-          "id_resp_vivanto": null,
-          "orden": 2
-        },
-        {
-          "valor": "3",
-          "etiqueta": "Cuidador Permanente",
-          "id_resp_vivanto": null,
-          "orden": 3
-        },
-        {
-          "valor": "4",
-          "etiqueta": "Miembro de Hogar",
-          "id_resp_vivanto": null,
-          "orden": 4
-        }
-      ],
-      "id": "dece6c59-1bbc-5a0d-bd27-532e97c39066"
-    },
-    {
-      "no_pregunta": "A4",
-      "codigo_externo": "Z4",
-      "id_preg": 35,
-      "capitulo_codigo": "A",
-      "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... Se autoreconoce como:",
-      "tipo": "LISTA",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 27,
-      "es_precargada": false,
-      "fuente_precarga": "CARACTERIZACIÓN",
-      "validaciones": {},
-      "opciones": [
-        {
-          "valor": "1",
-          "etiqueta": "Indígena",
-          "id_resp_vivanto": 112,
-          "orden": 1
-        },
-        {
-          "valor": "2",
-          "etiqueta": "Gitano(a), Rrom",
-          "id_resp_vivanto": 113,
-          "orden": 2
-        },
-        {
-          "valor": "3",
-          "etiqueta": "Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina",
-          "id_resp_vivanto": 114,
-          "orden": 3
-        },
-        {
-          "valor": "4",
-          "etiqueta": "Palenquero(a)",
-          "id_resp_vivanto": 115,
-          "orden": 4
-        },
-        {
-          "valor": "5",
-          "etiqueta": "Negro(a), afrocolombiano(a)",
-          "id_resp_vivanto": 116,
-          "orden": 5
-        },
-        {
-          "valor": "6",
-          "etiqueta": "Ninguna",
-          "id_resp_vivanto": 117,
-          "orden": 6
-        }
-      ],
-      "id": "8fb8c7ba-3f8d-5439-adca-f9c544abbccd"
-    },
-    {
-      "no_pregunta": "A11",
-      "codigo_externo": "Z9B",
-      "id_preg": 8,
-      "capitulo_codigo": "A",
-      "texto": "Telefono Celular",
-      "tipo": "NUMERICO",
-      "nivel": "HOGAR",
-      "obligatoria": true,
-      "orden": 28,
-      "es_precargada": false,
-      "fuente_precarga": "",
-      "validaciones": {
-        "longitud_exacta": 10,
-        "solo_numerico": true
-      },
-      "opciones": [],
-      "id": "73fe8d8e-a47c-5f1e-8c50-9df3ad21d875"
     },
     {
       "no_pregunta": "B1",
@@ -10320,16 +10374,16 @@
       "afecta_capitulo": "D"
     },
     {
-      "origen_expr": "sexo == '1' and edad >= 18 and edad <= 50",
+      "origen_expr": "sexo == '1' and edad >= 18 and edad <= 49",
       "accion": "HABILITAR",
       "afecta": "B6",
-      "descripcion": "[demográfico/étnico] libreta militar: hombres 18-50"
+      "descripcion": "[demográfico/étnico] libreta militar: hombres 18-49"
     },
     {
-      "origen_expr": "sexo == '2' and edad >= 12 and edad <= 50",
+      "origen_expr": "sexo == '2' and edad >= 12",
       "accion": "HABILITAR",
       "afecta": "B2",
-      "descripcion": "[B manual] mujer 12-50 años"
+      "descripcion": "[B manual] embarazo: mujeres 12+ (menores 12 -> observacion)"
     },
     {
       "origen_expr": "sexo == '2' and edad >= 12 and edad <= 50",
@@ -11427,6 +11481,27 @@
       "accion": "HABILITAR",
       "afecta": "D2",
       "descripcion": "[Vivienda] cuartos para dormir visible si tipo de vivienda es Casa/Apto/Cuarto"
+    },
+    {
+      "origen": "Z11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "Z18",
+      "descripcion": "[A] vereda correspondencia si NO es misma residencia"
+    },
+    {
+      "origen": "Z7",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "VEREDA",
+      "descripcion": "[A mejora] nombre lugar visible si Z7 respondida"
+    },
+    {
+      "origen": "Z17",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "Z18",
+      "descripcion": "[A mejora] nombre lugar corresp visible si Z17 respondida"
     }
   ]
 }
