@@ -1054,6 +1054,24 @@
       "id": "be0e506e-9a3f-5ecf-acf2-dd641de72c68"
     },
     {
+      "no_pregunta": "C1A",
+      "codigo_externo": "C1_OTRA",
+      "id_preg": null,
+      "capitulo_codigo": "C",
+      "texto": "¿Cuál es la otra vivienda? Describa.",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 2,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {
+        "max_length": 200
+      },
+      "opciones": [],
+      "id": "b0136fbd-41eb-5a30-ab5b-c56137d3c9ac"
+    },
+    {
       "no_pregunta": "C2",
       "codigo_externo": "D5",
       "id_preg": 45,
@@ -11502,6 +11520,60 @@
       "accion": "HABILITAR",
       "afecta": "Z18",
       "descripcion": "[A mejora] nombre lugar corresp visible si Z17 respondida"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+      "accion": "HABILITAR",
+      "afecta": "C2",
+      "descripcion": "[cap C manual] C2"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+      "accion": "HABILITAR",
+      "afecta": "C3",
+      "descripcion": "[cap C manual] C3"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+      "accion": "HABILITAR",
+      "afecta": "C5",
+      "descripcion": "[cap C manual] C5"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+      "accion": "HABILITAR",
+      "afecta": "C6A",
+      "descripcion": "[cap C manual] C6A"
+    },
+    {
+      "origen_expr": "etnia != 'ninguno'",
+      "accion": "HABILITAR",
+      "afecta": "C7",
+      "descripcion": "[cap C manual] C7"
+    },
+    {
+      "origen_expr": "etnia == 'rom'",
+      "accion": "HABILITAR",
+      "afecta": "D8F",
+      "descripcion": "[cap C manual] D8F"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "98",
+      "accion": "HABILITAR",
+      "afecta": "C1_OTRA",
+      "descripcion": "[cap C manual] C1_OTRA"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "98",
+      "accion": "OBLIGAR",
+      "afecta": "C1_OTRA",
+      "descripcion": "[cap C manual] C1_OTRA"
     }
   ]
 }
