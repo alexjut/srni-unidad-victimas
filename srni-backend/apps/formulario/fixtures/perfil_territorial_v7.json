@@ -10279,7 +10279,7 @@
     },
     {
       "origen": "F3",
-      "valor_trigger": "true",
+      "valor_trigger": "false",
       "accion": "HABILITAR",
       "afecta": "F5",
       "descripcion": "[Reunif validado] logró reunificarse visible si solicitó"
@@ -10299,7 +10299,7 @@
       "descripcion": "[Reunif validado] interesado visible si NO solicitó"
     },
     {
-      "origen": "E1B",
+      "origen": "E1A",
       "valor_trigger": "1,2",
       "accion": "HABILITAR",
       "afecta": "E1",
@@ -10356,7 +10356,8 @@
       "descripcion": "[demográfico/étnico] cabildo indígena: solo indígenas"
     },
     {
-      "origen_expr": "etnia == 'indigena'",
+      "origen": "Z4",
+      "valor_trigger": "2",
       "accion": "HABILITAR",
       "afecta": "A13C",
       "descripcion": "[demográfico/étnico] Vitsa: solo indígenas"
@@ -10513,7 +10514,7 @@
       "origen": "FP1",
       "valor_trigger": "4",
       "accion": "HABILITAR",
-      "afecta": "FP6",
+      "afecta": "FP7",
       "descripcion": "[L validado] fecha incorporación si licenciamiento"
     },
     {
@@ -10801,6 +10802,631 @@
       "accion": "HABILITAR",
       "afecta": "I26",
       "descripcion": "[H5/H6 manual] contribuyó visible si recibió atención psicosocial (≠Ninguna)"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A11",
+      "descripcion": "[flujo] A11 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A30",
+      "descripcion": "[flujo] A30 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A17",
+      "descripcion": "[flujo] A17 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A19",
+      "descripcion": "[flujo] A19 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A14",
+      "descripcion": "[flujo] A14 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A16A",
+      "descripcion": "[flujo] A16A visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "5",
+      "accion": "HABILITAR",
+      "afecta": "A25",
+      "descripcion": "[flujo] A25 visible si Z4=5"
+    },
+    {
+      "origen": "A14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "A15",
+      "descripcion": "[flujo] A15 visible si A14=true"
+    },
+    {
+      "origen": "ESTADO_RUV",
+      "valor_trigger": "2",
+      "accion": "HABILITAR",
+      "afecta": "A21",
+      "descripcion": "[flujo] A21 visible si ESTADO_RUV=2"
+    },
+    {
+      "origen": "E1A",
+      "valor_trigger": "3",
+      "accion": "HABILITAR",
+      "afecta": "E1B",
+      "descripcion": "[flujo] E1B visible si E1A=3"
+    },
+    {
+      "origen": "E1A",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "RR1",
+      "descripcion": "[flujo] RR1 visible si E1A=1,2"
+    },
+    {
+      "origen": "E1B",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "RR6",
+      "descripcion": "[flujo] RR6 visible si E1B=1,2"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "G11",
+      "descripcion": "[flujo] G11 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "G17",
+      "descripcion": "[flujo] G17 visible si Z4=1,2,3,4,5"
+    },
+    {
+      "origen": "B2",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "H14",
+      "descripcion": "[flujo] H14 visible si B2=1"
+    },
+    {
+      "origen": "A14",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "I30",
+      "descripcion": "[flujo] I30 visible si A14=true"
+    },
+    {
+      "origen": "L1",
+      "valor_trigger": "2,3,4,5,6,7",
+      "accion": "HABILITAR",
+      "afecta": "L2",
+      "descripcion": "[flujo] L2 visible si L1=2,3,4,5,6,7"
+    },
+    {
+      "origen": "L2",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "L3",
+      "descripcion": "[flujo] L3 visible si L2=false"
+    },
+    {
+      "origen": "L3",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "L4",
+      "descripcion": "[flujo] L4 visible si L3=false"
+    },
+    {
+      "origen": "L4",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "L5",
+      "descripcion": "[flujo] L5 visible si L4=false"
+    },
+    {
+      "origen": "L5",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "L7",
+      "descripcion": "[flujo] L7 visible si L5=false"
+    },
+    {
+      "origen": "L7",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L8",
+      "descripcion": "[flujo] L8 visible si L7=true"
+    },
+    {
+      "origen": "L8",
+      "valor_trigger": "2,3,4,5,6,7,8",
+      "accion": "HABILITAR",
+      "afecta": "L9",
+      "descripcion": "[flujo] L9 visible si L8=2,3,4,5,6,7,8"
+    },
+    {
+      "origen": "L9",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L10",
+      "descripcion": "[flujo] L10 visible si L9=true"
+    },
+    {
+      "origen": "L9",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "L11",
+      "descripcion": "[flujo] L11 visible si L9=false"
+    },
+    {
+      "origen": "L10",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L12",
+      "descripcion": "[flujo] L12 visible si L10=true"
+    },
+    {
+      "origen": "L8",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "L13",
+      "descripcion": "[flujo] L13 visible si L8=1"
+    },
+    {
+      "origen": "L1",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "L14",
+      "descripcion": "[flujo] L14 visible si L1=1"
+    },
+    {
+      "origen": "L2",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L14",
+      "descripcion": "[flujo] L14 visible si L2=true"
+    },
+    {
+      "origen": "L3",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L14",
+      "descripcion": "[flujo] L14 visible si L3=true"
+    },
+    {
+      "origen": "L4",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L14",
+      "descripcion": "[flujo] L14 visible si L4=true"
+    },
+    {
+      "origen": "L14",
+      "valor_trigger": "1,2,3,4,5,6,7,8",
+      "accion": "HABILITAR",
+      "afecta": "L15",
+      "descripcion": "[flujo] L15 visible si L14=1,2,3,4,5,6,7,8"
+    },
+    {
+      "origen": "L15",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L28",
+      "descripcion": "[flujo] L28 visible si L15=respondida"
+    },
+    {
+      "origen": "L28",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "L16",
+      "descripcion": "[flujo] L16 visible si L28=1,2,3"
+    },
+    {
+      "origen": "L14",
+      "valor_trigger": "1,2,3,8",
+      "accion": "HABILITAR",
+      "afecta": "L17",
+      "descripcion": "[flujo] L17 visible si L14=1,2,3,8"
+    },
+    {
+      "origen": "L17",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L18",
+      "descripcion": "[flujo] L18 visible si L17=respondida"
+    },
+    {
+      "origen": "L18",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "L19",
+      "descripcion": "[flujo] L19 visible si L18=1"
+    },
+    {
+      "origen": "L19",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L20",
+      "descripcion": "[flujo] L20 visible si L19=respondida"
+    },
+    {
+      "origen": "L20",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L21",
+      "descripcion": "[flujo] L21 visible si L20=respondida"
+    },
+    {
+      "origen": "L21",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L22",
+      "descripcion": "[flujo] L22 visible si L21=respondida"
+    },
+    {
+      "origen": "L22",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "L22C1",
+      "descripcion": "[flujo] L22C1 visible si L22=true"
+    },
+    {
+      "origen": "L22",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "L22E",
+      "descripcion": "[flujo] L22E visible si L22=respondida"
+    },
+    {
+      "origen": "L14",
+      "valor_trigger": "4,5",
+      "accion": "HABILITAR",
+      "afecta": "L23",
+      "descripcion": "[flujo] L23 visible si L14=4,5"
+    },
+    {
+      "origen": "L14",
+      "valor_trigger": "1,2,3,4,5,6,7,8",
+      "accion": "HABILITAR",
+      "afecta": "L24",
+      "descripcion": "[flujo] L24 visible si L14=1,2,3,4,5,6,7,8"
+    },
+    {
+      "origen": "L7",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "M1",
+      "descripcion": "[flujo] M1 visible si L7=false"
+    },
+    {
+      "origen": "L10",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "M1",
+      "descripcion": "[flujo] M1 visible si L10=false"
+    },
+    {
+      "origen": "L11",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "M1",
+      "descripcion": "[flujo] M1 visible si L11=false"
+    },
+    {
+      "origen": "L13",
+      "valor_trigger": "",
+      "accion": "HABILITAR",
+      "afecta": "M1",
+      "descripcion": "[flujo] M1 visible si L13=respondida"
+    },
+    {
+      "origen": "M1",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "M2B",
+      "descripcion": "[flujo] M2B visible si M1=true"
+    },
+    {
+      "origen": "M1",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "M2C",
+      "descripcion": "[flujo] M2C visible si M1=true"
+    },
+    {
+      "origen": "M1",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "M5",
+      "descripcion": "[flujo] M5 visible si M1=true"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M6",
+      "descripcion": "[flujo] M6 visible si M5=1"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M7",
+      "descripcion": "[flujo] M7 visible si M5=1"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M8",
+      "descripcion": "[flujo] M8 visible si M5=1"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M9",
+      "descripcion": "[flujo] M9 visible si M5=1"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M10",
+      "descripcion": "[flujo] M10 visible si M5=1"
+    },
+    {
+      "origen": "M5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M11",
+      "descripcion": "[flujo] M11 visible si M5=1"
+    },
+    {
+      "origen": "M6",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M6=1"
+    },
+    {
+      "origen": "M7",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M7=1"
+    },
+    {
+      "origen": "M8",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M8=1"
+    },
+    {
+      "origen": "M9",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M9=1"
+    },
+    {
+      "origen": "M10",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M10=1"
+    },
+    {
+      "origen": "M11",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "M4C1A",
+      "descripcion": "[flujo] M4C1A visible si M11=1"
+    },
+    {
+      "origen": "G7B_GRADO",
+      "valor_trigger": "1,2,3,4,5,6,7,8,9,10,11,12,13",
+      "accion": "HABILITAR",
+      "afecta": "PL1",
+      "descripcion": "[flujo] PL1 visible si G7B_GRADO=1,2,3,4,5,6,7,8,9,10,11,12,13"
+    },
+    {
+      "origen": "G15",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL2",
+      "descripcion": "[flujo] PL2 visible si G15=true"
+    },
+    {
+      "origen": "L16",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL4",
+      "descripcion": "[flujo] PL4 visible si L16=true"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "PL5A",
+      "descripcion": "[flujo] PL5A visible si PL4=1,2,3"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "PL5B",
+      "descripcion": "[flujo] PL5B visible si PL4=1,2,3"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "PL5C",
+      "descripcion": "[flujo] PL5C visible si PL4=1,2,3"
+    },
+    {
+      "origen": "PL4",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "PL25",
+      "descripcion": "[flujo] PL25 visible si PL4=1,2,3"
+    },
+    {
+      "origen": "L16",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL8A",
+      "descripcion": "[flujo] PL8A visible si L16=true"
+    },
+    {
+      "origen": "PL25",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "PL9A",
+      "descripcion": "[flujo] PL9A visible si PL25=1,2,3"
+    },
+    {
+      "origen": "PL25",
+      "valor_trigger": "4",
+      "accion": "HABILITAR",
+      "afecta": "PL12A",
+      "descripcion": "[flujo] PL12A visible si PL25=4"
+    },
+    {
+      "origen": "PL25",
+      "valor_trigger": "4",
+      "accion": "HABILITAR",
+      "afecta": "PL13A",
+      "descripcion": "[flujo] PL13A visible si PL25=4"
+    },
+    {
+      "origen": "PL15",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "PL21A",
+      "descripcion": "[flujo] PL21A visible si PL15=false"
+    },
+    {
+      "origen": "PL23B",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL23D",
+      "descripcion": "[flujo] PL23D visible si PL23B=true"
+    },
+    {
+      "origen": "FP1",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "FP2",
+      "descripcion": "[flujo] FP2 visible si FP1=1,2,3"
+    },
+    {
+      "origen": "FP2",
+      "valor_trigger": "1,2",
+      "accion": "HABILITAR",
+      "afecta": "FP4",
+      "descripcion": "[flujo] FP4 visible si FP2=1,2"
+    },
+    {
+      "origen": "FP1",
+      "valor_trigger": "3",
+      "accion": "HABILITAR",
+      "afecta": "FP9",
+      "descripcion": "[flujo] FP9 visible si FP1=3"
+    },
+    {
+      "origen_expr": "edad >= 12",
+      "accion": "HABILITAR",
+      "afecta": "A8A",
+      "descripcion": "[contexto] A8A visible si edad >= 12"
+    },
+    {
+      "origen_expr": "edad >= 12",
+      "accion": "HABILITAR",
+      "afecta": "B5",
+      "descripcion": "[contexto] B5 visible si edad >= 12"
+    },
+    {
+      "origen_expr": "sexo == '2' and edad >= 9 and edad <= 17",
+      "accion": "HABILITAR",
+      "afecta": "H14",
+      "descripcion": "[contexto] H14 visible si sexo == '2' and edad >= 9 and edad <= 17"
+    },
+    {
+      "origen_expr": "edad >= 0 and edad <= 6",
+      "accion": "HABILITAR",
+      "afecta": "H14",
+      "descripcion": "[contexto] H14 visible si edad >= 0 and edad <= 6"
+    },
+    {
+      "origen_expr": "etnia != 'ninguno'",
+      "accion": "HABILITAR",
+      "afecta": "I1D",
+      "descripcion": "[contexto] I1D visible si etnia != 'ninguno'"
+    },
+    {
+      "origen": "D8C",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "D10",
+      "descripcion": "[Vivienda] agua para beber visible si NO tiene acueducto"
+    },
+    {
+      "origen": "D8E",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "D13A",
+      "descripcion": "[Vivienda] como eliminan basuras visible si NO hay recoleccion de basuras"
+    },
+    {
+      "origen": "D8B",
+      "valor_trigger": "false",
+      "accion": "HABILITAR",
+      "afecta": "D14",
+      "descripcion": "[Vivienda] servicio sanitario visible si NO tiene alcantarillado"
+    },
+    {
+      "origen": "D5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "D6",
+      "descripcion": "[Vivienda] cuanto cobraria de arriendo visible si tenencia es Propia"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "D1",
+      "descripcion": "[Vivienda] no de cuartos visible si tipo de vivienda es Casa/Apto/Cuarto"
+    },
+    {
+      "origen": "C1",
+      "valor_trigger": "1,2,3",
+      "accion": "HABILITAR",
+      "afecta": "D2",
+      "descripcion": "[Vivienda] cuartos para dormir visible si tipo de vivienda es Casa/Apto/Cuarto"
     }
   ]
 }
