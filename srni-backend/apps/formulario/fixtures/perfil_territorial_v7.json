@@ -1165,6 +1165,59 @@
       "id": "d5e5f857-92be-5460-9a5a-df50b6e8ac8b"
     },
     {
+      "no_pregunta": "C3",
+      "codigo_externo": "D7",
+      "id_preg": null,
+      "capitulo_codigo": "C",
+      "texto": "¿Qué tipo de documento soporte tiene?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": true,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Escritura, resolución o sentencia registrada.",
+          "id_resp_vivanto": 4712,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Escritura, resolución o sentencia SIN registrar",
+          "id_resp_vivanto": 4713,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Certificado de sana posesión",
+          "id_resp_vivanto": 4714,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Acta de adjudicación/ contrato de usufructo",
+          "id_resp_vivanto": 4715,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Contrato de compra venta",
+          "id_resp_vivanto": 4716,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Ninguno",
+          "id_resp_vivanto": 4717,
+          "orden": 6
+        }
+      ],
+      "id": "a001c440-fabd-5f9a-b665-11707e1740cb"
+    },
+    {
       "no_pregunta": "C4",
       "codigo_externo": "C2",
       "id_preg": 37,
@@ -1173,7 +1226,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 4,
+      "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1244,7 +1297,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 5,
+      "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1303,7 +1356,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 6,
+      "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1332,7 +1385,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 7,
+      "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1361,7 +1414,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 8,
+      "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1390,7 +1443,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 9,
+      "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1419,7 +1472,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 10,
+      "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1448,7 +1501,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 11,
+      "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1477,7 +1530,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 12,
+      "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1506,7 +1559,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 13,
+      "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1583,7 +1636,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 14,
+      "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1642,7 +1695,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 15,
+      "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1701,7 +1754,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 16,
+      "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1717,7 +1770,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 17,
+      "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1733,7 +1786,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 18,
+      "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1749,7 +1802,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 19,
+      "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1784,7 +1837,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 20,
+      "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1855,7 +1908,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 21,
+      "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1950,7 +2003,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 22,
+      "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10294,11 +10347,11 @@
       "descripcion": "[Datos Básicos validado] cuál enfermedad visible si tiene diagnóstico ruinosas"
     },
     {
-      "origen": "A30",
-      "valor_trigger": "true",
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
       "accion": "HABILITAR",
       "afecta": "B17",
-      "descripcion": "[Datos Básicos validado] tipo territorio visible si habita territorio colectivo"
+      "descripcion": "[B27 manual] tipo territorio si étnico (Z4≠Ninguna)"
     },
     {
       "origen": "A25",
@@ -10494,13 +10547,6 @@
     },
     {
       "accion": "HABILITAR",
-      "afecta": "G11",
-      "descripcion": "[F] etnoeducación si matriculado",
-      "origen": "G2",
-      "valor_trigger": "true"
-    },
-    {
-      "accion": "HABILITAR",
       "afecta": "G17",
       "descripcion": "[F] profesor étnico si recibe etnoeducación",
       "origen": "G11",
@@ -10509,22 +10555,22 @@
     {
       "accion": "HABILITAR",
       "afecta": "G15",
-      "descripcion": "[F] sabe leer si NO matriculado",
-      "origen": "G2",
-      "valor_trigger": "false"
+      "descripcion": "[F2 manual] sabe leer si edad>=5",
+      "origen_expr": "edad >= 5"
     },
     {
       "accion": "HABILITAR",
       "afecta": "G16",
-      "descripcion": "[F] interesado alfabetización si NO matriculado",
-      "origen": "G2",
+      "descripcion": "[F3 manual] alfabetización si NO sabe leer",
+      "origen": "G15",
       "valor_trigger": "false"
     },
     {
       "accion": "HABILITAR",
       "afecta": "G4",
-      "descripcion": "[F] razón no estudia: edad escolar 5-17",
-      "origen_expr": "edad >= 5 and edad <= 17"
+      "descripcion": "[F6 manual] razón no estudia si NO matriculado",
+      "origen": "G2",
+      "valor_trigger": "false"
     },
     {
       "accion": "HABILITAR",
@@ -10841,10 +10887,10 @@
     },
     {
       "origen": "C1",
-      "valor_trigger": "98",
+      "valor_trigger": "11,12,98",
       "accion": "FINALIZAR",
       "afecta_capitulo": "C",
-      "descripcion": "[C1 manual] finaliza si otro tipo de vivienda"
+      "descripcion": "[C1 manual] finaliza si calle/ilegal/otra vivienda"
     },
     {
       "origen": "F1",
@@ -10971,13 +11017,6 @@
       "accion": "HABILITAR",
       "afecta": "G11",
       "descripcion": "[flujo] G11 visible si Z4=1,2,3,4,5"
-    },
-    {
-      "origen": "Z4",
-      "valor_trigger": "1,2,3,4,5",
-      "accion": "HABILITAR",
-      "afecta": "G17",
-      "descripcion": "[flujo] G17 visible si Z4=1,2,3,4,5"
     },
     {
       "origen": "B2",
@@ -11580,6 +11619,20 @@
       "accion": "OBLIGAR",
       "afecta": "C1_OTRA",
       "descripcion": "[cap C manual] C1_OTRA"
+    },
+    {
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5",
+      "accion": "HABILITAR",
+      "afecta": "A16",
+      "descripcion": "[B39 manual] idioma español si étnico"
+    },
+    {
+      "origen": "D5",
+      "valor_trigger": "1",
+      "accion": "HABILITAR",
+      "afecta": "D7",
+      "descripcion": "[C3 manual] documento soporte si tenencia propia"
     }
   ]
 }
