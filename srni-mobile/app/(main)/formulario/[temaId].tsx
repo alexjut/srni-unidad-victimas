@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
 import { View, FlatList, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import {
-  Text, TextInput, RadioButton, Checkbox,
+  Text, TextInput,
   ActivityIndicator, Chip, IconButton, ProgressBar,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import * as victimasOfflineDao from '../../../src/db/victimasOfflineDao';
-import { calcularVisibles, type ContextoVictima } from '../../../src/services/skipLogic';
+import { calcularVisibles, motivoOcultaPregunta, type ContextoVictima } from '../../../src/services/skipLogic';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
@@ -154,8 +154,10 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
 const PREGUNTAS_RUV_READONLY = new Set(['H_V', 'Ocur_HV']);
 
 interface ItemLista {
-  type: 'header-hogar' | 'header-miembro' | 'pregunta';
-  /** preguntas tipo 'pregunta' */
+  // 'pregunta'         → HOGAR: respuesta única para todo el hogar.
+  // 'pregunta-persona' → PERSONA: una fila por miembro dentro de la tarjeta.
+  type: 'header-hogar' | 'header-miembro' | 'pregunta' | 'pregunta-persona';
+  /** preguntas tipo 'pregunta' / 'pregunta-persona' */
   pregunta?: PreguntaRow;
   /** índice global dentro del cap (para numeración) */
   indexGlobal?: number;
@@ -213,9 +215,6 @@ export default function CapituloScreen() {
   // Si no hay hogar resuelto o se está offline sin caché, queda en [] y el
   // motor cae a comportamiento HOGAR-only (degradación segura).
   const [miembros, setMiembros] = useState<MiembroHogarResumen[]>([]);
-  // Sprint 21 Fase F — wizard por miembro. 0 = primer miembro activo.
-  // Solo se renderiza el miembro en este índice (no todos en scroll).
-  const [miembroIdx, setMiembroIdx] = useState(0);
   const flatRef = useRef<FlatList | null>(null);
   // Prellenado: guarda las claves (borrador|capítulo) ya sembradas. ANTES era solo
   // el borrador, lo que causaba que tras precargar el capítulo 1 NO se precargara
@@ -223,12 +222,6 @@ export default function CapituloScreen() {
   const prefillRef = useRef<Set<string>>(new Set());
   // Evita repetir la alerta de "no hay borrador" en cada tecla.
   const alertaBorradorRef = useRef(false);
-
-  // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
-  // encuestador vea desde la primera pregunta del nuevo miembro.
-  useEffect(() => {
-    flatRef.current?.scrollToOffset?.({ offset: 0, animated: true });
-  }, [miembroIdx]);
 
   // ── Cargar datos del capítulo + borradores previos ──────────────────────────
   useEffect(() => {
@@ -431,12 +424,13 @@ export default function CapituloScreen() {
     return () => { cancelado = true; };
   }, [borradorId, borradorIdParam, temaId, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
 
-  // ── Skip logic ──────────────────────────────────────────────────────────────
-  // La skip-logic PERSONA se evalúa con las respuestas del MIEMBRO ACTIVO (el
-  // wizard renderiza un miembro a la vez). Antes se colapsaba a "la primera
-  // respuesta no vacía entre miembros", lo que mostraba/ocultaba preguntas en
-  // personas equivocadas. Al cambiar de miembro, este memo se recalcula y las
-  // preguntas visibles se ajustan a ESE miembro. HOGAR usa su única respuesta.
+  // ── Skip logic — captura AGRUPADA (una pregunta, fila por miembro) ───────────
+  // Cada pregunta PERSONA se evalúa POR CADA MIEMBRO con SU propio contexto
+  // (edad/sexo/etnia/RUV de ese miembro) y SUS propias respuestas. Una pregunta
+  // aplica a un miembro M si queda visible al evaluar con el contexto/respuestas
+  // de M. Si no aplica, se muestra la fila en gris con el motivo derivado de la
+  // regla que la oculta. Las HOGAR usan una única respuesta para todo el hogar.
+  //
   // Todas las preguntas del instrumento (todos los capítulos) — para que el
   // skip-logic CROSS-CAPÍTULO funcione (ej. H3 rehabilitación depende de B16
   // discapacidad, que está en otro capítulo). `respuestas` ya trae todo el borrador.
@@ -444,72 +438,121 @@ export default function CapituloScreen() {
     () => instrumentos.getCapitulos().flatMap((c) => instrumentos.getPreguntas(c.id)),
     [temaId],
   );
-  const respuestasParaSkip = useMemo<Record<string, string>>(() => {
-    const activo = miembros[miembroIdx] ?? null;
-    const m: Record<string, string> = {};
-    for (const p of todasPreguntasInstrumento) {
-      if (p.nivel === 'PERSONA') {
-        m[p.codigo_externo] = activo ? (respuestas[claveResp(p.id, activo.id)] ?? '') : '';
-      } else {
-        m[p.codigo_externo] = respuestas[claveResp(p.id, null)] ?? '';
+
+  // Construye el mapa de respuestas (codigo_externo → valor) para evaluar
+  // skip-logic desde la óptica de UN miembro: PERSONA usa la respuesta de ESE
+  // miembro; HOGAR usa su respuesta única.
+  const construirRespuestasMiembro = useCallback(
+    (miembro: MiembroHogarResumen | null): Record<string, string> => {
+      const m: Record<string, string> = {};
+      for (const p of todasPreguntasInstrumento) {
+        if (p.nivel === 'PERSONA') {
+          m[p.codigo_externo] = miembro ? (respuestas[claveResp(p.id, miembro.id)] ?? '') : '';
+        } else {
+          m[p.codigo_externo] = respuestas[claveResp(p.id, null)] ?? '';
+        }
       }
+      return m;
+    },
+    [todasPreguntasInstrumento, respuestas],
+  );
+
+  // Contexto demográfico/étnico de UN miembro (edad/sexo/etnia/RUV) para evaluar
+  // condiciones offline. Prioriza lo capturado por ESE miembro (A6 fecha, B9 edad,
+  // A8 sexo); cae a los datos del propio miembro (genero, fecha_nacimiento,
+  // incluido_ruv). Para etnia no hay dato por-miembro: se usa el de la víctima
+  // fuente SOLO para el autorizado (a quien pertenece esa fuente); el resto cae a
+  // 'ninguno' salvo que el miembro la haya capturado. (Riesgo documentado.)
+  const construirContextoMiembro = useCallback(
+    (miembro: MiembroHogarResumen | null, respMiembro: Record<string, string>): ContextoVictima => {
+      const esAutorizado = !!miembro?.es_autorizado;
+      const fuente = esAutorizado ? victimaFuente : null;
+      const fechaNac = respMiembro.A6 || miembro?.fecha_nacimiento || fuente?.fecha_nacimiento || '';
+      const edadResp = respMiembro.B9 ? Number(respMiembro.B9) : NaN;
+      const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
+      // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae al genero del miembro (M/F),
+      // y para el autorizado al genero de la víctima fuente.
+      let sexo = respMiembro.A8 || '';
+      const genero = miembro?.genero || fuente?.genero || '';
+      if (!sexo && genero) sexo = genero === 'M' ? '1' : genero === 'F' ? '2' : '';
+      // etnia: solo la víctima fuente (autorizado) la tiene fiable. El resto
+      // 'ninguno' por defecto (no hay dato por-miembro persistido).
+      const etnia = esAutorizado ? mapearEtnia(fuente?.pertenencia_etnica) : 'ninguno';
+      // RUV: del propio miembro; para el autorizado cae a la víctima fuente.
+      const ruvIncluido = miembro?.incluido_ruv ?? (fuente?.estado_ruv === 'INCLUIDO');
+      return {
+        edad: Number.isFinite(edad) ? edad : undefined,
+        sexo: sexo || undefined,
+        etnia,
+        ruvIncluido,
+      };
+    },
+    [victimaFuente],
+  );
+
+  // ── Visibilidad HOGAR (una sola evaluación, contexto del autorizado) ─────────
+  // Las preguntas HOGAR no dependen de un miembro; se evalúan con el contexto del
+  // autorizado (o primer miembro) por compatibilidad con reglas demográficas.
+  const visiblesHogar = useMemo(() => {
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
+    const respMiembro = construirRespuestasMiembro(autorizado);
+    const ctx = construirContextoMiembro(autorizado, respMiembro);
+    const { visibles } = calcularVisibles(preguntas, reglas, respMiembro, ctx);
+    return preguntas.filter((p) => p.nivel === 'HOGAR' && visibles.has(p.codigo_externo));
+  }, [preguntas, reglas, miembros, construirRespuestasMiembro, construirContextoMiembro]);
+
+  // ── Visibilidad PERSONA por miembro ──────────────────────────────────────────
+  // Para CADA miembro: evalúa skip-logic con su contexto/respuestas y guarda, por
+  // pregunta PERSONA, si aplica (visible) y, si no, el motivo. Resultado indexado
+  // por id de miembro. Una pregunta PERSONA se muestra en el capítulo si está
+  // visible para AL MENOS un miembro (si no la ve nadie, no se lista).
+  type AplicabilidadMiembro = { aplica: boolean; motivo?: string };
+  const personaPorMiembro = useMemo(() => {
+    const mapa = new Map<string, Map<string, AplicabilidadMiembro>>(); // miembroId → (codigo → {aplica,motivo})
+    for (const miembro of miembros) {
+      const respMiembro = construirRespuestasMiembro(miembro);
+      const ctx = construirContextoMiembro(miembro, respMiembro);
+      const { visibles } = calcularVisibles(preguntas, reglas, respMiembro, ctx);
+      const porPregunta = new Map<string, AplicabilidadMiembro>();
+      for (const p of preguntas) {
+        if (p.nivel !== 'PERSONA') continue;
+        const aplica = visibles.has(p.codigo_externo);
+        if (aplica) {
+          porPregunta.set(p.codigo_externo, { aplica: true });
+        } else {
+          const motivo = motivoOcultaPregunta(p, reglas, respMiembro, ctx);
+          porPregunta.set(p.codigo_externo, { aplica: false, motivo });
+        }
+      }
+      mapa.set(miembro.id, porPregunta);
     }
-    return m;
-  }, [todasPreguntasInstrumento, respuestas, miembros, miembroIdx]);
+    return mapa;
+  }, [preguntas, reglas, miembros, construirRespuestasMiembro, construirContextoMiembro]);
 
-  // Contexto de la víctima para evaluar condiciones demográficas/étnicas offline
-  // (edad/sexo/etnia/RUV). Prioriza lo capturado del miembro activo (A6 fecha,
-  // A8 sexo); cae a los datos de la víctima fuente para etnia/RUV.
-  const contextoVictima = useMemo<ContextoVictima>(() => {
-    const fechaNac = respuestasParaSkip.A6 || victimaFuente?.fecha_nacimiento || '';
-    const edadResp = respuestasParaSkip.B9 ? Number(respuestasParaSkip.B9) : NaN;
-    const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
-    // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae a genero de la víctima (M/F).
-    let sexo = respuestasParaSkip.A8 || '';
-    if (!sexo && victimaFuente?.genero) sexo = victimaFuente.genero === 'M' ? '1' : victimaFuente.genero === 'F' ? '2' : '';
-    return {
-      edad: Number.isFinite(edad) ? edad : undefined,
-      sexo: sexo || undefined,
-      etnia: mapearEtnia(victimaFuente?.pertenencia_etnica),
-      ruvIncluido: victimaFuente?.estado_ruv === 'INCLUIDO',
-    };
-  }, [respuestasParaSkip, victimaFuente]);
+  // Preguntas PERSONA a listar: las que aplican a AL MENOS un miembro. Si no hay
+  // miembros resueltos, se listan todas las PERSONA del capítulo (degradación:
+  // el motor mostrará el aviso de "no se cargaron miembros").
+  const visiblesPersona = useMemo(() => {
+    const personaTodas = preguntas.filter((p) => p.nivel === 'PERSONA');
+    if (miembros.length === 0) return personaTodas;
+    return personaTodas.filter((p) =>
+      miembros.some((m) => personaPorMiembro.get(m.id)?.get(p.codigo_externo)?.aplica),
+    );
+  }, [preguntas, miembros, personaPorMiembro]);
 
-  const { visibles } = useMemo(
-    () => calcularVisibles(preguntas, reglas, respuestasParaSkip, contextoVictima),
-    [preguntas, reglas, respuestasParaSkip, contextoVictima],
+  // Helper de render: aplicabilidad de una pregunta para un miembro concreto.
+  const aplicabilidad = useCallback(
+    (codigoExterno: string, miembroId: string): AplicabilidadMiembro =>
+      personaPorMiembro.get(miembroId)?.get(codigoExterno) ?? { aplica: false, motivo: 'no aplica' },
+    [personaPorMiembro],
   );
 
-  const preguntasVisibles = useMemo(
-    // Las preguntas del RUV (hecho victimizante) SÍ se muestran, pero en modo
-    // solo-lectura (ver PREGUNTAS_RUV_READONLY): el encuestador ve el dato
-    // precargado del RUV sin poder editarlo.
-    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
-    [preguntas, visibles],
-  );
-
-  // Sprint 21 — separar visibles por nivel
-  const visiblesHogar = useMemo(
-    () => preguntasVisibles.filter((p) => p.nivel === 'HOGAR'),
-    [preguntasVisibles],
-  );
-  const visiblesPersona = useMemo(
-    () => preguntasVisibles.filter((p) => p.nivel === 'PERSONA'),
-    [preguntasVisibles],
-  );
-
-  // Sprint 21 Fase F — wizard por miembro.
-  // La FlatList renderea:
-  //   - todas las preguntas HOGAR (siempre arriba)
-  //   - SOLO el miembro activo (miembroIdx), no todos
-  // El usuario navega con botones 'Anterior/Siguiente miembro'.
-  const miembroActivo = miembros[miembroIdx] ?? null;
+  // ── Construcción de la lista (agrupada) ──────────────────────────────────────
+  // HOGAR: header + una tarjeta por pregunta (respuesta única).
+  // PERSONA: header + una tarjeta por pregunta; dentro, una fila por miembro.
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
-    // #27 — el badge "N de TOTAL" debe contar lo que está EN PANTALLA: solo se
-    // renderiza un miembro a la vez, así que el total es HOGAR + PERSONA (1×).
-    // La dimensión "por persona" la comunica el pie "Persona X de N".
     const totalGlobal = visiblesHogar.length + visiblesPersona.length;
 
     if (visiblesHogar.length > 0) {
@@ -524,51 +567,42 @@ export default function CapituloScreen() {
     }
 
     if (visiblesPersona.length > 0) {
-      if (miembros.length === 0) {
-        out.push({ type: 'header-miembro', miembro: null, key: 'hdr-sin-miembros' });
-      } else if (miembroActivo) {
-        // Solo el miembro activo: header + sus preguntas PERSONA
-        out.push({ type: 'header-miembro', miembro: miembroActivo, key: `hdr-${miembroActivo.id}` });
-        for (const p of visiblesPersona) {
-          out.push({
-            type: 'pregunta', pregunta: p, miembro: miembroActivo,
-            indexGlobal: idx++, totalGlobal,
-            key: `q-${p.id}-${miembroActivo.id}`,
-          });
-        }
+      // Cabecera única "Datos por persona" (o aviso si no se cargaron miembros —
+      // el header-miembro decide su contenido según miembros.length).
+      out.push({ type: 'header-miembro', miembro: null, key: 'hdr-personas' });
+      for (const p of visiblesPersona) {
+        out.push({
+          type: 'pregunta-persona', pregunta: p, miembro: null,
+          indexGlobal: idx++, totalGlobal,
+          key: `qp-${p.id}`,
+        });
       }
     }
     return out;
-  }, [visiblesHogar, visiblesPersona, miembros, miembroActivo]);
-
-  // Sprint 21 Fase F — completitud del miembro activo (para habilitar avance).
-  const obligPersonaActivo = useMemo(() => {
-    if (!miembroActivo) return { total: 0, faltan: 0 };
-    const oblig = visiblesPersona.filter((p) => p.obligatoria === 1);
-    let faltan = 0;
-    for (const p of oblig) {
-      if (!respuestas[claveResp(p.id, miembroActivo.id)]?.trim()) faltan++;
-    }
-    return { total: oblig.length, faltan };
-  }, [visiblesPersona, respuestas, miembroActivo]);
+  }, [visiblesHogar, visiblesPersona, miembros]);
 
   // ── Progreso del capítulo ───────────────────────────────────────────────────
+  // Las obligatorias PERSONA solo cuentan para los miembros A QUIENES APLICA la
+  // pregunta (skip-logic por miembro). Antes contaba PERSONA × TODOS los miembros,
+  // lo que inflaba el denominador con celdas que nunca se pueden responder.
   const { totalOblig, respondidoOblig } = useMemo(() => {
     const obligHogar = visiblesHogar.filter((p) => p.obligatoria === 1);
     const obligPersona = visiblesPersona.filter((p) => p.obligatoria === 1);
-    const totalOblig = obligHogar.length + obligPersona.length * miembros.length;
 
+    let totalOblig = obligHogar.length;
     let respondidoOblig = 0;
     for (const p of obligHogar) {
       if (respuestas[claveResp(p.id, null)]?.trim()) respondidoOblig++;
     }
     for (const p of obligPersona) {
       for (const m of miembros) {
+        if (!aplicabilidad(p.codigo_externo, m.id).aplica) continue;
+        totalOblig++;
         if (respuestas[claveResp(p.id, m.id)]?.trim()) respondidoOblig++;
       }
     }
     return { totalOblig, respondidoOblig };
-  }, [visiblesHogar, visiblesPersona, miembros, respuestas]);
+  }, [visiblesHogar, visiblesPersona, miembros, respuestas, aplicabilidad]);
 
   const progresoCap = totalOblig > 0 ? respondidoOblig / totalOblig : 0;
 
@@ -770,8 +804,8 @@ export default function CapituloScreen() {
   }
 
   async function finalizarCapitulo() {
-    // Sprint 21 — preguntas obligatorias sin respuesta, considerando HOGAR
-    // (1 por pregunta) y PERSONA (1 por pregunta × miembro).
+    // Preguntas obligatorias sin respuesta: HOGAR (1 por pregunta) y PERSONA
+    // (1 por pregunta × miembro AL QUE APLICA, según skip-logic por miembro).
     let faltantes = 0;
     for (const p of visiblesHogar) {
       if (p.obligatoria !== 1) continue;
@@ -780,6 +814,7 @@ export default function CapituloScreen() {
     for (const p of visiblesPersona) {
       if (p.obligatoria !== 1) continue;
       for (const m of miembros) {
+        if (!aplicabilidad(p.codigo_externo, m.id).aplica) continue;
         if (!respuestas[claveResp(p.id, m.id)]?.trim()) faltantes++;
       }
     }
@@ -829,8 +864,9 @@ export default function CapituloScreen() {
     );
   }
 
-  // Sprint 21 — total visible incluye HOGAR (1×) + PERSONA (N miembros)
-  const totalVisible = visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 1);
+  // Captura agrupada: cada pregunta se muestra UNA vez (las PERSONA con una fila
+  // por miembro dentro de la misma tarjeta), así que el conteo es 1 por pregunta.
+  const totalVisible = visiblesHogar.length + visiblesPersona.length;
   const migaContexto = hogarId
     ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${capituloNombre || 'Capítulo'}`
     : capituloNombre || 'Capítulo';
@@ -918,7 +954,7 @@ export default function CapituloScreen() {
             );
           }
           if (item.type === 'header-miembro') {
-            if (!item.miembro) {
+            if (miembros.length === 0) {
               return (
                 <View style={styles.seccionHeaderWarning}>
                   <MaterialCommunityIcons name="alert-circle-outline" size={18} color={GOV.naranja} />
@@ -928,33 +964,42 @@ export default function CapituloScreen() {
                 </View>
               );
             }
-            const m = item.miembro;
-            // Sprint 21 — header con nombre: "Autorizado · Juan Pérez" o
-            // "Miembro · María García". Si nombre_completo vino vacío,
-            // mostramos solo el rol (fallback seguro).
-            const rolPrefijo = m.es_autorizado ? 'Autorizado' : 'Miembro';
-            const nombre = (m.nombre_completo ?? '').trim();
-            const titulo = nombre
-              ? `${rolPrefijo} · ${nombre}`
-              : `${rolPrefijo} · ${m.rol_display || 'sin nombre'}`;
+            // Captura agrupada: una sola cabecera "Datos por persona" — cada
+            // pregunta lista a TODOS los miembros en filas dentro de su tarjeta.
             return (
               <View style={styles.seccionHeader}>
-                <MaterialCommunityIcons
-                  name={m.es_autorizado ? 'account-star' : 'account'}
-                  size={18}
-                  color={GOV.azul}
-                />
-                <Text style={styles.seccionTitulo}>{titulo}</Text>
+                <MaterialCommunityIcons name="account-group" size={18} color={GOV.azul} />
+                <Text style={styles.seccionTitulo}>
+                  Datos por persona ({miembros.length} miembro{miembros.length !== 1 ? 's' : ''})
+                </Text>
               </View>
             );
           }
-          // type === 'pregunta'
+
+          if (item.type === 'pregunta-persona') {
+            // Pregunta PERSONA: una tarjeta con una fila por miembro. Cada miembro
+            // responde su propio valor; si no aplica, fila en gris con el motivo.
+            const p = item.pregunta!;
+            return (
+              <PreguntaPersonaItem
+                pregunta={p}
+                index={item.indexGlobal ?? 0}
+                total={item.totalGlobal ?? 0}
+                opciones={opciones[p.id] ?? []}
+                miembros={miembros}
+                respuestas={respuestas}
+                soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo)}
+                aplicabilidad={aplicabilidad}
+                onChange={setRespuesta}
+              />
+            );
+          }
+
+          // type === 'pregunta' (HOGAR — respuesta única)
           const p = item.pregunta!;
-          const miembroId = item.miembro?.id ?? null;
-          const clave = claveResp(p.id, miembroId);
+          const clave = claveResp(p.id, null);
           const valor = respuestas[clave] ?? '';
           // IA: solo se asocia con HOGAR por ahora (clave preguntaId solo)
-          const iaPreguntaKey = miembroId ? null : p.id;
           return (
             <PreguntaItem
               pregunta={p}
@@ -963,15 +1008,15 @@ export default function CapituloScreen() {
               opciones={opciones[p.id] ?? []}
               valor={valor}
               soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo)}
-              onChange={(v) => setRespuesta(p.id, v, miembroId)}
-              iaActivo={iaActivo && !miembroId}
-              onTextoIA={iaPreguntaKey ? (texto) => handleTextoTranscrito(p.id, texto) : undefined}
+              onChange={(v) => setRespuesta(p.id, v, null)}
+              iaActivo={iaActivo}
+              onTextoIA={(texto) => handleTextoTranscrito(p.id, texto)}
               sugerenciaActiva={
-                iaPreguntaKey && sugerencia && preguntaActivaId === p.id && estadoIA === 'sugerida'
+                sugerencia && preguntaActivaId === p.id && estadoIA === 'sugerida'
                   ? sugerencia
                   : null
               }
-              onAceptarIA={iaPreguntaKey ? () => handleAceptarSugerencia(p.id) : undefined}
+              onAceptarIA={() => handleAceptarSugerencia(p.id)}
               onRechazarIA={rechazarSugerencia}
             />
           );
@@ -979,68 +1024,6 @@ export default function CapituloScreen() {
         contentContainerStyle={styles.lista}
         ListEmptyComponent={
           <Text style={styles.sinPreguntas}>No hay preguntas en este capítulo.</Text>
-        }
-        ListFooterComponent={
-          // Sprint 21 Fase F — navegador wizard entre miembros.
-          // Solo aparece si el capítulo tiene preguntas PERSONA y hay >1 miembro.
-          visiblesPersona.length > 0 && miembros.length > 0 ? (
-            <View style={styles.navMiembros}>
-              <View style={styles.navMiembrosCounter}>
-                <MaterialCommunityIcons name="account-group" size={16} color={GOV.azulOscuro} />
-                <Text style={styles.navMiembrosTxt}>
-                  Persona {miembroIdx + 1} de {miembros.length}
-                </Text>
-                {obligPersonaActivo.total > 0 && (
-                  <Text style={[
-                    styles.navMiembrosFaltan,
-                    obligPersonaActivo.faltan === 0 && { color: GOV.verde },
-                  ]}>
-                    {obligPersonaActivo.faltan === 0
-                      ? '✓ completa'
-                      : `${obligPersonaActivo.faltan} obligatoria${obligPersonaActivo.faltan > 1 ? 's' : ''} sin responder`}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.navMiembrosBotones}>
-                <Pressable
-                  onPress={() => setMiembroIdx((i) => Math.max(0, i - 1))}
-                  disabled={miembroIdx === 0}
-                  style={({ pressed }) => [
-                    styles.navBtn,
-                    styles.navBtnSecundario,
-                    miembroIdx === 0 && styles.navBtnDisabled,
-                    pressed && miembroIdx > 0 && { opacity: 0.85 },
-                  ]}
-                >
-                  <MaterialCommunityIcons name="chevron-left" size={20}
-                    color={miembroIdx === 0 ? GOV.textoT : GOV.azulOscuro} />
-                  <Text style={[
-                    styles.navBtnTxt,
-                    miembroIdx === 0 && { color: GOV.textoT },
-                  ]}>Anterior</Text>
-                </Pressable>
-
-                {miembroIdx < miembros.length - 1 ? (
-                  <Pressable
-                    onPress={() => setMiembroIdx((i) => Math.min(miembros.length - 1, i + 1))}
-                    style={({ pressed }) => [
-                      styles.navBtn,
-                      styles.navBtnPrimario,
-                      pressed && { opacity: 0.88 },
-                    ]}
-                  >
-                    <Text style={styles.navBtnTxtPrimario}>Siguiente miembro</Text>
-                    <MaterialCommunityIcons name="chevron-right" size={20} color="#FFF" />
-                  </Pressable>
-                ) : (
-                  <View style={[styles.navBtn, styles.navBtnUltimo]}>
-                    <MaterialCommunityIcons name="check-circle-outline" size={18} color={GOV.verde} />
-                    <Text style={styles.navBtnUltimoTxt}>Último miembro</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          ) : null
         }
       />
 
@@ -1092,36 +1075,29 @@ function parseMultiValor(valor: string): string[] {
   return trimmed.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-function PreguntaItemBase({
+// ─────────────────────────────────────────────────────────────────────────────
+// Control de entrada por tipo — reutilizable por HOGAR (1 control) y por cada
+// fila de miembro en las preguntas PERSONA. Centraliza TODOS los tipos de input
+// (TEXTO/NUMERICO/FECHA/RADIO/LISTA/BOOLEAN/LISTA_MULTIPLE/COMBO_DINAMICO) y sus
+// validaciones, para que cada miembro pueda responder su propio valor con la
+// MISMA lógica (incluida la selección múltiple). `compacto` reduce los labels de
+// los selectores cuando el control vive dentro de una fila de miembro.
+// ─────────────────────────────────────────────────────────────────────────────
+function ControlInput({
   pregunta,
-  index,
-  total,
   opciones,
   valor,
-  soloLectura,
   onChange,
-  iaActivo,
-  onTextoIA,
-  sugerenciaActiva,
-  onAceptarIA,
-  onRechazarIA,
+  compacto,
 }: {
   pregunta: PreguntaRow;
-  index: number;
-  total: number;
   opciones: OpcionRow[];
   valor: string;
-  soloLectura?: boolean;
   onChange: (v: string) => void;
-  iaActivo?: boolean;
-  onTextoIA?: (texto: string) => void;
-  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
-  onAceptarIA?: () => void;
-  onRechazarIA?: () => void;
+  compacto?: boolean;
 }) {
   const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
   const esNumerico = pregunta.tipo === 'NUMERICO';
-  // Validaciones del instrumento (longitud/numérico) — ej. celular = 10 dígitos.
   const validaciones = useMemo<{ longitud_exacta?: number; max_length?: number; solo_numerico?: boolean }>(() => {
     try { return JSON.parse(pregunta.validaciones || '{}'); } catch { return {}; }
   }, [pregunta.validaciones]);
@@ -1132,92 +1108,14 @@ function PreguntaItemBase({
     onChange(v);
   };
   const esFecha    = pregunta.tipo === 'FECHA';
-  // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — se renderiza con
-  // SelectorMunicipio (consume /api/parametricas/municipios/todos/).
+  // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — SelectorMunicipio.
   const esRadio    = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA';
   const esCombo    = pregunta.tipo === 'COMBO_DINAMICO';
   const esMultiple = pregunta.tipo === 'LISTA_MULTIPLE';
   const esBoolean  = pregunta.tipo === 'BOOLEAN';
 
-  const tieneRespuesta = !!valor?.trim();
-  const esObligatoria  = pregunta.obligatoria === 1;
-
-  // Modo SOLO LECTURA — datos del RUV (hecho victimizante). Se muestra el valor
-  // precargado, sin controles editables ni asistente de voz. Si el RUV no trajo
-  // el dato, se indica explícitamente en vez de mostrar un campo vacío.
-  if (soloLectura) {
-    const etiqueta = (esRadio || esBoolean || esMultiple)
-      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
-      : valor;
-    return (
-      <View style={[styles.preguntaCard, styles.preguntaCardRuv]}>
-        <View style={styles.preguntaHeader}>
-          <MaterialCommunityIcons name="shield-check" size={16} color={GOV.azul} />
-          <Text style={styles.ruvBadgeTxt}>Dato del RUV</Text>
-          {pregunta.no_pregunta ? (
-            <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
-          ) : null}
-        </View>
-        <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
-        <View style={styles.ruvValorBox}>
-          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
-          <Text style={styles.ruvValorTxt}>
-            {etiqueta?.trim() ? etiqueta : 'Sin dato registrado en el RUV'}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={[
-      styles.preguntaCard,
-      esObligatoria && !tieneRespuesta && styles.preguntaCardPendiente,
-      tieneRespuesta && styles.preguntaCardRespondida,
-    ]}>
-      <View style={styles.preguntaHeader}>
-        <View style={[styles.numBadge, tieneRespuesta && styles.numBadgeOk]}>
-          {tieneRespuesta
-            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
-            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
-          }
-        </View>
-        <Text style={styles.numTotal}>de {total}</Text>
-        {esObligatoria && (
-          <View style={[styles.requeridoChip, tieneRespuesta && styles.requeridoChipOk]}>
-            <Text style={[styles.requeridoTxt, tieneRespuesta && styles.requeridoTxtOk]}>
-              {tieneRespuesta ? 'Respondida' : 'Requerida'}
-            </Text>
-          </View>
-        )}
-        {pregunta.no_pregunta ? (
-          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
-        ) : null}
-      </View>
-
-      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
-
-      {pregunta.descripcion_ayuda ? (
-        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
-      ) : null}
-
-      {/* Asistente de voz */}
-      {iaActivo && onTextoIA && (
-        <AudioRecorder
-          preguntaId={pregunta.id}
-          onTextoListo={onTextoIA}
-          disabled={!!sugerenciaActiva}
-        />
-      )}
-      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
-        <SugerenciaIA
-          sugerencia={sugerenciaActiva}
-          onAceptar={() => onAceptarIA()}
-          onRechazar={onRechazarIA}
-        />
-      )}
-
-      {/* Controles por tipo — Sprint 21 fix UX: estilo consistente GOV.CO */}
+    <>
       {(esTexto || esNumerico) && (
         <TextInput
           mode="outlined"
@@ -1230,6 +1128,7 @@ function PreguntaItemBase({
           placeholder={esNumerico ? 'Escribe el número' : 'Escribe la respuesta'}
           outlineColor={GOV.borde}
           activeOutlineColor={GOV.azul}
+          dense={compacto}
           style={styles.inputTexto}
         />
       )}
@@ -1305,8 +1204,7 @@ function PreguntaItemBase({
         )
       )}
 
-      {/* Sprint 20: COMBO_DINAMICO = municipio (Z2/Z5A/Z15/A23A/HV3/Lud_encuesta).
-          Consume /api/parametricas/municipios/todos/ con caché en memoria. */}
+      {/* Sprint 20: COMBO_DINAMICO = municipio. */}
       {esCombo && (
         <SelectorMunicipio
           valor={valor}
@@ -1365,6 +1263,324 @@ function PreguntaItemBase({
           );
         })()
       )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fila de un miembro dentro de una pregunta PERSONA. Si la pregunta aplica al
+// miembro, muestra su control de entrada; si no, una fila gris con el motivo.
+// ─────────────────────────────────────────────────────────────────────────────
+function FilaMiembroBase({
+  miembro,
+  pregunta,
+  opciones,
+  valor,
+  aplica,
+  motivo,
+  soloLectura,
+  onChange,
+}: {
+  miembro: MiembroHogarResumen;
+  pregunta: PreguntaRow;
+  opciones: OpcionRow[];
+  valor: string;
+  aplica: boolean;
+  motivo?: string;
+  soloLectura?: boolean;
+  onChange: (v: string) => void;
+}) {
+  const rolPrefijo = miembro.es_autorizado ? 'Autorizado' : 'Miembro';
+  const nombre = (miembro.nombre_completo ?? '').trim();
+  const titulo = nombre || miembro.rol_display || rolPrefijo;
+  const tieneRespuesta = !!valor?.trim();
+
+  // No aplica → fila gris con el motivo, sin control habilitado.
+  if (!aplica) {
+    return (
+      <View style={styles.filaMiembro}>
+        <View style={styles.filaMiembroHeader}>
+          <MaterialCommunityIcons
+            name={miembro.es_autorizado ? 'account-star-outline' : 'account-outline'}
+            size={16}
+            color={GOV.textoT}
+          />
+          <Text style={styles.filaMiembroNombreInactivo} numberOfLines={1}>{titulo}</Text>
+        </View>
+        <View style={styles.noAplicaBox}>
+          <MaterialCommunityIcons name="minus-circle-outline" size={14} color={GOV.textoT} />
+          <Text style={styles.noAplicaTxt}>
+            No aplica{motivo ? ` · ${motivo}` : ''}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Solo lectura (RUV) — muestra el valor sin control editable.
+  if (soloLectura) {
+    const esOpcion = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA'
+      || pregunta.tipo === 'BOOLEAN' || pregunta.tipo === 'LISTA_MULTIPLE';
+    const etiqueta = esOpcion
+      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
+      : valor;
+    return (
+      <View style={styles.filaMiembro}>
+        <View style={styles.filaMiembroHeader}>
+          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
+          <Text style={styles.filaMiembroNombre} numberOfLines={1}>{titulo}</Text>
+        </View>
+        <Text style={styles.ruvValorTxt}>
+          {etiqueta?.trim() ? etiqueta : 'Sin dato registrado'}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.filaMiembro, tieneRespuesta && styles.filaMiembroOk]}>
+      <View style={styles.filaMiembroHeader}>
+        <MaterialCommunityIcons
+          name={miembro.es_autorizado ? 'account-star' : 'account'}
+          size={16}
+          color={tieneRespuesta ? GOV.verde : GOV.azul}
+        />
+        <Text style={styles.filaMiembroNombre} numberOfLines={1}>{titulo}</Text>
+        {tieneRespuesta && (
+          <MaterialCommunityIcons name="check-circle" size={15} color={GOV.verde} />
+        )}
+      </View>
+      <ControlInput pregunta={pregunta} opciones={opciones} valor={valor} onChange={onChange} compacto />
+    </View>
+  );
+}
+
+const FilaMiembro = memo(FilaMiembroBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.miembro === next.miembro &&
+  prev.valor === next.valor &&
+  prev.aplica === next.aplica &&
+  prev.motivo === next.motivo &&
+  prev.opciones === next.opciones &&
+  prev.soloLectura === next.soloLectura,
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarjeta de una pregunta PERSONA — encabezado de la pregunta + una fila por
+// miembro del hogar (agrupado). Reemplaza el wizard "un miembro a la vez".
+// ─────────────────────────────────────────────────────────────────────────────
+function PreguntaPersonaItemBase({
+  pregunta,
+  index,
+  total,
+  opciones,
+  miembros,
+  respuestas,
+  soloLectura,
+  aplicabilidad,
+  onChange,
+}: {
+  pregunta: PreguntaRow;
+  index: number;
+  total: number;
+  opciones: OpcionRow[];
+  miembros: MiembroHogarResumen[];
+  respuestas: Record<string, string>;
+  soloLectura?: boolean;
+  aplicabilidad: (codigoExterno: string, miembroId: string) => { aplica: boolean; motivo?: string };
+  onChange: (preguntaId: string, valor: string, miembroId: string | null) => void;
+}) {
+  const esObligatoria = pregunta.obligatoria === 1;
+  // Cuántos miembros a quienes APLICA ya tienen respuesta (progreso de la tarjeta).
+  const aplicables = miembros.filter((m) => aplicabilidad(pregunta.codigo_externo, m.id).aplica);
+  const respondidos = aplicables.filter(
+    (m) => respuestas[claveResp(pregunta.id, m.id)]?.trim(),
+  ).length;
+  const completa = aplicables.length > 0 && respondidos === aplicables.length;
+
+  return (
+    <View style={[
+      styles.preguntaCard,
+      esObligatoria && !completa && styles.preguntaCardPendiente,
+      completa && styles.preguntaCardRespondida,
+    ]}>
+      <View style={styles.preguntaHeader}>
+        <View style={[styles.numBadge, completa && styles.numBadgeOk]}>
+          {completa
+            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
+            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+          }
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {esObligatoria && (
+          <View style={[styles.requeridoChip, completa && styles.requeridoChipOk]}>
+            <Text style={[styles.requeridoTxt, completa && styles.requeridoTxtOk]}>
+              {completa ? 'Completa' : 'Requerida'}
+            </Text>
+          </View>
+        )}
+        {pregunta.no_pregunta ? (
+          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+        ) : null}
+      </View>
+
+      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+
+      {pregunta.descripcion_ayuda ? (
+        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
+      ) : null}
+
+      {aplicables.length > 0 && (
+        <Text style={styles.personaProgreso}>
+          {respondidos} de {aplicables.length} {aplicables.length === 1 ? 'persona' : 'personas'} respondida{respondidos !== 1 ? 's' : ''}
+        </Text>
+      )}
+
+      {/* Una fila por miembro */}
+      <View style={styles.filasWrap}>
+        {miembros.map((m) => {
+          const ap = aplicabilidad(pregunta.codigo_externo, m.id);
+          const valor = respuestas[claveResp(pregunta.id, m.id)] ?? '';
+          return (
+            <FilaMiembro
+              key={m.id}
+              miembro={m}
+              pregunta={pregunta}
+              opciones={opciones}
+              valor={valor}
+              aplica={ap.aplica}
+              motivo={ap.motivo}
+              soloLectura={soloLectura}
+              onChange={(v) => onChange(pregunta.id, v, m.id)}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const PreguntaPersonaItem = memo(PreguntaPersonaItemBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.index === next.index &&
+  prev.total === next.total &&
+  prev.opciones === next.opciones &&
+  prev.miembros === next.miembros &&
+  prev.respuestas === next.respuestas &&
+  prev.soloLectura === next.soloLectura &&
+  prev.aplicabilidad === next.aplicabilidad,
+);
+
+function PreguntaItemBase({
+  pregunta,
+  index,
+  total,
+  opciones,
+  valor,
+  soloLectura,
+  onChange,
+  iaActivo,
+  onTextoIA,
+  sugerenciaActiva,
+  onAceptarIA,
+  onRechazarIA,
+}: {
+  pregunta: PreguntaRow;
+  index: number;
+  total: number;
+  opciones: OpcionRow[];
+  valor: string;
+  soloLectura?: boolean;
+  onChange: (v: string) => void;
+  iaActivo?: boolean;
+  onTextoIA?: (texto: string) => void;
+  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
+  onAceptarIA?: () => void;
+  onRechazarIA?: () => void;
+}) {
+  const tieneRespuesta = !!valor?.trim();
+  const esObligatoria  = pregunta.obligatoria === 1;
+
+  // Modo SOLO LECTURA — datos del RUV (hecho victimizante). Se muestra el valor
+  // precargado, sin controles editables ni asistente de voz. Si el RUV no trajo
+  // el dato, se indica explícitamente en vez de mostrar un campo vacío.
+  if (soloLectura) {
+    const esOpcion = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA'
+      || pregunta.tipo === 'BOOLEAN' || pregunta.tipo === 'LISTA_MULTIPLE';
+    const etiqueta = esOpcion
+      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
+      : valor;
+    return (
+      <View style={[styles.preguntaCard, styles.preguntaCardRuv]}>
+        <View style={styles.preguntaHeader}>
+          <MaterialCommunityIcons name="shield-check" size={16} color={GOV.azul} />
+          <Text style={styles.ruvBadgeTxt}>Dato del RUV</Text>
+          {pregunta.no_pregunta ? (
+            <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+          ) : null}
+        </View>
+        <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+        <View style={styles.ruvValorBox}>
+          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
+          <Text style={styles.ruvValorTxt}>
+            {etiqueta?.trim() ? etiqueta : 'Sin dato registrado en el RUV'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[
+      styles.preguntaCard,
+      esObligatoria && !tieneRespuesta && styles.preguntaCardPendiente,
+      tieneRespuesta && styles.preguntaCardRespondida,
+    ]}>
+      <View style={styles.preguntaHeader}>
+        <View style={[styles.numBadge, tieneRespuesta && styles.numBadgeOk]}>
+          {tieneRespuesta
+            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
+            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+          }
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {esObligatoria && (
+          <View style={[styles.requeridoChip, tieneRespuesta && styles.requeridoChipOk]}>
+            <Text style={[styles.requeridoTxt, tieneRespuesta && styles.requeridoTxtOk]}>
+              {tieneRespuesta ? 'Respondida' : 'Requerida'}
+            </Text>
+          </View>
+        )}
+        {pregunta.no_pregunta ? (
+          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+        ) : null}
+      </View>
+
+      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+
+      {pregunta.descripcion_ayuda ? (
+        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
+      ) : null}
+
+      {/* Asistente de voz */}
+      {iaActivo && onTextoIA && (
+        <AudioRecorder
+          preguntaId={pregunta.id}
+          onTextoListo={onTextoIA}
+          disabled={!!sugerenciaActiva}
+        />
+      )}
+      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
+        <SugerenciaIA
+          sugerencia={sugerenciaActiva}
+          onAceptar={() => onAceptarIA()}
+          onRechazar={onRechazarIA}
+        />
+      )}
+
+      {/* Controles por tipo — delega en ControlInput (compartido con las filas
+          por miembro de las preguntas PERSONA). */}
+      <ControlInput pregunta={pregunta} opciones={opciones} valor={valor} onChange={onChange} />
     </View>
   );
 }
@@ -1455,59 +1671,41 @@ const styles = StyleSheet.create({
   },
   seccionTituloWarning: { ...FONT.caption, color: GOV.textoP, flex: 1 },
 
-  // Sprint 21 Fase F — navegador wizard entre miembros
-  navMiembros: {
-    marginTop: SPACING.md,
-    backgroundColor: GOV.superficie,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
+  // Captura agrupada — progreso por persona dentro de una pregunta PERSONA
+  personaProgreso: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+    fontStyle: 'italic',
+  },
+
+  // Captura agrupada — contenedor de las filas por miembro
+  filasWrap: { gap: SPACING.sm, marginTop: 2 },
+  filaMiembro: {
+    backgroundColor: GOV.fondoApp,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
     borderWidth: 1,
     borderColor: GOV.borde,
-    gap: SPACING.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: GOV.borde,
+    gap: SPACING.xs,
   },
-  navMiembrosCounter: {
+  filaMiembroOk: { borderLeftColor: GOV.verde },
+  filaMiembroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    paddingBottom: SPACING.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: GOV.borde,
   },
-  navMiembrosTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
-  navMiembrosFaltan: {
-    ...FONT.caption,
-    color: GOV.naranja,
-    marginLeft: 'auto',
-    fontWeight: '600',
-  },
-  navMiembrosBotones: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  navBtn: {
-    flex: 1,
+  filaMiembroNombre: { ...FONT.label, color: GOV.textoP, flex: 1, fontWeight: '700' },
+  filaMiembroNombreInactivo: { ...FONT.label, color: GOV.textoT, flex: 1 },
+  noAplicaBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: RADIUS.md,
+    gap: SPACING.xs,
+    paddingVertical: 2,
   },
-  navBtnSecundario: {
-    backgroundColor: GOV.azulTenue,
-    borderWidth: 1,
-    borderColor: GOV.azul,
-  },
-  navBtnPrimario: { backgroundColor: GOV.azul },
-  navBtnDisabled: { backgroundColor: GOV.fondoApp, borderColor: GOV.borde },
-  navBtnUltimo: {
-    backgroundColor: GOV.verdeTenue,
-    borderWidth: 1,
-    borderColor: GOV.verde,
-  },
-  navBtnTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
-  navBtnTxtPrimario: { ...FONT.body, fontWeight: '700', color: '#FFF' },
-  navBtnUltimoTxt: { ...FONT.body, fontWeight: '700', color: GOV.verde },
+  noAplicaTxt: { ...FONT.caption, color: GOV.textoT, flex: 1, fontStyle: 'italic' },
 
   // Tarjeta de pregunta
   preguntaCard: {

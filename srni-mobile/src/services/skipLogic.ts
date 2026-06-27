@@ -181,3 +181,134 @@ function _comparar(izq: number | string | boolean, op: string, der: number | str
     default:   return false;
   }
 }
+
+// ─── Motivo legible de "no aplica" (Sprint — captura agrupada) ──────────────────
+//
+// En la captura agrupada, cada pregunta PERSONA se muestra UNA vez con una fila
+// por miembro. Cuando la pregunta NO aplica a un miembro (no quedó visible al
+// evaluar con el contexto/respuestas de ESE miembro), se muestra la fila en gris
+// con un MOTIVO. Esta función deriva ese motivo a partir de las reglas entrantes,
+// SIN re-evaluar visibilidad (eso lo hace calcularVisibles): aquí solo se explica.
+//
+// No altera el motor: es puramente descriptivo. Cubre los casos comunes
+// (respuesta previa, edad, sexo, étnico). Si no logra derivar uno específico,
+// devuelve un motivo genérico ("no cumple la condición").
+
+/** Etiqueta humana para el valor de sexo del diccionario ('1'/'2'/'Hombre'…). */
+function _etiquetaSexo(raw: string): string {
+  const v = raw.replace(/^['"]|['"]$/g, '');
+  if (v === '1' || /hombre/i.test(v)) return 'hombre';
+  if (v === '2' || /mujer/i.test(v)) return 'mujer';
+  if (v === '3') return 'intersexual';
+  return v;
+}
+
+/** Etiqueta humana para el valor de etnia ('indigena'/'negro_afro'/'rom'/'ninguno'). */
+function _etiquetaEtnia(raw: string): string {
+  const v = raw.replace(/^['"]|['"]$/g, '');
+  switch (v) {
+    case 'indigena':   return 'indígena';
+    case 'negro_afro': return 'negro/afro';
+    case 'rom':        return 'Rom/gitano';
+    case 'ninguno':    return 'sin pertenencia étnica';
+    default:           return v;
+  }
+}
+
+/** Traduce un átomo de comparación (edad/sexo/etnia/ruv) a texto legible. */
+function _atomoLegible(atomo: string): string {
+  const e = atomo.trim();
+  // ruv_incluido (solo, sin comparación) → "incluido en el RUV"
+  if (/^ruv_incluido$/i.test(e)) return 'requiere estar incluido en el RUV';
+  // comparación encadenada "18 <= edad <= 49"
+  const enc = e.match(/^(\d+)\s*(<=|<)\s*edad\s*(<=|<)\s*(\d+)$/i);
+  if (enc) return `edad entre ${enc[1]} y ${enc[4]} años`;
+  const m = e.match(/^(\w+)\s*(<=|>=|==|!=|<|>)\s*(.+)$/);
+  if (!m) return e;
+  const [, nombre, op, rawValRaw] = m;
+  const rawVal = rawValRaw.trim();
+  if (nombre === 'edad') {
+    const txt: Record<string, string> = { '>=': 'edad ≥', '>': 'edad >', '<=': 'edad ≤', '<': 'edad <', '==': 'edad =', '!=': 'edad ≠' };
+    return `${txt[op] ?? 'edad'} ${rawVal} años`;
+  }
+  if (nombre === 'sexo') {
+    return op === '!=' ? `no es ${_etiquetaSexo(rawVal)}` : `es ${_etiquetaSexo(rawVal)}`;
+  }
+  if (nombre === 'etnia') {
+    return op === '!=' ? `no es ${_etiquetaEtnia(rawVal)}` : `es ${_etiquetaEtnia(rawVal)}`;
+  }
+  if (nombre === 'ruv_incluido') {
+    const val = rawVal.toLowerCase();
+    return val === 'true' ? 'incluido en el RUV' : 'no incluido en el RUV';
+  }
+  return e;
+}
+
+/** Convierte una expresion_origen completa (con and/or) a texto legible. */
+function _expresionLegible(expr: string): string {
+  const e = expr.trim();
+  if (!e) return 'no cumple la condición';
+  const ors = e.split(/\s+or\s+/i);
+  if (ors.length > 1) return ors.map((p) => _expresionLegible(p)).join(' o ');
+  const ands = e.split(/\s+and\s+/i);
+  if (ands.length > 1) return ands.map((p) => _atomoLegible(p)).join(' y ');
+  return _atomoLegible(e);
+}
+
+/** Describe la condición de UNA regla en términos legibles (origen del motivo). */
+function _condicionLegible(regla: ReglaSkipLogicRow): string {
+  if (regla.pregunta_origen_codigo) {
+    const trig = (regla.valor_trigger ?? '').trim();
+    if (!trig) return `depende de ${regla.pregunta_origen_codigo}`;
+    const valores = trig.includes(',')
+      ? trig.split(',').map((v) => v.trim()).join(' / ')
+      : trig;
+    return `${regla.pregunta_origen_codigo} = ${valores}`;
+  }
+  if (regla.expresion_origen) return _expresionLegible(regla.expresion_origen);
+  return 'no cumple la condición';
+}
+
+/**
+ * Deriva el motivo legible por el que una pregunta PERSONA NO aplica a un
+ * miembro. Recibe el mismo contexto/respuestas con que se evaluó visibilidad
+ * para ESE miembro. Devuelve undefined si la pregunta en realidad SÍ aplica
+ * (no debería llamarse en ese caso) o si no hay reglas que la oculten.
+ *
+ *   - Si está oculta por defecto (tiene HABILITAR pero ninguna se cumplió):
+ *     motivo = la condición de la regla HABILITAR (requisito para que aparezca).
+ *   - Si una DESHABILITAR se cumplió: motivo = esa condición (la que la ocultó).
+ */
+export function motivoOcultaPregunta(
+  pregunta: Pick<PreguntaRow, 'codigo_externo'>,
+  reglas: ReglaSkipLogicRow[],
+  respuestas: RespuestasMap,
+  contexto: ContextoVictima = {},
+): string | undefined {
+  const entrantes = reglas.filter(
+    (r) => r.pregunta_afectada_codigo === pregunta.codigo_externo,
+  );
+  if (entrantes.length === 0) return undefined;
+
+  // 1) ¿Una DESHABILITAR activa la ocultó? Ese es el motivo más directo.
+  const deshabilitan = entrantes.filter((r) => r.accion === 'DESHABILITAR');
+  for (const r of deshabilitan) {
+    if (_reglaActiva(r, respuestas, contexto)) {
+      return _condicionLegible(r);
+    }
+  }
+
+  // 2) Oculta por defecto: tiene HABILITAR/OBLIGAR pero ninguna se cumplió.
+  //    El motivo es el REQUISITO no satisfecho (la condición que la mostraría).
+  const habilitan = entrantes.filter(
+    (r) => r.accion === 'HABILITAR' || r.accion === 'OBLIGAR',
+  );
+  if (habilitan.length > 0) {
+    const condiciones = habilitan.map((r) => _condicionLegible(r));
+    // Si hay varias rutas para habilitarla, se listan como alternativas.
+    const unicas = [...new Set(condiciones)];
+    return `requiere ${unicas.join(' o ')}`;
+  }
+
+  return 'no cumple la condición';
+}

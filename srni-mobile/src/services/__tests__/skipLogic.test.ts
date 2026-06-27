@@ -9,7 +9,7 @@
  *   - OBLIGAR: hace la pregunta obligatoria (y visible).
  *   - FINALIZAR: cierra el capítulo cuando se cumple.
  */
-import { calcularVisibles } from '../skipLogic';
+import { calcularVisibles, motivoOcultaPregunta } from '../skipLogic';
 import type { RespuestasMap } from '../skipLogic';
 import type { ReglaSkipLogicRow } from '../../db/instrumentoDao';
 
@@ -260,5 +260,82 @@ describe('calcularVisibles — reglas combinadas sobre la misma pregunta', () =>
     const preguntas = [pregunta('P1'), pregunta('P2'), pregunta('P3')];
     const r = calcularVisibles(preguntas, reglas, { P1: 'SI', P2: 'NO' });
     expect(r.visibles.has('P3')).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// motivoOcultaPregunta — motivo legible de "no aplica" en la captura agrupada.
+// Se usa para explicar por qué una pregunta PERSONA no aplica a un miembro.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('motivoOcultaPregunta — pregunta_origen (respuesta previa)', () => {
+  it('oculta por defecto (HABILITAR no cumplida) → motivo = requiere X = valor', () => {
+    const reglas = [
+      regla({ accion: 'HABILITAR', pregunta_origen_codigo: 'B16',
+        valor_trigger: '1', pregunta_afectada_codigo: 'H3' }),
+    ];
+    const m = motivoOcultaPregunta(pregunta('H3'), reglas, { B16: '2' });
+    expect(m).toBe('requiere B16 = 1');
+  });
+
+  it('trigger multivalor lista los valores con /', () => {
+    const reglas = [
+      regla({ accion: 'HABILITAR', pregunta_origen_codigo: 'A4',
+        valor_trigger: '1,2,3', pregunta_afectada_codigo: 'A5' }),
+    ];
+    const m = motivoOcultaPregunta(pregunta('A5'), reglas, {});
+    expect(m).toBe('requiere A4 = 1 / 2 / 3');
+  });
+
+  it('DESHABILITAR activa → motivo = la condición que la ocultó', () => {
+    const reglas = [
+      regla({ accion: 'DESHABILITAR', pregunta_origen_codigo: 'B16',
+        valor_trigger: 'No', pregunta_afectada_codigo: 'H3' }),
+    ];
+    const m = motivoOcultaPregunta(pregunta('H3'), reglas, { B16: 'No' });
+    expect(m).toBe('B16 = No');
+  });
+});
+
+describe('motivoOcultaPregunta — expresion_origen (demográfico)', () => {
+  function reglaExpr(expr: string, afectada = 'P2') {
+    return [regla({ accion: 'HABILITAR', pregunta_origen_codigo: null,
+      expresion_origen: expr, pregunta_afectada_codigo: afectada })];
+  }
+
+  it('edad mínima → "edad ≥ N años"', () => {
+    const m = motivoOcultaPregunta(pregunta('P2'), reglaExpr('edad >= 18'), {}, { edad: 10 });
+    expect(m).toBe('requiere edad ≥ 18 años');
+  });
+
+  it('sexo == 1 → "es hombre"', () => {
+    const m = motivoOcultaPregunta(pregunta('P2'), reglaExpr("sexo == '1'"), {}, { sexo: '2' });
+    expect(m).toBe('requiere es hombre');
+  });
+
+  it('etnia == indigena → "es indígena"', () => {
+    const m = motivoOcultaPregunta(pregunta('P2'), reglaExpr("etnia == 'indigena'"), {}, { etnia: 'ninguno' });
+    expect(m).toBe('requiere es indígena');
+  });
+
+  it('combinación and: hombre 18-49 (libreta militar) se describe con "y"', () => {
+    const m = motivoOcultaPregunta(
+      pregunta('P2'),
+      reglaExpr("sexo == '1' and edad >= 18 and edad <= 49"),
+      {}, { sexo: '2', edad: 30 },
+    );
+    expect(m).toBe('requiere es hombre y edad ≥ 18 años y edad ≤ 49 años');
+  });
+
+  it('comparación encadenada "18 <= edad <= 49" → rango legible', () => {
+    const m = motivoOcultaPregunta(
+      pregunta('P2'),
+      reglaExpr("sexo == 'Hombre' and 18 <= edad <= 49"),
+      {}, { sexo: '1', edad: 60 },
+    );
+    expect(m).toBe('requiere es hombre y edad entre 18 y 49 años');
+  });
+
+  it('pregunta sin reglas entrantes → undefined (sí aplica / no hay motivo)', () => {
+    expect(motivoOcultaPregunta(pregunta('PX'), [], {})).toBeUndefined();
   });
 });
