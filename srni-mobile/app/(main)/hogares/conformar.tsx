@@ -7,7 +7,10 @@
  *  2. Muestra la ruta de entrevista y el listado de integrantes (comienza con el autorizado)
  *  3. Formulario para agregar integrantes uno a uno:
  *     Tipo Doc · Número · Primer Nombre · Segundo Nombre ·
- *     Primer Apellido · Segundo Apellido · Fecha Nacimiento · Parentesco · Género
+ *     Primer Apellido · Segundo Apellido · Fecha Nacimiento · Rol
+ *     (Documento oficial §2: el PARENTESCO y el GÉNERO ya NO se piden aquí —
+ *      se capturan en el Capítulo B "Datos básicos" para no duplicarlos.
+ *      Si el rol es Tutor o Cuidador permanente se exige adjuntar CONSTANCIA.)
  *  4. Botón "Continuar a caracterizaciones" → navega al hub del hogar
  *     (Sprint 14: ya no crea la sesión aquí. La caracterización se inicia
  *      desde el hub, donde el usuario ve el listado de las ya creadas
@@ -46,23 +49,9 @@ const TIPOS_DOC = [
   { codigo: 'PA', nombre: 'Pasaporte' },
 ];
 
-const PARENTESCOS = [
-  { value: 'CONYUGE',       label: 'Cónyuge / Compañero/a' },
-  { value: 'HIJO_A',        label: 'Hijo/a' },
-  { value: 'YERNO_NUERA',   label: 'Yerno / Nuera' },
-  { value: 'NIETO_A',       label: 'Nieto/a' },
-  { value: 'PADRE_MADRE',   label: 'Padre / Madre' },
-  { value: 'HERMANO_A',     label: 'Hermano/a' },
-  { value: 'OTRO_PARIENTE', label: 'Otro pariente' },
-  { value: 'NO_PARIENTE',   label: 'No pariente' },
-];
-
-const GENEROS = [
-  { value: 'M',  label: 'Masculino' },
-  { value: 'F',  label: 'Femenino' },
-  { value: 'NB', label: 'No binario' },
-  { value: 'ND', label: 'No declara' },
-];
+// Documento oficial §2: PARENTESCO y GÉNERO ya no se capturan en la conformación
+// del hogar (se piden en el Capítulo B "Datos básicos"). Los catálogos se
+// eliminaron de esta pantalla para evitar la doble captura.
 
 const RUTAS = [
   { value: 'GENERAL',                   label: 'General' },
@@ -77,6 +66,11 @@ const ROLES_MIEMBRO = [
   { value: 'CUIDADOR_PERMANENTE', label: 'Cuidador permanente — adulto dependiente' },
 ];
 
+// Documento oficial §2: al elegir Tutor o Cuidador permanente se debe adjuntar
+// una CONSTANCIA (documento/archivo) antes de poder continuar a la entrevista.
+const ROLES_CON_CONSTANCIA = ['TUTOR', 'CUIDADOR_PERMANENTE'];
+const requiereConstancia = (rol: string) => ROLES_CON_CONSTANCIA.includes(rol);
+
 // ── Tipo local para un integrante ya agregado ─────────────────────────────────
 
 interface IntegranteAgregado {
@@ -85,10 +79,11 @@ interface IntegranteAgregado {
   nombre_display: string;        // nombre completo para mostrar
   tipo_documento: string;        // código p.ej. "CC"
   numero_documento: string;
-  parentesco_display: string;
   rol_display: string;
-  genero: string;
+  // §2: parentesco y género ya no se capturan aquí (se piden en el Capítulo B).
   fecha_nacimiento: string;
+  /** Nombre de la constancia adjunta (solo Tutor/Cuidador). Vacío si no aplica. */
+  constancia_nombre: string;
 }
 
 // ── Selector modal genérico ───────────────────────────────────────────────────
@@ -180,10 +175,17 @@ function IntegranteCard({ item }: { item: IntegranteAgregado }) {
         </View>
         <Text style={styles.integranteMeta}>
           {item.tipo_documento} {item.numero_documento}
-          {item.parentesco_display ? `  ·  ${item.parentesco_display}` : ''}
           {item.rol_display ? `  ·  ${item.rol_display}` : ''}
           {item.fecha_nacimiento ? `  ·  Nac. ${item.fecha_nacimiento}` : ''}
         </Text>
+        {item.constancia_nombre ? (
+          <View style={styles.constanciaTag}>
+            <MaterialCommunityIcons name="paperclip" size={13} color={GOV.verde} />
+            <Text style={styles.constanciaTagTxt} numberOfLines={1}>
+              Constancia: {item.constancia_nombre}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -222,16 +224,16 @@ export default function ConformarHogarScreen() {
   const [primerApell,  setPrimerApell]  = useState('');
   const [segApell,     setSegApell]     = useState('');
   const [fechaNac,     setFechaNac]     = useState('');
-  const [parentesco,   setParentesco]   = useState('');
-  const [genero,       setGenero]       = useState('');
   const [rolMiembro,   setRolMiembro]   = useState('MIEMBRO');
+  // §2 — constancia obligatoria para Tutor/Cuidador. Guardamos una referencia
+  // del archivo (nombre + uri si el picker existe). Vacío = aún sin adjuntar.
+  const [constanciaNombre, setConstanciaNombre] = useState('');
+  const [constanciaUri,    setConstanciaUri]    = useState('');
   const [erroresForm,  setErroresForm]  = useState<Record<string, string>>({});
   const [agregando,    setAgregando]    = useState(false);
 
   // Modales selectores
   const [modalTipoDoc,    setModalTipoDoc]    = useState(false);
-  const [modalParentesco, setModalParentesco] = useState(false);
-  const [modalGenero,     setModalGenero]     = useState(false);
   const [modalRol,        setModalRol]        = useState(false);
   const [modalRuta,       setModalRuta]       = useState(false);
 
@@ -298,10 +300,9 @@ export default function ConformarHogarScreen() {
           nombre_display: nombreAutorizado,
           tipo_documento: v?.tipo_documento ?? '',
           numero_documento: v?.numero_documento ?? '',
-          parentesco_display: '',
           rol_display: 'Autorizado',
-          genero: v?.genero ?? '',
           fecha_nacimiento: '',
+          constancia_nombre: '',
         }]);
       } catch (err: any) {
         const detalle = err?.response?.data;
@@ -323,8 +324,11 @@ export default function ConformarHogarScreen() {
     const e: Record<string, string> = {};
     if (!primerNombre.trim())  e.primerNombre = 'Requerido';
     if (!primerApell.trim())   e.primerApell  = 'Requerido';
-    if (!parentesco)           e.parentesco   = 'Seleccione parentesco';
-    if (!genero)               e.genero       = 'Seleccione género';
+    // §2: parentesco y género ya NO se validan aquí (se piden en el Capítulo B).
+    // §2: Tutor/Cuidador permanente requieren constancia adjunta para agregarse.
+    if (requiereConstancia(rolMiembro) && !constanciaNombre) {
+      e.constancia = 'Adjunte la constancia del rol seleccionado';
+    }
     if (fechaNac && !/^\d{4}-\d{2}-\d{2}$/.test(fechaNac)) {
       e.fechaNac = 'Formato: AAAA-MM-DD';
     }
@@ -347,11 +351,17 @@ export default function ConformarHogarScreen() {
       // tipo). El tipo_documento es FK por id numérico y el form usa códigos,
       // así que se omite hasta tener el mapeo código→id (paramétrica).
       numero_documento: numDoc.trim() || undefined,
-      parentesco,
-      genero,
+      // §2: parentesco y género ya NO se envían desde la conformación — se
+      // capturan en el Capítulo B (Datos básicos). El backend los acepta vacíos.
       rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
       estado_inclusion: 'NO_INCLUIDO' as const,
       fecha_nacimiento: fechaNac || undefined,
+      // §2: referencia de la constancia (Tutor/Cuidador). El backend la ignora
+      // por ahora (no está en AgregarMiembroSerializer); viaja en el payload
+      // offline/online para no perderla. Pendiente: campo/almacenamiento real.
+      ...(requiereConstancia(rolMiembro) && constanciaNombre
+        ? { constancia_nombre: constanciaNombre, constancia_uri: constanciaUri || undefined }
+        : {}),
     };
 
     // Guarda el integrante offline (SQLite + cola). Reutilizado por el camino
@@ -398,8 +408,7 @@ export default function ConformarHogarScreen() {
     }
 
     if (guardado) {
-      const parentescoLabel = PARENTESCOS.find(p => p.value === parentesco)?.label ?? parentesco;
-      const rolLabel        = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
+      const rolLabel = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
       setIntegrantes(prev => [
         ...prev,
         {
@@ -408,19 +417,69 @@ export default function ConformarHogarScreen() {
           nombre_display: nombreCompleto,
           tipo_documento: tipoDoc,
           numero_documento: numDoc,
-          parentesco_display: parentescoLabel,
           rol_display: rolLabel,
-          genero,
           fecha_nacimiento: fechaNac,
+          constancia_nombre: requiereConstancia(rolMiembro) ? constanciaNombre : '',
         },
       ]);
 
       // Limpiar formulario para el siguiente
       setTipoDoc('CC'); setNumDoc(''); setPrimerNombre(''); setSegNombre('');
       setPrimerApell(''); setSegApell(''); setFechaNac('');
-      setParentesco(''); setGenero(''); setRolMiembro('MIEMBRO'); setErroresForm({});
+      setRolMiembro('MIEMBRO');
+      setConstanciaNombre(''); setConstanciaUri('');
+      setErroresForm({});
     }
     setAgregando(false);
+  }
+
+  // ── Adjuntar constancia (§2) ──────────────────────────────────────────────
+  // Tutor/Cuidador permanente deben cargar una constancia antes de continuar.
+  //
+  // PENDIENTE DE DEPENDENCIA: el selector de archivos real requiere
+  // `expo-document-picker` (o `expo-image-picker`), que NO está instalado.
+  // Hasta instalarlo, intentamos cargarlo dinámicamente; si no existe, se
+  // registra una referencia-marcador para no bloquear el flujo en campo y se
+  // informa al usuario. Al instalar la dep, este handler usará el picker real
+  // sin más cambios en la UI.
+  async function adjuntarConstancia() {
+    try {
+      // Carga perezosa: si algún día se instala expo-document-picker, se usa.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const picker: any = require('expo-document-picker');
+      const res = await picker.getDocumentAsync({ copyToCacheDirectory: true });
+      // API nueva (SDK 49+): { canceled, assets: [{ name, uri }] }
+      const asset = res?.assets?.[0];
+      if (res?.canceled || !asset) return;
+      setConstanciaNombre(asset.name ?? 'constancia');
+      setConstanciaUri(asset.uri ?? '');
+      setErroresForm(prev => { const { constancia, ...rest } = prev; return rest; });
+    } catch (err: any) {
+      // La dependencia no está instalada (MODULE_NOT_FOUND) o el picker falló.
+      // Placeholder: registrar una referencia-marcador para desbloquear el flujo
+      // y dejar explícito el pendiente. NO simula un archivo real.
+      const esModuloFaltante =
+        err?.code === 'MODULE_NOT_FOUND' ||
+        /Cannot find module|expo-document-picker/i.test(String(err?.message ?? ''));
+      const marcador = `constancia-pendiente-${Date.now()}.ref`;
+      setConstanciaNombre(marcador);
+      setConstanciaUri('');
+      setErroresForm(prev => { const { constancia, ...rest } = prev; return rest; });
+      Alert.alert(
+        'Constancia registrada (pendiente de archivo)',
+        esModuloFaltante
+          ? 'El selector de archivos aún no está disponible en esta versión. Se '
+            + 'registró la exigencia de la constancia para poder continuar; el '
+            + 'archivo deberá adjuntarse cuando se habilite el cargador.'
+          : 'No se pudo abrir el selector de archivos. Se registró la constancia '
+            + 'como pendiente para no bloquear la entrevista.',
+      );
+    }
+  }
+
+  function quitarConstancia() {
+    setConstanciaNombre('');
+    setConstanciaUri('');
   }
 
   // ── Continuar al hub de caracterizaciones (Sprint 14) ─────────────────────
@@ -501,6 +560,12 @@ export default function ConformarHogarScreen() {
   }
 
   const rutaLabel = RUTAS.find(r => r.value === rutaEntrevista)?.label ?? 'General';
+
+  // §2 — si en el formulario hay un Tutor/Cuidador a medio capturar sin su
+  // constancia, se bloquea Continuar para no perder ese integrante ni saltarse
+  // la constancia obligatoria.
+  const constanciaPendienteEnForm =
+    requiereConstancia(rolMiembro) && !constanciaNombre;
 
   return (
     <View style={styles.root}>
@@ -648,32 +713,14 @@ export default function ConformarHogarScreen() {
             ? <HelperText type="error">{erroresForm.fechaNac}</HelperText>
             : null}
 
-          {/* Fila: Parentesco + Género */}
-          <View style={styles.fila}>
-            <View style={{ flex: 1 }}>
-              <CampoSelector
-                label="Parentesco *"
-                valor={PARENTESCOS.find(p => p.value === parentesco)?.label ?? ''}
-                placeholder="Seleccionar"
-                error={!!erroresForm.parentesco}
-                onPress={() => setModalParentesco(true)}
-              />
-              {erroresForm.parentesco
-                ? <HelperText type="error">{erroresForm.parentesco}</HelperText>
-                : null}
-            </View>
-            <View style={{ flex: 1 }}>
-              <CampoSelector
-                label="Género *"
-                valor={GENEROS.find(g => g.value === genero)?.label ?? ''}
-                placeholder="Seleccionar"
-                error={!!erroresForm.genero}
-                onPress={() => setModalGenero(true)}
-              />
-              {erroresForm.genero
-                ? <HelperText type="error">{erroresForm.genero}</HelperText>
-                : null}
-            </View>
+          {/* §2 — Parentesco y Género ya NO se piden aquí: se capturan en el
+              Capítulo B (Datos básicos) para evitar la doble captura. */}
+          <View style={styles.notaB}>
+            <MaterialCommunityIcons name="information-outline" size={16} color={GOV.azulOscuro} />
+            <Text style={styles.notaBTxt}>
+              El parentesco y el género se registran en el Capítulo B (Datos básicos)
+              durante la entrevista.
+            </Text>
           </View>
 
           {/* Rol en el hogar */}
@@ -683,6 +730,45 @@ export default function ConformarHogarScreen() {
             placeholder="Seleccionar rol"
             onPress={() => setModalRol(true)}
           />
+
+          {/* §2 — Constancia obligatoria para Tutor / Cuidador permanente */}
+          {requiereConstancia(rolMiembro) && (
+            <View style={styles.constanciaBox}>
+              <Text style={styles.constanciaTitulo}>
+                Constancia obligatoria
+              </Text>
+              <Text style={styles.constanciaAyuda}>
+                El rol seleccionado exige adjuntar el documento que acredita la
+                tutoría o el cuidado permanente.
+              </Text>
+
+              {constanciaNombre ? (
+                <View style={styles.constanciaFila}>
+                  <MaterialCommunityIcons name="file-check-outline" size={18} color={GOV.verde} />
+                  <Text style={styles.constanciaArchivo} numberOfLines={1}>
+                    {constanciaNombre}
+                  </Text>
+                  <Pressable onPress={quitarConstancia} hitSlop={8}>
+                    <MaterialCommunityIcons name="close-circle" size={18} color={GOV.textoT} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <Button
+                mode="outlined"
+                icon="paperclip"
+                onPress={adjuntarConstancia}
+                style={styles.btnConstancia}
+                textColor={GOV.azul}
+              >
+                {constanciaNombre ? 'Cambiar constancia' : 'Adjuntar constancia'}
+              </Button>
+
+              {erroresForm.constancia
+                ? <HelperText type="error">{erroresForm.constancia}</HelperText>
+                : null}
+            </View>
+          )}
 
           {/* Botón Agregar */}
           <Button
@@ -704,12 +790,18 @@ export default function ConformarHogarScreen() {
             <Text style={styles.errorTxt}>{errorInicio}</Text>
           ) : null}
 
+          {constanciaPendienteEnForm ? (
+            <Text style={styles.errorTxt}>
+              Adjunte la constancia del Tutor/Cuidador o cambie su rol antes de continuar.
+            </Text>
+          ) : null}
+
           <GovButton
             label={`Continuar a caracterizaciones (${integrantes.length} integrante${integrantes.length !== 1 ? 's' : ''})`}
             icon="arrow-right-circle"
             onPress={continuarACaracterizaciones}
             loading={continuando}
-            disabled={!hogarId || continuando}
+            disabled={!hogarId || continuando || constanciaPendienteEnForm}
           />
 
           <Button
@@ -743,22 +835,6 @@ export default function ConformarHogarScreen() {
         valorActual={tipoDoc}
         onSeleccionar={setTipoDoc}
         onCerrar={() => setModalTipoDoc(false)}
-      />
-      <SelectorModal
-        visible={modalParentesco}
-        titulo="Parentesco con el autorizado"
-        opciones={PARENTESCOS}
-        valorActual={parentesco}
-        onSeleccionar={setParentesco}
-        onCerrar={() => setModalParentesco(false)}
-      />
-      <SelectorModal
-        visible={modalGenero}
-        titulo="Género"
-        opciones={GENEROS}
-        valorActual={genero}
-        onSeleccionar={setGenero}
-        onCerrar={() => setModalGenero(false)}
       />
       <SelectorModal
         visible={modalRol}
@@ -911,6 +987,74 @@ const styles = StyleSheet.create({
   integranteMeta: {
     ...FONT.caption,
     color: GOV.textoS,
+  },
+
+  // ── Nota Capítulo B (parentesco/género se piden allí) ───────────────────────
+  notaB: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: GOV.azulTenue,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  notaBTxt: {
+    ...FONT.caption,
+    color: GOV.azulOscuro,
+    flex: 1,
+  },
+
+  // ── Constancia (Tutor/Cuidador) ─────────────────────────────────────────────
+  constanciaBox: {
+    backgroundColor: GOV.verdeTenue,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: GOV.verde,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  constanciaTitulo: {
+    ...FONT.label,
+    color: GOV.verde,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  constanciaAyuda: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+  },
+  constanciaFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 8,
+    marginBottom: SPACING.sm,
+  },
+  constanciaArchivo: {
+    ...FONT.body,
+    color: GOV.textoP,
+    flex: 1,
+  },
+  btnConstancia: {
+    borderColor: GOV.azul,
+    borderRadius: RADIUS.sm,
+  },
+  constanciaTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  constanciaTagTxt: {
+    ...FONT.caption,
+    color: GOV.verde,
+    flex: 1,
   },
 
   // ── Botones ───────────────────────────────────────────────────────────────

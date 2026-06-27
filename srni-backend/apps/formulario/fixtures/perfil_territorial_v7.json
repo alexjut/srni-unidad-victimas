@@ -206,7 +206,7 @@
       "capitulo_codigo": "A",
       "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... Se autoreconoce como:",
       "tipo": "LISTA",
-      "nivel": "HOGAR",
+      "nivel": "PERSONA",
       "obligatoria": true,
       "orden": 3,
       "es_precargada": false,
@@ -403,7 +403,7 @@
       "capitulo_codigo": "A",
       "texto": "Telefono Celular",
       "tipo": "NUMERICO",
-      "nivel": "HOGAR",
+      "nivel": "PERSONA",
       "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
@@ -10410,22 +10410,25 @@
       "descripcion": "[B manual] mujer 12-50 años"
     },
     {
-      "origen_expr": "etnia == 'indigena'",
+      "origen": "Z4",
+      "valor_trigger": "1",
       "accion": "HABILITAR",
       "afecta": "A12",
-      "descripcion": "[demográfico/étnico] pueblo indígena: solo indígenas"
+      "descripcion": "[étnico por persona] pueblo indígena: Z4=Indígena(1)"
     },
     {
-      "origen_expr": "etnia == 'indigena'",
+      "origen": "Z4",
+      "valor_trigger": "1",
       "accion": "HABILITAR",
       "afecta": "A13",
-      "descripcion": "[demográfico/étnico] comunidad indígena: solo indígenas"
+      "descripcion": "[étnico por persona] comunidad indígena: Z4=Indígena(1)"
     },
     {
-      "origen_expr": "etnia == 'indigena'",
+      "origen": "Z4",
+      "valor_trigger": "1",
       "accion": "HABILITAR",
       "afecta": "A13A",
-      "descripcion": "[demográfico/étnico] cabildo indígena: solo indígenas"
+      "descripcion": "[étnico por persona] cabildo indígena: Z4=Indígena(1)"
     },
     {
       "origen": "Z4",
@@ -10435,10 +10438,11 @@
       "descripcion": "[demográfico/étnico] Vitsa: solo indígenas"
     },
     {
-      "origen_expr": "etnia == 'rom'",
+      "origen": "Z4",
+      "valor_trigger": "2",
       "accion": "HABILITAR",
       "afecta": "A13E",
-      "descripcion": "[demográfico/étnico] Kumpania: solo Rom"
+      "descripcion": "[étnico por persona] Kumpania: Z4=Gitano/Rrom(2)"
     },
     {
       "origen_expr": "etnia == 'indigena'",
@@ -10531,8 +10535,9 @@
     {
       "accion": "HABILITAR",
       "afecta": "H9",
-      "descripcion": "[G] usos y costumbres salud: solo étnicos",
-      "origen_expr": "etnia != 'ninguno'"
+      "descripcion": "[G] usos y costumbres salud: solo étnicos (Z4 != Ninguna)",
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5"
     },
     {
       "accion": "HABILITAR",
@@ -10572,8 +10577,9 @@
     {
       "accion": "HABILITAR",
       "afecta": "I29",
-      "descripcion": "[H] coordinación autoridades: solo étnicos",
-      "origen_expr": "etnia != 'ninguno'"
+      "descripcion": "[H] coordinación autoridades: solo étnicos (Z4 != Ninguna)",
+      "origen": "Z4",
+      "valor_trigger": "1,2,3,4,5"
     },
     {
       "origen": "FP2",
