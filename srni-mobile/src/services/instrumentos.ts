@@ -117,6 +117,7 @@ function _cargarPerfilEnMemoria(codigo: string): void {
         orden: p.orden ?? 0,
         obligatoria,
         activa: 1,
+        es_precargada: p.es_precargada ? 1 : 0,
         validaciones: typeof p.validaciones === 'string'
           ? p.validaciones
           : JSON.stringify(p.validaciones ?? {}),

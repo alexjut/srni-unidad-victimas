@@ -47,6 +47,7 @@ export interface PreguntaRow {
   orden: number;
   obligatoria: number;   // 0 | 1
   activa: number;        // 0 | 1
+  es_precargada?: number; // 0 | 1 — datos que vienen del RUV/sesión, NO se preguntan
   validaciones: string;  // JSON serializado
 }
 

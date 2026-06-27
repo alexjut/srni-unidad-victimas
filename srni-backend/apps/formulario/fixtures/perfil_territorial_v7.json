@@ -10984,11 +10984,10 @@
       "descripcion": "[flujo] A15 visible si A14=true"
     },
     {
-      "origen": "ESTADO_RUV",
-      "valor_trigger": "2",
       "accion": "HABILITAR",
       "afecta": "A21",
-      "descripcion": "[flujo] A21 visible si ESTADO_RUV=2"
+      "descripcion": "[B45 manual] es victima si NO incluido en RUV (contexto)",
+      "origen_expr": "ruv_incluido == false"
     },
     {
       "origen": "E1A",

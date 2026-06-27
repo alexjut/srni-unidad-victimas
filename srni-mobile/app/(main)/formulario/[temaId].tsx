@@ -498,7 +498,9 @@ export default function CapituloScreen() {
     const respMiembro = construirRespuestasMiembro(autorizado);
     const ctx = construirContextoMiembro(autorizado, respMiembro);
     const { visibles } = calcularVisibles(preguntas, reglas, respMiembro, ctx);
-    return preguntas.filter((p) => p.nivel === 'HOGAR' && visibles.has(p.codigo_externo));
+    // es_precargada: datos del RUV/sesión (dirección territorial, nombres RUV, hecho
+    // victimizante, estado…) — ya capturados antes; NO se vuelven a preguntar.
+    return preguntas.filter((p) => p.nivel === 'HOGAR' && !p.es_precargada && visibles.has(p.codigo_externo));
   }, [preguntas, reglas, miembros, construirRespuestasMiembro, construirContextoMiembro]);
 
   // ── Visibilidad PERSONA por miembro ──────────────────────────────────────────
@@ -533,7 +535,7 @@ export default function CapituloScreen() {
   // miembros resueltos, se listan todas las PERSONA del capítulo (degradación:
   // el motor mostrará el aviso de "no se cargaron miembros").
   const visiblesPersona = useMemo(() => {
-    const personaTodas = preguntas.filter((p) => p.nivel === 'PERSONA');
+    const personaTodas = preguntas.filter((p) => p.nivel === 'PERSONA' && !p.es_precargada);
     if (miembros.length === 0) return personaTodas;
     return personaTodas.filter((p) =>
       miembros.some((m) => personaPorMiembro.get(m.id)?.get(p.codigo_externo)?.aplica),
