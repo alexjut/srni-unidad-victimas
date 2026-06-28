@@ -241,7 +241,12 @@ export default function CapituloScreen() {
         setOpciones(instrumentos.getOpcionesBatch(pgs.map((p) => p.id)));
       }
 
-      setReglas(instrumentos.getReglasPorCapitulo(temaId));
+      // Skip-logic: cargar TODAS las reglas del instrumento (no solo las del
+      // capítulo). Las HABILITAR/DESHABILITAR/OBLIGAR cuelgan de pregunta_afectada
+      // (capitulo_afectado=null) y getReglasPorCapitulo las filtraba fuera → el
+      // formulario quedaba sin skip-logic ("como un libro"). calcularVisibles ya
+      // filtra por pregunta y maneja FINALIZAR de capítulo con todas las reglas.
+      setReglas(instrumentos.getReglas());
 
       // ── Resolver borrador ─────────────────────────────────────────────────
       const meta = instrumentos.getMeta();
