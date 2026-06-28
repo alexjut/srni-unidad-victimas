@@ -560,30 +560,18 @@ export default function CapituloScreen() {
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
-    const totalGlobal = visiblesHogar.length + visiblesPersona.length;
-
-    if (visiblesHogar.length > 0) {
-      out.push({ type: 'header-hogar', key: 'hdr-hogar' });
-      for (const p of visiblesHogar) {
-        out.push({
-          type: 'pregunta', pregunta: p, miembro: null,
-          indexGlobal: idx++, totalGlobal,
-          key: `q-${p.id}-`,
-        });
-      }
-    }
-
-    if (visiblesPersona.length > 0) {
-      // Cabecera única "Datos por persona" (o aviso si no se cargaron miembros —
-      // el header-miembro decide su contenido según miembros.length).
-      out.push({ type: 'header-miembro', miembro: null, key: 'hdr-personas' });
-      for (const p of visiblesPersona) {
-        out.push({
-          type: 'pregunta-persona', pregunta: p, miembro: null,
-          indexGlobal: idx++, totalGlobal,
-          key: `qp-${p.id}`,
-        });
-      }
+    // Render en el ORDEN del manual (campo `orden`), intercalando HOGAR y PERSONA.
+    // Antes se separaba en bloque HOGAR + bloque PERSONA, lo que mandaba las
+    // preguntas PERSONA (ej. autorreconocimiento A4, celular A11) al final, fuera
+    // de orden. Cada PERSONA sigue siendo una tarjeta agrupada (fila por miembro).
+    const todasVis = [...visiblesHogar, ...visiblesPersona].sort((a, b) => a.orden - b.orden);
+    const totalGlobal = todasVis.length;
+    for (const p of todasVis) {
+      out.push(
+        p.nivel === 'PERSONA'
+          ? { type: 'pregunta-persona', pregunta: p, miembro: null, indexGlobal: idx++, totalGlobal, key: `qp-${p.id}` }
+          : { type: 'pregunta', pregunta: p, miembro: null, indexGlobal: idx++, totalGlobal, key: `q-${p.id}-` },
+      );
     }
     return out;
   }, [visiblesHogar, visiblesPersona, miembros]);
@@ -725,6 +713,28 @@ export default function CapituloScreen() {
   }, [aceptarSugerencia, setRespuesta]);
 
   useEffect(() => { return () => { resetearIA(); }; }, []);
+
+  // ── Autollenar correspondencia = residencia cuando Z11 = "Sí" (mismo lugar) ───
+  // Las preguntas de correspondencia quedan OCULTAS por skip-logic cuando el lugar
+  // es el mismo, pero el registro debe llevar el dato (igual al de residencia).
+  // Pares residencia→correspondencia del cap A (Identificación). En otros capítulos
+  // los códigos no existen → no-op. Solo escribe si difiere (evita re-render loop).
+  useEffect(() => {
+    const byCodigo = new Map(preguntas.map((p) => [p.codigo_externo, p]));
+    const z11 = byCodigo.get('Z11');
+    if (!z11) return;
+    if ((respuestas[claveResp(z11.id, null)] ?? '') !== 'true') return;
+    const pares: [string, string][] = [
+      ['Z5A', 'Z15'], ['Z6', 'Z16'], ['Z7', 'Z17'], ['VEREDA', 'Z18'], ['Z8', 'Z12'],
+    ];
+    for (const [resCod, corCod] of pares) {
+      const res = byCodigo.get(resCod), cor = byCodigo.get(corCod);
+      if (!res || !cor) continue;
+      const valRes = respuestas[claveResp(res.id, null)] ?? '';
+      const valCor = respuestas[claveResp(cor.id, null)] ?? '';
+      if (valRes && valRes !== valCor) setRespuesta(cor.id, valRes, null);
+    }
+  }, [preguntas, respuestas, setRespuesta]);
 
   // ── Guardar capítulo: bulk sync (online) o encolar (offline) → volver ─────────
   async function guardarYVolver() {
