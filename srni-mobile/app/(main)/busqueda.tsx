@@ -23,7 +23,7 @@ import { GovHeader } from '../../src/components/GovHeader';
 import { SelectorFecha } from '../../src/components/SelectorFecha';
 
 // Fondo: caficultor colombiano en la montaña. Imagen LOCAL (bundled) → carga
-// offline, sin depender de red, coherente con la marca Vínculo Colombiano.
+// offline, sin depender de red, coherente con la marca SICAV Móvil.
 const IMAGEN_FONDO = require('../../assets/fondo-busqueda.jpg');
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 import { victimasApi } from '../../src/api/victimas';

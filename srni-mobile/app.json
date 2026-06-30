@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Vínculo Colombiano",
+    "name": "SICAV Móvil",
     "slug": "srni-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -48,7 +48,7 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Permitir acceder con Face ID al SRNI — Sistema de Caracterización de Víctimas"
+          "faceIDPermission": "Permitir acceder con Face ID a SICAV — Sistema de Caracterización a Víctimas"
         }
       ]
     ],

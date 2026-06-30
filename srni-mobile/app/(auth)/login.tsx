@@ -323,7 +323,7 @@ export default function LoginScreen() {
               {/* Nombre de la APK */}
               <Text style={styles.appTitulo}>{APP_NAME}</Text>
               <Text style={styles.appSubtitulo}>
-                Sistema de Caracterización de Víctimas
+                Sistema de Caracterización a Víctimas — Móvil
               </Text>
             </View>
           </View>
