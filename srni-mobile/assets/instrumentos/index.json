@@ -10,10 +10,10 @@
   {
     "codigo": "BUENAVENTURA",
     "version": "V7",
-    "nombre": "Buenaventura — Sentencia T-045",
+    "nombre": "Caracterización Buenaventura",
     "archivo": "buenaventura_v7.json",
-    "capitulos": 17,
-    "preguntas": 151
+    "capitulos": 16,
+    "preguntas": 379
   },
   {
     "codigo": "RURAL_ETNICO",
