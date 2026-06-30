@@ -26,10 +26,10 @@
   {
     "codigo": "SAN_ANDRES",
     "version": "V7",
-    "nombre": "San Andrés, Providencia y Santa Catalina",
+    "nombre": "Caracterización San Andrés",
     "archivo": "san_andres_v7.json",
-    "capitulos": 14,
-    "preguntas": 109
+    "capitulos": 15,
+    "preguntas": 333
   },
   {
     "codigo": "TELEFONICO",
