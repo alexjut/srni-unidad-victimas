@@ -1,134 +1,6412 @@
 {
-  "perfil": {
-    "codigo": "URBANO_ETNICO",
-    "nombre": "Perfil Urbano Étnico UARIV V1"
+ "perfil": {
+  "codigo": "URBANO_ETNICO",
+  "nombre": "Caracterización Urbano Étnico"
+ },
+ "instrumento_version": {
+  "numero": "V1",
+  "vigente_desde": "2023-07-14"
+ },
+ "capitulos": [
+  {
+   "codigo": "A",
+   "nombre": "A. IDENTIFICACIÓN",
+   "orden": 1,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
   },
-  "instrumento_version": {
-    "numero": "V1",
-    "vigente_desde": "2021-01-01",
-    "vigente_hasta": null,
-    "fuente_documental": "Diccionario UARIV Instrumento V1 — Perfil para comunidades étnicas (indígenas, afrocolombianas, ROM, raizales, palenqueras) en zonas urbanas; énfasis en impacto del desplazamiento sobre identidad cultural, prácticas ancestrales y acceso a derechos en ciudad"
+  {
+   "codigo": "B",
+   "nombre": "B. DATOS BÁSICOS",
+   "orden": 2,
+   "nivel": "PERSONA",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
   },
-  "capitulos": [
-    {"codigo": "A",  "nombre": "A. IDENTIFICACIÓN Y CONTACTO",         "orden": 1,  "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Registrar lugar de realización de la entrevista, lugar de residencia urbana del hogar y datos de contacto.", "aplicabilidad": {}},
-    {"codigo": "ET", "nombre": "ET. AUTORECONOCIMIENTO ÉTNICO",        "orden": 2,  "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Identificar la pertenencia étnica del hogar, prácticas culturales y usos y costumbres mantenidos en el contexto urbano.", "aplicabilidad": {}},
-    {"codigo": "C",  "nombre": "C. VIVIENDA URBANA",                   "orden": 3,  "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Caracterizar las condiciones de la vivienda en zona urbana.", "aplicabilidad": {}},
-    {"codigo": "ID", "nombre": "ID. IMPACTO DESPLAZAMIENTO CULTURAL",  "orden": 4,  "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Identificar el impacto del desplazamiento forzado sobre la identidad cultural, lengua nativa y continuidad de prácticas ancestrales del hogar.", "aplicabilidad": {}},
-    {"codigo": "PR", "nombre": "PR. PROGRAMAS SOCIALES",               "orden": 5,  "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Identificar vinculación del hogar a programas sociales del Estado.", "aplicabilidad": {}},
-    {"codigo": "B",  "nombre": "B. DATOS BÁSICOS",                     "orden": 6,  "nivel": "PERSONA", "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Caracterizar sociodemográficamente a cada miembro del hogar con énfasis en pertenencia étnica.", "aplicabilidad": {}},
-    {"codigo": "F",  "nombre": "F. EDUCACIÓN",                         "orden": 7,  "nivel": "PERSONA", "poblacion_objetivo": "VICTIMAS_RUV_3_ANOS_MAS", "objetivo": "Conocer el nivel de asistencia escolar y nivel educativo, incluyendo acceso a etnoeducación en ciudad.", "aplicabilidad": {"ruv_incluido": true, "edad_min": 3}},
-    {"codigo": "G",  "nombre": "G. SALUD",                             "orden": 8,  "nivel": "PERSONA", "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Obtener información sobre afiliación al sistema de salud y acceso a medicina tradicional en ciudad.", "aplicabilidad": {}},
-    {"codigo": "LN", "nombre": "LN. LENGUA NATIVA Y USOS CULTURALES", "orden": 9,  "nivel": "PERSONA", "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Identificar el uso de lengua nativa, prácticas espirituales y culturales mantenidas en entorno urbano.", "aplicabilidad": {}},
-    {"codigo": "JF", "nombre": "J. FUERZA DE TRABAJO",                 "orden": 10, "nivel": "PERSONA", "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Caracterizar la situación laboral e ingresos en entorno urbano.", "aplicabilidad": {}},
-    {"codigo": "AS", "nombre": "AS. ACCESO A SERVICIOS EN CIUDAD",     "orden": 11, "nivel": "PERSONA", "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Identificar barreras de acceso a bienes y servicios del Estado por parte de las comunidades étnicas en zona urbana.", "aplicabilidad": {}},
-    {"codigo": "T",  "nombre": "T. CONTROL",                           "orden": 12, "nivel": "HOGAR",   "poblacion_objetivo": "TODOS_MIEMBROS", "objetivo": "Capítulo de control interno — sin preguntas al entrevistado.", "aplicabilidad": {}}
-  ],
-  "preguntas": [
-    {"no_pregunta": "A1",  "codigo_externo": "DT_ATENCION",   "id_preg": 1161, "texto": "Dirección Territorial",                                                                    "tipo": "COMBO_DINAMICO", "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": false, "orden": 1,  "es_precargada": true,  "fuente_precarga": "TABLA_USUARIOS", "validaciones": {}, "opciones": []},
-    {"no_pregunta": "A2",  "codigo_externo": "Z2_ue",         "id_preg": 1,    "texto": "Lugar de la Encuesta (municipio)",                                                         "tipo": "COMBO_DINAMICO", "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "A3",  "codigo_externo": "Z3_ue",         "id_preg": 2,    "texto": "Método de recolección",                                                                    "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:Z3_METODO_RECOLECCION"},
-    {"no_pregunta": "A4",  "codigo_externo": "Z4_ue",         "id_preg": 35,   "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ¿cómo se autoreconoce?",             "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:Z4_AUTORECONOCIMIENTO"},
-    {"no_pregunta": "A5",  "codigo_externo": "Z5A_ue",        "id_preg": 3,    "texto": "Lugar de residencia (municipio)",                                                          "tipo": "COMBO_DINAMICO", "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "A6",  "codigo_externo": "Z6_ue",         "id_preg": 5,    "texto": "Zona de residencia",                                                                       "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:Z6_ZONA"},
-    {"no_pregunta": "A7",  "codigo_externo": "Z7_ue",         "id_preg": 4,    "texto": "Barrio o sector urbano",                                                                   "tipo": "TEXTO",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": false, "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 200}, "opciones": []},
-    {"no_pregunta": "A8",  "codigo_externo": "Z8_ue",         "id_preg": 6,    "texto": "Dirección de la vivienda",                                                                 "tipo": "TEXTO",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": false, "orden": 8,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 300}, "opciones": []},
-    {"no_pregunta": "A9",  "codigo_externo": "Z9B_ue",        "id_preg": 8,    "texto": "Teléfono celular",                                                                         "tipo": "NUMERICO",       "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": false, "orden": 9,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"min": 3000000000, "max": 3999999999}, "opciones": []},
-    {"no_pregunta": "A10", "codigo_externo": "T6_ue",         "id_preg": 10,   "texto": "Encuestador(a) responsable",                                                              "tipo": "TEXTO",          "nivel": "HOGAR",   "capitulo_codigo": "A",  "obligatoria": true,  "orden": 10, "es_precargada": true,  "fuente_precarga": "TABLA_USUARIOS", "validaciones": {}, "opciones": []},
-
-    {"no_pregunta": "ET1", "codigo_externo": "ET1_etnia",     "id_preg": 4001, "texto": "¿A qué grupo étnico pertenece principalmente el hogar?",                                  "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:Z4_AUTORECONOCIMIENTO"},
-    {"no_pregunta": "ET2", "codigo_externo": "ET2_pueblo",    "id_preg": 4002, "texto": "¿A qué pueblo indígena, comunidad negra o grupo étnico específico pertenece?",            "tipo": "TEXTO",          "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": false, "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 200}, "opciones": []},
-    {"no_pregunta": "ET3", "codigo_externo": "ET3_tiempo_urb","id_preg": 4003, "texto": "¿Cuánto tiempo lleva el hogar residiendo en zona urbana?",                               "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:TIEMPO_DESPLAZAMIENTO"},
-    {"no_pregunta": "ET4", "codigo_externo": "ET4_causa_urb", "id_preg": 4004, "texto": "¿Cuál fue la causa principal del traslado a la zona urbana?",                             "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": true,  "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Desplazamiento forzado por el conflicto", "orden": 1}, {"valor": "2", "etiqueta": "Amenazas directas de actores armados", "orden": 2}, {"valor": "3", "etiqueta": "Búsqueda de oportunidades económicas", "orden": 3}, {"valor": "4", "etiqueta": "Reunificación familiar", "orden": 4}, {"valor": "5", "etiqueta": "Acceso a servicios (salud, educación)", "orden": 5}, {"valor": "9", "etiqueta": "Otra causa", "orden": 6}]},
-    {"no_pregunta": "ET5", "codigo_externo": "ET5_org_etnica","id_preg": 4005, "texto": "¿El hogar participa en alguna organización étnica en la ciudad?",                        "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "ET6", "codigo_externo": "ET6_cual_org",  "id_preg": 4006, "texto": "¿Cuál organización étnica?",                                                              "tipo": "TEXTO",          "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": false, "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 200}, "opciones": []},
-    {"no_pregunta": "ET7", "codigo_externo": "ET7_pract_cult","id_preg": 4007, "texto": "¿El hogar mantiene prácticas culturales propias de su grupo étnico en la ciudad?",       "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": true,  "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "ET8", "codigo_externo": "ET8_cuales_pract","id_preg": 4008,"texto": "¿Cuáles prácticas culturales mantiene el hogar?",                                        "tipo": "LISTA_MULTIPLE", "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": false, "orden": 8,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Rituales espirituales / ceremonias", "orden": 1}, {"valor": "2", "etiqueta": "Gastronomía tradicional", "orden": 2}, {"valor": "3", "etiqueta": "Artesanía y tejido", "orden": 3}, {"valor": "4", "etiqueta": "Medicina tradicional / plantas medicinales", "orden": 4}, {"valor": "5", "etiqueta": "Música y danza", "orden": 5}, {"valor": "6", "etiqueta": "Lengua nativa", "orden": 6}, {"valor": "7", "etiqueta": "Economía comunitaria / mingas", "orden": 7}, {"valor": "8", "etiqueta": "Ninguna", "orden": 8}]},
-    {"no_pregunta": "ET9", "codigo_externo": "ET9_obs",       "id_preg": 4009, "texto": "Observaciones sobre autoreconocimiento étnico y prácticas culturales",                   "tipo": "TEXTO_LARGO",    "nivel": "HOGAR",   "capitulo_codigo": "ET", "obligatoria": false, "orden": 9,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 1000}, "opciones": []},
-
-    {"no_pregunta": "C1",  "codigo_externo": "C1_ue",         "id_preg": 42,   "texto": "¿Cuál es el tipo de vivienda?",                                                           "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:C1_TIPO_VIVIENDA"},
-    {"no_pregunta": "C2",  "codigo_externo": "C2_ue",         "id_preg": 43,   "texto": "¿Las paredes exteriores son principalmente de?",                                          "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:MATERIAL_PAREDES"},
-    {"no_pregunta": "C3",  "codigo_externo": "C3_ue",         "id_preg": 44,   "texto": "¿El piso es principalmente de?",                                                          "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:MATERIAL_PISO"},
-    {"no_pregunta": "C4",  "codigo_externo": "C4_ue",         "id_preg": 50,   "texto": "¿Con cuántos cuartos cuenta la vivienda para dormir?",                                   "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:D_CUARTOS"},
-    {"no_pregunta": "C5",  "codigo_externo": "C5_ue",         "id_preg": 53,   "texto": "¿Cuál es la forma de tenencia de la vivienda?",                                           "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:D5_TENENCIA_VIVIENDA"},
-    {"no_pregunta": "C6",  "codigo_externo": "C6_ue",         "id_preg": 46,   "texto": "¿De dónde obtiene principalmente el agua para el consumo?",                              "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:AGUA_FUENTE"},
-    {"no_pregunta": "C7",  "codigo_externo": "C7_ue",         "id_preg": 47,   "texto": "¿Cuál es el servicio de saneamiento básico?",                                             "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:SANEAMIENTO"},
-    {"no_pregunta": "C8",  "codigo_externo": "C8_ue",         "id_preg": 55,   "texto": "¿La vivienda cuenta con servicio de energía eléctrica?",                                  "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 8,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:ALUMBRADO"},
-    {"no_pregunta": "C9",  "codigo_externo": "C9_ue",         "id_preg": 52,   "texto": "¿Cuántas personas residen en la vivienda?",                                               "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "C",  "obligatoria": true,  "orden": 9,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:D_PERSONAS"},
-
-    {"no_pregunta": "ID1", "codigo_externo": "ID1_ue",        "id_preg": 4010, "texto": "¿El desplazamiento forzado afectó las prácticas culturales del hogar?",                   "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "ID", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Sí, gravemente", "orden": 1}, {"valor": "2", "etiqueta": "Sí, parcialmente", "orden": 2}, {"valor": "3", "etiqueta": "No", "orden": 3}, {"valor": "9", "etiqueta": "No sabe", "orden": 4}]},
-    {"no_pregunta": "ID2", "codigo_externo": "ID2_ue",        "id_preg": 4011, "texto": "¿El hogar perdió objetos o bienes de valor cultural (instrumentos, vestimenta, semillas)?", "tipo": "BOOLEAN", "nivel": "HOGAR", "capitulo_codigo": "ID", "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "ID3", "codigo_externo": "ID3_ue",        "id_preg": 4012, "texto": "¿Qué aspectos culturales se han perdido o reducido por el desplazamiento?",              "tipo": "LISTA_MULTIPLE", "nivel": "HOGAR",   "capitulo_codigo": "ID", "obligatoria": false, "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Uso de lengua nativa", "orden": 1}, {"valor": "2", "etiqueta": "Celebraciones y rituales", "orden": 2}, {"valor": "3", "etiqueta": "Conocimientos medicinales tradicionales", "orden": 3}, {"valor": "4", "etiqueta": "Formas de gobierno propio / autoridad", "orden": 4}, {"valor": "5", "etiqueta": "Acceso a territorio y naturaleza", "orden": 5}, {"valor": "6", "etiqueta": "Transmisión cultural a hijos", "orden": 6}, {"valor": "7", "etiqueta": "Economía comunitaria", "orden": 7}, {"valor": "8", "etiqueta": "Ninguno", "orden": 8}]},
-    {"no_pregunta": "ID4", "codigo_externo": "ID4_ue",        "id_preg": 4013, "texto": "¿El hogar ha recibido medidas de reparación que reconozcan el daño cultural?",           "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "ID", "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "ID5", "codigo_externo": "ID5_ue",        "id_preg": 4014, "texto": "¿El hogar desea retornar a su territorio étnico de origen?",                             "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "ID", "obligatoria": true,  "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Sí, en el corto plazo", "orden": 1}, {"valor": "2", "etiqueta": "Sí, pero no hay condiciones de seguridad", "orden": 2}, {"valor": "3", "etiqueta": "No, prefiere quedarse en la ciudad", "orden": 3}, {"valor": "4", "etiqueta": "No sabe / no decide", "orden": 4}]},
-    {"no_pregunta": "ID6", "codigo_externo": "ID6_ue",        "id_preg": 4015, "texto": "Observaciones sobre impacto del desplazamiento en la identidad cultural",               "tipo": "TEXTO_LARGO",    "nivel": "HOGAR",   "capitulo_codigo": "ID", "obligatoria": false, "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 1000}, "opciones": []},
-
-    {"no_pregunta": "PR1", "codigo_externo": "PR1_ue",        "id_preg": 90,   "texto": "¿El hogar está vinculado a Familias en Acción?",                                          "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "PR2", "codigo_externo": "PR2_ue",        "id_preg": 91,   "texto": "¿El hogar ha recibido alguna Ayuda Humanitaria de Emergencia (AHE)?",                     "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "PR3", "codigo_externo": "PR3_ue",        "id_preg": 92,   "texto": "¿Qué tipo de ayuda humanitaria ha recibido?",                                             "tipo": "LISTA_MULTIPLE", "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": false, "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:TIPO_AYUDA_HUMANITARIA"},
-    {"no_pregunta": "PR4", "codigo_externo": "PR4_ue",        "id_preg": 93,   "texto": "¿El hogar ha recibido indemnización administrativa?",                                     "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": true,  "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "PR5", "codigo_externo": "PR5_ue",        "id_preg": 94,   "texto": "¿El hogar ha recibido algún subsidio de vivienda?",                                       "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "PR6", "codigo_externo": "PR6_ue",        "id_preg": 95,   "texto": "¿El hogar conoce sus derechos dentro del SNARIV?",                                        "tipo": "LISTA",          "nivel": "HOGAR",   "capitulo_codigo": "PR", "obligatoria": false, "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:SI_NO_NS"},
-
-    {"no_pregunta": "B1",  "codigo_externo": "NOMBRE_1_ue",  "id_preg": 13,   "texto": "Primer nombre",                                                                            "tipo": "TEXTO",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 1,  "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {"max_length": 60}, "opciones": []},
-    {"no_pregunta": "B2",  "codigo_externo": "A2_ue",        "id_preg": 15,   "texto": "Segundo nombre",                                                                           "tipo": "TEXTO",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": false, "orden": 2,  "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {"max_length": 60}, "opciones": []},
-    {"no_pregunta": "B3",  "codigo_externo": "A6_ue",        "id_preg": 27,   "texto": "Fecha de nacimiento",                                                                      "tipo": "FECHA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 3,  "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {}, "opciones": []},
-    {"no_pregunta": "B4",  "codigo_externo": "B9_ue",        "id_preg": 14,   "texto": "¿Cuántos años cumplidos tiene?",                                                          "tipo": "NUMERICO",       "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"min": 0, "max": 120}, "opciones": []},
-    {"no_pregunta": "B5",  "codigo_externo": "A3_ue",        "id_preg": 30,   "texto": "¿Qué tipo de documento de identificación tiene?",                                         "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 5,  "es_precargada": true,  "fuente_precarga": "TABLA_CONFORMACION_HOGAR", "validaciones": {}, "opciones": "$ref:A3_TIPO_DOCUMENTO"},
-    {"no_pregunta": "B6",  "codigo_externo": "A5_ue",        "id_preg": 31,   "texto": "Número de documento de identificación",                                                    "tipo": "TEXTO",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 6,  "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {"max_length": 20}, "opciones": []},
-    {"no_pregunta": "B7",  "codigo_externo": "A8_ue",        "id_preg": 24,   "texto": "Sexo",                                                                                     "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:A8_SEXO"},
-    {"no_pregunta": "B8",  "codigo_externo": "A9_ue",        "id_preg": 28,   "texto": "El parentesco frente al jefe del hogar es:",                                               "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 8,  "es_precargada": true,  "fuente_precarga": "TABLA_CONFORMACION_HOGAR", "validaciones": {}, "opciones": "$ref:A9_PARENTESCO"},
-    {"no_pregunta": "B9",  "codigo_externo": "Z4_ETNIA_ue",  "id_preg": 35,   "texto": "Pertenencia étnica",                                                                       "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 9,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:Z4_AUTORECONOCIMIENTO"},
-    {"no_pregunta": "B10", "codigo_externo": "A11_ue",       "id_preg": 289,  "texto": "¿La Unidad para las Víctimas incluyó a esta persona en el RUV?",                          "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 10, "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {}, "opciones": "$ref:D8A_SN"},
-    {"no_pregunta": "B11", "codigo_externo": "A21_ue",       "id_preg": 17,   "texto": "Hecho victimizante principal",                                                             "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 11, "es_precargada": true,  "fuente_precarga": "RUV",            "validaciones": {}, "opciones": "$ref:A21_HECHO_VICTIMIZANTE"},
-    {"no_pregunta": "B12", "codigo_externo": "I6_ue",        "id_preg": 88,   "texto": "¿Presenta alguna discapacidad?",                                                           "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "B",  "obligatoria": true,  "orden": 12, "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-
-    {"no_pregunta": "F1",  "codigo_externo": "G2_ue",        "id_preg": 71,   "texto": "¿Actualmente está matriculado(a) en preescolar, escuela, colegio o universidad?",         "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": true,  "orden": 1,  "es_precargada": true,  "fuente_precarga": "MODELO_EDUCACION", "validaciones": {}, "opciones": []},
-    {"no_pregunta": "F2",  "codigo_externo": "G15_ue",       "id_preg": 339,  "texto": "¿Sabe leer y escribir?",                                                                   "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "F3",  "codigo_externo": "G7B_ue",       "id_preg": 76,   "texto": "¿Cuál es el nivel educativo más alto alcanzado?",                                         "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:G7B_GRADO_EDUCACION"},
-    {"no_pregunta": "F4",  "codigo_externo": "ET_etnoeduc",  "id_preg": 4016, "texto": "¿La institución educativa ofrece cátedra o currículo pertinente a la cultura étnica?",    "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:SI_NO_NS"},
-    {"no_pregunta": "F5",  "codigo_externo": "ET_idioma_esc","id_preg": 4017, "texto": "¿En la escuela se enseña o usa la lengua nativa del grupo étnico?",                        "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "F6",  "codigo_externo": "G4_ue",        "id_preg": 73,   "texto": "¿Por qué no asiste actualmente a un establecimiento educativo?",                          "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "F",  "obligatoria": false, "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Costos educativos elevados", "orden": 1}, {"valor": "2", "etiqueta": "Necesita trabajar", "orden": 2}, {"valor": "3", "etiqueta": "Discriminación étnica", "orden": 3}, {"valor": "4", "etiqueta": "No hay institución con pertinencia étnica cercana", "orden": 4}, {"valor": "5", "etiqueta": "Responsabilidades del hogar", "orden": 5}, {"valor": "9", "etiqueta": "Otra razón", "orden": 6}]},
-
-    {"no_pregunta": "G1",  "codigo_externo": "H8_ue",        "id_preg": 140,  "texto": "¿Está afiliado a algún régimen de seguridad social en salud?",                            "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": true,  "orden": 1,  "es_precargada": true,  "fuente_precarga": "MODELO_SALUD",   "validaciones": {}, "opciones": "$ref:H8_REGIMEN_SALUD"},
-    {"no_pregunta": "G2",  "codigo_externo": "H9_ue",        "id_preg": 141,  "texto": "¿Tuvo algún problema de salud en los últimos 30 días?",                                    "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "G3",  "codigo_externo": "H13_ue",       "id_preg": 145,  "texto": "¿Tiene diagnóstico de enfermedad crónica no transmisible?",                              "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "G4",  "codigo_externo": "ET_med_trad",  "id_preg": 4018, "texto": "¿Practica o usa medicina tradicional o ancestral de su grupo étnico?",                    "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "G5",  "codigo_externo": "ET_acceso_med_trad","id_preg": 4019,"texto": "¿Tiene acceso a plantas medicinales o curanderos de su cultura en la ciudad?",         "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:SI_NO_NS"},
-    {"no_pregunta": "G6",  "codigo_externo": "H17_ue",       "id_preg": 149,  "texto": "¿Se encuentra alguna mujer del hogar en estado de embarazo?",                            "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "G",  "obligatoria": true,  "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-
-    {"no_pregunta": "LN1", "codigo_externo": "LN1_ue",       "id_preg": 4020, "texto": "¿Esta persona habla una lengua nativa o indígena?",                                        "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "LN2", "codigo_externo": "LN2_ue",       "id_preg": 4021, "texto": "¿Cuál lengua nativa habla?",                                                              "tipo": "TEXTO",          "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 100}, "opciones": []},
-    {"no_pregunta": "LN3", "codigo_externo": "LN3_ue",       "id_preg": 4022, "texto": "¿El desplazamiento afectó el uso de la lengua nativa?",                                   "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Sí, dejó de hablarla", "orden": 1}, {"valor": "2", "etiqueta": "Sí, la usa menos", "orden": 2}, {"valor": "3", "etiqueta": "No, la usa igual", "orden": 3}, {"valor": "4", "etiqueta": "No aplica (no la hablaba)", "orden": 4}]},
-    {"no_pregunta": "LN4", "codigo_externo": "LN4_ue",       "id_preg": 4023, "texto": "¿La persona mantiene prácticas espirituales o rituales propias de su cultura?",          "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "LN5", "codigo_externo": "LN5_ue",       "id_preg": 4024, "texto": "¿La persona ha trasmitido sus prácticas culturales a sus hijos(as)?",                     "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:SI_NO_NS"},
-    {"no_pregunta": "LN6", "codigo_externo": "LN6_ue",       "id_preg": 4025, "texto": "¿Siente que su identidad cultural se ha debilitado en la ciudad?",                        "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 6,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Sí, mucho", "orden": 1}, {"valor": "2", "etiqueta": "Sí, un poco", "orden": 2}, {"valor": "3", "etiqueta": "No", "orden": 3}, {"valor": "9", "etiqueta": "No sabe", "orden": 4}]},
-    {"no_pregunta": "LN7", "codigo_externo": "LN7_ue",       "id_preg": 4026, "texto": "Observaciones sobre lengua nativa y usos culturales",                                     "tipo": "TEXTO_LARGO",    "nivel": "PERSONA", "capitulo_codigo": "LN", "obligatoria": false, "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 800}, "opciones": []},
-
-    {"no_pregunta": "JF1", "codigo_externo": "L1_ue",        "id_preg": 119,  "texto": "¿Cuál fue la actividad principal la semana pasada?",                                       "tipo": "LISTA",          "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": "$ref:L1_ACTIVIDAD_LABORAL"},
-    {"no_pregunta": "JF2", "codigo_externo": "L2_ue",        "id_preg": 120,  "texto": "¿Realizó la semana pasada alguna actividad paga por una hora o más?",                     "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "JF3", "codigo_externo": "L5_ue",        "id_preg": 123,  "texto": "¿Buscó trabajo la semana pasada?",                                                         "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": true,  "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "JF4", "codigo_externo": "L13_ue",       "id_preg": 131,  "texto": "¿En qué ocupación trabajó la semana pasada?",                                             "tipo": "TEXTO",          "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 200}, "opciones": []},
-    {"no_pregunta": "JF5", "codigo_externo": "L17_ue",       "id_preg": 135,  "texto": "¿Cuánto ganó el mes pasado?",                                                             "tipo": "NUMERICO",       "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"min": 0}, "opciones": []},
-    {"no_pregunta": "JF6", "codigo_externo": "ET_econ_prop", "id_preg": 4027, "texto": "¿Trabaja en actividades propias de su economía étnica (artesanía, medicina tradicional, trabajo comunitario)?", "tipo": "BOOLEAN", "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": false, "orden": 6, "es_precargada": false, "fuente_precarga": "", "validaciones": {}, "opciones": []},
-    {"no_pregunta": "JF7", "codigo_externo": "JF7_obs_ue",   "id_preg": 4028, "texto": "Observaciones al capítulo Fuerza de Trabajo",                                            "tipo": "TEXTO_LARGO",    "nivel": "PERSONA", "capitulo_codigo": "JF", "obligatoria": false, "orden": 7,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 500}, "opciones": []},
-
-    {"no_pregunta": "AS1", "codigo_externo": "AS1_ue",       "id_preg": 4030, "texto": "¿El hogar ha enfrentado barreras para acceder a servicios del Estado en la ciudad?",      "tipo": "BOOLEAN",        "nivel": "PERSONA", "capitulo_codigo": "AS", "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "AS2", "codigo_externo": "AS2_ue",       "id_preg": 4031, "texto": "¿Qué tipo de barreras ha enfrentado?",                                                    "tipo": "LISTA_MULTIPLE", "nivel": "PERSONA", "capitulo_codigo": "AS", "obligatoria": false, "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Falta de documentos de identidad", "orden": 1}, {"valor": "2", "etiqueta": "Discriminación étnica o racial", "orden": 2}, {"valor": "3", "etiqueta": "Barreras idiomáticas (no habla español fluido)", "orden": 3}, {"valor": "4", "etiqueta": "Desconocimiento de rutas de atención", "orden": 4}, {"valor": "5", "etiqueta": "Recursos económicos insuficientes", "orden": 5}, {"valor": "6", "etiqueta": "No hay oferta institucional étnica en la ciudad", "orden": 6}, {"valor": "9", "etiqueta": "Ninguna barrera", "orden": 7}]},
-    {"no_pregunta": "AS3", "codigo_externo": "AS3_ue",       "id_preg": 4032, "texto": "¿El hogar ha recibido orientación de la Unidad para las Víctimas sobre sus derechos étnicos?", "tipo": "BOOLEAN", "nivel": "PERSONA", "capitulo_codigo": "AS", "obligatoria": false, "orden": 3, "es_precargada": false, "fuente_precarga": "", "validaciones": {}, "opciones": []},
-    {"no_pregunta": "AS4", "codigo_externo": "AS4_ue",       "id_preg": 4033, "texto": "¿Qué servicios ha logrado acceder en la ciudad?",                                         "tipo": "LISTA_MULTIPLE", "nivel": "PERSONA", "capitulo_codigo": "AS", "obligatoria": false, "orden": 4,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": [{"valor": "1", "etiqueta": "Salud", "orden": 1}, {"valor": "2", "etiqueta": "Educación", "orden": 2}, {"valor": "3", "etiqueta": "Ayuda humanitaria", "orden": 3}, {"valor": "4", "etiqueta": "Vivienda temporal", "orden": 4}, {"valor": "5", "etiqueta": "Empleo formal", "orden": 5}, {"valor": "6", "etiqueta": "Registro en RUV", "orden": 6}, {"valor": "7", "etiqueta": "Ninguno", "orden": 7}]},
-    {"no_pregunta": "AS5", "codigo_externo": "AS5_ue",       "id_preg": 4034, "texto": "Observaciones sobre acceso a servicios en ciudad",                                        "tipo": "TEXTO_LARGO",    "nivel": "PERSONA", "capitulo_codigo": "AS", "obligatoria": false, "orden": 5,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 1000}, "opciones": []},
-
-    {"no_pregunta": "T1",  "codigo_externo": "T1_ue",        "id_preg": 170,  "texto": "Encuestador: ¿La entrevista fue completada?",                                             "tipo": "BOOLEAN",        "nivel": "HOGAR",   "capitulo_codigo": "T",  "obligatoria": true,  "orden": 1,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {}, "opciones": []},
-    {"no_pregunta": "T2",  "codigo_externo": "T2_ue",        "id_preg": 171,  "texto": "¿Cuánto tiempo tomó la entrevista (minutos)?",                                            "tipo": "NUMERICO",       "nivel": "HOGAR",   "capitulo_codigo": "T",  "obligatoria": true,  "orden": 2,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"min": 0, "max": 600}, "opciones": []},
-    {"no_pregunta": "T3",  "codigo_externo": "T3_ue",        "id_preg": 172,  "texto": "Observaciones generales del encuestador",                                                 "tipo": "TEXTO_LARGO",    "nivel": "HOGAR",   "capitulo_codigo": "T",  "obligatoria": false, "orden": 3,  "es_precargada": false, "fuente_precarga": "",               "validaciones": {"max_length": 2000}, "opciones": []}
-  ],
-  "reglas_skip_logic": [
-    {"origen": "ET5_org_etnica", "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["ET6_cual_org"]},
-    {"origen": "ET7_pract_cult", "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["ET8_cuales_pract"]},
-    {"origen": "LN1_ue",         "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["LN2_ue", "LN3_ue"]},
-    {"origen": "AS1_ue",         "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["AS2_ue"]},
-    {"origen": "G2_ue",          "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["G3_ue"]},
-    {"origen": "F1_G2_ue",       "origen_expr": "respuesta == true",  "valor_trigger": "true",  "accion": "DESHABILITAR", "afecta_multiple": ["F6_ue"]},
-    {"origen": "G4_ET_med_trad", "origen_expr": "respuesta == false", "valor_trigger": "false", "accion": "DESHABILITAR", "afecta_multiple": ["ET_acceso_med_trad"]}
-  ]
+  {
+   "codigo": "C",
+   "nombre": "C. VIVIENDA",
+   "orden": 3,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "D",
+   "nombre": "D. RETORNOS Y REUBICACIONES",
+   "orden": 4,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "JA",
+   "nombre": "J. ALIMENTACIÓN",
+   "orden": 5,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "SP",
+   "nombre": "SP. SALUD Y ATENCIÓN PSICOSOCIAL",
+   "orden": 6,
+   "nivel": "PERSONA",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "JF",
+   "nombre": "J. FUERZA DE TRABAJO",
+   "orden": 7,
+   "nivel": "PERSONA",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "K",
+   "nombre": "K. PERFIL SOCIOLABORAL",
+   "orden": 8,
+   "nivel": "PERSONA",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "M",
+   "nombre": "M. USO Y DISFRUTE DEL TERRITORIO",
+   "orden": 9,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  },
+  {
+   "codigo": "T",
+   "nombre": "T. CONTROL",
+   "orden": 10,
+   "nivel": "HOGAR",
+   "poblacion_objetivo": "TODOS_MIEMBROS",
+   "objetivo": ""
+  }
+ ],
+ "preguntas": [
+  {
+   "no_pregunta": "A1",
+   "codigo_externo": "DT_ATENCION",
+   "id_preg": 1161,
+   "capitulo_codigo": "A",
+   "texto": "Dirección Territorial",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACIÓN",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Departamento",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Punto de Atención",
+     "id_resp_vivanto": null,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Municipio",
+     "id_resp_vivanto": null,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A2",
+   "codigo_externo": "Z2",
+   "id_preg": 1,
+   "capitulo_codigo": "A",
+   "texto": "Lugar de la Encuesta",
+   "tipo": "COMBO_DINAMICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACIÓN",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "",
+     "etiqueta": "Municipio",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A3",
+   "codigo_externo": "Z3",
+   "id_preg": 2,
+   "capitulo_codigo": "A",
+   "texto": "Método de recolección:",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Vivienda de residencia",
+     "id_resp_vivanto": 2,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Entrevista presencial (en un lugar distinto de la vivienda)",
+     "id_resp_vivanto": 4,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Entrevista telefónica",
+     "id_resp_vivanto": 3,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Jornada de atención",
+     "id_resp_vivanto": 2334,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Otro",
+     "id_resp_vivanto": 5,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "Z3A",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A5",
+   "codigo_externo": "Z5A",
+   "id_preg": 3,
+   "capitulo_codigo": "A",
+   "texto": "Lugar de Residencia",
+   "tipo": "COMBO_DINAMICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "",
+     "etiqueta": "Departamento",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A6",
+   "codigo_externo": "Z6",
+   "id_preg": 5,
+   "capitulo_codigo": "A",
+   "texto": "Zona de residencia",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Cabecera municipal (donde está la alcaldía)",
+     "id_resp_vivanto": 8,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
+     "id_resp_vivanto": 9,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Rural disperso (vereda,)",
+     "id_resp_vivanto": 10,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A9",
+   "codigo_externo": "Z8",
+   "id_preg": 6,
+   "capitulo_codigo": "A",
+   "texto": "Dirección de la vivienda o nombre de la finca/predio",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A7",
+   "codigo_externo": "Z7",
+   "id_preg": 4,
+   "capitulo_codigo": "A",
+   "texto": "Barrio, centro poblado o vereda:",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A8",
+   "codigo_externo": "VEREDA",
+   "id_preg": 882,
+   "capitulo_codigo": "A",
+   "texto": "Ingrese el Nombre de la Vereda",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A10",
+   "codigo_externo": "Z9A",
+   "id_preg": 7,
+   "capitulo_codigo": "A",
+   "texto": "Teléfono fijo",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A12",
+   "codigo_externo": "Z9C",
+   "id_preg": 788,
+   "capitulo_codigo": "A",
+   "texto": "Otro teléfono de contacto",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A13",
+   "codigo_externo": "Z10",
+   "id_preg": 389,
+   "capitulo_codigo": "A",
+   "texto": "Correo electrónico",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 12,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A14",
+   "codigo_externo": "Z11",
+   "id_preg": 789,
+   "capitulo_codigo": "A",
+   "texto": "El lugar de correspondencia es el mismo de residencia?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 13,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2340,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2341,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A19",
+   "codigo_externo": "Z12",
+   "id_preg": 790,
+   "capitulo_codigo": "A",
+   "texto": "Dirección de correspondencia",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 14,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A15",
+   "codigo_externo": "Z15",
+   "id_preg": 1163,
+   "capitulo_codigo": "A",
+   "texto": "Lugar de Correspondencia",
+   "tipo": "COMBO_DINAMICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 15,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "DIVIPOLA",
+     "etiqueta": "Departamento",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A16",
+   "codigo_externo": "Z16",
+   "id_preg": 1164,
+   "capitulo_codigo": "A",
+   "texto": "Zona de Correspondencia",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 16,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Cabecera municipal (donde está la alcaldía)",
+     "id_resp_vivanto": 3809,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Centro poblado, corregimiento, inspección de policía, caserío",
+     "id_resp_vivanto": 3810,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Rural disperso (vereda,)",
+     "id_resp_vivanto": 3811,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A17",
+   "codigo_externo": "Z17",
+   "id_preg": 1165,
+   "capitulo_codigo": "A",
+   "texto": "Barrio, centro poblado o vereda:",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 17,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A18",
+   "codigo_externo": "Z18",
+   "id_preg": 1166,
+   "capitulo_codigo": "A",
+   "texto": "Ingrese el Nombre de la Vereda",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 18,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "A20",
+   "codigo_externo": "T6",
+   "id_preg": 10,
+   "capitulo_codigo": "A",
+   "texto": "Supervisor de la Encuesta",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 19,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C1",
+   "codigo_externo": "C1",
+   "id_preg": 36,
+   "capitulo_codigo": "C",
+   "texto": "¿En qué tipo de vivienda habita el hogar?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACIÓN",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Casa",
+     "id_resp_vivanto": 118,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Apartamento",
+     "id_resp_vivanto": 119,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Cuarto(s) en inquilinato u otro tipo de estructura",
+     "id_resp_vivanto": 120,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Albergue",
+     "id_resp_vivanto": 121,
+     "orden": 4
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Vivienda Indígena",
+     "id_resp_vivanto": 122,
+     "orden": 5
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Vivienda Étnica - Maloka, bohio, deadaré",
+     "id_resp_vivanto": 2653,
+     "orden": 6
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Vivienda Étnica - Vivienda tradicional familiar",
+     "id_resp_vivanto": 2654,
+     "orden": 7
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Vivienda étnica tradicional familiar palafito/palafitico",
+     "id_resp_vivanto": 2655,
+     "orden": 8
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Vivienda Étnica - Carpa",
+     "id_resp_vivanto": 2656,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Casa Comunitaria",
+     "id_resp_vivanto": 3757,
+     "orden": 10
+    },
+    {
+     "valor": "98",
+     "etiqueta": "Otra vivienda  (carpa, vagón, cueva, refugio natural,albergue, embarcación, campamento, Asentameinto fluvial, rancho, etc)",
+     "id_resp_vivanto": 1064,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C2",
+   "codigo_externo": "D5",
+   "id_preg": 45,
+   "capitulo_codigo": "C",
+   "texto": "La vivienda ocupada por este hogar es:",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Propia",
+     "id_resp_vivanto": 161,
+     "orden": 1
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Posesión sin título (ocupante de hecho)  o propiedad colectiva",
+     "id_resp_vivanto": 2659,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "En Usufructo**",
+     "id_resp_vivanto": 164,
+     "orden": 3
+    },
+    {
+     "valor": "2",
+     "etiqueta": "En arriendo o subarriendo",
+     "id_resp_vivanto": 2363,
+     "orden": 4
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Comunitaria en territorio colectivo",
+     "id_resp_vivanto": 2657,
+     "orden": 5
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Comunitario en propiedad privada",
+     "id_resp_vivanto": 2707,
+     "orden": 6
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Familiar en territorio colectivo",
+     "id_resp_vivanto": 2658,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Posada (acoger a una persona familiar o no familiar sin pagar arriendo",
+     "id_resp_vivanto": 2660,
+     "orden": 8
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Comunitaria fuera del territorio colectivo",
+     "id_resp_vivanto": 3758,
+     "orden": 9
+    },
+    {
+     "valor": "98",
+     "etiqueta": "Otra ¿Cuál?",
+     "id_resp_vivanto": 165,
+     "orden": 10
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "D5A",
+   "id_preg": null,
+   "capitulo_codigo": "C",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C3",
+   "codigo_externo": "D7",
+   "id_preg": 47,
+   "capitulo_codigo": "C",
+   "texto": "¿Qué tipo de documento soporte tiene?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Escritura, resolución o sentencia registrada.",
+     "id_resp_vivanto": 168,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Escritura, resolución o sentencia SIN registrar",
+     "id_resp_vivanto": 169,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Certificado de sana posesión",
+     "id_resp_vivanto": 170,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Acta de adjudicación/ contrato de usufructo",
+     "id_resp_vivanto": 2661,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Contrato de compra venta",
+     "id_resp_vivanto": 171,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Ninguno",
+     "id_resp_vivanto": 172,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C4",
+   "codigo_externo": "C2",
+   "id_preg": 37,
+   "capitulo_codigo": "C",
+   "texto": "¿Cuál es el material predominante de las paredes exteriores de la vivienda?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Ladrillo, Bloque, material prefabricado, piedra",
+     "id_resp_vivanto": 123,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Madera pulida",
+     "id_resp_vivanto": 124,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Adobe o tapia pisada",
+     "id_resp_vivanto": 125,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Bahareque y/o muro tendinoso",
+     "id_resp_vivanto": 126,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Madera burda, tabla, tablón",
+     "id_resp_vivanto": 127,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Guadua",
+     "id_resp_vivanto": 128,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Caña, esterilla, otro tipo de material vegetal",
+     "id_resp_vivanto": 129,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Zinc, tela, cartón, latas, desechos, plástico",
+     "id_resp_vivanto": 130,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Sin paredes",
+     "id_resp_vivanto": 131,
+     "orden": 9
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C5",
+   "codigo_externo": "C3",
+   "id_preg": 38,
+   "capitulo_codigo": "C",
+   "texto": "¿Cuál es el material predominante de los pisos de la vivienda?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Tierra, arena",
+     "id_resp_vivanto": 132,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Cemento, gravilla",
+     "id_resp_vivanto": 133,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Madera burda, tabla, tablón, otro vegetal",
+     "id_resp_vivanto": 134,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "baldosín, ladrillo, vinisol, otros materiales sintéticos",
+     "id_resp_vivanto": 135,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Mármol",
+     "id_resp_vivanto": 136,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Madera pulida",
+     "id_resp_vivanto": 137,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Alfombra o tapete de pared a pared",
+     "id_resp_vivanto": 138,
+     "orden": 7
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C6",
+   "codigo_externo": "C7",
+   "id_preg": 275,
+   "capitulo_codigo": "C",
+   "texto": "De acuerdo con sus usos y costumbres considera que: ¿la vivienda es adecuada para su hogar?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 979,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 980,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C7",
+   "codigo_externo": "D8A",
+   "id_preg": 318,
+   "capitulo_codigo": "C",
+   "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Energía Eléctrica",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1133,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1134,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C8",
+   "codigo_externo": "D8B",
+   "id_preg": 319,
+   "capitulo_codigo": "C",
+   "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Alcantarillado",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1135,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1136,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C9",
+   "codigo_externo": "D8C",
+   "id_preg": 320,
+   "capitulo_codigo": "C",
+   "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Acueducto",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1137,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1138,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C10",
+   "codigo_externo": "D8D",
+   "id_preg": 796,
+   "capitulo_codigo": "C",
+   "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Gas Natural conectado a red pública",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2364,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2365,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C11",
+   "codigo_externo": "D8E",
+   "id_preg": 797,
+   "capitulo_codigo": "C",
+   "texto": "¿Con cuales de los siguientes servicios cuenta el hogar? : Recolección de basuras",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 12,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2366,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2367,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C12",
+   "codigo_externo": "D8F",
+   "id_preg": 871,
+   "capitulo_codigo": "C",
+   "texto": "¿Su hogar tiene acceso a servicios públicos a través de vecinos?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 13,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2639,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2640,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C13",
+   "codigo_externo": "D10",
+   "id_preg": 300,
+   "capitulo_codigo": "C",
+   "texto": "¿De donde proviene principalmente el agua que utilizan para beber?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 14,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "2",
+     "etiqueta": "De ota fuente por tubería (Redes comunitarias)",
+     "id_resp_vivanto": 2369,
+     "orden": 1
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Agua embotellada o en bolsa",
+     "id_resp_vivanto": 2376,
+     "orden": 2
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Agua de carro tanques",
+     "id_resp_vivanto": 2374,
+     "orden": 3
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Aguas lluvias",
+     "id_resp_vivanto": 1101,
+     "orden": 4
+    },
+    {
+     "valor": "1",
+     "etiqueta": "Acueducto por tubería",
+     "id_resp_vivanto": 2368,
+     "orden": 5
+    },
+    {
+     "valor": "3",
+     "etiqueta": "de pozo con bomba",
+     "id_resp_vivanto": 2370,
+     "orden": 6
+    },
+    {
+     "valor": "4",
+     "etiqueta": "de pozo sin bomba, aljibe, jagüei o barreno",
+     "id_resp_vivanto": 2371,
+     "orden": 7
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Río, quebrada, yacimiento o manantial",
+     "id_resp_vivanto": 2372,
+     "orden": 8
+    },
+    {
+     "valor": "7",
+     "etiqueta": "De pila pública",
+     "id_resp_vivanto": 2373,
+     "orden": 9
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Aguatero",
+     "id_resp_vivanto": 2375,
+     "orden": 10
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C14",
+   "codigo_externo": "D13A",
+   "id_preg": 49,
+   "capitulo_codigo": "C",
+   "texto": "¿Cómo eliminan principalmente las basuras en este hogar?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 15,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Por recolecion pública o privada",
+     "id_resp_vivanto": 176,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "La reciclan ( producir energía, alimentar animales, abono)",
+     "id_resp_vivanto": 178,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "La tiran a un rio, mar, quebrada, caño o laguna",
+     "id_resp_vivanto": 182,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "La tiran a un patio, lote, zanja o baldío",
+     "id_resp_vivanto": 2793,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "la queman o entierran",
+     "id_resp_vivanto": 179,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "La eliminan de otra forma",
+     "id_resp_vivanto": 2794,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Disposición a campo abierto",
+     "id_resp_vivanto": 3752,
+     "orden": 7
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C15",
+   "codigo_externo": "D14",
+   "id_preg": 50,
+   "capitulo_codigo": "C",
+   "texto": "¿Cuál es el principal servicio sanitario con el que cuenta el hogar?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 16,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Inodoro conectado a alcantarillado",
+     "id_resp_vivanto": 184,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Inodoro conectado a pozo séptico",
+     "id_resp_vivanto": 185,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Inodoro sin conexión",
+     "id_resp_vivanto": 186,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Letrina sin conexión",
+     "id_resp_vivanto": 187,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Letrina con salida a un afluente o bajamar",
+     "id_resp_vivanto": 188,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Usa el servicio sanitario a través de los vecinos",
+     "id_resp_vivanto": 3759,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "No tiene servicio sanitario",
+     "id_resp_vivanto": 189,
+     "orden": 7
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C16",
+   "codigo_externo": "D1",
+   "id_preg": 42,
+   "capitulo_codigo": "C",
+   "texto": "Incluyendo sala-comedor, ¿de cuántos cuartos en total dispone este hogar? (Excluya cocinas, baños, garajes y cuartos destinados a negocio)",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 17,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C17",
+   "codigo_externo": "D2",
+   "id_preg": 43,
+   "capitulo_codigo": "C",
+   "texto": "¿En cuántos de esos cuartos que usted mencionó duermen las personas de este hogar?\nMenor o Igual (<=) a dato de arriba",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 18,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C18",
+   "codigo_externo": "D6",
+   "id_preg": 46,
+   "capitulo_codigo": "C",
+   "texto": "¿Cuánto cobraría usted por el arriendo del lugar que ocupa su hogar?",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 19,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C19",
+   "codigo_externo": "C5",
+   "id_preg": 40,
+   "capitulo_codigo": "C",
+   "texto": "¿La vivienda donde habita se encuentra ubicada en zona de alto riesgo de desastre natural declarada por alguna autoridad?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 20,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si    CUAL",
+     "id_resp_vivanto": 146,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 147,
+     "orden": 2
+    },
+    {
+     "valor": "98",
+     "etiqueta": "No sabe/No responde",
+     "id_resp_vivanto": 148,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "C5A",
+   "id_preg": null,
+   "capitulo_codigo": "C",
+   "texto": "Cual es el nombre de la autoridad?________",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 21,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C20",
+   "codigo_externo": "C6A",
+   "id_preg": 41,
+   "capitulo_codigo": "C",
+   "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por:",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 22,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Inundaciones, desbordamientos, crecientes, arroyos",
+     "id_resp_vivanto": 149,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Avalanchas",
+     "id_resp_vivanto": 150,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Vientos fuertes",
+     "id_resp_vivanto": 151,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Derrumbes o deslizamientos de tierra",
+     "id_resp_vivanto": 152,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Basura o contaminantes",
+     "id_resp_vivanto": 153,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Zona de riesgo por electricidad o gas",
+     "id_resp_vivanto": 154,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Ninguna",
+     "id_resp_vivanto": 156,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Otra, ¿cuál? __________________________",
+     "id_resp_vivanto": 155,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "No sabe/No responde",
+     "id_resp_vivanto": 157,
+     "orden": 9
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "C6G1",
+   "id_preg": null,
+   "capitulo_codigo": "C",
+   "texto": "¿cuál? __________________________",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 23,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "C21",
+   "codigo_externo": "C17A",
+   "id_preg": 872,
+   "capitulo_codigo": "C",
+   "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por factores como:",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 24,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Minería Ilegal",
+     "id_resp_vivanto": 2641,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Exploración y exploración minero-energética (petróleo, gas etc)",
+     "id_resp_vivanto": 2642,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+     "id_resp_vivanto": 2643,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Combares o bombardeos",
+     "id_resp_vivanto": 2644,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Restricción a la movilidad - Confinamiento",
+     "id_resp_vivanto": 2645,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Presencia de MAP, MUSE, etc.",
+     "id_resp_vivanto": 2646,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+     "id_resp_vivanto": 2647,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Ganadería extensiva",
+     "id_resp_vivanto": 2648,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Presencia de cultivos ilícitos",
+     "id_resp_vivanto": 2649,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos de uso ilícito",
+     "id_resp_vivanto": 2650,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Rutas de tránsito de estupefacientes y/o armas",
+     "id_resp_vivanto": 2651,
+     "orden": 11
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Actividades de explotación maderera",
+     "id_resp_vivanto": 2652,
+     "orden": 12
+    },
+    {
+     "valor": "13",
+     "etiqueta": "Ninguna",
+     "id_resp_vivanto": 2791,
+     "orden": 13
+    }
+   ]
+  },
+  {
+   "no_pregunta": "C22",
+   "codigo_externo": "C_OBSERVA",
+   "id_preg": 252,
+   "capitulo_codigo": "C",
+   "texto": "Observaciones a este capitulo",
+   "tipo": "TEXTO_LARGO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 25,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D2",
+   "codigo_externo": "E1A",
+   "id_preg": 798,
+   "capitulo_codigo": "D",
+   "texto": "¿En la actualidad … respecto al derecho del retorno o reubicación?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACION",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Ya regresó al municipio que abandonó a causa del desplazamiento forzado",
+     "id_resp_vivanto": 2377,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Ya se reubicó en un municipio diferente al que abandonó a causa del desplazamiento",
+     "id_resp_vivanto": 2378,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Ninguna de las anteriores",
+     "id_resp_vivanto": 2379,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D3",
+   "codigo_externo": "E1B",
+   "id_preg": 799,
+   "capitulo_codigo": "D",
+   "texto": "¿Cuál ha sido su decisión en relación con el derecho del retorno o reubicación?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Quiere retornar al lugar del que fue expulsado a causa del desplazamiento forzado",
+     "id_resp_vivanto": 2380,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Quiere reubicarse en un municipio distinto del que fue expulsado a causa del desplazamiento",
+     "id_resp_vivanto": 2381,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Quiere instalarse en el municipio de residencia actual",
+     "id_resp_vivanto": 2382,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Ninguna de las anteriores",
+     "id_resp_vivanto": 2383,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D4",
+   "codigo_externo": "E1",
+   "id_preg": 62,
+   "capitulo_codigo": "D",
+   "texto": "¿Solicitó apoyo del Gobierno para retornar o reubicarse?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 215,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No ¿Por qué?",
+     "id_resp_vivanto": 216,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D5",
+   "codigo_externo": "E2",
+   "id_preg": 63,
+   "capitulo_codigo": "D",
+   "texto": "¿En su proceso de retorno o reubicación lo acompañó alguna entidad o algún funcionario del Estado?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 217,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 218,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D6",
+   "codigo_externo": "RR1",
+   "id_preg": 800,
+   "capitulo_codigo": "D",
+   "texto": "¿Cuál fue el departamento y municipio en el cuál se retornó o se reubicó?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D7",
+   "codigo_externo": "RR2",
+   "id_preg": 883,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Resguardo indígena se retornó o se reubicó?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D8",
+   "codigo_externo": "RR3",
+   "id_preg": 884,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué comunidad indígena se retornó o se reubicó?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D9",
+   "codigo_externo": "RR4",
+   "id_preg": 885,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Territorio Colectivo de Comunidades Negras se retornó o se reubicó?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D10",
+   "codigo_externo": "RR5A",
+   "id_preg": 886,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Kumpania se retornó o se reubicó?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sabana Larga (Atlántico)",
+     "id_resp_vivanto": 3765,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Sampués (Sucre)",
+     "id_resp_vivanto": 3766,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Sahagún (Córdoba)",
+     "id_resp_vivanto": 3767,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "San Pelayo (Córdoba)",
+     "id_resp_vivanto": 3768,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Cúcuta (Norte de Santander)",
+     "id_resp_vivanto": 3769,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Girón (Santander)",
+     "id_resp_vivanto": 3770,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Envigado (Antioquia)",
+     "id_resp_vivanto": 3771,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Ataco (Tolima)",
+     "id_resp_vivanto": 3772,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Bogotá Unión Romaní",
+     "id_resp_vivanto": 3773,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Bogotá ProRrom",
+     "id_resp_vivanto": 3774,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Pasto",
+     "id_resp_vivanto": 3775,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D11",
+   "codigo_externo": "RR6",
+   "id_preg": 801,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué departamento y municipio quiere retornar o reubicarse?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D12",
+   "codigo_externo": "RR7",
+   "id_preg": 887,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Resguardo indígena desea retornar o reubicarse?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D13",
+   "codigo_externo": "RR8",
+   "id_preg": 888,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué comunidad indígena desea retornar o reubicarse?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 12,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D14",
+   "codigo_externo": "RR9",
+   "id_preg": 889,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Territorio Colectivo de Comunidades Negras desea retornar o reubicarse?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 13,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D15",
+   "codigo_externo": "RR10A",
+   "id_preg": 890,
+   "capitulo_codigo": "D",
+   "texto": "¿A qué Kumpania desea retornar o reubicarse?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 14,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sabana Larga (Atlántico)",
+     "id_resp_vivanto": 3776,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Sampués (Sucre)",
+     "id_resp_vivanto": 3777,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Sahagún (Córdoba)",
+     "id_resp_vivanto": 3778,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "San Pelayo (Córdoba)",
+     "id_resp_vivanto": 3779,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Cúcuta (Norte de Santander)",
+     "id_resp_vivanto": 3780,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Girón (Santander)",
+     "id_resp_vivanto": 3781,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Envigado (Antioquia)",
+     "id_resp_vivanto": 3782,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Ataco (Tolima)",
+     "id_resp_vivanto": 3783,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Bogotá Unión Romaní",
+     "id_resp_vivanto": 3784,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Bogotá ProRrom",
+     "id_resp_vivanto": 3785,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Pasto",
+     "id_resp_vivanto": 3786,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D16",
+   "codigo_externo": "E1C",
+   "id_preg": 334,
+   "capitulo_codigo": "D",
+   "texto": "¿Cuáles son las razónes por las que residen en este municipio?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 15,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Porque está cerca de familiares y/o amigos que lo apoyan",
+     "id_resp_vivanto": 1165,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Porque considera que hay mas oportunidades económicas",
+     "id_resp_vivanto": 1166,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Porque hay mejores condiciones de seguridad",
+     "id_resp_vivanto": 1167,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Porque hay mayor acceso a programas del Estado para Víctimas",
+     "id_resp_vivanto": 1168,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Porque hay mayor acceso a los servicios sociales (Salud, Educación)",
+     "id_resp_vivanto": 1169,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Porque hay un asentamiento de población víctima",
+     "id_resp_vivanto": 1170,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Porque se siente parte de la comunidad",
+     "id_resp_vivanto": 1171,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Por Necesidades del servicio",
+     "id_resp_vivanto": 2389,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Por Traslado",
+     "id_resp_vivanto": 2390,
+     "orden": 9
+    },
+    {
+     "valor": "98",
+     "etiqueta": "Otra",
+     "id_resp_vivanto": 1172,
+     "orden": 10
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "E1D",
+   "id_preg": null,
+   "capitulo_codigo": "D",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 16,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "D17",
+   "codigo_externo": "RR11",
+   "id_preg": 1183,
+   "capitulo_codigo": "D",
+   "texto": "¿Considera que el territorio al que desea retornar, reubicarse o reintegrarse localmente cumple con el principio de seguridad?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 17,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 3881,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 3882,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "D18",
+   "codigo_externo": "RR12",
+   "id_preg": 1184,
+   "capitulo_codigo": "D",
+   "texto": "¿Considera que el territorio al que desea retornar, reubicarse o reintegrarse localmente cumple con el principio de dignidad?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 18,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 3883,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 3884,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I2",
+   "codigo_externo": "I1A1",
+   "id_preg": 877,
+   "capitulo_codigo": "JA",
+   "texto": "¿Generalmente como se aprovisiona el hogar de alimentos?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACIÓN",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Donación",
+     "id_resp_vivanto": 2681,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Atención humanitaria",
+     "id_resp_vivanto": 2682,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Compra",
+     "id_resp_vivanto": 2683,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Actividades tradicionales: caza",
+     "id_resp_vivanto": 2684,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Actividades tradicionales: pesca",
+     "id_resp_vivanto": 2685,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Actividades tradicionales: recolección",
+     "id_resp_vivanto": 2686,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Actividades tradicionales: trueque",
+     "id_resp_vivanto": 2687,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Produccion en pancoger (Chagra, conuco, roza, monte, patio, colino, tul, tambo o parcela)",
+     "id_resp_vivanto": 2688,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Producción para vender  y comprar otros productos",
+     "id_resp_vivanto": 2689,
+     "orden": 9
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I3",
+   "codigo_externo": "I1B",
+   "id_preg": 878,
+   "capitulo_codigo": "JA",
+   "texto": "¿Ha tenido dificultades para adquirir los alimentos en el último mes?",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2690,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2691,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I4",
+   "codigo_externo": "J1A",
+   "id_preg": 95,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió:  (Leguminosas (fríjol,lentejas, garbanzos,arvejas...) ?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 360,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 361,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 360,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I5",
+   "codigo_externo": "J1B",
+   "id_preg": 96,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Cereales (arroz, harina  de trigo, avena)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 362,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 363,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 362,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I6",
+   "codigo_externo": "J1C",
+   "id_preg": 97,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió:Tubérculos y plátanos (yuca, ñame, arracacha, plátano, papa, holluco, calabaza, ahuyama, papa china, banano verde, banano chivo, batata)?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 364,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 365,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 364,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I7",
+   "codigo_externo": "J1D",
+   "id_preg": 98,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Verduras y hortalizas (tomate, cebolla, habichuela, arveja verde, zanahoria, col, etc.)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 366,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 367,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 366,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I8",
+   "codigo_externo": "J1E",
+   "id_preg": 99,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Frutas (papaya, guayaba, piña, borojo, caimito, guama, pomarrosa, zapote, pepepan, chontaduro, etc.)?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 368,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 369,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 368,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I9",
+   "codigo_externo": "J1F",
+   "id_preg": 100,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Carnes (res, pollo, cerdo, cabra)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 370,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 371,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 370,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I10",
+   "codigo_externo": "J1T",
+   "id_preg": 1185,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Pescados y/o mariscos",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 3885,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 3886,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 3885,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I11",
+   "codigo_externo": "J1G",
+   "id_preg": 347,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Otras carnes (Patos, tortugas, ranas, insectos, reptiles, aves)aves)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1211,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1212,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 1211,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I12",
+   "codigo_externo": "J1H",
+   "id_preg": 277,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Huevo?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 983,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 984,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 983,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I13",
+   "codigo_externo": "J1J",
+   "id_preg": 101,
+   "capitulo_codigo": "JA",
+   "texto": "Lácteos (leche, queso, kumis, yogur, etc.)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 12,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 372,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 373,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 372,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I14",
+   "codigo_externo": "J1K",
+   "id_preg": 102,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Grasas (aceites, mantequilla, margarina, mayonesa, manteca, etc.)",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 13,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 374,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 375,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 374,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I15",
+   "codigo_externo": "J1L",
+   "id_preg": 103,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Azúcar o panela",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 14,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 376,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 377,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 376,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I16",
+   "codigo_externo": "J1M",
+   "id_preg": 278,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Bienestarina",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 15,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 985,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 986,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 985,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I17",
+   "codigo_externo": "J1N",
+   "id_preg": 279,
+   "capitulo_codigo": "JA",
+   "texto": "¿En los últimos siete días, contando el día de ayer, este hogar consumió: Otros: (condimentos y especias, sal, cebolla, ajo, tomillo, laurel, cilantro, cimarron, oregano, albahaca)?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 16,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 987,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 988,
+     "orden": 2
+    },
+    {
+     "valor": "NUMÉRICO",
+     "etiqueta": "Valor (1 a 7)",
+     "id_resp_vivanto": 987,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "I18",
+   "codigo_externo": "I1D",
+   "id_preg": 880,
+   "capitulo_codigo": "JA",
+   "texto": "¿Considera que la alimentación en su hogar es adecuada?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 17,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2704,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No Por qué",
+     "id_resp_vivanto": 2705,
+     "orden": 2
+    },
+    {
+     "valor": "TEXTO",
+     "etiqueta": "Campo Abierto",
+     "id_resp_vivanto": 2705,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M1",
+   "codigo_externo": "AT1A",
+   "id_preg": 1209,
+   "capitulo_codigo": "M",
+   "texto": "¿Por cuáles de los siguientes motivos mantiene una relación urbano - rural?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Para lograr el abastecimiento de alimentos",
+     "id_resp_vivanto": 3974,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Para mantener los vínculos familiares y sociales",
+     "id_resp_vivanto": 3975,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Por motivos culturales y espirituales",
+     "id_resp_vivanto": 3976,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Otros motivos",
+     "id_resp_vivanto": 3977,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "No mantiene relación urbano - rural",
+     "id_resp_vivanto": 3978,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M2",
+   "codigo_externo": "AT2",
+   "id_preg": 900,
+   "capitulo_codigo": "M",
+   "texto": "¿A su hogar se le ha adjudicado materialmente terreno/lote/predio/habitación?.",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2742,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No dispongo de terreno/lote/predio de manera formal ni informal",
+     "id_resp_vivanto": 2743,
+     "orden": 2
+    },
+    {
+     "valor": "TEXTO",
+     "etiqueta": "Por qué (Histórico)",
+     "id_resp_vivanto": 2743,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M3",
+   "codigo_externo": "AT3",
+   "id_preg": 901,
+   "capitulo_codigo": "M",
+   "texto": "Este terreno o predio es parte de un:",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Resguardo Indígena",
+     "id_resp_vivanto": 2744,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Territorios de ocupación colectiva comunidades indígenas sin titulación",
+     "id_resp_vivanto": 2745,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Territorios colectivos de comunidades negras",
+     "id_resp_vivanto": 2746,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Territorios de ocupación colectiva de comunidades negras sin titulación",
+     "id_resp_vivanto": 2747,
+     "orden": 4
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Territorios Ancestralmente habitados",
+     "id_resp_vivanto": 4521,
+     "orden": 5
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Territorios Ganados al mar",
+     "id_resp_vivanto": 4522,
+     "orden": 6
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Ninguno de los anteriores",
+     "id_resp_vivanto": 2748,
+     "orden": 7
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M4",
+   "codigo_externo": "AT4",
+   "id_preg": 902,
+   "capitulo_codigo": "M",
+   "texto": "¿Cuál es la forma de tenencia de la tierra de este predio?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Propia",
+     "id_resp_vivanto": 2749,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Arriendo",
+     "id_resp_vivanto": 2750,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Aparcería",
+     "id_resp_vivanto": 2751,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Usufructo",
+     "id_resp_vivanto": 2752,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Comodato",
+     "id_resp_vivanto": 2753,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Ocupación de hecho",
+     "id_resp_vivanto": 2754,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Propiedad Colectiva",
+     "id_resp_vivanto": 2755,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Adjudicatario o comunero",
+     "id_resp_vivanto": 2756,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Otra forma de tenencia",
+     "id_resp_vivanto": 2757,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Asentamientos en territorios ganados al mar sin titulación",
+     "id_resp_vivanto": 4523,
+     "orden": 10
+    },
+    {
+     "valor": "99",
+     "etiqueta": "No sabe",
+     "id_resp_vivanto": 2758,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M5",
+   "codigo_externo": "AT5A",
+   "id_preg": 904,
+   "capitulo_codigo": "M",
+   "texto": "¿Cuáles son las principales actividades que se realizan en el predio o lugar con el que mantiene la relación urbano - rural?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Actividades agrícolas productivas.",
+     "id_resp_vivanto": 2761,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Actividades pecuarias productivas",
+     "id_resp_vivanto": 2762,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Actividades agropecuarias productivas",
+     "id_resp_vivanto": 2763,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Actividades tradicionales (caza, pesca y recolección)",
+     "id_resp_vivanto": 2764,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M6",
+   "codigo_externo": "AT6A",
+   "id_preg": 905,
+   "capitulo_codigo": "M",
+   "texto": "¿El principal destino de la producción final es?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Autoconsumo",
+     "id_resp_vivanto": 2765,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Intercambio o trueque",
+     "id_resp_vivanto": 2766,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Venta de producto en el lote",
+     "id_resp_vivanto": 2767,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Venta a cooperativa",
+     "id_resp_vivanto": 2768,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Venta a central de abastos",
+     "id_resp_vivanto": 2769,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Venta directa en plaza de mercado",
+     "id_resp_vivanto": 2770,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Venta a comercializador",
+     "id_resp_vivanto": 2771,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Venta a tienda, supermercado o grandes superficies",
+     "id_resp_vivanto": 2772,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Venta a mercado internacional",
+     "id_resp_vivanto": 2773,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Para la industria",
+     "id_resp_vivanto": 2774,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Otros destinos",
+     "id_resp_vivanto": 2775,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "M7",
+   "codigo_externo": "AT7",
+   "id_preg": 906,
+   "capitulo_codigo": "M",
+   "texto": "¿Cuál es la extensión del predio?",
+   "tipo": "NUMERICO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "M8",
+   "codigo_externo": "AT8A",
+   "id_preg": 907,
+   "capitulo_codigo": "M",
+   "texto": "¿En el predio en el que usted produce y/o habita existen alguno(s) de los siguientes a factores de riesgos?",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Contaminación por minería ilegal",
+     "id_resp_vivanto": 2777,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Exploración y explotación minero-energética (petróleo, gas etc.) (minería legal)",
+     "id_resp_vivanto": 2778,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Presencia de campamentos de actores armados ilegales o bases militares",
+     "id_resp_vivanto": 2779,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Combates o bombardeos",
+     "id_resp_vivanto": 2780,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Restricciones a la movilidad – Confinamiento",
+     "id_resp_vivanto": 2781,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Presencia de Minas antipersonales MAP, Municiones sin explotar -MUSE artefactos improvisados explosivos AIE, etc.",
+     "id_resp_vivanto": 2782,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Megaproyectos de infraestructura y/o turísticos (represas, hotelería etc.)",
+     "id_resp_vivanto": 2783,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Ganadería extensiva",
+     "id_resp_vivanto": 2784,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Presencia de cultivos ilícitos",
+     "id_resp_vivanto": 2785,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Aspersiones y/o fumigaciones aéreas para erradicación de cultivos ilícitos",
+     "id_resp_vivanto": 2786,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Rutas de tránsito de drogas y/o armas",
+     "id_resp_vivanto": 2787,
+     "orden": 11
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Actividades de explotación maderera",
+     "id_resp_vivanto": 2788,
+     "orden": 12
+    },
+    {
+     "valor": "13",
+     "etiqueta": "Otro ¿Cuál?",
+     "id_resp_vivanto": 2789,
+     "orden": 13
+    }
+   ]
+  },
+  {
+   "no_pregunta": "5",
+   "codigo_externo": "SA4",
+   "id_preg": 455,
+   "capitulo_codigo": "M",
+   "texto": "Observaciones a este capitulo",
+   "tipo": "TEXTO_LARGO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "Caracterización",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T1",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Soporte cargado",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": null,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T2",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Fecha de Creación",
+   "tipo": "FECHA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "T2A",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Hora de Creación",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "None",
+     "etiqueta": "N/A",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ]
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T3",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Fecha de Finalización",
+   "tipo": "FECHA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "T3A",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Hora de finalización",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "None",
+     "etiqueta": "N/A",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ]
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T4",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Archivo cargado soporte",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": null,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T5",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Usuario encuestador",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "T5A",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Nombre encuestador",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "T5B",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Numero de documento encuestador",
+   "tipo": "TEXTO",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "T8",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Estado_Entrevista",
+   "tipo": "LISTA",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Activa",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Aplazada",
+     "id_resp_vivanto": null,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Cerrada",
+     "id_resp_vivanto": null,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Anulada",
+     "id_resp_vivanto": null,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "---",
+   "codigo_externo": "T7",
+   "id_preg": null,
+   "capitulo_codigo": "T",
+   "texto": "Cuestionario diligenciado en papel",
+   "tipo": "BOOLEAN",
+   "nivel": "HOGAR",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": null,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "Estado_",
+   "codigo_externo": "Estado_",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Estado de la Entrevista",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 20,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Activa",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Aplazada",
+     "id_resp_vivanto": null,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Cerrada",
+     "id_resp_vivanto": null,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Anulada",
+     "id_resp_vivanto": null,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "ESTADO_RUV",
+   "codigo_externo": "ESTADO_RUV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Acción social o la Unidad para las Víctimas incluyó a … en el RUPD/RUV",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 21,
+   "es_precargada": false,
+   "fuente_precarga": "RUV",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Incluido",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No incluido",
+     "id_resp_vivanto": null,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "N/A",
+   "codigo_externo": "H_V",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Hecho Victimizante",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 22,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "N/A",
+   "codigo_externo": "Ocur_HV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Fecha de Ocurrencia",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 23,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "NOMBRE_1_RUV",
+   "codigo_externo": "NOMBRE_1_RUV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Primer Nombre RUV",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 24,
+   "es_precargada": false,
+   "fuente_precarga": "RUV",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "NOMBRE_2_RUV",
+   "codigo_externo": "NOMBRE_2_RUV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Segundo nombre RUV",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 25,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "APELLIDO_1_RUV",
+   "codigo_externo": "APELLIDO_1_RUV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Primer apellido RUV",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 26,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "APELLIDO_2_RUV",
+   "codigo_externo": "APELLIDO_2_RUV",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Segundo apellido RUV",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 27,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "N/A",
+   "codigo_externo": "Tip_Persona",
+   "id_preg": null,
+   "capitulo_codigo": "A",
+   "texto": "Tipo de Persona",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 28,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Autorizado",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Tutor",
+     "id_resp_vivanto": null,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Cuidador Permanente",
+     "id_resp_vivanto": null,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Miembro de Hogar",
+     "id_resp_vivanto": null,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A4",
+   "codigo_externo": "Z4",
+   "id_preg": 35,
+   "capitulo_codigo": "A",
+   "texto": "De acuerdo con su cultura, pueblo o rasgos físicos, ... Se autoreconoce como:",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 29,
+   "es_precargada": false,
+   "fuente_precarga": "CARACTERIZACIÓN",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Indígena",
+     "id_resp_vivanto": 112,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Gitano(a), Rrom",
+     "id_resp_vivanto": 113,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina",
+     "id_resp_vivanto": 114,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Palenquero(a)",
+     "id_resp_vivanto": 115,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Negro(a), afrocolombiano(a)",
+     "id_resp_vivanto": 116,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Ninguna",
+     "id_resp_vivanto": 117,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "A11",
+   "codigo_externo": "Z9B",
+   "id_preg": 8,
+   "capitulo_codigo": "A",
+   "texto": "Telefono Celular",
+   "tipo": "NUMERICO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 30,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B1",
+   "codigo_externo": "NOMBRE_1",
+   "id_preg": 13,
+   "capitulo_codigo": "B",
+   "texto": "Primer Nombre",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "NOMBRE_2",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "Segundo nombre",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "APELLIDO_1",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "Primer apellido",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "APELLIDO_2",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "Segundo apellido",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B2",
+   "codigo_externo": "A2",
+   "id_preg": 15,
+   "capitulo_codigo": "B",
+   "texto": "¿… está presente en esta entrevista?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 24,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 25,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B3",
+   "codigo_externo": "A6",
+   "id_preg": 27,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál es la fecha de nacimiento de … ?",
+   "tipo": "FECHA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 6,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B4",
+   "codigo_externo": "B9",
+   "id_preg": 14,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuántos años cumplidos tiene …?",
+   "tipo": "NUMERICO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 7,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B5",
+   "codigo_externo": "B10",
+   "id_preg": 1177,
+   "capitulo_codigo": "B",
+   "texto": "Grupo Etario",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 8,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "0 - 5 años: Primera Infancia",
+     "id_resp_vivanto": 3846,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "6 - 11 años: Niñez",
+     "id_resp_vivanto": 3847,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "12 - 17 años: Adolescencia",
+     "id_resp_vivanto": 3848,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "18 - 28 años: Jóvenes",
+     "id_resp_vivanto": 3849,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "29 - 59 años: Adulto",
+     "id_resp_vivanto": 3850,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "60  años en adelante: Persona mayor",
+     "id_resp_vivanto": 3851,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B6",
+   "codigo_externo": "A3",
+   "id_preg": 30,
+   "capitulo_codigo": "B",
+   "texto": "¿Qué tipo de documento de identificación tiene ...?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 9,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Cédula de Ciudadanía/Contraseña",
+     "id_resp_vivanto": null,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Cédula de Extranjería",
+     "id_resp_vivanto": 94,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Tarjeta de Identidad",
+     "id_resp_vivanto": 95,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Registro Civil/NUIP",
+     "id_resp_vivanto": 96,
+     "orden": 4
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Permiso especial de permanencia",
+     "id_resp_vivanto": 3799,
+     "orden": 5
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Permiso temporal de permanencia",
+     "id_resp_vivanto": 3800,
+     "orden": 6
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Pasaporte",
+     "id_resp_vivanto": 3801,
+     "orden": 7
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Adulto sin identificar",
+     "id_resp_vivanto": 3802,
+     "orden": 8
+    },
+    {
+     "valor": "13",
+     "etiqueta": "Menor sin identificar",
+     "id_resp_vivanto": 3803,
+     "orden": 9
+    },
+    {
+     "valor": "14",
+     "etiqueta": "Recién nacido",
+     "id_resp_vivanto": 3804,
+     "orden": 10
+    },
+    {
+     "valor": "15",
+     "etiqueta": "Certificado de pertenencia étnica",
+     "id_resp_vivanto": 3805,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B7",
+   "codigo_externo": "A4",
+   "id_preg": 32,
+   "capitulo_codigo": "B",
+   "texto": "¿… cuenta con el documento de identificación?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 10,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 102,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 103,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B8",
+   "codigo_externo": "A5",
+   "id_preg": 31,
+   "capitulo_codigo": "B",
+   "texto": "Número de documento de identificación",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 11,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B9",
+   "codigo_externo": "B11",
+   "id_preg": 1169,
+   "capitulo_codigo": "B",
+   "texto": "Novedades en el RUV",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 12,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Actualización de Nombres y/o Apellidos",
+     "id_resp_vivanto": 3819,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Actualización de Documento de Identidad",
+     "id_resp_vivanto": 3820,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Actualización Fecha de Nacimiento",
+     "id_resp_vivanto": 3821,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Ninguna",
+     "id_resp_vivanto": 3822,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B10",
+   "codigo_externo": "A8",
+   "id_preg": 24,
+   "capitulo_codigo": "B",
+   "texto": "Sexo",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 13,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Hombre",
+     "id_resp_vivanto": 68,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Mujer",
+     "id_resp_vivanto": 69,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Intersexual",
+     "id_resp_vivanto": 968,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Indeterminado",
+     "id_resp_vivanto": 3814,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B11",
+   "codigo_externo": "A8A",
+   "id_preg": 792,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál es su orientación sexual?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 14,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Heterosexual",
+     "id_resp_vivanto": 2351,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Homosexual",
+     "id_resp_vivanto": 2352,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Bisexual",
+     "id_resp_vivanto": 2353,
+     "orden": 3
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Asexual",
+     "id_resp_vivanto": 3756,
+     "orden": 4
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Ninguno",
+     "id_resp_vivanto": 2354,
+     "orden": 5
+    },
+    {
+     "valor": "99",
+     "etiqueta": "No sabe, No responde",
+     "id_resp_vivanto": 2355,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B12",
+   "codigo_externo": "B5",
+   "id_preg": 274,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál es su identidad de género?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 15,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Femenino",
+     "id_resp_vivanto": 974,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Masculino",
+     "id_resp_vivanto": 975,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Transgénero",
+     "id_resp_vivanto": 1358,
+     "orden": 3
+    },
+    {
+     "valor": "5",
+     "etiqueta": "No sabe / No responde",
+     "id_resp_vivanto": 978,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B13",
+   "codigo_externo": "B6",
+   "id_preg": 33,
+   "capitulo_codigo": "B",
+   "texto": "¿… tiene libreta militar?\nLey 43-1993",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 16,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sí",
+     "id_resp_vivanto": 105,
+     "orden": 1
+    },
+    {
+     "valor": "3",
+     "etiqueta": "No",
+     "id_resp_vivanto": 106,
+     "orden": 2
+    },
+    {
+     "valor": "98",
+     "etiqueta": "No sabe / No responde",
+     "id_resp_vivanto": 107,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B14",
+   "codigo_externo": "B12",
+   "id_preg": 1167,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuenta con libreta militar en físico?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 17,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sí",
+     "id_resp_vivanto": 3815,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 3816,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B15",
+   "codigo_externo": "B8",
+   "id_preg": 793,
+   "capitulo_codigo": "B",
+   "texto": "¿Pertenece o ha pertenecido a la Fuerza Pública?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 18,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sí",
+     "id_resp_vivanto": 2356,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2357,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B16",
+   "codigo_externo": "I6",
+   "id_preg": 88,
+   "capitulo_codigo": "B",
+   "texto": "¿Presenta alguna discapacidad?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 19,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sí",
+     "id_resp_vivanto": 315,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 316,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B17",
+   "codigo_externo": "I7A",
+   "id_preg": 89,
+   "capitulo_codigo": "B",
+   "texto": "¿Qué tipo de discapacidad presenta?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 20,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Física",
+     "id_resp_vivanto": 317,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Visual",
+     "id_resp_vivanto": 2807,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Auditiva",
+     "id_resp_vivanto": 2808,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Intelectual",
+     "id_resp_vivanto": 319,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Mental",
+     "id_resp_vivanto": 320,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Sordoceguera",
+     "id_resp_vivanto": 2809,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B18",
+   "codigo_externo": "I7E",
+   "id_preg": 400,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál es el origen de su discapacidad?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 21,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Enfermedad Congénita",
+     "id_resp_vivanto": 1397,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "A causa de un accidente",
+     "id_resp_vivanto": 1398,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Porque ya está muy mayor",
+     "id_resp_vivanto": 1399,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "A causa del conflicto armado (minas, cambates, otros)",
+     "id_resp_vivanto": 1400,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Porque fue víctima de otros hechos",
+     "id_resp_vivanto": 1401,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "No sabe/No responde",
+     "id_resp_vivanto": 1402,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B19",
+   "codigo_externo": "I13",
+   "id_preg": 794,
+   "capitulo_codigo": "B",
+   "texto": "¿Presenta diagnóstico de enfermedades ruinosas, catastróficas y de alto costo?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 22,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2358,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2359,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B20",
+   "codigo_externo": "B13A",
+   "id_preg": 865,
+   "capitulo_codigo": "B",
+   "texto": "Cuál enfermedad",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 23,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Trasplante renal",
+     "id_resp_vivanto": 3865,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Diálisis peritoneal y hemodiálisis",
+     "id_resp_vivanto": 3866,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Trasplante renal, corazón, hígado, médula ósea y córnea",
+     "id_resp_vivanto": 3876,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Manejo quirúrgico para enfermedades del sistema nervioso central",
+     "id_resp_vivanto": 3867,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Manejo quirúrgico para enfermedades del corazón",
+     "id_resp_vivanto": 3868,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Reemplazos articulares",
+     "id_resp_vivanto": 3869,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Manejo médico quirúrgico del paciente gran quemado",
+     "id_resp_vivanto": 3870,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Manejo del trauma mayor",
+     "id_resp_vivanto": 3871,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Diagnóstico y manejo del paciente infectado por VIH/SIDA",
+     "id_resp_vivanto": 3872,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Quimioterapia y radioterapia para el cáncer",
+     "id_resp_vivanto": 3873,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Manejo de pacientes en Unidad de Cuidados Intensivos",
+     "id_resp_vivanto": 3874,
+     "orden": 11
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Manejo quirúrgico de enfermedades congénitas",
+     "id_resp_vivanto": 3875,
+     "orden": 12
+    },
+    {
+     "valor": "13",
+     "etiqueta": "Corrección quirúrgica de la hernia de núcleo pulposo",
+     "id_resp_vivanto": 3877,
+     "orden": 13
+    },
+    {
+     "valor": "14",
+     "etiqueta": "Otra (EPOC, anemia falciforme, etc)",
+     "id_resp_vivanto": 3878,
+     "orden": 14
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B21",
+   "codigo_externo": "B2",
+   "id_preg": 26,
+   "capitulo_codigo": "B",
+   "texto": "¿Se encuentra alguna de las mujeres del hogar en estado de embarazo?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 24,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si ¿Cuántas semanas?",
+     "id_resp_vivanto": 76,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 77,
+     "orden": 2
+    },
+    {
+     "valor": "TEXTO",
+     "etiqueta": "Campo Abierto",
+     "id_resp_vivanto": 76,
+     "orden": 3
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B22",
+   "codigo_externo": "B2A",
+   "id_preg": 393,
+   "capitulo_codigo": "B",
+   "texto": "¿En la actualidad es madre lactante?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 25,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1357,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1356,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B23",
+   "codigo_externo": "A9",
+   "id_preg": 28,
+   "capitulo_codigo": "B",
+   "texto": "El parentesco … frente al jefe del hogar es:",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 26,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Jefe(a)",
+     "id_resp_vivanto": 79,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Cónyuge o Compañera(o)",
+     "id_resp_vivanto": 80,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Hijo(a) - Hijastro(a)",
+     "id_resp_vivanto": 81,
+     "orden": 3
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Padre o madre - padrastro o madrastra",
+     "id_resp_vivanto": 84,
+     "orden": 4
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Hermano(a) - Hermanastro(a)",
+     "id_resp_vivanto": 906,
+     "orden": 5
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Otro pariente del jefe",
+     "id_resp_vivanto": 912,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B24",
+   "codigo_externo": "A24",
+   "id_preg": 1435,
+   "capitulo_codigo": "B",
+   "texto": "El parentesco … frente a la persona responsable del hogar es:",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 27,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Responsable del Hogar",
+     "id_resp_vivanto": 4499,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Cónyuge o Compañera(o)",
+     "id_resp_vivanto": 4500,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Hijo(a) - Hijastro(a)",
+     "id_resp_vivanto": 4501,
+     "orden": 3
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Padre o madre - padrastro o madrastra",
+     "id_resp_vivanto": 4502,
+     "orden": 4
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Hermano(a) - Hermanastro(a)",
+     "id_resp_vivanto": 4503,
+     "orden": 5
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Otro pariente del jefe",
+     "id_resp_vivanto": 4504,
+     "orden": 6
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B25",
+   "codigo_externo": "A11",
+   "id_preg": 289,
+   "capitulo_codigo": "B",
+   "texto": "Siente … que vive en un entorno cultural acorde con sus usos y costumbres?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 28,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1040,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1041,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B26",
+   "codigo_externo": "A30",
+   "id_preg": 867,
+   "capitulo_codigo": "B",
+   "texto": "¿Se encuentra habitando algún terriorio colectivo?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 29,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2632,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2633,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B27",
+   "codigo_externo": "B17",
+   "id_preg": 866,
+   "capitulo_codigo": "B",
+   "texto": "¿En que tipo de territorio se encuentra ?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 30,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Resguardo indigena",
+     "id_resp_vivanto": 2628,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Territorio colectivo de Comunidades Negras",
+     "id_resp_vivanto": 2629,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Territorio ancestral Habitado",
+     "id_resp_vivanto": 2630,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Zonas de reserva campesina",
+     "id_resp_vivanto": 3798,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Otro",
+     "id_resp_vivanto": 2631,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B28",
+   "codigo_externo": "A12",
+   "id_preg": 290,
+   "capitulo_codigo": "B",
+   "texto": "¿… A qué pueblo indígena pertenece?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 31,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B29",
+   "codigo_externo": "A13",
+   "id_preg": 291,
+   "capitulo_codigo": "B",
+   "texto": "¿… A qué comunidad indígena pertenece?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 32,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B30",
+   "codigo_externo": "A13A",
+   "id_preg": 868,
+   "capitulo_codigo": "B",
+   "texto": "¿… A qué cabildo indígena pertenece?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 33,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B31",
+   "codigo_externo": "A25",
+   "id_preg": 1182,
+   "capitulo_codigo": "B",
+   "texto": "¿Pertenece a un Consejo Comunitario?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 34,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 3879,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 3880,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B32",
+   "codigo_externo": "A13B",
+   "id_preg": 795,
+   "capitulo_codigo": "B",
+   "texto": "A qué consejo comunitario pertenece?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 35,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B33",
+   "codigo_externo": "A13C",
+   "id_preg": 372,
+   "capitulo_codigo": "B",
+   "texto": "¿… A qué Vitsa pertenece?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 36,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Bolochoc",
+     "id_resp_vivanto": 1292,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Bimbay",
+     "id_resp_vivanto": 1293,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Mijhaís",
+     "id_resp_vivanto": 1294,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Ghoso",
+     "id_resp_vivanto": 1295,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Churon",
+     "id_resp_vivanto": 1296,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Rruso",
+     "id_resp_vivanto": 1297,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Eskelleichi",
+     "id_resp_vivanto": 1298,
+     "orden": 7
+    },
+    {
+     "valor": "98",
+     "etiqueta": "Otro",
+     "id_resp_vivanto": 1299,
+     "orden": 8
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "A13D",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 37,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B34",
+   "codigo_externo": "A13E",
+   "id_preg": 373,
+   "capitulo_codigo": "B",
+   "texto": "¿… A qué Kumpania pertenece?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 38,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Sabana Larga (Atlántico)",
+     "id_resp_vivanto": 1300,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Sampués (Sucre)",
+     "id_resp_vivanto": 1301,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Sahagún (Córdoba)",
+     "id_resp_vivanto": 1302,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "San Pelayo (Córdoba)",
+     "id_resp_vivanto": 1303,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Cúcuta (Norte de Santander)",
+     "id_resp_vivanto": 1304,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Girón (Santander)",
+     "id_resp_vivanto": 1305,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Envigado (Antioquia)",
+     "id_resp_vivanto": 1306,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Ataco (Tolima)",
+     "id_resp_vivanto": 1307,
+     "orden": 8
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Bogotá - ProRrom",
+     "id_resp_vivanto": 1375,
+     "orden": 9
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Bogotá - Unión Romaní",
+     "id_resp_vivanto": 1308,
+     "orden": 10
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Pasto",
+     "id_resp_vivanto": 1309,
+     "orden": 11
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B35",
+   "codigo_externo": "A17",
+   "id_preg": 294,
+   "capitulo_codigo": "B",
+   "texto": "En el actual sitio de residencia, reconoce … alguna autoridad, líder o alguien que lo represente?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 39,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1050,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1051,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B36",
+   "codigo_externo": "A19",
+   "id_preg": 296,
+   "capitulo_codigo": "B",
+   "texto": "Adicional, reconoce … la autoridad del Resguardo, comunidad, pueblo o territorio colectivo del que proviene?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 40,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1053,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1054,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "A19A",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 41,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B37",
+   "codigo_externo": "A14",
+   "id_preg": 292,
+   "capitulo_codigo": "B",
+   "texto": "¿Su comunidad o pueblo tiene un idioma propio?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 42,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 1044,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 1045,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B38",
+   "codigo_externo": "A15",
+   "id_preg": 273,
+   "capitulo_codigo": "B",
+   "texto": "En cuanto a su propio idioma usted:",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 43,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Lo habla y lo entiende bien",
+     "id_resp_vivanto": 969,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Lo entiende y habla poco",
+     "id_resp_vivanto": 970,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Lo entiende pero no lo habla",
+     "id_resp_vivanto": 971,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "No lo entiende ni lo habla",
+     "id_resp_vivanto": 972,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "En su comunidad solo se habla español",
+     "id_resp_vivanto": 973,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B39",
+   "codigo_externo": "A16",
+   "id_preg": 293,
+   "capitulo_codigo": "B",
+   "texto": "En cuanto al idioma español usted:",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 44,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "4",
+     "etiqueta": "No lo entiende ni lo habla",
+     "id_resp_vivanto": 1049,
+     "orden": 1
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Lo entiende pero no lo habla",
+     "id_resp_vivanto": 1048,
+     "orden": 2
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Lo entiende y habla poco",
+     "id_resp_vivanto": 1047,
+     "orden": 3
+    },
+    {
+     "valor": "1",
+     "etiqueta": "Lo habla y lo entiende bien",
+     "id_resp_vivanto": 1046,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B40",
+   "codigo_externo": "A16A",
+   "id_preg": 869,
+   "capitulo_codigo": "B",
+   "texto": "¿Pertenece a alguna organización?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 45,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2635,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2636,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B41",
+   "codigo_externo": "B18B",
+   "id_preg": 1158,
+   "capitulo_codigo": "B",
+   "texto": "¿Qué tipo de organización?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 46,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Étnica",
+     "id_resp_vivanto": 3760,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "De Víctimas",
+     "id_resp_vivanto": 3761,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Campesina",
+     "id_resp_vivanto": 3762,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Defensoras de Derechos",
+     "id_resp_vivanto": 3763,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Otra",
+     "id_resp_vivanto": 3764,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "B18A",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 47,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B42",
+   "codigo_externo": "A20",
+   "id_preg": 16,
+   "capitulo_codigo": "B",
+   "texto": "¿Hace cuántos años vive en el municipio?",
+   "tipo": "NUMERICO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 48,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "B43",
+   "codigo_externo": "A20A",
+   "id_preg": 870,
+   "capitulo_codigo": "B",
+   "texto": "¿En los últimos seis meses, usted ha declarado nuevos hechos victimizantes para ser incluidos en el RUV?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 49,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 2637,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 2638,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B44",
+   "codigo_externo": "A26A",
+   "id_preg": 1436,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuáles hechos victimizantes ha declarado usted para ser incluido en el RUV en los últimos 6 meses?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 50,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Acto terrorista / atentados / combates /enfrentamientos / hostigamientos",
+     "id_resp_vivanto": 4505,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Amenaza",
+     "id_resp_vivanto": 4506,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Delitos contra la libertad y la integridad sexual en desarrollo del conflicto armado",
+     "id_resp_vivanto": 4507,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Desaparición forzada",
+     "id_resp_vivanto": 4508,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Desplazamiento forzado",
+     "id_resp_vivanto": 4509,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Homicidio",
+     "id_resp_vivanto": 4510,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Minas antipersonal, munición sin explotar y artefacto explosivo improvisado",
+     "id_resp_vivanto": 4511,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Secuestro",
+     "id_resp_vivanto": 4512,
+     "orden": 8
+    },
+    {
+     "valor": "9",
+     "etiqueta": "Tortura",
+     "id_resp_vivanto": 4513,
+     "orden": 9
+    },
+    {
+     "valor": "10",
+     "etiqueta": "Vinculación de niños niñas y adolescentes a actividades relacionadas con grupos armados",
+     "id_resp_vivanto": 4514,
+     "orden": 10
+    },
+    {
+     "valor": "11",
+     "etiqueta": "Abandono o despojo forzado de tierras",
+     "id_resp_vivanto": 4515,
+     "orden": 11
+    },
+    {
+     "valor": "12",
+     "etiqueta": "Perdida de bienes muebles o inmuebles",
+     "id_resp_vivanto": 4516,
+     "orden": 12
+    },
+    {
+     "valor": "13",
+     "etiqueta": "Lesiones personales físicas",
+     "id_resp_vivanto": 4517,
+     "orden": 13
+    },
+    {
+     "valor": "14",
+     "etiqueta": "Lesiones personales psicológicas",
+     "id_resp_vivanto": 4518,
+     "orden": 14
+    },
+    {
+     "valor": "15",
+     "etiqueta": "Confinamiento",
+     "id_resp_vivanto": 4519,
+     "orden": 15
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B45",
+   "codigo_externo": "A21",
+   "id_preg": 17,
+   "capitulo_codigo": "B",
+   "texto": "¿… es víctima del conflicto armado?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 51,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 27,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 28,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B46",
+   "codigo_externo": "A22",
+   "id_preg": 18,
+   "capitulo_codigo": "B",
+   "texto": "¿… solicitó ser incluido en el RUPD/RUV por alguna de las siguientes formas?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 52,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "El hecho lo declaró usted",
+     "id_resp_vivanto": 29,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "El hecho fue declarado por otra persona de su hogar",
+     "id_resp_vivanto": 30,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "El hecho fue declarado por una persona de otro hogar",
+     "id_resp_vivanto": 31,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "El hecho fue declarado por un líder o una autoridad del Territorio",
+     "id_resp_vivanto": 1055,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "No Declaró",
+     "id_resp_vivanto": 32,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "B47",
+   "codigo_externo": "A23A",
+   "id_preg": 19,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuáles son las razones para no haber declarado?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 53,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Amenaza o miedo",
+     "id_resp_vivanto": 33,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Falta de confianza en el gobierno",
+     "id_resp_vivanto": 34,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "No confía en los funcionarios que reciben la información",
+     "id_resp_vivanto": 35,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Por falta de información",
+     "id_resp_vivanto": 36,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "No ha querido",
+     "id_resp_vivanto": 37,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Acceso",
+     "id_resp_vivanto": 2361,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Traslado",
+     "id_resp_vivanto": 2362,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Otra",
+     "id_resp_vivanto": 38,
+     "orden": 8
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "A23F1",
+   "id_preg": null,
+   "capitulo_codigo": "B",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 54,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "SA_PS_1",
+   "codigo_externo": "SA_PS_1",
+   "id_preg": 1439,
+   "capitulo_codigo": "SP",
+   "texto": "¿ ... está afiliado, es cotizante o es beneficiario en alguna de los siguientes regímenes de seguridad social en salud ?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "EPS - Contributivo",
+     "id_resp_vivanto": 4527,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "EPS - Subsidiado",
+     "id_resp_vivanto": 4528,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Regímenes especiales (Fuerzas Armadas, Ecopetrol, universidades públicas, magisterio)",
+     "id_resp_vivanto": 4529,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "No está afiliado",
+     "id_resp_vivanto": 4530,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "NS/NR",
+     "id_resp_vivanto": 4531,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "SA_PS_2",
+   "codigo_externo": "SA_PS_2",
+   "id_preg": 1440,
+   "capitulo_codigo": "SP",
+   "texto": "Según lo que usted ha vivido por el conflicto armado ¿Considera que … requiere acompañamiento psicosocial?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 4532,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 4533,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "FT_EMP_1",
+   "codigo_externo": "FT_EMP_1",
+   "id_preg": 1442,
+   "capitulo_codigo": "JF",
+   "texto": "¿En qué actividad ocupó ... la mayor parte del tiempo la semana pasada?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Trabajando",
+     "id_resp_vivanto": 4535,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Buscando trabajo",
+     "id_resp_vivanto": 4536,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Estudiando",
+     "id_resp_vivanto": 4537,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Trabajo doméstico y de cuidado a personas del hogar",
+     "id_resp_vivanto": 4538,
+     "orden": 4
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Trabaja en los oficios propios de su comunidad",
+     "id_resp_vivanto": 4539,
+     "orden": 5
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Con limitación(es) permanente(s) para trabajar",
+     "id_resp_vivanto": 4540,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Otra actividad",
+     "id_resp_vivanto": 4541,
+     "orden": 7
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_1A",
+   "id_preg": null,
+   "capitulo_codigo": "JF",
+   "texto": "¿cuál?__________",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_2",
+   "id_preg": 1443,
+   "capitulo_codigo": "JF",
+   "texto": "En este trabajo… es",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Obrero o empleado de  empresa particular",
+     "id_resp_vivanto": 4542,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Obrero o empleado del gobierno",
+     "id_resp_vivanto": 4543,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Empleado doméstico",
+     "id_resp_vivanto": 4544,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Trabajador por cuenta propia",
+     "id_resp_vivanto": 4545,
+     "orden": 4
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Patrón o empleador",
+     "id_resp_vivanto": 4546,
+     "orden": 5
+    },
+    {
+     "valor": "6",
+     "etiqueta": "Trabajador familiar  sin remuneración",
+     "id_resp_vivanto": 4547,
+     "orden": 6
+    },
+    {
+     "valor": "7",
+     "etiqueta": "Trabajador sin remuneración en empresas o negocios de otros hogares",
+     "id_resp_vivanto": 4548,
+     "orden": 7
+    },
+    {
+     "valor": "8",
+     "etiqueta": "Jornalero",
+     "id_resp_vivanto": 4549,
+     "orden": 8
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_3",
+   "id_preg": 1444,
+   "capitulo_codigo": "JF",
+   "texto": "Antes de descuentos ¿cuánto ganó … el mes pasado en este empleo?\n(Incluya propinas y comisiones, y excluya viáticos y pagos en especie)",
+   "tipo": "NUMERICO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_4",
+   "id_preg": 1445,
+   "capitulo_codigo": "K",
+   "texto": "¿Alguna vez ha llevado a cabo una iniacitiva de negocio propio o ha participado en alguna?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 1,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 4551,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 4552,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_5",
+   "id_preg": 1446,
+   "capitulo_codigo": "K",
+   "texto": "¿Actualmente se encuentra activo su negocio?",
+   "tipo": "BOOLEAN",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 2,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Si",
+     "id_resp_vivanto": 4553,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "No",
+     "id_resp_vivanto": 4554,
+     "orden": 2
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_6",
+   "id_preg": 1447,
+   "capitulo_codigo": "K",
+   "texto": "¿Cuánto tiempo ha estado activo su negocio?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 3,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "1",
+     "etiqueta": "Menos de un (1) año",
+     "id_resp_vivanto": 4555,
+     "orden": 1
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Entre 1 y 3 años",
+     "id_resp_vivanto": 4556,
+     "orden": 2
+    },
+    {
+     "valor": "3",
+     "etiqueta": "Entre  3  y 5 años",
+     "id_resp_vivanto": 4557,
+     "orden": 3
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Más de 5 años",
+     "id_resp_vivanto": 4558,
+     "orden": 4
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_7",
+   "id_preg": 1448,
+   "capitulo_codigo": "K",
+   "texto": "¿… hace parte de una organización productiva?",
+   "tipo": "LISTA",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 4,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": [
+    {
+     "valor": "3",
+     "etiqueta": "Cooperativa ¿Cuál?",
+     "id_resp_vivanto": 4559,
+     "orden": 1
+    },
+    {
+     "valor": "4",
+     "etiqueta": "Gremio ¿Cuál?",
+     "id_resp_vivanto": 4560,
+     "orden": 2
+    },
+    {
+     "valor": "5",
+     "etiqueta": "Sindicato ¿Cuál?",
+     "id_resp_vivanto": 4561,
+     "orden": 3
+    },
+    {
+     "valor": "1",
+     "etiqueta": "Otra ¿Cuál?",
+     "id_resp_vivanto": 4562,
+     "orden": 4
+    },
+    {
+     "valor": "2",
+     "etiqueta": "Ninguna",
+     "id_resp_vivanto": 4563,
+     "orden": 5
+    }
+   ]
+  },
+  {
+   "no_pregunta": "",
+   "codigo_externo": "FT_EMP_7A",
+   "id_preg": null,
+   "capitulo_codigo": "K",
+   "texto": "¿Cuál?",
+   "tipo": "TEXTO",
+   "nivel": "PERSONA",
+   "obligatoria": false,
+   "orden": 5,
+   "es_precargada": false,
+   "fuente_precarga": "",
+   "validaciones": {},
+   "opciones": []
+  }
+ ],
+ "reglas_skip_logic": [
+  {
+   "origen": "I6",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "I7A",
+   "descripcion": "[Datos Básicos validado] tipo discapacidad visible si presenta discapacidad"
+  },
+  {
+   "origen": "I6",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "I7E",
+   "descripcion": "[Datos Básicos validado] origen discapacidad visible si presenta discapacidad"
+  },
+  {
+   "origen": "I13",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "B13A",
+   "descripcion": "[Datos Básicos validado] cuál enfermedad visible si tiene diagnóstico ruinosas"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "B17",
+   "descripcion": "[B27 manual] tipo territorio si étnico (Z4≠Ninguna)"
+  },
+  {
+   "origen": "A25",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "A13B",
+   "descripcion": "[Datos Básicos validado] cuál consejo visible si pertenece a consejo comunitario"
+  },
+  {
+   "origen": "A16A",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "B18B",
+   "descripcion": "[Datos Básicos validado] tipo organización visible si pertenece a organización"
+  },
+  {
+   "origen": "A20A",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "A26A",
+   "descripcion": "[Datos Básicos validado] cuáles hechos visible si declaró nuevos hechos"
+  },
+  {
+   "origen": "B6",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "B12",
+   "descripcion": "[Datos Básicos validado] libreta física visible si tiene libreta militar"
+  },
+  {
+   "origen": "D5",
+   "valor_trigger": "98",
+   "accion": "HABILITAR",
+   "afecta": "D5A",
+   "descripcion": "[Vivienda validado] ¿Cuál? visible si tipo de tenencia = Otra"
+  },
+  {
+   "origen": "E1A",
+   "valor_trigger": "1,2",
+   "accion": "HABILITAR",
+   "afecta": "E1",
+   "descripcion": "[Retornos/módulo] quiere retornar/reubicar → solicitó apoyo (bloque retorno)"
+  },
+  {
+   "origen": "E1B",
+   "valor_trigger": "3",
+   "accion": "HABILITAR",
+   "afecta": "E1C",
+   "descripcion": "[Retornos/módulo] quiere instalarse aquí → razones por las que reside"
+  },
+  {
+   "origen": "E1B",
+   "valor_trigger": "4",
+   "accion": "FINALIZAR",
+   "descripcion": "[Retornos/módulo] ninguna de las anteriores → finaliza capítulo",
+   "afecta_capitulo": "D"
+  },
+  {
+   "origen_expr": "sexo == '1' and edad >= 18 and edad <= 49",
+   "accion": "HABILITAR",
+   "afecta": "B6",
+   "descripcion": "[demográfico/étnico] libreta militar: hombres 18-49"
+  },
+  {
+   "origen_expr": "sexo == '2' and edad >= 12",
+   "accion": "HABILITAR",
+   "afecta": "B2",
+   "descripcion": "[B manual] embarazo: mujeres 12+ (menores 12 -> observacion)"
+  },
+  {
+   "origen_expr": "sexo == '2' and edad >= 12 and edad <= 50",
+   "accion": "HABILITAR",
+   "afecta": "B2A",
+   "descripcion": "[B manual] mujer 12-50 años"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "A12",
+   "descripcion": "[étnico por persona] pueblo indígena: Z4=Indígena(1)"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "A13",
+   "descripcion": "[étnico por persona] comunidad indígena: Z4=Indígena(1)"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "A13A",
+   "descripcion": "[étnico por persona] cabildo indígena: Z4=Indígena(1)"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "2",
+   "accion": "HABILITAR",
+   "afecta": "A13C",
+   "descripcion": "[demográfico/étnico] Vitsa: solo indígenas"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "2",
+   "accion": "HABILITAR",
+   "afecta": "A13E",
+   "descripcion": "[étnico por persona] Kumpania: Z4=Gitano/Rrom(2)"
+  },
+  {
+   "origen_expr": "etnia == 'indigena'",
+   "accion": "HABILITAR",
+   "afecta": "RR2",
+   "descripcion": "[demográfico/étnico] resguardo retornó: indígenas"
+  },
+  {
+   "origen_expr": "etnia == 'indigena'",
+   "accion": "HABILITAR",
+   "afecta": "RR3",
+   "descripcion": "[demográfico/étnico] comunidad retornó: indígenas"
+  },
+  {
+   "origen_expr": "etnia == 'negro_afro'",
+   "accion": "HABILITAR",
+   "afecta": "RR4",
+   "descripcion": "[demográfico/étnico] territorio colectivo retornó: negro/afro"
+  },
+  {
+   "origen_expr": "etnia == 'rom'",
+   "accion": "HABILITAR",
+   "afecta": "RR5A",
+   "descripcion": "[demográfico/étnico] Kumpania retornó: Rom"
+  },
+  {
+   "origen_expr": "etnia == 'indigena'",
+   "accion": "HABILITAR",
+   "afecta": "RR7",
+   "descripcion": "[demográfico/étnico] resguardo desea: indígenas"
+  },
+  {
+   "origen_expr": "etnia == 'indigena'",
+   "accion": "HABILITAR",
+   "afecta": "RR8",
+   "descripcion": "[demográfico/étnico] comunidad desea: indígenas"
+  },
+  {
+   "origen_expr": "etnia == 'negro_afro'",
+   "accion": "HABILITAR",
+   "afecta": "RR9",
+   "descripcion": "[demográfico/étnico] territorio colectivo desea: negro/afro"
+  },
+  {
+   "origen_expr": "etnia == 'rom'",
+   "accion": "HABILITAR",
+   "afecta": "RR10A",
+   "descripcion": "[demográfico/étnico] Kumpania desea: Rom"
+  },
+  {
+   "origen": "AT1A",
+   "valor_trigger": "5",
+   "accion": "FINALIZAR",
+   "afecta_capitulo": "M",
+   "descripcion": "[M validado] finaliza si NO mantiene relación urbano-rural"
+  },
+  {
+   "origen": "AT2",
+   "valor_trigger": "2",
+   "accion": "FINALIZAR",
+   "afecta_capitulo": "M",
+   "descripcion": "[M validado] finaliza si no dispone de terreno"
+  },
+  {
+   "origen": "Z11",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "Z12",
+   "descripcion": "[A] correspondencia si NO es misma residencia"
+  },
+  {
+   "origen": "Z11",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "Z15",
+   "descripcion": "[A] correspondencia si NO es misma residencia"
+  },
+  {
+   "origen": "Z11",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "Z16",
+   "descripcion": "[A] correspondencia si NO es misma residencia"
+  },
+  {
+   "origen_expr": "edad >= 18",
+   "accion": "HABILITAR",
+   "afecta": "B8",
+   "descripcion": "[B15 manual] fuerza pública: mayores de 18"
+  },
+  {
+   "origen": "A21",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "A22",
+   "descripcion": "[B46 manual] solicitó RUV si víctima del conflicto"
+  },
+  {
+   "origen": "A22",
+   "valor_trigger": "5",
+   "accion": "HABILITAR",
+   "afecta": "A23A",
+   "descripcion": "[B47 manual] razones no declarar si NO declaró"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "11,12,98",
+   "accion": "FINALIZAR",
+   "afecta_capitulo": "C",
+   "descripcion": "[C1 manual] finaliza si calle/ilegal/otra vivienda"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A11",
+   "descripcion": "[flujo] A11 visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A30",
+   "descripcion": "[flujo] A30 visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A17",
+   "descripcion": "[flujo] A17 visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A19",
+   "descripcion": "[flujo] A19 visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A14",
+   "descripcion": "[flujo] A14 visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A16A",
+   "descripcion": "[flujo] A16A visible si Z4=1,2,3,4,5"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "5",
+   "accion": "HABILITAR",
+   "afecta": "A25",
+   "descripcion": "[flujo] A25 visible si Z4=5"
+  },
+  {
+   "origen": "A14",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "A15",
+   "descripcion": "[flujo] A15 visible si A14=true"
+  },
+  {
+   "accion": "HABILITAR",
+   "afecta": "A21",
+   "descripcion": "[B45 manual] es victima si NO incluido en RUV (contexto)",
+   "origen_expr": "ruv_incluido == false"
+  },
+  {
+   "origen": "E1A",
+   "valor_trigger": "3",
+   "accion": "HABILITAR",
+   "afecta": "E1B",
+   "descripcion": "[flujo] E1B visible si E1A=3"
+  },
+  {
+   "origen": "E1A",
+   "valor_trigger": "1,2",
+   "accion": "HABILITAR",
+   "afecta": "RR1",
+   "descripcion": "[flujo] RR1 visible si E1A=1,2"
+  },
+  {
+   "origen": "E1B",
+   "valor_trigger": "1,2",
+   "accion": "HABILITAR",
+   "afecta": "RR6",
+   "descripcion": "[flujo] RR6 visible si E1B=1,2"
+  },
+  {
+   "origen_expr": "edad >= 12",
+   "accion": "HABILITAR",
+   "afecta": "A8A",
+   "descripcion": "[contexto] A8A visible si edad >= 12"
+  },
+  {
+   "origen_expr": "edad >= 12",
+   "accion": "HABILITAR",
+   "afecta": "B5",
+   "descripcion": "[contexto] B5 visible si edad >= 12"
+  },
+  {
+   "origen_expr": "etnia != 'ninguno'",
+   "accion": "HABILITAR",
+   "afecta": "I1D",
+   "descripcion": "[contexto] I1D visible si etnia != 'ninguno'"
+  },
+  {
+   "origen": "D8C",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "D10",
+   "descripcion": "[Vivienda] agua para beber visible si NO tiene acueducto"
+  },
+  {
+   "origen": "D8E",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "D13A",
+   "descripcion": "[Vivienda] como eliminan basuras visible si NO hay recoleccion de basuras"
+  },
+  {
+   "origen": "D8B",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "D14",
+   "descripcion": "[Vivienda] servicio sanitario visible si NO tiene alcantarillado"
+  },
+  {
+   "origen": "D5",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "D6",
+   "descripcion": "[Vivienda] cuanto cobraria de arriendo visible si tenencia es Propia"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3",
+   "accion": "HABILITAR",
+   "afecta": "D1",
+   "descripcion": "[Vivienda] no de cuartos visible si tipo de vivienda es Casa/Apto/Cuarto"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3",
+   "accion": "HABILITAR",
+   "afecta": "D2",
+   "descripcion": "[Vivienda] cuartos para dormir visible si tipo de vivienda es Casa/Apto/Cuarto"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+   "accion": "HABILITAR",
+   "afecta": "C2",
+   "descripcion": "[cap C manual] C2"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+   "accion": "HABILITAR",
+   "afecta": "C3",
+   "descripcion": "[cap C manual] C3"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+   "accion": "HABILITAR",
+   "afecta": "C5",
+   "descripcion": "[cap C manual] C5"
+  },
+  {
+   "origen": "C1",
+   "valor_trigger": "1,2,3,4,9,5,6,7,8,10",
+   "accion": "HABILITAR",
+   "afecta": "C6A",
+   "descripcion": "[cap C manual] C6A"
+  },
+  {
+   "origen_expr": "etnia != 'ninguno'",
+   "accion": "HABILITAR",
+   "afecta": "C7",
+   "descripcion": "[cap C manual] C7"
+  },
+  {
+   "origen_expr": "etnia == 'rom'",
+   "accion": "HABILITAR",
+   "afecta": "D8F",
+   "descripcion": "[cap C manual] D8F"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1,2,3,4,5",
+   "accion": "HABILITAR",
+   "afecta": "A16",
+   "descripcion": "[B39 manual] idioma español si étnico"
+  },
+  {
+   "origen": "D5",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "D7",
+   "descripcion": "[C3 manual] documento soporte si tenencia propia"
+  }
+ ]
 }
