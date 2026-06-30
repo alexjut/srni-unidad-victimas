@@ -11,6 +11,7 @@ export default {
           azulOscuro:   '#003A80',
           azulTenue:    '#E3F2FD',
           amarillo:     '#F5BF04',  // franja GOV.CO
+          amarilloTenue:'#FFFDE7',  // fondo amarillo suave
           verde:        '#2E7D32',
           verdeTenue:   '#E8F5E9',
           rojo:         '#C62828',

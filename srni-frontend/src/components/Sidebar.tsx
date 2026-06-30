@@ -32,8 +32,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       {/* Logo */}
       <div className="px-5 py-5">
         <img src={LogoHorizontalNegativo} alt="Unidad para las Víctimas" className="h-10 w-auto" />
-      
-        </div>
+      </div>
 
       {/* Navegación */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Menú principal">
@@ -43,23 +42,33 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             to={to}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border-l-2 ${
                 isActive
-                  ? 'bg-gov-azul/20 border-gov-azul/30 text-white'
-                  : 'border-transparent text-white hover:bg-white/[0.07] hover:text-white'
+                  ? 'border-gov-amarillo bg-white/10 text-white'
+                  : 'border-transparent text-white/70 hover:bg-white/[0.07] hover:text-white'
               }`
             }
           >
-            <Icon size={17} />
-            <span className="flex-1">{label}</span>
-            <ChevronRight size={13} className="opacity-20 shrink-0" />
+            {({ isActive }) => (
+              <>
+                <Icon size={17} />
+                <span className="flex-1">{label}</span>
+                <ChevronRight
+                  size={13}
+                  className={`shrink-0 transition-colors duration-150 ${isActive ? 'text-gov-amarillo' : 'opacity-20'}`}
+                />
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
       {/* Versión */}
       <div className="px-5 py-3 border-t border-white/[0.06]">
-        <p className="text-[10px] text-white font-mono">v2026.01</p>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-gov-amarillo shrink-0" />
+          <p className="text-[10px] text-white/50 font-mono">v2026.01</p>
+        </div>
       </div>
     </>
   );

@@ -177,7 +177,7 @@ export default function SupervisionPage() {
           <Card icon={ClipboardCheck} label="Sesiones totales" valor={supervisor.totales.sesiones_total} color="bg-gov-azul" />
           <Card icon={TrendingUp} label="Completadas" valor={supervisor.totales.sesiones_completadas} color="bg-gov-verde" />
           <Card icon={Home} label="Hogares" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
-          <Card icon={Users} label="Encuestadores activos" valor={supervisor.encuestadores_activos} color="bg-purple-600" />
+          <Card icon={Users} label="Encuestadores activos" valor={supervisor.encuestadores_activos} color="bg-gov-azulOscuro" />
         </div>
       )}
 

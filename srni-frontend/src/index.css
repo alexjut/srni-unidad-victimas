@@ -99,6 +99,7 @@
   .badge-rojo   { @apply bg-gov-rojoTenue   text-gov-rojo   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-azul   { @apply bg-gov-azulTenue   text-gov-azul   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
   .badge-gris   { @apply bg-gray-100        text-gov-gris   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-amarillo { @apply bg-gov-amarilloTenue text-yellow-700 text-xs font-semibold px-2.5 py-0.5 rounded-full; }
 
   /* Contenido de página — fade in al entrar */
   .page-content {

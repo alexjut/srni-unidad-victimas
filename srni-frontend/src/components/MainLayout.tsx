@@ -52,6 +52,9 @@ export default function MainLayout() {
   return (
     <div className="flex h-screen bg-gov-azulOscuro">
 
+      {/* Franja GOV.CO — full width, institucional */}
+      <div className="fixed top-0 inset-x-0 h-1 bg-gov-amarillo z-[200]" aria-hidden="true" />
+
       {/* Skip to content — a11y */}
       <a
         href="#main-content"
@@ -148,7 +151,7 @@ export default function MainLayout() {
                     {usuario?.perfil && (
                       <p className="text-xs text-white">{usuario.perfil.nombre}</p>
                     )}
-                    <p className="text-xs font-medium text-blue-300 mt-0.5">Sesión activa</p>
+                    <p className="text-xs font-medium text-gov-amarillo mt-0.5">Sesión activa</p>
                   </div>
                 </div>
 
@@ -189,7 +192,7 @@ export default function MainLayout() {
         <header
           className="hidden lg:flex items-center justify-between bg-gov-azulOscuro px-6 py-3 shrink-0"
         >
-          <p className="text-sm font-display font-semibold text-white">{currentLabel}</p>
+          <p className="text-sm font-display font-semibold text-gov-amarillo">{currentLabel}</p>
 
           {usuario && (
             <div className="relative" ref={userMenuRef}>
@@ -222,7 +225,7 @@ export default function MainLayout() {
                   style={GLASS_DROPDOWN}
                 >
                   <div className="px-4 py-3 border-b border-white/[0.08]">
-                    <p className="text-[10px] font-medium text-blue-300 uppercase tracking-wider">Sesión activa</p>
+                    <p className="text-[10px] font-medium text-gov-amarillo uppercase tracking-wider">Sesión activa</p>
                     <p className="text-sm font-bold text-white truncate mt-0.5">{usuario.nombre_completo}</p>
                     {usuario.perfil && (
                       <p className="text-xs text-white">{usuario.perfil.nombre}</p>

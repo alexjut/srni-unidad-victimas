@@ -60,6 +60,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0a1628]">
 
+      {/* Franja GOV.CO */}
+      <div className="fixed top-0 inset-x-0 h-1 bg-gov-amarillo z-50" aria-hidden="true" />
+
       {/* ── Fondo slideshow ── */}
       {BG_IMAGES.map((src, i) => (
         <div
