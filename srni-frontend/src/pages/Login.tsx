@@ -2,22 +2,35 @@
  * Página de Login — liquid glass / glassmorphism
  * Fondo gradiente + orbes decorativos + tarjeta glass con backdrop-blur
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
-import LogoHorizontal from '@/assets/LogoHorizontalColor.svg';
+import LogoHorizontal from '@/assets/LogoColor.svg';
+
+const BG_IMAGES = [
+  '/img/1.jpg', '/img/2.jpg', '/img/3.jpg', '/img/4.jpg',
+  '/img/5.jpg', '/img/6.jpg', '/img/7.jpg',
+];
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { setTokens, setUsuario } = useAuthStore();
 
+  const [bgIdx, setBgIdx] = useState(0);
   const [usuario, setUsuarioField] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIdx((i) => (i + 1) % BG_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,20 +60,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#0a1628]">
 
-      {/* ── Fondo gradiente ── */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628] via-[#0d2847] to-[#0a1628]" />
-
-      {/* ── Orbes decorativos ── */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gov-azul/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-      <div className="absolute bottom-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full bg-blue-400/15 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
-      <div className="absolute top-[20%] right-[15%] w-[300px] h-[300px] rounded-full bg-gov-amarillo/10 blur-[80px] animate-pulse" style={{ animationDuration: '12s' }} />
+      {/* ── Fondo slideshow ── */}
+      {BG_IMAGES.map((src, i) => (
+        <div
+          key={src}
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{ backgroundImage: `url(${src})`, opacity: i === bgIdx ? 1 : 0 }}
+        />
+      ))}
+      {/* Overlay oscuro para legibilidad */}
+      <div className="absolute inset-0 bg-[#0a1628]/65" />
 
       {/* ── Contenido central ── */}
       <div className="relative z-10 w-full max-w-[440px] px-5 animate-fade-in-up">
 
         {/* Identidad institucional */}
         <div className="text-center mb-7">
-          <img src={LogoHorizontal} alt="Logo institucional" className="h-20 mx-auto mb-4" />
+          <img src={LogoHorizontal} alt="Logo institucional" className="h-40 mx-auto mb-4" />
           <p className="text-white text-[15px] tracking-wide">
             Sistema de Registro Nacional de Información
           </p>
