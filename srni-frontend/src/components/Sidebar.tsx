@@ -4,7 +4,7 @@ import {
   FileText, Database, Shield, ChevronRight, UserCog,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import LogoHorizontalNegativo from '@/assets/LogoNegativo.svg';
+import LogoHorizontalNegativo from '@/assets/LogoHorizontalnegativo.svg';
 
 export const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
