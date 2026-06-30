@@ -4,8 +4,8 @@
     "version": "V8",
     "nombre": "Asistencia humanitaria",
     "archivo": "asistencia_v8.json",
-    "capitulos": 7,
-    "preguntas": 174
+    "capitulos": 8,
+    "preguntas": 105
   },
   {
     "codigo": "BUENAVENTURA",
