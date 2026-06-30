@@ -86,7 +86,7 @@ export function calcularProgresoOffline(
       mapaParaMiembro(preguntas, respuestasCompuesto, efectivos[0].id),
     );
     const obligHogar = preguntas.filter(
-      (p) => p.nivel === 'HOGAR' && p.obligatoria === 1 && visH.visibles.has(p.codigo_externo),
+      (p) => p.nivel === 'HOGAR' && p.obligatoria === 1 && !p.es_precargada && visH.visibles.has(p.codigo_externo),
     );
 
     let obligVisibles = obligHogar.length;
@@ -103,7 +103,7 @@ export function calcularProgresoOffline(
         mapaParaMiembro(preguntas, respuestasCompuesto, miembro.id),
       );
       const obligPersona = preguntas.filter(
-        (p) => p.nivel === 'PERSONA' && p.obligatoria === 1 && visP.visibles.has(p.codigo_externo),
+        (p) => p.nivel === 'PERSONA' && p.obligatoria === 1 && !p.es_precargada && visP.visibles.has(p.codigo_externo),
       );
       obligVisibles += obligPersona.length;
       for (const p of obligPersona) {

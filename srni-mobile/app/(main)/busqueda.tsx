@@ -22,10 +22,9 @@ import { router, useFocusEffect } from 'expo-router';
 import { GovHeader } from '../../src/components/GovHeader';
 import { SelectorFecha } from '../../src/components/SelectorFecha';
 
-// Imagen auténtica de comunidad indígena Emberá — Unidad para las Víctimas
-const IMAGEN_FONDO = {
-  uri: 'https://www.unidadvictimas.gov.co/wp-content/uploads/2024/11/UnidadVictimasRechazaDiscursosDiscriminatoriosContraMingaEmbera-V1-e1732827844334-1024x577.jpeg',
-};
+// Fondo: caficultor colombiano en la montaña. Imagen LOCAL (bundled) → carga
+// offline, sin depender de red, coherente con la marca SICAV Móvil.
+const IMAGEN_FONDO = require('../../assets/fondo-busqueda.jpg');
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 import { victimasApi } from '../../src/api/victimas';
 import apiClient from '../../src/api/client';

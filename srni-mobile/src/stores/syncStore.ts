@@ -11,6 +11,7 @@
  */
 import { create } from 'zustand';
 import { AppState, type AppStateStatus } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import * as sincronizacionService from '../services/sincronizacion';
 import * as colaDao from '../db/colaDao';
 import * as instrumentoDao from '../db/instrumentoDao';
@@ -43,6 +44,7 @@ interface SyncState {
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let appStateSub: { remove: () => void } | null = null;
+let netInfoUnsub: (() => void) | null = null;
 
 export const useSyncStore = create<SyncState>((set, get) => ({
   estaOnline: false,
@@ -84,7 +86,20 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       }
     });
 
-    // Polling cada 60 s para detectar cuando vuelve la red
+    // Listener NetInfo: detección INSTANTÁNEA de cambios de red. Apenas el
+    // dispositivo recupera conexión, dispara checkConnectivity() (que verifica
+    // contra el servidor y sincroniza la cola si hay pendientes) — sin esperar
+    // los 60 s del polling. Solo reacciona a la transición a "conectado"; el
+    // resto de la lógica (verificación real + trigger) vive en checkConnectivity.
+    if (netInfoUnsub) netInfoUnsub();
+    netInfoUnsub = NetInfo.addEventListener((estado) => {
+      if (estado.isConnected) {
+        get().checkConnectivity();
+      }
+    });
+
+    // Polling cada 60 s como RESPALDO (cinturón y tirantes): cubre casos donde
+    // NetInfo no emite (algunos equipos/redes) o un cambio de reachability sutil.
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(() => {
       get().checkConnectivity();
