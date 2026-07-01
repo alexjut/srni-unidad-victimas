@@ -15,7 +15,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA: 'verde',
-  EN_PROGRESO: 'azul',
+  EN_PROGRESO: 'amarillo',
   INICIADA: 'naranja',
   SUSPENDIDA: 'rojo',
 };

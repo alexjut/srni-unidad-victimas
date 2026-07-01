@@ -12,7 +12,7 @@ const config: Record<AlertVariant, { bg: string; border: string; text: string; a
   error:   { bg: 'bg-gov-rojoTenue',    border: 'border-red-200/60',    text: 'text-gov-rojo',    accent: 'bg-gov-rojo',    icon: AlertCircle },
   exito:   { bg: 'bg-gov-verdeTenue',   border: 'border-green-200/60',  text: 'text-gov-verde',   accent: 'bg-gov-verde',   icon: CheckCircle },
   info:    { bg: 'bg-gov-azulTenue',    border: 'border-blue-200/60',   text: 'text-gov-azul',    accent: 'bg-gov-azul',    icon: Info },
-  warning: { bg: 'bg-gov-naranjaTenue', border: 'border-orange-200/60', text: 'text-gov-naranja', accent: 'bg-gov-naranja', icon: AlertTriangle },
+  warning: { bg: 'bg-gov-amarilloTenue', border: 'border-yellow-200/60', text: 'text-yellow-700',  accent: 'bg-gov-amarillo', icon: AlertTriangle },
 };
 
 export default function Alert({ variant, children, className = '' }: AlertProps) {

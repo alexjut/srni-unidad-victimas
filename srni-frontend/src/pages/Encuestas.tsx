@@ -15,7 +15,7 @@ import Alert from '@/components/ui/Alert';
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
   COMPLETADA:  'verde',
   FINALIZADA:  'verde',
-  EN_PROGRESO: 'azul',
+  EN_PROGRESO: 'amarillo',
   INICIADA:    'naranja',
   SUSPENDIDA:  'rojo',
   CANCELADA:   'rojo',

@@ -11,9 +11,12 @@ export default function Pagination({ pagina, totalPaginas, onChange }: Paginatio
 
   return (
     <div className="flex items-center justify-between px-4 py-3 border-t border-gov-borde/60">
-      <p className="text-xs text-gray-500">
-        Página <span className="font-semibold text-gray-700">{pagina}</span> de {totalPaginas}
-      </p>
+      <div className="flex items-center gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-gov-amarillo shrink-0" />
+        <p className="text-xs text-gray-500">
+          Página <span className="font-semibold text-gray-700">{pagina}</span> de {totalPaginas}
+        </p>
+      </div>
       <div className="flex gap-1.5">
         <button
           onClick={() => onChange(Math.max(1, pagina - 1))}

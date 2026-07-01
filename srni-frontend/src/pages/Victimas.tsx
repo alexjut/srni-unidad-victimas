@@ -26,11 +26,11 @@ const GENERO_LABEL: Record<string, string> = {
   ND: 'No definido',
 };
 
-const ESTADO_RUV_BADGE: Record<string, { variant: 'verde' | 'azul' | 'naranja' | 'rojo' | 'gris'; label: string }> = {
-  INCLUIDO:    { variant: 'verde',   label: 'Incluido en RUV' },
-  NO_INCLUIDO: { variant: 'gris',    label: 'No incluido' },
-  EN_PROCESO:  { variant: 'naranja', label: 'En proceso' },
-  EXCLUIDO:    { variant: 'rojo',    label: 'Excluido' },
+const ESTADO_RUV_BADGE: Record<string, { variant: 'verde' | 'azul' | 'amarillo' | 'naranja' | 'rojo' | 'gris'; label: string }> = {
+  INCLUIDO:    { variant: 'verde',    label: 'Incluido en RUV' },
+  NO_INCLUIDO: { variant: 'gris',     label: 'No incluido' },
+  EN_PROCESO:  { variant: 'amarillo', label: 'En proceso' },
+  EXCLUIDO:    { variant: 'rojo',     label: 'Excluido' },
 };
 
 const ETNIA_LABEL: Record<string, string> = {

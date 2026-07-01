@@ -20,7 +20,7 @@ const ESTADO_HOGAR: Record<string, BadgeVariant> = {
 
 const ESTADO_SESION: Record<string, BadgeVariant> = {
   COMPLETADA: 'verde',
-  EN_PROGRESO: 'azul',
+  EN_PROGRESO: 'amarillo',
   INICIADA: 'naranja',
   SUSPENDIDA: 'rojo',
 };

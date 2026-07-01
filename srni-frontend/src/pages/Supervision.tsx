@@ -86,7 +86,7 @@ export default function SupervisionPage() {
       key: 'en_progreso',
       header: 'En progreso',
       className: 'hidden md:table-cell',
-      render: (e) => <Badge variant="azul">{e.sesiones_en_progreso}</Badge>,
+      render: (e) => <Badge variant="amarillo">{e.sesiones_en_progreso}</Badge>,
     },
     {
       key: 'hogares',
