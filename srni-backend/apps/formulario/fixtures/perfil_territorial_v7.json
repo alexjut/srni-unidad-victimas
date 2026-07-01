@@ -4968,7 +4968,8 @@
       "validaciones": {
         "solo_numerico": true
       },
-      "opciones": []
+      "opciones": [],
+      "id": "799b50d1-2f0a-5135-a1fb-9f8bb37d1654"
     },
     {
       "no_pregunta": "B22",

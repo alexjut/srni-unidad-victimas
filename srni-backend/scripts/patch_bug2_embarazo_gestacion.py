@@ -57,7 +57,7 @@ def _detectar_indent(texto: str) -> int:
     return 1
 
 
-def patch_fixture(path: Path) -> None:
+def patch_fixture(path: Path, code: str) -> None:
     texto = path.read_text(encoding="utf-8")
     indent = _detectar_indent(texto)
     d = json.loads(texto)
@@ -88,6 +88,13 @@ def patch_fixture(path: Path) -> None:
         }
         idx = next(i for i, p in enumerate(preguntas) if p["codigo_externo"] == "B2")
         preguntas.insert(idx + 1, b2cant)
+
+    # ID determinista de B2_CANT: DEBE coincidir con el id del bundle para que el
+    # backend acepte la respuesta del móvil (Territorial fija ids uuid5 en el fixture;
+    # sin esto, cargar_perfil asignaría un uuid4 aleatorio y el backend rechazaría la
+    # respuesta con HTTP 400). Idempotente: se fija exista o no la pregunta.
+    cant_fix = next(p for p in preguntas if p["codigo_externo"] == "B2_CANT")
+    cant_fix["id"] = str(uuid.uuid5(NS, f"{code}:B2_CANT"))
 
     reglas = d.setdefault("reglas_skip_logic", [])
     for r in reglas:
@@ -137,6 +144,10 @@ def patch_bundle(path: Path, code: str) -> None:
         idx = next(i for i, p in enumerate(pregs) if p["codigo_externo"] == "B2")
         pregs.insert(idx + 1, b2cant)
 
+    # Idempotente: el id de B2_CANT en el bundle DEBE ser el mismo que en el fixture.
+    cant_b = next(p for p in pregs if p["codigo_externo"] == "B2_CANT")
+    cant_b["id"] = b2cant_id
+
     reglas = d.setdefault("reglas", [])
     for r in reglas:
         if r.get("pregunta_afectada_codigo") == "B2" and (r.get("expresion_origen") or "").strip():
@@ -175,7 +186,7 @@ def main() -> None:
         sys.exit(1 if check() else 0)
     for fix, bun in PERFILES:
         code = bun.rsplit("_", 1)[0]  # buenaventura_v7 -> buenaventura
-        patch_fixture(FIX_DIR / fix)
+        patch_fixture(FIX_DIR / fix, code)
         patch_bundle(BUN_DIR / bun, code)
         print(f"OK {fix}  +  {bun}")
     print("Reconciliación aplicada.")
