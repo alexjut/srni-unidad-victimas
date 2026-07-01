@@ -25,19 +25,19 @@ run cargar_puntos_atencion
 
 echo "===== INSTRUMENTOS ====="
 run crear_instrumentos_base
+# TODOS los perfiles se cargan desde su FIXTURE con `cargar_perfil --reemplazar`.
+# Los fixtures traen UUID de PREGUNTA deterministas que COINCIDEN con los bundles
+# empaquetados en el APK (ver srni-backend/scripts/sincronizar_ids_fixture_desde_bundle.py).
+# Sin esto, los comandos legacy (cargar_<perfil>_v*) hardcodeaban otra versión con uuid4
+# aleatorio y el backend rechazaba TODAS las respuestas del móvil con HTTP 400
+# (ver docs/sprints/sprint-15.md). NO reintroducir cargar_buenaventura_v7/etc.
+# --reemplazar purga los capítulos previos (cascade) para no dejar preguntas huérfanas
+# al cambiar de versión/reconstrucción.
+for COD in TERRITORIAL BUENAVENTURA SAN_ANDRES URBANO_ETNICO ASISTENCIA RURAL_ETNICO TELEFONICO VICTIMAS_EXTERIOR; do
+  run cargar_perfil --instrumento "$COD" --reemplazar
+done
+# El capítulo de control se re-agrega DESPUÉS del reemplazo (si no, lo purgaría).
 run cargar_capitulo_control
-# Territorial V7: cargar desde el FIXTURE (UUIDs deterministas uuid5 que coinciden
-# con el bundle del APK), NO desde cargar_territorial_v7 (comando hardcodeado con
-# uuid4 aleatorio). Si se siembra con el comando viejo en una BD limpia, los UUIDs
-# del backend no coinciden con los del APK y el backend rechaza TODAS las respuestas
-# del móvil con HTTP 400. Ver docs/sprints/sprint-15.md.
-run cargar_perfil --instrumento TERRITORIAL
-run cargar_buenaventura_v7
-run cargar_san_andres_v7
-run cargar_telefonico_v8
-run cargar_diccionario_v8
-run cargar_rural_etnico_v1
-run cargar_urbano_etnico_v1
 
 echo "===== USUARIO DE PRUEBA ====="
 run crear_usuario_prueba --codigo ENC001 --password "SrniTest2026!"

@@ -88,7 +88,8 @@
       "es_precargada": true,
       "fuente_precarga": "TABLA_USUARIOS",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "d3b5d293-2c03-5904-ac6f-7791cbc85070"
     },
     {
       "no_pregunta": "A2",
@@ -103,7 +104,8 @@
       "es_precargada": true,
       "fuente_precarga": "TABLA_USUARIOS",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "f02aaa22-7a5a-54a9-9f3a-29c1db59c56d"
     },
     {
       "no_pregunta": "A3",
@@ -118,7 +120,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "119b1a8a-5c16-4700-a5ce-52aa2d2a71dc"
     },
     {
       "no_pregunta": "A4",
@@ -133,7 +136,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:Z3_METODO_RECOLECCION"
+      "opciones": "$ref:Z3_METODO_RECOLECCION",
+      "id": "515f13f0-19f1-4ede-bd0b-26ecb763dbff"
     },
     {
       "no_pregunta": "A5",
@@ -148,7 +152,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:Z4_AUTORECONOCIMIENTO"
+      "opciones": "$ref:Z4_AUTORECONOCIMIENTO",
+      "id": "e18e6a73-7923-435d-8a7f-c5f19fd2a8cc"
     },
     {
       "no_pregunta": "A6",
@@ -163,7 +168,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "77fa8c90-23ba-4b31-a00b-1346e514ca5a"
     },
     {
       "no_pregunta": "A7",
@@ -178,7 +184,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:Z6_ZONA"
+      "opciones": "$ref:Z6_ZONA",
+      "id": "c6d24981-b0fb-4555-aa38-172de15d0254"
     },
     {
       "no_pregunta": "A8",
@@ -195,7 +202,8 @@
       "validaciones": {
         "max_length": 200
       },
-      "opciones": []
+      "opciones": [],
+      "id": "787c8501-dea9-449f-91d0-82abe5bdcb8d"
     },
     {
       "no_pregunta": "A9",
@@ -212,7 +220,8 @@
       "validaciones": {
         "max_length": 300
       },
-      "opciones": []
+      "opciones": [],
+      "id": "6059bcb0-8498-4c7e-a995-a122f522f595"
     },
     {
       "no_pregunta": "A10",
@@ -230,7 +239,8 @@
         "min": 1000000,
         "max": 9999999999
       },
-      "opciones": []
+      "opciones": [],
+      "id": "05416f09-e0f7-47ba-8896-ff88740d6b76"
     },
     {
       "no_pregunta": "A11",
@@ -248,7 +258,8 @@
         "min": 3000000000,
         "max": 3999999999
       },
-      "opciones": []
+      "opciones": [],
+      "id": "ff5f59a5-2eef-413f-a520-8a8a15d827f6"
     },
     {
       "no_pregunta": "A12",
@@ -263,7 +274,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "16fdfc86-0039-4747-b725-6d79fc23778e"
     },
     {
       "no_pregunta": "A13",
@@ -280,7 +292,8 @@
       "validaciones": {
         "regex": "^[^@]+@[^@]+\\.[^@]+$"
       },
-      "opciones": []
+      "opciones": [],
+      "id": "9f127c98-53ca-4762-ad67-e4093bec83bc"
     },
     {
       "no_pregunta": "A14",
@@ -295,7 +308,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "b01e4ca3-09da-4123-b229-b864856af32e"
     },
     {
       "no_pregunta": "A15",
@@ -312,7 +326,8 @@
       "validaciones": {
         "max_length": 300
       },
-      "opciones": []
+      "opciones": [],
+      "id": "f21cf238-a778-49d8-8eb1-4d0e03f20a4f"
     },
     {
       "no_pregunta": "A16",
@@ -327,7 +342,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "25364e91-86e8-4bd3-8c2f-a641aab91c6b"
     },
     {
       "no_pregunta": "A17",
@@ -342,7 +358,8 @@
       "es_precargada": true,
       "fuente_precarga": "TABLA_USUARIOS",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "604d01ea-c136-4e77-a97d-264caeb571e8"
     },
     {
       "no_pregunta": "B1",
@@ -359,7 +376,8 @@
       "validaciones": {
         "max_length": 60
       },
-      "opciones": []
+      "opciones": [],
+      "id": "58a48a8d-9c5b-4c65-b137-037b1bb72a52"
     },
     {
       "no_pregunta": "B2",
@@ -376,7 +394,8 @@
       "validaciones": {
         "max_length": 60
       },
-      "opciones": []
+      "opciones": [],
+      "id": "e8127dc0-09aa-4b85-b37e-c1c6301b5cc9"
     },
     {
       "no_pregunta": "B3",
@@ -391,7 +410,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "bd49355c-e14b-4874-a3da-c373823d97cd"
     },
     {
       "no_pregunta": "B4",
@@ -409,7 +429,8 @@
         "min": 0,
         "max": 120
       },
-      "opciones": []
+      "opciones": [],
+      "id": "db786014-ecc4-46a1-b039-d25583833f3d"
     },
     {
       "no_pregunta": "B5",
@@ -424,7 +445,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:B10_GRUPO_ETARIO"
+      "opciones": "$ref:B10_GRUPO_ETARIO",
+      "id": "c6666dad-3c35-48d2-a4e2-0cfa369a4dda"
     },
     {
       "no_pregunta": "B6",
@@ -439,7 +461,8 @@
       "es_precargada": true,
       "fuente_precarga": "TABLA_CONFORMACION_HOGAR",
       "validaciones": {},
-      "opciones": "$ref:A3_TIPO_DOCUMENTO"
+      "opciones": "$ref:A3_TIPO_DOCUMENTO",
+      "id": "21fd6698-21c8-4997-9a68-0080bd0d4c5f"
     },
     {
       "no_pregunta": "B7",
@@ -454,7 +477,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "0a67180d-2437-457e-b96f-bc5b772490d5"
     },
     {
       "no_pregunta": "B8",
@@ -471,7 +495,8 @@
       "validaciones": {
         "max_length": 20
       },
-      "opciones": []
+      "opciones": [],
+      "id": "c8242ffa-6a4d-45a3-8fa8-28498449a882"
     },
     {
       "no_pregunta": "B9",
@@ -486,7 +511,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:A8_SEXO"
+      "opciones": "$ref:A8_SEXO",
+      "id": "d141ff54-51ea-4566-a541-c6c85aa00863"
     },
     {
       "no_pregunta": "B10",
@@ -501,7 +527,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:B5_IDENTIDAD_GENERO"
+      "opciones": "$ref:B5_IDENTIDAD_GENERO",
+      "id": "8fe13a46-20db-42a6-ace5-145292e5e17b"
     },
     {
       "no_pregunta": "B11",
@@ -516,7 +543,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "90206314-33fb-476b-8efd-4b3b29e9fa65"
     },
     {
       "no_pregunta": "B12",
@@ -568,7 +596,8 @@
           "id_resp_vivanto": 4626,
           "orden": 6
         }
-      ]
+      ],
+      "id": "c6a6e20d-d1e7-445e-9fc4-2cc0b6aa6d47"
     },
     {
       "no_pregunta": "B13",
@@ -583,7 +612,8 @@
       "es_precargada": true,
       "fuente_precarga": "TABLA_CONFORMACION_HOGAR",
       "validaciones": {},
-      "opciones": "$ref:A9_PARENTESCO"
+      "opciones": "$ref:A9_PARENTESCO",
+      "id": "728f144f-a713-4de7-ba04-95e434107f40"
     },
     {
       "no_pregunta": "B14",
@@ -598,7 +628,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": "$ref:D8A_SN"
+      "opciones": "$ref:D8A_SN",
+      "id": "017e50f9-dc35-4168-a77b-15053023df9c"
     },
     {
       "no_pregunta": "B15",
@@ -613,7 +644,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": "$ref:A20_ESTADO_RUV"
+      "opciones": "$ref:A20_ESTADO_RUV",
+      "id": "7d0432b8-0b8e-4c27-8246-702ee12f4867"
     },
     {
       "no_pregunta": "B16",
@@ -628,7 +660,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": "$ref:A21_HECHO_VICTIMIZANTE"
+      "opciones": "$ref:A21_HECHO_VICTIMIZANTE",
+      "id": "1fe99999-bdbd-456c-a3f0-40a343fa3cb7"
     },
     {
       "no_pregunta": "B17",
@@ -643,7 +676,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "db7f03fa-1d06-4d87-b23e-6e19fc5d052b"
     },
     {
       "no_pregunta": "B18",
@@ -658,7 +692,8 @@
       "es_precargada": true,
       "fuente_precarga": "RUV",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "509b8d74-4006-47d3-95aa-62d58be93648"
     },
     {
       "no_pregunta": "C1",
@@ -673,7 +708,8 @@
       "es_precargada": true,
       "fuente_precarga": "MODELO_EDUCACION",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "610452b7-01f6-45a5-b8c9-93a505a0e6e7"
     },
     {
       "no_pregunta": "C2",
@@ -688,7 +724,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "5780ff6e-fe6d-4c44-86b6-f0f20dc336a2"
     },
     {
       "no_pregunta": "C3",
@@ -703,7 +740,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:G4_RAZON_NO_ESTUDIA"
+      "opciones": "$ref:G4_RAZON_NO_ESTUDIA",
+      "id": "fffc3e6e-c9ed-40d2-bb12-526d472d81c8"
     },
     {
       "no_pregunta": "C4",
@@ -718,7 +756,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:G7B_GRADO_EDUCACION"
+      "opciones": "$ref:G7B_GRADO_EDUCACION",
+      "id": "8e7e2cb8-d3cd-4235-b577-c418016c0045"
     },
     {
       "no_pregunta": "C5",
@@ -733,7 +772,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "34c20617-08d4-4156-a77d-fb1956fd9dd9"
     },
     {
       "no_pregunta": "D1",
@@ -748,7 +788,8 @@
       "es_precargada": true,
       "fuente_precarga": "MODELO_SALUD",
       "validaciones": {},
-      "opciones": "$ref:H8_REGIMEN_SALUD"
+      "opciones": "$ref:H8_REGIMEN_SALUD",
+      "id": "88415da8-1e96-4b28-af6e-4261e70235c2"
     },
     {
       "no_pregunta": "D2",
@@ -763,7 +804,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:H10_ACCION_SALUD"
+      "opciones": "$ref:H10_ACCION_SALUD",
+      "id": "9929a11f-4f63-4671-b426-137f3f8cd5e8"
     },
     {
       "no_pregunta": "D3",
@@ -778,7 +820,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "da6d8198-d034-47d9-8915-47878aad2630"
     },
     {
       "no_pregunta": "D4",
@@ -812,7 +855,8 @@
           "id_resp_vivanto": 2680,
           "orden": 3
         }
-      ]
+      ],
+      "id": "7e71d306-7d2c-4aab-b251-4e1c98ee1298"
     },
     {
       "no_pregunta": "D5",
@@ -827,7 +871,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "7e8c0cb3-302c-4bab-9100-a99842f70e63"
     },
     {
       "no_pregunta": "D6",
@@ -842,7 +887,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "25203a41-7bec-4ef2-9b93-574c79cb8d4d"
     },
     {
       "no_pregunta": "D7",
@@ -857,7 +903,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "7adbd149-7048-4b39-8694-313d4395b4b6"
     },
     {
       "no_pregunta": "E1",
@@ -872,7 +919,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:L1_ACTIVIDAD_LABORAL"
+      "opciones": "$ref:L1_ACTIVIDAD_LABORAL",
+      "id": "0b6161de-1b32-4610-bece-fef7f4e46181"
     },
     {
       "no_pregunta": "E2",
@@ -887,7 +935,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "2dc48b7d-80b8-4cb6-88ce-6bbe562e67e7"
     },
     {
       "no_pregunta": "E3",
@@ -902,7 +951,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "90de82ad-51c8-46e5-ab17-3015c3af1f4a"
     },
     {
       "no_pregunta": "E4",
@@ -917,7 +967,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "39d025f1-601f-41c3-b8aa-8bdb5fa65a2c"
     },
     {
       "no_pregunta": "E5",
@@ -932,7 +983,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "c651f797-5568-4d64-8fc8-a04cb0b9a6de"
     },
     {
       "no_pregunta": "E6",
@@ -949,7 +1001,8 @@
       "validaciones": {
         "max_length": 200
       },
-      "opciones": []
+      "opciones": [],
+      "id": "ebc19cfa-115c-43c4-be80-6477499f1886"
     },
     {
       "no_pregunta": "E7",
@@ -964,7 +1017,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": "$ref:L14_ACTIVIDAD_ECONOMICA"
+      "opciones": "$ref:L14_ACTIVIDAD_ECONOMICA",
+      "id": "0a784563-4945-4bba-af3d-67688d396759"
     },
     {
       "no_pregunta": "E8",
@@ -982,7 +1036,8 @@
         "min": 0,
         "max": 168
       },
-      "opciones": []
+      "opciones": [],
+      "id": "3689949b-c756-4269-a0f3-e6ad9ef7d0cb"
     },
     {
       "no_pregunta": "E9",
@@ -999,7 +1054,8 @@
       "validaciones": {
         "min": 0
       },
-      "opciones": []
+      "opciones": [],
+      "id": "89fbc503-6bfa-4aea-a6cb-38d9a0f18059"
     },
     {
       "no_pregunta": "E10",
@@ -1014,7 +1070,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "745738d2-7f5b-49e6-870b-e7bab4d62eba"
     },
     {
       "no_pregunta": "E11",
@@ -1029,7 +1086,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "d2b44196-e89a-453c-ad3d-fb9a99232422"
     },
     {
       "no_pregunta": "E12",
@@ -1046,7 +1104,8 @@
       "validaciones": {
         "max_length": 1000
       },
-      "opciones": []
+      "opciones": [],
+      "id": "74a98142-cc82-4eb7-9817-2afe809e4ca8"
     },
     {
       "no_pregunta": "F1",
@@ -1061,7 +1120,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "a72d3314-b446-43fd-b587-c61d349b5b3a"
     },
     {
       "no_pregunta": "F2",
@@ -1076,7 +1136,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "06c7f09e-fff7-471c-bc88-9c895c25ee2d"
     },
     {
       "no_pregunta": "F3",
@@ -1122,7 +1183,8 @@
           "id_resp_vivanto": 353,
           "orden": 5
         }
-      ]
+      ],
+      "id": "70190bfa-bd4f-4535-b4e1-ed1c4f9fac2a"
     },
     {
       "no_pregunta": "F4",
@@ -1156,7 +1218,8 @@
           "id_resp_vivanto": 2406,
           "orden": 3
         }
-      ]
+      ],
+      "id": "a3831dd9-40fb-48c7-a702-62c87ab5ba4a"
     },
     {
       "no_pregunta": "F5",
@@ -1171,7 +1234,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "772024e0-3264-4bd5-b156-c22e50ec2936"
     },
     {
       "no_pregunta": "F6",
@@ -1211,7 +1275,8 @@
           "id_resp_vivanto": 2414,
           "orden": 4
         }
-      ]
+      ],
+      "id": "3cc66077-61fd-46c6-930c-db7c64b9dfae"
     },
     {
       "no_pregunta": "F7",
@@ -1228,7 +1293,8 @@
       "validaciones": {
         "max_length": 1000
       },
-      "opciones": []
+      "opciones": [],
+      "id": "8d154fa5-ea47-49d0-bdb0-a0cc62fff391"
     }
   ],
   "reglas_skip_logic": [

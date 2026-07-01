@@ -87,7 +87,8 @@
    "es_precargada": false,
    "fuente_precarga": "TABLA DE USUARIOS",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "4890c796-187e-47e4-8cf8-fa37e6f169eb"
   },
   {
    "no_pregunta": "",
@@ -109,7 +110,8 @@
      "id_resp_vivanto": null,
      "orden": 1
     }
-   ]
+   ],
+   "id": "4fdb6b37-76fb-4054-8527-9e93690621b4"
   },
   {
    "no_pregunta": "",
@@ -137,7 +139,8 @@
      "id_resp_vivanto": null,
      "orden": 2
     }
-   ]
+   ],
+   "id": "cc80350e-d1ff-4f33-96c6-d619fb794cd5"
   },
   {
    "no_pregunta": "2",
@@ -159,7 +162,8 @@
      "id_resp_vivanto": null,
      "orden": 1
     }
-   ]
+   ],
+   "id": "19b47a20-12a4-44db-9e97-3af72d0c0852"
   },
   {
    "no_pregunta": "3",
@@ -193,7 +197,8 @@
      "id_resp_vivanto": 4574,
      "orden": 3
     }
-   ]
+   ],
+   "id": "cdb80aa8-c521-4ab0-a2f8-5742278482cf"
   },
   {
    "no_pregunta": "5",
@@ -208,7 +213,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "f8e5a68d-3fbc-4215-ac6d-f006f4b54ce1"
   },
   {
    "no_pregunta": "4",
@@ -223,7 +229,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "5bdefa28-c76b-4ddc-9585-2f8721dcc351"
   },
   {
    "no_pregunta": "6",
@@ -238,7 +245,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "bf176904-0032-4fc5-a8ff-a2d5d7f7e749"
   },
   {
    "no_pregunta": "8",
@@ -253,7 +261,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "785a7eb6-1d8e-4ff2-a4ee-f2c2576bfc46"
   },
   {
    "no_pregunta": "9",
@@ -268,7 +277,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "464af6fc-e64e-4133-b985-04bbf3dfb67d"
   },
   {
    "no_pregunta": "10",
@@ -296,7 +306,8 @@
      "id_resp_vivanto": 4582,
      "orden": 2
     }
-   ]
+   ],
+   "id": "251b0c74-a6cb-492e-9d75-b00d0388633f"
   },
   {
    "no_pregunta": "14",
@@ -311,7 +322,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "7f05f84b-2160-446e-8c3d-901ea186aeda"
   },
   {
    "no_pregunta": "11",
@@ -326,7 +338,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "91e8c4b5-fee5-41ab-889f-a14e8e08924e"
   },
   {
    "no_pregunta": "12",
@@ -360,7 +373,8 @@
      "id_resp_vivanto": 4586,
      "orden": 3
     }
-   ]
+   ],
+   "id": "387a0527-32d8-43c0-a3b0-af467dd142b5"
   },
   {
    "no_pregunta": "13",
@@ -375,7 +389,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "5e2daf0f-ba7d-4a96-99b7-0eb50262c09d"
   },
   {
    "no_pregunta": "1",
@@ -469,7 +484,8 @@
      "id_resp_vivanto": 4701,
      "orden": 13
     }
-   ]
+   ],
+   "id": "22a3e6eb-d5e9-4c00-a9c8-2f2c36646439"
   },
   {
    "no_pregunta": "2",
@@ -545,7 +561,8 @@
      "id_resp_vivanto": 4711,
      "orden": 10
     }
-   ]
+   ],
+   "id": "6a7571a5-e4cd-4854-8230-726586bce7ed"
   },
   {
    "no_pregunta": "",
@@ -560,7 +577,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "9595bae7-8212-42d6-a872-e74595289220"
   },
   {
    "no_pregunta": "3",
@@ -612,7 +630,8 @@
      "id_resp_vivanto": 4717,
      "orden": 6
     }
-   ]
+   ],
+   "id": "1b797d63-9778-4a7b-b32e-9e2635a9c7f8"
   },
   {
    "no_pregunta": "4",
@@ -682,7 +701,8 @@
      "id_resp_vivanto": 4726,
      "orden": 9
     }
-   ]
+   ],
+   "id": "43bdb4ae-c2fe-4359-9849-c467cd5d3844"
   },
   {
    "no_pregunta": "5",
@@ -740,7 +760,8 @@
      "id_resp_vivanto": 4733,
      "orden": 7
     }
-   ]
+   ],
+   "id": "3b4a590e-8869-46ff-8356-a0417d4a5e69"
   },
   {
    "no_pregunta": "6",
@@ -768,7 +789,8 @@
      "id_resp_vivanto": 4735,
      "orden": 2
     }
-   ]
+   ],
+   "id": "215eb31b-f5c3-4d29-9b32-7531dca2343c"
   },
   {
    "no_pregunta": "7",
@@ -796,7 +818,8 @@
      "id_resp_vivanto": 4737,
      "orden": 2
     }
-   ]
+   ],
+   "id": "46d44cb4-5cf1-4561-98f2-588b85c70a99"
   },
   {
    "no_pregunta": "8",
@@ -824,7 +847,8 @@
      "id_resp_vivanto": 4739,
      "orden": 2
     }
-   ]
+   ],
+   "id": "2b359a89-26b8-46ee-a72a-20a24ffc4118"
   },
   {
    "no_pregunta": "9",
@@ -852,7 +876,8 @@
      "id_resp_vivanto": 4741,
      "orden": 2
     }
-   ]
+   ],
+   "id": "6818f315-3f20-4152-99f4-8d48fcd80a3f"
   },
   {
    "no_pregunta": "10",
@@ -880,7 +905,8 @@
      "id_resp_vivanto": 4743,
      "orden": 2
     }
-   ]
+   ],
+   "id": "566da83f-22cf-4446-b542-12c40953a055"
   },
   {
    "no_pregunta": "11",
@@ -956,7 +982,8 @@
      "id_resp_vivanto": 4753,
      "orden": 10
     }
-   ]
+   ],
+   "id": "5e778b2a-1a00-4102-8145-c49d705c4efd"
   },
   {
    "no_pregunta": "12",
@@ -978,7 +1005,8 @@
      "id_resp_vivanto": 4754,
      "orden": 1
     }
-   ]
+   ],
+   "id": "a1a43d00-4dca-4000-a313-36c0214cb6d8"
   },
   {
    "no_pregunta": "13",
@@ -1036,7 +1064,8 @@
      "id_resp_vivanto": 4767,
      "orden": 7
     }
-   ]
+   ],
+   "id": "574445e3-5768-4958-b324-fab66b4be73f"
   },
   {
    "no_pregunta": "14",
@@ -1051,7 +1080,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "3eb1f183-c4e9-4400-b2cb-9048c70ef9e8"
   },
   {
    "no_pregunta": "15",
@@ -1066,7 +1096,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "9ebcd705-3a60-4b5e-b6bb-82d05547d946"
   },
   {
    "no_pregunta": "16",
@@ -1081,7 +1112,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "cd32b52c-4f70-4b30-b41e-e6eaae69f35a"
   },
   {
    "no_pregunta": "17",
@@ -1115,7 +1147,8 @@
      "id_resp_vivanto": 4773,
      "orden": 3
     }
-   ]
+   ],
+   "id": "ed19729e-4db1-4743-9115-70b18a9d156a"
   },
   {
    "no_pregunta": "",
@@ -1130,7 +1163,8 @@
    "es_precargada": false,
    "fuente_precarga": "",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "882aa2f5-a1eb-4165-acb5-ccf7b8b5dcd4"
   },
   {
    "no_pregunta": "18",
@@ -1152,7 +1186,8 @@
      "id_resp_vivanto": 4774,
      "orden": 1
     }
-   ]
+   ],
+   "id": "db5e2394-77f4-4c89-96f7-c5231f7568aa"
   },
   {
    "no_pregunta": "19",
@@ -1167,7 +1202,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "4459f907-a7e8-4b60-bb84-54e4cebce431"
   },
   {
    "no_pregunta": "2",
@@ -1189,7 +1225,8 @@
      "id_resp_vivanto": 4806,
      "orden": 1
     }
-   ]
+   ],
+   "id": "553c5f82-346c-49ad-ae0d-b75455ebe4bb"
   },
   {
    "no_pregunta": "3",
@@ -1217,7 +1254,8 @@
      "id_resp_vivanto": 4816,
      "orden": 2
     }
-   ]
+   ],
+   "id": "4569f8c3-1ac3-40cf-9fa4-e1c289bf978c"
   },
   {
    "no_pregunta": "4",
@@ -1239,7 +1277,8 @@
      "id_resp_vivanto": 4817,
      "orden": 1
     }
-   ]
+   ],
+   "id": "2dd928a1-ba2e-4ad9-a211-e8df1073ac74"
   },
   {
    "no_pregunta": "5",
@@ -1261,7 +1300,8 @@
      "id_resp_vivanto": 4819,
      "orden": 1
     }
-   ]
+   ],
+   "id": "5208d8e8-2f32-4f6b-9b04-146ab4252653"
   },
   {
    "no_pregunta": "6",
@@ -1283,7 +1323,8 @@
      "id_resp_vivanto": 4821,
      "orden": 1
     }
-   ]
+   ],
+   "id": "f52f6951-9c52-4e40-8f70-1c16d205b081"
   },
   {
    "no_pregunta": "7",
@@ -1305,7 +1346,8 @@
      "id_resp_vivanto": 4823,
      "orden": 1
     }
-   ]
+   ],
+   "id": "0778322d-a37b-4bd6-856d-960e267cc83f"
   },
   {
    "no_pregunta": "8",
@@ -1327,7 +1369,8 @@
      "id_resp_vivanto": 4825,
      "orden": 1
     }
-   ]
+   ],
+   "id": "8e2bb32a-93d4-410e-a74a-0dc65c1866e0"
   },
   {
    "no_pregunta": "9",
@@ -1355,7 +1398,8 @@
      "id_resp_vivanto": 4828,
      "orden": 2
     }
-   ]
+   ],
+   "id": "31b32e5e-df16-4bce-ad74-8010856af187"
   },
   {
    "no_pregunta": "10",
@@ -1377,7 +1421,8 @@
      "id_resp_vivanto": 4829,
      "orden": 1
     }
-   ]
+   ],
+   "id": "437376d1-975c-492c-8b17-d084a8b2338a"
   },
   {
    "no_pregunta": "11",
@@ -1399,7 +1444,8 @@
      "id_resp_vivanto": 4831,
      "orden": 1
     }
-   ]
+   ],
+   "id": "bf7ecec6-1d31-4333-aa0c-0d8587581a5a"
   },
   {
    "no_pregunta": "12",
@@ -1421,7 +1467,8 @@
      "id_resp_vivanto": 4833,
      "orden": 1
     }
-   ]
+   ],
+   "id": "05f761e2-1cf9-4a8c-a3a1-7220b8c918b9"
   },
   {
    "no_pregunta": "13",
@@ -1443,7 +1490,8 @@
      "id_resp_vivanto": 4835,
      "orden": 1
     }
-   ]
+   ],
+   "id": "f2659cee-aebf-46f7-a810-3cd69876f521"
   },
   {
    "no_pregunta": "14",
@@ -1465,7 +1513,8 @@
      "id_resp_vivanto": 4837,
      "orden": 1
     }
-   ]
+   ],
+   "id": "d187a6c5-ffa8-441a-9a9a-58faae45a99e"
   },
   {
    "no_pregunta": "15",
@@ -1487,7 +1536,8 @@
      "id_resp_vivanto": 4839,
      "orden": 1
     }
-   ]
+   ],
+   "id": "b4db67d1-7e94-414b-8c3e-c9d16dbc90d6"
   },
   {
    "no_pregunta": "16",
@@ -1502,7 +1552,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "63bfee90-5a78-4be7-9ae1-071131f7cca2"
   },
   {
    "no_pregunta": "",
@@ -1542,7 +1593,8 @@
      "id_resp_vivanto": null,
      "orden": 4
     }
-   ]
+   ],
+   "id": "02204514-552a-4951-9b62-2580a6e26882"
   },
   {
    "no_pregunta": "",
@@ -1570,7 +1622,8 @@
      "id_resp_vivanto": null,
      "orden": 2
     }
-   ]
+   ],
+   "id": "bd513728-fd66-4aae-b406-72239ef816bc"
   },
   {
    "no_pregunta": "",
@@ -1585,7 +1638,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "2aa4acc1-449f-4c2a-8152-d24ddf22387a"
   },
   {
    "no_pregunta": "",
@@ -1600,7 +1654,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "52b6f4b6-642b-479f-8d10-e50fceee7ab6"
   },
   {
    "no_pregunta": "",
@@ -1615,7 +1670,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "ddc8f248-cf65-4e42-90a8-6136ab2a9c75"
   },
   {
    "no_pregunta": "",
@@ -1630,7 +1686,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "b7f373db-df09-49d8-af55-2e411e6334b2"
   },
   {
    "no_pregunta": "",
@@ -1645,7 +1702,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "1ca21a0b-8f35-4ed0-b6da-f29c8d65166d"
   },
   {
    "no_pregunta": "",
@@ -1660,7 +1718,8 @@
    "es_precargada": false,
    "fuente_precarga": "RUV",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "8af72dd2-6164-4a69-8518-e968812149ca"
   },
   {
    "no_pregunta": "",
@@ -1700,7 +1759,8 @@
      "id_resp_vivanto": null,
      "orden": 4
     }
-   ]
+   ],
+   "id": "6d9625ce-b056-4b9e-b7c7-7942fd4417a9"
   },
   {
    "no_pregunta": "1",
@@ -1752,7 +1812,8 @@
      "id_resp_vivanto": 4570,
      "orden": 6
     }
-   ]
+   ],
+   "id": "691cc20f-2f5a-46cc-a643-ffdf864d9f29"
   },
   {
    "no_pregunta": "7",
@@ -1767,7 +1828,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "7dfa1918-96dd-4aa5-b85b-eb01b43675b7"
   },
   {
    "no_pregunta": "1",
@@ -1782,7 +1844,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "c50f71cf-ab69-4af4-ba3d-476882d92b12"
   },
   {
    "no_pregunta": "",
@@ -1797,7 +1860,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "7b69567c-b8c6-402f-8ccf-2ce77dc146c5"
   },
   {
    "no_pregunta": "",
@@ -1812,7 +1876,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "fa8abb7f-d02b-444a-9793-6b53ff66930f"
   },
   {
    "no_pregunta": "",
@@ -1827,7 +1892,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "ede090bb-0706-4a19-b3a9-7c1f98bdff4a"
   },
   {
    "no_pregunta": "2",
@@ -1842,7 +1908,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "9c235d8f-6934-4430-b68d-e2b8c3c68122"
   },
   {
    "no_pregunta": "3",
@@ -1857,7 +1924,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "4db24ea9-3a77-40cd-9826-223359a73e31"
   },
   {
    "no_pregunta": "",
@@ -1909,7 +1977,8 @@
      "id_resp_vivanto": null,
      "orden": 6
     }
-   ]
+   ],
+   "id": "b835cede-7771-4133-99e1-5e9b507b094e"
   },
   {
    "no_pregunta": "",
@@ -1991,7 +2060,8 @@
      "id_resp_vivanto": null,
      "orden": 11
     }
-   ]
+   ],
+   "id": "fa4483b5-ca33-4528-833a-43e385a08ffe"
   },
   {
    "no_pregunta": "4",
@@ -2019,7 +2089,8 @@
      "id_resp_vivanto": 4596,
      "orden": 2
     }
-   ]
+   ],
+   "id": "73c9f8f2-9ebf-4547-a103-24a1f5e12989"
   },
   {
    "no_pregunta": "5",
@@ -2034,7 +2105,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "d6e778b0-222d-4bec-80bf-adac552bc9dc"
   },
   {
    "no_pregunta": "6",
@@ -2074,7 +2146,8 @@
      "id_resp_vivanto": 4601,
      "orden": 4
     }
-   ]
+   ],
+   "id": "2e7f28fb-28ec-4e3e-b5a0-1e5c8fa2f6e7"
   },
   {
    "no_pregunta": "7",
@@ -2126,7 +2199,8 @@
      "id_resp_vivanto": 4607,
      "orden": 6
     }
-   ]
+   ],
+   "id": "2ea4f403-93e6-4229-b726-9f14789fe035"
   },
   {
    "no_pregunta": "8",
@@ -2166,7 +2240,8 @@
      "id_resp_vivanto": 4611,
      "orden": 4
     }
-   ]
+   ],
+   "id": "2e9b7dd7-f63c-4753-ab20-c37bb2a3e212"
   },
   {
    "no_pregunta": "9",
@@ -2200,7 +2275,8 @@
      "id_resp_vivanto": 4614,
      "orden": 3
     }
-   ]
+   ],
+   "id": "9cacc4de-fa80-4292-a6bf-139ac8dd9219"
   },
   {
    "no_pregunta": "10",
@@ -2228,7 +2304,8 @@
      "id_resp_vivanto": 4616,
      "orden": 2
     }
-   ]
+   ],
+   "id": "c2a62f83-8de7-420f-9120-ddfba699386a"
   },
   {
    "no_pregunta": "11",
@@ -2256,7 +2333,8 @@
      "id_resp_vivanto": 4618,
      "orden": 2
     }
-   ]
+   ],
+   "id": "1ace04fe-b03a-4d6e-bd27-5968969c7829"
   },
   {
    "no_pregunta": "12",
@@ -2284,7 +2362,8 @@
      "id_resp_vivanto": 4620,
      "orden": 2
     }
-   ]
+   ],
+   "id": "e7f3d1ea-07da-4017-be5c-67fdddf4fb0b"
   },
   {
    "no_pregunta": "13",
@@ -2306,7 +2385,8 @@
      "id_resp_vivanto": 4621,
      "orden": 1
     }
-   ]
+   ],
+   "id": "0ad88fc0-54db-4d18-8c54-474c74c3233c"
   },
   {
    "no_pregunta": "14",
@@ -2334,7 +2414,8 @@
      "id_resp_vivanto": 4628,
      "orden": 2
     }
-   ]
+   ],
+   "id": "a283c044-92a8-491f-8d74-0bc0addd217c"
   },
   {
    "no_pregunta": "15",
@@ -2356,7 +2437,8 @@
      "id_resp_vivanto": 4629,
      "orden": 1
     }
-   ]
+   ],
+   "id": "f44b678c-2e27-4233-96e0-a8216c83d970"
   },
   {
    "no_pregunta": "16",
@@ -2384,7 +2466,8 @@
      "id_resp_vivanto": 4644,
      "orden": 2
     }
-   ]
+   ],
+   "id": "42275fd9-385d-4118-be5a-d20fed62f834"
   },
   {
    "no_pregunta": "17",
@@ -2412,7 +2495,8 @@
      "id_resp_vivanto": 4646,
      "orden": 2
     }
-   ]
+   ],
+   "id": "3ebbdf10-30c2-471f-a15f-b2af69490c0a"
   },
   {
    "no_pregunta": "18",
@@ -2464,7 +2548,8 @@
      "id_resp_vivanto": 4652,
      "orden": 6
     }
-   ]
+   ],
+   "id": "64493716-4661-40c7-acb4-457fe4c7f105"
   },
   {
    "no_pregunta": "19",
@@ -2492,7 +2577,8 @@
      "id_resp_vivanto": 4654,
      "orden": 2
     }
-   ]
+   ],
+   "id": "1731f5cf-41ad-4178-a959-1bf268915d6f"
   },
   {
    "no_pregunta": "20",
@@ -2538,7 +2624,8 @@
      "id_resp_vivanto": 4659,
      "orden": 5
     }
-   ]
+   ],
+   "id": "15bd3bcd-7005-4e06-82cf-786fcd2a7915"
   },
   {
    "no_pregunta": "21",
@@ -2553,7 +2640,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "d78276f6-1526-4433-b190-e226c2843052"
   },
   {
    "no_pregunta": "22",
@@ -2568,7 +2656,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "abd1e23c-7ba2-4711-b4f1-f4805b3c79e5"
   },
   {
    "no_pregunta": "23",
@@ -2583,7 +2672,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "95087e56-6e9e-4dba-84d8-a185d8bcec6a"
   },
   {
    "no_pregunta": "24",
@@ -2611,7 +2701,8 @@
      "id_resp_vivanto": 4664,
      "orden": 2
     }
-   ]
+   ],
+   "id": "1802fec1-32e3-4495-9a8a-0a8c84483b1a"
   },
   {
    "no_pregunta": "25",
@@ -2626,7 +2717,8 @@
    "es_precargada": false,
    "fuente_precarga": "ENTREVISTA DE CARACTERIZACION",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "3e0a4438-af39-43c7-8bac-10c2a24d3685"
   },
   {
    "no_pregunta": "26",
@@ -2690,7 +2782,8 @@
      "id_resp_vivanto": 4673,
      "orden": 8
     }
-   ]
+   ],
+   "id": "5dbe2226-ff34-4c0e-b61e-b694ac22abc3"
   },
   {
    "no_pregunta": "",
@@ -2705,7 +2798,8 @@
    "es_precargada": false,
    "fuente_precarga": "",
    "validaciones": {},
-   "opciones": []
+   "opciones": [],
+   "id": "76491159-ebd4-4d04-974d-14c965735d27"
   },
   {
    "no_pregunta": "27",
@@ -2787,7 +2881,8 @@
      "id_resp_vivanto": 4684,
      "orden": 11
     }
-   ]
+   ],
+   "id": "aac6971b-b72a-49e4-a6a3-5d36eb22c1a4"
   },
   {
    "no_pregunta": "28",
@@ -2815,7 +2910,8 @@
      "id_resp_vivanto": 4687,
      "orden": 2
     }
-   ]
+   ],
+   "id": "f39ad2bd-06ed-4237-acba-b9ac026f8a83"
   },
   {
    "no_pregunta": "",
@@ -2843,7 +2939,8 @@
      "id_resp_vivanto": null,
      "orden": 2
     }
-   ]
+   ],
+   "id": "58b3be94-fbef-4df5-a27e-9ac6fffcfcd4"
   },
   {
    "no_pregunta": "1",
@@ -2871,7 +2968,8 @@
      "id_resp_vivanto": 4789,
      "orden": 2
     }
-   ]
+   ],
+   "id": "564c4a35-d535-4792-91d8-d5ea20acb0a6"
   },
   {
    "no_pregunta": "2",
@@ -2893,7 +2991,8 @@
      "id_resp_vivanto": 4790,
      "orden": 1
     }
-   ]
+   ],
+   "id": "a5bc0ba6-d930-4879-a611-0bb230c5b8bf"
   },
   {
    "no_pregunta": "",
@@ -2939,7 +3038,8 @@
      "id_resp_vivanto": null,
      "orden": 5
     }
-   ]
+   ],
+   "id": "8a458ce7-ff68-4e51-890d-1f763bb6d4b0"
   },
   {
    "no_pregunta": "1",
@@ -2967,7 +3067,8 @@
      "id_resp_vivanto": 3860,
      "orden": 2
     }
-   ]
+   ],
+   "id": "88369463-dc88-4dfc-a804-a74fdcf0de8b"
   },
   {
    "no_pregunta": "E1",
@@ -2995,7 +3096,8 @@
      "id_resp_vivanto": 237,
      "orden": 2
     }
-   ]
+   ],
+   "id": "03edf972-4f21-4e05-9051-b1d0f5dfe2aa"
   },
   {
    "no_pregunta": "E2",
@@ -3023,7 +3125,8 @@
      "id_resp_vivanto": 241,
      "orden": 2
     }
-   ]
+   ],
+   "id": "b47ddd94-dbc7-4fff-9e9b-f98831993a28"
   },
   {
    "no_pregunta": "E3",
@@ -3051,7 +3154,8 @@
      "id_resp_vivanto": 2392,
      "orden": 2
     }
-   ]
+   ],
+   "id": "32c2d35b-2e1d-4c80-9961-bfc7026024ce"
   },
   {
    "no_pregunta": "E4",
@@ -3085,7 +3189,8 @@
      "id_resp_vivanto": 2394,
      "orden": 3
     }
-   ]
+   ],
+   "id": "340854a6-bd9f-43f3-b18e-75f81fe69067"
   }
  ],
  "reglas_skip_logic": [
