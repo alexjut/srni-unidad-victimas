@@ -11,6 +11,7 @@ import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
 import * as victimasOfflineDao from '../../../src/db/victimasOfflineDao';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { calcularVisibles, motivoOcultaPregunta, type ContextoVictima } from '../../../src/services/skipLogic';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
@@ -143,6 +144,77 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
   }
   return m;
 }
+
+/**
+ * Prellenado BÁSICO de un miembro desde `MiembroHogarResumen` — el MISMO origen
+ * que usa el motor de skip-logic (construirContextoMiembro), disponible para
+ * TODOS los miembros (autorizado y adicionales, online y offline). Por eso este
+ * camino arregla el "0 de 3": antes solo se sembraba al autorizado.
+ *   A6  ← fecha_nacimiento
+ *   B9  ← años cumplidos derivados de A6 (campo automático del manual)
+ *   B10 ← grupo etario derivado de la edad
+ *   A8  ← sexo desde el género (M→'1', F→'2')
+ *   NOMBRE_1 ← primer token del nombre completo (fallback; para el autorizado lo
+ *              pisa construirPrefillVictima con el primer_nombre exacto del RUV).
+ */
+/**
+ * Tipo de documento (opción A3) derivado de la edad — fallback cuando el dato real
+ * no está disponible (miembro adicional cuyo `tipo_documento` no viaja en el
+ * payload offline). El manual (B6) dice "se precarga el tipo de documento según la
+ * edad": Registro Civil/NUIP (0-6), Tarjeta de Identidad (7-17), Cédula (18+).
+ * Códigos de la opción A3: 1=Cédula, 3=Tarjeta de Identidad, 4=Registro Civil/NUIP.
+ */
+function tipoDocPorEdad(edad: number): string {
+  if (!Number.isFinite(edad) || edad < 0) return '';
+  if (edad <= 6) return '4';   // Registro Civil / NUIP
+  if (edad <= 17) return '3';  // Tarjeta de Identidad
+  return '1';                  // Cédula de Ciudadanía
+}
+
+function construirPrefillMiembroBasico(m: MiembroHogarResumen): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (m.fecha_nacimiento) {
+    out.A6 = m.fecha_nacimiento;
+    const edad = calcularEdad(m.fecha_nacimiento);
+    if (edad) {
+      out.B9 = edad;
+      const grupo = edadAGrupoEtario(Number(edad));
+      if (grupo) out.B10 = grupo;
+      // A3 (tipo de documento) por edad — fallback del manual. Para el autorizado
+      // lo pisa construirPrefillVictima con el tipo real del RUV (spread posterior).
+      const doc = tipoDocPorEdad(Number(edad));
+      if (doc) out.A3 = doc;
+    }
+  }
+  const sexo = m.genero ? MAP_GENERO_A8[m.genero.toUpperCase()] : undefined;
+  if (sexo) out.A8 = sexo;
+  const nombre = (m.nombre_completo ?? '').trim();
+  if (nombre) out.NOMBRE_1 = nombre.split(/\s+/)[0];  // primer nombre (convención ES)
+  return out;
+}
+
+/**
+ * Prellenado adicional de un miembro NO autorizado creado offline, leyendo el
+ * payload crudo de `miembros_offline` (`AgregarMiembroPayload`). Solo trae lo que
+ * la conformación captura para adicionales: número de documento (→A5). El tipo de
+ * documento NO viaja en ese payload, así que no se siembra A3. El nombre ya se
+ * cubre en construirPrefillMiembroBasico desde `nombre_completo`.
+ */
+function construirPrefillAdicional(payload: Record<string, unknown> | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!payload) return out;
+  const numDoc = typeof payload.numero_documento === 'string' ? payload.numero_documento.trim() : '';
+  if (numDoc) out.A5 = numDoc;
+  return out;
+}
+
+/**
+ * Preguntas cuyo valor es CALCULADO automáticamente (derivado de la fecha de
+ * nacimiento) y por tanto se muestran en modo solo-lectura, no editable — según
+ * el manual (B4 años cumplidos "campo automático", B5 grupo etario "precargue
+ * automático"). Se mantienen sincronizadas por un efecto de recálculo.
+ */
+const PREGUNTAS_CALCULADAS = new Set(['B9', 'B10']);
 
 /**
  * Preguntas que el RUV ya tiene (hecho victimizante y su fecha de ocurrencia). NO
@@ -341,33 +413,34 @@ export default function CapituloScreen() {
     return () => { activo = false; };
   }, [hogarId]);
 
-  // ── Prellenado de "Datos básicos" del autorizado ────────────────────────────
-  // Siembra UNA sola vez por borrador las respuestas que ya conocemos de la
-  // víctima (nombres, documento, fecha de nacimiento, EDAD derivada, sexo), solo
-  // en celdas VACÍAS (nunca pisa lo capturado). Encola cada valor para que
-  // sincronice igual que una respuesta normal. Si el capítulo no tiene preguntas
-  // mapeables, no hace nada.
+  // ── Prellenado de "Datos básicos" por CADA miembro ──────────────────────────
+  // Siembra UNA sola vez por (borrador, capítulo) lo que ya conocemos de CADA
+  // miembro del hogar (no solo el autorizado), en celdas VACÍAS (nunca pisa lo
+  // capturado). Encola cada valor para que sincronice como una respuesta normal.
+  // Fuentes por miembro:
+  //   - TODOS (autorizado y adicionales, online y offline): A6/B9/B10/A8 + primer
+  //     nombre, desde MiembroHogarResumen — el MISMO origen que usa el motor de
+  //     skip-logic, por eso arregla el "0 de 3".
+  //   - AUTORIZADO: además NOMBRE_1/2, A3, A5 (y hecho victimizante) desde su
+  //     VictimaResumenFuente persistida.
+  //   - ADICIONAL creado offline: A5 (número de documento) desde el payload crudo.
   useEffect(() => {
     const bid = borradorId ?? borradorIdParam;
-    if (!bid || preguntas.length === 0) return;
+    if (!bid || preguntas.length === 0 || miembros.length === 0) return;
     const claveCap = `${bid}|${temaId}`; // por capítulo, no por borrador
     if (prefillRef.current.has(claveCap)) return;
 
-    // Las preguntas de datos básicos son PERSONA → se siembran contra el miembro
-    // autorizado. `miembros` ya viene ordenado con el autorizado primero
-    // (ordenarMiembros), así que si ninguno trae el flag es_autorizado marcado
-    // (p.ej. el backend no lo seteó), caemos al primero como autorizado de facto
-    // en vez de bloquear TODO el prellenado.
+    // `miembros` ya viene ordenado con el autorizado primero (ordenarMiembros);
+    // si ninguno trae el flag es_autorizado, el primero es autorizado de facto.
     const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
 
     let cancelado = false;
     (async () => {
       try {
-        // Fuente de datos del prellenado. `victimaFuente` vive solo en memoria
-        // (store volátil) y se pierde al reabrir la caracterización, cerrar la
-        // app o re-enfocar la búsqueda. Cuando no esté (o llegue incompleta), la
-        // recuperamos PERSISTIDA desde victimas_offline por el id del autorizado
-        // (que offline ES el id_local de la víctima). Así la precarga sobrevive.
+        // Fuente del autorizado: store volátil o, si se perdió (hogar creado
+        // online + app reabierta), la víctima persistida por su id_local. Puede
+        // quedar null: el autorizado igual se siembra con sus datos básicos del
+        // miembro (fecha/edad/grupo/sexo), que ANTES no se sembraban → "0 de 3".
         let fuente = victimaFuente;
         if ((!fuente || !fuente.fecha_nacimiento) && autorizado?.id) {
           try {
@@ -378,46 +451,64 @@ export default function CapituloScreen() {
             }
           } catch { /* sin víctima persistida: seguimos con lo que haya */ }
         }
+
+        // Payloads crudos de los miembros adicionales creados offline (traen el
+        // número de documento, que no está en MiembroHogarResumen). Para hogares
+        // de servidor no habrá filas → el mapa queda vacío (degradación segura).
+        const payloadPorMiembro = new Map<string, Record<string, unknown>>();
+        if (hogarId) {
+          try {
+            const rows = await miembrosOfflineDao.listarPorHogar(hogarId);
+            for (const r of rows) {
+              try { payloadPorMiembro.set(r.id_local, JSON.parse(r.payload_json)); }
+              catch { /* payload corrupto: se omite */ }
+            }
+          } catch { /* hogar de servidor / sin SQLite: sin filas offline */ }
+        }
+
         if (cancelado) return;
-        if (!fuente) return; // ni store ni SQLite → esperar (re-corre si llega)
-
-        const map = construirPrefillVictima(fuente);
-        if (Object.keys(map).length === 0) { prefillRef.current.add(claveCap); return; }
-
-        const hayPersonaMapeable = preguntas.some(
-          (p) => map[p.codigo_externo] && p.nivel === 'PERSONA',
-        );
-        // Si hay preguntas PERSONA por sembrar pero aún no hay miembro, esperar
-        // (el effect re-corre cuando lleguen los miembros).
-        if (hayPersonaMapeable && !autorizado) return;
 
         const existentes = await borradoresDao.getRespuestaMapCompuesto(bid);
         const borrador = await borradoresDao.getBorrador(bid);
         const nuevos: Record<string, string> = {};
-        for (const p of preguntas) {
-          const valor = map[p.codigo_externo];
-          if (!valor) continue;
-          const miembroId = p.nivel === 'PERSONA' ? (autorizado?.id ?? null) : null;
-          if (p.nivel === 'PERSONA' && !miembroId) continue;
-          const clave = claveResp(p.id, miembroId);
-          if (existentes[clave]?.trim()) continue; // no pisar lo ya capturado
-          // Tipos de opción: solo sembrar si el valor coincide con una opción real.
-          const esOpcion = p.tipo === 'LISTA' || p.tipo === 'RADIO'
-            || p.tipo === 'BOOLEAN' || p.tipo === 'LISTA_MULTIPLE';
-          if (esOpcion) {
-            const ops = opciones[p.id] ?? [];
-            if (!ops.some((o) => o.valor === valor)) continue;
+
+        for (const miembro of miembros) {
+          const esAut = miembro === autorizado;
+          const map: Record<string, string> = {
+            ...construirPrefillMiembroBasico(miembro),
+            ...(esAut && fuente ? construirPrefillVictima(fuente) : {}),
+            ...(!esAut ? construirPrefillAdicional(payloadPorMiembro.get(miembro.id) ?? null) : {}),
+          };
+          if (Object.keys(map).length === 0) continue;
+
+          for (const p of preguntas) {
+            const valor = map[p.codigo_externo];
+            if (!valor) continue;
+            const miembroId = p.nivel === 'PERSONA' ? miembro.id : null;
+            // Preguntas HOGAR (p.ej. hecho victimizante): sembrar UNA vez, en la
+            // iteración del autorizado, para no duplicar por cada miembro.
+            if (p.nivel !== 'PERSONA' && !esAut) continue;
+            const clave = claveResp(p.id, miembroId);
+            if (existentes[clave]?.trim() || nuevos[clave]) continue; // no pisar
+            // Tipos de opción: solo sembrar si el valor coincide con una opción real.
+            const esOpcion = p.tipo === 'LISTA' || p.tipo === 'RADIO'
+              || p.tipo === 'BOOLEAN' || p.tipo === 'LISTA_MULTIPLE';
+            if (esOpcion) {
+              const ops = opciones[p.id] ?? [];
+              if (!ops.some((o) => o.valor === valor)) continue;
+            }
+            await borradoresDao.upsertRespuesta(bid, p.id, valor, miembroId);
+            await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+              borrador_id: bid,
+              sesion_id: borrador?.sesion_id ?? null,
+              pregunta_id: p.id,
+              miembro_id: miembroId,
+              valor,
+            });
+            nuevos[clave] = valor;
           }
-          await borradoresDao.upsertRespuesta(bid, p.id, valor, miembroId);
-          await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
-            borrador_id: bid,
-            sesion_id: borrador?.sesion_id ?? null,
-            pregunta_id: p.id,
-            miembro_id: miembroId,
-            valor,
-          });
-          nuevos[clave] = valor;
         }
+
         if (cancelado) return;
         prefillRef.current.add(claveCap);
         if (Object.keys(nuevos).length > 0) {
@@ -427,7 +518,7 @@ export default function CapituloScreen() {
       } catch { /* prellenado best-effort: si falla, el usuario captura a mano */ }
     })();
     return () => { cancelado = true; };
-  }, [borradorId, borradorIdParam, temaId, victimaFuente, preguntas, miembros, opciones, refrescarContadores]);
+  }, [borradorId, borradorIdParam, temaId, victimaFuente, preguntas, miembros, opciones, hogarId, refrescarContadores]);
 
   // ── Skip logic — captura AGRUPADA (una pregunta, fila por miembro) ───────────
   // Cada pregunta PERSONA se evalúa POR CADA MIEMBRO con SU propio contexto
@@ -736,6 +827,34 @@ export default function CapituloScreen() {
     }
   }, [preguntas, respuestas, setRespuesta]);
 
+  // ── Recálculo automático de B9 (años) y B10 (grupo etario) desde A6 ──────────
+  // El manual define estos campos como automáticos y no editables (se muestran en
+  // solo-lectura, ver PREGUNTAS_CALCULADAS). Este efecto los mantiene sincronizados
+  // con la fecha de nacimiento (A6) de CADA miembro: si A6 cambia, recalcula; solo
+  // escribe si difiere (evita bucle de render). Mismo patrón que el autollenado Z11.
+  useEffect(() => {
+    const byCodigo = new Map(preguntas.map((p) => [p.codigo_externo, p]));
+    const a6 = byCodigo.get('A6');
+    const b9 = byCodigo.get('B9');
+    const b10 = byCodigo.get('B10');
+    if (!a6 || (!b9 && !b10)) return;
+    for (const m of miembros) {
+      const fecha = respuestas[claveResp(a6.id, m.id)] ?? '';
+      if (!fecha) continue;
+      const edad = calcularEdad(fecha);
+      if (!edad) continue;
+      if (b9 && (respuestas[claveResp(b9.id, m.id)] ?? '') !== edad) {
+        setRespuesta(b9.id, edad, m.id);
+      }
+      if (b10) {
+        const grupo = edadAGrupoEtario(Number(edad));
+        if (grupo && (respuestas[claveResp(b10.id, m.id)] ?? '') !== grupo) {
+          setRespuesta(b10.id, grupo, m.id);
+        }
+      }
+    }
+  }, [preguntas, miembros, respuestas, setRespuesta]);
+
   // ── Guardar capítulo: bulk sync (online) o encolar (offline) → volver ─────────
   async function guardarYVolver() {
     const bid = borradorId ?? borradorIdParam;
@@ -1005,7 +1124,7 @@ export default function CapituloScreen() {
                 opciones={opciones[p.id] ?? []}
                 miembros={miembros}
                 respuestas={respuestas}
-                soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo)}
+                soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
                 aplicabilidad={aplicabilidad}
                 onChange={setRespuesta}
               />
@@ -1024,7 +1143,7 @@ export default function CapituloScreen() {
               total={item.totalGlobal ?? 0}
               opciones={opciones[p.id] ?? []}
               valor={valor}
-              soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo)}
+              soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
               onChange={(v) => setRespuesta(p.id, v, null)}
               iaActivo={iaActivo}
               onTextoIA={(texto) => handleTextoTranscrito(p.id, texto)}
