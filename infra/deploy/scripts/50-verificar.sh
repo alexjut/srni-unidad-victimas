@@ -24,6 +24,11 @@ print('  Municipios:   ', Municipio.objects.count())
 print('  Tipos doc:    ', TipoDocumento.objects.count())
 print('  Instrumentos: ', Instrumento.objects.count())
 print('  Preguntas:    ', Pregunta.objects.count())
+print('  --- por instrumento (preg / B2_CANT) ---')
+for ins in Instrumento.objects.all().order_by('codigo'):
+    npr = Pregunta.objects.filter(capitulo__instrumento=ins).count()
+    cant = Pregunta.objects.filter(capitulo__instrumento=ins, codigo_externo='B2_CANT').exists()
+    print(f'    {ins.codigo:<18} preg={npr:<4} B2_CANT={\"si\" if cant else \"-\"}')
 "
 
 echo "===== PRUEBA DE LOGIN (usuario ENC001) ====="

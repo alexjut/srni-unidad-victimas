@@ -60,6 +60,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Simula la carga sin persistir. Útil para validar el fixture.",
         )
+        parser.add_argument(
+            "--reemplazar",
+            action="store_true",
+            help=(
+                "Purga los capítulos/preguntas/opciones existentes del instrumento "
+                "(cascade) ANTES de cargar, para evitar preguntas huérfanas al cambiar "
+                "de versión/reconstrucción. Falla si hay respuestas que las protegen."
+            ),
+        )
 
     def handle(self, *args, **opts):
         fixture_arg = opts.get("fixture", "").strip()
@@ -98,6 +107,24 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             instrumento = self._upsert_instrumento(data)
+            if opts.get("reemplazar"):
+                # Solo purga si NO hay respuestas de campo que protejan las preguntas
+                # (RespuestaEncuesta.pregunta es PROTECT). Con datos vivos, se actualiza
+                # en sitio (los códigos ya coinciden) para no fallar ni borrar respuestas.
+                tiene_datos = instrumento.capitulos.filter(
+                    preguntas__respuestas__isnull=False
+                ).exists()
+                if tiene_datos:
+                    self.stdout.write(self.style.WARNING(
+                        "  --reemplazar: hay respuestas de campo → NO se purga "
+                        "(se actualiza en sitio)."
+                    ))
+                else:
+                    n_cap = instrumento.capitulos.count()
+                    instrumento.capitulos.all().delete()  # cascade: preguntas, opciones, reglas
+                    self.stdout.write(self.style.WARNING(
+                        f"  --reemplazar: purgados {n_cap} capítulos previos (cascade)."
+                    ))
             capitulos_map = self._upsert_capitulos(instrumento, data["capitulos"])
             preguntas_map = self._upsert_preguntas(capitulos_map, data["preguntas"], catalogo)
             n_reglas = self._upsert_reglas(

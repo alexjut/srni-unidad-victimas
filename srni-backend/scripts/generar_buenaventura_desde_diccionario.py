@@ -18,6 +18,15 @@ Uso:
     python scripts/generar_buenaventura_desde_diccionario.py            # inspección
     python scripts/generar_buenaventura_desde_diccionario.py --escribir # escribe fixture
     python scripts/generar_buenaventura_desde_diccionario.py --muestra  # + muestra
+
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ ⚠  ATENCIÓN: este generador deriva del EXCEL y NO incluye la curación manual del │
+│    capítulo B (Bug 2): opciones limpias de B2, pregunta hija B2_CANT y reglas de │
+│    embarazo/lactante ajustadas. Esa curación vive SOLO en el fixture.            │
+│    → Tras cualquier `--escribir`, ejecutar OBLIGATORIAMENTE:                     │
+│        python scripts/patch_bug2_embarazo_gestacion.py                           │
+│    (idempotente; reconcilia fixture + bundle). Ver ese script para el detalle.   │
+└───────────────────────────────────────────────────────────────────────────────┘
 """
 import sys, json, re, unicodedata
 from pathlib import Path
@@ -255,6 +264,8 @@ def main():
     if escribir:
         OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding='utf-8')
         print(f"\nOK escrito: {OUT}")
+        print("\n⚠  RECUERDA: este fixture NO trae la curación del cap. B (Bug 2).")
+        print("   Ejecuta ahora: python scripts/patch_bug2_embarazo_gestacion.py")
     else:
         print("\n(inspección — usar --escribir para guardar)")
     return data

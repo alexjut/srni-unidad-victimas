@@ -177,7 +177,7 @@ class Pregunta(models.Model):
         help_text="Variable BD del diccionario oficial: DT_ATENCION, C1_tel, Z3, PL1...",
     )
     no_pregunta = models.CharField(
-        max_length=10, blank=True, db_index=True,
+        max_length=40, blank=True, db_index=True,
         help_text="Número en diagrama de flujo: A1, A2, B1, C1, J1... (columna 'No. PREGUNTA VARIABLE')",
     )
     id_preg = models.IntegerField(
