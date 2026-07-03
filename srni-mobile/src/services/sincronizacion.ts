@@ -380,8 +380,15 @@ async function ejecutarSincronizacion(): Promise<ResultadoSync> {
       continue;
     }
 
+    // Releer el ítem fresco de la BD: un ítem anterior de esta misma pasada
+    // (p.ej. CREAR_HOGAR) pudo remapear su payload local→servidor con
+    // reescribirPayloads. El snapshot `pendientes` es previo a ese remapeo, así
+    // que sin esto AGREGAR_MIEMBRO/CREAR_SESION harían POST con el id local del
+    // hogar → 404 espurio + 30 s de retraso. Fallback al snapshot si desapareció.
+    const itemActual = (await colaDao.obtenerPorId(item.id)) ?? item;
+
     try {
-      await procesador(item);
+      await procesador(itemActual);
       await colaDao.marcarEnviado(item.id);
       procesados++;
     } catch (err: any) {

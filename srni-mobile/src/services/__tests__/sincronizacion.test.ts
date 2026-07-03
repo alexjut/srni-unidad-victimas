@@ -11,7 +11,7 @@ jest.mock('../../api/client', () => ({
 }));
 
 jest.mock('../../api/hogares', () => ({
-  hogaresApi: { crear: jest.fn() },
+  hogaresApi: { crear: jest.fn(), agregarMiembro: jest.fn() },
 }));
 
 jest.mock('../../api/encuestas', () => ({
@@ -75,6 +75,8 @@ function crearItem(overrides: Partial<colaDao.ColaItem> = {}): colaDao.ColaItem 
 beforeEach(() => {
   jest.clearAllMocks();
   mockCola.resetearBloqueados.mockResolvedValue(undefined);
+  // Por defecto no hay remapeo fresco: el orquestador cae al ítem del snapshot.
+  mockCola.obtenerPorId.mockResolvedValue(null);
   mockCola.marcarEnviando.mockResolvedValue(undefined);
   mockCola.marcarEnviado.mockResolvedValue(undefined);
   mockCola.marcarError.mockResolvedValue(undefined);
@@ -149,6 +151,51 @@ describe('intentarSincronizar — CREAR_HOGAR', () => {
     expect(mockCola.marcarEnviado).not.toHaveBeenCalled();
     expect(resultado.procesados).toBe(0);
     expect(resultado.errores).toBe(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AGREGAR_MIEMBRO — re-lectura de payload remapeado en la misma pasada
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('intentarSincronizar — AGREGAR_MIEMBRO usa el payload remapeado', () => {
+  it('relee el ítem (obtenerPorId) y hace POST con el hogar de servidor, no el local', async () => {
+    // El snapshot de obtenerPendientes trae el hogar como id LOCAL (obsoleto):
+    // así llegaba a la cola antes de que CREAR_HOGAR remapeara su payload.
+    const itemStale = crearItem({
+      id: 7,
+      tipo: 'AGREGAR_MIEMBRO',
+      recurso_local_id: 'miembro-local-1',
+      payload: JSON.stringify({
+        id_local: 'miembro-local-1',
+        hogar: 'hogar-LOCAL-1',                 // ← id local obsoleto
+        miembro: { nombre_completo: 'ANA PEREZ', rol: 'MIEMBRO' },
+      }),
+    });
+    // La BD ya fue remapeada por CREAR_HOGAR: obtenerPorId devuelve el fresco.
+    const itemFresco = {
+      ...itemStale,
+      payload: JSON.stringify({
+        id_local: 'miembro-local-1',
+        hogar: 'hogar-SERVIDOR-1',              // ← id de servidor ya remapeado
+        miembro: { nombre_completo: 'ANA PEREZ', rol: 'MIEMBRO' },
+      }),
+    };
+    mockCola.obtenerPendientes.mockResolvedValue([itemStale]);
+    mockCola.obtenerPorId.mockResolvedValue(itemFresco);
+    mockCola.contarPendientes.mockResolvedValue(0);
+    mockHogaresApi.agregarMiembro.mockResolvedValue({ data: { id: 'miembro-servidor-1' } } as any);
+
+    const resultado = await intentarSincronizar();
+
+    // Debe usar el hogar de SERVIDOR (del fresco), nunca el local del snapshot.
+    expect(mockHogaresApi.agregarMiembro).toHaveBeenCalledWith(
+      'hogar-SERVIDOR-1',
+      expect.objectContaining({ nombre_completo: 'ANA PEREZ' }),
+    );
+    expect(mockCola.marcarEnviado).toHaveBeenCalledWith(7);
+    expect(resultado.procesados).toBe(1);
+    expect(resultado.errores).toBe(0);
   });
 });
 
