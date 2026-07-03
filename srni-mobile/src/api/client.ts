@@ -145,7 +145,17 @@ apiClient.interceptors.response.use(
       const { data } = await axios.post(
         `${BASE_URL}/api/auth/refresh/`,
         { refresh },
-        { headers: { 'ngrok-skip-browser-warning': 'true' } },
+        {
+          headers: { 'ngrok-skip-browser-warning': 'true' },
+          // Sin timeout, un refresh colgado (red parcial / túnel lento) dejaba la
+          // promesa sin resolver ni rechazar PARA SIEMPRE: las peticiones que
+          // esperaban en refreshQueue quedaban colgadas y la pantalla se quedaba
+          // en "Cargando…" indefinidamente, sin error. Con timeout, el refresh
+          // aborta (ECONNABORTED), cae al catch de abajo → rejectQueue() libera
+          // la cola y cada pantalla resuelve su catch/finally. Mismo valor que el
+          // timeout global de apiClient (15 s).
+          timeout: 15000,
+        },
       );
       const newAccess: string = data.access;
 
@@ -163,6 +173,19 @@ apiClient.interceptors.response.use(
       rejectQueue(refreshErr);
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
+      // Loguear el fallo del refresh: antes pasaba desapercibido (el 401 se
+      // excluye del reporter y este catch solo rechazaba en silencio), ocultando
+      // justamente los timeouts que dejaban la app "cargando". Sin PII: solo el
+      // código/estado del fallo del refresh, nunca el token.
+      const rErr = refreshErr as AxiosError;
+      import('../services/errorReporter').then(({ reportarError }) => {
+        reportarError({
+          nivel: 'warn',
+          mensaje: `Refresh de token falló (${rErr?.code ?? rErr?.response?.status ?? 'red'})`,
+          pantalla: '[axios-interceptor:refresh]',
+          contexto: { code: rErr?.code, status: rErr?.response?.status },
+        });
+      }).catch(() => {});
       return Promise.reject(error);
     } finally {
       isRefreshing = false;
