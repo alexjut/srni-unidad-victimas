@@ -1,11 +1,11 @@
 // Detalle de una sesión de encuesta — GOV.CO design system.
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
   Text, Chip, ProgressBar, ActivityIndicator, Divider,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
 import { activarPerfil } from '../../../src/services/instrumentos';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -49,7 +49,8 @@ export default function SesionDetalleScreen() {
       .finally(() => setCargando(false));
   }
 
-  useEffect(() => { cargar(); }, [sesionId]);
+  // Se recarga cada vez que la pantalla recupera el foco (p.ej. al volver del formulario).
+  useFocusEffect(useCallback(() => { cargar(); }, [sesionId]));
 
   function confirmarFinalizar() {
     Alert.alert(

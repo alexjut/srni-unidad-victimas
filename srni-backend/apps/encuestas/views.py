@@ -17,12 +17,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from django.conf import settings
-
 from apps.autenticacion.permissions import PuedeCaracterizar
 from apps.auditoria.models import LogAcceso
 from apps.formulario.models import Pregunta
-from apps.hogares.models import MiembroHogar, Hogar
+from apps.hogares.models import MiembroHogar
 from srni.pagination import CursorTimePagination
 from .models import SesionEncuesta, RespuestaEncuesta
 from .filters import SesionEncuestaFilterSet
@@ -114,37 +112,43 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        Sprint 21 — regla de negocio:
-          1 víctima → 1 hogar → 1 caracterización activa
+        Regla universal: 1 víctima → 1 hogar → 1 caracterización activa.
 
         Si el hogar ya tiene una sesión activa (no COMPLETADA), devolver esa
-        en lugar de crear una duplicada. La regla aplica a TODAS las víctimas
-        EXCEPTO a la víctima de pruebas (settings.VICTIMA_PRUEBAS_DOC), que
-        sí puede tener N sesiones para que el contratista valide los 8
-        instrumentos UARIV.
+        en lugar de crear una duplicada. Para probar otro instrumento sobre
+        la misma víctima, completar la sesión actual y archivar el hogar.
         """
         hogar_id = request.data.get('hogar')
         if hogar_id:
-            try:
-                hogar = Hogar.objects.select_related('autorizado').get(pk=hogar_id)
-            except Hogar.DoesNotExist:
-                hogar = None
+            es_admin = request.user.puede('administrar')
+            base = SesionEncuesta.objects.filter(
+                hogar_id=hogar_id,
+            ).exclude(estado='COMPLETADA').order_by('-created_at')
 
-            if hogar is not None:
-                autorizado_doc = (hogar.autorizado.numero_documento or '').strip()
-                es_victima_pruebas = autorizado_doc == settings.VICTIMA_PRUEBAS_DOC
+            if es_admin:
+                sesion_activa = base.first()
+            else:
+                # Para no-admin la idempotencia debe filtrar encuestador: una
+                # sesión activa de OTRO encuestador no es navegable (get_queryset
+                # filtra encuestador=user → 404 en responder/finalizar). En ese
+                # caso respondemos 409 en lugar de exponer un id inaccesible.
+                sesion_activa = base.filter(encuestador=request.user).first()
+                if not sesion_activa and base.exists():
+                    return Response(
+                        {'detail': (
+                            'Este hogar ya tiene una sesión de encuesta activa '
+                            'iniciada por otro encuestador. Solicita su '
+                            'reasignación al supervisor.'
+                        )},
+                        status=status.HTTP_409_CONFLICT,
+                    )
 
-                if not es_victima_pruebas:
-                    # Aplicar idempotencia para víctimas reales
-                    sesion_activa = SesionEncuesta.objects.filter(
-                        hogar=hogar,
-                    ).exclude(estado='COMPLETADA').order_by('-created_at').first()
-                    if sesion_activa:
-                        from .serializers import SesionEncuestaDetalleSerializer
-                        detalle = SesionEncuestaDetalleSerializer(
-                            sesion_activa, context={'request': request}
-                        )
-                        return Response(detalle.data, status=status.HTTP_200_OK)
+            if sesion_activa:
+                from .serializers import SesionEncuestaDetalleSerializer
+                detalle = SesionEncuestaDetalleSerializer(
+                    sesion_activa, context={'request': request}
+                )
+                return Response(detalle.data, status=status.HTTP_200_OK)
 
         return super().create(request, *args, **kwargs)
 

@@ -4,16 +4,16 @@
     "version": "V8",
     "nombre": "Asistencia humanitaria",
     "archivo": "asistencia_v8.json",
-    "capitulos": 7,
-    "preguntas": 174
+    "capitulos": 8,
+    "preguntas": 105
   },
   {
     "codigo": "BUENAVENTURA",
     "version": "V7",
-    "nombre": "Buenaventura — Sentencia T-045",
+    "nombre": "Caracterización Buenaventura",
     "archivo": "buenaventura_v7.json",
-    "capitulos": 17,
-    "preguntas": 151
+    "capitulos": 16,
+    "preguntas": 379
   },
   {
     "codigo": "RURAL_ETNICO",
@@ -26,10 +26,10 @@
   {
     "codigo": "SAN_ANDRES",
     "version": "V7",
-    "nombre": "San Andrés, Providencia y Santa Catalina",
+    "nombre": "Caracterización San Andrés",
     "archivo": "san_andres_v7.json",
-    "capitulos": 14,
-    "preguntas": 109
+    "capitulos": 15,
+    "preguntas": 333
   },
   {
     "codigo": "TELEFONICO",
@@ -45,15 +45,15 @@
     "nombre": "Caracterización territorial",
     "archivo": "territorial_v7.json",
     "capitulos": 14,
-    "preguntas": 200
+    "preguntas": 219
   },
   {
     "codigo": "URBANO_ETNICO",
     "version": "V1",
-    "nombre": "Urbano étnico",
+    "nombre": "Caracterización Urbano Étnico",
     "archivo": "urbano_etnico_v1.json",
-    "capitulos": 12,
-    "preguntas": 85
+    "capitulos": 10,
+    "preguntas": 175
   },
   {
     "codigo": "VICTIMAS_EXTERIOR",

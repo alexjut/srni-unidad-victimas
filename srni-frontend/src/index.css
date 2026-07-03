@@ -2,41 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════
+   BASE — estilos globales
+   ═══════════════════════════════════════════ */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-gov-grisTenue text-gray-800 font-sans;
   }
+
   h1, h2, h3, h4 {
     @apply font-display;
   }
+
+  /* Transiciones suaves en todos los elementos interactivos */
+  button, a, input, select, textarea {
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  /* Focus ring elegante — azul suave con offset */
+  :focus-visible {
+    @apply outline-none ring-2 ring-gov-azul/40 ring-offset-2 ring-offset-white;
+  }
+
+  /* Scrollbar minimalista */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Selection color institucional */
+  ::selection {
+    @apply bg-gov-azul/20 text-gov-azulOscuro;
+  }
 }
 
+/* ═══════════════════════════════════════════
+   COMPONENTES — clases reutilizables
+   ═══════════════════════════════════════════ */
 @layer components {
   /* Botón primario GOV.CO */
   .btn-primary {
     @apply bg-gov-azul hover:bg-gov-azulOscuro text-white font-semibold
-           px-4 py-2 rounded-md transition-colors duration-150
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           px-4 py-2 rounded-lg shadow-soft
+           hover:shadow-soft-md active:scale-[0.97]
+           transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
+
   /* Botón secundario */
   .btn-secondary {
     @apply border border-gov-azul text-gov-azul hover:bg-gov-azulTenue
-           font-semibold px-4 py-2 rounded-md transition-colors duration-150
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           font-semibold px-4 py-2 rounded-lg
+           active:scale-[0.97]
+           transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
+
   /* Input estándar */
   .input {
-    @apply w-full border border-gov-borde rounded-md px-3 py-2 text-sm
-           focus:outline-none focus:ring-2 focus:ring-gov-azul focus:border-transparent
-           bg-white placeholder-gray-400;
+    @apply w-full border border-gov-borde rounded-lg px-3 py-2 text-sm
+           bg-white placeholder-gray-400
+           hover:border-gray-400
+           focus:outline-none focus:ring-2 focus:ring-gov-azul/30 focus:border-gov-azul
+           transition-all duration-200;
   }
-  /* Card */
+
+  /* Card — con hover lift */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gov-borde p-4;
+    @apply bg-white rounded-2xl shadow-soft border border-gov-borde/60 p-4
+           transition-all duration-300;
   }
+  .card-hover {
+    @apply card hover:shadow-soft-md hover:-translate-y-0.5;
+  }
+
   /* Badge de estado */
-  .badge-verde  { @apply bg-gov-verdeTenue  text-gov-verde  text-xs font-semibold px-2 py-0.5 rounded-full; }
-  .badge-rojo   { @apply bg-gov-rojoTenue   text-gov-rojo   text-xs font-semibold px-2 py-0.5 rounded-full; }
-  .badge-azul   { @apply bg-gov-azulTenue   text-gov-azul   text-xs font-semibold px-2 py-0.5 rounded-full; }
-  .badge-gris   { @apply bg-gray-100        text-gov-gris   text-xs font-semibold px-2 py-0.5 rounded-full; }
+  .badge-verde  { @apply bg-gov-verdeTenue  text-gov-verde  text-xs font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-rojo   { @apply bg-gov-rojoTenue   text-gov-rojo   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-azul   { @apply bg-gov-azulTenue   text-gov-azul   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
+  .badge-gris   { @apply bg-gray-100        text-gov-gris   text-xs font-semibold px-2.5 py-0.5 rounded-full; }
+
+  /* Contenido de página — fade in al entrar */
+  .page-content {
+    @apply animate-fade-in-up;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   UTILIDADES
+   ═══════════════════════════════════════════ */
+@layer utilities {
+  /* Safe area para bottom sheets en iPhones */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

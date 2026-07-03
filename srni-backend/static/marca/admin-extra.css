@@ -1,0 +1,43 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Ajustes de presentación del admin (django-unfold) — SRNI.
+   Feedback: "se ve todo muy grande". Unfold/Tailwind usan rem, así que reducir
+   el font-size base de :root escala TODO el panel proporcionalmente.
+   Subir/bajar este valor (13–15px) ajusta qué tan compacto se ve.
+   ─────────────────────────────────────────────────────────────────────────── */
+html {
+    font-size: 14px;            /* base 16 → 14 (~12% más compacto) */
+}
+
+/* Tablas y formularios un poco más densos */
+#content table th,
+#content table td {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
+
+/* ── Sidebar: NO pisar la mecánica del toggle de unfold ──────────────────────
+   Contexto: unfold gobierna el sidebar con Alpine. El wrapper
+   (`.fixed.xl\:relative`, en admin/nav_sidebar.html) se muestra/oculta con
+   `x-show="sidebarOpen"` (alterna `display`), y unfold usa el breakpoint
+   xl = 1280px tanto en CSS (`xl:relative`) como en JS (app.js: `<=1280` ⇒
+   colapsado y NO persiste; `>1280` ⇒ incrustado y persiste en localStorage).
+
+   El override anterior forzaba `position: relative !important` desde 1024px.
+   Eso abría una franja rota 1024–1280px: ahí unfold trata el sidebar como
+   "móvil" (arranca colapsado y se re-fuerza a colapsado en cada resize/recarga),
+   pero el CSS lo incrustaba en el flujo. El resultado es el toggle inconsistente
+   entre páginas (un changelist ancho relayoutea distinto a un dashboard angosto)
+   y la sensación de que "no abre/cierra".
+
+   Fix: alinear el override al MISMO breakpoint que unfold (1280px) y sin
+   `!important`, para no introducir una franja con dos lógicas en conflicto.
+   Por debajo de 1280px se respeta el comportamiento nativo de unfold (overlay
+   `fixed` que se colapsa solo), que era justo lo que se buscaba evitar con el
+   "sobrepuesto" — pero unfold ya lo mantiene colapsado, así que no se sobrepone.
+   Desde 1280px la clase `xl:relative` ya deja el sidebar incrustado por sí sola;
+   este bloque solo refuerza esa intención de forma compatible con el toggle. */
+@media (min-width: 1280px) {
+    .fixed.xl\:relative {
+        position: relative;
+    }
+}

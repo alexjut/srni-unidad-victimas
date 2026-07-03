@@ -14,10 +14,54 @@ Los endpoints, serializers y lógica de negocio NO deben saber qué implementaci
 """
 from __future__ import annotations
 
+import hashlib
+import unicodedata
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional
+
+
+# ---------------------------------------------------------------------------
+# Normalización canónica del documento → doc_hash del padrón offline
+# ---------------------------------------------------------------------------
+#
+# CONTRATO DE NORMALIZACIÓN (debe ser idéntico en backend y en la APK):
+#
+#   1. tipo_documento y numero_documento se concatenan con '|' como separador:
+#        f"{tipo}|{numero}"
+#   2. Antes de concatenar, cada parte se normaliza así:
+#        - strip() de espacios al inicio/fin
+#        - se eliminan espacios, puntos y guiones internos (separadores de miles)
+#        - to lower-case (minúsculas)
+#        - se quitan acentos/diacríticos (NFKD → ASCII) por robustez
+#   3. doc_hash = sha256(cadena_utf8).hexdigest()  (64 chars hex, minúsculas)
+#
+# Ejemplo:  ('CC', '99.901.000-01')  → "cc|9990100001" → sha256(...) hex
+#
+# La APK DEBE replicar EXACTAMENTE estos pasos para que el hash que calcula al
+# buscar un documento coincida con el doc_hash almacenado en el padrón.
+
+def normalizar_doc(tipo_documento: str, numero_documento: str) -> str:
+    """Devuelve la cadena canónica '<tipo>|<numero>' lista para hashear."""
+    def _limpiar(parte: str) -> str:
+        s = (parte or '').strip()
+        # quitar separadores comunes de miles / formato
+        for ch in (' ', '.', '-'):
+            s = s.replace(ch, '')
+        s = s.lower()
+        # quitar acentos/diacríticos
+        s = unicodedata.normalize('NFKD', s)
+        s = ''.join(c for c in s if not unicodedata.combining(c))
+        return s
+
+    return f"{_limpiar(tipo_documento)}|{_limpiar(numero_documento)}"
+
+
+def doc_hash(tipo_documento: str, numero_documento: str) -> str:
+    """SHA-256 (hex, minúsculas) de la cadena canónica del documento."""
+    canon = normalizar_doc(tipo_documento, numero_documento)
+    return hashlib.sha256(canon.encode('utf-8')).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -150,6 +194,57 @@ class VictimaRepository(ABC):
         Returns:
             Lista de VictimaResumen (puede ser vacía si no hay grupo registrado)
         """
+
+    @abstractmethod
+    def listar_todas(self) -> list[VictimaResumen]:
+        """
+        Devuelve TODAS las víctimas conocidas por la fuente (padrón completo).
+
+        Pensado para la precarga offline: la APK descarga de una sola vez el
+        padrón con el que el encuestador trabajará sin conexión.
+
+        En el mock retorna los ~11 casos ficticios. En Oracle/producción esta
+        operación debe acotarse (por jornada, punto de atención o territorial)
+        antes de exponerse — un padrón nacional completo no debe materializarse.
+
+        ⚠️  NO usar para construir el padrón descargable a gran escala: materializa
+        toda la lista en RAM. Para eso existe ``iterar_padron`` (streaming por lotes).
+
+        Returns:
+            Lista de VictimaResumen (puede ser vacía)
+        """
+        raise NotImplementedError
+
+    def iterar_padron(self, batch_size: int = 1000):
+        """
+        Itera el padrón completo en LOTES para generación en streaming.
+
+        Es el método que usa el command ``generar_padron`` para construir el
+        archivo descargable SIN cargar todo el padrón en memoria. Devuelve un
+        generador que entrega ``VictimaResumen`` de a uno (el llamador decide
+        cuándo hacer commit por lotes).
+
+        Implementación por fuente:
+          - Mock: itera el dict ``_VICTIMAS`` (trivial, cabe en RAM).
+          - ORACLE (producción): DEBE abrir un **server-side cursor** (cursor por
+            lotes / arraysize) sobre la consulta del padrón y hacer ``fetchmany
+            (batch_size)`` en bucle, haciendo ``yield`` de cada registro. Así nunca
+            se materializan 10M filas en el proceso Django. Ese es el ÚNICO punto
+            donde se enchufa Oracle; ni el command ni los endpoints cambian.
+
+        La implementación por defecto delega en ``listar_todas`` para no romper
+        repositorios existentes que aún no la sobrescriban; las fuentes a escala
+        DEBEN sobrescribirla con un cursor real.
+
+        Args:
+            batch_size: tamaño de lote sugerido para el fetch del cursor.
+
+        Yields:
+            VictimaResumen, uno por uno.
+        """
+        # Fallback genérico (no escalable): solo para fuentes pequeñas.
+        for victima in self.listar_todas():
+            yield victima
 
     @abstractmethod
     def verificar_habilitacion(

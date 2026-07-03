@@ -9,6 +9,7 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
+import Dropdown from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
 
 const ESTADO_BADGE: Record<string, BadgeVariant> = {
@@ -29,13 +30,16 @@ const ESTADOS_SESION = [
 ];
 
 function BarraProgreso({ valor }: { valor: number }) {
-  const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
+  // Clamp 0–100 para que el relleno nunca se salga del riel y redondeo para que
+  // el % no desborde la caja de ancho fijo (causaba que la barra "se saliera").
+  const pct = Math.max(0, Math.min(100, Math.round(valor || 0)));
+  const color = pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 bg-gray-100 rounded-full h-2">
-        <div className={`h-2 rounded-full ${color}`} style={{ width: `${valor}%` }} />
+      <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        <div className={`h-1.5 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-gray-500 w-8 text-right">{valor}%</span>
+      <span className="text-xs text-gray-500 w-10 text-right shrink-0">{pct}%</span>
     </div>
   );
 }
@@ -118,16 +122,14 @@ export default function EncuestasPage() {
       <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
 
       {/* Barra de filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <select
-          value={filtroEstado}
-          onChange={(e) => handleEstadoChange(e.target.value)}
-          className="input w-full sm:w-52"
-        >
-          {ESTADOS_SESION.map((e) => (
-            <option key={e.value} value={e.value}>{e.label}</option>
-          ))}
-        </select>
+      <div className="card shadow-soft flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="w-full sm:w-52">
+          <Dropdown
+            value={filtroEstado}
+            onChange={handleEstadoChange}
+            options={ESTADOS_SESION}
+          />
+        </div>
         {hayFiltros && (
           <Button variant="secondary" size="sm" icon={X} onClick={limpiarFiltros}>
             Limpiar

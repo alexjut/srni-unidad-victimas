@@ -60,6 +60,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Simula la carga sin persistir. Útil para validar el fixture.",
         )
+        parser.add_argument(
+            "--reemplazar",
+            action="store_true",
+            help=(
+                "Purga los capítulos/preguntas/opciones existentes del instrumento "
+                "(cascade) ANTES de cargar, para evitar preguntas huérfanas al cambiar "
+                "de versión/reconstrucción. Falla si hay respuestas que las protegen."
+            ),
+        )
 
     def handle(self, *args, **opts):
         fixture_arg = opts.get("fixture", "").strip()
@@ -98,6 +107,24 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             instrumento = self._upsert_instrumento(data)
+            if opts.get("reemplazar"):
+                # Solo purga si NO hay respuestas de campo que protejan las preguntas
+                # (RespuestaEncuesta.pregunta es PROTECT). Con datos vivos, se actualiza
+                # en sitio (los códigos ya coinciden) para no fallar ni borrar respuestas.
+                tiene_datos = instrumento.capitulos.filter(
+                    preguntas__respuestas__isnull=False
+                ).exists()
+                if tiene_datos:
+                    self.stdout.write(self.style.WARNING(
+                        "  --reemplazar: hay respuestas de campo → NO se purga "
+                        "(se actualiza en sitio)."
+                    ))
+                else:
+                    n_cap = instrumento.capitulos.count()
+                    instrumento.capitulos.all().delete()  # cascade: preguntas, opciones, reglas
+                    self.stdout.write(self.style.WARNING(
+                        f"  --reemplazar: purgados {n_cap} capítulos previos (cascade)."
+                    ))
             capitulos_map = self._upsert_capitulos(instrumento, data["capitulos"])
             preguntas_map = self._upsert_preguntas(capitulos_map, data["preguntas"], catalogo)
             n_reglas = self._upsert_reglas(
@@ -184,18 +211,26 @@ class Command(BaseCommand):
     def _upsert_capitulos(self, instrumento: Instrumento, capitulos_data: list) -> dict:
         result = {}
         for cap_data in capitulos_data:
-            cap, _ = Capitulo.objects.update_or_create(
-                instrumento=instrumento,
-                codigo=cap_data["codigo"],
-                defaults={
-                    "nombre": cap_data["nombre"],
-                    "orden": cap_data["orden"],
-                    "nivel": cap_data.get("nivel", "HOGAR"),
-                    "objetivo": cap_data.get("objetivo", ""),
-                    "poblacion_objetivo": cap_data.get("poblacion_objetivo", "TODOS_MIEMBROS"),
-                    "aplicabilidad": cap_data.get("aplicabilidad", {}),
-                },
-            )
+            campos = {
+                "instrumento": instrumento,
+                "codigo": cap_data["codigo"],
+                "nombre": cap_data["nombre"],
+                "orden": cap_data["orden"],
+                "nivel": cap_data.get("nivel", "HOGAR"),
+                "objetivo": cap_data.get("objetivo", ""),
+                "poblacion_objetivo": cap_data.get("poblacion_objetivo", "TODOS_MIEMBROS"),
+                "aplicabilidad": cap_data.get("aplicabilidad", {}),
+            }
+            # UUID determinista del fixture: el mismo código → mismo id en BD local
+            # y servidor, para que la sincronización del APK cuadre. Si no viene id,
+            # se busca por (instrumento, código) como antes.
+            if cap_data.get("id"):
+                cap, _ = Capitulo.objects.update_or_create(id=cap_data["id"], defaults=campos)
+            else:
+                cap, _ = Capitulo.objects.update_or_create(
+                    instrumento=instrumento, codigo=cap_data["codigo"],
+                    defaults={k: v for k, v in campos.items() if k not in ("instrumento", "codigo")},
+                )
             result[cap_data["codigo"]] = cap
         self.stdout.write(f"  Capítulos procesados: {len(result)}")
         return result
@@ -224,28 +259,34 @@ class Command(BaseCommand):
                 opciones_lista = opciones_raw
 
             cap = capitulos[cap_codigo]
-            pregunta, _ = Pregunta.objects.update_or_create(
-                capitulo=cap,
-                codigo_externo=p_data["codigo_externo"],
-                defaults={
-                    "texto": p_data["texto"],
-                    "variable_bd": p_data.get(
-                        "variable_bd",
-                        p_data["codigo_externo"].replace("_tel", ""),
-                    ),
-                    "tipo": p_data["tipo"],
-                    "nivel": p_data.get("nivel", "PERSONA"),
-                    "orden": p_data.get("orden", 0),
-                    "obligatoria": p_data.get("obligatoria", True),
-                    "validaciones": p_data.get("validaciones", {}),
-                    "descripcion_ayuda": p_data.get("descripcion_ayuda", ""),
-                    "no_pregunta": p_data.get("no_pregunta", ""),
-                    "id_preg": p_data.get("id_preg"),
-                    "es_precargada": p_data.get("es_precargada", False),
-                    "fuente_precarga": p_data.get("fuente_precarga", ""),
-                    "activa": p_data.get("activa", True),
-                },
-            )
+            campos = {
+                "capitulo": cap,
+                "codigo_externo": p_data["codigo_externo"],
+                "texto": p_data["texto"],
+                "variable_bd": p_data.get(
+                    "variable_bd",
+                    p_data["codigo_externo"].replace("_tel", ""),
+                ),
+                "tipo": p_data["tipo"],
+                "nivel": p_data.get("nivel", "PERSONA"),
+                "orden": p_data.get("orden", 0),
+                "obligatoria": p_data.get("obligatoria", True),
+                "validaciones": p_data.get("validaciones", {}),
+                "descripcion_ayuda": p_data.get("descripcion_ayuda", ""),
+                "no_pregunta": p_data.get("no_pregunta", ""),
+                "id_preg": p_data.get("id_preg"),
+                "es_precargada": p_data.get("es_precargada", False),
+                "fuente_precarga": p_data.get("fuente_precarga", ""),
+                "activa": p_data.get("activa", True),
+            }
+            # UUID determinista del fixture (ver _upsert_capitulos).
+            if p_data.get("id"):
+                pregunta, _ = Pregunta.objects.update_or_create(id=p_data["id"], defaults=campos)
+            else:
+                pregunta, _ = Pregunta.objects.update_or_create(
+                    capitulo=cap, codigo_externo=p_data["codigo_externo"],
+                    defaults={k: v for k, v in campos.items() if k not in ("capitulo", "codigo_externo")},
+                )
             result[p_data["codigo_externo"]] = pregunta
 
             for opt_data in opciones_lista:

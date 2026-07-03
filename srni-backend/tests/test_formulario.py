@@ -1,5 +1,12 @@
 """
-Tests del motor de formularios dinámico y skip logic — Sprint 6 (Diccionario V8).
+Tests del motor de formularios dinámico y skip logic.
+
+Actualizado al esquema vigente (Instrumento plano — un único modelo en lugar
+de Perfil + InstrumentoVersion) y a los endpoints actuales de la app formulario:
+  - GET  /api/formulario/instrumentos/
+  - GET  /api/formulario/capitulos/?instrumento=<id>
+  - GET  /api/formulario/instrumento/<codigo>/
+  - POST /api/formulario/evaluar-skip-logic/
 """
 import pytest
 from datetime import date
@@ -7,8 +14,7 @@ from rest_framework.test import APIClient
 
 from apps.autenticacion.models import Perfil, Usuario
 from apps.formulario.models import (
-    Perfil as PerfilInstrumento,
-    InstrumentoVersion,
+    Instrumento,
     Capitulo,
     Pregunta,
     OpcionRespuesta,
@@ -47,26 +53,18 @@ def cliente_auth(usuario):
 # ─── Fixtures del instrumento ──────────────────────────────────────────────────
 
 @pytest.fixture
-def perfil_instrumento():
-    return PerfilInstrumento.objects.create(
-        codigo='TERRITORIAL', nombre='Perfil Territorial', activo=True,
-    )
-
-
-@pytest.fixture
-def version(perfil_instrumento):
-    return InstrumentoVersion.objects.create(
-        perfil=perfil_instrumento,
-        numero='V7',
-        vigente_desde=date(2021, 1, 1),
+def instrumento():
+    return Instrumento.objects.create(
+        codigo='TERRITORIAL', nombre='Perfil Territorial', version='V7',
+        vigente_desde=date(2021, 1, 1), activo=True,
         fuente_documental='Manual UARIV 520.06.06-1',
     )
 
 
 @pytest.fixture
-def capitulo(version):
+def capitulo(instrumento):
     return Capitulo.objects.create(
-        instrumento=version, codigo='B',
+        instrumento=instrumento, codigo='B',
         nombre='Datos Básicos e Identidad',
         orden=2, nivel='PERSONA',
     )
@@ -85,7 +83,7 @@ def pregunta_genero(capitulo):
 
 
 @pytest.fixture
-def pregunta_embarazo(capitulo, version, pregunta_genero):
+def pregunta_embarazo(capitulo, instrumento, pregunta_genero):
     """Solo visible si B1 == F (sexo femenino)."""
     p = Pregunta.objects.create(
         capitulo=capitulo, codigo_externo='B2', no_pregunta='B2',
@@ -94,7 +92,7 @@ def pregunta_embarazo(capitulo, version, pregunta_genero):
     )
     # Sin respuesta a B1 → deshabilitada por defecto
     ReglaSkipLogic.objects.create(
-        instrumento=version, pregunta_origen=pregunta_genero,
+        instrumento=instrumento, pregunta_origen=pregunta_genero,
         valor_trigger='F', pregunta_afectada=p,
         accion=AccionSkipChoices.HABILITAR,
     )
@@ -113,32 +111,35 @@ def pregunta_edad(capitulo):
 # ─── Tests: estructura del instrumento via API ─────────────────────────────────
 
 @pytest.mark.django_db
-class TestPerfilesAPI:
-    def test_listar_perfiles(self, cliente_auth, perfil_instrumento):
-        resp = cliente_auth.get('/api/formulario/perfiles/')
+class TestInstrumentosAPI:
+    def test_listar_instrumentos(self, cliente_auth, instrumento):
+        resp = cliente_auth.get('/api/formulario/instrumentos/')
         assert resp.status_code == 200
         assert resp.data['count'] >= 1
 
-    def test_solo_perfiles_activos(self, cliente_auth, perfil_instrumento):
-        PerfilInstrumento.objects.create(
-            codigo='INACTIVO', nombre='Inactivo', activo=False,
+    def test_solo_instrumentos_activos(self, cliente_auth, instrumento):
+        Instrumento.objects.create(
+            codigo='INACTIVO', nombre='Inactivo', version='V1',
+            vigente_desde=date(2021, 1, 1), activo=False,
         )
-        resp = cliente_auth.get('/api/formulario/perfiles/')
-        codigos = [p['codigo'] for p in resp.data['results']]
+        resp = cliente_auth.get('/api/formulario/instrumentos/')
+        codigos = [i['codigo'] for i in resp.data['results']]
         assert 'TERRITORIAL' in codigos
         assert 'INACTIVO' not in codigos
 
-    def test_detalle_incluye_versiones(self, cliente_auth, perfil_instrumento, version):
-        resp = cliente_auth.get(f'/api/formulario/perfiles/{perfil_instrumento.id}/')
+    def test_detalle_incluye_capitulos(self, cliente_auth, instrumento, capitulo):
+        resp = cliente_auth.get(f'/api/formulario/instrumentos/{instrumento.id}/')
         assert resp.status_code == 200
-        assert len(resp.data['versiones']) == 1
-        assert resp.data['versiones'][0]['numero'] == 'V7'
+        assert resp.data['codigo'] == 'TERRITORIAL'
+        assert resp.data['version'] == 'V7'
+        codigos_cap = [c['codigo'] for c in resp.data['capitulos']]
+        assert 'B' in codigos_cap
 
 
 @pytest.mark.django_db
 class TestCapituloAPI:
-    def test_listar_capitulos_por_instrumento(self, cliente_auth, version, capitulo):
-        resp = cliente_auth.get(f'/api/formulario/capitulos/?instrumento={version.id}')
+    def test_listar_capitulos_por_instrumento(self, cliente_auth, instrumento, capitulo):
+        resp = cliente_auth.get(f'/api/formulario/capitulos/?instrumento={instrumento.id}')
         assert resp.status_code == 200
         codigos = [c['codigo'] for c in resp.data['results']]
         assert 'B' in codigos
@@ -161,23 +162,23 @@ class TestCapituloAPI:
 
 @pytest.mark.django_db
 class TestInstrumentoCompletoAPI:
-    def test_descarga_completa(self, cliente_auth, version, capitulo, pregunta_genero):
+    def test_descarga_completa(self, cliente_auth, instrumento, capitulo, pregunta_genero):
         resp = cliente_auth.get('/api/formulario/instrumento/TERRITORIAL/')
         assert resp.status_code == 200
         data = resp.data
-        assert data['perfil_codigo'] == 'TERRITORIAL'
-        assert data['numero'] == 'V7'
+        assert data['codigo'] == 'TERRITORIAL'
+        assert data['version'] == 'V7'
         assert len(data['capitulos']) == 1
         cap = data['capitulos'][0]
         assert cap['codigo'] == 'B'
         assert len(cap['preguntas']) == 1
         assert cap['preguntas'][0]['codigo_externo'] == 'B1'
 
-    def test_perfil_no_existe_404(self, cliente_auth):
+    def test_instrumento_no_existe_404(self, cliente_auth):
         resp = cliente_auth.get('/api/formulario/instrumento/INEXISTENTE/')
         assert resp.status_code == 404
 
-    def test_no_autenticado_401(self, version):
+    def test_no_autenticado_401(self, instrumento):
         resp = APIClient().get('/api/formulario/instrumento/TERRITORIAL/')
         assert resp.status_code == 401
 
@@ -232,7 +233,7 @@ class TestSkipLogic:
         assert resp.status_code == 200
         assert 'B2' not in resp.data['preguntas_visibles']
 
-    def test_regla_activa_valor_exacto(self, version, pregunta_genero, pregunta_embarazo):
+    def test_regla_activa_valor_exacto(self, instrumento, pregunta_genero, pregunta_embarazo):
         """Test unitario de _regla_activa con valor exacto."""
         regla = ReglaSkipLogic.objects.get(
             pregunta_origen=pregunta_genero,
@@ -241,7 +242,7 @@ class TestSkipLogic:
         assert EvaluarSkipLogicView._regla_activa(regla, {'B1': 'F'}, {}) is True
         assert EvaluarSkipLogicView._regla_activa(regla, {'B1': 'M'}, {}) is False
 
-    def test_regla_activa_expresion_contexto(self, version, capitulo):
+    def test_regla_activa_expresion_contexto(self, instrumento, capitulo):
         """Regla basada en expresión de contexto (edad, RUV)."""
         p_destino = Pregunta.objects.create(
             capitulo=capitulo, codigo_externo='L1', variable_bd='L1',
@@ -249,7 +250,7 @@ class TestSkipLogic:
             tipo='BOOLEAN', nivel='PERSONA', orden=10,
         )
         regla = ReglaSkipLogic.objects.create(
-            instrumento=version,
+            instrumento=instrumento,
             expresion_origen='edad >= 15',
             pregunta_afectada=p_destino,
             accion=AccionSkipChoices.HABILITAR,

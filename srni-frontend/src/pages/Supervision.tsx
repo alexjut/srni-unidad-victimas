@@ -2,7 +2,7 @@
  * Panel de supervisión — métricas por encuestador + gráficas de producción
  */
 import { useEffect, useState } from 'react';
-import { Users, ClipboardCheck, Home, TrendingUp, RefreshCw } from 'lucide-react';
+import { Users, ClipboardCheck, Home, TrendingUp, RefreshCw, Trash2 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -85,27 +85,37 @@ export default function SupervisionPage() {
     {
       key: 'en_progreso',
       header: 'En progreso',
+      className: 'hidden md:table-cell',
       render: (e) => <Badge variant="azul">{e.sesiones_en_progreso}</Badge>,
     },
-    { key: 'hogares', header: 'Hogares', render: (e) => <span className="text-gray-700">{e.hogares_caracterizados}</span> },
+    {
+      key: 'hogares',
+      header: 'Hogares',
+      className: 'hidden md:table-cell',
+      render: (e) => <span className="text-gray-700">{e.hogares_caracterizados}</span>,
+    },
     {
       key: 'promedio',
       header: 'Avance',
-      render: (e) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-[80px]">
-            <div
-              className={`h-2 rounded-full ${e.promedio_completado >= 80 ? 'bg-gov-verde' : e.promedio_completado >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
-              style={{ width: `${Math.min(100, e.promedio_completado)}%` }}
-            />
+      render: (e) => {
+        const pct = Math.max(0, Math.min(100, Math.round(e.promedio_completado || 0)));
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[80px] overflow-hidden">
+              <div
+                className={`h-1.5 rounded-full ${pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja'}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500 w-10 text-right shrink-0">{pct}%</span>
           </div>
-          <span className="text-xs text-gray-500 w-10 text-right">{e.promedio_completado}%</span>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'actividad',
       header: 'Última actividad',
+      className: 'hidden lg:table-cell',
       render: (e) => (
         <span className="text-xs text-gray-500">
           {e.ultima_actividad ? new Date(e.ultima_actividad).toLocaleDateString('es-CO') : '—'}
@@ -119,25 +129,43 @@ export default function SupervisionPage() {
       <PageHeader
         titulo="Supervisión"
         subtitulo={supervisor ? `${supervisor.encuestadores_activos} encuestador(es) activos · ${supervisor.periodo_desde} a ${supervisor.periodo_hasta}` : 'Panel de supervisión'}
-        acciones={
-          <Button variant="secondary" size="sm" icon={RefreshCw} loading={cargando} onClick={cargar}>
-            Actualizar
-          </Button>
-        }
       />
 
-      {/* Filtros de fecha */}
-      <form onSubmit={aplicarFiltros} className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desde</label>
-          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="input" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Hasta</label>
-          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="input" />
-        </div>
-        <div className="flex items-end">
-          <Button type="submit" size="sm">Filtrar</Button>
+      {/* Barra de filtros */}
+      <form onSubmit={aplicarFiltros} className="card mb-6 shadow-soft">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Desde</label>
+            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Hasta</label>
+            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="input" />
+          </div>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
+            <Button type="submit" className="h-[38px]">Filtrar</Button>
+            <Button
+              type="button"
+              variant="secondary"
+              icon={RefreshCw}
+              loading={cargando}
+              onClick={cargar}
+              className="h-[38px]"
+            >
+              Actualizar
+            </Button>
+            {(desde || hasta) && (
+              <Button
+                type="button"
+                variant="danger"
+                icon={Trash2}
+                className="h-[38px]"
+                onClick={() => { setDesde(''); setHasta(''); setTimeout(cargar, 0); }}
+              >
+                Limpiar
+              </Button>
+            )}
+          </div>
         </div>
       </form>
 
@@ -145,10 +173,10 @@ export default function SupervisionPage() {
 
       {/* Cards de totales */}
       {supervisor && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
           <Card icon={ClipboardCheck} label="Sesiones totales" valor={supervisor.totales.sesiones_total} color="bg-gov-azul" />
           <Card icon={TrendingUp} label="Completadas" valor={supervisor.totales.sesiones_completadas} color="bg-gov-verde" />
-          <Card icon={Home} label="Hogares caracterizados" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
+          <Card icon={Home} label="Hogares" valor={supervisor.totales.hogares_caracterizados} color="bg-gov-naranja" />
           <Card icon={Users} label="Encuestadores activos" valor={supervisor.encuestadores_activos} color="bg-purple-600" />
         </div>
       )}
@@ -157,7 +185,7 @@ export default function SupervisionPage() {
       {series && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* Serie temporal */}
-          <div className="card">
+          <div className="card shadow-soft">
             <h3 className="font-display font-semibold text-gray-700 mb-4 text-sm">
               Actividad diaria
             </h3>
@@ -177,7 +205,7 @@ export default function SupervisionPage() {
           </div>
 
           {/* Distribución por instrumento */}
-          <div className="card">
+          <div className="card shadow-soft">
             <h3 className="font-display font-semibold text-gray-700 mb-4 text-sm">
               Sesiones por instrumento
             </h3>

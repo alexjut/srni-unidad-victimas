@@ -38,7 +38,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.formulario.models import (
-    InstrumentoVersion, Capitulo, Pregunta,
+    Instrumento, Capitulo, Pregunta,
 )
 
 INSTRUMENTO_PK = "22222222-0006-0006-0006-000000000006"  # Rural Étnico V1
@@ -288,10 +288,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            instrumento = InstrumentoVersion.objects.get(pk=INSTRUMENTO_PK)
-        except InstrumentoVersion.DoesNotExist:
+            instrumento = Instrumento.objects.get(pk=INSTRUMENTO_PK)
+        except Instrumento.DoesNotExist:
             self.stderr.write(
-                "Error: ejecuta primero: python manage.py loaddata perfiles_iniciales"
+                "Error: ejecuta primero: python manage.py crear_instrumentos_base"
             )
             return
 

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
@@ -92,11 +93,22 @@ urlpatterns = [
     # Auditoría — endpoint de logs para el panel web (Brando, Sprint integración jun-2026)
     path('api/auditoria/', include('apps.auditoria.urls')),
 
-    # Sprint 17 — Endpoint de debug: recibe errores móvil y los printea en consola
-    path('api/_debug/log/', log_error_mobile, name='debug-log-mobile'),
+    # Distribución móvil — versión y descarga auditada de la APK
+    path('api/movil/', include('apps.movil.urls')),
+
+    # Administración de usuarios (panel web — solo administradores)
+    path('api/usuarios/', include('apps.autenticacion.urls_admin')),
 
     # Documentación OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
+
+# Sprint 17 — Endpoint de debug: recibe errores móvil y los printea en consola.
+# Es AllowAny por diseño (el móvil reporta antes de autenticar), así que SOLO
+# se registra en desarrollo: en producción no debe existir esta superficie.
+if settings.DEBUG:
+    urlpatterns += [
+        path('api/_debug/log/', log_error_mobile, name='debug-log-mobile'),
+    ]

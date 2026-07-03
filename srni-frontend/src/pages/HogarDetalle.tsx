@@ -65,10 +65,10 @@ export default function HogarDetallePage() {
       <Breadcrumb items={[
         { label: 'Inicio', to: '/dashboard' },
         { label: 'Hogares', to: '/hogares' },
-        { label: hogar.codigo_hogar ?? hogar.id.slice(0, 8) },
+        { label: hogar.codigo_hogar || hogar.id.slice(0, 8) },
       ]} />
       <PageHeader
-        titulo={hogar.codigo_hogar ?? `Hogar ${hogar.id.slice(0, 8)}`}
+        titulo={hogar.codigo_hogar || `Hogar ${hogar.id.slice(0, 8)}`}
         subtitulo={hogar.municipio_nombre ?? 'Sin municipio'}
         acciones={
           <Button variant="secondary" size="sm" icon={ArrowLeft} onClick={() => navigate('/hogares')}>
@@ -78,7 +78,7 @@ export default function HogarDetallePage() {
       />
 
       {/* Info general */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
         <InfoCard icon={Home} label="Estado">
           <Badge variant={ESTADO_HOGAR[hogar.estado] ?? 'gris'}>
             {hogar.estado_display ?? hogar.estado}
@@ -90,7 +90,7 @@ export default function HogarDetallePage() {
       </div>
 
       {/* Datos del hogar */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in-up" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4">Datos del hogar</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
           <DatoItem label="Tipo vivienda" valor={hogar.tipo_vivienda_display} />
@@ -108,7 +108,7 @@ export default function HogarDetallePage() {
       </div>
 
       {/* Tabla de miembros */}
-      <div className="card overflow-hidden p-0 mb-6">
+      <div className="card overflow-hidden p-0 mb-6 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
         <div className="px-4 py-3 border-b border-gov-borde">
           <p className="font-semibold text-gray-700 text-sm">
             Miembros del hogar ({hogar.total_miembros})
@@ -133,7 +133,7 @@ export default function HogarDetallePage() {
                   </td>
                 </tr>
               ) : hogar.miembros.map((m) => (
-                <tr key={m.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+                <tr key={m.id} className="hover:bg-gov-azulTenue/30 transition-all">
                   <td className="px-4 py-3 text-gray-800 font-medium">
                     {m.nombre_completo || '—'}
                     {m.es_autorizado && (
@@ -157,7 +157,7 @@ export default function HogarDetallePage() {
       </div>
 
       {/* Tabla de sesiones */}
-      <div className="card overflow-hidden p-0">
+      <div className="card overflow-hidden p-0 animate-fade-in-up" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
         <div className="px-4 py-3 border-b border-gov-borde">
           <p className="font-semibold text-gray-700 text-sm">
             Sesiones de encuesta ({hogar.total_sesiones})
@@ -185,7 +185,7 @@ export default function HogarDetallePage() {
                 <tr
                   key={s.id}
                   onClick={() => navigate(`/encuestas/${s.id}`)}
-                  className="hover:bg-gov-azulTenue/30 transition-colors cursor-pointer"
+                  className="hover:bg-gov-azulTenue/30 transition-all cursor-pointer"
                 >
                   <td className="px-4 py-3 text-gray-700">{s.instrumento_nombre}</td>
                   <td className="px-4 py-3">

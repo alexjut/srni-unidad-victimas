@@ -131,8 +131,8 @@ function Selector<T extends { id: number; nombre: string }>({
 // ── Pantalla ────────────────────────────────────────────────────────────────
 
 export default function UbicacionAtencionScreen() {
-  const { sesionId, hogarId, instrumentoCodigo } = useLocalSearchParams<{
-    sesionId: string; hogarId: string; instrumentoCodigo?: string;
+  const { sesionId, hogarId, instrumentoId, instrumentoCodigo } = useLocalSearchParams<{
+    sesionId: string; hogarId: string; instrumentoId?: string; instrumentoCodigo?: string;
   }>();
 
   const [direcciones, setDirecciones] = useState<DireccionTerritorial[]>([]);
@@ -213,9 +213,14 @@ export default function UbicacionAtencionScreen() {
         punto_atencion: punto!.id,
       });
 
+      // Ir directo al hub del formulario de la sesión recién creada.
       router.replace({
-        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-        params: { hogarId: hogarId ?? '' },
+        pathname: '/(main)/formulario',
+        params: {
+          sesionServerId: sesionId,
+          hogarId: hogarId ?? '',
+          ...(instrumentoId ? { instrumentoId } : {}),
+        },
       });
     } catch (err: any) {
       const detalle = err?.response?.data?.detail
@@ -238,8 +243,12 @@ export default function UbicacionAtencionScreen() {
           text: 'Omitir',
           style: 'destructive',
           onPress: () => router.replace({
-            pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-            params: { hogarId: hogarId ?? '' },
+            pathname: '/(main)/formulario',
+            params: {
+              sesionServerId: sesionId,
+              hogarId: hogarId ?? '',
+              ...(instrumentoId ? { instrumentoId } : {}),
+            },
           }),
         },
       ],

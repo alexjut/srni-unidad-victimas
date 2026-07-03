@@ -13,7 +13,9 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001';
+// Solo reporta en desarrollo: el endpoint /api/_debug/log/ no existe en
+// producción (el backend lo registra únicamente con DEBUG=True).
+const BASE_URL = __DEV__ ? (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001') : null;
 
 export interface ErrorReportPayload {
   nivel?: 'error' | 'warn' | 'info';
@@ -30,8 +32,9 @@ function obtenerDispositivo(): string {
   return `${platform} ${ver} / ${device}`;
 }
 
-/** Envía un error al backend. NUNCA lanza. */
+/** Envía un error al backend. NUNCA lanza. En producción es un no-op. */
 export async function reportarError(payload: ErrorReportPayload): Promise<void> {
+  if (!BASE_URL) return;
   try {
     await fetch(`${BASE_URL}/api/_debug/log/`, {
       method: 'POST',

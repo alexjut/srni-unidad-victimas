@@ -61,7 +61,7 @@ export default function InstrumentosPage() {
       {cargando ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card animate-pulse h-20 bg-gray-100" />
+            <div key={i} className="card animate-pulse h-20 bg-gray-200" />
           ))}
         </div>
       ) : instrumentos.length === 0 ? (
@@ -102,9 +102,9 @@ function InstrumentoCard({
       {/* Header clickeable */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-4 px-4 py-4 text-left hover:bg-gray-50 transition-all"
       >
-        <div className="w-10 h-10 rounded-lg bg-gov-azulTenue flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gov-azulTenue flex items-center justify-center shrink-0">
           <FileText size={20} className="text-gov-azul" />
         </div>
         <div className="flex-1 min-w-0">
@@ -123,7 +123,7 @@ function InstrumentoCard({
 
       {/* Capítulos expandidos */}
       {expandido && (
-        <div className="border-t border-gov-borde">
+        <div className="border-t border-gov-borde animate-fade-in">
           {/* Info del instrumento */}
           <div className="px-4 py-3 bg-gray-50 text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-1">
             <span>Vigente desde: <strong className="text-gray-700">{new Date(instrumento.vigente_desde).toLocaleDateString('es-CO')}</strong></span>
@@ -185,7 +185,7 @@ function CapituloRow({ capitulo }: { capitulo: CapituloResumen }) {
     <div>
       <button
         onClick={toggle}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gov-azulTenue/20 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gov-azulTenue/20 transition-all"
       >
         <BookOpen size={16} className="text-gov-azul shrink-0" />
         <div className="flex-1 min-w-0">
@@ -215,7 +215,7 @@ function CapituloRow({ capitulo }: { capitulo: CapituloResumen }) {
           {detalle.preguntas.length === 0 ? (
             <p className="px-4 py-4 text-xs text-gray-400 text-center">Sin preguntas</p>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gov-borde/40">
               {detalle.preguntas.map((p) => (
                 <div key={p.id} className="px-4 py-2.5 flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
@@ -244,7 +244,7 @@ function CapituloRow({ capitulo }: { capitulo: CapituloResumen }) {
                     {p.opciones.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {p.opciones.slice(0, 6).map((o) => (
-                          <span key={o.id} className="text-xs bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-600">
+                          <span key={o.id} className="text-xs bg-white border border-gray-100 rounded-md px-1.5 py-0.5 text-gray-600">
                             {o.etiqueta}
                           </span>
                         ))}

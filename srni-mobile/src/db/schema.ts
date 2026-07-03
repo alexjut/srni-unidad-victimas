@@ -10,11 +10,16 @@
  *  2 → Sprint 7: tablas de instrumento migradas a UUID (capitulos, reglas_skip_logic)
  *               borradores.instrumento_id TEXT, respuestas.pregunta_id TEXT
  *  3 → Sprint 9: cola_sincronizacion.retry_after TEXT (backoff exponencial)
+ *  6 → Fase 0 Offline: padron, jornada, parametricas_cache, meta_offline
+ *  7 → Fase A Offline: victimas_offline, miembros_offline (conformación 100% offline)
+ *  8 → hogares_offline.ultimo_error TEXT (motivo del fallo de sincronización)
+ *  9 → hogares_cache: espejo de la lista de miembros del servidor para que un
+ *      hogar creado ONLINE siga capturable si cae la red (fix #4/#38)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 9;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -227,6 +232,110 @@ const MIGRATION_V5 = `
     ON respuestas(borrador_id, pregunta_id, miembro_id);
 `;
 
+// ─── Migración v6 — almacén OFFLINE de precarga (Fase 0) ─────────────────────
+// Tablas para trabajar offline desde el login:
+//   - padron: índice ligero de personas (documento HASHEADO, sin PII fuerte).
+//             Se busca por documento_hash; documento_display = últimos 4 dígitos.
+//   - jornada: VictimaResumenFuente COMPLETO por documento (json) para continuar
+//              el flujo offline cuando la persona viene en la jornada del día.
+//   - parametricas_cache: municipios / DT / puntos serializados como json por tipo.
+//   - meta_offline: clave/valor para guardar la "version" del padrón y timestamps.
+//
+// TODO(cifrado-en-reposo): Fase 0 NO cifra. Para una fase posterior con PII real
+// se debe migrar a SQLCipher (expo-sqlite con `enableChangeListener` + libsql/
+// op-sqlite, o expo-sqlite-storage cifrado) y derivar la llave desde SecureStore.
+// El padron ya guarda el documento HASHEADO (no reversible) como mitigación parcial.
+const MIGRATION_V6 = `
+  CREATE TABLE IF NOT EXISTS padron (
+    documento_hash    TEXT    PRIMARY KEY,
+    tipo_documento    TEXT    NOT NULL DEFAULT '',
+    documento_display TEXT    NOT NULL DEFAULT '',
+    nombre            TEXT    NOT NULL DEFAULT '',
+    ubicacion         TEXT    NOT NULL DEFAULT '',
+    cantidad_hechos   INTEGER NOT NULL DEFAULT 0,
+    en_ruv            INTEGER NOT NULL DEFAULT 0,
+    habilitada        INTEGER NOT NULL DEFAULT 0,
+    ya_caracterizada  INTEGER NOT NULL DEFAULT 0,
+    cons_persona      INTEGER
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_padron_hash ON padron(documento_hash);
+
+  CREATE TABLE IF NOT EXISTS jornada (
+    documento_hash TEXT PRIMARY KEY,
+    json           TEXT NOT NULL DEFAULT '{}'
+  );
+
+  CREATE TABLE IF NOT EXISTS parametricas_cache (
+    tipo TEXT PRIMARY KEY,
+    json TEXT NOT NULL DEFAULT '[]'
+  );
+
+  CREATE TABLE IF NOT EXISTS meta_offline (
+    clave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL DEFAULT ''
+  );
+`;
+
+// ─── Migración v7 — conformación 100% OFFLINE (Fase A) ───────────────────────
+// Permite registrar víctima + conformar hogar + agregar miembros SIN red, igual
+// que hogares_offline ya hace para el hogar. Cada fila lleva id_local (UUID),
+// id_servidor (NULL hasta sincronizar) y estado_sync.
+//
+//   - victimas_offline: la víctima "autorizada" registrada offline. Guarda el
+//       VictimaResumenFuente COMPLETO en `payload_json` para re-registrarlo en el
+//       servidor al recuperar red (POST registrar-desde-fuente). El id_local es
+//       el UUID que se usa como `autorizado` del hogar mientras no haya red.
+//   - miembros_offline: integrantes agregados al hogar sin red. hogar_id_local
+//       apunta al hogar (id_local) y se remapea a id_servidor al sincronizar.
+//
+// SEGURIDAD: payload_json SÍ contiene PII (nombre, documento) de la persona —
+// es el mismo dato que ya viaja en memoria por el flujo online. Queda pendiente
+// el cifrado en reposo (ver docs/offline-cifrado-reposo.md y TODO en MIGRATION_V6).
+const MIGRATION_V7 = `
+  CREATE TABLE IF NOT EXISTS victimas_offline (
+    id_local      TEXT    PRIMARY KEY,
+    id_servidor   TEXT,
+    payload_json  TEXT    NOT NULL DEFAULT '{}',
+    estado_sync   TEXT    NOT NULL DEFAULT 'pendiente',
+    created_at    TEXT    NOT NULL,
+    updated_at    TEXT    NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS miembros_offline (
+    id_local         TEXT    PRIMARY KEY,
+    id_servidor      TEXT,
+    hogar_id_local   TEXT    NOT NULL,
+    payload_json     TEXT    NOT NULL DEFAULT '{}',
+    estado_sync      TEXT    NOT NULL DEFAULT 'pendiente',
+    created_at       TEXT    NOT NULL,
+    updated_at       TEXT    NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_victimas_off_sync ON victimas_offline(estado_sync);
+  CREATE INDEX IF NOT EXISTS idx_miembros_off_hogar ON miembros_offline(hogar_id_local);
+`;
+
+// ─── Migración v9 — caché de miembros de hogares creados ONLINE (fix #4/#38) ──
+// Un hogar conformado ONLINE vive en el servidor, no en hogares_offline/
+// miembros_offline. Si la red cae a mitad de captura, construirMiembrosOffline
+// no encuentra nada y las preguntas PERSONA dejan de poderse capturar.
+// Esta tabla espeja la respuesta de GET hogares/{id}/ (la lista de miembros con
+// sus IDs de SERVIDOR) cada vez que se carga online, para releerla sin red. Al
+// usar los mismos IDs del servidor, las respuestas (clave pregunta_id|miembro_id)
+// quedan consistentes entre el camino online y el offline.
+//
+// SEGURIDAD: miembros_json contiene PII (nombre, fecha de nacimiento) — el mismo
+// dato que ya guarda miembros_offline.payload_json y que viaja en memoria en el
+// flujo online. Cifrado en reposo (SQLCipher) sigue pendiente para Fase 1 (#21).
+const MIGRATION_V9 = `
+  CREATE TABLE IF NOT EXISTS hogares_cache (
+    hogar_id      TEXT    PRIMARY KEY,
+    miembros_json TEXT    NOT NULL DEFAULT '[]',
+    actualizado   TEXT    NOT NULL
+  );
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -298,6 +407,34 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
           ON respuestas(borrador_id, pregunta_id, miembro_id);
       `);
     }
+  }
+
+  if (currentVersion < 6) {
+    // Fase 0: tablas del almacén offline de precarga. Idempotente (IF NOT EXISTS).
+    await db.execAsync(MIGRATION_V6);
+  }
+
+  if (currentVersion < 7) {
+    // Fase A: víctimas y miembros offline para conformación 100% sin red.
+    // Idempotente (IF NOT EXISTS).
+    await db.execAsync(MIGRATION_V7);
+  }
+
+  if (currentVersion < 8) {
+    // hogares_offline.ultimo_error: guarda el motivo del fallo de sincronización.
+    // ALTER TABLE ADD COLUMN no es idempotente en SQLite si la columna ya existe.
+    try {
+      await db.execAsync(
+        "ALTER TABLE hogares_offline ADD COLUMN ultimo_error TEXT NOT NULL DEFAULT ''",
+      );
+    } catch (e: any) {
+      if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
+    }
+  }
+
+  if (currentVersion < 9) {
+    // Fix #4/#38: caché de miembros de hogares creados online. Idempotente.
+    await db.execAsync(MIGRATION_V9);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

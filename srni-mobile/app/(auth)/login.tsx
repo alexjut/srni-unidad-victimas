@@ -2,8 +2,9 @@
  * Pantalla de inicio de sesión — GOV.CO institucional.
  *
  * Fondo: 5 fotos reales de regiones colombianas que ciclan automáticamente
- * cada 30 s usando crossfade + efecto Ken Burns (zoom suave). Sin controles
- * manuales de carrusel (sin dots, sin swipe, sin botones de navegación).
+ * cada 5 s en orden ALEATORIO (sin repetir la actual) usando crossfade +
+ * efecto Ken Burns (zoom suave). Sin controles manuales de carrusel
+ * (sin dots, sin swipe, sin botones de navegación).
  *
  * Rendimiento:
  *   - Imágenes empaquetadas como assets locales (bundled, sin prefetch necesario).
@@ -13,10 +14,10 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, StyleSheet, KeyboardAvoidingView, Platform,
-  ScrollView, StatusBar, Pressable,
+  ScrollView, StatusBar, Pressable, Image,
   Animated, ImageBackground, AppState, Dimensions,
 } from 'react-native';
-import { Text, TextInput, HelperText } from 'react-native-paper';
+import { Text, TextInput, HelperText, Checkbox } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,9 +26,10 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuthStore } from '../../src/stores/authStore';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
+import { APP_NAME, SUBDIRECTION_NAME } from '../../src/config/marca';
 
 // ── Constantes de animación ───────────────────────────────────────────────────
-const DURACION_MS  = 30_000;   // tiempo visible de cada foto
+const DURACION_MS  =  5_000;   // tiempo visible de cada foto
 const FADE_MS      =  2_000;   // duración del crossfade entre fotos
 const KB_MITAD_MS  = 40_000;   // Ken Burns: 1.0→1.08 en 40 s, luego 1.08→1.0
 
@@ -41,31 +43,31 @@ const REGIONES = [
     nombre: 'Caribe',
     subtitulo: 'Mar, playas y cultura vallenata',
     icono: 'palm-tree' as const,
-    imagen: require('../../assets/regiones/caribe.png'),
+    imagen: require('../../assets/regiones/caribe.jpg'),
   },
   {
     nombre: 'Andes',
     subtitulo: 'Montañas, café y memoria',
     icono: 'image-filter-hdr' as const,
-    imagen: require('../../assets/regiones/andina.png'),
+    imagen: require('../../assets/regiones/andina.jpg'),
   },
   {
     nombre: 'Amazonia',
     subtitulo: 'Selva tropical y grandes ríos',
     icono: 'leaf' as const,
-    imagen: require('../../assets/regiones/amazonia.png'),
+    imagen: require('../../assets/regiones/amazonia.jpg'),
   },
   {
     nombre: 'Orinoquía',
     subtitulo: 'Llanos orientales y sabanas',
     icono: 'grass' as const,
-    imagen: require('../../assets/regiones/orinoca.png'),
+    imagen: require('../../assets/regiones/orinoca.jpg'),
   },
   {
     nombre: 'Insular',
     subtitulo: 'San Andrés, Providencia y Santa Catalina',
     icono: 'island' as const,
-    imagen: require('../../assets/regiones/insular.png'),
+    imagen: require('../../assets/regiones/insular.jpg'),
   },
 ];
 
@@ -78,7 +80,12 @@ export default function LoginScreen() {
   const [codigo, setCodigo]       = useState('');
   const [password, setPassword]   = useState('');
   const [verPassword, setVerPassword] = useState(false);
+  const [recordar, setRecordar] = useState(true);
   const [biometricoListo, setBiometricoListo] = useState(false);
+  // #22 — biometría OPT-IN: el dispositivo soporta huella/rostro (para mostrar
+  // el checkbox) y la preferencia explícita del usuario (default false).
+  const [dispositivoBiometrico, setDispositivoBiometrico] = useState(false);
+  const [activarBiometria, setActivarBiometria] = useState(false);
   const [idxActivo, setIdxActivo] = useState(0);
   const insets = useSafeAreaInsets();
 
@@ -160,8 +167,17 @@ export default function LoginScreen() {
     // ── Arranque ─────────────────────────────────────────────────────────────
     iniciarKB(0);
 
+    // Elige un índice aleatorio distinto al actual (para que se vean todas
+    // las regiones sin repetir la que está en pantalla).
+    function siguienteAleatorio(actual: number): number {
+      if (N <= 1) return actual;
+      let n = Math.floor(Math.random() * (N - 1));
+      if (n >= actual) n += 1; // salta el índice actual
+      return n;
+    }
+
     const timer = setInterval(() => {
-      transicionarA((idxRef.current + 1) % N);
+      transicionarA(siguienteAleatorio(idxRef.current));
     }, DURACION_MS);
 
     // Pausa KB cuando la app va a background para ahorrar batería
@@ -180,6 +196,15 @@ export default function LoginScreen() {
     };
   }, []); // solo al montar — todas las dependencias son refs estables
 
+  // ── Recordar código de usuario (solo el código, nunca la contraseña) ─────────
+  useEffect(() => {
+    SecureStore.getItemAsync('codigo_recordado')
+      .then((c) => {
+        if (c) { setCodigo(c); setRecordar(true); } else { setRecordar(false); }
+      })
+      .catch(() => { /* silencioso */ });
+  }, []);
+
   // ── Biometría ──────────────────────────────────────────────────────────────
   useEffect(() => {
     async function verificar() {
@@ -188,8 +213,11 @@ export default function LoginScreen() {
         if (!hw) return;
         const enrolled = await LocalAuthentication.isEnrolledAsync();
         if (!enrolled) return;
+        setDispositivoBiometrico(true); // soportada → mostrar el checkbox opt-in
         const habilitado = await SecureStore.getItemAsync('biometrico_habilitado');
         const token = await SecureStore.getItemAsync('refresh_token');
+        // Pre-marcar el checkbox si el usuario ya la había activado antes.
+        setActivarBiometria(habilitado === 'true');
         setBiometricoListo(habilitado === 'true' && !!token);
       } catch { /* silencioso */ }
     }
@@ -199,7 +227,12 @@ export default function LoginScreen() {
   async function handleLogin() {
     if (!codigo.trim() || !password) return;
     limpiarError();
-    try { await login(codigo, password); } catch { /* error ya en store */ }
+    try {
+      await login(codigo, password, dispositivoBiometrico && activarBiometria);
+      // Persistir (o borrar) solo el código de usuario según preferencia.
+      if (recordar) await SecureStore.setItemAsync('codigo_recordado', codigo.trim().toUpperCase());
+      else await SecureStore.deleteItemAsync('codigo_recordado');
+    } catch { /* error ya en store */ }
   }
 
   async function handleBiometrico() {
@@ -279,19 +312,19 @@ export default function LoginScreen() {
               </View>
             </Animated.View>
 
-            {/* Logo institucional SRNI */}
+            {/* Logo institucional — Unidad para las Víctimas */}
             <View style={styles.logoWrap}>
-              <View style={styles.escudoCirculo}>
-                <MaterialCommunityIcons name="shield-account" size={38} color="#FFFFFF" />
-              </View>
-              <Text style={styles.appTitle}>SRNI</Text>
+              <Image
+                source={require('../../assets/logos/logo-unidad-vertical-negativo.png')}
+                style={styles.logoImg}
+                resizeMode="contain"
+                accessibilityLabel="Unidad para las Víctimas"
+              />
+              {/* Nombre de la APK */}
+              <Text style={styles.appTitulo}>{APP_NAME}</Text>
               <Text style={styles.appSubtitulo}>
-                Sistema de Caracterización de Víctimas
+                Sistema de Caracterización a Víctimas — Móvil
               </Text>
-              <View style={styles.entidadBadge}>
-                <MaterialCommunityIcons name="domain" size={11} color={GOV.amarillo} />
-                <Text style={styles.entidadTxt}>Unidad para las Víctimas — Colombia</Text>
-              </View>
             </View>
           </View>
 
@@ -341,6 +374,31 @@ export default function LoginScreen() {
               accessibilityLabel="Contraseña"
             />
 
+            <Pressable
+              style={styles.recordarRow}
+              onPress={() => setRecordar((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: recordar }}
+              accessibilityLabel="Recordar mi código de usuario"
+            >
+              <Checkbox status={recordar ? 'checked' : 'unchecked'} color={GOV.azul} />
+              <Text style={styles.recordarTxt}>Recordar mi código de usuario</Text>
+            </Pressable>
+
+            {/* #22 — opt-in de biometría: solo si el dispositivo la soporta. */}
+            {dispositivoBiometrico && (
+              <Pressable
+                style={styles.recordarRow}
+                onPress={() => setActivarBiometria((v) => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: activarBiometria }}
+                accessibilityLabel="Activar ingreso con huella o rostro"
+              >
+                <Checkbox status={activarBiometria ? 'checked' : 'unchecked'} color={GOV.azul} />
+                <Text style={styles.recordarTxt}>Activar ingreso con huella o rostro</Text>
+              </Pressable>
+            )}
+
             {error ? (
               <HelperText type="error" visible style={styles.errorTxt}>
                 {error}
@@ -389,6 +447,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Pie de página */}
+          <Text style={styles.pieInstitucional}>{SUBDIRECTION_NAME}</Text>
           <Text style={styles.pie}>
             Sistema protegido — Ley 1581 de 2012 · Datos de víctimas confidenciales
           </Text>
@@ -479,48 +538,38 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     gap: 4,
   },
-  escudoCirculo: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.42)',
+  logoImg: {
+    width: 210,
+    height: 200,
     marginBottom: SPACING.xs,
   },
-  appTitle: {
-    fontSize: 34,
+  appTitulo: {
+    fontSize: 26,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 7,
-    textShadowColor: 'rgba(0,0,0,0.55)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   appSubtitulo: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
     paddingHorizontal: SPACING.lg,
     lineHeight: 17,
+    letterSpacing: 0.2,
   },
-  entidadBadge: {
+  recordarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.pill,
-    marginTop: SPACING.xs,
+    marginTop: 2,
+    marginLeft: -8,
   },
-  entidadTxt: {
-    fontSize: 10,
-    color: GOV.amarillo,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+  recordarTxt: {
+    fontSize: 13,
+    color: GOV.textoP,
   },
 
   // Card de login
@@ -602,11 +651,20 @@ const styles = StyleSheet.create({
   },
 
   // Pie
+  pieInstitucional: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.92)',
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    letterSpacing: 0.2,
+  },
   pie: {
     ...FONT.caption,
     color: 'rgba(255,255,255,0.68)',
     textAlign: 'center',
-    marginTop: SPACING.md,
+    marginTop: 4,
     paddingHorizontal: SPACING.md,
     lineHeight: 16,
   },

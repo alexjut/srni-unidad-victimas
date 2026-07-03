@@ -171,6 +171,6 @@ const styles = StyleSheet.create({
   barra: { flex: 1, height: 5, borderRadius: 2, marginRight: SPACING.sm },
   pct: { ...FONT.caption, color: GOV.textoS, minWidth: 32, textAlign: 'right' },
   fecha: { ...FONT.caption, color: GOV.textoT },
-  hint: { marginTop: SPACING.sm, color: GOV.textoS, ...FONT.small },
+  hint: { marginTop: SPACING.sm, ...FONT.small, color: GOV.textoS },
   error: { ...FONT.small, color: GOV.rojo, textAlign: 'center', margin: SPACING.md },
 });

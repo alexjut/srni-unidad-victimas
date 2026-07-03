@@ -1,7 +1,7 @@
 import pytest
 from django.core.management import call_command
 from apps.formulario.models import (
-    Perfil, InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
+    Instrumento, Capitulo, Pregunta, OpcionRespuesta, ReglaSkipLogic,
 )
 
 
@@ -10,8 +10,8 @@ class TestCargarDiccionarioV8:
 
     def test_carga_exitosa(self):
         call_command("cargar_diccionario_v8")
-        assert Perfil.objects.filter(codigo="ASISTENCIA").exists()
-        assert InstrumentoVersion.objects.filter(numero="V8").exists()
+        assert Instrumento.objects.filter(codigo="ASISTENCIA").exists()
+        assert Instrumento.objects.filter(version="V8").exists()
         assert Capitulo.objects.count() == 7
         assert Pregunta.objects.count() >= 30
 
@@ -29,7 +29,7 @@ class TestCargarDiccionarioV8:
 
     def test_dry_run_no_persiste(self):
         call_command("cargar_diccionario_v8", dry_run=True)
-        assert Perfil.objects.count() == 0
+        assert Instrumento.objects.count() == 0
         assert Pregunta.objects.count() == 0
 
     def test_capitulos_todos_presentes(self):
@@ -96,5 +96,5 @@ class TestCargarDiccionarioV8:
 
     def test_version_fuente_documental(self):
         call_command("cargar_diccionario_v8")
-        version = InstrumentoVersion.objects.get(numero="V8")
-        assert "520.06.06-1" in version.fuente_documental
+        instrumento = Instrumento.objects.get(version="V8")
+        assert "520.06.06-1" in instrumento.fuente_documental

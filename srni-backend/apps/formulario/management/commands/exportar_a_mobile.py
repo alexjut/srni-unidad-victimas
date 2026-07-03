@@ -95,6 +95,7 @@ class Command(BaseCommand):
                     'orden': p.orden,
                     'obligatoria': p.obligatoria,
                     'activa': p.activa,
+                    'es_precargada': p.es_precargada,
                     'validaciones': p.validaciones or {},
                     'opciones': opciones,
                 })

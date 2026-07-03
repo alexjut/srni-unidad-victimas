@@ -177,6 +177,9 @@ export default function CaracterizacionesHogarScreen() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState('');
+  // #16 — distinguir el error de RED de los demás: sin conexión el hogar no se
+  // puede leer del servidor, pero el flujo /caracterizar SÍ funciona offline.
+  const [esOffline, setEsOffline] = useState(false);
 
   const cargar = useCallback(async () => {
     if (!hogarId) {
@@ -186,6 +189,7 @@ export default function CaracterizacionesHogarScreen() {
       return;
     }
     setError('');
+    setEsOffline(false);
     try {
       const { data } = await hogaresApi.detalle(hogarId);
       setHogar(data);
@@ -203,7 +207,8 @@ export default function CaracterizacionesHogarScreen() {
       } else if (status === 401) {
         setError('Tu sesión expiró. Vuelve a iniciar sesión.');
       } else if (!err?.response) {
-        setError('Sin conexión con el servidor. Verifica tu red.');
+        setEsOffline(true);
+        setError('Sin conexión con el servidor. Puedes continuar la caracterización sin conexión; se sincronizará al recuperar la red.');
       } else {
         setError(`No se pudo cargar el hogar (error ${status ?? 'desconocido'}).`);
       }
@@ -276,9 +281,26 @@ export default function CaracterizacionesHogarScreen() {
           </Text>
         </View>
         <View style={styles.centrado}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
+          <MaterialCommunityIcons
+            name={esOffline ? 'wifi-off' : 'alert-circle-outline'}
+            size={48}
+            color={esOffline ? GOV.naranja : GOV.rojo}
+          />
           <Text style={styles.errorTxt}>{error || 'Hogar no encontrado.'}</Text>
-          <GovButton label="Ir a la lista de hogares" variant="secondary" onPress={irAListaHogares} fullWidth={false} />
+          {/* #16 — degradación offline: continuar al flujo que sí opera sin red. */}
+          {esOffline && (
+            <GovButton
+              label="Continuar sin conexión"
+              onPress={irANuevaCaracterizacion}
+              fullWidth={false}
+            />
+          )}
+          <GovButton
+            label={esOffline ? 'Reintentar' : 'Ir a la lista de hogares'}
+            variant="secondary"
+            onPress={esOffline ? () => { setCargando(true); cargar(); } : irAListaHogares}
+            fullWidth={false}
+          />
         </View>
       </View>
     );

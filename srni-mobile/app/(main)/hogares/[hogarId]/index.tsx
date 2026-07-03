@@ -77,6 +77,12 @@ function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
 
       {/* Datos del integrante */}
       <View style={miembroStyles.info}>
+        {/* Nombre del integrante — para el autorizado y miembros del RNI viene
+            derivado de la Victima; para miembros de campo viene del nombre
+            capturado en la conformación. Sin esto las filas se veían anónimas. */}
+        <Text style={miembroStyles.nombre} numberOfLines={1}>
+          {(miembro.nombre_completo || '').trim() || 'Sin nombre registrado'}
+        </Text>
         <View style={miembroStyles.fila}>
           {esAutorizado && (
             <View style={miembroStyles.badgeAutorizado}>
@@ -137,6 +143,7 @@ const miembroStyles = StyleSheet.create({
     backgroundColor: GOV.azul,
   },
   info: { flex: 1, gap: 4 },
+  nombre: { ...FONT.body, color: GOV.textoP, fontWeight: '700' },
   fila: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   rol: { ...FONT.small, color: GOV.azulOscuro, fontWeight: '600' },
   rolAutorizado: { color: GOV.azul },

@@ -1,8 +1,8 @@
 // Motor de captura offline de un capítulo — Sprint 8: carga previa, validación, bulk sync, progreso.
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { View, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
+import { useEffect, useState, useMemo, useCallback, useRef, memo } from 'react';
+import { View, FlatList, StyleSheet, Alert, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import {
-  Text, TextInput, RadioButton, Checkbox,
+  Text, TextInput,
   ActivityIndicator, Chip, IconButton, ProgressBar,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,12 +10,14 @@ import { useLocalSearchParams, router } from 'expo-router';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
-import { calcularVisibles } from '../../../src/services/skipLogic';
+import * as victimasOfflineDao from '../../../src/db/victimasOfflineDao';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
+import { calcularVisibles, motivoOcultaPregunta, type ContextoVictima } from '../../../src/services/skipLogic';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { useIAStore } from '../../../src/stores/iaStore';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { hogaresApi } from '../../../src/api/hogares';
 import { AudioRecorder } from '../../../src/components/AudioRecorder';
 import { SugerenciaIA } from '../../../src/components/SugerenciaIA';
 import { GovHeader } from '../../../src/components/GovHeader';
@@ -24,7 +26,7 @@ import { SelectorMunicipio } from '../../../src/components/SelectorMunicipio';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { PreguntaRow, OpcionRow, ReglaSkipLogicRow } from '../../../src/db/instrumentoDao';
-import type { MiembroHogarResumen } from '../../../src/types';
+import type { MiembroHogarResumen, VictimaResumenFuente } from '../../../src/types';
 
 // Sprint 21 — clave compuesta para indexar respuestas por (pregunta, miembro).
 // Miembro vacío = pregunta nivel HOGAR (única para toda la sesión).
@@ -32,9 +34,202 @@ function claveResp(preguntaId: string, miembroId: string | null | undefined): st
   return `${preguntaId}|${miembroId ?? ''}`;
 }
 
+/** Edad en años cumplidos a hoy, derivada de una fecha ISO 'YYYY-MM-DD'. */
+function calcularEdad(fechaISO: string): string {
+  if (!fechaISO) return '';
+  const nac = new Date(fechaISO);
+  if (isNaN(nac.getTime())) return '';
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad >= 0 && edad < 130 ? String(edad) : '';
+}
+
+/**
+ * Grupo etario (pregunta B10) derivado de la edad, según los rangos del
+ * instrumento (B10_GRUPO_ETARIO). Se autocompleta desde la fecha de nacimiento
+ * que ya tiene la víctima → ahorra tramitología, no se vuelve a preguntar.
+ *   0-5: Primera infancia · 6-11: Niñez · 12-17: Adolescencia
+ *   18-28: Jóvenes · 29-59: Adulto · 60+: Persona mayor
+ */
+/**
+ * Mapea la pertenencia étnica de la víctima al grupo que usa el skip-logic
+ * (indigena · negro_afro · rom · ninguno). Heurística por palabra clave.
+ */
+function mapearEtnia(pertenencia?: string): string {
+  const p = (pertenencia ?? '').toLowerCase();
+  if (!p) return 'ninguno';
+  if (p.includes('ind') || p.includes('resguardo')) return 'indigena';
+  if (p.includes('negr') || p.includes('afro') || p.includes('palenq') || p.includes('raizal')) return 'negro_afro';
+  if (p.includes('rom') || p.includes('gitan') || p.includes('kumpa')) return 'rom';
+  return 'ninguno';
+}
+
+function edadAGrupoEtario(edad: number): string {
+  if (!Number.isFinite(edad) || edad < 0) return '';
+  if (edad <= 5) return '1';
+  if (edad <= 11) return '2';
+  if (edad <= 17) return '3';
+  if (edad <= 28) return '4';
+  if (edad <= 59) return '5';
+  return '6';
+}
+
+/**
+ * Traducción del tipo de documento de la víctima (códigos del RUV/Oracle) al
+ * valor de la opción A3 del instrumento (LISTA con códigos numéricos). Sin esto,
+ * sembrar 'CC' nunca coincidía con la opción '1' y el dato se descartaba en silencio.
+ */
+const MAP_TIPO_DOC_A3: Record<string, string> = {
+  CC: '1',   // Cédula de Ciudadanía
+  CE: '2',   // Cédula de Extranjería
+  TI: '3',   // Tarjeta de Identidad
+  RC: '4',   // Registro Civil/NUIP
+  PEP: '9',  // Permiso especial de permanencia
+  PTP: '10', PPT: '10', // Permiso temporal de permanencia
+  PA: '11',  PAS: '11', PASAPORTE: '11', // Pasaporte
+};
+
+/**
+ * Traducción del género de la víctima (M/F/NB/ND) al valor de la opción A8 "Sexo"
+ * del instrumento (1=Hombre, 2=Mujer, 3=Intersexual, 4=Indeterminado). NB/ND no
+ * tienen equivalente directo en SEXO biológico → no se siembran (se capturan a mano).
+ */
+const MAP_GENERO_A8: Record<string, string> = {
+  M: '1', // Hombre
+  F: '2', // Mujer
+};
+
+/**
+ * Mapa codigo_externo → valor para PRE-LLENAR "Datos básicos" del AUTORIZADO con
+ * lo ya capturado de la víctima (instrumento territorial/estándar). La EDAD se
+ * deriva de la fecha de nacimiento. Los apellidos NO se incluyen porque el
+ * instrumento no tiene esa pregunta (decisión de instrumento/UARIV). Los códigos
+ * de tipo LISTA (A3 doc, A8 sexo) se traducen al código de opción del instrumento
+ * y solo se siembran si coinciden con una opción real (validado en runtime).
+ */
+function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string> {
+  // Códigos del instrumento Territorial reconstruido desde el diccionario oficial.
+  const m: Record<string, string> = {};
+  if (v.primer_nombre)    m.NOMBRE_1 = v.primer_nombre;
+  if (v.segundo_nombre)   m.NOMBRE_2 = v.segundo_nombre;
+  if (v.primer_apellido)  m.APELLIDO_1 = v.primer_apellido;
+  if (v.segundo_apellido) m.APELLIDO_2 = v.segundo_apellido;
+  if (v.fecha_nacimiento) {
+    m.A6 = v.fecha_nacimiento;              // fecha de nacimiento (FECHA)
+    const edad = calcularEdad(v.fecha_nacimiento);
+    if (edad) {
+      m.B9 = edad;                          // años cumplidos (NUMERICO)
+      // Grupo etario (B10) derivado de la edad — se autocompleta desde la data
+      // que ya tiene la víctima (valida la opción en runtime).
+      const grupo = edadAGrupoEtario(Number(edad));
+      if (grupo) m.B10 = grupo;
+    }
+  }
+  if (v.numero_documento) m.A5 = v.numero_documento;  // número de documento (TEXTO)
+  // Tipo de documento y sexo son LISTA con códigos numéricos: traducir desde el
+  // código del RUV (CC/CE…, M/F) al valor de la opción del instrumento.
+  const docA3 = v.tipo_documento ? MAP_TIPO_DOC_A3[v.tipo_documento.toUpperCase()] : undefined;
+  if (docA3) m.A3 = docA3;                            // tipo de documento (LISTA)
+  const sexoA8 = v.genero ? MAP_GENERO_A8[v.genero.toUpperCase()] : undefined;
+  if (sexoA8) m.A8 = sexoA8;                          // sexo (LISTA)
+  // Hecho victimizante: NO se pregunta (el RUV ya lo tiene). Se prellena desde el
+  // hecho principal y se MUESTRA en modo solo-lectura (PREGUNTAS_RUV_READONLY) para
+  // que el encuestador lo confirme. H_V = hecho · Ocur_HV = fecha de ocurrencia.
+  const hecho = v.hechos_victimizantes?.[0];
+  if (hecho) {
+    if (hecho.codigo || hecho.nombre) m.H_V = hecho.nombre || hecho.codigo;
+    if (hecho.fecha_hecho)            m.Ocur_HV = hecho.fecha_hecho;
+  }
+  return m;
+}
+
+/**
+ * Prellenado BÁSICO de un miembro desde `MiembroHogarResumen` — el MISMO origen
+ * que usa el motor de skip-logic (construirContextoMiembro), disponible para
+ * TODOS los miembros (autorizado y adicionales, online y offline). Por eso este
+ * camino arregla el "0 de 3": antes solo se sembraba al autorizado.
+ *   A6  ← fecha_nacimiento
+ *   B9  ← años cumplidos derivados de A6 (campo automático del manual)
+ *   B10 ← grupo etario derivado de la edad
+ *   A8  ← sexo desde el género (M→'1', F→'2')
+ *   NOMBRE_1 ← primer token del nombre completo (fallback; para el autorizado lo
+ *              pisa construirPrefillVictima con el primer_nombre exacto del RUV).
+ */
+/**
+ * Tipo de documento (opción A3) derivado de la edad — fallback cuando el dato real
+ * no está disponible (miembro adicional cuyo `tipo_documento` no viaja en el
+ * payload offline). El manual (B6) dice "se precarga el tipo de documento según la
+ * edad": Registro Civil/NUIP (0-6), Tarjeta de Identidad (7-17), Cédula (18+).
+ * Códigos de la opción A3: 1=Cédula, 3=Tarjeta de Identidad, 4=Registro Civil/NUIP.
+ */
+function tipoDocPorEdad(edad: number): string {
+  if (!Number.isFinite(edad) || edad < 0) return '';
+  if (edad <= 6) return '4';   // Registro Civil / NUIP
+  if (edad <= 17) return '3';  // Tarjeta de Identidad
+  return '1';                  // Cédula de Ciudadanía
+}
+
+function construirPrefillMiembroBasico(m: MiembroHogarResumen): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (m.fecha_nacimiento) {
+    out.A6 = m.fecha_nacimiento;
+    const edad = calcularEdad(m.fecha_nacimiento);
+    if (edad) {
+      out.B9 = edad;
+      const grupo = edadAGrupoEtario(Number(edad));
+      if (grupo) out.B10 = grupo;
+      // A3 (tipo de documento) por edad — fallback del manual. Para el autorizado
+      // lo pisa construirPrefillVictima con el tipo real del RUV (spread posterior).
+      const doc = tipoDocPorEdad(Number(edad));
+      if (doc) out.A3 = doc;
+    }
+  }
+  const sexo = m.genero ? MAP_GENERO_A8[m.genero.toUpperCase()] : undefined;
+  if (sexo) out.A8 = sexo;
+  const nombre = (m.nombre_completo ?? '').trim();
+  if (nombre) out.NOMBRE_1 = nombre.split(/\s+/)[0];  // primer nombre (convención ES)
+  return out;
+}
+
+/**
+ * Prellenado adicional de un miembro NO autorizado creado offline, leyendo el
+ * payload crudo de `miembros_offline` (`AgregarMiembroPayload`). Solo trae lo que
+ * la conformación captura para adicionales: número de documento (→A5). El tipo de
+ * documento NO viaja en ese payload, así que no se siembra A3. El nombre ya se
+ * cubre en construirPrefillMiembroBasico desde `nombre_completo`.
+ */
+function construirPrefillAdicional(payload: Record<string, unknown> | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!payload) return out;
+  const numDoc = typeof payload.numero_documento === 'string' ? payload.numero_documento.trim() : '';
+  if (numDoc) out.A5 = numDoc;
+  return out;
+}
+
+/**
+ * Preguntas cuyo valor es CALCULADO automáticamente (derivado de la fecha de
+ * nacimiento) y por tanto se muestran en modo solo-lectura, no editable — según
+ * el manual (B4 años cumplidos "campo automático", B5 grupo etario "precargue
+ * automático"). Se mantienen sincronizadas por un efecto de recálculo.
+ */
+const PREGUNTAS_CALCULADAS = new Set(['B9', 'B10']);
+
+/**
+ * Preguntas que el RUV ya tiene (hecho victimizante y su fecha de ocurrencia). NO
+ * se le preguntan al encuestador: se prellenan desde el RUV y se muestran en modo
+ * SOLO LECTURA, para que el encuestador VEA el dato que vino del RUV (confirmación
+ * visual) sin poder editarlo. La caracterización es posterior a la victimización →
+ * el hecho ya se conoce; capturarlo de nuevo introduciría inconsistencias.
+ */
+const PREGUNTAS_RUV_READONLY = new Set(['H_V', 'Ocur_HV']);
+
 interface ItemLista {
-  type: 'header-hogar' | 'header-miembro' | 'pregunta';
-  /** preguntas tipo 'pregunta' */
+  // 'pregunta'         → HOGAR: respuesta única para todo el hogar.
+  // 'pregunta-persona' → PERSONA: una fila por miembro dentro de la tarjeta.
+  type: 'header-hogar' | 'header-miembro' | 'pregunta' | 'pregunta-persona';
+  /** preguntas tipo 'pregunta' / 'pregunta-persona' */
   pregunta?: PreguntaRow;
   /** índice global dentro del cap (para numeración) */
   indexGlobal?: number;
@@ -65,6 +260,7 @@ export default function CapituloScreen() {
 
   const { estaOnline, refrescarContadores } = useSyncStore();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
+  const victimaFuente = useCaracterizacionStore((s) => s.victimaFuente);
   const {
     activo: iaActivo,
     estado: estadoIA,
@@ -91,22 +287,25 @@ export default function CapituloScreen() {
   // Si no hay hogar resuelto o se está offline sin caché, queda en [] y el
   // motor cae a comportamiento HOGAR-only (degradación segura).
   const [miembros, setMiembros] = useState<MiembroHogarResumen[]>([]);
-  // Sprint 21 Fase F — wizard por miembro. 0 = primer miembro activo.
-  // Solo se renderiza el miembro en este índice (no todos en scroll).
-  const [miembroIdx, setMiembroIdx] = useState(0);
   const flatRef = useRef<FlatList | null>(null);
-
-  // Sprint 21 Fase F — al cambiar miembro, scroll al inicio para que el
-  // encuestador vea desde la primera pregunta del nuevo miembro.
-  useEffect(() => {
-    flatRef.current?.scrollToOffset?.({ offset: 0, animated: true });
-  }, [miembroIdx]);
+  // Prellenado: guarda las claves (borrador|capítulo) ya sembradas. ANTES era solo
+  // el borrador, lo que causaba que tras precargar el capítulo 1 NO se precargara
+  // ningún otro capítulo (mismo borrador → se saltaba). Ahora es por capítulo.
+  const prefillRef = useRef<Set<string>>(new Set());
+  // Evita repetir la alerta de "no hay borrador" en cada tecla.
+  const alertaBorradorRef = useRef(false);
 
   // ── Cargar datos del capítulo + borradores previos ──────────────────────────
   useEffect(() => {
     if (!temaId) return;
 
     (async () => {
+      // Blindaje anti-cuelgue: setCargando(false) SIEMPRE corre en el finally,
+      // aunque un await de red quede colgado y luego rechace. Con el fix del
+      // timeout del refresh (client.ts) un cuelgue ahora rechaza en vez de
+      // quedar pendiente; el .catch previo solo cubría rechazos y no garantizaba
+      // liberar el spinner en todos los caminos.
+      try {
       console.log('[cap useEffect] params:', { temaId, borradorIdParam, sesionServerId, instrumentoId, hogarId });
 
       // Sprint 18 F1B: TODO viene de memoria (bundle), no SQLite.
@@ -120,7 +319,12 @@ export default function CapituloScreen() {
         setOpciones(instrumentos.getOpcionesBatch(pgs.map((p) => p.id)));
       }
 
-      setReglas(instrumentos.getReglasPorCapitulo(temaId));
+      // Skip-logic: cargar TODAS las reglas del instrumento (no solo las del
+      // capítulo). Las HABILITAR/DESHABILITAR/OBLIGAR cuelgan de pregunta_afectada
+      // (capitulo_afectado=null) y getReglasPorCapitulo las filtraba fuera → el
+      // formulario quedaba sin skip-logic ("como un libro"). calcularVisibles ya
+      // filtra por pregunta y maneja FINALIZAR de capítulo con todas las reglas.
+      setReglas(instrumentos.getReglas());
 
       // ── Resolver borrador ─────────────────────────────────────────────────
       const meta = instrumentos.getMeta();
@@ -172,193 +376,428 @@ export default function CapituloScreen() {
         }
 
       } else {
-        // Sesión sin id de servidor — borrador completamente nuevo
-        const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
-        setBorradorId(nuevo.id);
-        if (hogarId && instrId) {
-          await colaDao.encolar('CREAR_SESION', nuevo.id, {
-            borrador_id: nuevo.id,
-            hogar: hogarId,
-            instrumento: instrId,
-            ruta_entrevista: rutaEntrevista,
-          });
-          await refrescarContadores();
+        // Sesión sin id de servidor (OFFLINE). Reutilizar el borrador único de
+        // este (hogar, instrumento) para que TODOS los capítulos compartan el
+        // mismo. Solo crear (y encolar CREAR_SESION) si aún no existe ninguno.
+        let borrador =
+          hogarId && instrId
+            ? await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrId)
+            : null;
+
+        if (borrador) {
+          setBorradorId(borrador.id);
+          setRespuestasState(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
+        } else {
+          const nuevo = await borradoresDao.crearBorrador(instrId, hogarId);
+          setBorradorId(nuevo.id);
+          if (hogarId && instrId) {
+            await colaDao.encolar('CREAR_SESION', nuevo.id, {
+              borrador_id: nuevo.id,
+              hogar: hogarId,
+              instrumento: instrId,
+              ruta_entrevista: rutaEntrevista,
+            });
+            await refrescarContadores();
+          }
         }
       }
 
-      setCargando(false);
-    })().catch(() => setCargando(false));
+      } catch (e) {
+        console.warn('[cap useEffect] carga del capítulo falló:', e);
+      } finally {
+        setCargando(false);
+      }
+    })();
   }, [temaId]);
 
   // ── Sprint 21 — cargar miembros del hogar ──────────────────────────────────
+  // Tolerante a red (fix #4/#38): online → caché; offline-local →
+  // construirMiembrosOffline; online caído → caché del servidor. Sin esto las
+  // preguntas PERSONA NO se renderizaban sin red y se perdía media caracterización.
   useEffect(() => {
     if (!hogarId) return;
     let activo = true;
-    hogaresApi.detalle(hogarId)
-      .then(({ data }) => {
-        if (!activo) return;
-        // Ordenar: autorizado primero, después por parentesco/orden natural.
-        const ordenados = [...(data.miembros ?? [])].sort((a, b) => {
-          if (a.es_autorizado && !b.es_autorizado) return -1;
-          if (!a.es_autorizado && b.es_autorizado) return 1;
-          return 0;
-        });
-        setMiembros(ordenados);
-      })
-      .catch(() => {
-        // Offline o sin permisos — degradación: queda en [] y solo HOGAR funciona.
-      });
+    cargarMiembrosHogar(hogarId)
+      .then((ms) => { if (activo) setMiembros(ms); })
+      .catch(() => { /* queda en [] (degradación a solo HOGAR) */ });
     return () => { activo = false; };
   }, [hogarId]);
 
-  // ── Skip logic ──────────────────────────────────────────────────────────────
-  // Sprint 21: la skip logic evalúa a nivel de pregunta (no por miembro).
-  // Para HOGAR usamos su única respuesta. Para PERSONA usamos la primera
-  // respuesta no vacía como representante — suficiente para reglas globales
-  // del tipo "si el hogar tiene X, mostrar Y". Reglas por miembro quedarían
-  // para iteración futura.
-  const respuestasParaSkip = useMemo<Record<string, string>>(() => {
-    const m: Record<string, string> = {};
-    for (const p of preguntas) {
-      const claveHogar = claveResp(p.id, null);
-      if (respuestas[claveHogar]) {
-        m[p.codigo_externo] = respuestas[claveHogar];
-        continue;
+  // ── Prellenado de "Datos básicos" por CADA miembro ──────────────────────────
+  // Siembra UNA sola vez por (borrador, capítulo) lo que ya conocemos de CADA
+  // miembro del hogar (no solo el autorizado), en celdas VACÍAS (nunca pisa lo
+  // capturado). Encola cada valor para que sincronice como una respuesta normal.
+  // Fuentes por miembro:
+  //   - TODOS (autorizado y adicionales, online y offline): A6/B9/B10/A8 + primer
+  //     nombre, desde MiembroHogarResumen — el MISMO origen que usa el motor de
+  //     skip-logic, por eso arregla el "0 de 3".
+  //   - AUTORIZADO: además NOMBRE_1/2, A3, A5 (y hecho victimizante) desde su
+  //     VictimaResumenFuente persistida.
+  //   - ADICIONAL creado offline: A5 (número de documento) desde el payload crudo.
+  useEffect(() => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid || preguntas.length === 0 || miembros.length === 0) return;
+    const claveCap = `${bid}|${temaId}`; // por capítulo, no por borrador
+    if (prefillRef.current.has(claveCap)) return;
+
+    // `miembros` ya viene ordenado con el autorizado primero (ordenarMiembros);
+    // si ninguno trae el flag es_autorizado, el primero es autorizado de facto.
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
+
+    let cancelado = false;
+    (async () => {
+      try {
+        // Fuente del autorizado: store volátil o, si se perdió (hogar creado
+        // online + app reabierta), la víctima persistida por su id_local. Puede
+        // quedar null: el autorizado igual se siembra con sus datos básicos del
+        // miembro (fecha/edad/grupo/sexo), que ANTES no se sembraban → "0 de 3".
+        let fuente = victimaFuente;
+        if ((!fuente || !fuente.fecha_nacimiento) && autorizado?.id) {
+          try {
+            const row = await victimasOfflineDao.obtenerPorIdLocal(autorizado.id);
+            if (row) {
+              const persistida = JSON.parse(row.payload_json) as VictimaResumenFuente;
+              if (persistida?.fecha_nacimiento || !fuente) fuente = persistida;
+            }
+          } catch { /* sin víctima persistida: seguimos con lo que haya */ }
+        }
+
+        // Payloads crudos de los miembros adicionales creados offline (traen el
+        // número de documento, que no está en MiembroHogarResumen). Para hogares
+        // de servidor no habrá filas → el mapa queda vacío (degradación segura).
+        const payloadPorMiembro = new Map<string, Record<string, unknown>>();
+        if (hogarId) {
+          try {
+            const rows = await miembrosOfflineDao.listarPorHogar(hogarId);
+            for (const r of rows) {
+              try { payloadPorMiembro.set(r.id_local, JSON.parse(r.payload_json)); }
+              catch { /* payload corrupto: se omite */ }
+            }
+          } catch { /* hogar de servidor / sin SQLite: sin filas offline */ }
+        }
+
+        if (cancelado) return;
+
+        const existentes = await borradoresDao.getRespuestaMapCompuesto(bid);
+        const borrador = await borradoresDao.getBorrador(bid);
+        const nuevos: Record<string, string> = {};
+
+        for (const miembro of miembros) {
+          const esAut = miembro === autorizado;
+          const map: Record<string, string> = {
+            ...construirPrefillMiembroBasico(miembro),
+            ...(esAut && fuente ? construirPrefillVictima(fuente) : {}),
+            ...(!esAut ? construirPrefillAdicional(payloadPorMiembro.get(miembro.id) ?? null) : {}),
+          };
+          if (Object.keys(map).length === 0) continue;
+
+          for (const p of preguntas) {
+            const valor = map[p.codigo_externo];
+            if (!valor) continue;
+            const miembroId = p.nivel === 'PERSONA' ? miembro.id : null;
+            // Preguntas HOGAR (p.ej. hecho victimizante): sembrar UNA vez, en la
+            // iteración del autorizado, para no duplicar por cada miembro.
+            if (p.nivel !== 'PERSONA' && !esAut) continue;
+            const clave = claveResp(p.id, miembroId);
+            if (existentes[clave]?.trim() || nuevos[clave]) continue; // no pisar
+            // Tipos de opción: solo sembrar si el valor coincide con una opción real.
+            const esOpcion = p.tipo === 'LISTA' || p.tipo === 'RADIO'
+              || p.tipo === 'BOOLEAN' || p.tipo === 'LISTA_MULTIPLE';
+            if (esOpcion) {
+              const ops = opciones[p.id] ?? [];
+              if (!ops.some((o) => o.valor === valor)) continue;
+            }
+            await borradoresDao.upsertRespuesta(bid, p.id, valor, miembroId);
+            await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+              borrador_id: bid,
+              sesion_id: borrador?.sesion_id ?? null,
+              pregunta_id: p.id,
+              miembro_id: miembroId,
+              valor,
+            });
+            nuevos[clave] = valor;
+          }
+        }
+
+        if (cancelado) return;
+        prefillRef.current.add(claveCap);
+        if (Object.keys(nuevos).length > 0) {
+          setRespuestasState((prev) => ({ ...prev, ...nuevos }));
+          await refrescarContadores();
+        }
+      } catch { /* prellenado best-effort: si falla, el usuario captura a mano */ }
+    })();
+    return () => { cancelado = true; };
+  }, [borradorId, borradorIdParam, temaId, victimaFuente, preguntas, miembros, opciones, hogarId, refrescarContadores]);
+
+  // ── Skip logic — captura AGRUPADA (una pregunta, fila por miembro) ───────────
+  // Cada pregunta PERSONA se evalúa POR CADA MIEMBRO con SU propio contexto
+  // (edad/sexo/etnia/RUV de ese miembro) y SUS propias respuestas. Una pregunta
+  // aplica a un miembro M si queda visible al evaluar con el contexto/respuestas
+  // de M. Si no aplica, se muestra la fila en gris con el motivo derivado de la
+  // regla que la oculta. Las HOGAR usan una única respuesta para todo el hogar.
+  //
+  // Todas las preguntas del instrumento (todos los capítulos) — para que el
+  // skip-logic CROSS-CAPÍTULO funcione (ej. H3 rehabilitación depende de B16
+  // discapacidad, que está en otro capítulo). `respuestas` ya trae todo el borrador.
+  const todasPreguntasInstrumento = useMemo(
+    () => instrumentos.getCapitulos().flatMap((c) => instrumentos.getPreguntas(c.id)),
+    [temaId],
+  );
+
+  // Construye el mapa de respuestas (codigo_externo → valor) para evaluar
+  // skip-logic desde la óptica de UN miembro: PERSONA usa la respuesta de ESE
+  // miembro; HOGAR usa su respuesta única.
+  const construirRespuestasMiembro = useCallback(
+    (miembro: MiembroHogarResumen | null): Record<string, string> => {
+      const m: Record<string, string> = {};
+      for (const p of todasPreguntasInstrumento) {
+        if (p.nivel === 'PERSONA') {
+          m[p.codigo_externo] = miembro ? (respuestas[claveResp(p.id, miembro.id)] ?? '') : '';
+        } else {
+          m[p.codigo_externo] = respuestas[claveResp(p.id, null)] ?? '';
+        }
       }
-      // PERSONA: buscar primera respuesta no vacía entre miembros
-      for (const miembro of miembros) {
-        const val = respuestas[claveResp(p.id, miembro.id)];
-        if (val) { m[p.codigo_externo] = val; break; }
+      return m;
+    },
+    [todasPreguntasInstrumento, respuestas],
+  );
+
+  // Contexto demográfico/étnico de UN miembro (edad/sexo/etnia/RUV) para evaluar
+  // condiciones offline. Prioriza lo capturado por ESE miembro (A6 fecha, B9 edad,
+  // A8 sexo); cae a los datos del propio miembro (genero, fecha_nacimiento,
+  // incluido_ruv). Para etnia no hay dato por-miembro: se usa el de la víctima
+  // fuente SOLO para el autorizado (a quien pertenece esa fuente); el resto cae a
+  // 'ninguno' salvo que el miembro la haya capturado. (Riesgo documentado.)
+  const construirContextoMiembro = useCallback(
+    (miembro: MiembroHogarResumen | null, respMiembro: Record<string, string>): ContextoVictima => {
+      const esAutorizado = !!miembro?.es_autorizado;
+      const fuente = esAutorizado ? victimaFuente : null;
+      const fechaNac = respMiembro.A6 || miembro?.fecha_nacimiento || fuente?.fecha_nacimiento || '';
+      const edadResp = respMiembro.B9 ? Number(respMiembro.B9) : NaN;
+      const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
+      // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae al genero del miembro (M/F),
+      // y para el autorizado al genero de la víctima fuente.
+      let sexo = respMiembro.A8 || '';
+      const genero = miembro?.genero || fuente?.genero || '';
+      if (!sexo && genero) sexo = genero === 'M' ? '1' : genero === 'F' ? '2' : '';
+      // etnia: solo la víctima fuente (autorizado) la tiene fiable. El resto
+      // 'ninguno' por defecto (no hay dato por-miembro persistido).
+      const etnia = esAutorizado ? mapearEtnia(fuente?.pertenencia_etnica) : 'ninguno';
+      // RUV: del propio miembro; para el autorizado cae a la víctima fuente.
+      const ruvIncluido = miembro?.incluido_ruv ?? (fuente?.estado_ruv === 'INCLUIDO');
+      return {
+        edad: Number.isFinite(edad) ? edad : undefined,
+        sexo: sexo || undefined,
+        etnia,
+        ruvIncluido,
+      };
+    },
+    [victimaFuente],
+  );
+
+  // ── Visibilidad HOGAR (una sola evaluación, contexto del autorizado) ─────────
+  // Las preguntas HOGAR no dependen de un miembro; se evalúan con el contexto del
+  // autorizado (o primer miembro) por compatibilidad con reglas demográficas.
+  const visiblesHogar = useMemo(() => {
+    const autorizado = miembros.find((m) => m.es_autorizado) ?? miembros[0] ?? null;
+    const respMiembro = construirRespuestasMiembro(autorizado);
+    const ctx = construirContextoMiembro(autorizado, respMiembro);
+    const { visibles } = calcularVisibles(preguntas, reglas, respMiembro, ctx);
+    // es_precargada: datos del RUV/sesión (dirección territorial, nombres RUV, hecho
+    // victimizante, estado…) — ya capturados antes; NO se vuelven a preguntar.
+    return preguntas.filter((p) => p.nivel === 'HOGAR' && !p.es_precargada && visibles.has(p.codigo_externo));
+  }, [preguntas, reglas, miembros, construirRespuestasMiembro, construirContextoMiembro]);
+
+  // ── Visibilidad PERSONA por miembro ──────────────────────────────────────────
+  // Para CADA miembro: evalúa skip-logic con su contexto/respuestas y guarda, por
+  // pregunta PERSONA, si aplica (visible) y, si no, el motivo. Resultado indexado
+  // por id de miembro. Una pregunta PERSONA se muestra en el capítulo si está
+  // visible para AL MENOS un miembro (si no la ve nadie, no se lista).
+  type AplicabilidadMiembro = { aplica: boolean; motivo?: string };
+  const personaPorMiembro = useMemo(() => {
+    const mapa = new Map<string, Map<string, AplicabilidadMiembro>>(); // miembroId → (codigo → {aplica,motivo})
+    for (const miembro of miembros) {
+      const respMiembro = construirRespuestasMiembro(miembro);
+      const ctx = construirContextoMiembro(miembro, respMiembro);
+      const { visibles } = calcularVisibles(preguntas, reglas, respMiembro, ctx);
+      const porPregunta = new Map<string, AplicabilidadMiembro>();
+      for (const p of preguntas) {
+        if (p.nivel !== 'PERSONA') continue;
+        const aplica = visibles.has(p.codigo_externo);
+        if (aplica) {
+          porPregunta.set(p.codigo_externo, { aplica: true });
+        } else {
+          const motivo = motivoOcultaPregunta(p, reglas, respMiembro, ctx);
+          porPregunta.set(p.codigo_externo, { aplica: false, motivo });
+        }
       }
-      if (!m[p.codigo_externo]) m[p.codigo_externo] = '';
+      mapa.set(miembro.id, porPregunta);
     }
-    return m;
-  }, [preguntas, respuestas, miembros]);
+    return mapa;
+  }, [preguntas, reglas, miembros, construirRespuestasMiembro, construirContextoMiembro]);
 
-  const { visibles } = useMemo(
-    () => calcularVisibles(preguntas, reglas, respuestasParaSkip),
-    [preguntas, reglas, respuestasParaSkip],
+  // Preguntas PERSONA a listar: las que aplican a AL MENOS un miembro. Si no hay
+  // miembros resueltos, se listan todas las PERSONA del capítulo (degradación:
+  // el motor mostrará el aviso de "no se cargaron miembros").
+  const visiblesPersona = useMemo(() => {
+    const personaTodas = preguntas.filter((p) => p.nivel === 'PERSONA' && !p.es_precargada);
+    if (miembros.length === 0) return personaTodas;
+    return personaTodas.filter((p) =>
+      miembros.some((m) => personaPorMiembro.get(m.id)?.get(p.codigo_externo)?.aplica),
+    );
+  }, [preguntas, miembros, personaPorMiembro]);
+
+  // Helper de render: aplicabilidad de una pregunta para un miembro concreto.
+  const aplicabilidad = useCallback(
+    (codigoExterno: string, miembroId: string): AplicabilidadMiembro =>
+      personaPorMiembro.get(miembroId)?.get(codigoExterno) ?? { aplica: false, motivo: 'no aplica' },
+    [personaPorMiembro],
   );
 
-  const preguntasVisibles = useMemo(
-    () => preguntas.filter((p) => visibles.has(p.codigo_externo)),
-    [preguntas, visibles],
-  );
-
-  // Sprint 21 — separar visibles por nivel
-  const visiblesHogar = useMemo(
-    () => preguntasVisibles.filter((p) => p.nivel === 'HOGAR'),
-    [preguntasVisibles],
-  );
-  const visiblesPersona = useMemo(
-    () => preguntasVisibles.filter((p) => p.nivel === 'PERSONA'),
-    [preguntasVisibles],
-  );
-
-  // Sprint 21 Fase F — wizard por miembro.
-  // La FlatList renderea:
-  //   - todas las preguntas HOGAR (siempre arriba)
-  //   - SOLO el miembro activo (miembroIdx), no todos
-  // El usuario navega con botones 'Anterior/Siguiente miembro'.
-  const miembroActivo = miembros[miembroIdx] ?? null;
+  // ── Construcción de la lista (agrupada) ──────────────────────────────────────
+  // HOGAR: header + una tarjeta por pregunta (respuesta única).
+  // PERSONA: header + una tarjeta por pregunta; dentro, una fila por miembro.
   const items = useMemo<ItemLista[]>(() => {
     const out: ItemLista[] = [];
     let idx = 0;
-    const totalGlobal =
-      visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 0);
-
-    if (visiblesHogar.length > 0) {
-      out.push({ type: 'header-hogar', key: 'hdr-hogar' });
-      for (const p of visiblesHogar) {
-        out.push({
-          type: 'pregunta', pregunta: p, miembro: null,
-          indexGlobal: idx++, totalGlobal,
-          key: `q-${p.id}-`,
-        });
-      }
-    }
-
-    if (visiblesPersona.length > 0) {
-      if (miembros.length === 0) {
-        out.push({ type: 'header-miembro', miembro: null, key: 'hdr-sin-miembros' });
-      } else if (miembroActivo) {
-        // Solo el miembro activo: header + sus preguntas PERSONA
-        out.push({ type: 'header-miembro', miembro: miembroActivo, key: `hdr-${miembroActivo.id}` });
-        for (const p of visiblesPersona) {
-          out.push({
-            type: 'pregunta', pregunta: p, miembro: miembroActivo,
-            indexGlobal: idx++, totalGlobal,
-            key: `q-${p.id}-${miembroActivo.id}`,
-          });
-        }
-      }
+    // Render en el ORDEN del manual (campo `orden`), intercalando HOGAR y PERSONA.
+    // Antes se separaba en bloque HOGAR + bloque PERSONA, lo que mandaba las
+    // preguntas PERSONA (ej. autorreconocimiento A4, celular A11) al final, fuera
+    // de orden. Cada PERSONA sigue siendo una tarjeta agrupada (fila por miembro).
+    const todasVis = [...visiblesHogar, ...visiblesPersona].sort((a, b) => a.orden - b.orden);
+    const totalGlobal = todasVis.length;
+    for (const p of todasVis) {
+      out.push(
+        p.nivel === 'PERSONA'
+          ? { type: 'pregunta-persona', pregunta: p, miembro: null, indexGlobal: idx++, totalGlobal, key: `qp-${p.id}` }
+          : { type: 'pregunta', pregunta: p, miembro: null, indexGlobal: idx++, totalGlobal, key: `q-${p.id}-` },
+      );
     }
     return out;
-  }, [visiblesHogar, visiblesPersona, miembros, miembroActivo]);
-
-  // Sprint 21 Fase F — completitud del miembro activo (para habilitar avance).
-  const obligPersonaActivo = useMemo(() => {
-    if (!miembroActivo) return { total: 0, faltan: 0 };
-    const oblig = visiblesPersona.filter((p) => p.obligatoria === 1);
-    let faltan = 0;
-    for (const p of oblig) {
-      if (!respuestas[claveResp(p.id, miembroActivo.id)]?.trim()) faltan++;
-    }
-    return { total: oblig.length, faltan };
-  }, [visiblesPersona, respuestas, miembroActivo]);
+  }, [visiblesHogar, visiblesPersona, miembros]);
 
   // ── Progreso del capítulo ───────────────────────────────────────────────────
+  // Las obligatorias PERSONA solo cuentan para los miembros A QUIENES APLICA la
+  // pregunta (skip-logic por miembro). Antes contaba PERSONA × TODOS los miembros,
+  // lo que inflaba el denominador con celdas que nunca se pueden responder.
   const { totalOblig, respondidoOblig } = useMemo(() => {
     const obligHogar = visiblesHogar.filter((p) => p.obligatoria === 1);
     const obligPersona = visiblesPersona.filter((p) => p.obligatoria === 1);
-    const totalOblig = obligHogar.length + obligPersona.length * miembros.length;
 
+    let totalOblig = obligHogar.length;
     let respondidoOblig = 0;
     for (const p of obligHogar) {
       if (respuestas[claveResp(p.id, null)]?.trim()) respondidoOblig++;
     }
     for (const p of obligPersona) {
       for (const m of miembros) {
+        if (!aplicabilidad(p.codigo_externo, m.id).aplica) continue;
+        totalOblig++;
         if (respuestas[claveResp(p.id, m.id)]?.trim()) respondidoOblig++;
       }
     }
     return { totalOblig, respondidoOblig };
-  }, [visiblesHogar, visiblesPersona, miembros, respuestas]);
+  }, [visiblesHogar, visiblesPersona, miembros, respuestas, aplicabilidad]);
 
   const progresoCap = totalOblig > 0 ? respondidoOblig / totalOblig : 0;
 
-  // ── Guardar respuesta en SQLite + encolar ───────────────────────────────────
-  // Sprint 21: miembroId es opcional. null/undefined para preguntas HOGAR.
-  const setRespuesta = useCallback(async (
+  // ── Guardar respuesta en SQLite + encolar (con debounce 500 ms) ─────────────
+  // - El estado React se actualiza inmediato (UI fluida).
+  // - SQLite + cola se escriben 500 ms después del último cambio por clave
+  //   pregunta+miembro. Esto evita un job por keystroke en preguntas tipo TEXTO.
+  // - flushPendientes() fuerza la persistencia inmediata (lo usa "Guardar capítulo").
+  type Pendiente = { preguntaId: string; valor: string; miembroId: string | null };
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendientes = useRef<Map<string, Pendiente>>(new Map());
+
+  const persistirRespuesta = useCallback(async (bid: string, p: Pendiente) => {
+    try {
+      await borradoresDao.upsertRespuesta(bid, p.preguntaId, p.valor, p.miembroId);
+      console.log('[setRespuesta] guardada:', { bid, preguntaId: p.preguntaId, miembroId: p.miembroId });
+      const borrador = await borradoresDao.getBorrador(bid);
+      if (borrador) {
+        await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
+          borrador_id: bid,
+          sesion_id: borrador.sesion_id ?? null,
+          pregunta_id: p.preguntaId,
+          miembro_id: p.miembroId,
+          valor: p.valor,
+        });
+        await refrescarContadores();
+      }
+    } catch (e) {
+      console.error('[setRespuesta] ERROR upsertRespuesta:', e);
+    }
+  }, []);
+
+  // Al desmontar: persistir cualquier pendiente para no perderlo si el usuario
+  // sale del capítulo sin tocar "Guardar".
+  useEffect(() => {
+    const timers = debounceTimers.current;
+    const pend = pendientes.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+      const bid = borradorId ?? borradorIdParam;
+      if (!bid) { pend.clear(); return; }
+      const items = Array.from(pend.values());
+      pend.clear();
+      // Persistencia fire-and-forget — el cleanup no puede ser async.
+      for (const p of items) void persistirRespuesta(bid, p);
+    };
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
+
+  const flushPendientes = useCallback(async () => {
+    const bid = borradorId ?? borradorIdParam;
+    if (!bid) return;
+    const timers = debounceTimers.current;
+    const items = Array.from(pendientes.current.values());
+    timers.forEach((t) => clearTimeout(t));
+    timers.clear();
+    pendientes.current.clear();
+    for (const p of items) {
+      await persistirRespuesta(bid, p);
+    }
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
+
+  const setRespuesta = useCallback((
     preguntaId: string,
     valor: string,
     miembroId: string | null = null,
   ) => {
     const clave = claveResp(preguntaId, miembroId);
+    // 1) UI: estado React inmediato
     setRespuestasState((prev) => ({ ...prev, [clave]: valor }));
 
     const bid = borradorId ?? borradorIdParam;
     if (!bid) {
-      console.warn('[setRespuesta] borradorId VACÍO — la respuesta NO se guarda en SQLite', { preguntaId, valor: valor.slice(0,30) });
+      // Sin borrador NO se puede persistir: avisar de forma visible (una vez) en
+      // lugar de descartar en silencio. Evita capturar "a ciegas" y perder todo.
+      if (!alertaBorradorRef.current) {
+        alertaBorradorRef.current = true;
+        Alert.alert(
+          'No se pudo guardar',
+          'No se preparó el borrador de esta caracterización. Vuelve atrás y entra de nuevo al capítulo; si continúa, reinicia la app.',
+        );
+      }
       return;
     }
 
-    borradoresDao.upsertRespuesta(bid, preguntaId, valor, miembroId)
-      .then(() => console.log('[setRespuesta] guardada:', { bid, preguntaId, miembroId }))
-      .catch((e) => console.error('[setRespuesta] ERROR upsertRespuesta:', e));
-
-    const borrador = await borradoresDao.getBorrador(bid);
-    if (borrador) {
-      await colaDao.encolar('RESPONDER_PREGUNTA', bid, {
-        borrador_id: bid,
-        sesion_id: borrador.sesion_id ?? null,
-        pregunta_id: preguntaId,
-        miembro_id: miembroId,
-        valor,
-      });
-      await refrescarContadores();
-    }
-  }, [borradorId, borradorIdParam]);
+    // 2) Guardar valor pendiente + reprogramar timer de persistencia
+    pendientes.current.set(clave, { preguntaId, valor, miembroId });
+    const timers = debounceTimers.current;
+    const prev = timers.get(clave);
+    if (prev) clearTimeout(prev);
+    const timer = setTimeout(() => {
+      timers.delete(clave);
+      const p = pendientes.current.get(clave);
+      if (!p) return;
+      pendientes.current.delete(clave);
+      void persistirRespuesta(bid, p);
+    }, 500);
+    timers.set(clave, timer);
+  }, [borradorId, borradorIdParam, persistirRespuesta]);
 
   // ── Asistente IA ────────────────────────────────────────────────────────────
   const handleTextoTranscrito = useCallback(async (preguntaId: string, texto: string) => {
@@ -376,9 +815,63 @@ export default function CapituloScreen() {
 
   useEffect(() => { return () => { resetearIA(); }; }, []);
 
+  // ── Autollenar correspondencia = residencia cuando Z11 = "Sí" (mismo lugar) ───
+  // Las preguntas de correspondencia quedan OCULTAS por skip-logic cuando el lugar
+  // es el mismo, pero el registro debe llevar el dato (igual al de residencia).
+  // Pares residencia→correspondencia del cap A (Identificación). En otros capítulos
+  // los códigos no existen → no-op. Solo escribe si difiere (evita re-render loop).
+  useEffect(() => {
+    const byCodigo = new Map(preguntas.map((p) => [p.codigo_externo, p]));
+    const z11 = byCodigo.get('Z11');
+    if (!z11) return;
+    if ((respuestas[claveResp(z11.id, null)] ?? '') !== 'true') return;
+    const pares: [string, string][] = [
+      ['Z5A', 'Z15'], ['Z6', 'Z16'], ['Z7', 'Z17'], ['VEREDA', 'Z18'], ['Z8', 'Z12'],
+    ];
+    for (const [resCod, corCod] of pares) {
+      const res = byCodigo.get(resCod), cor = byCodigo.get(corCod);
+      if (!res || !cor) continue;
+      const valRes = respuestas[claveResp(res.id, null)] ?? '';
+      const valCor = respuestas[claveResp(cor.id, null)] ?? '';
+      if (valRes && valRes !== valCor) setRespuesta(cor.id, valRes, null);
+    }
+  }, [preguntas, respuestas, setRespuesta]);
+
+  // ── Recálculo automático de B9 (años) y B10 (grupo etario) desde A6 ──────────
+  // El manual define estos campos como automáticos y no editables (se muestran en
+  // solo-lectura, ver PREGUNTAS_CALCULADAS). Este efecto los mantiene sincronizados
+  // con la fecha de nacimiento (A6) de CADA miembro: si A6 cambia, recalcula; solo
+  // escribe si difiere (evita bucle de render). Mismo patrón que el autollenado Z11.
+  useEffect(() => {
+    const byCodigo = new Map(preguntas.map((p) => [p.codigo_externo, p]));
+    const a6 = byCodigo.get('A6');
+    const b9 = byCodigo.get('B9');
+    const b10 = byCodigo.get('B10');
+    if (!a6 || (!b9 && !b10)) return;
+    for (const m of miembros) {
+      const fecha = respuestas[claveResp(a6.id, m.id)] ?? '';
+      if (!fecha) continue;
+      const edad = calcularEdad(fecha);
+      if (!edad) continue;
+      if (b9 && (respuestas[claveResp(b9.id, m.id)] ?? '') !== edad) {
+        setRespuesta(b9.id, edad, m.id);
+      }
+      if (b10) {
+        const grupo = edadAGrupoEtario(Number(edad));
+        if (grupo && (respuestas[claveResp(b10.id, m.id)] ?? '') !== grupo) {
+          setRespuesta(b10.id, grupo, m.id);
+        }
+      }
+    }
+  }, [preguntas, miembros, respuestas, setRespuesta]);
+
   // ── Guardar capítulo: bulk sync (online) o encolar (offline) → volver ─────────
   async function guardarYVolver() {
     const bid = borradorId ?? borradorIdParam;
+
+    // Persistir cualquier respuesta debounceada que aún esté en el aire ANTES
+    // de leer SQLite para el bulk.
+    await flushPendientes();
 
     if (bid && sesionServerId) {
       setSincronizando(true);
@@ -395,10 +888,17 @@ export default function CapituloScreen() {
           }));
 
         if (arr.length > 0) {
+          let enviado = false;
           if (estaOnline) {
-            await encuestasApi.responderBulk(sesionServerId, arr);
-          } else {
-            // Sin red: encolar para sincronizar cuando vuelva la conexión
+            try {
+              await encuestasApi.responderBulk(sesionServerId, arr);
+              enviado = true;
+            } catch { /* el envío directo falló — cae al encolado de abajo */ }
+          }
+          if (!enviado) {
+            // Sin red (o bulk online fallido): encolar para que la cola lo
+            // reintente cuando vuelva la conexión. Sin este fallback, un 500
+            // o timeout dejaba las respuestas solo en SQLite sin reintento.
             await colaDao.encolar('RESPONDER_BULK', bid, {
               sesion_id: sesionServerId,
               borrador_id: bid,
@@ -406,7 +906,7 @@ export default function CapituloScreen() {
             });
           }
         }
-      } catch { /* silencioso — la cola lo reintentará */ }
+      } catch { /* lectura de SQLite falló — las respuestas siguen en el borrador */ }
       finally { setSincronizando(false); }
     }
 
@@ -428,22 +928,30 @@ export default function CapituloScreen() {
           ...(hogarId ? { hogarId } : {}),
         },
       });
+    } else if (borradorId || borradorIdParam || (hogarId && instrumentoId)) {
+      // OFFLINE: volver a la LISTA de capítulos local (índice del formulario),
+      // que es 100% offline-friendly. NUNCA al hub del servidor
+      // (hogares/[hogarId]/caracterizaciones hace hogaresApi.detalle y, con un
+      // id de hogar local + sin red, revienta el flujo). Mantenemos el MISMO
+      // borrador para que el progreso y las respuestas se conserven.
+      router.replace({
+        pathname: '/(main)/formulario',
+        params: {
+          ...(borradorId ?? borradorIdParam
+            ? { borradorId: (borradorId ?? borradorIdParam) as string }
+            : {}),
+          ...(instrumentoId ? { instrumentoId } : {}),
+          ...(hogarId ? { hogarId } : {}),
+        },
+      });
     } else {
-      // Fallback: si no tenemos sesionServerId, volver al hub del hogar
-      if (hogarId) {
-        router.replace({
-          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-          params: { hogarId },
-        });
-      } else {
-        router.back();
-      }
+      router.back();
     }
   }
 
   async function finalizarCapitulo() {
-    // Sprint 21 — preguntas obligatorias sin respuesta, considerando HOGAR
-    // (1 por pregunta) y PERSONA (1 por pregunta × miembro).
+    // Preguntas obligatorias sin respuesta: HOGAR (1 por pregunta) y PERSONA
+    // (1 por pregunta × miembro AL QUE APLICA, según skip-logic por miembro).
     let faltantes = 0;
     for (const p of visiblesHogar) {
       if (p.obligatoria !== 1) continue;
@@ -452,6 +960,7 @@ export default function CapituloScreen() {
     for (const p of visiblesPersona) {
       if (p.obligatoria !== 1) continue;
       for (const m of miembros) {
+        if (!aplicabilidad(p.codigo_externo, m.id).aplica) continue;
         if (!respuestas[claveResp(p.id, m.id)]?.trim()) faltantes++;
       }
     }
@@ -482,8 +991,28 @@ export default function CapituloScreen() {
     );
   }
 
-  // Sprint 21 — total visible incluye HOGAR (1×) + PERSONA (N miembros)
-  const totalVisible = visiblesHogar.length + visiblesPersona.length * Math.max(miembros.length, 1);
+  // Guarda #6 — sin borrador resuelto NO se puede persistir nada. Bloquear la
+  // captura con un estado de error en vez de pintar el formulario y descartar
+  // cada respuesta en silencio (pérdida total a ciegas).
+  if (!(borradorId ?? borradorIdParam)) {
+    return (
+      <View style={styles.root}>
+        <GovHeader title={capituloNombre || 'Capítulo'} onBack={volverAListaCapitulos} />
+        <View style={styles.centrado}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={GOV.rojo} />
+          <Text style={{ ...FONT.body, color: GOV.textoP, textAlign: 'center', marginTop: SPACING.sm, marginBottom: SPACING.md }}>
+            No se pudo preparar el borrador de esta caracterización. No es posible
+            capturar respuestas en este capítulo.
+          </Text>
+          <GovButton label="Volver a capítulos" variant="secondary" onPress={volverAListaCapitulos} />
+        </View>
+      </View>
+    );
+  }
+
+  // Captura agrupada: cada pregunta se muestra UNA vez (las PERSONA con una fila
+  // por miembro dentro de la misma tarjeta), así que el conteo es 1 por pregunta.
+  const totalVisible = visiblesHogar.length + visiblesPersona.length;
   const migaContexto = hogarId
     ? `Hogar ${hogarId.slice(0, 8)}…  ›  ${capituloNombre || 'Capítulo'}`
     : capituloNombre || 'Capítulo';
@@ -548,10 +1077,19 @@ export default function CapituloScreen() {
         />
       </View>
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <FlatList
         ref={flatRef}
         data={items}
         keyExtractor={(it) => it.key}
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         renderItem={({ item }) => {
           if (item.type === 'header-hogar') {
             return (
@@ -562,7 +1100,7 @@ export default function CapituloScreen() {
             );
           }
           if (item.type === 'header-miembro') {
-            if (!item.miembro) {
+            if (miembros.length === 0) {
               return (
                 <View style={styles.seccionHeaderWarning}>
                   <MaterialCommunityIcons name="alert-circle-outline" size={18} color={GOV.naranja} />
@@ -572,33 +1110,42 @@ export default function CapituloScreen() {
                 </View>
               );
             }
-            const m = item.miembro;
-            // Sprint 21 — header con nombre: "Autorizado · Juan Pérez" o
-            // "Miembro · María García". Si nombre_completo vino vacío,
-            // mostramos solo el rol (fallback seguro).
-            const rolPrefijo = m.es_autorizado ? 'Autorizado' : 'Miembro';
-            const nombre = (m.nombre_completo ?? '').trim();
-            const titulo = nombre
-              ? `${rolPrefijo} · ${nombre}`
-              : `${rolPrefijo} · ${m.rol_display || 'sin nombre'}`;
+            // Captura agrupada: una sola cabecera "Datos por persona" — cada
+            // pregunta lista a TODOS los miembros en filas dentro de su tarjeta.
             return (
               <View style={styles.seccionHeader}>
-                <MaterialCommunityIcons
-                  name={m.es_autorizado ? 'account-star' : 'account'}
-                  size={18}
-                  color={GOV.azul}
-                />
-                <Text style={styles.seccionTitulo}>{titulo}</Text>
+                <MaterialCommunityIcons name="account-group" size={18} color={GOV.azul} />
+                <Text style={styles.seccionTitulo}>
+                  Datos por persona ({miembros.length} miembro{miembros.length !== 1 ? 's' : ''})
+                </Text>
               </View>
             );
           }
-          // type === 'pregunta'
+
+          if (item.type === 'pregunta-persona') {
+            // Pregunta PERSONA: una tarjeta con una fila por miembro. Cada miembro
+            // responde su propio valor; si no aplica, fila en gris con el motivo.
+            const p = item.pregunta!;
+            return (
+              <PreguntaPersonaItem
+                pregunta={p}
+                index={item.indexGlobal ?? 0}
+                total={item.totalGlobal ?? 0}
+                opciones={opciones[p.id] ?? []}
+                miembros={miembros}
+                respuestas={respuestas}
+                soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
+                aplicabilidad={aplicabilidad}
+                onChange={setRespuesta}
+              />
+            );
+          }
+
+          // type === 'pregunta' (HOGAR — respuesta única)
           const p = item.pregunta!;
-          const miembroId = item.miembro?.id ?? null;
-          const clave = claveResp(p.id, miembroId);
+          const clave = claveResp(p.id, null);
           const valor = respuestas[clave] ?? '';
           // IA: solo se asocia con HOGAR por ahora (clave preguntaId solo)
-          const iaPreguntaKey = miembroId ? null : p.id;
           return (
             <PreguntaItem
               pregunta={p}
@@ -606,15 +1153,16 @@ export default function CapituloScreen() {
               total={item.totalGlobal ?? 0}
               opciones={opciones[p.id] ?? []}
               valor={valor}
-              onChange={(v) => setRespuesta(p.id, v, miembroId)}
-              iaActivo={iaActivo && !miembroId}
-              onTextoIA={iaPreguntaKey ? (texto) => handleTextoTranscrito(p.id, texto) : undefined}
+              soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
+              onChange={(v) => setRespuesta(p.id, v, null)}
+              iaActivo={iaActivo}
+              onTextoIA={(texto) => handleTextoTranscrito(p.id, texto)}
               sugerenciaActiva={
-                iaPreguntaKey && sugerencia && preguntaActivaId === p.id && estadoIA === 'sugerida'
+                sugerencia && preguntaActivaId === p.id && estadoIA === 'sugerida'
                   ? sugerencia
                   : null
               }
-              onAceptarIA={iaPreguntaKey ? () => handleAceptarSugerencia(p.id) : undefined}
+              onAceptarIA={() => handleAceptarSugerencia(p.id)}
               onRechazarIA={rechazarSugerencia}
             />
           );
@@ -622,68 +1170,6 @@ export default function CapituloScreen() {
         contentContainerStyle={styles.lista}
         ListEmptyComponent={
           <Text style={styles.sinPreguntas}>No hay preguntas en este capítulo.</Text>
-        }
-        ListFooterComponent={
-          // Sprint 21 Fase F — navegador wizard entre miembros.
-          // Solo aparece si el capítulo tiene preguntas PERSONA y hay >1 miembro.
-          visiblesPersona.length > 0 && miembros.length > 0 ? (
-            <View style={styles.navMiembros}>
-              <View style={styles.navMiembrosCounter}>
-                <MaterialCommunityIcons name="account-group" size={16} color={GOV.azulOscuro} />
-                <Text style={styles.navMiembrosTxt}>
-                  Persona {miembroIdx + 1} de {miembros.length}
-                </Text>
-                {obligPersonaActivo.total > 0 && (
-                  <Text style={[
-                    styles.navMiembrosFaltan,
-                    obligPersonaActivo.faltan === 0 && { color: GOV.verde },
-                  ]}>
-                    {obligPersonaActivo.faltan === 0
-                      ? '✓ completa'
-                      : `${obligPersonaActivo.faltan} obligatoria${obligPersonaActivo.faltan > 1 ? 's' : ''} sin responder`}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.navMiembrosBotones}>
-                <Pressable
-                  onPress={() => setMiembroIdx((i) => Math.max(0, i - 1))}
-                  disabled={miembroIdx === 0}
-                  style={({ pressed }) => [
-                    styles.navBtn,
-                    styles.navBtnSecundario,
-                    miembroIdx === 0 && styles.navBtnDisabled,
-                    pressed && miembroIdx > 0 && { opacity: 0.85 },
-                  ]}
-                >
-                  <MaterialCommunityIcons name="chevron-left" size={20}
-                    color={miembroIdx === 0 ? GOV.textoT : GOV.azulOscuro} />
-                  <Text style={[
-                    styles.navBtnTxt,
-                    miembroIdx === 0 && { color: GOV.textoT },
-                  ]}>Anterior</Text>
-                </Pressable>
-
-                {miembroIdx < miembros.length - 1 ? (
-                  <Pressable
-                    onPress={() => setMiembroIdx((i) => Math.min(miembros.length - 1, i + 1))}
-                    style={({ pressed }) => [
-                      styles.navBtn,
-                      styles.navBtnPrimario,
-                      pressed && { opacity: 0.88 },
-                    ]}
-                  >
-                    <Text style={styles.navBtnTxtPrimario}>Siguiente miembro</Text>
-                    <MaterialCommunityIcons name="chevron-right" size={20} color="#FFF" />
-                  </Pressable>
-                ) : (
-                  <View style={[styles.navBtn, styles.navBtnUltimo]}>
-                    <MaterialCommunityIcons name="check-circle-outline" size={18} color={GOV.verde} />
-                    <Text style={styles.navBtnUltimoTxt}>Último miembro</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          ) : null
         }
       />
 
@@ -696,6 +1182,7 @@ export default function CapituloScreen() {
           onPress={finalizarCapitulo}
         />
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -734,104 +1221,60 @@ function parseMultiValor(valor: string): string[] {
   return trimmed.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-function PreguntaItem({
+// ─────────────────────────────────────────────────────────────────────────────
+// Control de entrada por tipo — reutilizable por HOGAR (1 control) y por cada
+// fila de miembro en las preguntas PERSONA. Centraliza TODOS los tipos de input
+// (TEXTO/NUMERICO/FECHA/RADIO/LISTA/BOOLEAN/LISTA_MULTIPLE/COMBO_DINAMICO) y sus
+// validaciones, para que cada miembro pueda responder su propio valor con la
+// MISMA lógica (incluida la selección múltiple). `compacto` reduce los labels de
+// los selectores cuando el control vive dentro de una fila de miembro.
+// ─────────────────────────────────────────────────────────────────────────────
+function ControlInput({
   pregunta,
-  index,
-  total,
   opciones,
   valor,
   onChange,
-  iaActivo,
-  onTextoIA,
-  sugerenciaActiva,
-  onAceptarIA,
-  onRechazarIA,
+  compacto,
 }: {
   pregunta: PreguntaRow;
-  index: number;
-  total: number;
   opciones: OpcionRow[];
   valor: string;
   onChange: (v: string) => void;
-  iaActivo?: boolean;
-  onTextoIA?: (texto: string) => void;
-  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
-  onAceptarIA?: () => void;
-  onRechazarIA?: () => void;
+  compacto?: boolean;
 }) {
   const esTexto    = pregunta.tipo === 'TEXTO' || pregunta.tipo === 'TEXTO_LARGO';
   const esNumerico = pregunta.tipo === 'NUMERICO';
+  const validaciones = useMemo<{ longitud_exacta?: number; max_length?: number; solo_numerico?: boolean }>(() => {
+    try { return JSON.parse(pregunta.validaciones || '{}'); } catch { return {}; }
+  }, [pregunta.validaciones]);
+  const maxLen = validaciones.longitud_exacta ?? validaciones.max_length;
+  const onChangeValidado = (t: string) => {
+    let v = validaciones.solo_numerico ? t.replace(/[^0-9]/g, '') : t;
+    if (maxLen) v = v.slice(0, maxLen);
+    onChange(v);
+  };
   const esFecha    = pregunta.tipo === 'FECHA';
-  // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — se renderiza con
-  // SelectorMunicipio (consume /api/parametricas/municipios/todos/).
+  // Sprint 20: COMBO_DINAMICO ya no se trata como LISTA — SelectorMunicipio.
   const esRadio    = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA';
   const esCombo    = pregunta.tipo === 'COMBO_DINAMICO';
   const esMultiple = pregunta.tipo === 'LISTA_MULTIPLE';
   const esBoolean  = pregunta.tipo === 'BOOLEAN';
 
-  const tieneRespuesta = !!valor?.trim();
-  const esObligatoria  = pregunta.obligatoria === 1;
-
   return (
-    <View style={[
-      styles.preguntaCard,
-      esObligatoria && !tieneRespuesta && styles.preguntaCardPendiente,
-      tieneRespuesta && styles.preguntaCardRespondida,
-    ]}>
-      <View style={styles.preguntaHeader}>
-        <View style={[styles.numBadge, tieneRespuesta && styles.numBadgeOk]}>
-          {tieneRespuesta
-            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
-            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
-          }
-        </View>
-        <Text style={styles.numTotal}>de {total}</Text>
-        {esObligatoria && (
-          <View style={[styles.requeridoChip, tieneRespuesta && styles.requeridoChipOk]}>
-            <Text style={[styles.requeridoTxt, tieneRespuesta && styles.requeridoTxtOk]}>
-              {tieneRespuesta ? 'Respondida' : 'Requerida'}
-            </Text>
-          </View>
-        )}
-        {pregunta.no_pregunta ? (
-          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
-        ) : null}
-      </View>
-
-      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
-
-      {pregunta.descripcion_ayuda ? (
-        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
-      ) : null}
-
-      {/* Asistente de voz */}
-      {iaActivo && onTextoIA && (
-        <AudioRecorder
-          preguntaId={pregunta.id}
-          onTextoListo={onTextoIA}
-          disabled={!!sugerenciaActiva}
-        />
-      )}
-      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
-        <SugerenciaIA
-          sugerencia={sugerenciaActiva}
-          onAceptar={() => onAceptarIA()}
-          onRechazar={onRechazarIA}
-        />
-      )}
-
-      {/* Controles por tipo — Sprint 21 fix UX: estilo consistente GOV.CO */}
+    <>
       {(esTexto || esNumerico) && (
         <TextInput
           mode="outlined"
           value={valor}
-          onChangeText={onChange}
+          onChangeText={onChangeValidado}
           keyboardType={esNumerico ? 'numeric' : 'default'}
+          maxLength={maxLen}
           multiline={pregunta.tipo === 'TEXTO_LARGO'}
           numberOfLines={pregunta.tipo === 'TEXTO_LARGO' ? 4 : 1}
           placeholder={esNumerico ? 'Escribe el número' : 'Escribe la respuesta'}
           outlineColor={GOV.borde}
           activeOutlineColor={GOV.azul}
+          dense={compacto}
           style={styles.inputTexto}
         />
       )}
@@ -907,8 +1350,7 @@ function PreguntaItem({
         )
       )}
 
-      {/* Sprint 20: COMBO_DINAMICO = municipio (Z2/Z5A/Z15/A23A/HV3/Lud_encuesta).
-          Consume /api/parametricas/municipios/todos/ con caché en memoria. */}
+      {/* Sprint 20: COMBO_DINAMICO = municipio. */}
       {esCombo && (
         <SelectorMunicipio
           valor={valor}
@@ -967,9 +1409,345 @@ function PreguntaItem({
           );
         })()
       )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fila de un miembro dentro de una pregunta PERSONA. Si la pregunta aplica al
+// miembro, muestra su control de entrada; si no, una fila gris con el motivo.
+// ─────────────────────────────────────────────────────────────────────────────
+function FilaMiembroBase({
+  miembro,
+  pregunta,
+  opciones,
+  valor,
+  aplica,
+  motivo,
+  soloLectura,
+  onChange,
+}: {
+  miembro: MiembroHogarResumen;
+  pregunta: PreguntaRow;
+  opciones: OpcionRow[];
+  valor: string;
+  aplica: boolean;
+  motivo?: string;
+  soloLectura?: boolean;
+  onChange: (v: string) => void;
+}) {
+  const rolPrefijo = miembro.es_autorizado ? 'Autorizado' : 'Miembro';
+  const nombre = (miembro.nombre_completo ?? '').trim();
+  const titulo = nombre || miembro.rol_display || rolPrefijo;
+  const tieneRespuesta = !!valor?.trim();
+
+  // No aplica → fila gris con el motivo, sin control habilitado.
+  if (!aplica) {
+    return (
+      <View style={styles.filaMiembro}>
+        <View style={styles.filaMiembroHeader}>
+          <MaterialCommunityIcons
+            name={miembro.es_autorizado ? 'account-star-outline' : 'account-outline'}
+            size={16}
+            color={GOV.textoT}
+          />
+          <Text style={styles.filaMiembroNombreInactivo} numberOfLines={1}>{titulo}</Text>
+        </View>
+        <View style={styles.noAplicaBox}>
+          <MaterialCommunityIcons name="minus-circle-outline" size={14} color={GOV.textoT} />
+          <Text style={styles.noAplicaTxt}>
+            No aplica{motivo ? ` · ${motivo}` : ''}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Solo lectura (RUV) — muestra el valor sin control editable.
+  if (soloLectura) {
+    const esOpcion = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA'
+      || pregunta.tipo === 'BOOLEAN' || pregunta.tipo === 'LISTA_MULTIPLE';
+    const etiqueta = esOpcion
+      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
+      : valor;
+    return (
+      <View style={styles.filaMiembro}>
+        <View style={styles.filaMiembroHeader}>
+          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
+          <Text style={styles.filaMiembroNombre} numberOfLines={1}>{titulo}</Text>
+        </View>
+        <Text style={styles.ruvValorTxt}>
+          {etiqueta?.trim() ? etiqueta : 'Sin dato registrado'}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.filaMiembro, tieneRespuesta && styles.filaMiembroOk]}>
+      <View style={styles.filaMiembroHeader}>
+        <MaterialCommunityIcons
+          name={miembro.es_autorizado ? 'account-star' : 'account'}
+          size={16}
+          color={tieneRespuesta ? GOV.verde : GOV.azul}
+        />
+        <Text style={styles.filaMiembroNombre} numberOfLines={1}>{titulo}</Text>
+        {tieneRespuesta && (
+          <MaterialCommunityIcons name="check-circle" size={15} color={GOV.verde} />
+        )}
+      </View>
+      <ControlInput pregunta={pregunta} opciones={opciones} valor={valor} onChange={onChange} compacto />
     </View>
   );
 }
+
+const FilaMiembro = memo(FilaMiembroBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.miembro === next.miembro &&
+  prev.valor === next.valor &&
+  prev.aplica === next.aplica &&
+  prev.motivo === next.motivo &&
+  prev.opciones === next.opciones &&
+  prev.soloLectura === next.soloLectura,
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarjeta de una pregunta PERSONA — encabezado de la pregunta + una fila por
+// miembro del hogar (agrupado). Reemplaza el wizard "un miembro a la vez".
+// ─────────────────────────────────────────────────────────────────────────────
+function PreguntaPersonaItemBase({
+  pregunta,
+  index,
+  total,
+  opciones,
+  miembros,
+  respuestas,
+  soloLectura,
+  aplicabilidad,
+  onChange,
+}: {
+  pregunta: PreguntaRow;
+  index: number;
+  total: number;
+  opciones: OpcionRow[];
+  miembros: MiembroHogarResumen[];
+  respuestas: Record<string, string>;
+  soloLectura?: boolean;
+  aplicabilidad: (codigoExterno: string, miembroId: string) => { aplica: boolean; motivo?: string };
+  onChange: (preguntaId: string, valor: string, miembroId: string | null) => void;
+}) {
+  const esObligatoria = pregunta.obligatoria === 1;
+  // Cuántos miembros a quienes APLICA ya tienen respuesta (progreso de la tarjeta).
+  const aplicables = miembros.filter((m) => aplicabilidad(pregunta.codigo_externo, m.id).aplica);
+  const respondidos = aplicables.filter(
+    (m) => respuestas[claveResp(pregunta.id, m.id)]?.trim(),
+  ).length;
+  const completa = aplicables.length > 0 && respondidos === aplicables.length;
+
+  return (
+    <View style={[
+      styles.preguntaCard,
+      esObligatoria && !completa && styles.preguntaCardPendiente,
+      completa && styles.preguntaCardRespondida,
+    ]}>
+      <View style={styles.preguntaHeader}>
+        <View style={[styles.numBadge, completa && styles.numBadgeOk]}>
+          {completa
+            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
+            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+          }
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {esObligatoria && (
+          <View style={[styles.requeridoChip, completa && styles.requeridoChipOk]}>
+            <Text style={[styles.requeridoTxt, completa && styles.requeridoTxtOk]}>
+              {completa ? 'Completa' : 'Requerida'}
+            </Text>
+          </View>
+        )}
+        {pregunta.no_pregunta ? (
+          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+        ) : null}
+      </View>
+
+      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+
+      {pregunta.descripcion_ayuda ? (
+        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
+      ) : null}
+
+      {aplicables.length > 0 && (
+        <Text style={styles.personaProgreso}>
+          {respondidos} de {aplicables.length} {aplicables.length === 1 ? 'persona' : 'personas'} respondida{respondidos !== 1 ? 's' : ''}
+        </Text>
+      )}
+
+      {/* Una fila por miembro */}
+      <View style={styles.filasWrap}>
+        {miembros.map((m) => {
+          const ap = aplicabilidad(pregunta.codigo_externo, m.id);
+          const valor = respuestas[claveResp(pregunta.id, m.id)] ?? '';
+          return (
+            <FilaMiembro
+              key={m.id}
+              miembro={m}
+              pregunta={pregunta}
+              opciones={opciones}
+              valor={valor}
+              aplica={ap.aplica}
+              motivo={ap.motivo}
+              soloLectura={soloLectura}
+              onChange={(v) => onChange(pregunta.id, v, m.id)}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const PreguntaPersonaItem = memo(PreguntaPersonaItemBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.index === next.index &&
+  prev.total === next.total &&
+  prev.opciones === next.opciones &&
+  prev.miembros === next.miembros &&
+  prev.respuestas === next.respuestas &&
+  prev.soloLectura === next.soloLectura &&
+  prev.aplicabilidad === next.aplicabilidad,
+);
+
+function PreguntaItemBase({
+  pregunta,
+  index,
+  total,
+  opciones,
+  valor,
+  soloLectura,
+  onChange,
+  iaActivo,
+  onTextoIA,
+  sugerenciaActiva,
+  onAceptarIA,
+  onRechazarIA,
+}: {
+  pregunta: PreguntaRow;
+  index: number;
+  total: number;
+  opciones: OpcionRow[];
+  valor: string;
+  soloLectura?: boolean;
+  onChange: (v: string) => void;
+  iaActivo?: boolean;
+  onTextoIA?: (texto: string) => void;
+  sugerenciaActiva?: import('../../../src/api/ia').MapearAudioResponse | null;
+  onAceptarIA?: () => void;
+  onRechazarIA?: () => void;
+}) {
+  const tieneRespuesta = !!valor?.trim();
+  const esObligatoria  = pregunta.obligatoria === 1;
+
+  // Modo SOLO LECTURA — datos del RUV (hecho victimizante). Se muestra el valor
+  // precargado, sin controles editables ni asistente de voz. Si el RUV no trajo
+  // el dato, se indica explícitamente en vez de mostrar un campo vacío.
+  if (soloLectura) {
+    const esOpcion = pregunta.tipo === 'RADIO' || pregunta.tipo === 'LISTA'
+      || pregunta.tipo === 'BOOLEAN' || pregunta.tipo === 'LISTA_MULTIPLE';
+    const etiqueta = esOpcion
+      ? (opciones.find((o) => o.valor === valor)?.etiqueta ?? valor)
+      : valor;
+    return (
+      <View style={[styles.preguntaCard, styles.preguntaCardRuv]}>
+        <View style={styles.preguntaHeader}>
+          <MaterialCommunityIcons name="shield-check" size={16} color={GOV.azul} />
+          <Text style={styles.ruvBadgeTxt}>Dato del RUV</Text>
+          {pregunta.no_pregunta ? (
+            <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+          ) : null}
+        </View>
+        <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+        <View style={styles.ruvValorBox}>
+          <MaterialCommunityIcons name="lock-outline" size={15} color={GOV.textoS} />
+          <Text style={styles.ruvValorTxt}>
+            {etiqueta?.trim() ? etiqueta : 'Sin dato registrado en el RUV'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[
+      styles.preguntaCard,
+      esObligatoria && !tieneRespuesta && styles.preguntaCardPendiente,
+      tieneRespuesta && styles.preguntaCardRespondida,
+    ]}>
+      <View style={styles.preguntaHeader}>
+        <View style={[styles.numBadge, tieneRespuesta && styles.numBadgeOk]}>
+          {tieneRespuesta
+            ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" />
+            : <Text style={styles.numBadgeTxt}>{index + 1}</Text>
+          }
+        </View>
+        <Text style={styles.numTotal}>de {total}</Text>
+        {esObligatoria && (
+          <View style={[styles.requeridoChip, tieneRespuesta && styles.requeridoChipOk]}>
+            <Text style={[styles.requeridoTxt, tieneRespuesta && styles.requeridoTxtOk]}>
+              {tieneRespuesta ? 'Respondida' : 'Requerida'}
+            </Text>
+          </View>
+        )}
+        {pregunta.no_pregunta ? (
+          <Text style={styles.codigoTxt}>{pregunta.no_pregunta}</Text>
+        ) : null}
+      </View>
+
+      <Text style={styles.textoPregunta}>{pregunta.texto}</Text>
+
+      {pregunta.descripcion_ayuda ? (
+        <Text style={styles.ayuda}>{pregunta.descripcion_ayuda}</Text>
+      ) : null}
+
+      {/* Asistente de voz */}
+      {iaActivo && onTextoIA && (
+        <AudioRecorder
+          preguntaId={pregunta.id}
+          onTextoListo={onTextoIA}
+          disabled={!!sugerenciaActiva}
+        />
+      )}
+      {sugerenciaActiva && onAceptarIA && onRechazarIA && (
+        <SugerenciaIA
+          sugerencia={sugerenciaActiva}
+          onAceptar={() => onAceptarIA()}
+          onRechazar={onRechazarIA}
+        />
+      )}
+
+      {/* Controles por tipo — delega en ControlInput (compartido con las filas
+          por miembro de las preguntas PERSONA). */}
+      <ControlInput pregunta={pregunta} opciones={opciones} valor={valor} onChange={onChange} />
+    </View>
+  );
+}
+
+// #23/#34 — memoizar evita re-renderizar TODAS las tarjetas en cada pulsación de
+// tecla (setRespuestasState re-renderiza el padre). Las callbacks envoltorio
+// cambian de identidad cada render pero solo reenvían a useCallbacks estables
+// (setRespuesta, handleAceptarSugerencia…), así que se comparan solo las props
+// de DATOS. La presencia (no la identidad) de las callbacks IA sí importa.
+const PreguntaItem = memo(PreguntaItemBase, (prev, next) =>
+  prev.pregunta === next.pregunta &&
+  prev.valor === next.valor &&
+  prev.soloLectura === next.soloLectura &&
+  prev.index === next.index &&
+  prev.total === next.total &&
+  prev.opciones === next.opciones &&
+  prev.iaActivo === next.iaActivo &&
+  prev.sugerenciaActiva === next.sugerenciaActiva &&
+  !!prev.onTextoIA === !!next.onTextoIA &&
+  !!prev.onAceptarIA === !!next.onAceptarIA,
+);
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 
@@ -1007,7 +1785,7 @@ const styles = StyleSheet.create({
   progressBar: { height: 6, borderRadius: 3, backgroundColor: GOV.borde },
 
   lista: { padding: SPACING.md, paddingBottom: 96 },
-  sinPreguntas: { textAlign: 'center', color: GOV.textoT, marginTop: SPACING.xl, ...FONT.body },
+  sinPreguntas: { textAlign: 'center', ...FONT.body, color: GOV.textoT, marginTop: SPACING.xl },
 
   // Sprint 21 — headers de sección (Datos del hogar / Datos de cada miembro)
   seccionHeader: {
@@ -1039,59 +1817,41 @@ const styles = StyleSheet.create({
   },
   seccionTituloWarning: { ...FONT.caption, color: GOV.textoP, flex: 1 },
 
-  // Sprint 21 Fase F — navegador wizard entre miembros
-  navMiembros: {
-    marginTop: SPACING.md,
-    backgroundColor: GOV.superficie,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
+  // Captura agrupada — progreso por persona dentro de una pregunta PERSONA
+  personaProgreso: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+    fontStyle: 'italic',
+  },
+
+  // Captura agrupada — contenedor de las filas por miembro
+  filasWrap: { gap: SPACING.sm, marginTop: 2 },
+  filaMiembro: {
+    backgroundColor: GOV.fondoApp,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
     borderWidth: 1,
     borderColor: GOV.borde,
-    gap: SPACING.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: GOV.borde,
+    gap: SPACING.xs,
   },
-  navMiembrosCounter: {
+  filaMiembroOk: { borderLeftColor: GOV.verde },
+  filaMiembroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    paddingBottom: SPACING.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: GOV.borde,
   },
-  navMiembrosTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
-  navMiembrosFaltan: {
-    ...FONT.caption,
-    color: GOV.naranja,
-    marginLeft: 'auto',
-    fontWeight: '600',
-  },
-  navMiembrosBotones: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  navBtn: {
-    flex: 1,
+  filaMiembroNombre: { ...FONT.label, color: GOV.textoP, flex: 1, fontWeight: '700' },
+  filaMiembroNombreInactivo: { ...FONT.label, color: GOV.textoT, flex: 1 },
+  noAplicaBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    paddingVertical: SPACING.sm + 2,
-    borderRadius: RADIUS.md,
+    gap: SPACING.xs,
+    paddingVertical: 2,
   },
-  navBtnSecundario: {
-    backgroundColor: GOV.azulTenue,
-    borderWidth: 1,
-    borderColor: GOV.azul,
-  },
-  navBtnPrimario: { backgroundColor: GOV.azul },
-  navBtnDisabled: { backgroundColor: GOV.fondoApp, borderColor: GOV.borde },
-  navBtnUltimo: {
-    backgroundColor: GOV.verdeTenue,
-    borderWidth: 1,
-    borderColor: GOV.verde,
-  },
-  navBtnTxt: { ...FONT.body, fontWeight: '700', color: GOV.azulOscuro },
-  navBtnTxtPrimario: { ...FONT.body, fontWeight: '700', color: '#FFF' },
-  navBtnUltimoTxt: { ...FONT.body, fontWeight: '700', color: GOV.verde },
+  noAplicaTxt: { ...FONT.caption, color: GOV.textoT, flex: 1, fontStyle: 'italic' },
 
   // Tarjeta de pregunta
   preguntaCard: {
@@ -1109,6 +1869,25 @@ const styles = StyleSheet.create({
   preguntaCardRespondida: {
     borderLeftColor: GOV.verde,
   },
+  // Tarjeta de pregunta en modo solo-lectura (dato precargado del RUV).
+  preguntaCardRuv: {
+    borderLeftColor: GOV.azul,
+    backgroundColor: GOV.azulTenue,
+  },
+  ruvBadgeTxt: { ...FONT.label, color: GOV.azulOscuro },
+  ruvValorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: GOV.superficie,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 10,
+    marginTop: 2,
+  },
+  ruvValorTxt: { ...FONT.body, fontWeight: '600', color: GOV.textoP, flex: 1 },
   preguntaHeader: {
     flexDirection: 'row',
     alignItems: 'center',

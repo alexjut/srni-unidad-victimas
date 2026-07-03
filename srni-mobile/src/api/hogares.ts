@@ -30,6 +30,15 @@ export interface AgregarMiembroPayload {
   tiene_discapacidad?: boolean;
   tipo_discapacidad?: string;
   tiene_enfermedad_ruinosa?: boolean;
+  /**
+   * Documento oficial §2 — constancia obligatoria cuando rol es TUTOR o
+   * CUIDADOR_PERMANENTE. Referencia del archivo adjunto (nombre visible + uri
+   * local). El backend AÚN no persiste estos campos (no están en
+   * AgregarMiembroSerializer): viajan en el payload para no perder el dato y
+   * quedan pendientes de almacenamiento real (ver conformar.tsx, §2).
+   */
+  constancia_nombre?: string;
+  constancia_uri?: string;
 }
 
 export const hogaresApi = {

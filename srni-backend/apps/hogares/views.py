@@ -2,6 +2,7 @@
 Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
+from django.db import IntegrityError, transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -85,16 +86,66 @@ class HogarViewSet(viewsets.ModelViewSet):
         sí se puede crear uno nuevo (caso de cambio definitivo de núcleo familiar).
         """
         autorizado_id = request.data.get('autorizado')
-        if autorizado_id:
-            existente = Hogar.objects.filter(
+        es_admin = request.user.puede('administrar')
+
+        # Mensaje cuando ya existe un hogar activo creado por OTRO encuestador.
+        MSG_AJENO = (
+            'Esta víctima ya tiene un hogar activo registrado por otro '
+            'encuestador. Solicita su reasignación al supervisor.'
+        )
+
+        def _no_archivados():
+            """Todos los hogares no archivados de esta víctima (de cualquier dueño)."""
+            if not autorizado_id:
+                return Hogar.objects.none()
+            return Hogar.objects.filter(
                 autorizado_id=autorizado_id,
-            ).exclude(estado='ARCHIVADO').order_by('-created_at').first()
+            ).exclude(estado='ARCHIVADO').order_by('-created_at')
+
+        def _existente_propio():
+            """
+            Hogar no archivado idempotente que el usuario PUEDE ver.
+
+            - Admin: cualquier hogar no archivado de la víctima.
+            - No-admin: solo si es propio (creado_por = request.user). Si NO hay
+              propio pero SÍ existe uno ajeno, devuelve el ajeno marcado para que
+              el caller responda 409 en lugar de exponer un id inaccesible.
+
+            Retorna (hogar, es_propio).
+            """
+            base = _no_archivados()
+            if es_admin:
+                return base.first(), True
+            propio = base.filter(creado_por=request.user).first()
+            if propio:
+                return propio, True
+            ajeno = base.first()
+            return ajeno, False
+
+        existente, es_propio = _existente_propio()
+        if existente:
+            if not es_propio:
+                # Hogar activo de otro encuestador: el get_queryset le negaría
+                # acceso (404 en cadena), así que respondemos 409 explícito.
+                return Response({'detail': MSG_AJENO}, status=status.HTTP_409_CONFLICT)
+            detalle = HogarDetalleSerializer(existente, context={'request': request})
+            return Response(detalle.data, status=status.HTTP_200_OK)
+
+        try:
+            with transaction.atomic():
+                return super().create(request, *args, **kwargs)
+        except IntegrityError:
+            # Carrera: otro request creó el hogar entre la verificación de arriba
+            # y el INSERT. El constraint uniq_hogar_no_archivado_por_autorizado lo
+            # rechazó. Devolvemos el hogar ganador si es accesible; si es ajeno
+            # (no-admin), respondemos 409 con el mismo mensaje claro.
+            existente, es_propio = _existente_propio()
             if existente:
-                # Devolver el hogar existente con detalle completo
+                if not es_propio:
+                    return Response({'detail': MSG_AJENO}, status=status.HTTP_409_CONFLICT)
                 detalle = HogarDetalleSerializer(existente, context={'request': request})
                 return Response(detalle.data, status=status.HTTP_200_OK)
-
-        return super().create(request, *args, **kwargs)
+            raise
 
     def perform_create(self, serializer):
         hogar = serializer.save(creado_por=self.request.user)

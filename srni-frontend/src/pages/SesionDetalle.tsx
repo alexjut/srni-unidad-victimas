@@ -21,13 +21,15 @@ const ESTADO_BADGE: Record<string, BadgeVariant> = {
 };
 
 function BarraProgreso({ valor }: { valor: number }) {
-  const color = valor >= 80 ? 'bg-gov-verde' : valor >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
+  // Clamp 0–100 + redondeo: evita que el relleno o el % desborden el riel.
+  const pct = Math.max(0, Math.min(100, Math.round(valor || 0)));
+  const color = pct >= 80 ? 'bg-gov-verde' : pct >= 40 ? 'bg-gov-azul' : 'bg-gov-naranja';
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 bg-gray-100 rounded-full h-3">
-        <div className={`h-3 rounded-full transition-all ${color}`} style={{ width: `${valor}%` }} />
+      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+        <div className={`h-3 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-sm font-semibold text-gray-700 w-12 text-right">{valor}%</span>
+      <span className="text-sm font-semibold text-gray-700 w-12 text-right shrink-0">{pct}%</span>
     </div>
   );
 }
@@ -85,7 +87,7 @@ export default function SesionDetallePage() {
       />
 
       {/* Cards de info */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
         <InfoCard icon={ClipboardList} label="Estado">
           <Badge variant={ESTADO_BADGE[sesion.estado] ?? 'gris'}>
             {sesion.estado_display ?? sesion.estado}
@@ -103,13 +105,13 @@ export default function SesionDetallePage() {
       </div>
 
       {/* Barra de progreso grande */}
-      <div className="card mb-6">
+      <div className="card mb-6 shadow-soft animate-fade-in-up" style={{ animationDelay: '50ms', animationFillMode: 'both' }}>
         <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wide">Progreso general</p>
         <BarraProgreso valor={sesion.porcentaje_completado} />
       </div>
 
       {/* Datos de la sesión */}
-      <div className="card mb-6">
+      <div className="card mb-6 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4">Información de la sesión</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
           <DatoItem label="Ruta de entrevista" valor={sesion.ruta_entrevista} />
@@ -134,7 +136,7 @@ export default function SesionDetallePage() {
       </div>
 
       {/* Tabla de respuestas */}
-      <div className="card overflow-hidden p-0">
+      <div className="card overflow-hidden p-0 animate-fade-in-up" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
         <div className="px-4 py-3 border-b border-gov-borde">
           <p className="font-semibold text-gray-700 text-sm">
             Respuestas ({sesion.total_respuestas})
@@ -163,7 +165,7 @@ export default function SesionDetallePage() {
                   </td>
                 </tr>
               ) : sesion.respuestas.map((r) => (
-                <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-colors">
+                <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
                   <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo}</td>
                   <td className="px-4 py-3 text-gray-700 max-w-[300px]">
                     <p className="line-clamp-2">{r.pregunta_texto}</p>

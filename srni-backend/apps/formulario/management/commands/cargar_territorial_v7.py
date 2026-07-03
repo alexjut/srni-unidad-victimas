@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.formulario.models import (
-    InstrumentoVersion, Capitulo, Pregunta, OpcionRespuesta,
+    Instrumento, Capitulo, Pregunta, OpcionRespuesta,
     NivelPreguntaChoices, TipoPreguntaChoices, PoblacionObjetivoChoices,
 )
 
@@ -24,14 +24,14 @@ INSTRUMENTO_PK = "22222222-0001-0001-0001-000000000001"  # Territorial V7
 CAPITULOS = [
     # NIVEL HOGAR
     ("A",  "A. IDENTIFICACIÓN",                  1,  "HOGAR",   "TODOS_MIEMBROS"),
-    ("C",  "C. VIVIENDA",                         2,  "HOGAR",   "TODOS_MIEMBROS"),
-    ("D",  "D. RETORNOS Y REUBICACIONES",         3,  "HOGAR",   "TODOS_MIEMBROS"),
-    ("E",  "E. REUNIFICACIÓN FAMILIAR",            4,  "HOGAR",   "TODOS_MIEMBROS"),
+    ("C",  "C. VIVIENDA",                         3,  "HOGAR",   "TODOS_MIEMBROS"),
+    ("D",  "D. RETORNOS Y REUBICACIONES",         4,  "HOGAR",   "TODOS_MIEMBROS"),
+    ("E",  "E. REUNIFICACIÓN FAMILIAR",            5,  "HOGAR",   "TODOS_MIEMBROS"),
     ("JA", "J. ALIMENTACIÓN",                     9,  "HOGAR",   "TODOS_MIEMBROS"),
     ("M",  "M. USO Y DISFRUTE DEL TERRITORIO",   13,  "HOGAR",   "TODOS_MIEMBROS"),
     ("T",  "T. CONTROL",                          14,  "HOGAR",   "TODOS_MIEMBROS"),
     # NIVEL PERSONA
-    ("B",  "B. DATOS BÁSICOS",                    5,  "PERSONA", "TODOS_MIEMBROS"),
+    ("B",  "B. DATOS BÁSICOS",                    2,  "PERSONA", "TODOS_MIEMBROS"),
     ("F",  "F. EDUCACIÓN",                        6,  "PERSONA", "VICTIMAS_RUV_3_ANOS_MAS"),
     ("G",  "G. SALUD",                            7,  "PERSONA", "TODOS_MIEMBROS"),
     ("H",  "H. REHABILITACIÓN",                   8,  "PERSONA", "TODOS_MIEMBROS"),
@@ -336,10 +336,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            instrumento = InstrumentoVersion.objects.get(pk=INSTRUMENTO_PK)
-        except InstrumentoVersion.DoesNotExist:
+            instrumento = Instrumento.objects.get(pk=INSTRUMENTO_PK)
+        except Instrumento.DoesNotExist:
             self.stderr.write(
-                "Error: ejecuta primero: python manage.py loaddata perfiles_iniciales"
+                "Error: ejecuta primero: python manage.py crear_instrumentos_base"
             )
             return
 
@@ -386,6 +386,42 @@ class Command(BaseCommand):
                             "es_precargada": es_precarg,
                             "fuente_precarga": fuente,
                             "validaciones": validaciones,
+                            "activa": True,
+                        },
+                    )
+                    total_preguntas += 1
+
+            # ── Apellidos de "Datos básicos" (B) ──────────────────────────────
+            # El instrumento base NO traía preguntas de apellido. Se agregan aquí
+            # con UUID FIJO para que coincidan exactamente con el bundle del APK
+            # (que es offline y se edita en paralelo). Se precargan desde la
+            # víctima (es_precargada + fuente_precarga). OJO: el 'orden' aquí (47/48)
+            # NO define la posición en el formulario — eso lo define el bundle del
+            # APK, que las ubica junto a los nombres (posición 3/4). Si algún día se
+            # reexporta el bundle desde BD, reposicionarlas a 3/4 y renumerar el cap B.
+            APELLIDOS_DB = [
+                ("a9e110a1-0000-4000-8000-000000000001", "APELLIDO_1", "B1A", "Primer apellido",  47, True,  "VICTIMA_PRIMER_APELLIDO"),
+                ("a9e110a2-0000-4000-8000-000000000002", "APELLIDO_2", "B1B", "Segundo apellido", 48, False, "VICTIMA_SEGUNDO_APELLIDO"),
+            ]
+            cap_b = cap_objs.get("B")
+            if cap_b:
+                for uid, cod, nopreg, texto, orden, oblig, fuente in APELLIDOS_DB:
+                    Pregunta.objects.update_or_create(
+                        capitulo=cap_b,
+                        codigo_externo=cod,
+                        defaults={
+                            "id": uid,
+                            "no_pregunta": nopreg,
+                            "id_preg": None,
+                            "variable_bd": cod,
+                            "texto": texto,
+                            "tipo": "TEXTO",
+                            "nivel": "PERSONA",
+                            "obligatoria": oblig,
+                            "orden": orden,
+                            "es_precargada": True,
+                            "fuente_precarga": fuente,
+                            "validaciones": {"max_length": 60},
                             "activa": True,
                         },
                     )

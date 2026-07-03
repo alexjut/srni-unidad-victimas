@@ -4,9 +4,12 @@ Solo contiene ajustes comunes a todos los entornos.
 DATABASES, CACHES y almacenamiento se definen en cada entorno (development / production).
 NUNCA poner credenciales aquí.
 """
+import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+from django.templatetags.static import static
+from django.urls import reverse_lazy
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -45,9 +48,146 @@ LOCAL_APPS = [
     'apps.auditoria',
     'apps.reportes',
     'apps.ia',
+    'apps.movil',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+# 'unfold' (+ contrib) debe ir ANTES de django.contrib.admin (que vive en DJANGO_APPS).
+UNFOLD_APPS = ['unfold', 'unfold.contrib.filters']
+INSTALLED_APPS = UNFOLD_APPS + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+
+# ─── Indicador de entorno (banner del panel) ─────────────────────────────────
+# CRÍTICO: distinguir visualmente PRODUCCIÓN (servidor con datos reales de
+# víctimas) de DESARROLLO. Lee DJANGO_SETTINGS_MODULE en tiempo de ejecución.
+def unfold_environment_callback(request):
+    settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', '')
+    if 'servidor' in settings_module or 'production' in settings_module:
+        return ['PRODUCCIÓN', 'danger']
+    return ['DESARROLLO', 'warning']
+
+
+# ─── Tema del panel de administración (django-unfold) ─────────────────────────
+UNFOLD = {
+    'SITE_TITLE': 'SRNI · Unidad para las Víctimas',
+    'SITE_HEADER': 'SRNI · Unidad para las Víctimas',
+    'SITE_SUBHEADER': 'Sistema de Caracterización (SRNI)',
+    'SITE_BRAND': 'SRNI',
+    'THEME': 'dark',              # fuerza el tema oscuro de Unfold (usa el logo en negativo)
+    # Logo institucional de la Unidad para las Víctimas (servido desde static/marca/).
+    # Horizontal a color en modo claro, en negativo (blanco) en modo oscuro.
+    'SITE_LOGO': {
+        'light': lambda request: static('marca/logo-unidad-horizontal-color.svg'),
+        'dark': lambda request: static('marca/logo-unidad-horizontal-negativo.svg'),
+    },
+    'SITE_ICON': {
+        'light': lambda request: static('marca/logo-unidad-vertical-color.svg'),
+        'dark': lambda request: static('marca/logo-unidad-vertical-bn-negativo.svg'),
+    },
+    # CSS propio para compactar el panel (se ve "muy grande" por defecto).
+    'STYLES': [
+        lambda request: static('marca/admin-extra.css'),
+    ],
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'SHOW_THEME_SWITCHER': True,   # selector claro/oscuro (dark mode disponible)
+    'ENVIRONMENT': 'srni.settings.base.unfold_environment_callback',
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': True,
+        'navigation': [
+            {
+                'title': 'Formularios / Diccionario',
+                'icon': 'menu_book',
+                'items': [
+                    {'title': 'Instrumentos', 'icon': 'assignment',
+                     'link': reverse_lazy('admin:formulario_instrumento_changelist')},
+                    {'title': 'Capítulos', 'icon': 'folder',
+                     'link': reverse_lazy('admin:formulario_capitulo_changelist')},
+                    {'title': 'Preguntas', 'icon': 'quiz',
+                     'link': reverse_lazy('admin:formulario_pregunta_changelist')},
+                    # Nota: OpcionRespuesta solo existe como inline (sin changelist) → se omite.
+                    {'title': 'Reglas Skip-Logic', 'icon': 'account_tree',
+                     'link': reverse_lazy('admin:formulario_reglaskiplogic_changelist')},
+                ],
+            },
+            {
+                'title': 'Caracterización / Entrevistas',
+                'icon': 'how_to_reg',
+                'items': [
+                    {'title': 'Sesiones de encuesta', 'icon': 'fact_check',
+                     'link': reverse_lazy('admin:encuestas_sesionencuesta_changelist')},
+                    {'title': 'Respuestas', 'icon': 'checklist',
+                     'link': reverse_lazy('admin:encuestas_respuestaencuesta_changelist')},
+                    {'title': 'Hogares', 'icon': 'home',
+                     'link': reverse_lazy('admin:hogares_hogar_changelist')},
+                    {'title': 'Miembros del hogar', 'icon': 'groups',
+                     'link': reverse_lazy('admin:hogares_miembrohogar_changelist')},
+                ],
+            },
+            {
+                'title': 'Víctimas',
+                'icon': 'shield_person',
+                'items': [
+                    {'title': 'Víctimas', 'icon': 'shield_person',
+                     'link': reverse_lazy('admin:victimas_victima_changelist')},
+                ],
+            },
+            {
+                'title': 'Paramétricas',
+                'icon': 'map',
+                'items': [
+                    {'title': 'Departamentos', 'icon': 'map',
+                     'link': reverse_lazy('admin:parametricas_departamento_changelist')},
+                    {'title': 'Municipios', 'icon': 'location_city',
+                     'link': reverse_lazy('admin:parametricas_municipio_changelist')},
+                    {'title': 'Veredas', 'icon': 'cottage',
+                     'link': reverse_lazy('admin:parametricas_vereda_changelist')},
+                    {'title': 'Tipos de documento', 'icon': 'badge',
+                     'link': reverse_lazy('admin:parametricas_tipodocumento_changelist')},
+                    {'title': 'Comunidades negras', 'icon': 'diversity_3',
+                     'link': reverse_lazy('admin:parametricas_comunidadnegra_changelist')},
+                    {'title': 'Resguardos indígenas', 'icon': 'forest',
+                     'link': reverse_lazy('admin:parametricas_resguardoindigena_changelist')},
+                    {'title': 'Direcciones territoriales', 'icon': 'apartment',
+                     'link': reverse_lazy('admin:parametricas_direccionterritorial_changelist')},
+                    {'title': 'Puntos de atención', 'icon': 'support_agent',
+                     'link': reverse_lazy('admin:parametricas_puntoatencion_changelist')},
+                ],
+            },
+            {
+                'title': 'IA / Asistente',
+                'icon': 'smart_toy',
+                'items': [
+                    {'title': 'Consentimientos IA', 'icon': 'verified_user',
+                     'link': reverse_lazy('admin:ia_consentimientoia_changelist')},
+                    {'title': 'Sesiones IA', 'icon': 'smart_toy',
+                     'link': reverse_lazy('admin:ia_sesionia_changelist')},
+                ],
+            },
+            {
+                'title': 'Usuarios y accesos',
+                'icon': 'admin_panel_settings',
+                'items': [
+                    {'title': 'Usuarios', 'icon': 'person',
+                     'link': reverse_lazy('admin:autenticacion_usuario_changelist')},
+                    {'title': 'Perfiles', 'icon': 'badge',
+                     'link': reverse_lazy('admin:autenticacion_perfil_changelist')},
+                    {'title': 'Log de acceso (auditoría)', 'icon': 'shield',
+                     'link': reverse_lazy('admin:auditoria_logacceso_changelist')},
+                ],
+            },
+        ],
+    },
+}
+
+# Dashboard personalizado del panel (solo presentación — KPIs, gráficos, tabla).
+# Enriquece el context del index del admin. Ver srni/dashboard.py.
+UNFOLD['DASHBOARD_CALLBACK'] = 'srni.dashboard.dashboard_callback'
+
+# ─── Distribución móvil (APK) ────────────────────────────────────────────────
+MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
+MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)
+MOVIL_ACTUALIZACION_OBLIGATORIA = config('MOVIL_ACTUALIZACION_OBLIGATORIA', default=False, cast=bool)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -168,6 +308,7 @@ USE_TZ = True
 # --- Archivos estáticos ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']   # incluye static/marca/ (logos del admin)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- IA — Gemini ---
@@ -176,13 +317,9 @@ GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Datos de prueba del contratista (excepción a reglas de idempotencia) ---
-# Documento de la víctima de pruebas (Javier Aguilar — contratista 2226-2026).
-# Esta víctima específica puede tener N caracterizaciones bajo su único hogar,
-# para que el contratista valide los 8 instrumentos UARIV sin restricciones.
-# Para cualquier otra víctima real, aplica la regla 1 hogar → 1 caracterización.
-# Configurable por entorno (.env) en producción.
-VICTIMA_PRUEBAS_DOC = config('VICTIMA_PRUEBAS_DOC', default='1030547250')
+# Regla universal vigente: 1 víctima → 1 hogar → 1 caracterización activa.
+# Para probar otro instrumento sobre la misma víctima: completar la sesión actual,
+# archivar el hogar, crear hogar nuevo con la misma víctima.
 
 # --- Cifrado de campos PII ---
 # Clave AES-256 para EncryptedField personalizado (apps/victimas/fields.py)

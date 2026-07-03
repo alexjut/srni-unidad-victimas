@@ -96,7 +96,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "País"
+      "descripcion_ayuda": "País",
+      "id": "8f0367ac-81c9-4900-ab0d-f2c0900d29fd"
     },
     {
       "no_pregunta": "A2",
@@ -110,7 +111,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "c325a7f2-3bb2-45a9-9ab8-9ab23f0a14bf"
     },
     {
       "no_pregunta": "A3",
@@ -186,7 +188,8 @@
           "orden": 10
         }
       ],
-      "descripcion_ayuda": "Cédula de Ciudadanía/Contraseña"
+      "descripcion_ayuda": "Cédula de Ciudadanía/Contraseña",
+      "id": "b3937ba7-9896-4ec4-95cf-c2c09770c3d9"
     },
     {
       "no_pregunta": "A4",
@@ -200,7 +203,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "7f228dc1-1e0c-497b-9b0a-9afa32d2c593"
     },
     {
       "no_pregunta": "A5",
@@ -246,7 +250,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Jefe(a)"
+      "descripcion_ayuda": "Jefe(a)",
+      "id": "94dab7ef-75e7-4775-9856-c57d2c5f9ec2"
     },
     {
       "no_pregunta": "A6",
@@ -260,7 +265,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "94ad929e-270a-4b03-b6e5-bc8964e61f01"
     },
     {
       "no_pregunta": "A7",
@@ -282,7 +288,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "fb79f133-f621-448a-a04d-720e8d729a87"
     },
     {
       "no_pregunta": "A8",
@@ -310,7 +317,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Este país"
+      "descripcion_ayuda": "Este país",
+      "id": "c90e43a4-79f0-45c9-b521-918d3ca8c1c5"
     },
     {
       "no_pregunta": "A9",
@@ -332,7 +340,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "En Colombia"
+      "descripcion_ayuda": "En Colombia",
+      "id": "37e7d5da-a8da-4809-a51d-7fd68696d28c"
     },
     {
       "no_pregunta": "A10",
@@ -354,7 +363,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "8937a241-403f-4798-968f-86b02db0ac85"
     },
     {
       "no_pregunta": "A11",
@@ -376,7 +386,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si, ¿de qué otro país o países cuenta con la nacionalidad?"
+      "descripcion_ayuda": "Si, ¿de qué otro país o países cuenta con la nacionalidad?",
+      "id": "a8dc19f7-b2ac-4be9-85bc-20a149e64425"
     },
     {
       "no_pregunta": "A12",
@@ -404,7 +415,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Pais"
+      "descripcion_ayuda": "Pais",
+      "id": "c624660b-6dad-4470-aa1f-fac05b8acf63"
     },
     {
       "no_pregunta": "A13",
@@ -438,7 +450,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Hombre"
+      "descripcion_ayuda": "Hombre",
+      "id": "49a96b81-9fdd-41bd-8c7d-63632df27a2d"
     },
     {
       "no_pregunta": "A14",
@@ -478,7 +491,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Heterosexual"
+      "descripcion_ayuda": "Heterosexual",
+      "id": "6ffc911f-e155-4e52-b681-698e73e291b2"
     },
     {
       "no_pregunta": "A15",
@@ -506,7 +520,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Femenino"
+      "descripcion_ayuda": "Femenino",
+      "id": "50431221-1100-4636-82a2-36c6e85301ed"
     },
     {
       "no_pregunta": "A16",
@@ -552,7 +567,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Indígena"
+      "descripcion_ayuda": "Indígena",
+      "id": "71ed8a03-19d5-4624-90ec-d02d9daf82f0"
     },
     {
       "no_pregunta": "A17",
@@ -566,7 +582,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "1bce3916-49fd-44ba-9245-7720a0fc398a"
     },
     {
       "no_pregunta": "A18",
@@ -580,7 +597,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "3b8782f3-992e-4d26-b4ad-1f52fdf94703"
     },
     {
       "no_pregunta": "A19",
@@ -594,7 +612,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "8a683dba-45f1-4850-a256-051ec3958cbc"
     },
     {
       "no_pregunta": "A20",
@@ -621,7 +640,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "3f228364-4f33-40ec-a14e-e50a7f6696ad"
     },
     {
       "no_pregunta": "A21",
@@ -635,7 +655,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "8bc8b73a-d1f3-43c6-9dd4-c876aa79bb46"
     },
     {
       "no_pregunta": "A22",
@@ -662,7 +683,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "c23174bd-9aa6-49bd-bd02-3cbdf052bb6e"
     },
     {
       "no_pregunta": "A23",
@@ -713,7 +735,8 @@
           "id_resp_vivanto": 0,
           "orden": 6
         }
-      ]
+      ],
+      "id": "4e76cbb7-b974-41e3-83da-a8bab15149d9"
     },
     {
       "no_pregunta": "A24",
@@ -740,7 +763,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "8d60086f-a550-44ee-a1ff-1218622c8bb5"
     },
     {
       "no_pregunta": "A25",
@@ -839,7 +863,8 @@
           "id_resp_vivanto": 0,
           "orden": 14
         }
-      ]
+      ],
+      "id": "7f861d14-1b71-466c-b8e9-f755e85debd0"
     },
     {
       "no_pregunta": "A26",
@@ -944,7 +969,8 @@
           "id_resp_vivanto": 0,
           "orden": 15
         }
-      ]
+      ],
+      "id": "5555fb2c-f4b3-4925-897e-6273095da644"
     },
     {
       "no_pregunta": "A27",
@@ -971,7 +997,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "e6a47903-b5d8-4ba2-987b-06a394c39715"
     },
     {
       "no_pregunta": "B1",
@@ -998,7 +1025,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "982d8042-4105-4ff2-9c31-a04b81f95074"
     },
     {
       "no_pregunta": "B2",
@@ -1012,7 +1040,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "8b4c8ea4-fca4-42b8-8fa4-3017dc65106f"
     },
     {
       "no_pregunta": "B3",
@@ -1026,7 +1055,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "4e4ad2f4-27c8-4b7c-a152-0dcd04bb75cd"
     },
     {
       "no_pregunta": "B4",
@@ -1040,7 +1070,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "c93e6fa5-e204-4b27-871d-e92f4f8129c0"
     },
     {
       "no_pregunta": "B5",
@@ -1054,7 +1085,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "75aa4aaf-1ff5-46c2-acaf-987ddb608dbb"
     },
     {
       "no_pregunta": "B6",
@@ -1068,7 +1100,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "b98ab521-8984-4ad2-88b8-98105d975d83"
     },
     {
       "no_pregunta": "C1",
@@ -1095,7 +1128,8 @@
           "id_resp_vivanto": 0,
           "orden": 2
         }
-      ]
+      ],
+      "id": "fe61b211-2039-4ccc-9804-120b6b6c401b"
     },
     {
       "no_pregunta": "C2",
@@ -1123,7 +1157,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "7347d247-e0f2-4c4a-88b0-ce2d89574484"
     },
     {
       "no_pregunta": "C3",
@@ -1175,7 +1210,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "No conoce el lugar donde puede hacerlo"
+      "descripcion_ayuda": "No conoce el lugar donde puede hacerlo",
+      "id": "999a99f4-2093-4b3b-9336-05ec047c635c"
     },
     {
       "no_pregunta": "C4",
@@ -1197,7 +1233,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "a473854c-6b78-47fb-940e-ef868727c1c4"
     },
     {
       "no_pregunta": "C5",
@@ -1212,7 +1249,8 @@
       "fuente_precarga": "",
       "validaciones": {},
       "opciones": [],
-      "descripcion_ayuda": "Campo Abierto"
+      "descripcion_ayuda": "Campo Abierto",
+      "id": "21971aba-32fa-4291-9fd6-3839417acbec"
     },
     {
       "no_pregunta": "C6",
@@ -1324,7 +1362,8 @@
           "orden": 16
         }
       ],
-      "descripcion_ayuda": "Acto terrorista / atentados / combates /enfrentamientos / hostigamientos"
+      "descripcion_ayuda": "Acto terrorista / atentados / combates /enfrentamientos / hostigamientos",
+      "id": "3ec9564f-ac4f-4a10-8325-7d1969fe24f5"
     },
     {
       "no_pregunta": "C7",
@@ -1376,7 +1415,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "Dejó de tener ingresos por la pérdida o afectación a algún tipo de negocio o pertenencia (lucro cesante)"
+      "descripcion_ayuda": "Dejó de tener ingresos por la pérdida o afectación a algún tipo de negocio o pertenencia (lucro cesante)",
+      "id": "7fe599f9-4966-49e7-8a79-a2354878e171"
     },
     {
       "no_pregunta": "C8",
@@ -1404,7 +1444,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "La conoce mucho"
+      "descripcion_ayuda": "La conoce mucho",
+      "id": "40c667ed-f247-485b-8e24-73ad9b4458e9"
     },
     {
       "no_pregunta": "C9",
@@ -1432,7 +1473,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Los conoce mucho"
+      "descripcion_ayuda": "Los conoce mucho",
+      "id": "5faf61e0-8f06-4d53-be8b-a278af923a42"
     },
     {
       "no_pregunta": "C10",
@@ -1502,7 +1544,8 @@
           "orden": 9
         }
       ],
-      "descripcion_ayuda": "Derecho a la verdad sobre los hechos ocurridos"
+      "descripcion_ayuda": "Derecho a la verdad sobre los hechos ocurridos",
+      "id": "4b94dd80-3bdc-4a89-b6fb-a4b5ac3ef0ba"
     },
     {
       "no_pregunta": "C11",
@@ -1578,7 +1621,8 @@
           "orden": 10
         }
       ],
-      "descripcion_ayuda": "Atención - Orientación por canales virtuales, telefónicos o presenciales"
+      "descripcion_ayuda": "Atención - Orientación por canales virtuales, telefónicos o presenciales",
+      "id": "04587c76-d0fd-40f7-85fc-a9a0638a8f7b"
     },
     {
       "no_pregunta": "C12",
@@ -1630,7 +1674,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "Unidad para las Víctimas"
+      "descripcion_ayuda": "Unidad para las Víctimas",
+      "id": "03777af9-d84b-4f2a-91c8-e55163cc098e"
     },
     {
       "no_pregunta": "C13",
@@ -1676,7 +1721,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Porque no sabe cómo acceder"
+      "descripcion_ayuda": "Porque no sabe cómo acceder",
+      "id": "4daaf97e-a83a-47a9-9d8e-d396f2c8c57c"
     },
     {
       "no_pregunta": "C14",
@@ -1710,7 +1756,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Comisión para el Esclarecimiento de la Verdad"
+      "descripcion_ayuda": "Comisión para el Esclarecimiento de la Verdad",
+      "id": "89be2f06-9283-4b2d-90a7-c793abd1f999"
     },
     {
       "no_pregunta": "D1",
@@ -1732,7 +1779,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Departamento"
+      "descripcion_ayuda": "Departamento",
+      "id": "cc99475f-2f64-46af-817a-ac3aa6c0422e"
     },
     {
       "no_pregunta": "D2",
@@ -1746,7 +1794,8 @@
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": []
+      "opciones": [],
+      "id": "e84ceac3-d0c6-4924-af9f-883b235b77e8"
     },
     {
       "no_pregunta": "D3",
@@ -1792,7 +1841,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Menos de 1 año"
+      "descripcion_ayuda": "Menos de 1 año",
+      "id": "0e4918e0-d159-43d4-afaa-786bbd69fb0d"
     },
     {
       "no_pregunta": "D4",
@@ -1838,7 +1888,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Menos de 1 año"
+      "descripcion_ayuda": "Menos de 1 año",
+      "id": "5ac8d1eb-7ab5-4c6f-a3b6-a8177edc7318"
     },
     {
       "no_pregunta": "D5",
@@ -1860,7 +1911,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "e710aba8-5253-4e5d-b8c2-d46b7d0c1786"
     },
     {
       "no_pregunta": "D6",
@@ -1906,7 +1958,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Cero"
+      "descripcion_ayuda": "Cero",
+      "id": "9ea489a8-1ffc-453e-850c-b31fc98a8614"
     },
     {
       "no_pregunta": "D7",
@@ -1921,7 +1974,8 @@
       "fuente_precarga": "",
       "validaciones": {},
       "opciones": [],
-      "descripcion_ayuda": "Listado de Paises (selección múltiple)"
+      "descripcion_ayuda": "Listado de Paises (selección múltiple)",
+      "id": "56ab53ea-f66d-47c1-b0cb-b8be982fd2e1"
     },
     {
       "no_pregunta": "D8",
@@ -1979,7 +2033,8 @@
           "orden": 7
         }
       ],
-      "descripcion_ayuda": "Solo (a)"
+      "descripcion_ayuda": "Solo (a)",
+      "id": "143d2514-2792-4ff2-8b34-162f31f686be"
     },
     {
       "no_pregunta": "D9",
@@ -2037,7 +2092,8 @@
           "orden": 7
         }
       ],
-      "descripcion_ayuda": "Menos de 1 año"
+      "descripcion_ayuda": "Menos de 1 año",
+      "id": "2694a3c9-2db3-4387-abee-d125d113c875"
     },
     {
       "no_pregunta": "D10",
@@ -2059,7 +2115,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "2af5d268-9965-428f-8bf7-dea147d1d717"
     },
     {
       "no_pregunta": "D11",
@@ -2135,7 +2192,8 @@
           "orden": 10
         }
       ],
-      "descripcion_ayuda": "Los costos del transporte para llegar aquí son económicos"
+      "descripcion_ayuda": "Los costos del transporte para llegar aquí son económicos",
+      "id": "1300104e-60a9-43a6-8ea6-06e5cdb7dfd0"
     },
     {
       "no_pregunta": "E1",
@@ -2157,7 +2215,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "24aa0684-bc90-466a-bf4b-0ee19125568b"
     },
     {
       "no_pregunta": "E2",
@@ -2185,7 +2244,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Aceptado"
+      "descripcion_ayuda": "Aceptado",
+      "id": "9787d210-57c8-42d7-86c9-b4ba04696597"
     },
     {
       "no_pregunta": "E3",
@@ -2219,7 +2279,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Menos de 1 año"
+      "descripcion_ayuda": "Menos de 1 año",
+      "id": "946395fc-5f43-409e-9069-8630e58f642d"
     },
     {
       "no_pregunta": "E4",
@@ -2241,7 +2302,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "06e041b4-d5c7-4f25-bd3f-5a93918f1074"
     },
     {
       "no_pregunta": "E5",
@@ -2275,7 +2337,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "No se acercó al consulado colombiano para declarar los hechos que sufrió"
+      "descripcion_ayuda": "No se acercó al consulado colombiano para declarar los hechos que sufrió",
+      "id": "5255389b-5d97-48ab-864b-a1d9fb6fef17"
     },
     {
       "no_pregunta": "E6",
@@ -2321,7 +2384,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Tiene residencia permanente"
+      "descripcion_ayuda": "Tiene residencia permanente",
+      "id": "fa1a9b8d-7593-4105-b5c3-86516175999b"
     },
     {
       "no_pregunta": "F1",
@@ -2349,7 +2413,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "c5eaec07-b998-4f59-a1e4-83e1c65942d1"
     },
     {
       "no_pregunta": "F2",
@@ -2383,7 +2448,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Lo domina mucho"
+      "descripcion_ayuda": "Lo domina mucho",
+      "id": "48e67857-7911-4ed5-a46e-61b063747a9f"
     },
     {
       "no_pregunta": "F3",
@@ -2447,7 +2513,8 @@
           "orden": 8
         }
       ],
-      "descripcion_ayuda": "Porque está cerca de familiares y/o amigos que lo (la) apoyan"
+      "descripcion_ayuda": "Porque está cerca de familiares y/o amigos que lo (la) apoyan",
+      "id": "e9d5a424-91ee-4e91-b117-a2ef1b3c5144"
     },
     {
       "no_pregunta": "F4",
@@ -2469,7 +2536,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "623b5eb8-5b13-41d2-92ca-038a12704707"
     },
     {
       "no_pregunta": "F5",
@@ -2545,7 +2613,8 @@
           "orden": 10
         }
       ],
-      "descripcion_ayuda": "Falta de oportunidades económicas"
+      "descripcion_ayuda": "Falta de oportunidades económicas",
+      "id": "96fcb021-1e45-4c55-896c-65d5afb9e5c0"
     },
     {
       "no_pregunta": "F6",
@@ -2585,7 +2654,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Una casa"
+      "descripcion_ayuda": "Una casa",
+      "id": "3c3dc178-1bad-4cc2-b833-5b29d1761afd"
     },
     {
       "no_pregunta": "F7",
@@ -2631,7 +2701,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Arrendada"
+      "descripcion_ayuda": "Arrendada",
+      "id": "5962ca46-6a3b-4c0b-a601-f645db2d249e"
     },
     {
       "no_pregunta": "F8",
@@ -2671,7 +2742,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Solo (a)"
+      "descripcion_ayuda": "Solo (a)",
+      "id": "d29bdedb-84cf-4dd0-bbcf-f27536faaa5e"
     },
     {
       "no_pregunta": "F9",
@@ -2693,7 +2765,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "4500593a-6cb7-47c3-94c7-6ae466ff85bd"
     },
     {
       "no_pregunta": "F10",
@@ -2727,7 +2800,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Condiciones exigidas para acceder a una vivienda (documentos)"
+      "descripcion_ayuda": "Condiciones exigidas para acceder a una vivienda (documentos)",
+      "id": "179b38ba-e9f1-4706-9f44-53aa6bd8a285"
     },
     {
       "no_pregunta": "F11",
@@ -2749,7 +2823,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "5f0a8aca-e58b-4028-b6ff-9baa83844619"
     },
     {
       "no_pregunta": "F12",
@@ -2771,7 +2846,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "c4735d85-3f18-4ba2-8655-fd8e85cdd786"
     },
     {
       "no_pregunta": "F13",
@@ -2823,7 +2899,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "Ministerio de Salud de Colombia"
+      "descripcion_ayuda": "Ministerio de Salud de Colombia",
+      "id": "c68a0b8f-e110-466a-b955-7f87d7ce48fe"
     },
     {
       "no_pregunta": "F14",
@@ -2845,7 +2922,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "ab910c53-571d-4044-b941-649aa3d7cf2c"
     },
     {
       "no_pregunta": "F15",
@@ -2867,7 +2945,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "d998f4bc-a827-41f3-889c-395be2fa4837"
     },
     {
       "no_pregunta": "F16",
@@ -2913,7 +2992,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Estudios no formales"
+      "descripcion_ayuda": "Estudios no formales",
+      "id": "86e4c424-8d9d-4a8c-bd7d-ea7e83d21c37"
     },
     {
       "no_pregunta": "F17",
@@ -2935,7 +3015,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "7dabfeb5-c914-4f9d-930e-63b3154a6380"
     },
     {
       "no_pregunta": "F18",
@@ -2987,7 +3068,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "Estudios no formales"
+      "descripcion_ayuda": "Estudios no formales",
+      "id": "6b65319c-259f-40f4-86ca-356bcb06d8eb"
     },
     {
       "no_pregunta": "F19",
@@ -3009,7 +3091,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "a350c63c-f4cb-4504-ac10-3aded8f02d56"
     },
     {
       "no_pregunta": "F20",
@@ -3061,7 +3144,8 @@
           "orden": 6
         }
       ],
-      "descripcion_ayuda": "No hay oportunidades en este país"
+      "descripcion_ayuda": "No hay oportunidades en este país",
+      "id": "8daffda3-62d9-4f75-9b10-7e49fb55f619"
     },
     {
       "no_pregunta": "F21",
@@ -3089,7 +3173,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Cubrir todas sus necesidades"
+      "descripcion_ayuda": "Cubrir todas sus necesidades",
+      "id": "e6cceb77-d510-477c-87b0-6a892af611ab"
     },
     {
       "no_pregunta": "F22",
@@ -3117,7 +3202,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Cubrir todas sus necesidades"
+      "descripcion_ayuda": "Cubrir todas sus necesidades",
+      "id": "16f387f4-fa1c-4cd6-a7c4-3789ef7b3d08"
     },
     {
       "no_pregunta": "F23",
@@ -3181,7 +3267,8 @@
           "orden": 8
         }
       ],
-      "descripcion_ayuda": "Empleado formal (con contrato)"
+      "descripcion_ayuda": "Empleado formal (con contrato)",
+      "id": "aff029d5-3d29-42a3-89eb-a6d7a05a4111"
     },
     {
       "no_pregunta": "F24",
@@ -3245,7 +3332,8 @@
           "orden": 8
         }
       ],
-      "descripcion_ayuda": "Empleado formal (con contrato)"
+      "descripcion_ayuda": "Empleado formal (con contrato)",
+      "id": "4ac2c406-9acd-4043-9ef3-3b2f86fab4fa"
     },
     {
       "no_pregunta": "F25",
@@ -3273,7 +3361,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Más seguro (a) que en Colombia"
+      "descripcion_ayuda": "Más seguro (a) que en Colombia",
+      "id": "0ea80a15-84b6-4adf-94a7-3a26461102d9"
     },
     {
       "no_pregunta": "F26",
@@ -3313,7 +3402,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Esta ciudad"
+      "descripcion_ayuda": "Esta ciudad",
+      "id": "f4c2f16d-c5c9-403a-acec-fd959ab970ec"
     },
     {
       "no_pregunta": "F27",
@@ -3335,7 +3425,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "e29ddfb5-d982-4840-b50a-d59c5e104f73"
     },
     {
       "no_pregunta": "F28",
@@ -3393,7 +3484,8 @@
           "orden": 7
         }
       ],
-      "descripcion_ayuda": "Gobierno local"
+      "descripcion_ayuda": "Gobierno local",
+      "id": "06ba191d-4e6a-4e7a-b705-a488806db27c"
     },
     {
       "no_pregunta": "F29",
@@ -3415,7 +3507,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "91fce672-66b2-4f6f-9fcb-5867bb74f957"
     },
     {
       "no_pregunta": "F30",
@@ -3449,7 +3542,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Organizaciones benéficas o voluntarias"
+      "descripcion_ayuda": "Organizaciones benéficas o voluntarias",
+      "id": "c5a65f7a-2deb-4fbf-a1e2-872a9cc71059"
     },
     {
       "no_pregunta": "F31",
@@ -3471,7 +3565,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "b51e6e96-cb6b-4de8-9df7-aeae3940d804"
     },
     {
       "no_pregunta": "F32",
@@ -3505,7 +3600,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Organizaciones benéficas o voluntarias"
+      "descripcion_ayuda": "Organizaciones benéficas o voluntarias",
+      "id": "0c44c9de-b036-441d-8eab-ae01f86e5ee7"
     },
     {
       "no_pregunta": "F33",
@@ -3527,7 +3623,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "35a90dc2-9db6-4b68-87f0-8d549f165c04"
     },
     {
       "no_pregunta": "G1",
@@ -3561,7 +3658,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "Abandono Forzado"
+      "descripcion_ayuda": "Abandono Forzado",
+      "id": "bbcacc59-30f8-4879-94be-35db0689e2bb"
     },
     {
       "no_pregunta": "G2",
@@ -3583,7 +3681,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Departamento"
+      "descripcion_ayuda": "Departamento",
+      "id": "5bac186c-7835-432d-8746-3424f12adbde"
     },
     {
       "no_pregunta": "G3",
@@ -3611,7 +3710,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "0b7b90b0-4436-45e5-a715-38ffe38e47bc"
     },
     {
       "no_pregunta": "G4",
@@ -3639,7 +3739,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "683f0501-45d2-4dba-b2e1-ed4623405bfe"
     },
     {
       "no_pregunta": "H1",
@@ -3667,7 +3768,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Retornar a Colombia"
+      "descripcion_ayuda": "Retornar a Colombia",
+      "id": "66073874-7d24-4acf-a5bb-f0c9a19c6528"
     },
     {
       "no_pregunta": "H2",
@@ -3713,7 +3815,8 @@
           "orden": 5
         }
       ],
-      "descripcion_ayuda": "Entre 1 y 6 meses"
+      "descripcion_ayuda": "Entre 1 y 6 meses",
+      "id": "8c149293-d017-4381-b572-cb1be7f9677b"
     },
     {
       "no_pregunta": "H3",
@@ -3747,7 +3850,8 @@
           "orden": 3
         }
       ],
-      "descripcion_ayuda": "A su lugar de nacimiento"
+      "descripcion_ayuda": "A su lugar de nacimiento",
+      "id": "d96f95d2-2822-4331-98ee-2a3e2d0802df"
     },
     {
       "no_pregunta": "H4",
@@ -3787,7 +3891,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Temor que vuelva a ser víctima del conflicto armado"
+      "descripcion_ayuda": "Temor que vuelva a ser víctima del conflicto armado",
+      "id": "266e8bc5-0dd2-4943-8a84-988c337a8134"
     },
     {
       "no_pregunta": "H5",
@@ -3857,7 +3962,8 @@
           "orden": 9
         }
       ],
-      "descripcion_ayuda": "Quiere estar con su familia"
+      "descripcion_ayuda": "Quiere estar con su familia",
+      "id": "56853dc8-4ee1-47d5-9cb3-00057d5d229c"
     },
     {
       "no_pregunta": "H6",
@@ -3885,7 +3991,8 @@
           "orden": 2
         }
       ],
-      "descripcion_ayuda": "Sí"
+      "descripcion_ayuda": "Sí",
+      "id": "5c87c43e-c925-48e6-84a6-5de7b58ca20b"
     },
     {
       "no_pregunta": "H7",
@@ -3925,7 +4032,8 @@
           "orden": 4
         }
       ],
-      "descripcion_ayuda": "Ingresos"
+      "descripcion_ayuda": "Ingresos",
+      "id": "78363ed9-3f68-4d31-9ba7-f7d6575711c9"
     },
     {
       "no_pregunta": "H8",
@@ -3947,7 +4055,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "58f7d61a-480e-4ae7-bf06-c75d6e586825"
     },
     {
       "no_pregunta": "H9",
@@ -3969,7 +4078,8 @@
           "orden": 1
         }
       ],
-      "descripcion_ayuda": "Si"
+      "descripcion_ayuda": "Si",
+      "id": "e8057f13-e65d-4696-94c2-0ad8c88e1ab0"
     }
   ],
   "reglas_skip_logic": [],

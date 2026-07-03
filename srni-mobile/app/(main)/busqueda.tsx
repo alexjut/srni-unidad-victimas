@@ -22,14 +22,19 @@ import { router, useFocusEffect } from 'expo-router';
 import { GovHeader } from '../../src/components/GovHeader';
 import { SelectorFecha } from '../../src/components/SelectorFecha';
 
-// Imagen auténtica de comunidad indígena Emberá — Unidad para las Víctimas
-const IMAGEN_FONDO = {
-  uri: 'https://www.unidadvictimas.gov.co/wp-content/uploads/2024/11/UnidadVictimasRechazaDiscursosDiscriminatoriosContraMingaEmbera-V1-e1732827844334-1024x577.jpeg',
-};
+// Fondo: caficultor colombiano en la montaña. Imagen LOCAL (bundled) → carga
+// offline, sin depender de red, coherente con la marca SICAV Móvil.
+const IMAGEN_FONDO = require('../../assets/fondo-busqueda.jpg');
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
 import { victimasApi } from '../../src/api/victimas';
 import apiClient from '../../src/api/client';
 import { useCaracterizacionStore } from '../../src/stores/caracterizacionStore';
+import { useSyncStore } from '../../src/stores/syncStore';
+import * as precargaDao from '../../src/db/precargaDao';
+import type { PadronRow } from '../../src/db/precargaDao';
+import * as victimasOfflineDao from '../../src/db/victimasOfflineDao';
+import * as colaDao from '../../src/db/colaDao';
+import { reportarError } from '../../src/services/errorReporter';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
 // ── Tipos de documento ───────────────────────────────────────────────────────
@@ -272,7 +277,7 @@ function TarjetaNoHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente
       <View style={styles.chipsFila}>
         <Chip
           style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
-          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+          textStyle={{ ...FONT.label, color: colorEstadoRuv(v.estado_ruv) }}
         >
           {v.estado_ruv.replace('_', ' ')}
         </Chip>
@@ -303,14 +308,14 @@ function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }
       <View style={styles.chipsFila}>
         <Chip
           style={[styles.chip, { backgroundColor: fondoEstadoRuv(v.estado_ruv) }]}
-          textStyle={{ color: colorEstadoRuv(v.estado_ruv), ...FONT.label }}
+          textStyle={{ ...FONT.label, color: colorEstadoRuv(v.estado_ruv) }}
         >
           {v.estado_ruv.replace('_', ' ')}
         </Chip>
         {v.discapacidad && (
           <Chip
             style={[styles.chip, { backgroundColor: GOV.rojoTenue }]}
-            textStyle={{ color: GOV.rojo, ...FONT.label }}
+            textStyle={{ ...FONT.label, color: GOV.rojo }}
             icon="wheelchair-accessibility"
           >
             Discapacidad
@@ -319,7 +324,7 @@ function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }
         {mostrarEtnia && (
           <Chip
             style={[styles.chip, { backgroundColor: GOV.azulTenue }]}
-            textStyle={{ color: GOV.azul, ...FONT.label }}
+            textStyle={{ ...FONT.label, color: GOV.azul }}
           >
             {v.pertenencia_etnica}
           </Chip>
@@ -473,6 +478,65 @@ function TarjetaNoEncontrado({
   );
 }
 
+// ── Búsqueda OFFLINE: arma un ResultadoBusquedaFuente desde el padrón local ───
+// Cuando no hay red (o el server falla) buscamos en el padrón precargado. Si la
+// persona viene en la jornada del día usamos el VictimaResumenFuente COMPLETO;
+// si solo está en el padrón liviano, construimos un resumen mínimo suficiente
+// para mostrar estado (nombre, ubicación, hechos, RUV/habilitada/caracterizada).
+function resultadoDesdePadron(
+  p: PadronRow,
+  jornada: VictimaResumenFuente | null,
+): ResultadoBusquedaFuente {
+  if (jornada) {
+    return {
+      encontrado: true,
+      victima: jornada,
+      fuente: 'OFFLINE (jornada)',
+      mensaje: p.ya_caracterizada
+        ? 'Persona ya caracterizada (datos offline).'
+        : 'Persona encontrada en datos offline.',
+    };
+  }
+
+  const partes = (p.nombre ?? '').trim().split(/\s+/);
+  const victima: VictimaResumenFuente = {
+    cons_persona: p.cons_persona,
+    tipo_documento: p.tipo_documento,
+    numero_documento: `••••${p.documento_display}`,
+    primer_nombre: partes[0] ?? p.nombre ?? '',
+    segundo_nombre: '',
+    primer_apellido: partes.slice(1).join(' '),
+    segundo_apellido: '',
+    fecha_nacimiento: '',
+    genero: 'ND',
+    estado_ruv: p.en_ruv ? 'INCLUIDO' : 'NO_INCLUIDO',
+    habilitado_para_caracterizacion: p.habilitada && !p.ya_caracterizada,
+    fecha_ult_caracterizacion: null,
+    pertenencia_etnica: 'NINGUNA',
+    pueblo_indigena: '',
+    discapacidad: false,
+    tipo_discapacidad: '',
+    hechos_victimizantes: Array.from({ length: Math.max(0, p.cantidad_hechos) }, () => ({
+      codigo: '',
+      nombre: 'Hecho registrado',
+      fecha_hecho: null,
+      municipio_hecho: p.ubicacion || null,
+    })),
+    municipio_residencia_codigo: null,
+    municipio_residencia_nombre: p.ubicacion || null,
+    fuente_origen: 'OFFLINE',
+  };
+
+  return {
+    encontrado: true,
+    victima,
+    fuente: 'OFFLINE (padrón)',
+    mensaje: p.ya_caracterizada
+      ? 'Persona YA CARACTERIZADA (datos offline).'
+      : 'Persona encontrada en el padrón offline.',
+  };
+}
+
 // ── Pantalla principal ────────────────────────────────────────────────────────
 
 export default function BusquedaScreen() {
@@ -490,6 +554,8 @@ export default function BusquedaScreen() {
 
   const { rutaEntrevista, setRutaEntrevista, victimaFuente } = useCaracterizacionStore();
   const rutaLabel = RUTAS.find((r) => r.value === rutaEntrevista)?.label ?? 'General';
+  const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
   const [noIncluidaRegistrada, setNoIncluidaRegistrada] = useState(false);
 
@@ -525,6 +591,23 @@ export default function BusquedaScreen() {
     }
   }
 
+  /**
+   * Fase 0 offline: busca en el padrón local. Devuelve true si encontró y ya
+   * pintó el resultado; false si no hay nada local (para mostrar el error de red).
+   */
+  async function buscarOffline(): Promise<boolean> {
+    try {
+      const doc = documento.trim();
+      const p = await precargaDao.buscarEnPadron(doc);
+      if (!p) return false;
+      const jornada = await precargaDao.buscarEnJornada(doc);
+      setResultado(resultadoDesdePadron(p, jornada));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function buscar() {
     if (!documento.trim()) return;
     setCargando(true);
@@ -532,16 +615,40 @@ export default function BusquedaScreen() {
     setErrorBusqueda(null);
     setInstrumentoSeleccionado(null);
     setNoIncluidaRegistrada(false);
+
+    // Si no hay red, ni intentamos el server: vamos directo al padrón offline.
+    if (!estaOnline) {
+      const ok = await buscarOffline();
+      if (!ok) {
+        setErrorBusqueda(
+          'Sin conexión y la persona no está en los datos offline. Conéctese e intente de nuevo.',
+        );
+      }
+      setCargando(false);
+      return;
+    }
+
     try {
       const { data } = await victimasApi.consultarFuente(tipoDoc, documento.trim());
       setResultado(data);
       // Sprint 17: ya NO se cargan instrumentos aquí. El selector vive en el hub
       // de caracterizaciones tras conformar el hogar (flujo cosido Sprint 14).
     } catch {
-      setErrorBusqueda('Error al consultar el RNI. Verifique la conexión.');
+      // El server falló aunque creíamos estar online → fallback al padrón local.
+      const ok = await buscarOffline();
+      if (!ok) {
+        setErrorBusqueda('Error al consultar el RNI. Verifique la conexión.');
+      }
     } finally {
       setCargando(false);
     }
+  }
+
+  // true si el error es de RED (el servidor no respondió: timeout / sin conexión).
+  // axios deja err.response indefinido en errores de red. Sirve para caer a offline
+  // aunque la bandera `estaOnline` esté desactualizada (modo avión reciente).
+  function esErrorDeRed(err: any): boolean {
+    return !err?.response;
   }
 
   async function conformarHogar() {
@@ -549,15 +656,47 @@ export default function BusquedaScreen() {
     if (!v) return;
     setCargandoRegistro(true);
     try {
-      const { data } = await victimasApi.registrarDesdeFuente(v);
-      useCaracterizacionStore.getState().setVictimaFuente(v);
-      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      if (estaOnline) {
+        try {
+          const { data } = await victimasApi.registrarDesdeFuente(v);
+          useCaracterizacionStore.getState().setVictimaFuente(v);
+          useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        } catch (err) {
+          if (!esErrorDeRed(err)) throw err; // error real del servidor → propagar
+          // La bandera estaba desactualizada: el servidor no respondió → offline.
+          await registrarVictimaOffline(v);
+        }
+      } else {
+        // Sin red: registrar la víctima OFFLINE. El id_local actúa como
+        // `autorizado` del hogar; REGISTRAR_VICTIMA la creará en el servidor al
+        // recuperar señal y remapeará el UUID en el CREAR_HOGAR pendiente.
+        await registrarVictimaOffline(v);
+      }
       router.push('/(main)/hogares/conformar');
-    } catch {
-      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } catch (err: any) {
+      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'conformarHogar — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        stack: err?.stack,
+        pantalla: 'busqueda',
+      });
+      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
     } finally {
       setCargandoRegistro(false);
     }
+  }
+
+  /** Crea la víctima offline + encola REGISTRAR_VICTIMA y deja el store listo. */
+  async function registrarVictimaOffline(v: VictimaResumenFuente) {
+    const victimaLocal = await victimasOfflineDao.crearVictimaOffline(v);
+    await colaDao.encolar('REGISTRAR_VICTIMA', victimaLocal.id_local, {
+      id_local: victimaLocal.id_local,
+      victima: v,
+    });
+    useCaracterizacionStore.getState().setVictimaFuente(v);
+    useCaracterizacionStore.getState().setVictimaLocalId(victimaLocal.id_local);
+    await refrescarContadores();
   }
 
   // Víctima ya registrada (no incluida) — directo a conformar hogar
@@ -590,12 +729,29 @@ export default function BusquedaScreen() {
         municipio_residencia_nombre: null,
         fuente_origen: 'NO_INCLUIDA',
       };
-      const { data } = await victimasApi.registrarDesdeFuente(payload);
-      useCaracterizacionStore.getState().setVictimaFuente(payload);
-      useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+      if (estaOnline) {
+        try {
+          const { data } = await victimasApi.registrarDesdeFuente(payload);
+          useCaracterizacionStore.getState().setVictimaFuente(payload);
+          useCaracterizacionStore.getState().setVictimaLocalId(data.victima_id);
+        } catch (err) {
+          if (!esErrorDeRed(err)) throw err;
+          await registrarVictimaOffline(payload);
+        }
+      } else {
+        // Sin red: registrar la víctima no incluida OFFLINE (id_local + cola).
+        await registrarVictimaOffline(payload);
+      }
       setNoIncluidaRegistrada(true);
-    } catch {
-      setErrorBusqueda('No se pudo registrar la víctima. Intente nuevamente.');
+    } catch (err: any) {
+      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'registrarNoIncluida — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        stack: err?.stack,
+        pantalla: 'busqueda',
+      });
+      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
     } finally {
       setCargandoRegistro(false);
     }
@@ -658,54 +814,33 @@ export default function BusquedaScreen() {
       return <TarjetaNoHabilitado resultado={resultado} />;
     }
 
-    // Sprint 21 — el backend devuelve hogar_activo + es_victima_pruebas
+    // Regla universal: 1 víctima → 1 hogar. El backend devuelve hogar_activo si existe.
     const hogarActivo = (resultado.victima as any)?.hogar_activo as
       | { id: string; estado: string; total_miembros: number; total_sesiones: number }
       | null
       | undefined;
-    const esPruebas = !!(resultado.victima as any)?.es_victima_pruebas;
 
-    // Habilitado: 3 casos según hogar existente y tipo de víctima
+    // Habilitado: 2 casos según haya o no hogar activo previo.
     return (
       <>
         <TarjetaHabilitado resultado={resultado} />
 
         {hogarActivo ? (
-          // CASO A — Ya tiene hogar activo
-          esPruebas ? (
-            // Víctima de pruebas → permitir crear nueva caracterización
-            <Button
-              mode="contained"
-              icon="clipboard-plus"
-              onPress={() => router.push({
-                pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-                params: { hogarId: hogarActivo.id },
-              })}
-              buttonColor={GOV.azul}
-              textColor="#FFFFFF"
-              style={[styles.botonAccion, styles.botonConformar]}
-              contentStyle={styles.botonAccionContent}
-            >
-              Nueva caracterización
-              {hogarActivo.total_sesiones > 0 ? `  (${hogarActivo.total_sesiones} previas)` : ''}
-            </Button>
-          ) : (
-            // Víctima normal → solo ver hogar, no permite duplicar
-            <Button
-              mode="contained"
-              icon="home-search"
-              onPress={() => router.push({
-                pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-                params: { hogarId: hogarActivo.id },
-              })}
-              buttonColor={GOV.naranja}
-              textColor="#FFFFFF"
-              style={[styles.botonAccion, styles.botonConformar]}
-              contentStyle={styles.botonAccionContent}
-            >
-              Ver hogar registrado  ({hogarActivo.total_sesiones} caracterización{hogarActivo.total_sesiones !== 1 ? 'es' : ''})
-            </Button>
-          )
+          // CASO A — Ya tiene hogar activo → continuar caracterización
+          <Button
+            mode="contained"
+            icon="home-search"
+            onPress={() => router.push({
+              pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+              params: { hogarId: hogarActivo.id },
+            })}
+            buttonColor={GOV.naranja}
+            textColor="#FFFFFF"
+            style={[styles.botonAccion, styles.botonConformar]}
+            contentStyle={styles.botonAccionContent}
+          >
+            Ver hogar registrado  ({hogarActivo.total_sesiones} caracterización{hogarActivo.total_sesiones !== 1 ? 'es' : ''})
+          </Button>
         ) : (
           // CASO B — Sin hogar → flujo normal de conformar
           <Button
@@ -753,6 +888,17 @@ export default function BusquedaScreen() {
 
           {/* Tarjeta flotante con el formulario */}
           <View style={styles.cardBusqueda}>
+            {!estaOnline && (
+              <Chip
+                icon="wifi-off"
+                mode="flat"
+                style={styles.offlineBanner}
+                textStyle={styles.offlineBannerTxt}
+              >
+                Sin conexión — se buscará en los datos offline y se sincronizará al recuperar señal
+              </Chip>
+            )}
+
             {/* Tipo de documento */}
             <SelectTipoDoc valor={tipoDoc} onChange={setTipoDoc} />
 
@@ -878,6 +1024,9 @@ const styles = StyleSheet.create({
   },
 
   input: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie },
+
+  offlineBanner: { marginBottom: SPACING.sm, backgroundColor: '#FFF3E0' },
+  offlineBannerTxt: { color: '#E65100', fontSize: 12 },
 
   botonRuta: {
     marginBottom: SPACING.sm,

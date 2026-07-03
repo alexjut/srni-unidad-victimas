@@ -31,6 +31,12 @@ class LogAcceso(models.Model):
         ('ACCESO_DENEGADO', 'Acceso denegado'),
         ('LLAMADA_GEMINI', 'Llamada al asistente IA Gemini'),
         ('CONSENTIMIENTO_IA', 'Consentimiento de uso de IA'),
+        ('DESCARGA_APK', 'Descarga de APK móvil'),
+        ('CONSULTA_FUENTE_EXTERNA', 'Consulta en fuente externa (RNI/Registraduría)'),
+        ('REGISTRAR_VICTIMA_FUENTE_EXTERNA', 'Registro de víctima desde fuente externa'),
+        ('CAMBIAR_AUTORIZADO', 'Cambio de autorizado del hogar'),
+        ('HABILITAR', 'Verificación de habilitación'),
+        ('PRECARGA_OFFLINE', 'Precarga de datos para trabajo offline'),
     ]
 
     RESULTADOS = [
@@ -49,7 +55,7 @@ class LogAcceso(models.Model):
     )
     # Preservar codigo aún si el usuario es eliminado
     codigo_usuario = models.CharField(max_length=50, blank=True, db_index=True)
-    accion = models.CharField(max_length=30, choices=ACCIONES, db_index=True)
+    accion = models.CharField(max_length=50, choices=ACCIONES, db_index=True)
     recurso = models.CharField(max_length=200, blank=True)
     recurso_id = models.CharField(max_length=100, blank=True, db_index=True)
     ip_origen = models.GenericIPAddressField(default='0.0.0.0')
@@ -80,12 +86,15 @@ class LogAcceso(models.Model):
         Único punto de entrada para crear registros de auditoría.
         Uso: LogAcceso.registrar(accion='LOGIN', ip=request.META.get('REMOTE_ADDR'), usuario=user)
         """
+        # Truncado defensivo a los límites de cada columna: la auditoría NUNCA
+        # debe lanzar una excepción que tumbe la operación auditada (un valor
+        # demasiado largo degradaría a truncado, no a un 500).
         return cls.objects.create(
             usuario=usuario,
-            codigo_usuario=usuario.codigo_usuario if usuario else '',
-            accion=accion,
-            recurso=recurso,
-            recurso_id=str(recurso_id),
+            codigo_usuario=(usuario.codigo_usuario if usuario else '')[:50],
+            accion=(accion or '')[:50],
+            recurso=(recurso or '')[:200],
+            recurso_id=str(recurso_id)[:100],
             ip_origen=ip or '0.0.0.0',
             user_agent=(user_agent or '')[:500],
             resultado=resultado,

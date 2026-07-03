@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from .models import (
     Departamento, Municipio, Vereda,
     TipoDocumento, ComunidadNegra, ResguardoIndigena,
@@ -7,7 +8,7 @@ from .models import (
 
 
 @admin.register(Departamento)
-class DepartamentoAdmin(admin.ModelAdmin):
+class DepartamentoAdmin(ModelAdmin):
     list_display = ('codigo_dane', 'nombre', 'activo')
     list_filter = ('activo',)
     search_fields = ('codigo_dane', 'nombre')
@@ -15,7 +16,7 @@ class DepartamentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Municipio)
-class MunicipioAdmin(admin.ModelAdmin):
+class MunicipioAdmin(ModelAdmin):
     list_display = ('codigo_dane', 'nombre', 'departamento', 'activo')
     list_filter = ('activo', 'departamento')
     search_fields = ('codigo_dane', 'nombre')
@@ -24,7 +25,7 @@ class MunicipioAdmin(admin.ModelAdmin):
 
 
 @admin.register(Vereda)
-class VeredaAdmin(admin.ModelAdmin):
+class VeredaAdmin(ModelAdmin):
     list_display = ('codigo_dane', 'nombre', 'municipio', 'activo')
     list_filter = ('activo',)
     search_fields = ('codigo_dane', 'nombre')
@@ -32,7 +33,7 @@ class VeredaAdmin(admin.ModelAdmin):
 
 
 @admin.register(TipoDocumento)
-class TipoDocumentoAdmin(admin.ModelAdmin):
+class TipoDocumentoAdmin(ModelAdmin):
     list_display = ('codigo', 'nombre', 'aplica_nacionales', 'aplica_extranjeros', 'activo')
     list_filter = ('activo', 'aplica_nacionales', 'aplica_extranjeros')
     search_fields = ('codigo', 'nombre')
@@ -40,7 +41,7 @@ class TipoDocumentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(ComunidadNegra)
-class ComunidadNegraAdmin(admin.ModelAdmin):
+class ComunidadNegraAdmin(ModelAdmin):
     list_display = ('codigo', 'nombre', 'municipio', 'activo')
     list_filter = ('activo',)
     search_fields = ('codigo', 'nombre')
@@ -48,7 +49,7 @@ class ComunidadNegraAdmin(admin.ModelAdmin):
 
 
 @admin.register(ResguardoIndigena)
-class ResguardoIndigenaAdmin(admin.ModelAdmin):
+class ResguardoIndigenaAdmin(ModelAdmin):
     list_display = ('codigo', 'nombre', 'pueblo', 'municipio', 'activo')
     list_filter = ('activo',)
     search_fields = ('codigo', 'nombre', 'pueblo')
@@ -56,7 +57,7 @@ class ResguardoIndigenaAdmin(admin.ModelAdmin):
 
 
 @admin.register(DireccionTerritorial)
-class DireccionTerritorialAdmin(admin.ModelAdmin):
+class DireccionTerritorialAdmin(ModelAdmin):
     list_display = ('codigo', 'nombre', 'activo')
     list_filter = ('activo',)
     search_fields = ('codigo', 'nombre')
@@ -64,7 +65,7 @@ class DireccionTerritorialAdmin(admin.ModelAdmin):
 
 
 @admin.register(PuntoAtencion)
-class PuntoAtencionAdmin(admin.ModelAdmin):
+class PuntoAtencionAdmin(ModelAdmin):
     list_display = ('codigo', 'nombre', 'direccion_territorial', 'municipio', 'activo')
     list_filter = ('activo', 'direccion_territorial')
     search_fields = ('codigo', 'nombre')

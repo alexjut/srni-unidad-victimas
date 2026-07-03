@@ -36,6 +36,34 @@ export interface TipoDocumento {
   activo: boolean;
 }
 
+export interface Vereda {
+  id: number;
+  codigo_dane: string;
+  nombre: string;
+  municipio: number;
+  municipio_nombre: string;
+  activo: boolean;
+}
+
+export interface ComunidadNegra {
+  id: number;
+  codigo: string;
+  nombre: string;
+  municipio: number;
+  municipio_nombre: string;
+  activo: boolean;
+}
+
+export interface ResguardoIndigena {
+  id: number;
+  codigo: string;
+  nombre: string;
+  municipio: number;
+  municipio_nombre: string;
+  pueblo: string;
+  activo: boolean;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -63,4 +91,13 @@ export const parametricasApi = {
 
   tiposDocumento: () =>
     api.get<PaginatedResponse<TipoDocumento>>('/api/parametricas/tipos-documento/'),
+
+  veredas: (params?: { municipio?: number; page?: number }) =>
+    api.get<PaginatedResponse<Vereda>>('/api/parametricas/veredas/', { params }),
+
+  comunidadesNegras: (params?: { municipio?: number; page?: number }) =>
+    api.get<PaginatedResponse<ComunidadNegra>>('/api/parametricas/comunidades-negras/', { params }),
+
+  resguardosIndigenas: (params?: { municipio?: number; page?: number }) =>
+    api.get<PaginatedResponse<ResguardoIndigena>>('/api/parametricas/resguardos-indigenas/', { params }),
 };

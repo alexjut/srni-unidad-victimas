@@ -4,11 +4,13 @@
 # ============================================================
 
 # --- Core ---
-Django==5.2                         # LTS — soporta Python 3.13/3.14
+Django==5.2.15                         # LTS — soporta Python 3.13/3.14
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.4.0
+drf-spectacular==0.28.0             # Esquema OpenAPI (referenciado en INSTALLED_APPS)
 django-cors-headers==4.4.0
 django-filter==24.3
+django-unfold==0.98.0               # Tema moderno del panel de administración
 
 # --- Base de datos ---
 # NOTA: psycopg2-binary no tiene wheels para Python 3.14.

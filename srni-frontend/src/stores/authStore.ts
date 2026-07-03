@@ -17,6 +17,8 @@ interface Usuario {
     nombre: string;
     puede_caracterizar: boolean;
     puede_buscar_rni: boolean;
+    puede_ver_reportes?: boolean;
+    puede_administrar?: boolean;
   } | null;
 }
 

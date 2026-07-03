@@ -19,6 +19,7 @@ export interface HogarOfflineRow {
   numero_personas: number;
   observaciones: string;
   estado_sync: 'pendiente' | 'enviando' | 'enviado' | 'error';
+  ultimo_error: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +56,7 @@ export async function crearHogarOffline(
     numero_personas: input.numero_personas ?? 1,
     observaciones: input.observaciones ?? '',
     estado_sync: 'pendiente',
+    ultimo_error: '',
     created_at: now,
     updated_at: now,
   };
@@ -74,6 +76,15 @@ export async function crearHogarOffline(
   );
 
   return row;
+}
+
+export async function obtenerPorIdLocal(idLocal: string): Promise<HogarOfflineRow | null> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<HogarOfflineRow>(
+    'SELECT * FROM hogares_offline WHERE id_local = ?',
+    [idLocal],
+  );
+  return row ?? null;
 }
 
 export async function listarPendientes(): Promise<HogarOfflineRow[]> {
@@ -104,7 +115,17 @@ export async function marcarSincronizado(
 export async function marcarError(idLocal: string, mensaje: string): Promise<void> {
   const db = await openDb();
   await db.runAsync(
-    "UPDATE hogares_offline SET estado_sync = 'error', updated_at = ? WHERE id_local = ?",
-    [new Date().toISOString(), idLocal],
+    "UPDATE hogares_offline SET estado_sync = 'error', ultimo_error = ?, updated_at = ? WHERE id_local = ?",
+    [mensaje.slice(0, 500), new Date().toISOString(), idLocal],
   );
+}
+
+/**
+ * Elimina definitivamente una fila de hogares_offline. Lo usa la lista de hogares
+ * para purgar copias locales ya sincronizadas que el servidor ya no devuelve
+ * (p.ej. el hogar se borró desde el admin) y así no quedan "fantasmas".
+ */
+export async function eliminarPorIdLocal(idLocal: string): Promise<void> {
+  const db = await openDb();
+  await db.runAsync('DELETE FROM hogares_offline WHERE id_local = ?', [idLocal]);
 }

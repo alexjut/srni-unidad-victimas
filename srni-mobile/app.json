@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SRNI Encuestador",
+    "name": "SICAV Móvil",
     "slug": "srni-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "co.gov.unidadvictimas.srni",
+      "buildNumber": "1",
       "infoPlist": {
         "NSAllowsArbitraryLoads": false
       }
@@ -28,8 +29,13 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "co.gov.unidadvictimas.srni",
+      "versionCode": 1,
       "allowBackup": false,
-      "usesCleartextTraffic": false
+      "usesCleartextTraffic": false,
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -42,12 +48,18 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Permitir acceder con Face ID al SRNI — Sistema de Caracterización de Víctimas"
+          "faceIDPermission": "Permitir acceder con Face ID a SICAV — Sistema de Caracterización a Víctimas"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2e3c7b13-1698-4b14-8216-f3d166f8dcea"
+      }
     }
   }
 }

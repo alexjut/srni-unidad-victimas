@@ -82,6 +82,12 @@ docs/analisis-bd-oracle*.md
 docs/solicitud-acceso-oracle-uariv.md
 srni-backend/scripts/analizar_bd_oracle.py
 
+# QR de pruebas locales (Expo) — efímeros, no van al repo
+qr-expo*.png
+
+# Cache de Vite (panel web) — generado, no va al repo
+srni-frontend/.vite/
+
 # ─── Claude Code (contexto local — nunca al repositorio) ────────────────────
 .claude/
 CLAUDE.md
@@ -96,3 +102,4 @@ CLAUDE.md
 .DS_Store
 Thumbs.db
 desktop.ini
+.tmp-assets/

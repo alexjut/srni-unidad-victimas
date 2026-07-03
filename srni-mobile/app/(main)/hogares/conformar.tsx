@@ -7,7 +7,10 @@
  *  2. Muestra la ruta de entrevista y el listado de integrantes (comienza con el autorizado)
  *  3. Formulario para agregar integrantes uno a uno:
  *     Tipo Doc · Número · Primer Nombre · Segundo Nombre ·
- *     Primer Apellido · Segundo Apellido · Fecha Nacimiento · Parentesco · Género
+ *     Primer Apellido · Segundo Apellido · Fecha Nacimiento · Rol
+ *     (Documento oficial §2: el PARENTESCO y el GÉNERO ya NO se piden aquí —
+ *      se capturan en el Capítulo B "Datos básicos" para no duplicarlos.
+ *      Si el rol es Tutor o Cuidador permanente se exige adjuntar CONSTANCIA.)
  *  4. Botón "Continuar a caracterizaciones" → navega al hub del hogar
  *     (Sprint 14: ya no crea la sesión aquí. La caracterización se inicia
  *      desde el hub, donde el usuario ve el listado de las ya creadas
@@ -25,7 +28,12 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
+import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
+import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
+import * as colaDao from '../../../src/db/colaDao';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
+import { useSyncStore } from '../../../src/stores/syncStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GovButton } from '../../../src/components/GovButton';
@@ -41,23 +49,9 @@ const TIPOS_DOC = [
   { codigo: 'PA', nombre: 'Pasaporte' },
 ];
 
-const PARENTESCOS = [
-  { value: 'CONYUGE',       label: 'Cónyuge / Compañero/a' },
-  { value: 'HIJO_A',        label: 'Hijo/a' },
-  { value: 'YERNO_NUERA',   label: 'Yerno / Nuera' },
-  { value: 'NIETO_A',       label: 'Nieto/a' },
-  { value: 'PADRE_MADRE',   label: 'Padre / Madre' },
-  { value: 'HERMANO_A',     label: 'Hermano/a' },
-  { value: 'OTRO_PARIENTE', label: 'Otro pariente' },
-  { value: 'NO_PARIENTE',   label: 'No pariente' },
-];
-
-const GENEROS = [
-  { value: 'M',  label: 'Masculino' },
-  { value: 'F',  label: 'Femenino' },
-  { value: 'NB', label: 'No binario' },
-  { value: 'ND', label: 'No declara' },
-];
+// Documento oficial §2: PARENTESCO y GÉNERO ya no se capturan en la conformación
+// del hogar (se piden en el Capítulo B "Datos básicos"). Los catálogos se
+// eliminaron de esta pantalla para evitar la doble captura.
 
 const RUTAS = [
   { value: 'GENERAL',                   label: 'General' },
@@ -72,6 +66,11 @@ const ROLES_MIEMBRO = [
   { value: 'CUIDADOR_PERMANENTE', label: 'Cuidador permanente — adulto dependiente' },
 ];
 
+// Documento oficial §2: al elegir Tutor o Cuidador permanente se debe adjuntar
+// una CONSTANCIA (documento/archivo) antes de poder continuar a la entrevista.
+const ROLES_CON_CONSTANCIA = ['TUTOR', 'CUIDADOR_PERMANENTE'];
+const requiereConstancia = (rol: string) => ROLES_CON_CONSTANCIA.includes(rol);
+
 // ── Tipo local para un integrante ya agregado ─────────────────────────────────
 
 interface IntegranteAgregado {
@@ -80,10 +79,11 @@ interface IntegranteAgregado {
   nombre_display: string;        // nombre completo para mostrar
   tipo_documento: string;        // código p.ej. "CC"
   numero_documento: string;
-  parentesco_display: string;
   rol_display: string;
-  genero: string;
+  // §2: parentesco y género ya no se capturan aquí (se piden en el Capítulo B).
   fecha_nacimiento: string;
+  /** Nombre de la constancia adjunta (solo Tutor/Cuidador). Vacío si no aplica. */
+  constancia_nombre: string;
 }
 
 // ── Selector modal genérico ───────────────────────────────────────────────────
@@ -175,10 +175,17 @@ function IntegranteCard({ item }: { item: IntegranteAgregado }) {
         </View>
         <Text style={styles.integranteMeta}>
           {item.tipo_documento} {item.numero_documento}
-          {item.parentesco_display ? `  ·  ${item.parentesco_display}` : ''}
           {item.rol_display ? `  ·  ${item.rol_display}` : ''}
           {item.fecha_nacimiento ? `  ·  Nac. ${item.fecha_nacimiento}` : ''}
         </Text>
+        {item.constancia_nombre ? (
+          <View style={styles.constanciaTag}>
+            <MaterialCommunityIcons name="paperclip" size={13} color={GOV.verde} />
+            <Text style={styles.constanciaTagTxt} numberOfLines={1}>
+              Constancia: {item.constancia_nombre}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -195,9 +202,14 @@ export default function ConformarHogarScreen() {
     setHogarId,
     limpiar,
   } = useCaracterizacionStore();
+  const estaOnline = useSyncStore((s) => s.estaOnline);
+  const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
   // Estado del hogar
   const [hogarId, setHogarIdLocal]    = useState<string | null>(null);
+  // Fase A: true si el hogar se creó OFFLINE (hogarId es un id_local, no servidor).
+  // Determina si agregarIntegrante encola o hace POST directo.
+  const [hogarEsLocal, setHogarEsLocal] = useState(false);
   const [creandoHogar, setCreandoHogar] = useState(true);
   const [errorHogar, setErrorHogar]   = useState('');
 
@@ -212,16 +224,16 @@ export default function ConformarHogarScreen() {
   const [primerApell,  setPrimerApell]  = useState('');
   const [segApell,     setSegApell]     = useState('');
   const [fechaNac,     setFechaNac]     = useState('');
-  const [parentesco,   setParentesco]   = useState('');
-  const [genero,       setGenero]       = useState('');
   const [rolMiembro,   setRolMiembro]   = useState('MIEMBRO');
+  // §2 — constancia obligatoria para Tutor/Cuidador. Guardamos una referencia
+  // del archivo (nombre + uri si el picker existe). Vacío = aún sin adjuntar.
+  const [constanciaNombre, setConstanciaNombre] = useState('');
+  const [constanciaUri,    setConstanciaUri]    = useState('');
   const [erroresForm,  setErroresForm]  = useState<Record<string, string>>({});
   const [agregando,    setAgregando]    = useState(false);
 
   // Modales selectores
   const [modalTipoDoc,    setModalTipoDoc]    = useState(false);
-  const [modalParentesco, setModalParentesco] = useState(false);
-  const [modalGenero,     setModalGenero]     = useState(false);
   const [modalRol,        setModalRol]        = useState(false);
   const [modalRuta,       setModalRuta]       = useState(false);
 
@@ -237,15 +249,46 @@ export default function ConformarHogarScreen() {
         setCreandoHogar(false);
         return;
       }
-      try {
-        const { data } = await hogaresApi.crear({
+      // Sin red: crea el hogar OFFLINE (id_local) + encola CREAR_HOGAR, igual que
+      // hogares/nuevo.tsx. El autorizado es el victimaLocalId (UUID local o servidor).
+      const crearOffline = async () => {
+        const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
+          jefe_hogar_uuid: victimaLocalId,
+          numero_personas: 1,
+        });
+        await colaDao.encolar('CREAR_HOGAR', hogarLocal.id_local, {
+          id_local: hogarLocal.id_local,
           autorizado: victimaLocalId,
           numero_personas: 1,
         });
-        setHogarIdLocal(data.id);
-        setHogarId(data.id);
+        await refrescarContadores();
+        setHogarIdLocal(hogarLocal.id_local);
+        setHogarId(hogarLocal.id_local);
+        setHogarEsLocal(true);
+      };
 
-        // Autorizado como primer integrante (lo agrega el backend, lo mostramos acá)
+      try {
+        if (estaOnline) {
+          try {
+            // Camino feliz online: el backend auto-inserta al autorizado.
+            const { data } = await hogaresApi.crear({
+              autorizado: victimaLocalId,
+              numero_personas: 1,
+            });
+            setHogarIdLocal(data.id);
+            setHogarId(data.id);
+            setHogarEsLocal(false);
+          } catch (err: any) {
+            if (err?.response) throw err; // error real del servidor → propagar
+            // Sin respuesta = red caída aunque la bandera dijera online → offline.
+            await crearOffline();
+          }
+        } else {
+          await crearOffline();
+        }
+
+        // Autorizado como primer integrante (online lo agrega el backend; offline
+        // se mostrará y se incluye en numero_personas). Solo es presentación local.
         const v = victimaFuente;
         const nombreAutorizado = v
           ? [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
@@ -257,17 +300,17 @@ export default function ConformarHogarScreen() {
           nombre_display: nombreAutorizado,
           tipo_documento: v?.tipo_documento ?? '',
           numero_documento: v?.numero_documento ?? '',
-          parentesco_display: '',
           rol_display: 'Autorizado',
-          genero: v?.genero ?? '',
           fecha_nacimiento: '',
+          constancia_nombre: '',
         }]);
       } catch (err: any) {
         const detalle = err?.response?.data;
         if (typeof detalle === 'object') {
           setErrorHogar(JSON.stringify(detalle));
         } else {
-          setErrorHogar('No se pudo crear el hogar. Verifique la conexión.');
+          const msg = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
+          setErrorHogar(`No se pudo crear el hogar.${msg}`);
         }
       } finally {
         setCreandoHogar(false);
@@ -281,8 +324,11 @@ export default function ConformarHogarScreen() {
     const e: Record<string, string> = {};
     if (!primerNombre.trim())  e.primerNombre = 'Requerido';
     if (!primerApell.trim())   e.primerApell  = 'Requerido';
-    if (!parentesco)           e.parentesco   = 'Seleccione parentesco';
-    if (!genero)               e.genero       = 'Seleccione género';
+    // §2: parentesco y género ya NO se validan aquí (se piden en el Capítulo B).
+    // §2: Tutor/Cuidador permanente requieren constancia adjunta para agregarse.
+    if (requiereConstancia(rolMiembro) && !constanciaNombre) {
+      e.constancia = 'Adjunte la constancia del rol seleccionado';
+    }
     if (fechaNac && !/^\d{4}-\d{2}-\d{2}$/.test(fechaNac)) {
       e.fechaNac = 'Formato: AAAA-MM-DD';
     }
@@ -298,18 +344,71 @@ export default function ConformarHogarScreen() {
     const nombreCompleto = [primerNombre, segNombre, primerApell, segApell]
       .map(s => s.trim()).filter(Boolean).join(' ');
 
-    try {
-      await hogaresApi.agregarMiembro(hogarId, {
-        nombre_completo: nombreCompleto,
-        parentesco,
-        genero,
-        rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
-        estado_inclusion: 'NO_INCLUIDO',
-        fecha_nacimiento: fechaNac || undefined,
-      });
+    const miembroPayload = {
+      nombre_completo: nombreCompleto,
+      // #3 — el número de documento se capturaba pero NUNCA se enviaba ni se
+      // encolaba (se perdía). El backend lo acepta (write-only, sin exigir el
+      // tipo). El tipo_documento es FK por id numérico y el form usa códigos,
+      // así que se omite hasta tener el mapeo código→id (paramétrica).
+      numero_documento: numDoc.trim() || undefined,
+      // §2: parentesco y género ya NO se envían desde la conformación — se
+      // capturan en el Capítulo B (Datos básicos). El backend los acepta vacíos.
+      rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
+      estado_inclusion: 'NO_INCLUIDO' as const,
+      fecha_nacimiento: fechaNac || undefined,
+      // §2: referencia de la constancia (Tutor/Cuidador). El backend la ignora
+      // por ahora (no está en AgregarMiembroSerializer); viaja en el payload
+      // offline/online para no perderla. Pendiente: campo/almacenamiento real.
+      ...(requiereConstancia(rolMiembro) && constanciaNombre
+        ? { constancia_nombre: constanciaNombre, constancia_uri: constanciaUri || undefined }
+        : {}),
+    };
 
-      const parentescoLabel = PARENTESCOS.find(p => p.value === parentesco)?.label ?? parentesco;
-      const rolLabel        = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
+    // Guarda el integrante offline (SQLite + cola). Reutilizado por el camino
+    // offline directo y por el fallback cuando se cae la red en el camino online.
+    const guardarOffline = async () => {
+      const miembroLocal = await miembrosOfflineDao.crearMiembroOffline(hogarId, miembroPayload);
+      await colaDao.encolar('AGREGAR_MIEMBRO', miembroLocal.id_local, {
+        id_local: miembroLocal.id_local,
+        hogar: hogarId,
+        miembro: miembroPayload,
+      });
+      await refrescarContadores();
+    };
+
+    let guardado = false;
+    try {
+      if (hogarEsLocal) {
+        // Fase A — sin red: el `hogar` se referencia por su id_local;
+        // procesarCrearHogar lo remapea a su id de servidor antes de procesar
+        // este AGREGAR_MIEMBRO.
+        await guardarOffline();
+      } else {
+        // Online: POST directo al servidor.
+        await hogaresApi.agregarMiembro(hogarId, miembroPayload);
+      }
+      guardado = true;
+    } catch (err: any) {
+      // El hogar es de servidor pero perdimos la red (o el id aún no propagó):
+      // guardar el integrante offline en vez de bloquear al encuestador en campo.
+      const sinRed = !err?.response;
+      const hogarNoEnServidor = err?.response?.status === 400 || err?.response?.status === 404;
+      if (!hogarEsLocal && (sinRed || hogarNoEnServidor)) {
+        try {
+          await guardarOffline();
+          guardado = true;
+        } catch { /* fallo de SQLite — se informa abajo */ }
+      }
+      if (!guardado) {
+        Alert.alert(
+          'Error al agregar',
+          err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
+        );
+      }
+    }
+
+    if (guardado) {
+      const rolLabel = ROLES_MIEMBRO.find(r => r.value === rolMiembro)?.label ?? rolMiembro;
       setIntegrantes(prev => [
         ...prev,
         {
@@ -318,25 +417,69 @@ export default function ConformarHogarScreen() {
           nombre_display: nombreCompleto,
           tipo_documento: tipoDoc,
           numero_documento: numDoc,
-          parentesco_display: parentescoLabel,
           rol_display: rolLabel,
-          genero,
           fecha_nacimiento: fechaNac,
+          constancia_nombre: requiereConstancia(rolMiembro) ? constanciaNombre : '',
         },
       ]);
 
       // Limpiar formulario para el siguiente
       setTipoDoc('CC'); setNumDoc(''); setPrimerNombre(''); setSegNombre('');
       setPrimerApell(''); setSegApell(''); setFechaNac('');
-      setParentesco(''); setGenero(''); setRolMiembro('MIEMBRO'); setErroresForm({});
-    } catch (err: any) {
-      Alert.alert(
-        'Error al agregar',
-        err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
-      );
-    } finally {
-      setAgregando(false);
+      setRolMiembro('MIEMBRO');
+      setConstanciaNombre(''); setConstanciaUri('');
+      setErroresForm({});
     }
+    setAgregando(false);
+  }
+
+  // ── Adjuntar constancia (§2) ──────────────────────────────────────────────
+  // Tutor/Cuidador permanente deben cargar una constancia antes de continuar.
+  //
+  // PENDIENTE DE DEPENDENCIA: el selector de archivos real requiere
+  // `expo-document-picker` (o `expo-image-picker`), que NO está instalado.
+  // Hasta instalarlo, intentamos cargarlo dinámicamente; si no existe, se
+  // registra una referencia-marcador para no bloquear el flujo en campo y se
+  // informa al usuario. Al instalar la dep, este handler usará el picker real
+  // sin más cambios en la UI.
+  async function adjuntarConstancia() {
+    try {
+      // Carga perezosa: si algún día se instala expo-document-picker, se usa.
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const picker: any = require('expo-document-picker');
+      const res = await picker.getDocumentAsync({ copyToCacheDirectory: true });
+      // API nueva (SDK 49+): { canceled, assets: [{ name, uri }] }
+      const asset = res?.assets?.[0];
+      if (res?.canceled || !asset) return;
+      setConstanciaNombre(asset.name ?? 'constancia');
+      setConstanciaUri(asset.uri ?? '');
+      setErroresForm(prev => { const { constancia, ...rest } = prev; return rest; });
+    } catch (err: any) {
+      // La dependencia no está instalada (MODULE_NOT_FOUND) o el picker falló.
+      // Placeholder: registrar una referencia-marcador para desbloquear el flujo
+      // y dejar explícito el pendiente. NO simula un archivo real.
+      const esModuloFaltante =
+        err?.code === 'MODULE_NOT_FOUND' ||
+        /Cannot find module|expo-document-picker/i.test(String(err?.message ?? ''));
+      const marcador = `constancia-pendiente-${Date.now()}.ref`;
+      setConstanciaNombre(marcador);
+      setConstanciaUri('');
+      setErroresForm(prev => { const { constancia, ...rest } = prev; return rest; });
+      Alert.alert(
+        'Constancia registrada (pendiente de archivo)',
+        esModuloFaltante
+          ? 'El selector de archivos aún no está disponible en esta versión. Se '
+            + 'registró la exigencia de la constancia para poder continuar; el '
+            + 'archivo deberá adjuntarse cuando se habilite el cargador.'
+          : 'No se pudo abrir el selector de archivos. Se registró la constancia '
+            + 'como pendiente para no bloquear la entrevista.',
+      );
+    }
+  }
+
+  function quitarConstancia() {
+    setConstanciaNombre('');
+    setConstanciaUri('');
   }
 
   // ── Continuar al hub de caracterizaciones (Sprint 14) ─────────────────────
@@ -348,10 +491,25 @@ export default function ConformarHogarScreen() {
     setContinuando(true);
     setErrorInicio('');
     try {
-      router.replace({
-        pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
-        params: { hogarId },
-      });
+      if (hogarEsLocal) {
+        // Fase A — sin red: el hub de caracterizaciones requiere GET /hogares/{id}/
+        // (404 con un id_local). Vamos directo a seleccionar instrumento y crear
+        // la sesión OFFLINE (borrador + cola), saltando el hub que necesita servidor.
+        router.replace({
+          pathname: '/(main)/caracterizar',
+          params: { hogarId },
+        });
+      } else {
+        // Warm-up de la caché de miembros (fix #4/#38): si la red cae justo
+        // después de continuar, la caracterización ya tendrá los miembros del
+        // servidor para capturar offline. Best-effort, no bloquea el flujo.
+        try { await cargarMiembrosHogar(hogarId); }
+        catch { /* la caché se poblará al cargar el hub/capítulo online */ }
+        router.replace({
+          pathname: '/(main)/hogares/[hogarId]/caracterizaciones',
+          params: { hogarId },
+        });
+      }
     } catch (err: any) {
       setErrorInicio('No se pudo continuar. Intente nuevamente.');
     } finally {
@@ -373,7 +531,9 @@ export default function ConformarHogarScreen() {
         </View>
         <View style={styles.centrado}>
           <ActivityIndicator size="large" color={GOV.azul} />
-          <Text style={styles.cargandoTxt}>Registrando hogar…</Text>
+          <Text style={styles.cargandoTxt}>
+            {estaOnline ? 'Registrando hogar…' : 'Guardando hogar offline…'}
+          </Text>
         </View>
       </View>
     );
@@ -401,6 +561,12 @@ export default function ConformarHogarScreen() {
 
   const rutaLabel = RUTAS.find(r => r.value === rutaEntrevista)?.label ?? 'General';
 
+  // §2 — si en el formulario hay un Tutor/Cuidador a medio capturar sin su
+  // constancia, se bloquea Continuar para no perder ese integrante ni saltarse
+  // la constancia obligatoria.
+  const constanciaPendienteEnForm =
+    requiereConstancia(rolMiembro) && !constanciaNombre;
+
   return (
     <View style={styles.root}>
       <GovHeader
@@ -423,6 +589,17 @@ export default function ConformarHogarScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+
+          {hogarEsLocal && (
+            <Chip
+              icon="wifi-off"
+              mode="flat"
+              style={styles.offlineBanner}
+              textStyle={styles.offlineBannerTxt}
+            >
+              Sin conexión — hogar e integrantes se guardan localmente y se sincronizan al recuperar señal
+            </Chip>
+          )}
 
           {/* ── Ruta de entrevista ── */}
           <Text style={styles.secTitulo}>Ruta de entrevista</Text>
@@ -536,32 +713,14 @@ export default function ConformarHogarScreen() {
             ? <HelperText type="error">{erroresForm.fechaNac}</HelperText>
             : null}
 
-          {/* Fila: Parentesco + Género */}
-          <View style={styles.fila}>
-            <View style={{ flex: 1 }}>
-              <CampoSelector
-                label="Parentesco *"
-                valor={PARENTESCOS.find(p => p.value === parentesco)?.label ?? ''}
-                placeholder="Seleccionar"
-                error={!!erroresForm.parentesco}
-                onPress={() => setModalParentesco(true)}
-              />
-              {erroresForm.parentesco
-                ? <HelperText type="error">{erroresForm.parentesco}</HelperText>
-                : null}
-            </View>
-            <View style={{ flex: 1 }}>
-              <CampoSelector
-                label="Género *"
-                valor={GENEROS.find(g => g.value === genero)?.label ?? ''}
-                placeholder="Seleccionar"
-                error={!!erroresForm.genero}
-                onPress={() => setModalGenero(true)}
-              />
-              {erroresForm.genero
-                ? <HelperText type="error">{erroresForm.genero}</HelperText>
-                : null}
-            </View>
+          {/* §2 — Parentesco y Género ya NO se piden aquí: se capturan en el
+              Capítulo B (Datos básicos) para evitar la doble captura. */}
+          <View style={styles.notaB}>
+            <MaterialCommunityIcons name="information-outline" size={16} color={GOV.azulOscuro} />
+            <Text style={styles.notaBTxt}>
+              El parentesco y el género se registran en el Capítulo B (Datos básicos)
+              durante la entrevista.
+            </Text>
           </View>
 
           {/* Rol en el hogar */}
@@ -571,6 +730,45 @@ export default function ConformarHogarScreen() {
             placeholder="Seleccionar rol"
             onPress={() => setModalRol(true)}
           />
+
+          {/* §2 — Constancia obligatoria para Tutor / Cuidador permanente */}
+          {requiereConstancia(rolMiembro) && (
+            <View style={styles.constanciaBox}>
+              <Text style={styles.constanciaTitulo}>
+                Constancia obligatoria
+              </Text>
+              <Text style={styles.constanciaAyuda}>
+                El rol seleccionado exige adjuntar el documento que acredita la
+                tutoría o el cuidado permanente.
+              </Text>
+
+              {constanciaNombre ? (
+                <View style={styles.constanciaFila}>
+                  <MaterialCommunityIcons name="file-check-outline" size={18} color={GOV.verde} />
+                  <Text style={styles.constanciaArchivo} numberOfLines={1}>
+                    {constanciaNombre}
+                  </Text>
+                  <Pressable onPress={quitarConstancia} hitSlop={8}>
+                    <MaterialCommunityIcons name="close-circle" size={18} color={GOV.textoT} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <Button
+                mode="outlined"
+                icon="paperclip"
+                onPress={adjuntarConstancia}
+                style={styles.btnConstancia}
+                textColor={GOV.azul}
+              >
+                {constanciaNombre ? 'Cambiar constancia' : 'Adjuntar constancia'}
+              </Button>
+
+              {erroresForm.constancia
+                ? <HelperText type="error">{erroresForm.constancia}</HelperText>
+                : null}
+            </View>
+          )}
 
           {/* Botón Agregar */}
           <Button
@@ -592,12 +790,18 @@ export default function ConformarHogarScreen() {
             <Text style={styles.errorTxt}>{errorInicio}</Text>
           ) : null}
 
+          {constanciaPendienteEnForm ? (
+            <Text style={styles.errorTxt}>
+              Adjunte la constancia del Tutor/Cuidador o cambie su rol antes de continuar.
+            </Text>
+          ) : null}
+
           <GovButton
             label={`Continuar a caracterizaciones (${integrantes.length} integrante${integrantes.length !== 1 ? 's' : ''})`}
             icon="arrow-right-circle"
             onPress={continuarACaracterizaciones}
             loading={continuando}
-            disabled={!hogarId || continuando}
+            disabled={!hogarId || continuando || constanciaPendienteEnForm}
           />
 
           <Button
@@ -631,22 +835,6 @@ export default function ConformarHogarScreen() {
         valorActual={tipoDoc}
         onSeleccionar={setTipoDoc}
         onCerrar={() => setModalTipoDoc(false)}
-      />
-      <SelectorModal
-        visible={modalParentesco}
-        titulo="Parentesco con el autorizado"
-        opciones={PARENTESCOS}
-        valorActual={parentesco}
-        onSeleccionar={setParentesco}
-        onCerrar={() => setModalParentesco(false)}
-      />
-      <SelectorModal
-        visible={modalGenero}
-        titulo="Género"
-        opciones={GENEROS}
-        valorActual={genero}
-        onSeleccionar={setGenero}
-        onCerrar={() => setModalGenero(false)}
       />
       <SelectorModal
         visible={modalRol}
@@ -694,6 +882,8 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingBottom: 48,
   },
+  offlineBanner: { marginBottom: SPACING.md, backgroundColor: '#FFF3E0' },
+  offlineBannerTxt: { color: '#E65100', fontSize: 12 },
   secTitulo: {
     ...FONT.label,
     color: GOV.textoT,
@@ -799,6 +989,74 @@ const styles = StyleSheet.create({
     color: GOV.textoS,
   },
 
+  // ── Nota Capítulo B (parentesco/género se piden allí) ───────────────────────
+  notaB: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: GOV.azulTenue,
+    borderRadius: RADIUS.sm,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  notaBTxt: {
+    ...FONT.caption,
+    color: GOV.azulOscuro,
+    flex: 1,
+  },
+
+  // ── Constancia (Tutor/Cuidador) ─────────────────────────────────────────────
+  constanciaBox: {
+    backgroundColor: GOV.verdeTenue,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: GOV.verde,
+    padding: SPACING.sm,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  constanciaTitulo: {
+    ...FONT.label,
+    color: GOV.verde,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  constanciaAyuda: {
+    ...FONT.caption,
+    color: GOV.textoS,
+    marginBottom: SPACING.sm,
+  },
+  constanciaFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 8,
+    marginBottom: SPACING.sm,
+  },
+  constanciaArchivo: {
+    ...FONT.body,
+    color: GOV.textoP,
+    flex: 1,
+  },
+  btnConstancia: {
+    borderColor: GOV.azul,
+    borderRadius: RADIUS.sm,
+  },
+  constanciaTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  constanciaTagTxt: {
+    ...FONT.caption,
+    color: GOV.verde,
+    flex: 1,
+  },
+
   // ── Botones ───────────────────────────────────────────────────────────────
   btnAgregar: {
     marginTop: SPACING.xs,
@@ -835,7 +1093,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   modalTitulo: {
-    ...FONT.subtitle,
+    ...FONT.h3,
     fontWeight: '700',
     color: GOV.azulOscuro,
     marginBottom: SPACING.sm,

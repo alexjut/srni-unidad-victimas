@@ -7,8 +7,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// En desarrollo apunta al backend local. En producción se sobreescribe con variable de entorno.
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001';
+// En desarrollo apunta al backend local. En producción la variable de entorno
+// es OBLIGATORIA (la inyecta eas.json por perfil de build): un build de tienda
+// sin URL configurada debe fallar al arrancar, no conectarse a localhost.
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? 'http://localhost:8001' : '');
+if (!BASE_URL) {
+  throw new Error('EXPO_PUBLIC_API_URL no está configurada — build de producción inválido.');
+}
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -16,6 +21,10 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    // El APK de pruebas (perfil preview) apunta a la URL pública de ngrok, que
+    // sirve una página de advertencia HTML a clientes sin este header → axios
+    // recibe HTML en vez de JSON y rompe hasta el login. Inocuo en la URL final.
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -30,10 +39,18 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 
 // ── Response interceptor — manejo de 401 + refresh ──────────────────────────
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+interface ColaRefresh { resolve: (token: string) => void; reject: (err: unknown) => void; }
+let refreshQueue: ColaRefresh[] = [];
 
 function processQueue(newToken: string) {
-  refreshQueue.forEach((resolve) => resolve(newToken));
+  refreshQueue.forEach(({ resolve }) => resolve(newToken));
+  refreshQueue = [];
+}
+
+// Si el refresh falla, hay que RECHAZAR las peticiones encoladas; de lo
+// contrario quedan colgadas para siempre (su promesa nunca se resuelve).
+function rejectQueue(err: unknown) {
+  refreshQueue.forEach(({ reject }) => reject(err));
   refreshQueue = [];
 }
 
@@ -105,11 +122,15 @@ apiClient.interceptors.response.use(
     }
 
     if (isRefreshing) {
-      // Encolar requests que lleguen mientras se refresca
-      return new Promise((resolve) => {
-        refreshQueue.push((token: string) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          resolve(apiClient(original));
+      // Encolar requests que lleguen mientras se refresca. Se resuelven cuando el
+      // refresh tiene éxito, o se RECHAZAN si falla (no quedan colgadas).
+      return new Promise((resolve, reject) => {
+        refreshQueue.push({
+          resolve: (token: string) => {
+            original.headers.Authorization = `Bearer ${token}`;
+            resolve(apiClient(original));
+          },
+          reject,
         });
       });
     }
@@ -121,7 +142,21 @@ apiClient.interceptors.response.use(
       const refresh = await SecureStore.getItemAsync('refresh_token');
       if (!refresh) throw new Error('No refresh token');
 
-      const { data } = await axios.post(`${BASE_URL}/api/auth/refresh/`, { refresh });
+      const { data } = await axios.post(
+        `${BASE_URL}/api/auth/refresh/`,
+        { refresh },
+        {
+          headers: { 'ngrok-skip-browser-warning': 'true' },
+          // Sin timeout, un refresh colgado (red parcial / túnel lento) dejaba la
+          // promesa sin resolver ni rechazar PARA SIEMPRE: las peticiones que
+          // esperaban en refreshQueue quedaban colgadas y la pantalla se quedaba
+          // en "Cargando…" indefinidamente, sin error. Con timeout, el refresh
+          // aborta (ECONNABORTED), cae al catch de abajo → rejectQueue() libera
+          // la cola y cada pantalla resuelve su catch/finally. Mismo valor que el
+          // timeout global de apiClient (15 s).
+          timeout: 15000,
+        },
+      );
       const newAccess: string = data.access;
 
       await SecureStore.setItemAsync('access_token', newAccess);
@@ -132,10 +167,25 @@ apiClient.interceptors.response.use(
       processQueue(newAccess);
       original.headers.Authorization = `Bearer ${newAccess}`;
       return apiClient(original);
-    } catch {
-      // Refresh falló — limpiar tokens y dejar que el guard redirija al login
+    } catch (refreshErr) {
+      // Refresh falló — rechazar las peticiones encoladas (no dejarlas colgadas),
+      // limpiar tokens y dejar que el guard redirija al login.
+      rejectQueue(refreshErr);
       await SecureStore.deleteItemAsync('access_token');
       await SecureStore.deleteItemAsync('refresh_token');
+      // Loguear el fallo del refresh: antes pasaba desapercibido (el 401 se
+      // excluye del reporter y este catch solo rechazaba en silencio), ocultando
+      // justamente los timeouts que dejaban la app "cargando". Sin PII: solo el
+      // código/estado del fallo del refresh, nunca el token.
+      const rErr = refreshErr as AxiosError;
+      import('../services/errorReporter').then(({ reportarError }) => {
+        reportarError({
+          nivel: 'warn',
+          mensaje: `Refresh de token falló (${rErr?.code ?? rErr?.response?.status ?? 'red'})`,
+          pantalla: '[axios-interceptor:refresh]',
+          contexto: { code: rErr?.code, status: rErr?.response?.status },
+        });
+      }).catch(() => {});
       return Promise.reject(error);
     } finally {
       isRefreshing = false;
