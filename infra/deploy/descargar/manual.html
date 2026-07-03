@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2288%22>📱</text></svg>">
+<title>Manual Funcional — App Móvil SICAV</title>
+<style>
+  :root{
+    --ground:#f7f9fc; --surface:#ffffff; --ink:#12233b; --ink-soft:#33475f;
+    --muted:#5c6f89; --line:#e3e9f2; --line-soft:#eef2f8;
+    --azul:#3366cc; --azul-oscuro:#1b3a6b; --azul-tenue:#eaf0fb;
+    --amarillo:#ffcc03; --amarillo-ink:#3d2f00;
+    --verde:#1f9d57; --verde-bg:#e7f6ee;
+    --naranja:#d9821a; --naranja-bg:#fdf1e2;
+    --rojo:#cf3d3d; --rojo-bg:#fcebeb;
+    --gris:#6b7a90; --gris-bg:#eef1f6;
+    --radius:12px; --maxw:74ch;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:"SFMono-Regular","Cascadia Code",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--amarillo);color:var(--amarillo-ink)}
+
+  /* ---------- Top bar ---------- */
+  .franja{height:5px;background:var(--amarillo)}
+  header.top{position:sticky;top:0;z-index:20;background:var(--azul-oscuro);color:#fff;
+    border-bottom:1px solid rgba(255,255,255,.08)}
+  .top-inner{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .govco{font-weight:800;letter-spacing:.06em;font-size:13px;
+    background:var(--amarillo);color:var(--amarillo-ink);padding:2px 7px;border-radius:5px}
+  .brand h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em}
+  .brand .sub{font-size:12.5px;color:#b9c6dd;font-weight:400}
+  .top .meta{margin-left:auto;font-size:12px;color:#9fb0cc;text-align:right;line-height:1.4}
+  .top .meta b{color:#fff;font-weight:600}
+
+  /* ---------- Shell ---------- */
+  .shell{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:264px minmax(0,1fr);
+    gap:40px;padding:0 22px}
+  /* ---------- Sidebar nav ---------- */
+  nav.toc{position:sticky;top:76px;align-self:start;height:calc(100vh - 96px);overflow-y:auto;
+    padding:26px 0 40px;font-size:13.5px}
+  nav.toc .grp{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    font-weight:700;margin:22px 0 8px}
+  nav.toc a{display:block;color:var(--ink-soft);text-decoration:none;padding:5px 12px 5px 12px;
+    border-left:2px solid transparent;border-radius:0 6px 6px 0;transition:background .12s,color .12s}
+  nav.toc a:hover{background:var(--azul-tenue);color:var(--azul-oscuro)}
+  nav.toc a.on{border-left-color:var(--azul);color:var(--azul-oscuro);background:var(--azul-tenue);font-weight:600}
+  nav.toc a .n{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:7px}
+
+  /* ---------- Main ---------- */
+  main{padding:34px 0 90px;min-width:0}
+  .lede{max-width:var(--maxw)}
+  section{max-width:var(--maxw);margin:0 0 8px;padding:30px 0 6px;scroll-margin-top:80px}
+  section+section{border-top:1px solid var(--line)}
+  h2{font-size:25px;line-height:1.15;letter-spacing:-.02em;margin:.2em 0 .5em;text-wrap:balance;color:var(--azul-oscuro)}
+  h2 .k{display:inline-block;font-size:13px;font-variant-numeric:tabular-nums;color:#fff;
+    background:var(--azul);border-radius:7px;padding:2px 9px;margin-right:11px;vertical-align:middle;font-weight:700}
+  h3{font-size:17.5px;letter-spacing:-.01em;margin:1.7em 0 .5em;color:var(--ink)}
+  h3 .scr{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}
+  p{margin:.6em 0;max-width:var(--maxw)}
+  a{color:var(--azul)}
+  strong{font-weight:650;color:var(--ink)}
+  .q{background:var(--line-soft);border:1px solid var(--line);border-radius:5px;
+    padding:.06em .38em;font-weight:600;font-size:.94em;white-space:nowrap}
+  code{font-family:var(--mono);font-size:.86em;background:var(--line-soft);
+    border:1px solid var(--line);border-radius:5px;padding:.08em .36em}
+
+  ul,ol{margin:.5em 0 .9em;padding-left:1.25em;max-width:var(--maxw)}
+  li{margin:.32em 0}
+  li::marker{color:var(--azul)}
+
+  /* ---------- Chips (estados de la app) ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:.5em 0}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;
+    padding:3px 10px;border-radius:999px;line-height:1.3;border:1px solid transparent}
+  .chip::before{content:"";width:7px;height:7px;border-radius:50%}
+  .c-verde{background:var(--verde-bg);color:#136c3c}.c-verde::before{background:var(--verde)}
+  .c-naranja{background:var(--naranja-bg);color:#95560a}.c-naranja::before{background:var(--naranja)}
+  .c-rojo{background:var(--rojo-bg);color:#992a2a}.c-rojo::before{background:var(--rojo)}
+  .c-azul{background:var(--azul-tenue);color:var(--azul-oscuro)}.c-azul::before{background:var(--azul)}
+  .c-gris{background:var(--gris-bg);color:#4a5668}.c-gris::before{background:var(--gris)}
+
+  /* ---------- Callouts ---------- */
+  .box{border-radius:var(--radius);padding:15px 18px;margin:16px 0;max-width:var(--maxw);
+    border:1px solid var(--line);background:var(--surface);font-size:14.7px}
+  .box .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;
+    display:block;margin-bottom:5px}
+  .box p{margin:.3em 0}
+  .box.oro{background:linear-gradient(180deg,#fffdf3,#fffbe9);border-color:#f0dc8a}
+  .box.oro .lbl{color:#8a6d00}
+  .box.info{background:var(--azul-tenue);border-color:#c9d9f5}
+  .box.info .lbl{color:var(--azul-oscuro)}
+  .box.warn{background:var(--rojo-bg);border-color:#f0c4c4}
+  .box.warn .lbl{color:#992a2a}
+
+  /* ---------- Tables ---------- */
+  .tw{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);max-width:var(--maxw)}
+  table{border-collapse:collapse;width:100%;font-size:14px;background:var(--surface)}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{background:#f2f5fa;color:var(--azul-oscuro);font-size:11.5px;text-transform:uppercase;
+    letter-spacing:.05em;font-weight:700;position:sticky;top:0}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafcff}
+  td .yes{color:var(--verde);font-weight:700}
+  td .no{color:var(--rojo);font-weight:700}
+  td .dep{color:var(--naranja);font-weight:700}
+
+  /* ---------- Screen cards ---------- */
+  .screen{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin:16px 0;max-width:var(--maxw)}
+  .screen h3{margin-top:.2em}
+  .purpose{color:var(--ink-soft);font-size:14.5px;border-left:3px solid var(--azul);
+    padding-left:12px;margin:.4em 0 .8em}
+  .kv{font-size:14px}
+
+  /* ---------- Flow diagram ---------- */
+  pre.flow{background:var(--azul-oscuro);color:#dfe8f7;border-radius:var(--radius);
+    padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.75;
+    max-width:var(--maxw);margin:16px 0}
+  pre.flow .hl{color:var(--amarillo)}
+
+  /* ---------- Checklist ---------- */
+  .check{list-style:none;padding-left:0}
+  .check li{position:relative;padding-left:30px;margin:.4em 0}
+  .check li::before{content:"";position:absolute;left:0;top:4px;width:16px;height:16px;
+    border:2px solid var(--azul);border-radius:4px;background:var(--surface)}
+
+  /* ---------- Footer ---------- */
+  footer{max-width:var(--maxw);margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13px}
+
+  a:focus-visible,nav.toc a:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:4px}
+
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr;gap:0}
+    nav.toc{position:static;height:auto;overflow:visible;border-bottom:1px solid var(--line);
+      display:flex;flex-wrap:wrap;gap:2px 4px;padding:12px 0}
+    nav.toc .grp{width:100%;margin:8px 0 2px}
+    nav.toc a{border-left:none;border-radius:6px}
+    nav.toc a.on{border-left:none}
+    .top .meta{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  @media print{header.top{position:static}nav.toc{display:none}.shell{grid-template-columns:1fr}
+    section{break-inside:avoid}}
+  html{scroll-behavior:smooth}
+</style>
+
+<div class="franja"></div>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <span class="govco">GOV.CO</span>
+      <h1>Manual Funcional — App Móvil de Caracterización</h1>
+      <span class="sub">SICAV / SRNI · Unidad para las Víctimas</span>
+    </div>
+    <div class="meta">v1.0 · 2026-07-03<br><b>Equipo funcional / de pruebas</b></div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Índice">
+    <div class="grp">Fundamentos</div>
+    <a href="#s1"><span class="n">1</span>Qué es la app</a>
+    <a href="#s2"><span class="n">2</span>Glosario clave</a>
+    <a href="#s3"><span class="n">3</span>Instalación y credenciales</a>
+    <a href="#s4"><span class="n">4</span>Reglas de negocio</a>
+    <a href="#s5"><span class="n">5</span>Flujo completo</a>
+    <div class="grp">Pantallas</div>
+    <a href="#s6"><span class="n">6</span>Recorrido pantalla a pantalla</a>
+    <div class="grp">Operación</div>
+    <a href="#s7"><span class="n">7</span>Modo sin conexión</a>
+    <a href="#s8"><span class="n">8</span>Mensajes y estados</a>
+    <a href="#s9"><span class="n">9</span>Checklists de prueba</a>
+    <a href="#s10"><span class="n">10</span>Pendientes conocidos</a>
+    <a href="#s11"><span class="n">11</span>Solución de problemas</a>
+    <a href="#s12"><span class="n">12</span>Carga y red (esta versión)</a>
+  </nav>
+
+  <main>
+    <p class="lede" style="font-size:18px;color:var(--ink-soft);max-width:var(--maxw)">
+      Cómo funciona la aplicación con la que la UARIV caracteriza víctimas en campo:
+      qué ve y toca el usuario en cada pantalla, qué mensajes aparecen, qué es obligatorio
+      y cómo se comporta <strong>con y sin internet</strong>. Todo lo que va
+      <span class="q">entre chip</span> es texto literal de la app.
+    </p>
+
+    <!-- 1 -->
+    <section id="s1">
+      <h2><span class="k">1</span>¿Qué es esta aplicación?</h2>
+      <p>Es la herramienta móvil con la que un <strong>encuestador</strong> caracteriza a las víctimas
+      en campo: busca a la persona en el registro nacional, <strong>conforma su hogar</strong> (arma la
+      lista de integrantes) y le aplica uno o varios <strong>instrumentos</strong> de caracterización
+      (encuestas por capítulos). Está diseñada para trabajar <strong>con y sin señal</strong>.</p>
+      <p><strong>Objetivo de la prueba funcional:</strong> verificar que cada flujo se comporta como se
+      describe aquí, que los mensajes son claros, que lo capturado sin señal <strong>no se pierde</strong>
+      y que la app nunca deja al encuestador bloqueado.</p>
+    </section>
+
+    <!-- 2 -->
+    <section id="s2">
+      <h2><span class="k">2</span>Glosario de conceptos clave</h2>
+      <p>Entender estos términos evita confusiones al probar.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Término</th><th>Qué significa en la app</th></tr></thead>
+        <tbody>
+          <tr><td><strong>RNI / RUV</strong></td><td>Registro nacional de víctimas. La app dice si la persona está <b>INCLUIDO</b>, <b>NO INCLUIDO</b>, <b>EN PROCESO</b> o <b>EXCLUIDO</b>.</td></tr>
+          <tr><td><strong>Autorizado / Titular</strong></td><td>La víctima titular que autoriza la entrevista. Es el <b>primer integrante</b> del hogar y lleva la estrella <b>★ AUTORIZADO</b>. Solo uno por hogar.</td></tr>
+          <tr><td><strong>Hogar</strong></td><td>La unidad familiar que se caracteriza: autorizado + demás integrantes.</td></tr>
+          <tr><td><strong>Integrante / Miembro</strong></td><td>Cada persona del hogar. Rol <b>Miembro</b>, <b>Tutor</b> (de un menor) o <b>Cuidador permanente</b>.</td></tr>
+          <tr><td><strong>Instrumento / Perfil</strong></td><td>El tipo de encuesta (Territorial, Telefónico, Urbano/Rural étnico…). Tiene versión y número de capítulos.</td></tr>
+          <tr><td><strong>Caracterización / Sesión</strong></td><td>Una aplicación de un instrumento a un hogar. Un hogar puede tener varias. Estados: INICIADA, EN PROGRESO, COMPLETADA, SUSPENDIDA.</td></tr>
+          <tr><td><strong>Capítulo</strong></td><td>Bloque de preguntas. <b>Por hogar</b> (una vez) o <b>por persona</b> (se repite por integrante).</td></tr>
+          <tr><td><strong>Skip-logic</strong></td><td>Preguntas que <b>aparecen, desaparecen o se vuelven obligatorias</b> según respuestas previas. Es esperado, no un error.</td></tr>
+          <tr><td><strong>Padrón (precarga)</strong></td><td>Lista de víctimas que la app <b>descarga tras el login</b> para poder buscar sin internet.</td></tr>
+          <tr><td><strong>Cola de sincronización</strong></td><td>La "bandeja de salida": todo lo creado sin señal se <b>encola</b> y sube al reconectar.</td></tr>
+          <tr><td><strong>En línea / sin conexión</strong></td><td>La app decide sola según la señal. El estado se refresca ~cada 60 s (puede haber un pequeño desfase).</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 3 -->
+    <section id="s3">
+      <h2><span class="k">3</span>Requisitos, credenciales e instalación</h2>
+      <ul>
+        <li><strong>Dispositivo:</strong> Android 8 o superior. (iOS está aplazado en esta fase — probar solo en Android.)</li>
+        <li><strong>Credenciales:</strong> un <strong>código de usuario</strong> y una <strong>contraseña</strong> asignados por el administrador. No hay auto-registro ni recuperación de contraseña desde el móvil.</li>
+      </ul>
+      <p><strong>Instalar la APK de prueba:</strong></p>
+      <ol>
+        <li>Abrir en el celular <a href="https://prod-caracterizacion.ngrok.app/descargar/">prod-caracterizacion.ngrok.app/descargar/</a> (tiene <strong>QR</strong> y enlace directo).</li>
+        <li>Descargar <code>app.apk</code> e instalarla (Android pedirá permitir "orígenes desconocidos": es normal).</li>
+        <li>Abrir <strong>"SICAV Móvil"</strong>.</li>
+      </ol>
+      <div class="box info"><span class="lbl">Nota de entorno</span>
+        <p>En pruebas la app se conecta por un <strong>túnel (ngrok)</strong> que puede estar lento o caerse. La app ya <strong>no</strong> se queda "cargando" para siempre: degrada a error o a modo sin conexión (ver sección 12).</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="s4">
+      <h2><span class="k">4</span>Reglas de negocio que todo probador debe conocer</h2>
+      <ol>
+        <li><strong>Un autorizado = un hogar activo.</strong> Si intenta crear un segundo hogar para la misma persona, la app <strong>devuelve el existente</strong> (no duplica). Si el hogar activo es de otro encuestador, lo bloquea y pide reasignación al supervisor.</li>
+        <li><strong>El autorizado se agrega solo</strong> como primer integrante (<b>★ AUTORIZADO</b>).</li>
+        <li><strong>Parentesco y género NO se piden al conformar</strong> — se capturan en el Capítulo B "Datos básicos" de la entrevista.</li>
+        <li><strong>Tutor/Cuidador exigen constancia</strong> para poder continuar (ver pendiente en §10).</li>
+        <li><strong>1 hogar → N caracterizaciones.</strong> Para probar varios instrumentos con la misma persona no se crean varios hogares: se agregan varias caracterizaciones al mismo hogar.</li>
+        <li><strong>Nada se pierde sin señal.</strong> Todo se encola y sube al reconectar. Verifique siempre que la cola quede en <span class="chip c-verde">Todo al día</span>.</li>
+        <li><strong>Se permite guardar incompleto.</strong> Un capítulo se puede guardar con obligatorias sin responder (la app avisa y deja "Guardar igual").</li>
+      </ol>
+    </section>
+
+    <!-- 5 -->
+    <section id="s5">
+      <h2><span class="k">5</span>El flujo completo de una caracterización</h2>
+<pre class="flow"><span class="hl">Login</span>
+  → Inicio (dashboard)
+    → <span class="hl">Búsqueda RNI</span>   (buscar por documento)
+      → <span class="hl">Conformar hogar</span>   (agregar integrantes)
+        → Hub de caracterizaciones del hogar
+          → <span class="hl">Caracterizar</span>: elegir instrumento  (→ elegir hogar si no venía)
+            → Ubicación de atención   (DT / Depto / Municipio / Punto)  [solo online]
+              → Lista de capítulos
+                → <span class="hl">Capturar cada capítulo</span> (manual o asistido por IA)
+                  → Finalizar caracterización</pre>
+      <p><strong>Ruta corta:</strong> desde <span class="q">Inicio → Crear hogar y entrevista</span> se entra directo a la Búsqueda y se recorre todo el flujo.</p>
+    </section>
+
+    <!-- 6 -->
+    <section id="s6">
+      <h2><span class="k">6</span>Recorrido pantalla por pantalla</h2>
+      <p>Para cada pantalla: propósito, qué ve y toca el usuario, validaciones y diferencias online/offline.</p>
+
+      <div class="screen">
+        <h3>6.1 Inicio de sesión <span class="scr">(auth)/login</span></h3>
+        <p class="purpose">Entrar con las credenciales institucionales.</p>
+        <ul>
+          <li>Fondo con <strong>fotos de regiones de Colombia</strong> que rotan solas cada ~5 s. Franja <span class="q">GOV.CO</span>, logo Unidad para las Víctimas, tarjeta <span class="q">Bienvenido/a</span>.</li>
+          <li>Campos: <span class="q">Código de usuario</span> (MAYÚSCULAS auto), <span class="q">Contraseña</span> (con ojito).</li>
+          <li>Casillas: <span class="q">Recordar mi código de usuario</span> (marcada; guarda solo el código) y <span class="q">Activar ingreso con huella o rostro</span> (solo si el celular tiene biometría).</li>
+          <li>Botón <span class="q">Ingresar</span> <strong>deshabilitado</strong> con campos vacíos.</li>
+          <li>Huella: si ya entró antes con biometría, aparece <span class="q">Huella digital</span>.</li>
+          <li>Error: credenciales/red → texto rojo bajo las casillas.</li>
+          <li><strong>Tras entrar:</strong> descarga el <strong>padrón</strong> en segundo plano (sin barra). Si falla, el login no falla.</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.2 Inicio (Dashboard) <span class="scr">(main)/index</span></h3>
+        <p class="purpose">Panel principal, punto de partida.</p>
+        <p><strong>Chip de sincronización</strong> (arriba, tocar = forzar sync):</p>
+        <div class="chips">
+          <span class="chip c-azul">Sincronizando…</span>
+          <span class="chip c-naranja">N pendiente(s)</span>
+          <span class="chip c-gris">Sin conexión</span>
+          <span class="chip c-rojo">N error(es)</span>
+          <span class="chip c-verde">✓ Al día</span>
+        </div>
+        <p><strong>Banner de estado de campo</strong> (clave para offline):</p>
+        <div class="chips">
+          <span class="chip c-verde">Conectado</span>
+          <span class="chip c-naranja">Sin conexión · listo para campo</span>
+          <span class="chip c-rojo">Sin conexión · sin datos</span>
+        </div>
+        <ul>
+          <li>Tarjeta <span class="q">Crear hogar y entrevista</span> (si el perfil puede caracterizar).</li>
+          <li><strong>ACCIONES:</strong> <span class="q">Búsqueda RNI</span> · <span class="q">Hogares</span> · <span class="q">Caracterizaciones</span>.</li>
+          <li><strong>SISTEMA:</strong> <span class="q">Mis reportes</span> · <span class="q">Estado de sincronización</span>.</li>
+          <li>Al final, botón rojo <span class="q">Cerrar sesión</span>.</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.3 Navegación (barra inferior) <span class="scr">(main)/_layout</span></h3>
+        <p class="purpose">4 pestañas fijas abajo. No hay menú lateral.</p>
+        <div class="chips">
+          <span class="chip c-azul">Inicio</span><span class="chip c-azul">Buscar</span>
+          <span class="chip c-azul">Hogares</span><span class="chip c-azul">Encuestas</span>
+        </div>
+        <p>Las demás pantallas se abren desde botones dentro del flujo. Si el usuario deja de ser válido, la app <strong>redirige al login</strong> sola.</p>
+      </div>
+
+      <div class="screen">
+        <h3>6.4 Búsqueda RNI <span class="scr">(main)/busqueda</span></h3>
+        <p class="purpose">Buscar a la persona por documento e iniciar el flujo.</p>
+        <ul>
+          <li>Tipo de documento: <strong>CC, TI, RC, CE, PA</strong> (defecto CC). Número (solo dígitos). Ruta: <strong>General, Acc. Constitucionales, Mod. Núcleo Familiar, Ruta Especial</strong>.</li>
+          <li>Botón <span class="q">Consultar RNI</span> (deshabilitado si el número está vacío).</li>
+        </ul>
+        <p><strong>Resultados:</strong></p>
+        <div class="chips">
+          <span class="chip c-verde">Persona habilitada</span>
+          <span class="chip c-naranja">No habilitado</span>
+          <span class="chip c-gris">No encontrado en el RUV</span>
+        </div>
+        <ul>
+          <li><strong>Habilitada:</strong> nombre + estado RUV + botón <span class="q">Conformar hogar</span> (o <span class="q">Ver hogar registrado</span> si ya tiene uno).</li>
+          <li><strong>No encontrada:</strong> <span class="q">Agregar como víctima no incluida</span> → formulario (Primer nombre*, Primer apellido*, Fecha de nacimiento* sin futuro, Género). <span class="q">Agregar víctima</span> deshabilitado hasta completar los obligatorios.</li>
+        </ul>
+        <p><strong>Online/offline:</strong> en línea consulta al servidor y, si la red se cae, <strong>cae al padrón offline</strong>. Sin conexión busca en el padrón (documento enmascarado <code>••••1234</code>).</p>
+      </div>
+
+      <div class="screen">
+        <h3>6.5 Conformar hogar <span class="scr">(main)/hogares/conformar</span></h3>
+        <p class="purpose">Crea el hogar automáticamente y permite agregar integrantes.</p>
+        <ul>
+          <li>Al entrar: <span class="q">Registrando hogar…</span> / <span class="q">Guardando hogar offline…</span></li>
+          <li>El autorizado aparece primero con <strong>★ AUTORIZADO</strong>.</li>
+          <li>Agregar integrante: Tipo/Número doc, Primer Nombre*, Primer Apellido*, Fecha nac. (sin futuro), <strong>Rol</strong> (Miembro / Tutor / Cuidador).</li>
+          <li>Nota: <em>parentesco y género se piden en el Capítulo B</em>, no aquí.</li>
+        </ul>
+        <div class="box warn"><span class="lbl">Constancia obligatoria</span>
+          <p>Rol <strong>Tutor</strong> o <strong>Cuidador</strong> exige adjuntar constancia. <span class="q">Continuar a caracterizaciones</span> queda bloqueado hasta hacerlo. <em>Hoy registra un marcador, no un archivo real — ver §10.</em></p>
+        </div>
+        <p><strong>Destino:</strong> online → hub de caracterizaciones; offline → flujo caracterizar directo.</p>
+      </div>
+
+      <div class="screen">
+        <h3>6.6 Detalle del hogar <span class="scr">(main)/hogares/[hogarId]</span></h3>
+        <p class="purpose">Ver toda la información del hogar. Requiere servidor.</p>
+        <ul>
+          <li><strong>Datos de vivienda</strong> (tipo, ocupación, estrato, cuartos, personas).</li>
+          <li><strong>Integrantes:</strong> nombre (o "Sin nombre registrado"), badge AUTORIZADO, rol, chip <span class="chip c-verde">Incluido</span>/<span class="chip c-gris">No incluido</span>.</li>
+          <li><strong>Agregar del grupo familiar RUV</strong> (solo en flujo activo): botón <span class="q">Agregar</span> por pariente.</li>
+          <li>Botón <span class="q">Ver caracterizaciones (N)</span> (deshabilitado sin autorizado).</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.7 Hub de caracterizaciones <span class="scr">(main)/hogares/[hogarId]/caracterizaciones</span></h3>
+        <p class="purpose">Ver las caracterizaciones del hogar y crear nuevas.</p>
+        <ul>
+          <li>Sin conexión: botones <span class="q">Continuar sin conexión</span> y <span class="q">Reintentar</span>.</li>
+          <li>Una tarjeta por sesión con chip de estado y barra de progreso.</li>
+          <li>Botón fijo <span class="q">+ Nueva caracterización</span> (deshabilitado sin autorizado).</li>
+        </ul>
+        <div class="chips">
+          <span class="chip c-naranja">INICIADA</span><span class="chip c-azul">EN PROGRESO</span>
+          <span class="chip c-verde">COMPLETADA</span><span class="chip c-rojo">SUSPENDIDA</span>
+        </div>
+      </div>
+
+      <div class="screen">
+        <h3>6.8 Caracterizar — instrumento y hogar <span class="scr">(main)/caracterizar</span></h3>
+        <p class="purpose">Iniciar una nueva caracterización: paso 1 instrumento, paso 2 hogar.</p>
+        <ul>
+          <li>Paso 1 <span class="q">¿Qué tipo de caracterización vas a realizar?</span> — tarjetas con <strong>versión · N capítulos</strong>. Funciona sin internet (bundle).</li>
+          <li>Paso 2 <span class="q">¿A qué hogar vas a caracterizar?</span> — overlay <span class="q">Iniciando sesión…</span> al elegir.</li>
+          <li><strong>Online</strong> → Ubicación de atención. <strong>Offline</strong> → salta a la lista de capítulos (la sesión se crea al reconectar).</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.9 Ubicación de atención <span class="scr">(main)/caracterizar/ubicacion-atencion</span></h3>
+        <p class="purpose">DT / Departamento / Municipio / Punto en cascada. Solo online.</p>
+        <ul>
+          <li>Cambiar la DT borra las selecciones dependientes. Caso <em>no presencial</em>: solo DT + Punto.</li>
+          <li><span class="q">Continuar al formulario</span> deshabilitado hasta completar. <span class="q">Omitir por ahora</span> para completar luego.</li>
+          <li>Sin red: banner rojo — recomendación: <strong>Omitir</strong> y completar después.</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.10 Lista de capítulos <span class="scr">(main)/formulario/index</span></h3>
+        <p class="purpose">Hub de la caracterización: progreso y finalizar/anular.</p>
+        <ul>
+          <li>Selector de modo (online): <span class="q">Manual</span> vs <span class="q">Asistido por IA</span>.</li>
+          <li>Estados de capítulo: <span class="chip c-gris">Sin iniciar</span> <span class="chip c-naranja">Faltan N</span> <span class="chip c-verde">Completo</span>. Indica <strong>· Por persona</strong> o <strong>· Por hogar</strong>.</li>
+          <li>El progreso se recalcula al volver; el denominador son las <strong>obligatorias visibles</strong> (skip-logic).</li>
+          <li><span class="q">Finalizar caracterización</span> (online y offline). Solo online: <span class="q">Anular entrevista</span> (doble confirmación).</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.11 Captura de un capítulo <span class="scr">(main)/formulario/[temaId]</span></h3>
+        <p class="purpose">El corazón de la app. Funciona completamente offline.</p>
+        <ul>
+          <li><strong>Preguntas por hogar</strong> (un control) y <strong>por persona</strong> (una fila por integrante; <span class="q">No aplica · motivo</span> si la skip-logic la excluye).</li>
+          <li>Tipos: Texto, Número (filtra no-numéricos), Fecha (sin futuro), Opción única, Sí/No, Opción múltiple, Municipio.</li>
+          <li>Automáticas/solo lectura: edad (B9) y grupo etario (B10) desde la fecha (A6); datos del RUV con candado.</li>
+          <li><strong>Autoguardado</strong> local (~½ s). Botón <span class="q">Guardar y volver</span>. Si faltan obligatorias: <span class="q">Preguntas requeridas</span> → <span class="q">Guardar igual</span>.</li>
+          <li><strong>Bloqueo protector:</strong> si no hay borrador local, no deja capturar (evita perder respuestas en silencio).</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.12 Modo IA — Consentimiento · Grabación · Revisión <span class="scr">(main)/formulario/*-ia</span></h3>
+        <p class="purpose">Asistente de voz opcional que sugiere respuestas.</p>
+        <ul>
+          <li><strong>Consentimiento:</strong> el audio se transcribe en el dispositivo y <strong>solo se envía el texto</strong>; el audio <strong>nunca se almacena</strong>; la IA <strong>solo sugiere</strong>. Casilla obligatoria.</li>
+          <li><strong>Grabación:</strong> campo de transcripción (<strong>MVP: se escribe/pega el texto</strong>, no audio real) → <span class="q">Procesar con IA</span>. Requiere conexión.</li>
+          <li><strong>Revisión:</strong> por pregunta, nivel de confianza <span class="chip c-verde">Alta ≥80%</span> <span class="chip c-naranja">Media 50–79%</span> <span class="chip c-rojo">Baja &lt;50%</span>, valor editable, <span class="q">Aceptar</span>/<span class="q">Ignorar</span>. El encuestador decide.</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.13 Encuestas (sesiones) <span class="scr">(main)/encuestas</span></h3>
+        <p class="purpose">Listado y detalle de sesiones. Requieren servidor.</p>
+        <ul>
+          <li>Filtro <span class="q">Todas / Iniciadas / En curso / Completadas</span>.</li>
+          <li>Detalle: barra + %, <span class="q">Continuar formulario…</span>, <span class="q">Finalizar sesión</span>, y <strong>Respuestas guardadas</strong> (<code>[código] pregunta → valor</code>).</li>
+        </ul>
+      </div>
+
+      <div class="screen">
+        <h3>6.14 Estado de sincronización <span class="scr">(main)/sync-status</span></h3>
+        <p class="purpose">Ver la cola y forzar el envío. Ventana clave para probar offline.</p>
+        <ul>
+          <li>Botones <span class="q">Sincronizar</span> (deshabilitado sin conexión), <span class="q">Reintentar errores</span>, <span class="q">Limpiar enviados</span>.</li>
+          <li>Cola: tipos <strong>Crear hogar · Crear sesión · Respuestas · Finalizar sesión</strong>, con estado <span class="chip c-naranja">pendiente</span> <span class="chip c-azul">enviando</span> <span class="chip c-verde">enviado</span> <span class="chip c-rojo">error</span>.</li>
+        </ul>
+        <div class="box oro"><span class="lbl">Regla de oro</span>
+          <p>Tras cualquier prueba offline, <strong>reconecte</strong> y confirme que la cola llega a <span class="chip c-verde">Cola vacía — todo al día</span>. Así garantiza que nada quedó solo en el teléfono.</p>
+        </div>
+      </div>
+
+      <div class="screen">
+        <h3>6.15 Mis reportes <span class="scr">(main)/reportes</span></h3>
+        <p class="purpose">Producción del encuestador. Requiere conexión.</p>
+        <p>Período <span class="q">Esta semana / Este mes / Todo</span>; métricas Completadas, En progreso, Hogares, Respuestas; <span class="q">Por instrumento</span>; <span class="q">Exportar CSV</span>.</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="s7">
+      <h2><span class="k">7</span>Comportamiento sin conexión — matriz</h2>
+      <div class="tw"><table>
+        <thead><tr><th>Acción</th><th style="width:120px">¿Sin señal?</th><th>Cómo se comporta</th></tr></thead>
+        <tbody>
+          <tr><td>Iniciar sesión (1.ª vez)</td><td><span class="no">✗ No</span></td><td>Requiere internet para validar.</td></tr>
+          <tr><td>Ingreso con huella</td><td><span class="dep">~ Depende</span></td><td>Re-autentica con el token guardado; puede requerir red.</td></tr>
+          <tr><td>Búsqueda de víctima</td><td><span class="yes">✓ Sí</span></td><td>Busca en el <strong>padrón precargado</strong>; documento enmascarado.</td></tr>
+          <tr><td>Conformar hogar / integrantes</td><td><span class="yes">✓ Sí</span></td><td>Se guarda local y se <strong>encola</strong>.</td></tr>
+          <tr><td>Crear nuevo hogar (manual)</td><td><span class="yes">✓ Sí</span></td><td>Local ("Pendiente sync").</td></tr>
+          <tr><td>Elegir instrumento</td><td><span class="yes">✓ Sí</span></td><td>La lista viene en el <strong>bundle</strong>.</td></tr>
+          <tr><td>Ubicación de atención</td><td><span class="no">✗ No</span></td><td>Necesita listas del servidor → usar <strong>"Omitir por ahora"</strong>.</td></tr>
+          <tr><td><strong>Capturar capítulos</strong></td><td><span class="yes">✓ Sí</span></td><td>Autoguardado + cola. <strong>Lo más importante que funcione offline.</strong></td></tr>
+          <tr><td>Finalizar caracterización</td><td><span class="yes">✓ Sí</span></td><td>Se encola ("finalizada offline").</td></tr>
+          <tr><td>Detalle hogar / hub / detalle sesión</td><td><span class="no">✗ No</span></td><td>Requieren servidor (el hub ofrece continuar offline).</td></tr>
+          <tr><td>Reportes</td><td><span class="no">✗ No</span></td><td>Requieren servidor.</td></tr>
+          <tr><td>Sincronizar la cola</td><td><span class="no">✗ No</span></td><td>El botón se deshabilita sin conexión.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 8 -->
+    <section id="s8">
+      <h2><span class="k">8</span>Mensajes y estados</h2>
+      <p><strong>Estado de una caracterización:</strong></p>
+      <div class="chips">
+        <span class="chip c-naranja">INICIADA</span><span class="chip c-azul">EN PROGRESO</span>
+        <span class="chip c-verde">COMPLETADA</span><span class="chip c-rojo">SUSPENDIDA</span>
+      </div>
+      <p><strong>Estado RUV de una persona:</strong></p>
+      <div class="chips">
+        <span class="chip c-verde">INCLUIDO</span><span class="chip c-gris">NO INCLUIDO</span>
+        <span class="chip c-naranja">EN PROCESO</span><span class="chip c-rojo">EXCLUIDO</span>
+      </div>
+      <p><strong>Errores frecuentes (literales):</strong></p>
+      <ul>
+        <li><span class="q">Sin conexión y la persona no está en los datos offline. Conéctese e intente de nuevo.</span></li>
+        <li><span class="q">Error al consultar el RNI. Verifique la conexión.</span></li>
+        <li><span class="q">Este hogar ya no existe en el servidor. Vuelve a la lista de hogares.</span> (404)</li>
+        <li><span class="q">Tu sesión expiró. Vuelve a iniciar sesión.</span> (401)</li>
+        <li><span class="q">El perfil {CÓDIGO} no está disponible en el bundle local. Reinstala la app.</span></li>
+      </ul>
+    </section>
+
+    <!-- 9 -->
+    <section id="s9">
+      <h2><span class="k">9</span>Checklists de prueba funcional</h2>
+
+      <h3>9.1 Flujo feliz (end-to-end, con conexión)</h3>
+      <ul class="check">
+        <li>Login válido → llega al Inicio; banner en verde <span class="chip c-verde">Conectado</span>.</li>
+        <li>Búsqueda de persona <strong>habilitada</strong> → tarjeta verde → "Conformar hogar".</li>
+        <li>El autorizado aparece solo con <strong>★ AUTORIZADO</strong>.</li>
+        <li>Agregar 1 integrante "Miembro" → aparece en la lista.</li>
+        <li>"Continuar a caracterizaciones" → hub → "+ Nueva caracterización".</li>
+        <li>Elegir instrumento → (hogar) → Ubicación → "Continuar al formulario".</li>
+        <li>Responder un capítulo por hogar y uno por persona → progreso sube.</li>
+        <li>"Finalizar caracterización" → "Sesión finalizada"; chip queda <span class="chip c-verde">✓ Al día</span>.</li>
+      </ul>
+
+      <h3>9.2 Registro de "no incluida"</h3>
+      <ul class="check">
+        <li>Documento inexistente → tarjeta gris → "Agregar como víctima no incluida".</li>
+        <li>"Agregar víctima" deshabilitado sin nombre/apellido/fecha; se habilita al completar.</li>
+        <li>Tras agregar → "Conformar hogar" disponible.</li>
+      </ul>
+
+      <h3>9.3 Reglas de negocio</h3>
+      <ul class="check">
+        <li>2.º hogar para la misma persona → la app devuelve el existente (no duplica).</li>
+        <li>Rol "Tutor"/"Cuidador" → exige constancia; "Continuar" bloqueado hasta el marcador.</li>
+        <li>Un mismo hogar con 2 caracterizaciones (2 instrumentos).</li>
+      </ul>
+
+      <h3>9.4 Offline (crítico)</h3>
+      <ul class="check">
+        <li>Con la app abierta, activar modo avión.</li>
+        <li>Buscar una persona del padrón → aparece (documento enmascarado).</li>
+        <li>Conformar hogar + agregar integrante offline.</li>
+        <li>Capturar un capítulo completo offline (autoguardado).</li>
+        <li>Ver los ítems en "Estado de sincronización".</li>
+        <li>Reconectar → la cola pasa a "enviado" → "Todo al día".</li>
+        <li>Verificar en web/servidor que hogar, integrantes y respuestas llegaron.</li>
+      </ul>
+
+      <h3>9.5 Robustez de carga/red</h3>
+      <ul class="check">
+        <li>Con red lenta (ngrok), abrir un hogar: <strong>no</strong> se queda "Cargando…" para siempre; a los ~15 s muestra error o funciona offline.</li>
+        <li>Al expirar la sesión, la app pide login sin colgarse.</li>
+      </ul>
+    </section>
+
+    <!-- 10 -->
+    <section id="s10">
+      <h2><span class="k">10</span>Pendientes conocidos <span style="font-size:14px;font-weight:500;color:var(--muted)">— no reportar como bugs nuevos</span></h2>
+      <div class="box warn"><span class="lbl">Comportamiento esperado en esta versión</span>
+      <ol style="margin:.2em 0 0">
+        <li><strong>Constancia sin adjunto real:</strong> al tocar "Adjuntar constancia" sale <span class="q">Constancia registrada (pendiente de archivo)</span> y registra un marcador. El selector de archivos aún no está instalado.</li>
+        <li><strong>Transcripción IA manual:</strong> en la grabación se escribe/pega el texto; aún no hay grabación de audio real por capítulo (MVP).</li>
+        <li><strong>Voz inline "Dictar respuesta":</strong> la transcripción de ese botón es un placeholder.</li>
+        <li><strong>"Anular" no crea estado separado:</strong> la sesión queda COMPLETADA con la observación <code>[ANULADA POR ENCUESTADOR]</code>.</li>
+        <li><strong>Desfase del indicador offline:</strong> el estado de red se refresca ~cada 60 s.</li>
+      </ol>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="s11">
+      <h2><span class="k">11</span>Solución de problemas</h2>
+      <div class="tw"><table>
+        <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Qué hacer</th></tr></thead>
+        <tbody>
+          <tr><td>"Sin conexión" con señal aparente</td><td>El servidor/túnel no responde</td><td>Reintentar desde "Estado de sincronización"; probar datos/WiFi.</td></tr>
+          <tr><td>"Consultar RNI" tarda</td><td>Túnel ngrok lento</td><td>Esperar; si falla, cae a offline o muestra error (no se cuelga).</td></tr>
+          <tr><td>Ítems en "error" en la cola</td><td>Reintentos agotados</td><td>Tocar <strong>"Reintentar errores"</strong>; reportar el mensaje.</td></tr>
+          <tr><td>La app pide login otra vez</td><td>Sesión expirada</td><td>Ingresar normal; el trabajo local no se pierde.</td></tr>
+          <tr><td>Capítulo dice "Faltan N" tras responder</td><td>Obligatorias por cada integrante</td><td>Revisar la fila de cada persona.</td></tr>
+          <tr><td>No aparece el botón de huella</td><td>Biometría no configurada / 1.er ingreso</td><td>Ingresar una vez con contraseña; configurar huella.</td></tr>
+        </tbody>
+      </table></div>
+      <p style="color:var(--muted);font-size:14px">Soporte técnico: <code>[COMPLETAR — canal interno UARIV]</code></p>
+    </section>
+
+    <!-- 12 -->
+    <section id="s12">
+      <h2><span class="k">12</span>Carga y red — importante en esta versión</h2>
+      <p>En pruebas el backend va por un <strong>túnel (ngrok)</strong> que puede estar lento o caerse. Antes, una petición colgada dejaba algunas pantallas en <span class="q">Cargando…</span> de forma indefinida. <strong>Eso ya se corrigió:</strong></p>
+      <ul>
+        <li>Toda petición tiene un límite de espera de <strong>~15 segundos</strong>: si la red falla, la pantalla <strong>muestra un error</strong> o <strong>cae a modo sin conexión</strong> — no se queda cargando para siempre.</li>
+        <li>Si el <span class="q">Cargando…</span> supera claramente los ~15 s sin resolver, es un caso a <strong>reportar</strong> (con hora, pantalla y estado del túnel).</li>
+        <li>La lentitud puntual sí puede pasar mientras el entorno siga en ngrok. Repórtela como <strong>lentitud de entorno</strong>, no como cuelgue de la app.</li>
+      </ul>
+      <div class="box info"><span class="lbl">Cómo reportar un hallazgo</span>
+        <p>Pantalla · pasos exactos · qué esperaba · qué pasó · si había conexión · captura de pantalla (si es posible).</p>
+      </div>
+    </section>
+
+    <footer>
+      Manual Funcional — App Móvil de Caracterización (SICAV / SRNI) · v1.0 · 2026-07-03 ·
+      Unidad para las Víctimas. Documento interno para el equipo de pruebas.
+    </footer>
+  </main>
+</div>
+
+<script>
+  // Resaltar en el índice la sección visible.
+  (function(){
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var map = {};
+    links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('on'); });
+          if(map[e.target.id]) map[e.target.id].classList.add('on');
+        }
+      });
+    }, {rootMargin:'-20% 0px -70% 0px', threshold:0});
+    document.querySelectorAll('main section').forEach(function(s){ obs.observe(s); });
+  })();
+</script>
+</body>
+</html>
