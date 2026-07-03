@@ -18,7 +18,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prod-caracterizacion.ngrok.app"
+        "EXPO_PUBLIC_API_URL": "https://caracterizacion.unidadvictimas.gov.co"
       }
     },
     "production": {
@@ -27,7 +27,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://CAMBIAR-URL-PRODUCCION.unidadvictimas.gov.co"
+        "EXPO_PUBLIC_API_URL": "https://caracterizacion.unidadvictimas.gov.co"
       }
     }
   },
