@@ -100,7 +100,7 @@ services:
       - ./movil:/app/movil:ro
     depends_on:
       - cz_backend
-    networks: [cz_net]
+    networks: [cz_net, uariv_ext]
     restart: unless-stopped
 
 volumes:
@@ -111,3 +111,9 @@ volumes:
 networks:
   cz_net:
     name: caracterizacion_net
+  # Red del reverse-proxy compartido (nginx-proxy-manager). Necesaria para que el
+  # dominio institucional vía WAF (FortiWeb 443 → 30.0.1.109:80 → NPM → cz_nginx:80)
+  # alcance el backend. Ver memoria: WAF dominio / project_ngrok_web_filter.
+  uariv_ext:
+    name: uariv-network
+    external: true
