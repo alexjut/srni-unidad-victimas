@@ -331,10 +331,64 @@ def lote2_k35_cual(d):
     log("K35: +PL23_CUAL (¿cuál servicio?) visible si PL23=true")
 
 
+# J31-J40 (M2A,M2B,M2C,M5-M11): ingresos del mes pasado. El manual pide en cada
+# uno "Si ¿Valor del mes pasado?". Se agrega un hijo NUMERICO ($) gateado por =Sí.
+INGRESOS = ["M2A", "M2B", "M2C", "M5", "M6", "M7", "M8", "M9", "M10", "M11"]
+_PSEUDO_OPC = {"NUMÉRICO", "NUMERICO", "TEXTO"}
+
+
+def lote2_valores_ingresos(d):
+    """Agrega '¿Valor recibido el mes pasado? $' (NUMERICO) a cada ingreso J31-J40,
+    visible si el ingreso = Sí (valor 1). Limpia la pseudo-opción embebida
+    'NUMÉRICO/Valor' (patrón roto, reemplazado por la pregunta hija). [manual]"""
+    P = {p["codigo_externo"]: p for p in d["preguntas"]}
+    for code in INGRESOS:
+        parent = P.get(code)
+        if not parent:
+            continue
+        antes = len(parent["opciones"])
+        parent["opciones"] = [o for o in parent["opciones"]
+                              if str(o.get("valor")) not in _PSEUDO_OPC]
+        if len(parent["opciones"]) != antes:
+            log(f"Ingresos: limpiada pseudo-opción embebida de {code}")
+        cod = f"{code}_VALOR"
+        if _existe(d, cod):
+            continue
+        res = _insertar_bloque(d, code, 1)
+        if res is None:
+            continue
+        cap, base = res
+        d["preguntas"].append({
+            "no_pregunta": "",
+            "codigo_externo": cod,
+            "id_preg": _next_idpreg(d),
+            "capitulo_codigo": cap,
+            "texto": "¿Valor recibido el mes pasado? $",
+            "tipo": "NUMERICO",
+            "nivel": "PERSONA",
+            "obligatoria": False,
+            "orden": base + 1,
+            "es_precargada": False,
+            "fuente_precarga": "",
+            "validaciones": {},
+            "opciones": [],
+            "id": pid(cod),
+        })
+        reglas(d).append({
+            "origen": code,
+            "valor_trigger": "1",
+            "accion": "HABILITAR",
+            "afecta": cod,
+            "descripcion": f"[manual J31-J40] valor $ visible si {code}=Sí",
+        })
+        log(f"Ingresos: +{cod} (valor $) visible si {code}=Sí")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
     ("LOTE 2 — preguntas faltantes",
-     [lote2_observaciones, lote2_estrato, lote2_cursos_subcampos, lote2_k35_cual]),
+     [lote2_observaciones, lote2_estrato, lote2_cursos_subcampos, lote2_k35_cual,
+      lote2_valores_ingresos]),
 ]
 
 
