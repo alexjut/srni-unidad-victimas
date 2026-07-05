@@ -11147,11 +11147,11 @@
       "descripcion": "[Datos Básicos validado] cuál enfermedad visible si tiene diagnóstico ruinosas"
     },
     {
-      "origen": "Z4",
-      "valor_trigger": "1,2,3,4,5",
+      "origen": "A30",
+      "valor_trigger": "1",
       "accion": "HABILITAR",
       "afecta": "B17",
-      "descripcion": "[B27 manual] tipo territorio si étnico (Z4≠Ninguna)"
+      "descripcion": "[flujo] B27 (tipo territorio) visible si B26=Si (A30=1) [obs funcional: 26=No no debe desplegar 27]"
     },
     {
       "origen": "A25",

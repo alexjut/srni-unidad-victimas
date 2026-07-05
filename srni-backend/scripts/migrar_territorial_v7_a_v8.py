@@ -65,8 +65,25 @@ def lote1_d7_d8_etnico(d):
             log(f"D7/D8: regla de {afecta} ahora dispara por Z4=1 (Indígena)")
 
 
+def lote1_b26_b27_territorio(d):
+    """P26/P27: B27 (B17, "¿en qué tipo de territorio?") solo debe mostrarse si
+    B26 (A30, "¿habita territorio colectivo?") = Si.
+
+    Antes se gatillaba por Z4 (etnia), sin relación con B26 → aparecía aunque
+    B26=No. Como A30 ya está gateada por Z4=1..5, la condición étnica se conserva
+    por encadenamiento (A30 visible solo para étnicos → B17 solo si A30=Si).
+    """
+    for r in reglas(d):
+        if r.get("afecta") == "B17" and r.get("accion") == "HABILITAR" and r.get("origen") == "Z4":
+            r["origen"] = "A30"
+            r["valor_trigger"] = "1"
+            r["descripcion"] = ("[flujo] B27 (tipo territorio) visible si B26=Si (A30=1) "
+                                "[obs funcional: 26=No no debe desplegar 27]")
+            log("P26/P27 (B26/B27): B17 visible si A30=1 (territorio colectivo=Si), ya no por Z4")
+
+
 LOTES = [
-    ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico]),
+    ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
 ]
 
 
