@@ -75,6 +75,26 @@ def _insertar_despues(d, cap, cod_ref):
             p["orden"] += 1
     return base + 1
 
+
+def _insertar_bloque(d, cod_ref, n):
+    """Reserva n posiciones de orden justo después de cod_ref (en su propio
+    capítulo), desplazando +n las posteriores. Devuelve (capitulo, orden_base);
+    el llamador asigna orden_base+1 .. orden_base+n."""
+    ref = next((p for p in d["preguntas"] if p.get("codigo_externo") == cod_ref), None)
+    if not ref:
+        return None
+    cap, base = ref["capitulo_codigo"], ref["orden"]
+    for p in d["preguntas"]:
+        if p.get("capitulo_codigo") == cap and p.get("orden", 0) > base:
+            p["orden"] += n
+    return cap, base
+
+
+def _opciones_sino(d):
+    rr = _next_id_resp(d)
+    return [{"valor": "1", "etiqueta": "Si", "id_resp_vivanto": rr, "orden": 1},
+            {"valor": "2", "etiqueta": "No", "id_resp_vivanto": rr + 1, "orden": 2}]
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # …/srni-backend
 FIX = os.path.join(BASE, "apps", "formulario", "fixtures")
 SRC = os.path.join(FIX, "perfil_territorial_v7.json")
@@ -226,9 +246,95 @@ def lote2_estrato(d):
     log("Estrato: +D8A_ESTRATO (LISTA 1-6/Sin estrato) en cap C, visible si D8A=true")
 
 
+# Cursos K17/K18/K19 (PL9A/PL10A/PL11A): hoy solo "Nombre del curso". El manual
+# pide 4 campos por curso; faltan Institución, Tipo y ¿Certificó?. Cada sub-campo
+# se gatilla con el mismo trigger PL25 que su curso padre.
+CURSO_SUB = [
+    ("INST", "Institución", "TEXTO"),
+    ("TIPO", "Tipo", "TEXTO"),
+    ("CERT", "¿Terminó y obtuvo certificación?", "BOOLEAN"),
+]
+CURSOS = [("PL9A", "1,2,3"), ("PL10A", "1,2"), ("PL11A", "1")]  # (curso, trigger PL25)
+
+
+def lote2_cursos_subcampos(d):
+    """Agrega Institución / Tipo / ¿Certificó? a cada uno de los 3 cursos (K17-19),
+    justo después del nombre del curso, con el mismo gate PL25 del curso. [manual]"""
+    for curso, trig in CURSOS:
+        res = _insertar_bloque(d, curso, len(CURSO_SUB))
+        if res is None:
+            continue
+        cap, base = res
+        for i, (suf, txt, tipo) in enumerate(CURSO_SUB, start=1):
+            cod = f"{curso}_{suf}"
+            if _existe(d, cod):
+                continue
+            d["preguntas"].append({
+                "no_pregunta": "",
+                "codigo_externo": cod,
+                "id_preg": _next_idpreg(d),
+                "capitulo_codigo": cap,
+                "texto": txt,
+                "tipo": tipo,
+                "nivel": "PERSONA",
+                "obligatoria": False,
+                "orden": base + i,
+                "es_precargada": False,
+                "fuente_precarga": "",
+                "validaciones": {},
+                "opciones": _opciones_sino(d) if tipo == "BOOLEAN" else [],
+                "id": pid(cod),
+            })
+            reglas(d).append({
+                "origen": "PL25",
+                "valor_trigger": trig,
+                "accion": "HABILITAR",
+                "afecta": cod,
+                "descripcion": f"[manual K17-19] {txt} del curso visible si recibió cursos (PL25={trig})",
+            })
+        log(f"Cursos: +{curso}_INST/_TIPO/_CERT (3 sub-campos, gate PL25={trig})")
+
+
+def lote2_k35_cual(d):
+    """K35 (PL23, "¿Conoce servicios ofrecidos por alguna institución?"): agrega
+    "¿Cuál servicio?" (TEXTO) visible si PL23=Sí. [manual K35]"""
+    cod = "PL23_CUAL"
+    if _existe(d, cod):
+        return
+    res = _insertar_bloque(d, "PL23", 1)
+    if res is None:
+        return
+    cap, base = res
+    d["preguntas"].append({
+        "no_pregunta": "",
+        "codigo_externo": cod,
+        "id_preg": _next_idpreg(d),
+        "capitulo_codigo": cap,
+        "texto": "¿Cuál servicio?",
+        "tipo": "TEXTO",
+        "nivel": "PERSONA",
+        "obligatoria": False,
+        "orden": base + 1,
+        "es_precargada": False,
+        "fuente_precarga": "",
+        "validaciones": {},
+        "opciones": [],
+        "id": pid(cod),
+    })
+    reglas(d).append({
+        "origen": "PL23",
+        "valor_trigger": "true",
+        "accion": "HABILITAR",
+        "afecta": cod,
+        "descripcion": "[manual K35] ¿cuál servicio? visible si conoce servicios de alguna institución (PL23=Sí)",
+    })
+    log("K35: +PL23_CUAL (¿cuál servicio?) visible si PL23=true")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
-    ("LOTE 2 — preguntas faltantes", [lote2_observaciones, lote2_estrato]),
+    ("LOTE 2 — preguntas faltantes",
+     [lote2_observaciones, lote2_estrato, lote2_cursos_subcampos, lote2_k35_cual]),
 ]
 
 
