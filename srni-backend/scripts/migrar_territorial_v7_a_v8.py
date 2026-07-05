@@ -57,6 +57,24 @@ def _existe(d, cod):
 def _next_idpreg(d):
     return max([p.get("id_preg", 0) or 0 for p in d["preguntas"]] + [0]) + 1
 
+
+def _next_id_resp(d):
+    ids = [o.get("id_resp_vivanto") for p in d["preguntas"] for o in p.get("opciones", [])
+           if isinstance(o.get("id_resp_vivanto"), int)]
+    return (max(ids) if ids else 0) + 1
+
+
+def _insertar_despues(d, cap, cod_ref):
+    """Orden para insertar una pregunta justo después de cod_ref, desplazando +1
+    el orden de las preguntas posteriores del mismo capítulo (solo afecta el orden
+    de despliegue; las reglas referencian por código, no por orden)."""
+    ref = next((p for p in d["preguntas"] if p.get("codigo_externo") == cod_ref), None)
+    base = ref["orden"] if ref else _max_orden(d, cap)
+    for p in d["preguntas"]:
+        if p.get("capitulo_codigo") == cap and p.get("orden", 0) > base:
+            p["orden"] += 1
+    return base + 1
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # …/srni-backend
 FIX = os.path.join(BASE, "apps", "formulario", "fixtures")
 SRC = os.path.join(FIX, "perfil_territorial_v7.json")
@@ -165,9 +183,52 @@ def lote2_observaciones(d):
             f"(orden {q['orden']}, {q['nivel']})")
 
 
+ESTRATO_OPC = [("1", "Estrato 1"), ("2", "Estrato 2"), ("3", "Estrato 3"),
+               ("4", "Estrato 4"), ("5", "Estrato 5"), ("6", "Estrato 6"),
+               ("0", "Sin estrato")]
+
+
+def lote2_estrato(d):
+    """C7 (D8A, energía eléctrica): si el hogar SÍ cuenta con energía, preguntar
+    el estrato — el manual lo trae como sub-opción 'Si ¿Estrato?'. Nueva pregunta
+    LISTA gateada por D8A=true (BOOLEAN), justo después de energía. [manual C7]"""
+    cod = "D8A_ESTRATO"
+    if _existe(d, cod):
+        return
+    rr = _next_id_resp(d)
+    opciones = []
+    for i, (val, et) in enumerate(ESTRATO_OPC, start=1):
+        opciones.append({"valor": val, "etiqueta": et, "id_resp_vivanto": rr, "orden": i})
+        rr += 1
+    d["preguntas"].append({
+        "no_pregunta": "C7_1",
+        "codigo_externo": cod,
+        "id_preg": _next_idpreg(d),
+        "capitulo_codigo": "C",
+        "texto": "¿Cuál es el estrato de la vivienda?",
+        "tipo": "LISTA",
+        "nivel": "HOGAR",
+        "obligatoria": False,
+        "orden": _insertar_despues(d, "C", "D8A"),
+        "es_precargada": False,
+        "fuente_precarga": "",
+        "validaciones": {},
+        "opciones": opciones,
+        "id": pid(cod),
+    })
+    reglas(d).append({
+        "origen": "D8A",
+        "valor_trigger": "true",
+        "accion": "HABILITAR",
+        "afecta": cod,
+        "descripcion": "[manual C7] estrato visible si el hogar cuenta con energía eléctrica (D8A=Sí)",
+    })
+    log("Estrato: +D8A_ESTRATO (LISTA 1-6/Sin estrato) en cap C, visible si D8A=true")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
-    ("LOTE 2 — preguntas faltantes", [lote2_observaciones]),
+    ("LOTE 2 — preguntas faltantes", [lote2_observaciones, lote2_estrato]),
 ]
 
 

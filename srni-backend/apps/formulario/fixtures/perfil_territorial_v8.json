@@ -1411,7 +1411,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 12,
+      "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1440,7 +1440,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 13,
+      "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1469,7 +1469,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 14,
+      "orden": 15,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1498,7 +1498,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 15,
+      "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1527,7 +1527,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 16,
+      "orden": 17,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1556,7 +1556,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 17,
+      "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1633,7 +1633,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 18,
+      "orden": 19,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1692,7 +1692,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 20,
+      "orden": 21,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1751,7 +1751,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 21,
+      "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1767,7 +1767,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 22,
+      "orden": 23,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1783,7 +1783,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 23,
+      "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1799,7 +1799,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 24,
+      "orden": 25,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1834,7 +1834,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 25,
+      "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -1905,7 +1905,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 27,
+      "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2000,7 +2000,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 28,
+      "orden": 29,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10540,7 +10540,7 @@
       "tipo": "TEXTO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 19,
+      "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10556,7 +10556,7 @@
       "tipo": "TEXTO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 26,
+      "orden": 27,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11218,6 +11218,65 @@
       "validaciones": {},
       "opciones": [],
       "id": "a7a5964f-eceb-58b6-91a2-27128e0954c0"
+    },
+    {
+      "no_pregunta": "C7_1",
+      "codigo_externo": "D8A_ESTRATO",
+      "id_preg": 1443,
+      "capitulo_codigo": "C",
+      "texto": "¿Cuál es el estrato de la vivienda?",
+      "tipo": "LISTA",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 12,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [
+        {
+          "valor": "1",
+          "etiqueta": "Estrato 1",
+          "id_resp_vivanto": 4718,
+          "orden": 1
+        },
+        {
+          "valor": "2",
+          "etiqueta": "Estrato 2",
+          "id_resp_vivanto": 4719,
+          "orden": 2
+        },
+        {
+          "valor": "3",
+          "etiqueta": "Estrato 3",
+          "id_resp_vivanto": 4720,
+          "orden": 3
+        },
+        {
+          "valor": "4",
+          "etiqueta": "Estrato 4",
+          "id_resp_vivanto": 4721,
+          "orden": 4
+        },
+        {
+          "valor": "5",
+          "etiqueta": "Estrato 5",
+          "id_resp_vivanto": 4722,
+          "orden": 5
+        },
+        {
+          "valor": "6",
+          "etiqueta": "Estrato 6",
+          "id_resp_vivanto": 4723,
+          "orden": 6
+        },
+        {
+          "valor": "0",
+          "etiqueta": "Sin estrato",
+          "id_resp_vivanto": 4724,
+          "orden": 7
+        }
+      ],
+      "id": "e9cce95c-7f96-5457-abc4-6db03f9ca6cd"
     }
   ],
   "reglas_skip_logic": [
@@ -12866,6 +12925,13 @@
       "accion": "HABILITAR",
       "afecta": "L22E1",
       "descripcion": "[flujo] L22E1 (¿cuánto?) visible si L22E=true"
+    },
+    {
+      "origen": "D8A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "D8A_ESTRATO",
+      "descripcion": "[manual C7] estrato visible si el hogar cuenta con energía eléctrica (D8A=Sí)"
     }
   ]
 }
