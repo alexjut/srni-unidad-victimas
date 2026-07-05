@@ -17,6 +17,45 @@ import io
 import json
 import os
 import sys
+import uuid
+
+# UUID v5 deterministas — misma convención que scripts/patch_primas_jf.py, para
+# que fixture e (eventual) bundle compartan el mismo id por pregunta (paridad
+# backend↔APK). El esquema exacto no importa mientras sea único y estable.
+NS = uuid.UUID("5c1a0000-0000-5c1a-0000-000000000001")
+PERFIL_ID = "territorial"
+
+
+def pid(cod):
+    return str(uuid.uuid5(NS, f"{PERFIL_ID}:{cod}"))
+
+
+def oid(cod, v):
+    return str(uuid.uuid5(NS, f"{PERFIL_ID}:{cod}:{v}"))
+
+
+def rid(origen, afecta):
+    return str(uuid.uuid5(NS, f"{PERFIL_ID}:rule:{origen}->{afecta}"))
+
+
+def _nivel_cap(d, cap):
+    for c in d["capitulos"]:
+        if c["codigo"] == cap:
+            return c.get("nivel", "HOGAR")
+    return "HOGAR"
+
+
+def _max_orden(d, cap):
+    ordenes = [p.get("orden", 0) for p in d["preguntas"] if p.get("capitulo_codigo") == cap]
+    return max(ordenes) if ordenes else 0
+
+
+def _existe(d, cod):
+    return any(p.get("codigo_externo") == cod for p in d["preguntas"])
+
+
+def _next_idpreg(d):
+    return max([p.get("id_preg", 0) or 0 for p in d["preguntas"]] + [0]) + 1
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # …/srni-backend
 FIX = os.path.join(BASE, "apps", "formulario", "fixtures")
@@ -82,8 +121,53 @@ def lote1_b26_b27_territorio(d):
             log("P26/P27 (B26/B27): B17 visible si A30=1 (territorio colectivo=Si), ya no por Z4")
 
 
+# ─── LOTE 2 — Preguntas faltantes ──────────────────────────────────────────────
+
+# Capítulos sin "Observaciones a este capitulo" (C ya tiene C_OBSERVA; E tiene
+# F_OBSERVA "finales"). Falta en D, F(educación), J.Alimentación(JA),
+# J.Fuerza(JF), K y L. (capitulo, codigo_nuevo, no_pregunta)
+OBSERVACIONES = [
+    ("D", "OBS_D", "D17"),
+    ("F", "OBS_F", "F9"),
+    ("JA", "OBS_JA", ""),
+    ("JF", "OBS_JF", ""),
+    ("K", "OBS_K", ""),
+    ("L", "OBS_L", ""),
+]
+
+
+def lote2_observaciones(d):
+    """Agrega una pregunta TEXTO_LARGO de observaciones al final de cada capítulo
+    que no la tenga, con el nivel del capítulo y id uuid5 determinista."""
+    seq = _next_idpreg(d)
+    for cap, cod, nopreg in OBSERVACIONES:
+        if _existe(d, cod):
+            continue
+        q = {
+            "no_pregunta": nopreg,
+            "codigo_externo": cod,
+            "id_preg": seq,
+            "capitulo_codigo": cap,
+            "texto": "Observaciones a este capitulo",
+            "tipo": "TEXTO_LARGO",
+            "nivel": _nivel_cap(d, cap),
+            "obligatoria": False,
+            "orden": _max_orden(d, cap) + 1,
+            "es_precargada": False,
+            "fuente_precarga": "",
+            "validaciones": {},
+            "opciones": [],
+            "id": pid(cod),
+        }
+        d["preguntas"].append(q)
+        seq += 1
+        log(f"Observaciones: +{cod} ({nopreg or 'obs'}) en cap {cap} "
+            f"(orden {q['orden']}, {q['nivel']})")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
+    ("LOTE 2 — preguntas faltantes", [lote2_observaciones]),
 ]
 
 
