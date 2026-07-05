@@ -12,10 +12,10 @@ export const NAV_ITEMS = [
   { to: '/hogares',      icon: Home,            label: 'Hogares'       },
   { to: '/encuestas',    icon: ClipboardList,   label: 'Encuestas'     },
   { to: '/reportes',     icon: BarChart3,       label: 'Reportes'      },
-  { to: '/supervision',  icon: Eye,             label: 'Supervisión'   },
+  { to: '/supervision',  icon: Eye,             label: 'Supervisión',   supervisorOnly: true },
   { to: '/instrumentos', icon: FileText,        label: 'Instrumentos'  },
   { to: '/parametricas', icon: Database,        label: 'Paramétricas'  },
-  { to: '/auditoria',    icon: Shield,          label: 'Auditoría'     },
+  { to: '/auditoria',    icon: Shield,          label: 'Auditoría',     coordinadorOnly: true },
   { to: '/usuarios',     icon: UserCog,         label: 'Usuarios',      adminOnly: true },
 ];
 
@@ -25,8 +25,16 @@ interface SidebarProps {
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const usuario = useAuthStore((s) => s.usuario);
-  const esAdmin = !!usuario?.perfil?.puede_administrar;
-  const items = NAV_ITEMS.filter((i) => !('adminOnly' in i && i.adminOnly) || esAdmin);
+  const esAdmin         = !!usuario?.perfil?.puede_administrar;
+  const puedeSupervisar = !!usuario?.perfil?.puede_ver_reportes;
+  const codigoPerfil    = usuario?.perfil?.codigo ?? '';
+  const puedeVerAuditoria = ['COORDINADOR', 'ADMINISTRADOR'].includes(codigoPerfil);
+  const items = NAV_ITEMS.filter((i) => {
+    if ('adminOnly'      in i && i.adminOnly      && !esAdmin)           return false;
+    if ('supervisorOnly' in i && i.supervisorOnly  && !puedeSupervisar)  return false;
+    if ('coordinadorOnly' in i && i.coordinadorOnly && !puedeVerAuditoria) return false;
+    return true;
+  });
   return (
     <>
       {/* Logo */}

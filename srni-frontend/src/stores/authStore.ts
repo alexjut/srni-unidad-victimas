@@ -13,7 +13,7 @@ interface Usuario {
   nombre_completo: string;
   email: string;
   perfil: {
-    id: number;
+    codigo: string;
     nombre: string;
     puede_caracterizar: boolean;
     puede_buscar_rni: boolean;

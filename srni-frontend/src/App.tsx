@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
+import { ShieldOff } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import Spinner from '@/components/ui/Spinner';
@@ -32,6 +33,47 @@ function PageSpinner() {
 
 function SuspensePage({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageSpinner />}>{children}</Suspense>;
+}
+
+/** Página de acceso restringido — se renderiza dentro del layout (con sidebar). */
+function Forbidden() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 animate-fade-in">
+      <div className="text-center max-w-sm">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-gov-rojoTenue flex items-center justify-center mb-6">
+          <ShieldOff size={32} className="text-gov-rojo" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-gray-800 mb-2">
+          Acceso restringido
+        </h2>
+        <p className="text-sm text-gov-gris mb-8 leading-relaxed">
+          No tienes permisos para ver esta sección.
+          Si crees que es un error, contacta al administrador del sistema.
+        </p>
+        <Link to="/dashboard" className="btn-primary inline-flex items-center gap-2">
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Muestra la página de acceso restringido si el usuario no cumple la condición indicada. */
+function RequirePermission({
+  permiso,
+  check,
+  children,
+}: {
+  permiso?: 'puede_ver_reportes' | 'puede_administrar';
+  check?: (u: NonNullable<ReturnType<typeof useAuthStore>['usuario']>) => boolean;
+  children: React.ReactNode;
+}) {
+  const usuario = useAuthStore((s) => s.usuario);
+  if (usuario) {
+    if (permiso && !usuario.perfil?.[permiso]) return <Forbidden />;
+    if (check && !check(usuario)) return <Forbidden />;
+  }
+  return <>{children}</>;
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -77,11 +119,25 @@ export default function App() {
         <Route path="encuestas"   element={<SuspensePage><EncuestasPage /></SuspensePage>} />
         <Route path="encuestas/:id" element={<SuspensePage><SesionDetallePage /></SuspensePage>} />
         <Route path="reportes"    element={<SuspensePage><ReportesPage /></SuspensePage>} />
-        <Route path="supervision" element={<SuspensePage><SupervisionPage /></SuspensePage>} />
+        <Route path="supervision" element={
+          <RequirePermission permiso="puede_ver_reportes">
+            <SuspensePage><SupervisionPage /></SuspensePage>
+          </RequirePermission>
+        } />
         <Route path="instrumentos" element={<SuspensePage><InstrumentosPage /></SuspensePage>} />
         <Route path="parametricas" element={<SuspensePage><ParametricasPage /></SuspensePage>} />
-        <Route path="auditoria"   element={<SuspensePage><AuditoriaPage /></SuspensePage>} />
-        <Route path="usuarios"    element={<SuspensePage><UsuariosPage /></SuspensePage>} />
+        <Route path="auditoria"   element={
+          <RequirePermission check={(u) =>
+            ['COORDINADOR', 'ADMINISTRADOR'].includes(u.perfil?.codigo ?? '')
+          }>
+            <SuspensePage><AuditoriaPage /></SuspensePage>
+          </RequirePermission>
+        } />
+        <Route path="usuarios"    element={
+          <RequirePermission permiso="puede_administrar">
+            <SuspensePage><UsuariosPage /></SuspensePage>
+          </RequirePermission>
+        } />
         <Route path="perfil/cambiar-password" element={<SuspensePage><CambiarPasswordPage /></SuspensePage>} />
       </Route>
 
