@@ -2845,12 +2845,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 361,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 360,
-          "orden": 3
         }
       ],
       "id": "98c18565-7bc3-566f-9dde-e41153cd80a1"
@@ -2864,7 +2858,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 5,
+      "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2880,12 +2874,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 363,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 362,
-          "orden": 3
         }
       ],
       "id": "8b139117-c8d2-5619-8c6d-18d6fdf83a9f"
@@ -2899,7 +2887,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 6,
+      "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2915,12 +2903,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 365,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 364,
-          "orden": 3
         }
       ],
       "id": "ab703a33-18f3-5e5d-9150-8ab6cb168076"
@@ -2934,7 +2916,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 7,
+      "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2950,12 +2932,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 367,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 366,
-          "orden": 3
         }
       ],
       "id": "d23b3b41-1eec-5d0e-92e3-719f8f31372b"
@@ -2969,7 +2945,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 8,
+      "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -2985,12 +2961,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 369,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 368,
-          "orden": 3
         }
       ],
       "id": "d17b189f-3ba2-59ef-8268-57a2da581c16"
@@ -3004,7 +2974,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 9,
+      "orden": 14,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3020,12 +2990,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 371,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 370,
-          "orden": 3
         }
       ],
       "id": "0441f5ed-161b-55b3-93f9-0182dcb44d66"
@@ -3039,7 +3003,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 10,
+      "orden": 16,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3055,12 +3019,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 3886,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 3885,
-          "orden": 3
         }
       ],
       "id": "67fff564-68f0-5902-9218-42d633871940"
@@ -3074,7 +3032,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 11,
+      "orden": 18,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3090,12 +3048,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 1212,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 1211,
-          "orden": 3
         }
       ],
       "id": "832072a5-5f8b-59e1-a325-5fb4c08d3808"
@@ -3109,7 +3061,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 12,
+      "orden": 20,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3125,12 +3077,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 984,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 983,
-          "orden": 3
         }
       ],
       "id": "e03a392b-b13b-51b0-8a98-a0bdc512cb7d"
@@ -3144,7 +3090,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 13,
+      "orden": 22,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3160,12 +3106,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 373,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 372,
-          "orden": 3
         }
       ],
       "id": "407080de-04b9-5e40-874b-af828ea23e41"
@@ -3179,7 +3119,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 14,
+      "orden": 24,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3195,12 +3135,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 375,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 374,
-          "orden": 3
         }
       ],
       "id": "b1bea6fe-7447-55c9-92a5-c4d081fb5438"
@@ -3214,7 +3148,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 15,
+      "orden": 26,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3230,12 +3164,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 377,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 376,
-          "orden": 3
         }
       ],
       "id": "ad815b26-811d-58e2-b59a-017954ad6707"
@@ -3249,7 +3177,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 16,
+      "orden": 28,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3265,12 +3193,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 986,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 985,
-          "orden": 3
         }
       ],
       "id": "6390b88a-4447-5899-bd45-f85f0d893a8f"
@@ -3284,7 +3206,7 @@
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 17,
+      "orden": 30,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3300,12 +3222,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 988,
           "orden": 2
-        },
-        {
-          "valor": "NUMÉRICO",
-          "etiqueta": "Valor (1 a 7)",
-          "id_resp_vivanto": 987,
-          "orden": 3
         }
       ],
       "id": "ad5ff82a-dce2-5a8f-9576-ec30817970d4"
@@ -3319,7 +3235,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 18,
+      "orden": 32,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3335,12 +3251,6 @@
           "etiqueta": "No Por qué",
           "id_resp_vivanto": 2705,
           "orden": 2
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "Campo Abierto",
-          "id_resp_vivanto": 2705,
-          "orden": 3
         }
       ],
       "id": "fb59de23-994c-5792-9fe2-07cbd0878c59"
@@ -3440,12 +3350,6 @@
           "etiqueta": "No dispongo de terreno/lote/predio de manera formal ni informal",
           "id_resp_vivanto": 2743,
           "orden": 2
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "Por qué (Histórico)",
-          "id_resp_vivanto": 2743,
-          "orden": 3
         }
       ],
       "id": "509fea34-c205-56af-9295-7b5a1872cc31"
@@ -3459,7 +3363,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 4,
+      "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3518,7 +3422,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 5,
+      "orden": 6,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3601,7 +3505,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 7,
+      "orden": 8,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3642,7 +3546,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 8,
+      "orden": 9,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3725,7 +3629,7 @@
       "tipo": "NUMERICO",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 10,
+      "orden": 11,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -3741,7 +3645,7 @@
       "tipo": "LISTA",
       "nivel": "HOGAR",
       "obligatoria": true,
-      "orden": 11,
+      "orden": 12,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -8728,12 +8632,6 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2811,
           "orden": 10
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "¿Cuál?",
-          "id_resp_vivanto": 2811,
-          "orden": 11
         }
       ],
       "id": "b29ac9a1-3b45-5ea2-82b2-88106e690e69"
@@ -8843,12 +8741,6 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2813,
           "orden": 10
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "¿Cuál?",
-          "id_resp_vivanto": 2813,
-          "orden": 11
         }
       ],
       "id": "1e0caa2e-97d9-519d-a1ad-2ed08580954a"
@@ -8958,12 +8850,6 @@
           "etiqueta": "Otro ¿Cuál?",
           "id_resp_vivanto": 2815,
           "orden": 10
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "¿Cuál?",
-          "id_resp_vivanto": 2815,
-          "orden": 11
         }
       ],
       "id": "13498496-b952-5bd4-ae6e-5dc3df322118"
@@ -9706,12 +9592,6 @@
           "etiqueta": "No",
           "id_resp_vivanto": 2540,
           "orden": 2
-        },
-        {
-          "valor": "TEXTO",
-          "etiqueta": "Cuál",
-          "id_resp_vivanto": 2539,
-          "orden": 3
         }
       ],
       "id": "cbef2160-3f56-5aa6-b6ae-93e345ab6d40"
@@ -9725,7 +9605,7 @@
       "tipo": "LISTA",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 46,
+      "orden": 47,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -9874,7 +9754,7 @@
       "tipo": "LISTA",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 48,
+      "orden": 49,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -9903,7 +9783,7 @@
       "tipo": "LISTA",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 49,
+      "orden": 50,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -9992,7 +9872,7 @@
       "tipo": "LISTA",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 51,
+      "orden": 52,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10057,7 +9937,7 @@
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 53,
+      "orden": 54,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10086,7 +9966,7 @@
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 55,
+      "orden": 56,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10115,7 +9995,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 56,
+      "orden": 57,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10131,7 +10011,7 @@
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 57,
+      "orden": 58,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10147,7 +10027,7 @@
       "tipo": "LISTA",
       "nivel": "PERSONA",
       "obligatoria": true,
-      "orden": 58,
+      "orden": 59,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10646,7 +10526,7 @@
       "tipo": "TEXTO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 6,
+      "orden": 7,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10662,7 +10542,7 @@
       "tipo": "TEXTO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 9,
+      "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -10678,7 +10558,7 @@
       "tipo": "TEXTO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 12,
+      "orden": 13,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11062,7 +10942,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 47,
+      "orden": 48,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11078,7 +10958,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 50,
+      "orden": 51,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11094,7 +10974,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 52,
+      "orden": 53,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11110,7 +10990,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 59,
+      "orden": 60,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11158,7 +11038,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
       "obligatoria": false,
-      "orden": 19,
+      "orden": 34,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11190,7 +11070,7 @@
       "tipo": "TEXTO_LARGO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 60,
+      "orden": 61,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11464,7 +11344,7 @@
       "tipo": "TEXTO",
       "nivel": "PERSONA",
       "obligatoria": false,
-      "orden": 54,
+      "orden": 55,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
@@ -11630,6 +11510,278 @@
       "validaciones": {},
       "opciones": [],
       "id": "4738226f-b118-50b6-985f-76cee5d26056"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1A_DIAS",
+      "id_preg": 1464,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 5,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "ac6d9a04-7838-551b-8c3d-ee13ec784a9e"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1B_DIAS",
+      "id_preg": 1465,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 7,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "1da8e287-d1f1-5e52-890b-0f331f14c1f5"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1C_DIAS",
+      "id_preg": 1466,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 9,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "5859bf96-47f6-54bb-83ae-435e0212acb5"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1D_DIAS",
+      "id_preg": 1467,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 11,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "fb35f400-664d-50f6-9ba8-53306e61ac44"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1E_DIAS",
+      "id_preg": 1468,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 13,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "724a5329-bea7-5653-b8a3-150600217788"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1F_DIAS",
+      "id_preg": 1469,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 15,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "96302078-5e1b-5b5f-95f2-0b91d32873fb"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1T_DIAS",
+      "id_preg": 1470,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 17,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "c457b5e8-7e7f-5d39-9467-9cbab0562ad5"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1G_DIAS",
+      "id_preg": 1471,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 19,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "10a04b95-2c02-5053-a34e-578b8bdedad0"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1H_DIAS",
+      "id_preg": 1472,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 21,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "ccb68248-1a90-550a-8a33-d0b86b74b916"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1J_DIAS",
+      "id_preg": 1473,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 23,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "11b62608-defb-53ad-8f53-291f99799c72"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1K_DIAS",
+      "id_preg": 1474,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 25,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "36365acc-ea9b-545e-97a5-14e9364dc479"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1L_DIAS",
+      "id_preg": 1475,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 27,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "82838c07-2bf3-5431-a32f-d99a1d1cbd64"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1M_DIAS",
+      "id_preg": 1476,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 29,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "9817ac38-9523-5b9e-b947-6e295ae0f89d"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "J1N_DIAS",
+      "id_preg": 1477,
+      "capitulo_codigo": "JA",
+      "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
+      "tipo": "NUMERICO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 31,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "ea273d60-918d-5606-b645-5d319c551bb7"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "I1D_PORQUE",
+      "id_preg": 1478,
+      "capitulo_codigo": "JA",
+      "texto": "¿Por qué?",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 33,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "4c88a701-54ec-5e69-bc15-db359cafb22a"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "PL20_CUAL",
+      "id_preg": 1479,
+      "capitulo_codigo": "K",
+      "texto": "¿Cuál institución?",
+      "tipo": "TEXTO",
+      "nivel": "PERSONA",
+      "obligatoria": false,
+      "orden": 46,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "272a1992-9f1f-58e1-9141-d453f805c908"
+    },
+    {
+      "no_pregunta": "",
+      "codigo_externo": "AT2_PORQUE",
+      "id_preg": 1480,
+      "capitulo_codigo": "M",
+      "texto": "¿Por qué? (Histórico)",
+      "tipo": "TEXTO",
+      "nivel": "HOGAR",
+      "obligatoria": false,
+      "orden": 4,
+      "es_precargada": false,
+      "fuente_precarga": "",
+      "validaciones": {},
+      "opciones": [],
+      "id": "64ff7e2f-ae69-5327-8e99-7e7abe4e736b"
     }
   ],
   "reglas_skip_logic": [
@@ -13148,24 +13300,24 @@
     },
     {
       "origen": "PL5C",
-      "valor_trigger": "7",
+      "valor_trigger": "10",
       "accion": "HABILITAR",
       "afecta": "PL5C_OTRO",
-      "descripcion": "[otra] especifique si PL5C=7"
+      "descripcion": "[fix] PL5C_OTRO visible si posición ocupacional = Otro (opción 10)"
     },
     {
       "origen": "PL6C",
-      "valor_trigger": "7",
+      "valor_trigger": "10",
       "accion": "HABILITAR",
       "afecta": "PL6C_OTRO",
-      "descripcion": "[otra] especifique si PL6C=7"
+      "descripcion": "[fix] PL6C_OTRO visible si posición ocupacional = Otro (opción 10)"
     },
     {
       "origen": "PL7C",
-      "valor_trigger": "7",
+      "valor_trigger": "10",
       "accion": "HABILITAR",
       "afecta": "PL7C_OTRO",
-      "descripcion": "[otra] especifique si PL7C=7"
+      "descripcion": "[fix] PL7C_OTRO visible si posición ocupacional = Otro (opción 10)"
     },
     {
       "origen": "PL8A",
@@ -13425,6 +13577,125 @@
       "accion": "HABILITAR",
       "afecta": "M11_VALOR",
       "descripcion": "[manual J31-J40] valor $ visible si M11=Sí"
+    },
+    {
+      "origen": "J1A",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1A_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1A=Sí"
+    },
+    {
+      "origen": "J1B",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1B_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1B=Sí"
+    },
+    {
+      "origen": "J1C",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1C_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1C=Sí"
+    },
+    {
+      "origen": "J1D",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1D_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1D=Sí"
+    },
+    {
+      "origen": "J1E",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1E_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1E=Sí"
+    },
+    {
+      "origen": "J1F",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1F_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1F=Sí"
+    },
+    {
+      "origen": "J1T",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1T_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1T=Sí"
+    },
+    {
+      "origen": "J1G",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1G_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1G=Sí"
+    },
+    {
+      "origen": "J1H",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1H_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1H=Sí"
+    },
+    {
+      "origen": "J1J",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1J_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1J=Sí"
+    },
+    {
+      "origen": "J1K",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1K_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1K=Sí"
+    },
+    {
+      "origen": "J1L",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1L_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1L=Sí"
+    },
+    {
+      "origen": "J1M",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1M_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1M=Sí"
+    },
+    {
+      "origen": "J1N",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "J1N_DIAS",
+      "descripcion": "[manual I4-I17] días de consumo (1-7) visible si J1N=Sí"
+    },
+    {
+      "origen": "I1D",
+      "valor_trigger": "2",
+      "accion": "HABILITAR",
+      "afecta": "I1D_PORQUE",
+      "descripcion": "[manual I18] motivo visible si considera que la alimentación NO es suficiente (I1D=No)"
+    },
+    {
+      "origen": "PL20",
+      "valor_trigger": "true",
+      "accion": "HABILITAR",
+      "afecta": "PL20_CUAL",
+      "descripcion": "[manual K29] institución visible si recibió apoyo económico (PL20=Sí)"
+    },
+    {
+      "origen": "AT2",
+      "valor_trigger": "2",
+      "accion": "HABILITAR",
+      "afecta": "AT2_PORQUE",
+      "descripcion": "[histórico M2] motivo si no dispone de terreno/lote/predio (AT2=No dispongo)"
     }
   ]
 }

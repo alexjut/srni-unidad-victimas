@@ -95,6 +95,59 @@ def _opciones_sino(d):
     return [{"valor": "1", "etiqueta": "Si", "id_resp_vivanto": rr, "orden": 1},
             {"valor": "2", "etiqueta": "No", "id_resp_vivanto": rr + 1, "orden": 2}]
 
+
+def _pseudo_tipo(valor):
+    """Devuelve el tipo de una pseudo-opción embebida ('NUMÉRICO'→NUMERICO,
+    'TEXTO'→TEXTO) o None si es una opción normal. Robusto a acentos/codificación."""
+    v = str(valor).upper()
+    if "NUM" in v:
+        return "NUMERICO"
+    if "TEXT" in v:
+        return "TEXTO"
+    return None
+
+
+def _convertir_embebido(d, parent_code, trigger, child_texto, child_suffix, desc):
+    """Convierte la pseudo-opción embebida de parent_code en una pregunta-hija
+    tipada, gateada por trigger, y elimina la pseudo-opción del padre. Devuelve
+    True si convirtió algo."""
+    parent = next((p for p in d["preguntas"] if p.get("codigo_externo") == parent_code), None)
+    if not parent:
+        return False
+    pseudo = next((o for o in parent.get("opciones", []) if _pseudo_tipo(o.get("valor"))), None)
+    if pseudo is None:
+        return False
+    tipo = _pseudo_tipo(pseudo["valor"])
+    parent["opciones"] = [o for o in parent["opciones"] if o is not pseudo]
+    cod = f"{parent_code}_{child_suffix}"
+    if _existe(d, cod):
+        return False
+    cap, base = _insertar_bloque(d, parent_code, 1)
+    d["preguntas"].append({
+        "no_pregunta": "",
+        "codigo_externo": cod,
+        "id_preg": _next_idpreg(d),
+        "capitulo_codigo": cap,
+        "texto": child_texto,
+        "tipo": tipo,
+        "nivel": parent.get("nivel", "HOGAR"),
+        "obligatoria": False,
+        "orden": base + 1,
+        "es_precargada": False,
+        "fuente_precarga": "",
+        "validaciones": {},
+        "opciones": [],
+        "id": pid(cod),
+    })
+    reglas(d).append({
+        "origen": parent_code,
+        "valor_trigger": trigger,
+        "accion": "HABILITAR",
+        "afecta": cod,
+        "descripcion": desc,
+    })
+    return True
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # …/srni-backend
 FIX = os.path.join(BASE, "apps", "formulario", "fixtures")
 SRC = os.path.join(FIX, "perfil_territorial_v7.json")
@@ -384,11 +437,67 @@ def lote2_valores_ingresos(d):
         log(f"Ingresos: +{cod} (valor $) visible si {code}=Sí")
 
 
+def lote2_frecuencia_alimentos(d):
+    """I4-I17 (J1A..J1N): consumo de alimentos en los últimos 7 días. Cada uno es
+    BOOLEAN con pseudo-opción 'Valor (1 a 7)'. Se convierte en hijo NUMERICO
+    '¿En cuántos días? (1 a 7)' visible si el alimento=Sí (BOOLEAN → true)."""
+    codes = [p["codigo_externo"] for p in d["preguntas"]
+             if p.get("capitulo_codigo") == "JA"
+             and any(_pseudo_tipo(o.get("valor")) == "NUMERICO" for o in p.get("opciones", []))]
+    for code in codes:
+        if _convertir_embebido(d, code, "true",
+                               "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)", "DIAS",
+                               f"[manual I4-I17] días de consumo (1-7) visible si {code}=Sí"):
+            log(f"Frecuencia alimentos: +{code}_DIAS (1-7) si {code}=Sí")
+
+
+def lote2_i18_porque(d):
+    """I18 (I1D, ¿la alimentación es suficiente?): pseudo-opción 'Campo Abierto'
+    del 'No Por qué' → hijo TEXTO '¿Por qué?' visible si I1D=No (valor 2)."""
+    if _convertir_embebido(d, "I1D", "2", "¿Por qué?", "PORQUE",
+                           "[manual I18] motivo visible si considera que la alimentación NO es suficiente (I1D=No)"):
+        log("I18: +I1D_PORQUE (texto) si I1D=No")
+
+
+def lote2_k29_cual(d):
+    """K29 (PL20, ¿recibió apoyo económico de alguna institución?): pseudo-opción
+    'Cuál' → hijo TEXTO '¿Cuál institución?' visible si PL20=Sí (BOOLEAN → true)."""
+    if _convertir_embebido(d, "PL20", "true", "¿Cuál institución?", "CUAL",
+                           "[manual K29] institución visible si recibió apoyo económico (PL20=Sí)"):
+        log("K29: +PL20_CUAL (texto) si PL20=Sí")
+
+
+def lote2_fix_posicion_ocupacional_otro(d):
+    """PL5C/PL6C/PL7C (K8/K11/K14, posición ocupacional): la opción 10='Otro ¿Cuál?'
+    debe habilitar el campo _OTRO, pero la regla apuntaba a valor 7 (bug). Corrige el
+    trigger a '10' y elimina la pseudo-opción TEXTO '¿Cuál?' que renderizaba como
+    radio fantasma (el _OTRO ya la reemplaza)."""
+    for code in ("PL5C", "PL6C", "PL7C"):
+        parent = next((p for p in d["preguntas"] if p.get("codigo_externo") == code), None)
+        if parent:
+            parent["opciones"] = [o for o in parent["opciones"] if _pseudo_tipo(o.get("valor")) is None]
+        for r in reglas(d):
+            if (r.get("origen") == code and r.get("afecta") == f"{code}_OTRO"
+                    and str(r.get("valor_trigger")) == "7"):
+                r["valor_trigger"] = "10"
+                r["descripcion"] = f"[fix] {code}_OTRO visible si posición ocupacional = Otro (opción 10)"
+                log(f"Posición ocupacional: {code}_OTRO dispara con 'Otro' (10), no 7; pseudo-opción eliminada")
+
+
+def lote2_at2_porque(d):
+    """AT2 (M2, ¿se le adjudicó terreno?): pseudo-opción TEXTO 'Por qué (Histórico)'
+    → hijo TEXTO opcional visible si AT2=2 (No dispongo). Elimina el radio fantasma."""
+    if _convertir_embebido(d, "AT2", "2", "¿Por qué? (Histórico)", "PORQUE",
+                           "[histórico M2] motivo si no dispone de terreno/lote/predio (AT2=No dispongo)"):
+        log("AT2: +AT2_PORQUE (texto) si AT2=2")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
     ("LOTE 2 — preguntas faltantes",
      [lote2_observaciones, lote2_estrato, lote2_cursos_subcampos, lote2_k35_cual,
-      lote2_valores_ingresos]),
+      lote2_valores_ingresos, lote2_frecuencia_alimentos, lote2_i18_porque, lote2_k29_cual,
+      lote2_fix_posicion_ocupacional_otro, lote2_at2_porque]),
 ]
 
 
