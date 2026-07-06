@@ -9,9 +9,9 @@ import LogoHorizontalNegativo from '@/assets/LogoHorizontalnegativo.svg';
 export const NAV_ITEMS = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'        },
   { to: '/victimas',     icon: Search,          label: 'Víctimas'      },
-  { to: '/hogares',      icon: Home,            label: 'Hogares'       },
-  { to: '/encuestas',    icon: ClipboardList,   label: 'Encuestas'     },
-  { to: '/reportes',     icon: BarChart3,       label: 'Reportes'      },
+  { to: '/hogares',      icon: Home,            label: 'Hogares',       caracterizadorOnly: true },
+  { to: '/encuestas',    icon: ClipboardList,   label: 'Encuestas',     caracterizadorOnly: true },
+  { to: '/reportes',     icon: BarChart3,       label: 'Reportes',      caracterizadorOnly: true },
   { to: '/supervision',  icon: Eye,             label: 'Supervisión',   supervisorOnly: true },
   { to: '/instrumentos', icon: FileText,        label: 'Instrumentos'  },
   { to: '/parametricas', icon: Database,        label: 'Paramétricas'  },
@@ -25,14 +25,16 @@ interface SidebarProps {
 
 export default function Sidebar({ onNavigate }: SidebarProps) {
   const usuario = useAuthStore((s) => s.usuario);
-  const esAdmin         = !!usuario?.perfil?.puede_administrar;
-  const puedeSupervisar = !!usuario?.perfil?.puede_ver_reportes;
-  const codigoPerfil    = usuario?.perfil?.codigo ?? '';
-  const puedeVerAuditoria = ['COORDINADOR', 'ADMINISTRADOR'].includes(codigoPerfil);
+  const esAdmin            = !!usuario?.perfil?.puede_administrar;
+  const puedeSupervisar    = !!usuario?.perfil?.puede_ver_reportes;
+  const puedeCaracterizar  = !!usuario?.perfil?.puede_caracterizar;
+  const codigoPerfil       = usuario?.perfil?.codigo ?? '';
+  const puedeVerAuditoria  = ['COORDINADOR', 'ADMINISTRADOR'].includes(codigoPerfil);
   const items = NAV_ITEMS.filter((i) => {
-    if ('adminOnly'      in i && i.adminOnly      && !esAdmin)           return false;
-    if ('supervisorOnly' in i && i.supervisorOnly  && !puedeSupervisar)  return false;
-    if ('coordinadorOnly' in i && i.coordinadorOnly && !puedeVerAuditoria) return false;
+    if ('adminOnly'         in i && i.adminOnly         && !esAdmin)           return false;
+    if ('supervisorOnly'    in i && i.supervisorOnly    && !puedeSupervisar)   return false;
+    if ('coordinadorOnly'   in i && i.coordinadorOnly   && !puedeVerAuditoria) return false;
+    if ('caracterizadorOnly' in i && i.caracterizadorOnly && !puedeCaracterizar) return false;
     return true;
   });
   return (

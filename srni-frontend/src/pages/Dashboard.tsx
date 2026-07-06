@@ -174,7 +174,9 @@ export default function DashboardPage() {
   const perfil = usuario?.perfil ?? null;
   const rol = detectarRol(perfil);
   const rolInfo = ROL_INFO[rol];
-  const puedeCaracterizar = !!perfil?.puede_caracterizar;
+  // Solo mostrar métricas personales si el usuario ES encuestador de campo.
+  // Coordinadores y admins tienen puede_caracterizar=true pero no hacen trabajo de campo.
+  const puedeCaracterizar = rol === 'encuestador' && !!perfil?.puede_caracterizar;
 
   async function cargar() {
     if (!puedeCaracterizar) { setCargando(false); return; }
