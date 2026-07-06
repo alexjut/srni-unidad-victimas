@@ -48,6 +48,8 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
             # Auxiliares
             'incluido_ruv',
             'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
+            # Constancia tutor/cuidador (se sube por la acción subir-constancia)
+            'constancia', 'constancia_nombre', 'constancia_subida_en',
             'created_at',
         ]
         read_only_fields = [
@@ -55,6 +57,8 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
             'rol_display', 'parentesco_display', 'genero_display',
             'estado_inclusion_display', 'victima_hash',
             'tipo_persona', 'incluido_ruv',  # calculados en save()
+            # El archivo se gestiona por la acción dedicada, no por escritura directa
+            'constancia', 'constancia_nombre', 'constancia_subida_en',
         ]
         extra_kwargs = {
             'numero_documento': {'write_only': True},
