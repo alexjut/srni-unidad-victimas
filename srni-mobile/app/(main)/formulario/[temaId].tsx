@@ -300,6 +300,12 @@ export default function CapituloScreen() {
     if (!temaId) return;
 
     (async () => {
+      // Blindaje anti-cuelgue: setCargando(false) SIEMPRE corre en el finally,
+      // aunque un await de red quede colgado y luego rechace. Con el fix del
+      // timeout del refresh (client.ts) un cuelgue ahora rechaza en vez de
+      // quedar pendiente; el .catch previo solo cubría rechazos y no garantizaba
+      // liberar el spinner en todos los caminos.
+      try {
       console.log('[cap useEffect] params:', { temaId, borradorIdParam, sesionServerId, instrumentoId, hogarId });
 
       // Sprint 18 F1B: TODO viene de memoria (bundle), no SQLite.
@@ -396,8 +402,12 @@ export default function CapituloScreen() {
         }
       }
 
-      setCargando(false);
-    })().catch(() => setCargando(false));
+      } catch (e) {
+        console.warn('[cap useEffect] carga del capítulo falló:', e);
+      } finally {
+        setCargando(false);
+      }
+    })();
   }, [temaId]);
 
   // ── Sprint 21 — cargar miembros del hogar ──────────────────────────────────

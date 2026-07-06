@@ -1,15 +1,15 @@
-# Manual de Uso — SRNI Encuestador (App Móvil)
+# Manual de Uso — SICAV Móvil (App de caracterización)
 
-**Versión:** 1.0
-**Fecha:** 2026-06-10
+**Versión:** 1.1
+**Fecha:** 2026-07-05
 **Dirigido a:** Encuestadores de caracterización UARIV
-**Aplicación:** SRNI Encuestador — Android / iOS
+**Aplicación:** SICAV Móvil — Android
 
 ---
 
 ## 1. Requisitos previos
 
-- Teléfono Android 8+ o iPhone (iOS 15+).
+- Teléfono Android 8 o superior.
 - **Código de usuario y contraseña** asignados por el administrador del SRNI.
   La app no permite auto-registro.
 - Conexión a internet para iniciar sesión y sincronizar. **La entrevista puede
@@ -21,9 +21,10 @@
 2. Digite su **código de usuario** y su **contraseña** (el ícono de ojo
    muestra/oculta la contraseña).
 3. Toque **Ingresar**.
-4. Si su teléfono tiene huella o reconocimiento facial configurado, en los
-   siguientes ingresos aparecerá el botón **Huella digital** para entrar sin
-   digitar la contraseña. La biometría se valida solo en su teléfono.
+4. Si su teléfono tiene huella o rostro configurado, marque **Activar ingreso
+   con huella o rostro** al iniciar sesión. En los siguientes ingresos aparecerá
+   el botón **Huella digital** para entrar sin digitar la contraseña. La
+   biometría se valida solo en su teléfono.
 
 > **¿Olvidó su contraseña?** No existe recuperación desde la app: contacte al
 > administrador del sistema. El cambio de contraseña se realiza por el panel
@@ -74,9 +75,12 @@ Ubicación de atención → Responder capítulos → Finalizar sesión
 1. La persona buscada queda registrada automáticamente como **★ AUTORIZADO**
    (primer integrante del hogar).
 2. Para cada integrante adicional diligencie: tipo y número de documento,
-   nombres y apellidos, fecha de nacimiento, **parentesco** (cónyuge, hijo/a,
-   etc.), **género** y **rol** (miembro, tutor o cuidador permanente). Toque
-   **Agregar al hogar** y repita.
+   nombres y apellidos, fecha de nacimiento y **rol** (miembro, tutor o cuidador
+   permanente). El **parentesco** y el **género** ya no se piden aquí: se
+   registran durante la entrevista, en el Capítulo B (Datos básicos). Si elige
+   **tutor** o **cuidador permanente**, la app le exigirá **adjuntar la
+   constancia** que acredita ese rol antes de continuar. Toque **Agregar al
+   hogar** y repita.
 3. Al terminar, toque **Continuar a caracterizaciones**.
 
 > Regla del sistema: una persona solo puede ser autorizada de **un** hogar
@@ -117,16 +121,16 @@ En modo manual, dentro de un capítulo:
 - Las preguntas se responden según su tipo (texto, número, fecha, lista,
   selección múltiple). Algunas preguntas aparecen u se ocultan según
   respuestas anteriores — es el comportamiento esperado del formulario.
-- Las preguntas de nivel **persona** se repiten por cada integrante del hogar;
-  use las pestañas de miembros para cambiar de persona.
+- Las preguntas de nivel **persona** se repiten por cada integrante del hogar,
+  agrupadas en una sección por integrante dentro del capítulo.
 - **Las respuestas se guardan automáticamente** en el teléfono mientras
-  escribe. Al salir con **Guardar capítulo**, se envían al servidor (o quedan
+  escribe. Al salir con **Guardar y volver**, se envían al servidor (o quedan
   en cola si no hay señal).
 
 ### Paso 6 — Finalizar la sesión
 
 1. Cuando los capítulos obligatorios estén completos, toque **Finalizar
-   sesión** en la pantalla de capítulos.
+   caracterización** en la pantalla de capítulos.
 2. Agregue observaciones (opcional) y confirme. La sesión queda **COMPLETADA**
    y no podrá modificarse.
 3. Si necesita anular una entrevista, use **Anular entrevista** (pide doble
@@ -135,12 +139,14 @@ En modo manual, dentro de un capítulo:
 ## 5. Asistente de voz con IA (opcional)
 
 1. En la pantalla de capítulos, toque **Asistido por IA**.
-2. La primera vez verá la pantalla de **Consentimiento**: léala y marque la
-   casilla de aceptación. Puntos clave: el audio se transcribe en el teléfono
-   y **nunca se guarda ni se envía**; solo el texto va al servidor; la IA solo
-   **sugiere** y usted decide.
-3. Al abrir un capítulo en este modo, use el botón de **micrófono**: toque
-   para grabar la conversación del capítulo y toque de nuevo para detener.
+2. La primera vez verá la pantalla de **Consentimiento — Asistente IA**: léala
+   y marque la casilla de aceptación; luego toque **Activar asistente de voz**.
+   Puntos clave: **nunca se almacena audio**, solo el texto transcrito viaja al
+   servidor, la clave de la IA vive en el servidor y la IA solo **sugiere** —
+   usted decide.
+3. Al abrir un capítulo en este modo verá el área **Transcripción de la
+   entrevista**: escriba o pegue allí el texto de la entrevista y toque
+   **Procesar con IA**.
 4. En la pantalla de **Revisión IA** verá cada sugerencia con su nivel de
    confianza (alta/media/baja) y el razonamiento. Para cada una puede
    **Aceptar**, **Editar** o **Ignorar**.
@@ -201,10 +207,10 @@ La app está diseñada para campo con señal intermitente:
 | Síntoma | Causa probable | Qué hacer |
 |---|---|---|
 | "Sin conexión" permanente con señal | El servidor no es alcanzable | Verifique datos móviles/WiFi; reintente desde Estado de sincronización |
-| Botón "Consultar RNI" deshabilitado | Sin conexión | La búsqueda RNI requiere internet |
+| Botón "Consultar RNI" deshabilitado | No ha digitado el número de documento | Escriba el número de documento; el botón se habilita automáticamente |
 | Elementos con "error" en la cola | Reintentos agotados | Toque **Reintentar errores**; si persiste, reporte el detalle del error al soporte |
 | La app pide ingresar de nuevo | Sesión expirada | Ingrese normalmente; su trabajo local no se pierde |
-| No aparece el botón de huella | Biometría no configurada en el teléfono o primer ingreso | Ingrese una vez con contraseña; configure huella/Face ID en el sistema |
-| Un capítulo muestra "Faltan N" tras responder | Preguntas obligatorias por **cada miembro** del hogar | Revise las pestañas de cada integrante |
+| No aparece el botón de huella | Biometría no activada, no configurada en el teléfono, o primer ingreso | Configure la huella/rostro en los ajustes del teléfono e ingrese una vez marcando "Activar ingreso con huella o rostro" |
+| Un capítulo muestra "Faltan N" tras responder | Preguntas obligatorias por **cada miembro** del hogar | Revise la sección de cada integrante |
 
 **Soporte técnico:** `[COMPLETAR — canal de soporte interno UARIV]`

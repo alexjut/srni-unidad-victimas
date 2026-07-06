@@ -41,11 +41,11 @@
   },
   {
     "codigo": "TERRITORIAL",
-    "version": "V7",
+    "version": "V8",
     "nombre": "Caracterización territorial",
-    "archivo": "territorial_v7.json",
+    "archivo": "territorial_v8.json",
     "capitulos": 14,
-    "preguntas": 219
+    "preguntas": 363
   },
   {
     "codigo": "URBANO_ETNICO",

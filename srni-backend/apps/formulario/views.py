@@ -5,6 +5,7 @@ Endpoints de solo lectura para estructura del instrumento +
 endpoint POST de evaluación de skip logic (reglas HABILITAR/DESHABILITAR/OBLIGAR/FINALIZAR).
 """
 import ast
+import json
 import operator as _op
 
 from rest_framework import viewsets, mixins
@@ -203,6 +204,27 @@ class InstrumentoCompletoView(APIView):
         "total": {"type": "integer"},
     }}},
 )
+def _valores_seleccionados(valor: str) -> list:
+    """Descompone la respuesta en los valores seleccionados.
+
+    Array JSON de un multi-select ('["1","3"]') → sus elementos como strings;
+    cualquier otra cosa (selección única, texto, booleano) → un único valor escalar.
+    Vacío → []. Espejo de _valoresSeleccionados() del móvil (skipLogic.ts).
+    """
+    s = (valor or "").strip()
+    if not s:
+        return []
+    if s.startswith("["):
+        try:
+            arr = json.loads(s)
+            if isinstance(arr, list):
+                return [str(x) for x in arr]
+        except (ValueError, TypeError):
+            pass
+        return [s]
+    return [s]
+
+
 class EvaluarSkipLogicView(APIView):
     """
     Motor de evaluación de skip logic basado en reglas declarativas (ReglaSkipLogic).
@@ -284,10 +306,13 @@ class EvaluarSkipLogicView(APIView):
             valor_actual = respuestas.get(regla.pregunta_origen.codigo_externo, "")
             if not regla.valor_trigger:
                 return bool(valor_actual)
-            trigger = regla.valor_trigger
-            if "," in trigger:
-                return valor_actual in [v.strip() for v in trigger.split(",")]
-            return valor_actual == trigger
+            # Soporta origen de selección ÚNICA (escalar) y MÚLTIPLE (LISTA_MULTIPLE,
+            # que guarda un array JSON: '["1","3"]'). Dispara si CUALQUIER valor del
+            # trigger está entre los seleccionados. Compatible hacia atrás: para un
+            # escalar, seleccionados == [valor_actual].
+            seleccionados = _valores_seleccionados(valor_actual)
+            triggers = [v.strip() for v in regla.valor_trigger.split(",")]
+            return any(t in seleccionados for t in triggers)
 
         if regla.expresion_origen:
             return evaluar_expresion_segura(regla.expresion_origen, contexto)

@@ -5,17 +5,21 @@ TODOS LOS DATOS SON 100 % FICTICIOS.
 Ningún nombre, cédula ni fecha corresponde a personas reales.
 Los números de documento empiezan con 999 para distinguirlos de cédulas reales.
 
-Casos cubiertos (10):
+Casos cubiertos (9990100001–10):
   1. Incluida en RUV, desplazada, con grupo familiar de 2 miembros
-  2. Solo en Registraduría — no incluida en RUV
-  3. Incluida en RUV pero ya caracterizada recientemente (no habilitada)
+  2. Incluida y habilitada (demo — antes: solo Registraduría / no incluida)
+  3. Incluida y habilitada (demo — antes: ya caracterizada / no habilitada)
   4. Menor de edad incluida en RUV — flujo tutor (tipo_persona 5002)
   5. Adulto con discapacidad severa — flujo cuidador permanente (tipo_persona 5003)
   6. Incluida con todos los hechos victimizantes HV01-HV13
-  7. No encontrada en ninguna fuente (resultado negativo limpio)
-  8. Excluida del RUV — no elegible para caracterización
+  7. Incluida y habilitada (demo — antes: no encontrada)
+  8. Incluida y habilitada (demo — antes: excluida del RUV)
   9. Con grupo familiar numeroso (5 miembros: adulto, cónyuge, 3 hijos)
  10. Mujer indígena NASA, municipio rural Cauca — flujo instrumento TERRITORIAL
+
+Nota (demo funcional): 9990100001–10 quedan TODAS habilitadas para caracterización
+(el 9990100005 conserva su caso de discapacidad/cuidador). Para probar el resultado
+"no encontrado" se puede buscar cualquier documento ausente del padrón.
 """
 from __future__ import annotations
 
@@ -123,25 +127,25 @@ _CASO1 = _v(
 )
 _VICTIMAS[('CC', '9990100001')] = _CASO1
 
-# ── Caso 2: Solo Registraduría, no incluida en RUV ──────────────────────────
+# ── Caso 2: (demo) INCLUIDA y habilitada — antes solo Registraduría ──────────
 _CASO2 = _v(
-    cons=None,
+    cons=10002,
     tdoc='CC', ndoc='9990100002',
     p1='Pedro', p2='Camilo', a1='Torres', a2='Herrera',
     fn=date(1975, 3, 22), gen='M',
-    estado_ruv='NO_INCLUIDO', habilitado=False,
-    fuente='REGISTRADURIA',
+    estado_ruv='INCLUIDO', habilitado=True,
+    hechos=[_h('HV01', _HECHOS_NOMBRE['HV01'], date(2006, 4, 12), 'Tumaco (Nariño)')],
+    mpio_cod='52835', mpio_nom='Tumaco',
 )
 _VICTIMAS[('CC', '9990100002')] = _CASO2
 
-# ── Caso 3: Ya caracterizada recientemente ──────────────────────────────────
+# ── Caso 3: (demo) habilitada — antes marcada como ya caracterizada ─────────
 _CASO3 = _v(
     cons=10003,
     tdoc='CC', ndoc='9990100003',
     p1='Ana', p2='Lucía', a1='Pinto', a2='Salcedo',
     fn=date(1988, 11, 30), gen='F',
-    estado_ruv='INCLUIDO', habilitado=False,
-    ult_caract=datetime(2025, 11, 14, 9, 30, 0),
+    estado_ruv='INCLUIDO', habilitado=True,
     hechos=[_h('HV01', _HECHOS_NOMBRE['HV01'], date(2018, 6, 20), 'Buenaventura')],
     mpio_cod='76001', mpio_nom='Cali',
 )
@@ -191,18 +195,29 @@ _CASO6 = _v(
 )
 _VICTIMAS[('CC', '9990100006')] = _CASO6
 
-# ── Caso 7: No encontrada en ninguna fuente ──────────────────────────────────
-# (no se registra en _VICTIMAS — la búsqueda retorna encontrado=False)
-_NDOC_NO_ENCONTRADO = ('CC', '9990100007')
+# ── Caso 7: (demo) INCLUIDA y habilitada — antes "no encontrada" ─────────────
+_CASO7 = _v(
+    cons=10007,
+    tdoc='CC', ndoc='9990100007',
+    p1='Marta', p2='Cecilia', a1='Beltrán', a2='Nieto',
+    fn=date(1983, 2, 14), gen='F',
+    estado_ruv='INCLUIDO', habilitado=True,
+    hechos=[_h('HV01', _HECHOS_NOMBRE['HV01'], date(2009, 7, 8), 'Apartadó (Antioquia)')],
+    mpio_cod='05001', mpio_nom='Medellín',
+)
+_VICTIMAS[('CC', '9990100007')] = _CASO7
+# Documento reservado para probar el resultado "no encontrado" (cualquier
+# cédula ausente del padrón devuelve encontrado=False; ya no se usa el 007).
+_NDOC_NO_ENCONTRADO = ('CC', '9990199999')
 
-# ── Caso 8: Excluida del RUV ─────────────────────────────────────────────────
+# ── Caso 8: (demo) INCLUIDA y habilitada — antes excluida del RUV ────────────
 _CASO8 = _v(
     cons=10008,
     tdoc='CC', ndoc='9990100008',
     p1='Bernardo', p2='Augusto', a1='Morales', a2='Peña',
     fn=date(1960, 4, 18), gen='M',
-    estado_ruv='EXCLUIDO', habilitado=False,
-    hechos=[],
+    estado_ruv='INCLUIDO', habilitado=True,
+    hechos=[_h('HV06', _HECHOS_NOMBRE['HV06'], date(2003, 10, 2), 'Bogotá D.C.')],
     mpio_cod='11001', mpio_nom='Bogotá D.C.',
 )
 _VICTIMAS[('CC', '9990100008')] = _CASO8

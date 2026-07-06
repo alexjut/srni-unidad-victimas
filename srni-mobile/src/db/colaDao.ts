@@ -118,6 +118,21 @@ export async function obtenerPendientes(): Promise<ColaItem[]> {
   });
 }
 
+/**
+ * Relee un ítem por su id. La sincronización lo usa para recoger el payload
+ * ya remapeado (local → servidor) que un ítem anterior de la MISMA pasada pudo
+ * escribir con reescribirPayloads — el snapshot de obtenerPendientes() es previo
+ * a ese remapeo y quedaría obsoleto (p.ej. AGREGAR_MIEMBRO con el hogar local).
+ */
+export async function obtenerPorId(id: number): Promise<ColaItem | null> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<ColaItem>(
+    'SELECT * FROM cola_sincronizacion WHERE id = ?',
+    [id],
+  );
+  return row ?? null;
+}
+
 export async function obtenerTodos(): Promise<ColaItem[]> {
   const db = await openDb();
   return db.getAllAsync<ColaItem>(

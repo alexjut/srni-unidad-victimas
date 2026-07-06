@@ -83,6 +83,46 @@ describe('calcularVisibles — HABILITAR', () => {
   });
 });
 
+describe('calcularVisibles — origen MULTI-SELECT (LISTA_MULTIPLE)', () => {
+  const reglas = [
+    regla({
+      accion: 'HABILITAR',
+      pregunta_origen_codigo: 'P1',
+      valor_trigger: '3',
+      pregunta_afectada_codigo: 'P2',
+    }),
+  ];
+
+  it('dispara si el trigger está entre los seleccionados del array JSON', () => {
+    const r = calcularVisibles([pregunta('P1'), pregunta('P2')], reglas, { P1: '["1","3"]' });
+    expect(r.visibles.has('P2')).toBe(true);
+  });
+
+  it('NO dispara si el trigger no está en el array', () => {
+    const r = calcularVisibles([pregunta('P1'), pregunta('P2')], reglas, { P1: '["1","2"]' });
+    expect(r.visibles.has('P2')).toBe(false);
+  });
+
+  it('trigger con OR (varias opciones) dispara si alguna está marcada', () => {
+    const reglasOr = [regla({
+      accion: 'HABILITAR', pregunta_origen_codigo: 'P1',
+      valor_trigger: '2,4', pregunta_afectada_codigo: 'P2',
+    })];
+    const r = calcularVisibles([pregunta('P1'), pregunta('P2')], reglasOr, { P1: '["4"]' });
+    expect(r.visibles.has('P2')).toBe(true);
+  });
+
+  it('array vacío no dispara', () => {
+    const r = calcularVisibles([pregunta('P1'), pregunta('P2')], reglas, { P1: '[]' });
+    expect(r.visibles.has('P2')).toBe(false);
+  });
+
+  it('compatibilidad hacia atrás: origen escalar (selección única) sigue funcionando', () => {
+    const r = calcularVisibles([pregunta('P1'), pregunta('P2')], reglas, { P1: '3' });
+    expect(r.visibles.has('P2')).toBe(true);
+  });
+});
+
 describe('calcularVisibles — DESHABILITAR', () => {
   const reglas = [
     regla({

@@ -82,4 +82,23 @@ describe('cargarMiembrosHogar — OFFLINE', () => {
     const r = await cargarMiembrosHogar('H1');
     expect(r).toEqual([]);
   });
+
+  // Regresión del fix "carga infinita": con el timeout del refresh (client.ts),
+  // una petición colgada por 401→refresh ahora RECHAZA (ECONNABORTED) en vez de
+  // quedar pendiente. Esto garantiza que cargarMiembrosHogar entre a su catch y
+  // caiga al fallback de caché, en lugar de dejar la lista de integrantes vacía
+  // para siempre. hogaresApi.detalle va por apiClient (timeout 15 s heredado).
+  it('detalle rechaza por timeout (ECONNABORTED): cae al fallback de caché, no queda colgado', async () => {
+    const timeoutErr = Object.assign(new Error('timeout of 15000ms exceeded'), {
+      code: 'ECONNABORTED',
+      isAxiosError: true,
+    });
+    mockApi.detalle.mockRejectedValue(timeoutErr);
+    mockOffline.construirMiembrosOffline.mockResolvedValue([]);
+    mockCache.obtenerMiembros.mockResolvedValue([miembro('srv1', true)] as any);
+
+    const r = await cargarMiembrosHogar('H1');
+
+    expect(r.map((m) => m.id)).toEqual(['srv1']);
+  });
 });

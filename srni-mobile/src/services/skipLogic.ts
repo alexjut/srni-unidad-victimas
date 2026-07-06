@@ -101,6 +101,26 @@ export function calcularVisibles(
   return { visibles, obligatorias, finalizar };
 }
 
+/**
+ * Descompone la respuesta en los valores seleccionados:
+ *   - array JSON de multi-select ('["1","3"]') → sus elementos como strings;
+ *   - cualquier otra cosa (selección única, texto, booleano) → un único valor escalar.
+ * Vacío → []. Espejo de _valores_seleccionados() del backend.
+ */
+function _valoresSeleccionados(raw: string): string[] {
+  const s = (raw ?? '').trim();
+  if (!s) return [];
+  if (s.startsWith('[')) {
+    try {
+      const arr = JSON.parse(s);
+      return Array.isArray(arr) ? arr.map((x) => String(x)) : [s];
+    } catch {
+      return [s];
+    }
+  }
+  return [s];
+}
+
 /** Evalúa si una regla debe dispararse. Espejo de _regla_activa() del backend. */
 function _reglaActiva(
   regla: ReglaSkipLogicRow,
@@ -110,11 +130,13 @@ function _reglaActiva(
   if (regla.pregunta_origen_codigo) {
     const valorActual = respuestas[regla.pregunta_origen_codigo] ?? '';
     if (!regla.valor_trigger) return !!valorActual;
-    const trigger = regla.valor_trigger;
-    if (trigger.includes(',')) {
-      return trigger.split(',').map((v) => v.trim()).includes(valorActual);
-    }
-    return valorActual === trigger;
+    // Soporta origen de selección ÚNICA (escalar) y MÚLTIPLE (LISTA_MULTIPLE, que
+    // guarda un array JSON: '["1","3"]'). La regla dispara si CUALQUIER valor del
+    // trigger está entre los seleccionados. Compatible hacia atrás: para un escalar,
+    // seleccionados = [valorActual] → equivale a la comparación anterior.
+    const seleccionados = _valoresSeleccionados(valorActual);
+    const triggers = regla.valor_trigger.split(',').map((v) => v.trim());
+    return triggers.some((t) => seleccionados.includes(t));
   }
   // expresion_origen — se evalúa con el contexto de la víctima (edad/sexo/etnia/RUV).
   if (regla.expresion_origen) {

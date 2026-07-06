@@ -39,7 +39,7 @@ const BUNDLED: Record<string, any> = {
   RURAL_ETNICO:      require('../../assets/instrumentos/rural_etnico_v1.json'),
   SAN_ANDRES:        require('../../assets/instrumentos/san_andres_v7.json'),
   TELEFONICO:        require('../../assets/instrumentos/telefonico_v8.json'),
-  TERRITORIAL:       require('../../assets/instrumentos/territorial_v7.json'),
+  TERRITORIAL:       require('../../assets/instrumentos/territorial_v8.json'),
   URBANO_ETNICO:     require('../../assets/instrumentos/urbano_etnico_v1.json'),
   VICTIMAS_EXTERIOR: require('../../assets/instrumentos/victimas_exterior_v1.json'),
 };
