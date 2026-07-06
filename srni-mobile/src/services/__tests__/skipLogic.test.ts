@@ -379,3 +379,47 @@ describe('motivoOcultaPregunta — expresion_origen (demográfico)', () => {
     expect(motivoOcultaPregunta(pregunta('PX'), [], {})).toBeUndefined();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Condiciones AND mixtas: expresion_origen que referencia la RESPUESTA de otra
+// pregunta por su codigo_externo (además del contexto étnico/demográfico).
+// Cierra los casos "étnico Y otra respuesta" (RR2-RR5A, I30, H11/H12A) que antes
+// el motor no podía expresar (solo OR entre reglas, o O-pregunta-O-expresión).
+describe('calcularVisibles — expresion referencia respuesta de otra pregunta (AND)', () => {
+  function reglaExpr(expr: string, afectada = 'P2') {
+    return [regla({ accion: 'HABILITAR', pregunta_origen_codigo: null,
+      expresion_origen: expr, pregunta_afectada_codigo: afectada })];
+  }
+  const preg = [pregunta('D6'), pregunta('P2')];
+
+  it('AND étnico + respuesta: visible solo si etnia indígena Y D6 == 2', () => {
+    const reglas = reglaExpr("etnia == 'indigena' and D6 == '2'");
+    expect(calcularVisibles(preg, reglas, { D6: '2' }, { etnia: 'indigena' }).visibles.has('P2')).toBe(true);
+    // falla el étnico
+    expect(calcularVisibles(preg, reglas, { D6: '2' }, { etnia: 'ninguno' }).visibles.has('P2')).toBe(false);
+    // falla la respuesta
+    expect(calcularVisibles(preg, reglas, { D6: '1' }, { etnia: 'indigena' }).visibles.has('P2')).toBe(false);
+    // D6 aún sin responder → condición false
+    expect(calcularVisibles(preg, reglas, {}, { etnia: 'indigena' }).visibles.has('P2')).toBe(false);
+  });
+
+  it('referencia simple a respuesta (sin contexto): D6 == 2', () => {
+    const reglas = reglaExpr("D6 == '2'");
+    expect(calcularVisibles(preg, reglas, { D6: '2' }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles(preg, reglas, { D6: '3' }).visibles.has('P2')).toBe(false);
+  });
+
+  it('origen BOOLEAN referenciado: H10 == true', () => {
+    const reglas = reglaExpr('etnia == \'indigena\' and H10 == true', 'P2');
+    const p = [pregunta('H10'), pregunta('P2')];
+    expect(calcularVisibles(p, reglas, { H10: 'true' }, { etnia: 'indigena' }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles(p, reglas, { H10: 'false' }, { etnia: 'indigena' }).visibles.has('P2')).toBe(false);
+  });
+
+  it('origen multi-select referenciado: == es pertenencia', () => {
+    const reglas = reglaExpr("H2 == '3'");
+    const p = [pregunta('H2'), pregunta('P2')];
+    expect(calcularVisibles(p, reglas, { H2: '["1","3"]' }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles(p, reglas, { H2: '["1","2"]' }).visibles.has('P2')).toBe(false);
+  });
+});
