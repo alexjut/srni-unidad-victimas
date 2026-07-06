@@ -3,8 +3,10 @@ Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -212,6 +214,65 @@ class HogarViewSet(viewsets.ModelViewSet):
         hogar = self.get_object()
         miembros = hogar.miembros.select_related('victima', 'tipo_documento').all()
         return Response(MiembroHogarSerializer(miembros, many=True).data)
+
+    @extend_schema(
+        summary='Subir constancia de tutor/cuidador de un miembro',
+        description=(
+            'Sube el documento que acredita el rol de TUTOR o CUIDADOR_PERMANENTE '
+            '(Manual §5.1.2). multipart/form-data con `miembro_id` y `archivo`. '
+            'Solo se acepta para miembros con esos roles.'
+        ),
+        tags=['Hogares'],
+        responses={200: MiembroHogarSerializer},
+    )
+    @action(
+        detail=True, methods=['post'], url_path='subir-constancia',
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def subir_constancia(self, request, pk=None):
+        hogar = self.get_object()
+        miembro_id = request.data.get('miembro_id')
+        archivo = request.FILES.get('archivo')
+
+        if not miembro_id or not archivo:
+            return Response(
+                {'detail': 'Se requieren `miembro_id` y `archivo`.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            miembro = hogar.miembros.get(id=miembro_id)
+        except MiembroHogar.DoesNotExist:
+            return Response(
+                {'detail': 'El miembro no pertenece a este hogar.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if miembro.rol not in ('TUTOR', 'CUIDADOR_PERMANENTE'):
+            return Response(
+                {'detail': 'Solo los roles TUTOR o CUIDADOR_PERMANENTE requieren constancia.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Reemplaza la constancia previa si existía (evita huérfanos en disco).
+        if miembro.constancia:
+            miembro.constancia.delete(save=False)
+        miembro.constancia = archivo
+        miembro.constancia_nombre = archivo.name[:255]
+        miembro.constancia_subida_en = timezone.now()
+        miembro.save(update_fields=[
+            'constancia', 'constancia_nombre', 'constancia_subida_en',
+        ])
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='SUBIR_CONSTANCIA',
+            recurso='MiembroHogar',
+            recurso_id=str(miembro.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'hogar_id': str(hogar.id), 'rol': miembro.rol},
+        )
+        return Response(MiembroHogarSerializer(miembro).data)
 
     @extend_schema(
         summary='Cambiar autorizado del hogar',

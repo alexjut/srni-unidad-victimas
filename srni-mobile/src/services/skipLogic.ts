@@ -138,9 +138,11 @@ function _reglaActiva(
     const triggers = regla.valor_trigger.split(',').map((v) => v.trim());
     return triggers.some((t) => seleccionados.includes(t));
   }
-  // expresion_origen — se evalúa con el contexto de la víctima (edad/sexo/etnia/RUV).
+  // expresion_origen — se evalúa con el contexto de la víctima (edad/sexo/etnia/RUV)
+  // Y, además, puede referenciar la respuesta de OTRA pregunta por su codigo_externo,
+  // lo que permite condiciones AND mixtas (ej. "etnia == 'indigena' and D6 == '2'").
   if (regla.expresion_origen) {
-    return _evaluarExpresion(regla.expresion_origen, contexto);
+    return _evaluarExpresion(regla.expresion_origen, contexto, respuestas);
   }
   return false;
 }
@@ -148,36 +150,61 @@ function _reglaActiva(
 // ─── Evaluador de expresiones (seguro, sin eval) ────────────────────────────────
 
 /**
- * Evalúa expresiones simples del diccionario contra el contexto de la víctima.
+ * Evalúa expresiones simples del diccionario contra el contexto de la víctima
+ * y, opcionalmente, contra las respuestas ya capturadas.
  * Soporta: and / or · operadores < <= > >= == != · variables edad, sexo, etnia,
- * ruv_incluido · valores numéricos, 'string' entre comillas, true/false.
- * Ejemplos: "edad >= 18 and edad <= 50" · "sexo == '2'" · "etnia == 'indigena'".
+ * ruv_incluido · valores numéricos, 'string' entre comillas, true/false ·
+ * REFERENCIA a otra pregunta por su codigo_externo (cualquier nombre que no sea
+ * una variable de contexto se busca en `respuestas`).
+ * Ejemplos: "edad >= 18 and edad <= 50" · "sexo == '2'" · "etnia == 'indigena'"
+ *           · "etnia == 'indigena' and D6 == '2'"  (AND étnico + respuesta).
+ * Para orígenes multi-select (respuesta = array JSON), == / != son pertenencia.
  */
-export function _evaluarExpresion(expr: string, ctx: ContextoVictima): boolean {
+export function _evaluarExpresion(
+  expr: string,
+  ctx: ContextoVictima,
+  respuestas: RespuestasMap = {},
+): boolean {
   const e = expr.trim();
   if (!e) return false;
   // Precedencia: OR (más bajo) → AND → comparación.
   const ors = e.split(/\s+or\s+/i);
-  if (ors.length > 1) return ors.some((p) => _evaluarExpresion(p, ctx));
+  if (ors.length > 1) return ors.some((p) => _evaluarExpresion(p, ctx, respuestas));
   const ands = e.split(/\s+and\s+/i);
-  if (ands.length > 1) return ands.every((p) => _evaluarExpresion(p, ctx));
+  if (ands.length > 1) return ands.every((p) => _evaluarExpresion(p, ctx, respuestas));
 
   const m = e.match(/^(\w+)\s*(<=|>=|==|!=|<|>)\s*(.+)$/);
   if (!m) return false;
   const [, nombre, op, rawVal] = m;
-  const izq = _varContexto(nombre, ctx);
+  const izq = _varContexto(nombre, ctx, respuestas);
   if (izq === undefined || izq === null) return false;
   const der = _parseValor(rawVal.trim());
+  // Origen multi-select: la respuesta es un array JSON ('["1","3"]') → == / != es pertenencia.
+  if (typeof izq === 'string' && izq.trim().startsWith('[')) {
+    const sel = _valoresSeleccionados(izq);
+    const dv = String(der);
+    if (op === '==') return sel.includes(dv);
+    if (op === '!=') return !sel.includes(dv);
+  }
   return _comparar(izq, op, der);
 }
 
-function _varContexto(nombre: string, ctx: ContextoVictima): number | string | boolean | undefined {
+function _varContexto(
+  nombre: string,
+  ctx: ContextoVictima,
+  respuestas: RespuestasMap = {},
+): number | string | boolean | undefined {
   switch (nombre) {
     case 'edad': return ctx.edad;
     case 'sexo': return ctx.sexo;
     case 'etnia': return ctx.etnia;
     case 'ruv_incluido': return ctx.ruvIncluido;
-    default: return undefined;
+    // Cualquier otro nombre se interpreta como codigo_externo de otra pregunta:
+    // se busca su respuesta. undefined si aún no fue respondida (condición → false).
+    default: {
+      const v = respuestas[nombre];
+      return v === undefined || v === '' ? undefined : v;
+    }
   }
 }
 

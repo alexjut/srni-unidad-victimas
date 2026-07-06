@@ -16,12 +16,23 @@ Seguridad:
 - Los nombres de miembros que NO están en el RNI se cifran con EncryptedField.
 - Los miembros que SÍ están en el RNI se referencian via FK a Victima.
 """
+import os
 import uuid
 from django.db import models
 from django.db.models import Q, UniqueConstraint
 from django.conf import settings
 
 from apps.victimas.fields import EncryptedField
+
+
+def ruta_constancia(instance, filename):
+    """Ruta de almacenamiento de la constancia tutor/cuidador.
+
+    Sin PII en el nombre: se organiza por hogar y se nombra con el id del
+    miembro (UUID). Conserva solo la extensión original.
+    """
+    ext = os.path.splitext(filename)[1].lower()[:10]
+    return f'constancias/{instance.hogar_id}/{instance.id}{ext}'
 
 
 class Hogar(models.Model):
@@ -268,6 +279,22 @@ class MiembroHogar(models.Model):
         help_text='El miembro tiene enfermedad ruinosa o catastrófica (Manual §5.1.2).',
     )
     tipo_discapacidad = models.CharField(max_length=100, blank=True)
+
+    # Constancia que acredita el rol de TUTOR / CUIDADOR_PERMANENTE (Manual §5.1.2).
+    # El móvil la adjunta (expo-document-picker) y bloquea continuar hasta subirla;
+    # aquí se persiste el archivo y su metadata. Solo aplica a esos dos roles.
+    constancia = models.FileField(
+        upload_to=ruta_constancia, null=True, blank=True,
+        help_text='Documento que acredita el rol de tutor/cuidador.',
+    )
+    constancia_nombre = models.CharField(
+        max_length=255, blank=True,
+        help_text='Nombre original del archivo subido (para mostrar al usuario).',
+    )
+    constancia_subida_en = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Momento en que se subió la constancia.',
+    )
 
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,

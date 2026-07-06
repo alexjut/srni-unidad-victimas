@@ -2,7 +2,9 @@
 Management command: crear_instrumentos_base
 
 Crea los registros base de `Instrumento` (con PKs fijos) que esperan los
-cargadores de perfiles (cargar_territorial_v7, cargar_buenaventura_v7, etc.).
+cargadores de perfiles. El cargador vigente es `cargar_perfil --fixture ...`
+(determinista, fuente de verdad en los fixtures); los antiguos `cargar_<perfil>_v7`
+hardcodeados están en retiro (cargar_territorial_v7 ya fue eliminado).
 
 Reemplaza al antiguo fixture `perfiles_iniciales` que creaba el modelo
 `InstrumentoVersion` (eliminado en la migración 0004).

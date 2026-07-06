@@ -23,6 +23,7 @@ class LogAcceso(models.Model):
         ('VER_VICTIMA', 'Vista de datos de víctima'),
         ('CREAR_HOGAR', 'Creación de hogar'),
         ('AGREGAR_MIEMBRO', 'Miembro agregado al hogar'),
+        ('SUBIR_CONSTANCIA', 'Constancia de tutor/cuidador subida'),
         ('RESPONDER_PREGUNTA', 'Respuesta a pregunta'),
         ('FINALIZAR_ENCUESTA', 'Encuesta finalizada'),
         ('EXPORTAR', 'Exportación de datos'),

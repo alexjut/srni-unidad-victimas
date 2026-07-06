@@ -78,11 +78,21 @@ def _safe_eval(node: ast.AST, ctx: dict):
     raise ValueError(f'Nodo AST no permitido: {type(node).__name__}')
 
 
-def evaluar_expresion_segura(expresion: str, contexto: dict) -> bool:
-    """Evalúa una expresión de skip logic de forma segura usando AST."""
+def evaluar_expresion_segura(expresion: str, contexto: dict, respuestas: dict = None) -> bool:
+    """Evalúa una expresión de skip logic de forma segura usando AST.
+
+    El ámbito combina las respuestas ya capturadas (indexadas por codigo_externo)
+    como base y el contexto de la víctima (edad/sexo/etnia/ruv_incluido) con
+    precedencia. Así una expresión puede referenciar la respuesta de OTRA pregunta
+    por su código, habilitando condiciones AND mixtas
+    (ej. "etnia == 'indigena' and D6 == '2'"). Espejo de _evaluarExpresion (móvil).
+    Convención: los valores del lado derecho van entre comillas ('2', 'true').
+    """
     try:
         tree = ast.parse(expresion, mode='eval')
-        return bool(_safe_eval(tree, contexto))
+        ambito = dict(respuestas or {})
+        ambito.update(contexto or {})
+        return bool(_safe_eval(tree, ambito))
     except Exception:
         return False
 
@@ -315,6 +325,6 @@ class EvaluarSkipLogicView(APIView):
             return any(t in seleccionados for t in triggers)
 
         if regla.expresion_origen:
-            return evaluar_expresion_segura(regla.expresion_origen, contexto)
+            return evaluar_expresion_segura(regla.expresion_origen, contexto, respuestas)
 
         return False

@@ -11825,10 +11825,10 @@
     },
     {
       "origen": "A30",
-      "valor_trigger": "1",
+      "valor_trigger": "true",
       "accion": "HABILITAR",
       "afecta": "B17",
-      "descripcion": "[flujo] B27 (tipo territorio) visible si B26=Si (A30=1) [obs funcional: 26=No no debe desplegar 27]"
+      "descripcion": "[flujo] B27 (tipo territorio) visible si B26=Si (A30=true) [obs funcional: 26=No no debe desplegar 27]"
     },
     {
       "origen": "A25",
