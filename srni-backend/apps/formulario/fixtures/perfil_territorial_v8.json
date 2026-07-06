@@ -2147,14 +2147,21 @@
       "id_preg": 800,
       "capitulo_codigo": "D",
       "texto": "¿Cuál fue el departamento y municipio en el cuál se retornó o se reubicó?",
-      "tipo": "TEXTO",
+      "tipo": "COMBO_DINAMICO",
       "nivel": "HOGAR",
       "obligatoria": true,
       "orden": 5,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": [],
+      "opciones": [
+        {
+          "valor": "",
+          "etiqueta": "Departamento",
+          "id_resp_vivanto": null,
+          "orden": 1
+        }
+      ],
       "id": "246286e1-a9b5-5d7a-8391-4c13fe8cba5c"
     },
     {
@@ -2294,14 +2301,21 @@
       "id_preg": 801,
       "capitulo_codigo": "D",
       "texto": "¿A qué departamento y municipio quiere retornar o reubicarse?",
-      "tipo": "TEXTO",
+      "tipo": "COMBO_DINAMICO",
       "nivel": "HOGAR",
       "obligatoria": true,
       "orden": 10,
       "es_precargada": false,
       "fuente_precarga": "",
       "validaciones": {},
-      "opciones": [],
+      "opciones": [
+        {
+          "valor": "",
+          "etiqueta": "Departamento",
+          "id_resp_vivanto": null,
+          "orden": 1
+        }
+      ],
       "id": "edf3ec46-46a3-59df-a02a-ff1e74e73a96"
     },
     {

@@ -510,6 +510,27 @@ def lote3_multiselect(d):
             log(f"Multi-select: {code} ({p.get('no_pregunta') or '·'}) LISTA → LISTA_MULTIPLE")
 
 
+# ─── LOTE 4 — DIVIPOLA ─────────────────────────────────────────────────────────
+
+# D6 (RR1) y D11 (RR6): 'departamento y municipio' de retorno. Eran TEXTO libre;
+# se pasan a COMBO_DINAMICO para usar el SelectorMunicipio (1102 muns DANE, con
+# buscador y offline). El renderer mapea por tipo (esCombo = COMBO_DINAMICO) y el
+# componente ya precarga los municipios (obs H3) y busca por depto/mun (obs H4).
+# PL28 (negocio) ya era COMBO_DINAMICO.
+COMBO_MUNICIPIO = ["RR1", "RR6"]
+_COMBO_PLACEHOLDER = {"valor": "", "etiqueta": "Departamento", "id_resp_vivanto": None, "orden": 1}
+
+
+def lote4_divipola(d):
+    for code in COMBO_MUNICIPIO:
+        p = next((x for x in d["preguntas"] if x.get("codigo_externo") == code), None)
+        if p and p.get("tipo") == "TEXTO":
+            p["tipo"] = "COMBO_DINAMICO"
+            if not p.get("opciones"):
+                p["opciones"] = [dict(_COMBO_PLACEHOLDER)]
+            log(f"DIVIPOLA: {code} ({p.get('no_pregunta')}) TEXTO → COMBO_DINAMICO (SelectorMunicipio)")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
     ("LOTE 2 — preguntas faltantes",
@@ -517,6 +538,7 @@ LOTES = [
       lote2_valores_ingresos, lote2_frecuencia_alimentos, lote2_i18_porque, lote2_k29_cual,
       lote2_fix_posicion_ocupacional_otro, lote2_at2_porque]),
     ("LOTE 3 — multi-select", [lote3_multiselect]),
+    ("LOTE 4 — DIVIPOLA", [lote4_divipola]),
 ]
 
 
