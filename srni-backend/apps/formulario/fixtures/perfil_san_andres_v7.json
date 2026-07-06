@@ -1418,7 +1418,7 @@
    "id_preg": 41,
    "capitulo_codigo": "C",
    "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por:",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "HOGAR",
    "obligatoria": false,
    "orden": 22,
@@ -1505,7 +1505,7 @@
    "id_preg": 872,
    "capitulo_codigo": "C",
    "texto": "En los últimos dos años, ¿… esta zona se ha visto afectada por factores como:",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "HOGAR",
    "obligatoria": false,
    "orden": 24,
@@ -1750,14 +1750,21 @@
    "id_preg": 800,
    "capitulo_codigo": "D",
    "texto": "¿Cuál fue el departamento y municipio en el cuál se retornó o se reubicó?",
-   "tipo": "TEXTO",
+   "tipo": "COMBO_DINAMICO",
    "nivel": "HOGAR",
    "obligatoria": false,
    "orden": 5,
    "es_precargada": false,
    "fuente_precarga": "",
    "validaciones": {},
-   "opciones": [],
+   "opciones": [
+    {
+     "valor": "",
+     "etiqueta": "Departamento",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ],
    "id": "6c27a7c3-c631-431f-a666-525baf3ecb28"
   },
   {
@@ -1897,14 +1904,21 @@
    "id_preg": 801,
    "capitulo_codigo": "D",
    "texto": "¿A qué departamento y municipio quiere retornar o reubicarse?",
-   "tipo": "TEXTO",
+   "tipo": "COMBO_DINAMICO",
    "nivel": "HOGAR",
    "obligatoria": false,
    "orden": 10,
    "es_precargada": false,
    "fuente_precarga": "",
    "validaciones": {},
-   "opciones": [],
+   "opciones": [
+    {
+     "valor": "",
+     "etiqueta": "Departamento",
+     "id_resp_vivanto": null,
+     "orden": 1
+    }
+   ],
    "id": "28452951-4dae-4307-b290-b53476c63d08"
   },
   {
@@ -2435,7 +2449,7 @@
    "id_preg": 877,
    "capitulo_codigo": "JA",
    "texto": "¿Generalmente como se aprovisiona el hogar de alimentos?",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "HOGAR",
    "obligatoria": false,
    "orden": 1,
@@ -6749,7 +6763,7 @@
    "id_preg": 92,
    "capitulo_codigo": "H",
    "texto": "¿Qué tipo de rehabilitación ha recibido?",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "PERSONA",
    "obligatoria": false,
    "orden": 2,
@@ -6838,7 +6852,7 @@
    "id_preg": 93,
    "capitulo_codigo": "H",
    "texto": "¿…ha recibido atención psicosocial (para su recuperación emocional) en alguno de estos ambitos?",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "PERSONA",
    "obligatoria": false,
    "orden": 3,
@@ -10531,7 +10545,7 @@
    "id_preg": 843,
    "capitulo_codigo": "K",
    "texto": "¿Cuáles fueron los motivos por los que usted tuvo que cerrar su negocio?",
-   "tipo": "LISTA",
+   "tipo": "LISTA_MULTIPLE",
    "nivel": "PERSONA",
    "obligatoria": false,
    "orden": 44,
@@ -12559,6 +12573,118 @@
    "accion": "HABILITAR",
    "afecta": "B2_CANT",
    "descripcion": "[flujo] '¿Cuántas?' (gestación) visible si B2 = Sí (1)"
+  },
+  {
+   "origen": "A30",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "B17",
+   "descripcion": "[portado V8] [flujo] B27 (tipo territorio) visible si B26=Si (A30=true) [obs funcional: 26=No no debe desplegar 27]"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "RR2",
+   "descripcion": "[portado V8] [étnico] RR2 visible si Z4=1 (Indígena) [obs funcional: antes por contexto etnia, no disparaba]"
+  },
+  {
+   "origen": "Z4",
+   "valor_trigger": "1",
+   "accion": "HABILITAR",
+   "afecta": "RR3",
+   "descripcion": "[portado V8] [étnico] RR3 visible si Z4=1 (Indígena) [obs funcional: antes por contexto etnia, no disparaba]"
+  },
+  {
+   "origen": "Z6",
+   "valor_trigger": "3",
+   "accion": "HABILITAR",
+   "afecta": "VEREDA",
+   "descripcion": "[portado V8] [A] vereda si zona residencia rural disperso"
+  },
+  {
+   "origen": "Z11",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "Z17",
+   "descripcion": "[portado V8] [A] correspondencia si NO es misma residencia"
+  },
+  {
+   "origen": "Z16",
+   "valor_trigger": "3",
+   "accion": "HABILITAR",
+   "afecta": "Z18",
+   "descripcion": "[portado V8] [A] vereda correspondencia si zona rural disperso"
+  },
+  {
+   "origen": "L22",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "L22A1",
+   "descripcion": "[portado V8] [flujo] L22A1 (¿cuánto? servicios) visible si L22=true"
+  },
+  {
+   "origen": "L22",
+   "valor_trigger": "",
+   "accion": "HABILITAR",
+   "afecta": "L22B",
+   "descripcion": "[portado V8] [flujo] L22B (navidad) visible tras L22"
+  },
+  {
+   "origen": "Z11",
+   "valor_trigger": "false",
+   "accion": "HABILITAR",
+   "afecta": "Z18",
+   "descripcion": "[portado V8] [A] vereda correspondencia si NO es misma residencia"
+  },
+  {
+   "origen": "L22B",
+   "valor_trigger": "",
+   "accion": "HABILITAR",
+   "afecta": "L22C",
+   "descripcion": "[portado V8] [flujo] L22C visible tras L22B"
+  },
+  {
+   "origen": "L22C",
+   "valor_trigger": "",
+   "accion": "HABILITAR",
+   "afecta": "L22D",
+   "descripcion": "[portado V8] [flujo] L22D visible tras L22C"
+  },
+  {
+   "origen": "L22D",
+   "valor_trigger": "",
+   "accion": "HABILITAR",
+   "afecta": "L22E",
+   "descripcion": "[portado V8] [flujo] L22E visible tras L22D"
+  },
+  {
+   "origen": "L22B",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "L221",
+   "descripcion": "[portado V8] [flujo] L221 (¿cuánto?) visible si L22B=true"
+  },
+  {
+   "origen": "L22C",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "L22C1",
+   "descripcion": "[portado V8] [flujo] L22C1 (¿cuánto?) visible si L22C=true"
+  },
+  {
+   "origen": "L22D",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "L22D1",
+   "descripcion": "[portado V8] [flujo] L22D1 (¿cuánto?) visible si L22D=true"
+  },
+  {
+   "origen": "L22E",
+   "valor_trigger": "true",
+   "accion": "HABILITAR",
+   "afecta": "L22E1",
+   "descripcion": "[portado V8] [flujo] L22E1 (¿cuánto?) visible si L22E=true"
   }
  ]
 }

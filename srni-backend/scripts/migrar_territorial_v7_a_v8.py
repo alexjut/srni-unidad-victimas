@@ -206,10 +206,13 @@ def lote1_b26_b27_territorio(d):
     for r in reglas(d):
         if r.get("afecta") == "B17" and r.get("accion") == "HABILITAR" and r.get("origen") == "Z4":
             r["origen"] = "A30"
-            r["valor_trigger"] = "1"
-            r["descripcion"] = ("[flujo] B27 (tipo territorio) visible si B26=Si (A30=1) "
+            # A30 es BOOLEAN: el motor hardcodea la respuesta como "true"/"false"
+            # (ver reference_skiplogic_funcional_apk). Un trigger "1" NUNCA dispara
+            # → B17 quedaba oculta para siempre. Debe ser "true".
+            r["valor_trigger"] = "true"
+            r["descripcion"] = ("[flujo] B27 (tipo territorio) visible si B26=Si (A30=true) "
                                 "[obs funcional: 26=No no debe desplegar 27]")
-            log("P26/P27 (B26/B27): B17 visible si A30=1 (territorio colectivo=Si), ya no por Z4")
+            log("P26/P27 (B26/B27): B17 visible si A30=true (territorio colectivo=Si), ya no por Z4")
 
 
 # ─── LOTE 2 — Preguntas faltantes ──────────────────────────────────────────────
