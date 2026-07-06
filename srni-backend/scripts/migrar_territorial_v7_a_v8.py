@@ -492,12 +492,31 @@ def lote2_at2_porque(d):
         log("AT2: +AT2_PORQUE (texto) si AT2=2")
 
 
+# ─── LOTE 3 — Multi-select ─────────────────────────────────────────────────────
+
+# Preguntas que el manual define como "selección múltiple con múltiple respuesta"
+# pero el fixture tenía como LISTA (única). El motor de skip-logic ya soporta
+# orígenes multi-select (helper _valoresSeleccionados, mirror en views.py).
+#   C6A=C20, C17A=C21 (factores que afectan la zona) · I10A=H3 tipo rehabilitación ·
+#   I11A psicosocial · I1A1=I2 aprovisionamiento · PL21A=K33 motivos cierre negocio
+MULTISELECT = ["C6A", "C17A", "I10A", "I11A", "I1A1", "PL21A"]
+
+
+def lote3_multiselect(d):
+    for code in MULTISELECT:
+        p = next((x for x in d["preguntas"] if x.get("codigo_externo") == code), None)
+        if p and p.get("tipo") == "LISTA":
+            p["tipo"] = "LISTA_MULTIPLE"
+            log(f"Multi-select: {code} ({p.get('no_pregunta') or '·'}) LISTA → LISTA_MULTIPLE")
+
+
 LOTES = [
     ("LOTE 1 — skip-logic", [lote1_j2_l2, lote1_d7_d8_etnico, lote1_b26_b27_territorio]),
     ("LOTE 2 — preguntas faltantes",
      [lote2_observaciones, lote2_estrato, lote2_cursos_subcampos, lote2_k35_cual,
       lote2_valores_ingresos, lote2_frecuencia_alimentos, lote2_i18_porque, lote2_k29_cual,
       lote2_fix_posicion_ocupacional_otro, lote2_at2_porque]),
+    ("LOTE 3 — multi-select", [lote3_multiselect]),
 ]
 
 
