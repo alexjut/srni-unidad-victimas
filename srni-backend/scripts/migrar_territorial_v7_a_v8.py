@@ -550,7 +550,12 @@ def main():
     with io.open(SRC, encoding="utf-8") as f:
         d = json.load(f)
 
-    d["instrumento_version"] = "V8"
+    iv = d.get("instrumento_version")
+    if not isinstance(iv, dict):
+        iv = {}
+        d["instrumento_version"] = iv
+    iv["numero"] = "V8"
+    iv["vigente_desde"] = "2026-07-05"
 
     for nombre, fns in LOTES:
         for fn in fns:
@@ -560,7 +565,7 @@ def main():
         json.dump(d, f, ensure_ascii=False, indent=2)
 
     print(f"Generado: {os.path.relpath(DST, BASE)}")
-    print(f"Versión: {d['instrumento_version']} | preguntas={len(d['preguntas'])} | reglas={len(reglas(d))}")
+    print(f"Versión: {iv['numero']} | preguntas={len(d['preguntas'])} | reglas={len(reglas(d))}")
     print(f"Cambios aplicados ({len(CAMBIOS)}):")
     for c in CAMBIOS:
         print(f"  - {c}")

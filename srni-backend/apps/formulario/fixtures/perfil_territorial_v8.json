@@ -3,7 +3,10 @@
     "codigo": "TERRITORIAL",
     "nombre": "Caracterización territorial"
   },
-  "instrumento_version": "V8",
+  "instrumento_version": {
+    "numero": "V8",
+    "vigente_desde": "2026-07-05"
+  },
   "capitulos": [
     {
       "codigo": "A",
