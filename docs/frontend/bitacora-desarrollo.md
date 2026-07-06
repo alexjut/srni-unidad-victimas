@@ -988,4 +988,83 @@ Javier desplego el ambiente en produccion (`prod-caracterizacion.ngrok.app`) y d
 
 ---
 
+## Dia 16 — 2026-07-05 | Dashboard role-based + Instrumentos rediseno + permisos sidebar
+
+### Contexto
+
+Se fusionaron 17 commits de Javier desde `main` (backend/mobile/infra — ningun archivo de `srni-frontend/` modificado). Incluyen: migracion Territorial V7→V8 (363 preguntas), fixture format nuevo, gestion permisos backend, Rural Etnico fuente_documental. Se analizo el impacto en frontend y se confirmo que no hay cambios necesarios por la fusion. Se implementaron mejoras de UX pendientes.
+
+### Actividades realizadas
+
+1. **Dashboard role-based — deteccion de rol y contenido condicional**
+   - Funcion `detectarRol()` que determina: admin, coordinador, supervisor o encuestador segun `puede_administrar`, `perfil.codigo`, `puede_ver_reportes`
+   - Accesos rapidos dinamicos por rol (QUICK_LINKS): encuestador ve Hogares/Encuestas/Reportes, supervisor ve Supervision/Instrumentos, coordinador ve Auditoria/Usuarios, admin ve Usuarios/Auditoria
+   - Card de rol con acento de color, label, descripcion del rol y actividad reciente (sesiones en curso, completadas, hogares) solo para encuestadores
+   - Metricas personales (4 Cards) solo se muestran para encuestadores con `puede_caracterizar` — coordinadores/admin ven CTA a Supervision en su lugar
+   - Se evita llamar `/api/reportes/encuestador/` para roles sin permiso (previene 403)
+
+2. **Sidebar — filtro de permisos por rol**
+   - Flag `caracterizadorOnly: true` agregado a Hogares, Encuestas y Reportes en NAV_ITEMS
+   - Logica de filtro: si el usuario no tiene `puede_caracterizar`, no ve esos items
+   - Resuelve: SUPERVISOR veia paginas que retornaban 403 (backend protege con PuedeCaracterizar)
+
+3. **Instrumentos — rediseno completo de UX (3 iteraciones)**
+   - Eliminado: doble accordion "ladrilludo" con iconos CheckCircle/Circle (parecia checklist)
+   - Implementado: patron Card Grid + Drill-down
+   - Vista grilla: cards limpias con nombre, codigo, version, stats en pills grises neutrales, badge vigente, hover lift + fade-in-up escalonado
+   - Vista detalle: encabezado con fondo tintado por acento, metricas rapidas, capitulos expandibles con lazy-load de preguntas
+   - Dot indicator: punto naranja = obligatoria, punto gris = opcional (reemplaza iconos checklist)
+   - 8 colores de acento en rotacion (azul, verde, naranja, morado, rojo, cyan, amarillo, indigo)
+   - Primer capitulo se abre automaticamente al entrar al detalle
+
+4. **Script de datos de prueba — seed_encuestadores.py**
+   - Archivo personal (excluido via `.git/info/exclude`)
+   - Crea 30 sesiones distribuidas en ENC001-ENC005 con estados variados
+   - Prefijo `SV-` para idempotencia (cleanup con `--limpiar`)
+   - Fechas aleatorias ultimos 90 dias
+
+5. **Analisis de fusion main → frontend**
+   - 17 commits revisados (todos backend/mobile/infra)
+   - Tipo `Instrumento.version` sigue siendo string en el serializer — sin cambio en frontend
+   - Permisos backend sin cambios — mismos 403 conocidos
+   - Correo enviado a Javier sobre 3 bugs de permisos pendientes
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Dashboard.tsx` | Deteccion de rol, accesos rapidos dinamicos, card de rol con actividad, metricas condicionales |
+| `src/components/Sidebar.tsx` | Flag `caracterizadorOnly` en 3 items + filtro en logica de items |
+| `src/pages/Instrumentos.tsx` | Reescritura completa: Card Grid + Drill-down, 4 componentes (InstrumentosPage, InstrumentoCard, InstrumentoDetalle, CapituloRow) |
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `srni-backend/scripts/seed_encuestadores.py` | Datos de prueba para 5 encuestadores (personal, excluido de git) |
+
+### Bugs reportados a Javier (correo enviado)
+
+| Bug | Descripcion | Workaround frontend |
+|-----|-------------|---------------------|
+| SUPERVISOR 403 en Hogares/Encuestas/Reportes | Backend protege con `PuedeCaracterizar` pero supervisor no tiene ese permiso | Items ocultos del sidebar con `caracterizadorOnly` |
+| Admin/Coordinador sin datos en Supervision | `/api/reportes/supervisor/` retorna vacio sin encuestadores asignados | CTA a Supervision en lugar de metricas vacias |
+| Instrumentos ViewSet con `PuedeCaracterizar` | Todos los roles deberian poder consultar instrumentos | Endpoints individuales usan solo `IsAuthenticated` (funciona) |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 18 (16 funcionales + Login + NotFound) |
+| API clients | 11 |
+| Componentes UI | 14 |
+| Componentes layout | 3 |
+| Rutas | 16 + catch-all 404 |
+| Nav items sidebar | 10 (3 caracterizadorOnly, 1 supervisorOnly, 1 coordinadorOnly, 1 adminOnly) |
+| Tests | 9 (5 Button + 4 authStore) |
+| Fases completadas | 1 a 8 + Usuarios |
+| Bundle principal | 116KB |
+
+---
+
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*

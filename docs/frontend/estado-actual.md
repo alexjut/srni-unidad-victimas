@@ -3,7 +3,7 @@
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
 **Estado:** 18 paginas funcionales — Fases 1-8 + Usuarios completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-06-16
+**Ultima actualizacion:** 2026-07-05
 
 ---
 
@@ -57,7 +57,7 @@ srni-frontend/src/
 │   └── usuarios.ts        CRUD usuarios + perfiles + activar/desactivar + reset password
 ├── components/
 │   ├── MainLayout.tsx     Sidebar desktop + drawer mobile + header con dropdown usuario + bottom sheet mobile
-│   ├── Sidebar.tsx        Logo institucional (LogoHorizontalNegativo.svg) + 10 nav items (Usuarios adminOnly)
+│   ├── Sidebar.tsx        Logo institucional (LogoHorizontalNegativo.svg) + 10 nav items (filtrado por rol: caracterizadorOnly, supervisorOnly, coordinadorOnly, adminOnly)
 │   ├── ErrorBoundary.tsx  Captura errores React
 │   └── ui/                14 componentes reutilizables
 │       ├── Button.tsx     4 variantes, 3 tamanos, loading, icon, shadow-soft, press effect
@@ -78,7 +78,7 @@ srni-frontend/src/
 │   └── authStore.ts       Zustand: tokens en sessionStorage, usuario, logout
 ├── pages/
 │   ├── Login.tsx          Logo institucional (LogoHorizontalColor.svg) + formulario glass
-│   ├── Dashboard.tsx      4 Cards metricas + accesos rapidos
+│   ├── Dashboard.tsx      Role-based: deteccion de rol, accesos rapidos dinamicos, card de rol con actividad, metricas condicionales
 │   ├── Hogares.tsx        Tabla paginada + filtros (busqueda + estado)
 │   ├── HogarDetalle.tsx   Breadcrumb + InfoCards + miembros + sesiones
 │   ├── Encuestas.tsx      Tabla paginada + filtro estado + barra progreso
@@ -87,7 +87,7 @@ srni-frontend/src/
 │   ├── Victimas.tsx       Busqueda por documento + resultado + recientes
 │   ├── VictimaDetalle.tsx Datos PII + hechos victimizantes + metadata
 │   ├── Supervision.tsx    LineChart + BarChart + tabla encuestadores + filtros
-│   ├── Instrumentos.tsx   Cards expandibles + lazy-load preguntas
+│   ├── Instrumentos.tsx   Card Grid + Drill-down (grilla seleccionable → vista detalle con capitulos expandibles + lazy-load preguntas)
 │   ├── Parametricas.tsx   Mapa Colombia + 8 tabs con filtros
 │   ├── Auditoria.tsx      Logs inmutables + filtros accion/resultado/fecha
 │   ├── CambiarPassword.tsx Formulario con react-hook-form + zod
@@ -249,6 +249,86 @@ Analisis cruzado backend vs frontend realizado el 2026-06-10. Se agregaron las 3
 Datos de prueba: 30 veredas, 20 comunidades negras, 25 resguardos indigenas (solo en db.sqlite3 local).
 
 **No hace falta para el frontend (son exclusivos de mobile):** crear hogares, responder encuestas, IA Gemini, sync offline, skip logic.
+
+---
+
+## Dashboard Role-Based (implementado 2026-07-05)
+
+### Deteccion de rol
+
+```typescript
+type RolTipo = 'encuestador' | 'supervisor' | 'coordinador' | 'admin';
+
+function detectarRol(perfil): RolTipo {
+  if (perfil.puede_administrar) return 'admin';
+  if (perfil.codigo === 'COORDINADOR') return 'coordinador';
+  if (perfil.puede_ver_reportes) return 'supervisor';
+  return 'encuestador';
+}
+```
+
+### Contenido condicional por rol
+
+| Seccion | Encuestador | Supervisor | Coordinador | Admin |
+|---------|-------------|------------|-------------|-------|
+| Card de rol | Actividad reciente (sesiones en curso/completadas/hogares) | Descripcion rol | Descripcion rol | Descripcion rol |
+| Metricas personales | 4 Cards con datos de `/api/reportes/encuestador/` | CTA a Supervision | CTA a Supervision | CTA a Supervision |
+| Accesos rapidos | Hogares, Encuestas, Reportes | Supervision, Instrumentos, Parametricas | Auditoria, Usuarios, Supervision | Usuarios, Auditoria, Supervision |
+
+### Llamadas API condicionales
+
+Solo se llama a `/api/reportes/encuestador/` cuando `rol === 'encuestador' && puede_caracterizar`. Esto evita 403 para supervisores/coordinadores/admin.
+
+---
+
+## Instrumentos — Rediseno UX (implementado 2026-07-05)
+
+### Patron Card Grid + Drill-down
+
+**Antes:** doble accordion anidado con iconos CheckCircle/Circle (parecia checklist, no intuitivo).
+
+**Despues:** grid de cards seleccionables → vista detalle con navegacion back.
+
+**Estado:** `seleccionado` (null = grilla, string = detalle del instrumento)
+
+### Componentes
+
+| Componente | Proposito |
+|-----------|-----------|
+| `InstrumentosPage` | Controlador de estado: grilla vs detalle |
+| `InstrumentoCard` | Card con nombre, codigo, version, stats, badge vigente, hover lift |
+| `InstrumentoDetalle` | Header tintado + metricas + capitulos expandibles |
+| `CapituloRow` | Accordion con lazy-load de preguntas via `formularioApi.capituloDetalle()` |
+
+### Diseno visual
+
+- 8 colores de acento en rotacion (azul, verde, naranja, morado, rojo, cyan, amarillo, indigo)
+- Stats en pills grises neutrales (no coloreadas)
+- Dot indicator: naranja = obligatoria, gris = opcional
+- Primer capitulo se abre automaticamente
+
+---
+
+## Permisos Sidebar (implementado 2026-07-05)
+
+### Flags de visibilidad en NAV_ITEMS
+
+```typescript
+{ to: '/hogares',    caracterizadorOnly: true }   // requiere puede_caracterizar
+{ to: '/encuestas',  caracterizadorOnly: true }
+{ to: '/reportes',   caracterizadorOnly: true }
+{ to: '/supervision', supervisorOnly: true }       // requiere puede_ver_reportes
+{ to: '/auditoria',  coordinadorOnly: true }       // requiere perfil COORDINADOR o ADMINISTRADOR
+{ to: '/usuarios',   adminOnly: true }             // requiere puede_administrar
+```
+
+### Bugs conocidos en backend (reportados a Javier 2026-07-05)
+
+| Bug | Estado |
+|-----|--------|
+| SUPERVISOR 403 en Hogares/Encuestas/Reportes (backend PuedeCaracterizar) | Workaround: items ocultos con caracterizadorOnly |
+| Admin/Coordinador sin datos en Supervision | Workaround: CTA a Supervision en Dashboard |
+| Instrumentos ViewSet con PuedeCaracterizar | No afecta: endpoints individuales usan IsAuthenticated |
 
 ---
 
@@ -533,7 +613,12 @@ location /api {
 
 #### Sidebar.tsx
 
-**Navegación:** 9 items (Inicio, Víctimas, Hogares, Encuestas, Reportes, Supervisión, Instrumentos, Paramétricas, Auditoría)
+**Navegación:** 10 items con filtrado por rol:
+- Siempre visibles: Inicio, Victimas, Instrumentos, Parametricas
+- `caracterizadorOnly`: Hogares, Encuestas, Reportes (requiere `puede_caracterizar`)
+- `supervisorOnly`: Supervision (requiere `puede_ver_reportes`)
+- `coordinadorOnly`: Auditoria (requiere perfil COORDINADOR o ADMINISTRADOR)
+- `adminOnly`: Usuarios (requiere `puede_administrar`)
 
 **Indicador activo:** `bg-white/15 text-white font-semibold` (ruta actual)
 
@@ -681,5 +766,4 @@ Usado en: Victimas.
 
 | Fuente | Peso | Uso |
 |--------|------|-----|
-| **Montserrat** | 600, 700 | Títulos (h2, h3), display |
-| **Work Sans** | 400, 500, 600 | Body, labels, botones |
+| **Nunito Sans** | 400, 500, 600, 700, 800 | Toda la interfaz (body + headings + display) |
