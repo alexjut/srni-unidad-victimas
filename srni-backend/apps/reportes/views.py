@@ -24,7 +24,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.autenticacion.permissions import (
-    PuedeCaracterizar, PuedeVerReportes, PuedeAdministrar,
+    PuedeConsultarOperacion, PuedeVerReportes,
 )
 from apps.encuestas.models import SesionEncuesta, RespuestaEncuesta
 from apps.autenticacion.models import Usuario
@@ -82,7 +82,7 @@ def _build_sesion_data(sesion) -> dict:
 # ─── Endpoint: resumen ─────────────────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, PuedeCaracterizar])
+@permission_classes([IsAuthenticated, PuedeConsultarOperacion])
 def produccion_resumen(request):
     """
     Resumen de producción del encuestador autenticado.
@@ -179,7 +179,7 @@ def produccion_resumen(request):
 # ─── Endpoint: detalle paginado ───────────────────────────────────────────────
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, PuedeCaracterizar])
+@permission_classes([IsAuthenticated, PuedeConsultarOperacion])
 def produccion_detalle(request):
     """
     Lista paginada de sesiones del período.
@@ -238,7 +238,7 @@ class _Echo:
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, PuedeCaracterizar])
+@permission_classes([IsAuthenticated, PuedeConsultarOperacion])
 def produccion_export_csv(request):
     """
     Descarga CSV de las sesiones del período.
@@ -426,8 +426,9 @@ def dashboard_series(request):
       - serie_diaria: lista de (fecha, sesiones_iniciadas, sesiones_completadas)
       - distribucion_por_instrumento: lista (instrumento_codigo, nombre, total)
 
-    Si el usuario tiene puede_administrar=True ve todos los encuestadores.
-    Si solo tiene puede_ver_reportes ve únicamente sus propias sesiones.
+    Administración (puede_administrar) y supervisión (puede_ver_reportes) ven
+    el agregado de todos los encuestadores; cualquier otro rol ve solo sus
+    propias sesiones.
     """
     hoy = date.today()
     desde = _parse_date(request.query_params.get('desde'), hoy - timedelta(days=30))
@@ -436,7 +437,9 @@ def dashboard_series(request):
     hasta_dt = make_aware(datetime(hasta.year, hasta.month, hasta.day, 23, 59, 59))
 
     qs = SesionEncuesta.objects.filter(created_at__range=(desde_dt, hasta_dt))
-    if not request.user.puede('administrar'):
+    # Admin y supervisión (ver_reportes) ven el agregado de todos los
+    # encuestadores; cualquier otro rol solo sus propias sesiones (Bug 2).
+    if not (request.user.puede('administrar') or request.user.puede('ver_reportes')):
         qs = qs.filter(encuestador=request.user)
 
     # Serie diaria de iniciadas (created_at) y completadas (fecha_fin)
