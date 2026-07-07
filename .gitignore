@@ -103,3 +103,7 @@ CLAUDE.md
 Thumbs.db
 desktop.ini
 .tmp-assets/
+
+# ─── Material local sin versionar (depósitos de fotos crudas / sueltas) ──────
+srni-mobile/assets/regiones/loguin/
+image*.png
