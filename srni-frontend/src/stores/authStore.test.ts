@@ -34,7 +34,7 @@ describe('authStore', () => {
       nombre_completo: 'Javier Aguilar',
       email: 'javier@test.com',
       perfil: {
-        id: 1,
+        codigo: 'SUPERVISOR',
         nombre: 'Supervisor',
         puede_caracterizar: true,
         puede_buscar_rni: true,

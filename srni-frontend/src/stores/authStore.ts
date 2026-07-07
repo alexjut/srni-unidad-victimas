@@ -8,7 +8,7 @@
  */
 import { create } from 'zustand';
 
-interface Usuario {
+export interface Usuario {
   codigo_usuario: string;
   nombre_completo: string;
   email: string;

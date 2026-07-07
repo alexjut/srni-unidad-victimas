@@ -15,10 +15,12 @@ export interface PerfilUsuario {
   nombre_completo: string;
   email: string;
   perfil: {
-    id: number;
+    codigo: string;
     nombre: string;
-    puede_caracterizar: boolean;
     puede_buscar_rni: boolean;
+    puede_caracterizar: boolean;
+    puede_ver_reportes: boolean;
+    puede_administrar: boolean;
   } | null;
 }
 

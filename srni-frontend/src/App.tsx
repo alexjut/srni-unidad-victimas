@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { ShieldOff } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, type Usuario } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import Spinner from '@/components/ui/Spinner';
 import LoginPage from '@/pages/Login';
@@ -65,7 +65,7 @@ function RequirePermission({
   children,
 }: {
   permiso?: 'puede_ver_reportes' | 'puede_administrar';
-  check?: (u: NonNullable<ReturnType<typeof useAuthStore>['usuario']>) => boolean;
+  check?: (u: Usuario) => boolean;
   children: React.ReactNode;
 }) {
   const usuario = useAuthStore((s) => s.usuario);
