@@ -19,8 +19,8 @@ export interface PerfilUsuario {
     nombre: string;
     puede_buscar_rni: boolean;
     puede_caracterizar: boolean;
-    puede_ver_reportes: boolean;
-    puede_administrar: boolean;
+    puede_ver_reportes?: boolean;
+    puede_administrar?: boolean;
   } | null;
 }
 

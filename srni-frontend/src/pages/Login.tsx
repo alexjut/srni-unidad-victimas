@@ -10,8 +10,8 @@ import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
 import LogoHorizontal from '@/assets/LogoColor.svg';
 
 const BG_IMAGES = [
-  '/img/1.jpg', '/img/2.jpg', '/img/3.jpg', '/img/4.jpg',
-  '/img/5.jpg', '/img/6.jpg', '/img/7.jpg',
+  '/img/1.avif', '/img/2.avif', '/img/3.avif', '/img/4.avif',
+  '/img/5.avif', '/img/6.avif', '/img/7.avif',
 ];
 
 export default function LoginPage() {
