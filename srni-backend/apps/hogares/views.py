@@ -13,7 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from apps.autenticacion.permissions import PuedeCaracterizar
+from apps.autenticacion.permissions import PuedeConsultarOperacion
 from apps.auditoria.models import LogAcceso
 from .models import Hogar, MiembroHogar
 from .filters import HogarFilterSet
@@ -44,7 +44,7 @@ class HogarViewSet(viewsets.ModelViewSet):
     El listado muestra solo los hogares creados por el encuestador autenticado
     (o todos, si tiene perfil administrador).
     """
-    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+    permission_classes = [IsAuthenticated, PuedeConsultarOperacion]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = HogarFilterSet
     ordering_fields = ['created_at', 'updated_at', 'estado', 'numero_personas']
@@ -60,7 +60,9 @@ class HogarViewSet(viewsets.ModelViewSet):
             'sesiones__encuestador',
         )
 
-        if not (user.puede('administrar')):
+        # Admin y supervisión (ver_reportes) ven todos los hogares; el
+        # encuestador de campo solo los que él creó.
+        if not (user.puede('administrar') or user.puede('ver_reportes')):
             qs = qs.filter(creado_por=user)
         return qs
 

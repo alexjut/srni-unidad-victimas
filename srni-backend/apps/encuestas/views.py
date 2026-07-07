@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from apps.autenticacion.permissions import PuedeCaracterizar
+from apps.autenticacion.permissions import PuedeConsultarOperacion
 from apps.auditoria.models import LogAcceso
 from apps.formulario.models import Pregunta
 from apps.hogares.models import MiembroHogar
@@ -82,7 +82,7 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
     Gestión de sesiones de encuesta.
     Solo los encuestadores con puede_caracterizar pueden operar este endpoint.
     """
-    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+    permission_classes = [IsAuthenticated, PuedeConsultarOperacion]
     pagination_class = CursorTimePagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = SesionEncuestaFilterSet
@@ -101,7 +101,9 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             'direccion_territorial', 'departamento_atencion',
             'municipio_atencion', 'punto_atencion',
         ).prefetch_related('respuestas')
-        if not user.puede('administrar'):
+        # Admin y supervisión (ver_reportes) ven todas las sesiones; el
+        # encuestador de campo solo las suyas.
+        if not (user.puede('administrar') or user.puede('ver_reportes')):
             qs = qs.filter(encuestador=user)
         return qs
 

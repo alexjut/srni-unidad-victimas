@@ -16,7 +16,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from apps.autenticacion.permissions import PuedeCaracterizar
 from .models import Instrumento, Capitulo, Pregunta, ReglaSkipLogic, AccionSkipChoices
 from django.shortcuts import get_object_or_404
 from .serializers import (
@@ -102,7 +101,10 @@ class ReadOnlyViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+    # Los instrumentos, capítulos y preguntas son información de referencia
+    # de solo lectura: cualquier usuario autenticado (campo, supervisión o
+    # administración) puede consultarlos. No exige puede_caracterizar (Bug 1).
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
 
 
