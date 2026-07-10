@@ -26,6 +26,9 @@ PERFILES = {
 # Usuarios: codigo, password, nombre, email, perfil, es_administrador
 USUARIOS = [
     ("ALEXJUT",    "alexjut1030",   "Javier Alexander Aguilar Castro", "ingaguilarsistemas@gmail.com", "ADMINISTRADOR", True),
+    # Equipo — acceso total (backend /admin/, panel web y móvil)
+    ("JORGE",      "JorgeQA2026*",  "Jorge — QA",                      "jorge.qa@srni.dev",            "ADMINISTRADOR", True),
+    ("KAREN",      "KarenDoc2026*", "Karen — Documental",              "karen.doc@srni.dev",           "ADMINISTRADOR", True),
     ("BRANDO",     "Brando2026*",   "Brando — Líder Frontend",         "brando@srni.dev",              "COORDINADOR",   False),
     ("SUPERVISOR", "Supervisor2026*", "Oscar Andrés Manosalva García", "supervisor@srni.dev",          "SUPERVISOR",    False),
     ("ENC001",     "SrniTest2026!", "Encuestador de Prueba 1",         "enc001@srni.dev",              "ENCUESTADOR",   False),
