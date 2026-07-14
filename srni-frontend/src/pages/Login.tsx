@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 import LogoHorizontal from '@/assets/LogoColor.svg';
 
 const BG_IMAGES = [
@@ -23,7 +24,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,11 +35,10 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!usuario.trim() || !password.trim()) {
-      setError('Ingrese usuario y contraseña.');
+      toast.error('Ingrese usuario y contraseña.');
       return;
     }
     setCargando(true);
-    setError('');
     try {
       const { data: tokens } = await authApi.login({
         codigo_usuario: usuario.trim().toUpperCase(),
@@ -50,8 +49,7 @@ export default function LoginPage() {
       setUsuario(perfil);
       navigate('/dashboard');
     } catch (err: any) {
-      const detalle = err?.response?.data?.detail;
-      setError(detalle ?? 'Credenciales incorrectas. Verifique e intente de nuevo.');
+      toast.error('La combinación de usuario y contraseña no es correcta.');
     } finally {
       setCargando(false);
     }
@@ -116,7 +114,7 @@ export default function LoginPage() {
                 }}
                 onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
                 onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
-                placeholder="Ej. ALEXJUT"
+                placeholder="Ingrese su usuario"
                 value={usuario}
                 onChange={(e) => setUsuarioField(e.target.value.toUpperCase())}
                 autoComplete="username"
@@ -141,7 +139,7 @@ export default function LoginPage() {
                   }}
                   onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
                   onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
-                  placeholder="••••••••"
+                  placeholder="Ingrese su contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
@@ -157,19 +155,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
-            {/* Error */}
-            {error && (
-              <div
-                className="rounded-xl px-4 py-3 text-sm text-red-200 animate-fade-in"
-                style={{
-                  background: 'rgba(220, 38, 38, 0.15)',
-                  border: '1px solid rgba(220, 38, 38, 0.25)',
-                }}
-              >
-                {error}
-              </div>
-            )}
 
             {/* Botón */}
             <button
