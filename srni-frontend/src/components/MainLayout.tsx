@@ -4,6 +4,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { Menu, X, KeyRound, LogOut, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/authStore';
 import { authApi } from '@/api/auth';
 import Sidebar, { NAV_ITEMS } from '@/components/Sidebar';
@@ -24,6 +25,11 @@ export default function MainLayout() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
+  // H-009: Limpiar toasts al navegar entre módulos
+  useEffect(() => {
+    toast.dismiss();
+  }, [location.pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
