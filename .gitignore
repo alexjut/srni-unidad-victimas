@@ -88,6 +88,7 @@ docs/oracle-legacy/*
 !docs/oracle-legacy/oracle-local-setup.md
 srni-backend/scripts/investigar_ruta_escritura.py
 srni-backend/scripts/validar_paridad_pruebas.py
+srni-backend/scripts/verificar_factibilidad_expdp.py
 
 # Oracle local (Docker) — nunca commitear credenciales ni dumps.
 infra/oracle-local/.env
@@ -118,3 +119,8 @@ desktop.ini
 # ─── Material local sin versionar (depósitos de fotos crudas / sueltas) ──────
 srni-mobile/assets/regiones/loguin/
 image*.png
+
+# Credenciales de PROD (lectura) — jamás al repo, jamás impresas.
+infra/oracle-local/.secret-oracle-prod
+# Logs de export/import Data Pump (listan nombres de objetos del esquema prod).
+infra/oracle-local/dumps/*.log
