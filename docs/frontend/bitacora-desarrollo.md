@@ -1065,6 +1065,75 @@ Se fusionaron 17 commits de Javier desde `main` (backend/mobile/infra — ningun
 | Fases completadas | 1 a 8 + Usuarios |
 | Bundle principal | 116KB |
 
+## Dia 17 — 2026-07-15 | Correcciones QA — Parametricas, Encuestas, SesionDetalle
+
+### Contexto
+
+Se recibio informe de QA con 23 hallazgos (3 criticos, 13 medios, 4 bajos). Se revisaron todos los hallazgos, se identificaron los que ya estaban corregidos en commits anteriores y se implementaron las correcciones pendientes.
+
+### Actividades realizadas
+
+1. **H-023 — Normalizar casing en Parametricas (BAJO)**
+   - Creada funcion `toTitleCase()` que convierte nombres a formato titulo respetando preposiciones espanolas (de, del, la, los, el, en, y, e)
+   - Aplicada en las 8 pestanas: Departamentos, Municipios, Dir. Territoriales, Puntos de atencion, Tipos de documento, Veredas, Comunidades Negras, Resguardos Indigenas
+   - Ejemplo: "PUERTO NARIÑO" → "Puerto Nariño", "ABEJORRAL" → "Abejorral"
+
+2. **H-010 / H-011 — Eliminar textos "undefined" y "NaN" en Encuestas (MEDIO)**
+   - Protegidos campos nullable con fallbacks `?? '—'` o `?? 0` en SesionDetalle.tsx:
+     - `ruta_entrevista`, `pregunta_codigo`, `pregunta_texto`, `valor` → `'—'`
+     - `porcentaje_completado`, `total_respuestas` → `0`
+   - Protegido `encuestador_nombre` en Encuestas.tsx → `'—'`
+
+3. **Verificacion de hallazgos ya corregidos**
+   - H-001: Login toast error (commit 4c9e541)
+   - H-007: Toast warning buscar sin documento (sesion anterior)
+   - H-009: toast.dismiss() al navegar (MainLayout.tsx)
+   - H-012: Dropdown fondo opaco (sesion anterior)
+   - H-013: Campo documento solo digitos (sesion anterior)
+   - H-017: Buscador hogares con param `search` (commit 9c5edae)
+   - H-019: Respuestas agrupadas por miembro (commit 8a89b1f)
+   - H-020: Modal confirmacion usuarios (commit 161a0eb)
+
+4. **Informe de respuesta a QA**
+   - Creado `docs/frontend/informe-qa-respuesta-2026-07-15.md` con estado de cada hallazgo
+   - Actualizado `docs/frontend/estado-actual.md` con seccion QA completa
+   - Mensaje preparado para QA y Javier
+
+5. **Identificacion de pendientes backend**
+   - H-008 (CRITICO): POST /api/victimas/buscar/ → 500 en todos los casos
+   - H-022 (BAJO): Django admin en ingles/espanol
+   - QATEST01: usuario de prueba pendiente de eliminacion
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Parametricas.tsx` | Funcion `toTitleCase()` + aplicada en 8 tabs |
+| `src/pages/SesionDetalle.tsx` | Fallbacks nullable en 6 campos (elimina "undefined"/"NaN") |
+| `src/pages/Encuestas.tsx` | Fallback `encuestador_nombre ?? '—'` |
+
+### Archivos creados
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `docs/frontend/informe-qa-respuesta-2026-07-15.md` | Informe de respuesta a QA con estado de los 23 hallazgos |
+
+### Estado del frontend al cierre
+
+| Tipo | Cantidad |
+|------|----------|
+| Paginas | 18 (16 funcionales + Login + NotFound) |
+| API clients | 11 |
+| Componentes UI | 14 |
+| Componentes layout | 3 |
+| Rutas | 16 + catch-all 404 |
+| Nav items sidebar | 10 (3 caracterizadorOnly, 1 supervisorOnly, 1 coordinadorOnly, 1 adminOnly) |
+| Tests | 9 (5 Button + 4 authStore) |
+| Fases completadas | 1 a 8 + Usuarios |
+| Hallazgos QA corregidos | 11 de 23 |
+| Hallazgos QA pendientes backend | 2 (H-008 critico, H-022 bajo) |
+| Bundle principal | 116KB |
+
 ---
 
 *Documento de seguimiento para el ingeniero lider (Javier Alexander Aguilar)*
