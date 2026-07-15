@@ -106,7 +106,7 @@ export default function SesionDetallePage() {
           </Badge>
         </InfoCard>
         <InfoCard icon={BarChart3} label="Progreso">
-          <p className="text-sm font-semibold text-gray-800">{sesion.porcentaje_completado}%</p>
+          <p className="text-sm font-semibold text-gray-800">{sesion.porcentaje_completado ?? 0}%</p>
         </InfoCard>
         <InfoCard icon={Calendar} label="Inicio" valor={new Date(sesion.fecha_inicio).toLocaleDateString('es-CO')} />
         <InfoCard
@@ -126,12 +126,12 @@ export default function SesionDetallePage() {
       <div className="card mb-6 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4">Información de la sesión</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-          <DatoItem label="Ruta de entrevista" valor={sesion.ruta_entrevista} />
+          <DatoItem label="Ruta de entrevista" valor={sesion.ruta_entrevista ?? '—'} />
           <DatoItem label="Dirección Territorial" valor={sesion.direccion_territorial_nombre ?? '—'} />
           <DatoItem label="Departamento" valor={sesion.departamento_atencion_nombre ?? '—'} />
           <DatoItem label="Municipio" valor={sesion.municipio_atencion_nombre ?? '—'} />
           <DatoItem label="Punto de atención" valor={sesion.punto_atencion_nombre ?? '—'} />
-          <DatoItem label="Total respuestas" valor={String(sesion.total_respuestas)} />
+          <DatoItem label="Total respuestas" valor={String(sesion.total_respuestas ?? 0)} />
         </dl>
         {sesion.observaciones && (
           <p className="text-sm text-gray-500 mt-4 border-t border-gov-borde pt-3">
@@ -226,12 +226,12 @@ function RespuestasAgrupadas({
                     </tr>
                     {items.map((r) => (
                       <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
-                        <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo}</td>
+                        <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo ?? '—'}</td>
                         <td className="px-4 py-3 text-gray-700 max-w-[300px]">
-                          <p className="line-clamp-2">{r.pregunta_texto}</p>
+                          <p className="line-clamp-2">{r.pregunta_texto ?? '—'}</p>
                         </td>
                         <td className="px-4 py-3 text-gray-800 font-medium max-w-[200px] truncate">
-                          {r.valor}
+                          {r.valor ?? '—'}
                         </td>
                       </tr>
                     ))}

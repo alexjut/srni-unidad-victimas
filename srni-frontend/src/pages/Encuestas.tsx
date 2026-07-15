@@ -101,7 +101,7 @@ export default function EncuestasPage() {
         </Badge>
       ),
     },
-    { key: 'encuestador', header: 'Encuestador', render: (s) => <span className="text-gray-600 text-xs">{s.encuestador_nombre}</span> },
+    { key: 'encuestador', header: 'Encuestador', render: (s) => <span className="text-gray-600 text-xs">{s.encuestador_nombre ?? '—'}</span> },
     { key: 'fecha', header: 'Fecha', render: (s) => <span className="text-gray-500 text-xs">{new Date(s.created_at).toLocaleDateString('es-CO')}</span> },
     {
       key: 'acciones',
