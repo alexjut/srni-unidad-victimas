@@ -84,7 +84,7 @@ export interface PaginatedResponse<T> {
 }
 
 export const hogaresApi = {
-  listar: (params?: { page?: number; estado?: string; busqueda?: string }) =>
+  listar: (params?: { page?: number; estado?: string; search?: string }) =>
     apiClient.get<PaginatedResponse<HogarResumen>>('/api/hogares/', { params }),
 
   detalle: (id: string) =>
