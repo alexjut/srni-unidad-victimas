@@ -39,6 +39,7 @@ export default function LoginPage() {
       return;
     }
     setCargando(true);
+    const inicio = Date.now();
     try {
       const { data: tokens } = await authApi.login({
         codigo_usuario: usuario.trim().toUpperCase(),
@@ -47,8 +48,12 @@ export default function LoginPage() {
       setTokens(tokens.access, tokens.refresh);
       const { data: perfil } = await authApi.perfil();
       setUsuario(perfil);
+      const espera = Math.max(0, 700 - (Date.now() - inicio));
+      await new Promise((r) => setTimeout(r, espera));
       navigate('/dashboard');
     } catch (err: any) {
+      const espera = Math.max(0, 700 - (Date.now() - inicio));
+      await new Promise((r) => setTimeout(r, espera));
       toast.error('La combinación de usuario y contraseña no es correcta.');
     } finally {
       setCargando(false);
