@@ -81,6 +81,9 @@ docs/analisis-bd-oracle-*.txt
 docs/analisis-bd-oracle*.md
 docs/solicitud-acceso-oracle-uariv.md
 srni-backend/scripts/analizar_bd_oracle.py
+# Migración a Oracle legacy (Agente 1/2) — fuente PL/SQL de prod y ruta de escritura.
+docs/oracle-legacy/
+srni-backend/scripts/investigar_ruta_escritura.py
 
 # QR de pruebas locales (Expo) — efímeros, no van al repo
 qr-expo*.png
