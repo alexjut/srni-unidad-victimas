@@ -39,7 +39,7 @@ export default function HogaresPage() {
   const [busquedaActiva, setBusquedaActiva] = useState('');
 
   const porPagina = 20;
-  const totalPags = Math.ceil(total / porPagina);
+  const totalPags = Math.max(1, Math.ceil(total / porPagina));
 
   async function cargar(pag: number) {
     setCargando(true);

@@ -56,7 +56,7 @@ export default function EncuestasPage() {
   const [filtroEstado, setFiltroEstado] = useState('');
 
   const porPagina = 20;
-  const totalPags = Math.ceil(total / porPagina);
+  const totalPags = Math.max(1, Math.ceil(total / porPagina));
 
   async function cargar(pag: number) {
     setCargando(true);
@@ -119,7 +119,7 @@ export default function EncuestasPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
-      <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
+      <PageHeader titulo="Encuestas" subtitulo={cargando ? 'Cargando…' : `${total} sesión(es) registradas`} />
 
       {/* Barra de filtros */}
       <div className="card shadow-soft flex flex-col sm:flex-row gap-3 mb-4">
