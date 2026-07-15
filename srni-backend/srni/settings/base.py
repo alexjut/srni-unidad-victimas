@@ -325,3 +325,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Clave AES-256 para EncryptedField personalizado (apps/victimas/fields.py)
 # En desarrollo: valor de .env; en producción: Docker Secret
 FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
+
+# --- Oracle legacy (RNIENTREVISTA) — SOLO para validación de paridad ---
+# Conexión vía oracledb (thin mode), NO es un backend de Django ORM. Se consume
+# desde los scripts/tests de validación (feat/oracle-legacy-writer). Por defecto
+# apunta al Oracle LOCAL de Docker (infra/oracle-local); nunca a producción.
+ORACLE_LEGACY = {
+    'HOST':     config('ORACLE_LEGACY_HOST', default='localhost'),
+    'PORT':     config('ORACLE_LEGACY_PORT', default=1521, cast=int),
+    'SERVICE':  config('ORACLE_LEGACY_SERVICE', default='FREEPDB1'),
+    'USER':     config('ORACLE_LEGACY_USER', default='RNIENTREVISTA'),
+    'PASSWORD': config('ORACLE_LEGACY_PASSWORD', default=''),
+}
