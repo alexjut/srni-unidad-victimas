@@ -116,9 +116,8 @@ export default function LoginPage() {
                 onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
                 placeholder="Ingrese su usuario"
                 value={usuario}
-                onChange={(e) => setUsuarioField(e.target.value.toUpperCase())}
+                onChange={(e) => setUsuarioField(e.target.value)}
                 autoComplete="username"
-                autoCapitalize="characters"
                 disabled={cargando}
               />
             </div>
