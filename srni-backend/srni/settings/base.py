@@ -336,4 +336,10 @@ ORACLE_LEGACY = {
     'SERVICE':  config('ORACLE_LEGACY_SERVICE', default='FREEPDB1'),
     'USER':     config('ORACLE_LEGACY_USER', default='RNIENTREVISTA'),
     'PASSWORD': config('ORACLE_LEGACY_PASSWORD', default=''),
+    # Usuario/perfil de SERVICIO Oracle para hogares originados en SICAV Móvil
+    # (Etapa A). PENDIENTE DE CONFIRMAR CON NEGOCIO (Oscar/UARIV): ¿existe un
+    # usuario de servicio en GIC_USUARIO o hay que solicitarlo? Sin estos valores,
+    # la ruta confirmada NO arranca (ResolverCatalogos.id_usuario_servicio lanza).
+    'USUARIO_SERVICIO_ID': config('ORACLE_USUARIO_SERVICIO_ID', default=None),
+    'PERFIL_SERVICIO_ID':  config('ORACLE_PERFIL_SERVICIO_ID', default=None),
 }
