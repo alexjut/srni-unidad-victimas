@@ -10,7 +10,7 @@ import pytest
 
 from apps.sincronizacion.oracle import catalogos
 from apps.sincronizacion.oracle.mapeo import (
-    MapeoDesconocido, MapeoPendienteNegocio, ResolverCatalogos,
+    CampoOrigenFaltante, MapeoDesconocido, MapeoPendienteNegocio, ResolverCatalogos,
 )
 
 
@@ -71,10 +71,52 @@ def test_relac_vacio_lanza():
         _r().resolver_relac("")
 
 
-# ── catálogo 4b — tipo de víctima (sin fuente aún → pendiente) ───────────────
-def test_t_victima_pendiente_lanza():
+# ── catálogo 4b — tipo de víctima (el campo origen NO existe en el modelo) ───
+class _MiembroSinCampo:
+    """Como el MiembroHogar REAL: no define `tipo_victima`."""
+    parentesco = "HIJO_A"
+
+
+class _MiembroConCampo:
+    """Hipotético: si algún día el modelo tuviera el campo."""
+    tipo_victima = "DIRECTA"
+
+
+def test_t_victima_sin_campo_lanza_campo_faltante():
+    # MiembroHogar no define tipo_victima: debe fallar señalando el CAMPO, no el
+    # catálogo Oracle. Antes el getattr(..., None) lo disfrazaba de "sin mapeo None".
+    with pytest.raises(CampoOrigenFaltante) as exc:
+        _r().resolver_t_victima(_MiembroSinCampo())
+    assert "tipo_victima" in str(exc.value)
+    assert "no define el campo" in str(exc.value)
+
+
+def test_campo_faltante_es_mapeo_desconocido():
+    # Subclase: los `except MapeoDesconocido` existentes lo siguen atrapando.
+    assert issubclass(CampoOrigenFaltante, MapeoDesconocido)
+
+
+def test_t_victima_sin_campo_no_devuelve_default_silencioso():
+    # El pecado a evitar: devolver None calladamente como si fuera un valor.
     with pytest.raises(MapeoDesconocido):
-        _r().resolver_t_victima("DIRECTA")
+        _r().resolver_t_victima(_MiembroSinCampo())
+
+
+def test_t_victima_dry_run_marca_la_causa_real():
+    # En dry-run no se rompe el flujo, pero el marcador dice POR QUÉ falta: el
+    # campo no existe. No un ‹PEND:TIPO_VICTIMA(None)› que aparenta hueco de catálogo.
+    marcador = _r(estricto=False).resolver_t_victima(_MiembroSinCampo())
+    assert marcador == "‹PEND:T_VICTIMA(MiembroHogar SIN campo tipo_victima)›"
+    assert "None" not in marcador
+
+
+def test_t_victima_con_campo_sigue_siendo_pendiente_de_negocio():
+    # Aunque el campo existiera, TIPO_VICTIMA está vacío a propósito (P8, Oscar):
+    # el fallo pasa a ser de CATÁLOGO, y ya no de campo faltante.
+    with pytest.raises(MapeoDesconocido) as exc:
+        _r().resolver_t_victima(_MiembroConCampo())
+    assert not isinstance(exc.value, CampoOrigenFaltante)
+    assert "PER_TIPOVICTIMA" in str(exc.value)
 
 
 # ── catálogo 1 — usuario/perfil de servicio (pendiente de negocio) ───────────
@@ -91,19 +133,137 @@ def test_usuario_servicio_dry_run_marcador():
     assert _r(estricto=False).id_usuario_servicio() == "‹PEND:USUARIO_SERVICIO_ID(negocio)›"
 
 
-# ── catálogo 5 — territorio (aparte por volumen → pendiente) ─────────────────
-class _Sesion:
-    class direccion_territorial: codigo = "DT-X"
-    class departamento_atencion: codigo_dane = "05"
-    class municipio_atencion: codigo_dane = "05001"
-    class punto_atencion: codigo = "PA-1"
+# ── catálogo 5 — territorio (cruce por nombre contra el crosswalk REAL) ──────
+class _Nombrado:
+    def __init__(self, nombre): self.nombre = nombre
 
 
-def test_territorio_estricto_lanza():
+def _sesion(dt="DIRECCION TERRITORIAL CENTRAL", depto="TOLIMA",
+            punto="JORNADAS DE ATENCION Y/O FERIAS DE SERVICIO", municipio="ALVARADO"):
+    """Sesión mínima con solo lo que mira resolver_territorio (los 4 nombres)."""
+    class _S:
+        direccion_territorial = _Nombrado(dt) if dt is not None else None
+        departamento_atencion = _Nombrado(depto) if depto is not None else None
+        punto_atencion = _Nombrado(punto) if punto is not None else None
+        municipio_atencion = _Nombrado(municipio) if municipio is not None else None
+    return _S()
+
+
+def test_territorio_resuelve_los_cuatro_ids_reales():
+    # Fila real del volcado: DT CENTRAL / TOLIMA / JORNADAS / ALVARADO.
+    t = _r().resolver_territorio(_sesion())
+    assert t == {"id_dt": 7, "id_depto": 30, "id_pt": 13, "id_ma": 32}
+
+
+def test_territorio_devuelve_cuatro_claves_no_tres():
+    # IDDEPTOATEN es columna propia de GIC_N_RELACION_DT_PUNTO: si falta, el
+    # territorio queda incompleto y los reportes se rompen (bug histórico).
+    assert set(_r().resolver_territorio(_sesion())) == {"id_dt", "id_depto", "id_pt", "id_ma"}
+
+
+def test_territorio_ids_son_surrogate_no_dane():
+    # TOLIMA=30 (DANE 73) y ALVARADO=32 (DANE 73026): confirma que NO son DANE.
+    t = _r().resolver_territorio(_sesion())
+    assert (t["id_depto"], t["id_ma"]) == (30, 32)
+
+
+def test_territorio_normaliza_acentos_y_espacios():
+    # SICAV acentúa ('ATENCIÓN') y Oracle no; Oracle además trae espacios de sobra.
+    t = _r().resolver_territorio(
+        _sesion(dt="  dirección territorial central ",
+                punto="Jornadas de Atención y/o Ferias de Servicio")
+    )
+    assert t["id_dt"] == 7
+
+
+def test_territorio_cruza_enie():
+    # NARIÑO existe con Ñ en ambos lados; el plegado de diacríticos es simétrico.
+    # Fila real del volcado: DT NARIÑO(15) / NARIÑO(23) / IPIALES(220) / IPIALES(446).
+    t = _r().resolver_territorio(
+        _sesion(dt="DIRECCION TERRITORIAL NARIÑO", depto="NARIÑO",
+                punto="IPIALES", municipio="IPIALES")
+    )
+    assert t == {"id_dt": 15, "id_depto": 23, "id_pt": 220, "id_ma": 446}
+
+
+def test_territorio_desambigua_municipio_repetido():
+    # BUENAVISTA existe con 4 ids distintos; el contexto (DT+depto+punto) decide.
+    # Si el cruce fuera por columna suelta, esto devolvería un id al azar.
+    t = _r().resolver_territorio(
+        _sesion(dt="DIRECCION TERRITORIAL SUCRE", depto="SUCRE",
+                punto="JORNADAS DE ATENCION Y/O FERIAS DE SERVICIO",
+                municipio="BUENAVISTA")
+    )
+    otro = _r().resolver_territorio(
+        _sesion(dt="DIRECCION TERRITORIAL CORDOBA", depto="CORDOBA",
+                punto="JORNADAS DE ATENCION Y/O FERIAS DE SERVICIO",
+                municipio="BUENAVISTA")
+    )
+    assert t["id_ma"] != otro["id_ma"]
+
+
+def test_territorio_punto_ambiguo_se_desambigua_por_dt():
+    # 'JORNADAS...' tiene 39 ids en Oracle (uno por DT): el id depende de la DT.
+    central = _r().resolver_territorio(_sesion())
+    antioquia = _r().resolver_territorio(
+        _sesion(dt="DIRECCION TERRITORIAL ANTIOQUIA", depto="ANTIOQUIA",
+                municipio="MEDELLIN")
+    )
+    assert central["id_pt"] != antioquia["id_pt"]
+
+
+@pytest.mark.parametrize("kwargs,fragmento", [
+    ({"dt": "DIRECCION TERRITORIAL INEXISTENTE"}, "Dirección Territorial"),
+    ({"depto": "ATLANTICO"}, "Departamento de atención"),   # no cuelga de DT CENTRAL
+    ({"punto": "PUNTO QUE NO EXISTE"}, "Punto de atención"),
+    ({"municipio": "MUNICIPIO QUE NO EXISTE"}, "Municipio de atención"),
+])
+def test_territorio_error_dice_en_que_nivel_fallo(kwargs, fragmento):
+    with pytest.raises(MapeoDesconocido) as exc:
+        _r().resolver_territorio(_sesion(**kwargs))
+    assert fragmento in str(exc.value)
+    assert "Opciones Oracle" in str(exc.value)  # el error es accionable
+
+
+def test_territorio_sesion_sin_punto_lanza_claro():
+    with pytest.raises(MapeoDesconocido) as exc:
+        _r().resolver_territorio(_sesion(punto=None))
+    assert "punto_atencion" in str(exc.value)
+
+
+def test_territorio_placeholder_sicav_sin_equivalente_lanza():
+    # El catálogo de puntos de SICAV es placeholder: 'Centro Regional Medellín' no
+    # existe en Oracle. Debe fallar claro, no aproximar.
     with pytest.raises(MapeoDesconocido):
-        _r().resolver_territorio(_Sesion())
+        _r().resolver_territorio(
+            _sesion(dt="DIRECCION TERRITORIAL ANTIOQUIA", depto="ANTIOQUIA",
+                    punto="Centro Regional Medellín", municipio="MEDELLIN")
+        )
 
 
-def test_territorio_dry_run_marcadores():
-    t = _r(estricto=False).resolver_territorio(_Sesion())
-    assert t["id_dt"].startswith("‹PEND:TERRITORIO")
+def test_territorio_dry_run_marca_los_cuatro():
+    t = _r(estricto=False).resolver_territorio(_sesion(dt="NO EXISTE"))
+    assert set(t) == {"id_dt", "id_depto", "id_pt", "id_ma"}
+    assert all(str(v).startswith("‹PEND:TERRITORIO") for v in t.values())
+
+
+# ── catálogo 6 — instrumento/respuestas (sin dato Oracle → pendiente) ────────
+class _Instrumento:
+    codigo = "TERRITORIAL"
+
+
+def test_ins_idinstrumento_pendiente_lanza():
+    with pytest.raises(MapeoPendienteNegocio) as exc:
+        _r().resolver_ins_idinstrumento(_Instrumento())
+    assert "INS_IDINSTRUMENTO" in str(exc.value)
+
+
+def test_ins_idinstrumento_dry_run_marcador():
+    assert _r(estricto=False).resolver_ins_idinstrumento(_Instrumento()) == \
+        "‹PEND:INS_IDINSTRUMENTO(TERRITORIAL)›"
+
+
+def test_tipo_pregunta_pendiente_lanza():
+    class _P: tipo = "RADIO"
+    with pytest.raises(MapeoPendienteNegocio):
+        _r().resolver_tipo_pregunta(_P())

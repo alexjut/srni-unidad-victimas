@@ -9,6 +9,10 @@ Regla: si un código SICAV no tiene entrada aquí, el resolver LANZA MapeoDescon
 (modo estricto/confirmado). NUNCA se inventa un valor por defecto.
 Claves = valor SICAV (código del modelo Django). Valores = id Oracle real.
 """
+import functools
+import json
+import pathlib
+import unicodedata
 
 # ── Catálogo 2 — tipo de caracterización (GIC_TIPOCARACTERIZACION) ───────────
 # Oracle distingue solo 1=INDIVIDUO / 2=HOGAR (NO por instrumento). GIC_INSERT_HOGAR1
@@ -51,6 +55,64 @@ PARENTESCO = {
 # ⚠️ PENDIENTE: no se identificó tabla catálogo ni campo SICAV de origen. Vacío.
 TIPO_VICTIMA: dict = {}
 
+# ── Catálogo 5 — territorio (GIC_N_DT_PUNTOS_ATENCION) ───────────────────────
+# Las 1370 filas del volcado real viven en catalogos_oracle.json → clave 'dt_puntos'.
+# Cada fila es la combinación completa DT × departamento × punto × municipio, con
+# los cuatro ids SURROGATE de Oracle (NO son DANE: TOLIMA=30, ALVARADO=32).
+#
+# Por qué se cruza por NOMBRE y por la FILA COMPLETA (no columna a columna):
+# - Los ids son surrogate ⇒ el único puente estable con SICAV es el nombre.
+# - Los nombres NO son únicos por separado: 68 nombres de municipio se repiten con
+#   ids distintos (BUENAVISTA tiene 4) y 'JORNADAS DE ATENCION Y/O FERIAS DE
+#   SERVICIO' existe con 39 ids (uno por DT). Cruzar cada columna suelta produciría
+#   el id equivocado en silencio.
+# - En cambio la TUPLA (dt, departamento, punto, municipio) SÍ es única: verificado
+#   1370/1370 combinaciones distintas, 0 ambiguas. Ese es el eje del cruce.
+ARCHIVO_CROSSWALK = pathlib.Path(__file__).with_name("catalogos_oracle.json")
+
+
+def normalizar_nombre(valor: str) -> str:
+    """
+    Forma canónica para comparar nombres SICAV ↔ Oracle.
+
+    Hace falta porque los dos lados difieren en cosas que no son semánticas:
+    - Oracle trae espacios de sobra ('DIRECCION TERRITORIAL ANTIOQUIA ', y la DT 14
+      aparece con uno y con dos espacios finales).
+    - SICAV acentúa y Oracle no ('JORNADAS DE ATENCIÓN…' vs 'JORNADAS DE ATENCION…').
+    Se quitan diacríticos en AMBOS lados, así que el plegado es simétrico (NARIÑO y
+    NARINO colapsan al mismo valor a los dos lados: no se pierde el cruce).
+    """
+    texto = unicodedata.normalize("NFD", (valor or "").strip().upper())
+    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
+    return " ".join(texto.split())
+
+
+@functools.lru_cache(maxsize=1)
+def cargar_dt_puntos() -> tuple:
+    """Filas de GIC_N_DT_PUNTOS_ATENCION con sus nombres ya normalizados (cacheado)."""
+    with open(ARCHIVO_CROSSWALK, encoding="utf-8") as fh:
+        datos = json.load(fh)
+    filas = []
+    for fila in datos["dt_puntos"]:
+        filas.append({
+            "iddt": fila["iddt"],
+            "iddepartamento": fila["iddepartamento"],
+            "idpuntoatencion": fila["idpuntoatencion"],
+            "idmunicipio": fila["idmunicipio"],
+            # Nombres tal cual vienen (para mensajes de error legibles)…
+            "dt": fila["dt"].strip(),
+            "departamento": fila["departamento"].strip(),
+            "punto": fila["punto"].strip(),
+            "municipio": fila["municipio"].strip(),
+            # …y normalizados (para comparar).
+            "_dt": normalizar_nombre(fila["dt"]),
+            "_departamento": normalizar_nombre(fila["departamento"]),
+            "_punto": normalizar_nombre(fila["punto"]),
+            "_municipio": normalizar_nombre(fila["municipio"]),
+        })
+    return tuple(filas)
+
+
 # Nombre canónico de cada catálogo (para mensajes de error y auditoría).
 NOMBRES = {
     "tipo_caracterizacion": "GIC_TIPOCARACTERIZACION.TPOCRN_ID",
@@ -58,4 +120,7 @@ NOMBRES = {
     "parentesco": "GIC_PARENTESCOGENEALOGICO.PRST_ID",
     "tipo_victima": "GIC_PERSONA.PER_TIPOVICTIMA",
     "territorio": "GIC_N_DT_PUNTOS_ATENCION",
+    "instrumento": "GIC_N_INSTRUMENTOXPREG.INS_IDINSTRUMENTO",
+    "res_idrespuesta": "GIC_N_RESPUESTAS.RES_IDRESPUESTA",
+    "tipo_pregunta": "GIC_N_RESPUESTASENCUESTA.RXP_TIPOPREGUNTA",
 }

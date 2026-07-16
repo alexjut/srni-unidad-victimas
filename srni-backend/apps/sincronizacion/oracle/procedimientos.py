@@ -97,7 +97,11 @@ SP_SET_RESPUESTAS_DE_ENCUESTA = Procedimiento(
         Param("PCOD_HOGAR", Dir.IN),
         Param("PPER_IDPERSONA", Dir.IN),
         Param("PRES_IDRESPUESTA", Dir.IN),
-        Param("PRXP_TEXTORESPUESTA", Dir.IN),  # texto libre: puede ser PII según pregunta
+        # Texto libre de la respuesta. Se redacta SIEMPRE: en una caracterización de
+        # víctimas el texto libre puede traer nombres, direcciones o relatos de los
+        # hechos, y desde aquí no se sabe qué pregunta lo originó. Se prefiere perder
+        # detalle en la auditoría antes que filtrar PII al ledger o a la consola.
+        Param("PRXP_TEXTORESPUESTA", Dir.IN, pii=True),
         Param("PRXP_TIPOPREGUNTARESPUESTA", Dir.IN),
         Param("PINS_IDINSTRUMENTO", Dir.IN),
         Param("PUSU_USUARIOCREACION", Dir.IN),
@@ -106,12 +110,25 @@ SP_SET_RESPUESTAS_DE_ENCUESTA = Procedimiento(
     ],
 )
 
-# Cascada territorial: cada uno escribe GIC_N_RELACION_DT_PUNTO por efecto colateral
-# y devuelve un REF CURSOR que aquí se ignora (solo interesa la escritura).
+# ── Cascada territorial ──────────────────────────────────────────────────────
+# Son procedures de UI (el front web los llama para llenar cada combo), pero cada
+# uno escribe UNA columna de GIC_N_RELACION_DT_PUNTO por efecto colateral y devuelve
+# un REF CURSOR con las opciones del nivel siguiente, que aquí se ignora: solo
+# interesa la escritura. Orden y semántica verificados en el package body
+# (líneas 3069-3252); ver mapeo.binds_territorio para el detalle y las trampas.
+#
+#   procedure                  | recibe        | escribe
+#   GIC_SP_OBDEPTOPORDT        | id de DT      | IDDT        (+ INSERT de la fila)
+#   GIC_SP_OBTPUNTOATECION     | id de DEPTO ⚠ | IDDEPTOATEN
+#   GIC_SP_OBMUNICIPIOATECION  | id de PUNTO   | IDPUNTOATEN
+#   GIC_SP_GUARDAMUNATEN       | id de MUNIC.  | IDMUNATEN
 GIC_SP_OBDEPTOPORDT = Procedimiento(
     "GIC_N_CARACTERIZACION", "GIC_SP_OBDEPTOPORDT",
     [Param("PHOGAR_CODIGO", Dir.IN), Param("ID_DT", Dir.IN), Param("CUR_OUT", Dir.OUT)],
 )
+# ⚠️ El formal se llama ID_DT pero el cuerpo hace `SET iddeptoaten = Id_dt` y filtra
+# `T.IDDEPARTAMENTO = pId_DT`: espera el id de DEPARTAMENTO. El nombre miente; el
+# bind debe conservarlo (se invoca por nombre formal) pero el VALOR es el depto.
 GIC_SP_OBTPUNTOATECION = Procedimiento(
     "GIC_N_CARACTERIZACION", "GIC_SP_OBTPUNTOATECION",
     [Param("PHOGAR_CODIGO", Dir.IN), Param("ID_DT", Dir.IN), Param("CUR_OUT", Dir.OUT)],
