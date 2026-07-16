@@ -83,9 +83,10 @@ docs/solicitud-acceso-oracle-uariv.md
 srni-backend/scripts/analizar_bd_oracle.py
 # Migración a Oracle legacy (Agente 1/2) — fuente PL/SQL de prod y ruta de escritura.
 docs/oracle-legacy/*
-# Excepción: el setup del Oracle local NO es sensible → sí se versiona.
-# (se usa /* arriba, no el dir, para poder re-incluir este archivo)
+# Excepciones: documentos de traspaso/arquitectura, sin datos de prod → sí se versionan.
+# (se usa /* arriba, no el dir, para poder re-incluir estos archivos)
 !docs/oracle-legacy/oracle-local-setup.md
+!docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
 srni-backend/scripts/investigar_ruta_escritura.py
 srni-backend/scripts/validar_paridad_pruebas.py
 srni-backend/scripts/verificar_factibilidad_expdp.py
