@@ -3,7 +3,7 @@
  * Tabla + crear/editar + activar/desactivar + resetear contraseña.
  */
 import { useEffect, useRef, useState } from 'react';
-import { UserCog, Plus, KeyRound, PowerOff, Power, Pencil, Search, ChevronDown } from 'lucide-react';
+import { UserCog, Plus, KeyRound, PowerOff, Power, Pencil, Search, ChevronDown, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -76,6 +76,10 @@ export default function UsuariosPage() {
   // Modal confirmación activar/desactivar
   const [toggleUser, setToggleUser] = useState<Usuario | null>(null);
   const [toggling, setToggling] = useState(false);
+
+  // Modal confirmación eliminar
+  const [deleteUser, setDeleteUser] = useState<Usuario | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function cargar(
     pag: number,
@@ -185,6 +189,22 @@ export default function UsuariosPage() {
       .finally(() => setToggling(false));
   }
 
+  function confirmarEliminar() {
+    if (!deleteUser) return;
+    setDeleting(true);
+    usuariosApi.eliminar(deleteUser.id)
+      .then(() => {
+        toast.success('Usuario eliminado');
+        setDeleteUser(null);
+        cargar(pagina);
+      })
+      .catch((e) => {
+        const d = e?.response?.data;
+        toast.error(d?.detail || d?.message || 'No se pudo eliminar el usuario.');
+      })
+      .finally(() => setDeleting(false));
+  }
+
   function guardarReset() {
     if (!resetUser) return;
     if (nuevaPass.length < 8) { toast.error('Mínimo 8 caracteres.'); return; }
@@ -255,7 +275,7 @@ export default function UsuariosPage() {
       key: 'acciones',
       header: 'Acciones',
       className: 'w-32',
-      render: (u) => <MenuAcciones usuario={u} onEditar={abrirEditar} onReset={(usr) => { setResetUser(usr); setNuevaPass(''); }} onToggle={setToggleUser} />,
+      render: (u) => <MenuAcciones usuario={u} onEditar={abrirEditar} onReset={(usr) => { setResetUser(usr); setNuevaPass(''); }} onToggle={setToggleUser} onEliminar={setDeleteUser} />,
     },
   ];
 
@@ -446,6 +466,45 @@ export default function UsuariosPage() {
         )}
       </Modal>
 
+      {/* Modal confirmación eliminar */}
+      <Modal
+        abierto={!!deleteUser}
+        onCerrar={() => setDeleteUser(null)}
+        titulo="Eliminar usuario"
+        acciones={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteUser(null)}>Cancelar</Button>
+            <Button
+              variant="danger"
+              onClick={confirmarEliminar}
+              loading={deleting}
+            >
+              Eliminar
+            </Button>
+          </>
+        }
+      >
+        {deleteUser && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gov-rojoTenue border border-red-200">
+              <div className="w-9 h-9 rounded-full bg-gov-rojo flex items-center justify-center text-white text-sm font-bold shrink-0">
+                {deleteUser.nombre_completo.charAt(0)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{deleteUser.nombre_completo}</p>
+                <p className="text-xs font-mono text-gov-azul">{deleteUser.codigo_usuario}</p>
+                <Badge variant={PERFIL_BADGE[deleteUser.perfil_codigo] ?? 'gris'} className="mt-1">
+                  {deleteUser.perfil_nombre || '—'}
+                </Badge>
+              </div>
+            </div>
+            <Alert variant="error">
+              Esta acción es irreversible. El usuario y todos sus datos asociados serán eliminados permanentemente del sistema.
+            </Alert>
+          </div>
+        )}
+      </Modal>
+
       {/* Modal resetear contraseña */}
       <Modal
         abierto={!!resetUser}
@@ -490,11 +549,13 @@ function MenuAcciones({
   onEditar,
   onReset,
   onToggle,
+  onEliminar,
 }: {
   usuario: Usuario;
   onEditar: (u: Usuario) => void;
   onReset: (u: Usuario) => void;
   onToggle: (u: Usuario) => void;
+  onEliminar: (u: Usuario) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -516,6 +577,12 @@ function MenuAcciones({
       icon: usuario.activo ? PowerOff : Power,
       onClick: () => onToggle(usuario),
       className: usuario.activo ? 'text-gov-rojo' : 'text-gov-verde',
+    },
+    {
+      label: 'Eliminar usuario',
+      icon: Trash2,
+      onClick: () => onEliminar(usuario),
+      className: 'text-gov-rojo',
     },
   ];
 

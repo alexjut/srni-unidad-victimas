@@ -228,7 +228,11 @@ function RespuestasAgrupadas({
                       <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
                         <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo ?? '—'}</td>
                         <td className="px-4 py-3 text-gray-700 max-w-[300px]">
-                          <p className="line-clamp-2">{r.pregunta_texto ?? '—'}</p>
+                          <p className="line-clamp-2">
+                            {r.miembro && miembrosMap[r.miembro]
+                              ? (r.pregunta_texto ?? '—').replace(/\.{3}|…/, miembrosMap[r.miembro])
+                              : (r.pregunta_texto ?? '—')}
+                          </p>
                         </td>
                         <td className="px-4 py-3 text-gray-800 font-medium max-w-[200px] truncate">
                           {r.valor ?? '—'}
