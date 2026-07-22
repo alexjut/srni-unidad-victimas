@@ -87,6 +87,10 @@ docs/oracle-legacy/*
 # (se usa /* arriba, no el dir, para poder re-incluir estos archivos)
 !docs/oracle-legacy/oracle-local-setup.md
 !docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+# Export del catálogo de preguntas/respuestas de Oracle (Query A v2): es el ORIGEN de
+# `respuestas_oracle.json`, y sin él ese JSON no se puede regenerar ni auditar. Sin PII:
+# son textos de preguntas y opciones del instrumento, no respuestas de nadie.
+!docs/oracle-legacy/query_a_v2_*.tsv
 srni-backend/scripts/investigar_ruta_escritura.py
 srni-backend/scripts/validar_paridad_pruebas.py
 srni-backend/scripts/verificar_factibilidad_expdp.py
@@ -125,3 +129,6 @@ image*.png
 infra/oracle-local/.secret-oracle-prod
 # Logs de export/import Data Pump (listan nombres de objetos del esquema prod).
 infra/oracle-local/dumps/*.log
+
+# Credenciales de PROD Oracle (solo local, NUNCA versionar)
+infra/oracle-local/.env.prod

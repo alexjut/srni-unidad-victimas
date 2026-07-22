@@ -67,10 +67,25 @@ def test_bloques_plsql_invocan_por_nombre_formal():
     assert res.ejecutado is False  # DRY-RUN no ejecuta
 
 
-# ── RESPUESTA — ids pendientes, nunca inventados ─────────────────────────────
+# ── RESPUESTA — ids reales donde los hay, pendientes donde no ────────────────
+class _Opciones:
+    """Stub del related manager: solo se usa .filter(valor=...).first()."""
+    def __init__(self, *o): self._o = list(o)
+    def filter(self, valor): return _Opciones(*[x for x in self._o if x.valor == valor])
+    def first(self): return self._o[0] if self._o else None
+
+
+class _Opcion:
+    def __init__(self, valor, etiqueta):
+        self.valor, self.etiqueta = valor, etiqueta
+
+
 class _Pregunta:
+    """Pregunta 5 'Zona de residencia' del volcado real (opción 8 = Cabecera)."""
     tipo = "RADIO"
-    opciones = None
+    id_preg = 5
+    codigo_externo = "Z6"
+    opciones = _Opciones(_Opcion("1", "Cabecera municipal (donde está la alcaldía)"))
 
 
 class _Respuesta:
@@ -95,18 +110,24 @@ def test_respuesta_nivel_persona_usa_el_mapa_del_paso_persona():
         _R(), {"abc": 555}, ResolverCatalogos(estricto=True)) == 555
 
 
-def test_binds_respuesta_marcan_pendientes_en_dry_run():
+def test_binds_respuesta_mezcla_ids_reales_y_pendientes_en_dry_run():
     binds = mapeo.binds_respuesta(
         _Respuesta(), user=None, catalogos=ResolverCatalogos(estricto=False),
         hog_codigo="HOG-1", per_idpersona=555, instrumento=type("I", (), {"codigo": "TERRITORIAL"})(),
     )
-    # Los cinco ids que hoy no se pueden resolver salen marcados, no inventados.
-    for clave in ("pres_idrespuesta", "pins_idinstrumento",
-                  "prxp_tipopreguntarespuesta", "pper_idpreguntapadre", "pbandera"):
-        assert str(binds[clave]).startswith("‹PEND:"), clave
-    # …y lo que sí se sabe, va real.
+    # Ya resueltos con dato real de Oracle:
+    assert binds["pins_idinstrumento"] == 1        # único instrumento (Query B)
     assert binds["pcod_hogar"] == "HOG-1"
     assert binds["pper_idpersona"] == 555
+    # El cruce de la respuesta resuelve limpio y su escribibilidad está confirmada
+    # por la columna ESCRIBIBLE del export (antes esto era ‹PEND:ESCRIBIBLE(res=8)›).
+    assert binds["pres_idrespuesta"] == 8
+    # RXP_TIPOPREGUNTA se copia del catálogo de Oracle: la pregunta 5 es de hogar ⇒ GE.
+    # (Antes era ‹PEND:RXP_TIPOPREGUNTA(RADIO)›, mandando el widget de SICAV.)
+    assert binds["prxp_tipopreguntarespuesta"] == "GE"
+    # Los que siguen sin dato/decisión, marcados y nunca inventados:
+    for clave in ("pper_idpreguntapadre", "pbandera"):
+        assert str(binds[clave]).startswith("‹PEND:"), clave
 
 
 def test_pbandera_no_asume_el_valor_destructivo():

@@ -57,19 +57,34 @@ TERRITORIO_DEMO = {
 }
 IDS_ORACLE_ESPERADOS = {"id_dt": 7, "id_depto": 30, "id_pt": 13, "id_ma": 32}
 
-# Preguntas demo: una por nivel. `id_resp_vivanto` son ID_RESP reales del Diccionario
-# V8 (4599=Mujer, 4572=Cabecera municipal) — son la HIPÓTESIS de RES_IDRESPUESTA que
-# el Escalón 1 tiene que confirmar contra GIC_N_RESPUESTAS.
+# Preguntas demo: una por nivel, calcadas del catálogo REAL de Oracle
+# (respuestas_oracle.json) para que el paso RESPUESTA resuelva ids de verdad.
+#
+# `id_preg` es el puente verificado hacia GIC_N_PREGUNTAS.PRE_IDPREGUNTA (14/14 ids,
+# 52/59 textos), y la `etiqueta` debe cruzar LITERALMENTE con RES_RESPUESTA de Oracle
+# —incluido el paréntesis de "(donde está la alcaldía)"— porque el cruce de opciones
+# es por texto normalizado y aquí no se hace fuzzy matching.
+#
+# ⚠️ `id_resp_vivanto` se deja a propósito con el valor del Diccionario V8 (4599=Mujer,
+# 4572=Cabecera) AUNQUE NO sea el RES_IDRESPUESTA de Oracle (69 y 8): así el escenario
+# sigue reproduciendo la trampa refutada, y el resolver demuestra que NO lo usa.
 PREGUNTAS_DEMO = [
     {
+        # Oracle: pregunta 24 'Sexo' → 68 Hombre / 69 Mujer / 968 Intersexual.
         "capitulo": ("DEMO_P", "Demo — nivel persona", "PERSONA", 90),
         "codigo_externo": "DEMO_SEXO", "texto": "Sexo", "nivel": "PERSONA",
+        "id_preg": 24,
         "opcion": {"valor": "2", "etiqueta": "Mujer", "id_resp_vivanto": 4599},
+        "res_idrespuesta_esperado": 69,
     },
     {
+        # Oracle: pregunta 5 'Zona de residencia' → 8 Cabecera / 9 Centro poblado / 10 Rural.
         "capitulo": ("DEMO_H", "Demo — nivel hogar", "HOGAR", 91),
-        "codigo_externo": "DEMO_ZONA", "texto": "Zona de la vivienda", "nivel": "HOGAR",
-        "opcion": {"valor": "1", "etiqueta": "Cabecera municipal", "id_resp_vivanto": 4572},
+        "codigo_externo": "DEMO_ZONA", "texto": "Zona de residencia", "nivel": "HOGAR",
+        "id_preg": 5,
+        "opcion": {"valor": "1", "etiqueta": "Cabecera municipal (donde está la alcaldía)",
+                   "id_resp_vivanto": 4572},
+        "res_idrespuesta_esperado": 8,
     },
 ]
 
@@ -117,6 +132,7 @@ class Command(BaseCommand):
             )
 
         self._verificar_cruce(sesion)
+        self._verificar_respuestas(sesion)
         self.stdout.write(self.style.SUCCESS(
             f"Hogar demo listo: {hogar.codigo_hogar} — {hogar.miembros.count()} miembro(s), "
             f"{sesion.respuestas.count()} respuesta(s)."
@@ -199,7 +215,9 @@ class Command(BaseCommand):
         pregunta, _ = Pregunta.objects.update_or_create(
             capitulo=capitulo, codigo_externo=spec["codigo_externo"],
             defaults={"variable_bd": spec["codigo_externo"], "texto": spec["texto"],
-                      "tipo": "RADIO", "nivel": spec["nivel"], "orden": 1},
+                      "tipo": "RADIO", "nivel": spec["nivel"], "orden": 1,
+                      # El puente hacia GIC_N_PREGUNTAS.PRE_IDPREGUNTA.
+                      "id_preg": spec["id_preg"]},
         )
         opcion = spec["opcion"]
         OpcionRespuesta.objects.update_or_create(
@@ -226,4 +244,28 @@ class Command(BaseCommand):
                 f"El territorio cruza pero a ids inesperados: {ids} != "
                 f"{IDS_ORACLE_ESPERADOS}. ¿Cambió catalogos_oracle.json?"
             )
-        self.stdout.write(f"  ids Oracle verificados: {ids}")
+        self.stdout.write(f"  territorio → ids Oracle verificados: {ids}")
+
+    def _verificar_respuestas(self, sesion):
+        """
+        Comprueba que las respuestas sembradas cruzan al RES_IDRESPUESTA esperado.
+
+        Mismo criterio que el territorio: si el escenario deja de cruzar, mejor saberlo
+        aquí. Se resuelve en modo NO estricto porque hoy la escribibilidad no está
+        verificada (faltan las 153 huérfanas de la Query C2), así que lo que se afirma
+        es el CRUCE, no que ya se pueda escribir.
+        """
+        from apps.sincronizacion.oracle.mapeo import ResolverCatalogos
+        resolver = ResolverCatalogos(estricto=False)
+        esperados = {s["codigo_externo"]: s["res_idrespuesta_esperado"] for s in PREGUNTAS_DEMO}
+        for respuesta in sesion.respuestas.select_related("pregunta"):
+            codigo = respuesta.pregunta.codigo_externo
+            resuelto = resolver.resolver_res_idrespuesta(respuesta)
+            esperado = esperados[codigo]
+            if str(esperado) not in str(resuelto):
+                raise CommandError(
+                    f"La respuesta de {codigo} no cruza al RES_IDRESPUESTA esperado "
+                    f"({esperado}): resolvió {resuelto!r}. ¿Cambió respuestas_oracle.json "
+                    f"o la etiqueta de la opción?"
+                )
+            self.stdout.write(f"  respuesta {codigo:<10} → RES_IDRESPUESTA={esperado} ({resuelto})")

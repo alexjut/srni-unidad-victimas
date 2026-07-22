@@ -9,6 +9,76 @@
 
 ---
 
+## 0. Actualización 2026-07-22 — el catálogo COMPLETO ya está en el Oracle local
+
+**Se cerró el bloqueo #1 (catálogo truncado).** En vez de reexportar por el cliente SQL,
+se trajo el catálogo entero desde prod al Oracle **local**:
+
+- **Método (cero footprint en prod):** `SELECT` directo de las 8 tablas de **catálogo**
+  (sin PII) desde `30.0.1.9/ENTREVISTARN` (solo lectura) e `INSERT` en el Oracle local.
+  No se creó `.dmp`, ni job, ni archivo en el server. Script reproducible:
+  `srni-backend/scripts/cargar_catalogo_local.py` (lee `infra/oracle-local/.env.prod`,
+  gitignored). **No** se trajo `GIC_N_RESPUESTASENCUESTA` (respuestas reales = sensible).
+- **Cargado (9.316 filas, todas de definición):** `GIC_N_PREGUNTAS` 1108,
+  `GIC_N_RESPUESTAS` 3686, `GIC_N_INSTRUMENTOXPREG` 903, `GIC_N_INSTRUMENTOXRESP` 3533,
+  `GIC_INSTRUMENTO` 1, `GIC_TEMA` 69, `GIC_TIPOCARACTERIZACION` 2, `GIC_TIPODOC` 14.
+- **`respuestas_oracle.json` REGENERADO → `cobertura: COMPLETO`** (antes: truncado a 200):
+  **902 preguntas / 3069 respuestas / 43 huérfanas**. Export crudo versionado en
+  `docs/oracle-legacy/query_a_v2_completo.tsv`. Comando:
+  `generar_catalogo_respuestas ../docs/oracle-legacy/query_a_v2_completo.tsv --fecha 2026-07-22`
+  (en Windows, con `PYTHONUTF8=1` o la consola revienta al imprimir `⇒`).
+- **Confirmado con dato completo (no muestra):**
+  - **Parentesco (preg 28):** 6 escribibles (`79,80,81,84,906,912`) = las 6 del manual =
+    las 6 de SICAV; 7 huérfanas. **Falsa alarma cerrada, ahora con catálogo completo.**
+    ⇒ el correo que escala esto como "defecto activo" hay que **corregirlo**, no ejecutarlo.
+  - **Cédula (preg 30):** los 4 ids `93/3852/3853/3854` son **todos escribibles** →
+    sigue siendo pregunta de negocio para Oscar (3a.13).
+- **Nueva lista de curación:** las **43 huérfanas** completas ya salen en el reporte del
+  comando. El default es "opciones retiradas" (como parentesco), pero **revisar contra el
+  manual** algunas que llaman la atención: **preg 221/222 (hechos victimizantes:** Acto
+  terrorista, Minas Antipersonal, Vinculación de NNA, Delitos contra libertad/integridad
+  sexual**)** y las SI/NO de preg 1532-1535 — cotejar antes de concluir nada.
+- ⚠️ **Se volvió a usar la clave de RNIENTREVISTA (solo lectura).** Sigue **pendiente de
+  rotar** (3a.5) — coordinar con OTI. `.env.prod` es local y gitignored.
+- **Reproducir todo:** `docker start srni-oracle-local` → `scripts/cargar_catalogo_local.py`
+  → `generar_catalogo_respuestas ...`. Sin commitear (a revisión de Javier).
+
+**Avance 2026-07-22 (cont.) — curación cruzada + crosswalk verificado:**
+- Se cruzó SICAV ↔ catálogo completo: **0 pérdidas silenciosas reales**; 148 trivial /
+  16 sustantiva / 12 mapeo-dudoso / 2 a Oscar (agente experto, contra el manual).
+- **Crosswalk verificado** `apps/sincronizacion/oracle/crosswalk_opciones.json` (164
+  mapeos SICAV→`res_idrespuesta`). **164/164 verificados: existen y son escribibles**.
+  Clasificación: **104 CROSSWALK_SOLO** (dato puro, no toca instrumento — p.ej. `"Otro"`
+  →`"Otro,¿cuál?"` es prompt de sub-campo) · **54 FIXTURE_REVISAR** (wording caso a caso)
+  · **6 FIXTURE_FIX_TYPO** (typos claros de SICAV: `recolecion`, `ota`, `Combares`,
+  `exploración`→`explotación`, `turiísticos`).
+- **Hallazgo estructural:** `PR3_re` (Ayuda Humanitaria) está mapeado a `id_preg=92`
+  (=rehabilitación) — id_preg mal. Revisar antes de escribir ese perfil.
+- Propuesta y detalle: `docs/gestion/curacion_crosswalk_propuesta.md`. Normalizador
+  reforzado (§2). Tests: **96/96**.
+
+**Avance 2026-07-22 (cont. 2) — ejecutado:**
+1. ✅ **Crosswalk WIREADO** en `resolver_res_idrespuesta` (consulta `crosswalk_opciones.json`
+   como autoridad curada antes de fallar, verifica escribibilidad, sin fuzzy). Tests: **100/100**.
+2. ✅ **Batch de fixture APLICADO** (en `main`, sin commitear): **21 correcciones** (6 typos +
+   15 wording) → **79 ediciones en fixtures + 63 en bundles**, en 7 `perfil_*.json` + 6 bundles.
+   Diff mínimo (88 líneas, verificado que es solo `etiqueta`), **fixture↔bundle 0 mismatches**.
+   Detalle: `docs/gestion/batch_fixture_correcciones.md`. NO se bumpeó versión (correcciones
+   cosméticas, in-place; el APK las toma en el próximo build).
+
+**Siguiente:**
+1. **Reconciliar el crosswalk con las etiquetas nuevas** (migración, worktree): tras corregir
+   los labels, algunas claves del crosswalk quedaron en el texto viejo (p.ej. wording como
+   `Rural disperso (vereda)` que ya no cruza directo con Oracle). Refrescar las claves afectadas.
+2. **A Oscar:** familia NS/NR (M-series), pre1435 `del jefe`→`del responsable`, pre1503 mismatch,
+   PR3_re id_preg, "Autodiligenciada"/"Cara a cara" (pre 2), Cédula 3854.
+3. **`cargar_perfil --reemplazar`** de los 7 perfiles editados en el server (en el próximo deploy;
+   el fixture es la fuente, la BD se regenera). ¿Bump de versión? Solo si se quiere que el sync
+   empuje a dispositivos ya desplegados; para cosmético no hace falta.
+4. 🔒 Rotar clave RNIENTREVISTA + borrar `.env.prod`. Commitear (main = instrumento; worktree = migración) cuando Javier revise.
+
+---
+
 ## 1. Qué hicimos (fases completadas)
 
 | Fase | Resultado | Artefacto |
@@ -27,16 +97,29 @@
 
 ## 2. Estado actual del código
 
-- **Commiteado y pusheado** en `feat/oracle-legacy-writer`: `b504d79` (Etapa A + ResolverCatalogos, 17 archivos), en ambos remotes (`origin` + `azure`).
-- **SIN COMMITEAR (pendiente de revisión de Javier):** incrementos 6+7 — cascada
-  territorial cableada + `resolver_territorio` real. 5 archivos tocados + 1 test nuevo.
+- **Commiteado y pusheado** en `feat/oracle-legacy-writer` (ambos remotes, `origin` + `azure`):
+  - `b504d79` — Etapa A + ResolverCatalogos (17 archivos).
+  - `38e4bf0` — incrementos 6+7: cascada territorial cableada + `resolver_territorio`
+    real (+ fix del diagnóstico de `t_victima`, redacción de `PRXP_TEXTORESPUESTA`).
+  - `e57a99d` — `cargar_hogar_demo_oracle`, el escenario del Escalón 1.
+  - `88cad0a` — este documento.
 - **Todo en DRY-RUN.** La ruta `--confirmar` aborta a propósito hasta resolver los pendientes de negocio.
+- **Tests:** 90/90 en `apps/sincronizacion`. La suite completa trae 7 fallos en
+  `apps/formulario/tests/test_cargar_diccionario.py` que son **preexistentes**
+  (verificado contra HEAD limpio), ajenos a este trabajo.
 - Máquina de estados ejecuta ya los **cinco pasos**: HOGAR → PERSONA → MIEMBRO →
   TERRITORIO → RESPUESTA. Corrida real sobre un hogar: **10 pasos, todos DRY_RUN**.
   - **TERRITORIO resuelve ids REALES** contra el crosswalk (DT CENTRAL/TOLIMA/
-    JORNADAS/ALVARADO → `id_dt=7, id_depto=30, id_pt=13, id_ma=32`).
-  - **RESPUESTA tiene la fontanería completa pero sus ids están PENDIENTES** de
-    dato/negocio (ver 3a.6-3a.9): salen como marcadores `‹PEND:...›`, nunca inventados.
+    JORNADAS/ALVARADO → `id_dt=7, id_depto=30, id_pt=13, id_ma=32`). Único paso que
+    sale **sin ningún pendiente**.
+  - **RESPUESTA: el cruce ya resuelve a ids reales de Oracle.** `2/2` respuestas del
+    demo limpias (`res=8` Zona/Cabecera, `res=69` Sexo/Mujer), con escribibilidad
+    confirmada, y **`RXP_TIPOPREGUNTA` cableado** (`GE` para la de hogar, `IN` para la
+    de persona). Ya **no** quedan `‹PEND:RES_IDRESPUESTA›`, `‹PEND:ESCRIBIBLE›` ni
+    `‹PEND:RXP_TIPOPREGUNTA›`. Siguen marcados solo `PBANDERA` y `PPER_IDPREGUNTAPADRE`
+    (+ `PPER_IDPERSONA` en las de nivel hogar), nunca inventados.
+  - ⚠️ **El catálogo de respuestas cargado es PARCIAL** (temas 1-2): el export volvió
+    truncado a 200 filas. El código lo sabe y lo declara — ver §3b-bis-C.2.
 - Docs de análisis en `docs/oracle-legacy/` están **gitignored** por convención del equipo (menos `oracle-local-setup.md` y este archivo, que son traspaso/arquitectura sin datos de prod).
 
 ### 2.1 Lo que se aprendió del PL/SQL real (relevante para revisar)
@@ -77,15 +160,14 @@
 
 **Nuevos, detectados al cablear RESPUESTA (bloquean ese paso por completo):**
 
-6. **`PINS_IDINSTRUMENTO`** — SICAV **no guarda en ninguna parte** el id de
-   instrumento de Oracle. `formulario.Instrumento` tiene su propio TODO al respecto
-   ("confirmar lista oficial de instrumentos y códigos exactos con área funcional /
-   tablas Oracle"). Hace falta la equivalencia instrumento SICAV → `INS_IDINSTRUMENTO`.
-7. **`PRES_IDRESPUESTA`** — hipótesis razonable: `OpcionRespuesta.id_resp_vivanto`
-   (ID_RESP del Diccionario V8, p.ej. 4599=Mujer) sería el `RES_IDRESPUESTA` de
-   `GIC_N_RESPUESTAS`. **Sin verificar**: no tenemos volcado de esa tabla. En dry-run
-   el marcador muestra el candidato (`‹PEND:RES_IDRESPUESTA(hip:4572)›`) para poder
-   cotejarlo. **Basta un `SELECT` de `GIC_N_RESPUESTAS` para confirmar o descartar.**
+6. ~~**`PINS_IDINSTRUMENTO`**~~ ✅ **RESUELTO** (Query B): `GIC_INSTRUMENTO` tiene una
+   sola fila (1=`CARACTERIZACION`). Oracle no separa por instrumento como SICAV: no
+   había crosswalk que resolver. Es la constante `INS_IDINSTRUMENTO_CARACTERIZACION`.
+7. ~~**`PRES_IDRESPUESTA`**~~ ✅ **RESUELTO** — y la hipótesis era **falsa**:
+   `id_resp_vivanto` **NO** es `RES_IDRESPUESTA` (refutado 0/14: Mujer es 4599 en SICAV
+   y 69 en Oracle). El puente bueno es `Pregunta.id_preg == PRE_IDPREGUNTA` (14/14) +
+   opción por texto normalizado dentro de la pregunta. Hay test de regresión para que
+   no vuelva a colarse: escribir 4599 no habría dado error, simplemente no habría escrito.
 8. **`PPER_IDPERSONA` de preguntas de nivel HOGAR** — en SICAV llegan con
    `miembro=NULL` y el procedure exige un NUMBER. La cascada territorial usa el
    literal `'1'` como "persona del hogar"; extrapolarlo sería suponer. ¿Qué manda
@@ -93,8 +175,23 @@
 9. **`PBANDERA`** — con valor 1 dispara `SP_BORRADORESPUESTAS`, que **BORRA** las
    respuestas previas del hogar/instrumento; con 0 solo inserta. Qué corresponde en
    una migración es decisión de negocio, y el lado destructivo no se asume.
-10. **`RXP_TIPOPREGUNTA`** — VARCHAR2 libre, sin catálogo ni CHECK que lo acote. No
-    hay dominio conocido al cual mapear los tipos SICAV (RADIO/LISTA/TEXTO…).
+10. ~~**`RXP_TIPOPREGUNTA`**~~ ✅ **RESUELTO CON DATO (2026-07-16) — y sin negocio.**
+    `SELECT DISTINCT RXP_TIPOPREGUNTA` en prod → **`{GE, IN}`**: mismo dominio que
+    `PRE_TIPOPREGUNTA`. No era el tipo de widget, era el **nivel** (GE=hogar,
+    IN=persona). ⇒ No hay crosswalk: se **copia** el valor que Oracle ya tiene para esa
+    pregunta. Cableado; el DRY-RUN ya no marca `‹PEND:RXP_TIPOPREGUNTA›`.
+    ⚠️ Falta el control fila-a-fila (§3b-bis-E.4): el `DISTINCT` prueba el dominio,
+    no que la app vieja escriba el `PRE_TIPOPREGUNTA` de SU pregunta. Barato y pendiente.
+12. ~~**10 respuestas que Oracle ofrece pero no sabe guardar** (7 parentescos)~~
+    ❌ **NO EXISTE — falsa alarma mía, cerrada por el manual antes de escalarla.**
+    Las 10 huérfanas son opciones que el manual **no declara** y que SICAV **no ofrece**
+    (10/10): filas muertas del catálogo de Oracle, no un agujero funcional. El manual
+    (11-MU pág. 56) lista 6 opciones de parentesco y son exactamente las 6 escribibles.
+    Ver §3b-bis-E.3 — **no llevar a Oscar.**
+13. 🆕 **`Cédula de ciudadanía / Contraseña` con 4 ids escribibles** (pregunta 30).
+    **El único de los dos "hallazgos" del 2026-07-16 que sobrevivió.** El manual declara
+    la opción una vez ⇒ sobran ids, pero no dice cuál surrogate es el vigente (no es
+    dato del manual). Pregunta concreta + consulta de apoyo en §3b-bis-E.1.
 
 **Dato, no decisión — pero también bloquea:**
 
@@ -119,6 +216,466 @@
   arregla el diagnóstico**. Siguen abiertos, encadenados: (a) el campo no existe en el
   modelo — ¿se añade o el dato sale de otro lado?; (b) aunque existiera, el mapeo de
   T_VICTIMA sigue pendiente (3a.2, P8, Oscar).
+
+### 3b-bis-A. RESULTADOS de las consultas (2026-07-16) — dos veredictos
+
+Javier corrió las consultas. Lo que cambió:
+
+**❌ REFUTADA — `id_resp_vivanto` NO es `RES_IDRESPUESTA`.** Cero de 14 coinciden:
+Mujer es 4599 en SICAV y **69** en Oracle; Indígena 4565 vs **112**; Heterosexual
+4602 vs **2351**; Cabecera municipal 4572 vs **8**. Haberla asumido habría escrito
+ids ajenos —y como el procedure traga el `NO_DATA_FOUND`, sin error visible—.
+Hay test de regresión (`test_no_usa_id_resp_vivanto`).
+
+**✅ CONFIRMADO — el puente ya existía: `Pregunta.id_preg` == `PRE_IDPREGUNTA`.**
+14/14 ids del volcado existen en SICAV y, comparando el texto de la pregunta, **52 de
+59 coinciden** (39 idénticos tras normalizar + 13 compatibles). Ej.: `id_preg=5` →
+'ZONA DE RESIDENCIA' en ambos lados; `id_preg=35` (Z4) → la de autorreconocimiento
+étnico. ⇒ Las preguntas **no** se cruzan por texto: se cruzan por id. Solo las
+**opciones** se cruzan por texto, y acotadas a su pregunta (2-14 candidatas).
+
+**Query B — hay UN solo instrumento:** `GIC_INSTRUMENTO` = 1 fila, `1 =
+'CARACTERIZACION'` (activo desde 2013-10-18). Oracle no modela el cuestionario por
+instrumento como SICAV (que tiene 8): todo cuelga de ese id. ⇒ `INS_IDINSTRUMENTO`
+deja de ser pendiente y pasa a **constante**. El `= 1` del WHERE nunca fue circular.
+
+**Query C1 — dominio `'SI'`/`'NO'`**: la suposición original era correcta.
+
+**Query C2 — 153 respuestas huérfanas** (sin fila en `GIC_N_INSTRUMENTOXRESP`): el
+riesgo de NO_DATA_FOUND es real y medido. ⚠️ **Tenemos el CONTEO pero no la LISTA**,
+así que todavía no se pueden excluir: ver 3b-bis-C.
+
+**Query C3 — 0 y 0**: no hay preguntas ni respuestas en varios instrumentos ⇒ el
+riesgo de TOO_MANY_ROWS por esa causa no existe (coherente con haber un instrumento).
+
+### 3b-bis-B. Lo que YA quedó implementado (sin commitear, a revisión)
+
+- `respuestas_oracle.json` — catálogo del volcado, **regenerado desde la Query A v2**
+  (62 preguntas / 200 respuestas), ahora con `escribible` por fila y `pre_tipopregunta`.
+  Export crudo versionado en `docs/oracle-legacy/query_a_v2_parcial_temas_1_2.tsv`.
+- `resolver_ins_idinstrumento` → constante 1.
+- `resolver_res_idrespuesta` → `id_preg`→`PRE_IDPREGUNTA`, luego opción por texto
+  normalizado **dentro de esa pregunta**; error claro y accionable si no cruza.
+- Escenario demo alineado al catálogo real (`DEMO_SEXO` id_preg=24 → 69;
+  `DEMO_ZONA` id_preg=5 → 8), y el comando **verifica el cruce** y aborta si se rompe.
+- 90/90 tests en `apps/sincronizacion`.
+
+**Estado del DRY-RUN de `LISTO-96001` (2026-07-16, corrida limpia de 10 pasos):**
+
+| | |
+|---|---|
+| Respuestas que resuelven **limpio** | **2/2** — `res=8` (Zona/Cabecera), `res=69` (Sexo/Mujer) |
+| Respuestas pendientes de curaduría | **0** |
+| `‹PEND:RES_IDRESPUESTA›` / `‹PEND:ESCRIBIBLE›` | **0** — desaparecieron los dos |
+| Paso TERRITORIO | **LIMPIO** (único paso sin ningún pendiente) |
+
+Los `‹PEND›` que siguen en el paso RESPUESTA **no son del resolver**: son
+`RXP_TIPOPREGUNTA`, `PBANDERA`, `PPER_IDPREGUNTAPADRE` y `PPER_IDPERSONA(nivel_hogar)`
+— los bloqueantes de negocio 3a.6-3a.11, intactos.
+
+### 3b-bis-C. Lo que FALTA para cerrar RESPUESTA
+
+1. ~~La LISTA de las 153 huérfanas~~ ✅ **RESUELTO** por la columna `ESCRIBIBLE` de la
+   Query A v2. De las filas exportadas ya se **sabe** (no se supone) qué se puede
+   escribir: 10 huérfanas identificadas. `escribibilidad_verificada: true`.
+2. **El catálogo completo — SIGUE PENDIENTE, es lo único que bloquea.** El export v2
+   volvió a llegar **truncado en exactamente 200 filas** (201 con cabecera): ese número
+   redondo es la firma del cliente SQL cortando, no el final del instrumento. Cubre
+   temas 1-2 (62 preguntas, hasta la 1158 / `IXP_ORDEN` 41) de un cuestionario que en
+   SICAV tiene **290 preguntas con `id_preg`**.
+   → **Reexportar a archivo** (`SPOOL` en SQL*Plus, o "export to file" en el cliente),
+   no a la rejilla de resultados. El SQL de 3b-bis-D no lleva límite: el corte es del
+   cliente.
+   → El código ya convive con esto sin mentir: `_meta.completo: false`, y una pregunta
+   ausente produce *"no está en el volcado — y eso NO quiere decir que no exista en
+   Oracle"*, nunca *"no existe"*. Cuando llegue el export completo, `completo` pasa a
+   `true` y el mensaje cambia solo.
+3. **Curaduría manual** (no se resuelven con código, ver 3b-bis-E).
+
+### 3b-bis-D. Query A v2 — catálogo + escribibilidad en una sola pasada
+
+**Estado: CORRIDA el 2026-07-16, pero el export llegó truncado a 200 filas ⇒ hay que
+REEXPORTARLA A ARCHIVO.** Lo que trajo funcionó (resultado crudo en
+`docs/oracle-legacy/query_a_v2_parcial_temas_1_2.tsv`, cargado en el catálogo): la
+columna `ESCRIBIBLE` cerró el pendiente de las huérfanas y `PRE_TIPOPREGUNTA` destapó
+el hallazgo GE/IN de 3b-bis-E.4. Solo falta que no la corte el cliente.
+
+> **El SQL no lleva `LIMIT` ni `ROWNUM`: el corte es del cliente.** Exportar **a
+> archivo** (`SPOOL` en SQL*Plus, o "export to file" / "fetch all rows" en el cliente
+> gráfico), no a la rejilla de resultados. Señal de que volvió a pasar: el archivo
+> tiene exactamente 200 filas de datos y termina en la pregunta 1158.
+
+`ESCRIBIBLE` marca lo que la Query C2 solo contaba, y `PRE_TIPOPREGUNTA` es candidato
+a resolver `RXP_TIPOPREGUNTA` (3a.10).
+**Sin `WHERE INS_IDINSTRUMENTO` ni límite de filas** (solo hay un instrumento).
+
+```sql
+SELECT
+  ip.INS_IDINSTRUMENTO,
+  ip.TEM_IDTEMA,
+  ip.IXP_ORDEN,
+  ip.PRE_TIPOPREGUNTA,
+  pr.PRE_IDPREGUNTA,
+  pr.PRE_PREGUNTA,
+  re.RES_IDRESPUESTA,
+  re.RES_RESPUESTA,
+  re.RES_ACTIVA,
+  CASE WHEN EXISTS (SELECT 1 FROM GIC_N_INSTRUMENTOXRESP ir
+                    WHERE ir.RES_IDRESPUESTA = re.RES_IDRESPUESTA)
+       THEN 'SI' ELSE 'NO' END AS ESCRIBIBLE
+FROM GIC_N_INSTRUMENTOXPREG ip
+JOIN GIC_N_PREGUNTAS pr ON pr.PRE_IDPREGUNTA = ip.PRE_IDPREGUNTA
+JOIN GIC_N_RESPUESTAS re ON re.PRE_IDPREGUNTA = pr.PRE_IDPREGUNTA
+WHERE re.RES_ACTIVA = 'SI'
+ORDER BY ip.TEM_IDTEMA, ip.IXP_ORDEN, re.RES_IDRESPUESTA;
+```
+
+Con el resultado (ya hecho para la parte que llegó): se regenera `respuestas_oracle.json`
+con `escribibilidad_verificada: true` + `escribible` por fila, y el DRY-RUN muestra
+`pres_idrespuesta` limpio. Reproducible con el conversor
+`scratchpad/tsv_a_catalogo_v2.py` (apuntarlo al TSV nuevo y volver a correr).
+
+### 3b-bis-E. Casos de curaduría — **la autoridad es el MANUAL OFICIAL**
+
+> 📌 **Regla del proyecto:** lo funcional (qué preguntas hay, qué opciones, con qué
+> texto) lo decide el **manual oficial**, no el criterio de nadie: `11-MU` para
+> Territorial y Étnicos, `14-MU` para Asistencia (`docs/perfiles/`, gitignored).
+> A Oscar solo lo que el manual no cubra. Antes de marcar algo "pendiente de
+> negocio", **mirar el manual primero**.
+
+1. **`Cédula de ciudadanía / Contraseña` con 4 ids** (`93, 3852, 3853, 3854`) en la
+   pregunta 30 — **sigue siendo decisión de negocio. Mi predicción falló.**
+
+   > ⚠️ **Aquí decía que el filtro de escribibilidad iba a disolverlo solo.** La
+   > hipótesis era que `3852-3854` serían huérfanas y que al descartarlas quedaría
+   > `93`. La Query A v2 la **refutó**: los **4 ids están marcados `ESCRIBIBLE=SI`**.
+   > El filtro no desempata nada aquí. Se deja escrito porque la teoría era mía y el
+   > dato dijo que no; el test `test_el_filtro_de_escribibilidad_disuelve_la_falsa_
+   > ambiguedad` se borró (fingía con `monkeypatch` unas huérfanas que no existen) y
+   > lo sustituye `test_los_4_ids_de_cedula_son_todos_escribibles`, que fija el dato real.
+
+   Dónde queda, aplicando la escalera:
+   - **Peldaño 2 (escribibilidad):** no resuelve — los 4 son escribibles.
+   - **Peldaño 3 (manual):** el 11-MU (B6) declara la opción **una sola vez**, y su
+     lista de 11 opciones calza exacto con `93-96` + `3799-3805`. ⇒ Confirma que
+     **sobran ids**… pero el manual habla de opciones funcionales, no de surrogates:
+     **no dice cuál de los 4 es el vigente**. No puede: ese dato no es del manual.
+   - **Peldaño 4 (Oscar):** ⇒ **aquí queda.** Es la pregunta exacta a llevarle:
+     *"Oracle repite 'Cédula de ciudadanía / Contraseña' con 4 ids escribibles en la
+     pregunta 30 y el manual declara la opción una sola vez. ¿Cuál id usamos?"*
+
+   **USO REAL MEDIDO EN PROD (2026-07-16)** — y el resultado **no** es el que esperaba:
+
+   | RES_IDRESPUESTA | usos | lectura |
+   |---:|---:|---|
+   | **93** | **29.338** | el mayoritario |
+   | **3854** | **8.620** | ⚠️ **volumen real — NO es ruido** |
+   | 3852 | 19 | ruido (error de captura / duplicado de catálogo) |
+   | 3853 | 15 | ruido |
+
+   **Esto es lo que impide resolverlo por código, y es la razón de que siga abierto.**
+   Con 3852/3853 no hay discusión: 19 y 15 usos contra 29.338 es ruido. Pero **3854
+   tiene 8.620 usos: hay algo real detrás.** Un id con ese volumen no es un duplicado
+   accidental — responde a *algo* (¿un período distinto? ¿otro canal de captura?
+   ¿una migración pasada? ¿un perfil concreto?). Elegir 93 "porque es el mayoritario"
+   sería exactamente la suposición que este proyecto no se permite: si 3854 significa
+   algo, mandar 93 en su lugar escribiría mal 8.620 casos… en silencio.
+
+   ⇒ **Pendiente de negocio (3a.13). La pregunta exacta para Oscar:**
+   > *"En la pregunta 30 (tipo de documento), Oracle tiene 4 ids escribibles con el
+   > texto 'Cédula de ciudadanía / Contraseña' y el manual declara la opción una sola
+   > vez. El uso real es 93 → 29.338, **3854 → 8.620**, 3852 → 19, 3853 → 15. Los dos
+   > pequeños son claramente ruido. **¿Qué representa el 3854, que tiene volumen
+   > significativo — un período distinto, otro canal de captura, una migración
+   > anterior?** ¿Cuál debe usar SICAV al escribir?"*
+
+   El resolver **NO** lo resuelve: sigue fallando con las 4 candidatas a la vista.
+   Es lo correcto hasta que Oscar diga qué es 3854.
+
+   *(SQL usado, verificado contra el esquema real — la columna de fecha es
+   `USU_FECHACREACION`, no `RXP_FECHACREACION`, que fue mi primera suposición y no
+   existe:)*
+
+   ```sql
+   SELECT RES_IDRESPUESTA, COUNT(*) AS USOS,
+          MIN(USU_FECHACREACION) AS PRIMERO, MAX(USU_FECHACREACION) AS ULTIMO
+   FROM GIC_N_RESPUESTASENCUESTA
+   WHERE RES_IDRESPUESTA IN (93, 3852, 3853, 3854)
+   GROUP BY RES_IDRESPUESTA ORDER BY USOS DESC;
+   ```
+
+   **Pista barata para la reunión:** las columnas `PRIMERO`/`ULTIMO` de esa misma
+   consulta probablemente ya expliquen el 3854 (si sus fechas no se solapan con las de
+   93, es un período/migración; si se solapan, es un canal paralelo). Mirar eso antes
+   de la reunión puede convertir la pregunta en una confirmación.
+
+2. **Los textos de opción divergen entre SICAV y Oracle** — no es cosa de acentos, y
+   por eso no se aplica *fuzzy matching* (elegiría mal en silencio):
+
+   | SICAV | Oracle |
+   |---|---|
+   | `Palenquero(a)` | `Palenquero (a)` |
+   | `Rural disperso (vereda)` | `Parte rural disperso (vereda, campo)` |
+   | `Negro(a), afrocolombiano(a)` | `Negro(a), afrocolombiano(a) o afrodescendiente` |
+
+   Con territorio tuvimos suerte (21/21 DT idénticas). Aquí hace falta un crosswalk
+   curado opción-a-opción **contra el texto del manual**, que es el que dice cuál es
+   la redacción oficial y, por tanto, si las dos variantes son la misma opción. El
+   resolver ya falla listando las candidatas reales de la pregunta, así que la
+   curaduría se hace con los datos a la vista.
+
+3. **🆕 Las 10 huérfanas del volcado: NO son un defecto — falsa alarma, cerrada por el
+   manual.** ⚠️ **Esto estuvo a punto de escalarse a Oscar como "defecto activo de
+   producción con prioridad". Habría sido un error.** Se deja documentado el episodio
+   completo porque el mecanismo de la falsa alarma es instructivo.
+
+   **Lo que parecía:** 10 respuestas sin fila en `GIC_N_INSTRUMENTOXRESP` ⇒ el
+   procedure las traga con `NO_DATA_FOUND` y no escribe nada sin avisar. **7 de las 13
+   opciones de parentesco (pregunta 28)** entre ellas: `Nieto(a)`, `Yerno o nuera`,
+   `Abuelo(a)`, `Suegro(a)`, `Tío(a)`, `Sobrino(a)`, `Otros no parientes`. Leído así,
+   un hogar extenso no podría registrar el parentesco de sus miembros — grave, y en un
+   censo de víctimas los hogares extensos son lo normal.
+
+   **Lo que dice el manual** (11-MU pág. 56, *"El parentesco … frente al jefe del hogar
+   es:"*): lista **exactamente 6 opciones** — Jefe(a), Cónyuge o Compañera(o),
+   Hijo(a)-Hijastro(a), Padre o madre-Padrastro o madrastra, Hermano(a)-Hermanastro(a),
+   **Otro pariente del jefe**. Las 7 "huérfanas" **no están en el manual**: son
+   categorías que se absorbieron en *"otro pariente del jefe"*.
+
+   **Los tres lados coinciden:**
+
+   | | opciones de la pregunta 28 |
+   |---|---|
+   | Manual 11-MU (pág. 56) | **6** |
+   | SICAV (`formulario.OpcionRespuesta`) | **6** — las mismas |
+   | Oracle **escribibles** | **6** — las mismas (`79, 80, 81, 84, 906, 912`) |
+   | Oracle huérfanas | 7 — las que el manual no declara |
+
+   Verificado además **10/10: SICAV no ofrece NINGUNA de las 10 huérfanas** (tampoco
+   `No sabe/no informa`, `En trámite` ni `Porque nació así`).
+   ⇒ **No hay defecto, ni pérdida de datos, ni nada que escalar.** La escribibilidad de
+   Oracle **implementa el manual**: es el mecanismo con que retira opciones que dejaron
+   de ser oficiales, igual que los 3 ids de más de Cédula. Filas muertas de catálogo.
+
+   **Dato que descarta la otra hipótesis:** la pregunta 1435 (*"…frente a la persona
+   responsable del hogar"*, 6 opciones, todas escribibles) **no es la sustituta** de la
+   28 — el manual (B24) dice que *"solo se habilita para el perfil Buenaventura"*.
+
+   **Lo que sí queda, y es útil:** el guard sigue fallando ruidosamente, pero ahora
+   apunta a donde toca. Si algún día SICAV manda una huérfana, el hallazgo no es sobre
+   Oracle: es que **el instrumento de SICAV se desvió del manual**. El filtro es, de
+   hecho, un **detector de deriva SICAV↔manual** gratis.
+
+   **La lección del episodio** (por eso se conserva escrito): tenía el mecanismo bien
+   —el `NO_DATA_FOUND` tragado es real y está verificado en el PL/SQL— y aun así la
+   conclusión era falsa, porque nunca comprobé si alguien llega a mandar esas opciones.
+   *Un fallo silencioso en una ruta que nadie recorre no es un fallo.* La regla del
+   proyecto (**mirar el manual ANTES de escalar**) es justo lo que lo atajó.
+   ⚠️ Con el export completo saldrán las otras ~143 huérfanas: **el default es que
+   sean lo mismo** (opciones retiradas). Antes de alarmarse por ninguna, cotejarla
+   contra el manual y contra lo que SICAV ofrece.
+
+4. **🆕 `PRE_TIPOPREGUNTA` es el NIVEL, no el tipo — pista fuerte para 3a.10.**
+   Vale `GE`/`IN`. Pese al nombre no es el widget (radio/texto): cruzando las 62
+   preguntas del volcado contra `Pregunta.nivel` de SICAV —que se llenó aparte,
+   leyendo el manual— concuerdan **61 de 63**:
+
+   | Oracle | SICAV | n |
+   |---|---|---|
+   | `GE` | HOGAR | 18 |
+   | `IN` | PERSONA | 43 |
+   | `IN` | HOGAR | **2** ← |
+
+   Y **las 2 excepciones refuerzan la lectura en vez de romperla: en las dos, Oracle
+   tiene razón y el que está mal es SICAV.** Consultado el manual (regla del proyecto):
+   - **Pregunta 8 — Celular.** 11-MU pág. 45, **A11**, textual: *"Campo abierto.
+     Numérico. **Se habilita para cada una de las personas del hogar.**"* ⇒ es PERSONA.
+     Oracle dice `IN` ✅. SICAV lo tiene en HOGAR ❌ — **defecto de SICAV**.
+   - **Pregunta 35 — Autorreconocimiento étnico.** El manual (A4, pág. 42) **no
+     declara el nivel de forma literal** en esa página; lo que hay es el pendiente
+     funcional ya registrado del 24-jun ("pertenencia étnica **por persona**") y el
+     propio texto de A4, dirigido a un individuo. ⇒ **Corrobora a Oracle (`IN`), pero
+     con evidencia más floja que A11**: no lo doy por cerrado igual que el celular.
+
+   **Por qué NO se cableó todavía:** falta probar que `RXP_TIPOPREGUNTA` (el bind del
+   procedure) comparta dominio con `PRE_TIPOPREGUNTA`. Los nombres se parecen y sería
+   el origen natural del dato — pero *"se parece"* no es evidencia, y ya nos mordió
+   una vez (`id_resp_vivanto` también se parecía). **Un renglón lo cierra:**
+
+   ```sql
+   SELECT DISTINCT RXP_TIPOPREGUNTA FROM GIC_N_RESPUESTASENCUESTA ORDER BY 1;
+   ```
+
+   Si sale `{GE, IN}`, el pendiente **3a.10 se resuelve sin crosswalk y sin negocio**:
+   se copia el valor que el propio Oracle ya tiene para esa pregunta, y el DRY-RUN
+   pierde el `‹PEND:RXP_TIPOPREGUNTA(RADIO)›` (ese `RADIO` de ahora es el widget de
+   SICAV: dominio equivocado, no lo mandes así).
+
+   **Control que lo prueba de verdad** (que salga `{GE, IN}` es necesario pero no
+   suficiente: hay que ver que el valor escrito coincida con el nivel de SU pregunta).
+   Si la diagonal `GE/GE` + `IN/IN` concentra casi todo, está probado; si está
+   repartido, la corazonada era falsa y no se cablea:
+
+   ```sql
+   SELECT re.RXP_TIPOPREGUNTA, ip.PRE_TIPOPREGUNTA, COUNT(*) AS N
+   FROM GIC_N_RESPUESTASENCUESTA re
+   JOIN GIC_N_RESPUESTAS rs ON rs.RES_IDRESPUESTA = re.RES_IDRESPUESTA
+   JOIN GIC_N_INSTRUMENTOXPREG ip ON ip.PRE_IDPREGUNTA = rs.PRE_IDPREGUNTA
+   GROUP BY re.RXP_TIPOPREGUNTA, ip.PRE_TIPOPREGUNTA ORDER BY N DESC;
+   ```
+
+   *(Los 3 SQL de esta sección parsean contra el esquema real — validados en el Oracle
+   local, que tiene la estructura de prod.)*
+
+   **Regalo aparte:** esto detectó **2 defectos en el instrumento de SICAV** (preguntas
+   8 y 35 con `nivel` equivocado). No es de esta migración — va a la lista del
+   instrumento territorial.
+
+### 3b-bis. Contexto original — desbloquear RESPUESTA con datos reales de Oracle
+
+Es **el** incremento técnico que queda, y no arranca sin dato: hoy el paso RESPUESTA
+escribe `‹PEND:...›` en `PRES_IDRESPUESTA`, `PINS_IDINSTRUMENTO` y
+`PRXP_TIPOPREGUNTA` porque SICAV no tiene los ids de Oracle (3a.6, 3a.7, 3a.10).
+El plan es el mismo que funcionó con territorio: traer el catálogo real y **cruzar
+por nombre/significado, nunca por id** (los ids de Oracle son surrogate).
+
+#### Paso 1 — Javier corre estos SELECT contra prod (solo lectura, sin PII) y pega el resultado
+
+**Query A — catálogo de respuestas del instrumento** (la consulta base):
+
+```sql
+-- Catálogo de respuestas del instrumento, con texto de pregunta para
+-- poder cruzar por nombre/significado (igual que se hizo con territorio)
+SELECT
+  ip.INS_IDINSTRUMENTO,
+  ip.TEM_IDTEMA,
+  pr.PRE_IDPREGUNTA,
+  pr.PRE_PREGUNTA,
+  re.RES_IDRESPUESTA,
+  re.RES_RESPUESTA,
+  re.RES_ACTIVA
+FROM GIC_N_INSTRUMENTOXPREG ip
+JOIN GIC_N_PREGUNTAS pr ON pr.PRE_IDPREGUNTA = ip.PRE_IDPREGUNTA
+JOIN GIC_N_RESPUESTAS re ON re.PRE_IDPREGUNTA = pr.PRE_IDPREGUNTA
+WHERE ip.INS_IDINSTRUMENTO = 1  -- ajustar al instrumento real (ver Query B)
+  AND re.RES_ACTIVA = 'SI'
+ORDER BY ip.TEM_IDTEMA, ip.IXP_ORDEN, re.RES_IDRESPUESTA;
+```
+
+> ✅ **Verificada contra el esquema real** (Oracle local, `user_tab_columns`,
+> 2026-07-16): las 3 tablas y las 7 columnas existen con esos nombres exactos.
+> La consulta corre tal cual.
+>
+> ⚠️ Dos ajustes que conviene hacer **antes** de correrla:
+> - **`INS_IDINSTRUMENTO = 1` es circular**: ese id es justo lo que buscamos (3a.6).
+>   Correr primero la Query B para elegirlo. Ojo: el catálogo se llama
+>   **`GIC_INSTRUMENTO`**, sin el `_N` (`GIC_N_INSTRUMENTO` NO existe).
+> - **`RES_ACTIVA = 'SI'` es una suposición sobre el dominio.** La columna es
+>   `NVARCHAR2(4)` y **no tiene CHECK** que la acote (verificado), así que podría ser
+>   `'S'`/`'N'` y el filtro devolvería 0 filas — pareciendo "catálogo vacío" en vez de
+>   "filtro mal". Sacar el filtro en la primera corrida, o mirar el
+>   `SELECT DISTINCT RES_ACTIVA FROM GIC_N_RESPUESTAS;` de la Query C.
+
+**Query B — instrumentos disponibles** (rompe la circularidad y da el cruce por nombre
+contra `formulario.Instrumento` de SICAV):
+
+```sql
+SELECT INS_IDINSTRUMENTO, INS_NOMBREINSTRUMENTO, INS_ACTIVO,
+       INS_FECHAINICIO, INS_FECHAFIN
+FROM GIC_INSTRUMENTO
+ORDER BY INS_IDINSTRUMENTO;
+```
+
+**Query C — chequeos de los dos fallos SILENCIOSOS del procedure** (esto es lo que
+decide qué respuestas son escribibles de verdad — ver la explicación abajo):
+
+```sql
+-- C1. Dominio real de las banderas (¿'SI'/'NO'? ¿'S'/'N'?)
+SELECT DISTINCT RES_ACTIVA FROM GIC_N_RESPUESTAS;
+
+-- C2. NO_DATA_FOUND: respuestas SIN fila en GIC_N_INSTRUMENTOXRESP.
+--     El procedure hace SELECT ... INTO sobre esa tabla ⇒ si no hay fila,
+--     no escribe NADA y no avisa.
+SELECT COUNT(*) AS respuestas_sin_instrumentoxresp
+FROM GIC_N_RESPUESTAS re
+WHERE NOT EXISTS (SELECT 1 FROM GIC_N_INSTRUMENTOXRESP ir
+                  WHERE ir.RES_IDRESPUESTA = re.RES_IDRESPUESTA);
+
+-- C3. TOO_MANY_ROWS: preguntas que viven en MÁS DE UN instrumento, y
+--     respuestas registradas para más de un instrumento. Ambos rompen los
+--     SELECT ... INTO del procedure, también en silencio.
+SELECT COUNT(*) AS preguntas_en_varios_instrumentos FROM (
+  SELECT PRE_IDPREGUNTA FROM GIC_N_INSTRUMENTOXPREG
+  GROUP BY PRE_IDPREGUNTA HAVING COUNT(DISTINCT INS_IDINSTRUMENTO) > 1);
+
+SELECT COUNT(*) AS respuestas_en_varios_instrumentos FROM (
+  SELECT RES_IDRESPUESTA FROM GIC_N_INSTRUMENTOXRESP
+  GROUP BY RES_IDRESPUESTA HAVING COUNT(DISTINCT INS_IDINSTRUMENTO) > 1);
+```
+
+**Opcional pero útil — Query D:** `GIC_N_INSTRUMENTOXPREG.TEM_IDTEMA` referencia
+**`GIC_TEMA`** (singular; `GIC_TEMAS` en plural es otra cosa, metadata de cruces de
+reporte). El "tema" es el equivalente del **Capítulo** de SICAV, así que traer su
+nombre permite cruzar también ese nivel:
+
+```sql
+SELECT TEM_IDTEMA, TEM_NOMBRETEMA, TEM_ACTIVO, TEM_ORDEN
+FROM GIC_TEMA ORDER BY TEM_ORDEN;
+```
+
+`GIC_N_INSTRUMENTOXRESP` además trae `RES_ORDENRESPUESTA`, `RES_OBLIGATORIO` y
+**`RES_FINALIZA`** — que es exactamente el `OpcionRespuesta.finaliza_capitulo` de
+SICAV (el viejo RESFINALIZA del APK). Sirve como verificación cruzada del mapeo.
+
+#### Por qué las Query C importan (los dos fallos silenciosos)
+
+`SP_SET_RESPUESTAS_DE_ENCUESTA` abre con **dos `SELECT ... INTO` sin filtrar por
+instrumento** (body líneas 23-29):
+
+```sql
+SELECT PR.IXP_ORDEN INTO pOrden FROM GIC_N_INSTRUMENTOXPREG PR
+JOIN GIC_N_RESPUESTAS RE ON RE.PRE_IDPREGUNTA = PR.PRE_IDPREGUNTA
+WHERE RE.RES_IDRESPUESTA = pres_IdRespuesta;          -- sin AND INS_IDINSTRUMENTO
+
+SELECT COALESCE(VAL_IDVALIDADOR,0), VAL_IDVALIDADOR_DEF INTO pValidador, textVal
+FROM GIC_N_INSTRUMENTOXRESP WHERE RES_IDRESPUESTA = pres_IdRespuesta;
+```
+
+Como el `EXCEPTION WHEN OTHERS` del procedure se traga todo, hay dos formas de que la
+escritura **no ocurra y nadie se entere**:
+- **NO_DATA_FOUND** — la respuesta no tiene fila en `GIC_N_INSTRUMENTOXRESP` (C2).
+- **TOO_MANY_ROWS** — la pregunta está en más de un instrumento, o la respuesta está
+  registrada para varios: el `SELECT INTO` recibe 2+ filas y revienta (C3).
+
+⇒ **No todo `RES_IDRESPUESTA` es escribible.** Si C2/C3 dan > 0, el resolver tendrá
+que excluir esos casos explícitamente en vez de confiar en que el procedure avise.
+Mejor descubrirlo en el SELECT que con el hogar a medio escribir.
+
+#### Paso 2 — Con el resultado pegado, yo hago (sigue en DRY-RUN, sin commitear)
+
+1. **Resolver de respuestas** en `ResolverCatalogos`: cruce **por texto** de
+   pregunta/respuesta contra `formulario.Pregunta` / `formulario.OpcionRespuesta`,
+   con la misma normalización que territorio (mayúsculas, acentos, espacios) y el
+   mismo criterio: si no hay match, **error claro**, nunca un id inventado.
+   Se aprovechará para **contrastar la hipótesis `id_resp_vivanto == RES_IDRESPUESTA`**
+   (3a.7): si el cruce por texto coincide con el `id_resp_vivanto` que ya trae SICAV,
+   queda confirmada; si no, gana el texto y lo reportamos.
+2. **Cablear** ese resolver en `paso_respuesta` de `escritor.py`, quitando los
+   `‹PEND:›` que hoy tapan `PRES_IDRESPUESTA` / `PINS_IDINSTRUMENTO` /
+   `PRXP_TIPOPREGUNTA`.
+3. **Tests** del resolver (incluidos los casos de C2/C3 si aparecen) + re-correr
+   `escribir_a_oracle --hogar LISTO-96001` en DRY-RUN con los **10 pasos y sin ningún
+   `‹PEND:RESPUESTA...›`**.
+4. **Ajustar `cargar_hogar_demo_oracle`** si hace falta: hoy siembra el primer
+   `Instrumento` activo de SICAV y dos preguntas demo (`DEMO_SEXO`, `DEMO_ZONA`) con
+   `id_resp_vivanto` 4599/4572. Si el instrumento real de Oracle no las tiene, el
+   escenario debe sembrar preguntas que **sí** existan en el catálogo, o el Escalón 1
+   no probaría nada.
+
+**Lo que seguirá pendiente aunque llegue este SELECT** (no lo desbloquea): `PBANDERA`
+(3a.9), `PPER_IDPERSONA` de nivel hogar (3a.8), usuario/perfil de servicio (3a.1) y
+`T_VICTIMA` (3a.2). Sin esos cuatro, `--confirmar` sigue bloqueado aunque RESPUESTA
+resuelva sus ids.
 - 13. **Territorio con varias sesiones** — `GIC_N_RELACION_DT_PUNTO` admite **una sola
   fila por hogar** (PK `hogarcodigo`+`idpersona='1'`). El escritor toma la PRIMERA
   sesión. Si un hogar puede tener sesiones con territorios distintos, Oracle solo
@@ -130,43 +687,112 @@
 
 ---
 
+## 3d. 🌅 MAÑANA (17-jul) — lista corta, en orden
+
+**1. El re-export completo** (lo único que bloquea de verdad). Con `SPOOL`, no la
+grilla. Al llegar:
+```
+python manage.py generar_catalogo_respuestas <tsv> --fecha 2026-07-17
+```
+Si el comando NO avisa de truncado y dice `cobertura: COMPLETO`, está bien.
+
+**2. Tres consultas de un renglón, ya validadas contra el esquema real.** Las dos
+primeras pueden **cerrar pendientes de negocio sin reunión**:
+
+```sql
+-- (a) 3a.8: ¿qué PER_IDPERSONA usa Oracle en las respuestas de nivel HOGAR?
+--     Ahora que sabemos que GE = hogar, esto se MIDE en vez de preguntarse.
+--     Si sale un valor convencional (p.ej. siempre la persona 1 del hogar), 3a.8 cae.
+SELECT PER_IDPERSONA, COUNT(*) AS N FROM GIC_N_RESPUESTASENCUESTA
+WHERE RXP_TIPOPREGUNTA = 'GE' GROUP BY PER_IDPERSONA
+ORDER BY N DESC FETCH FIRST 10 ROWS ONLY;
+
+-- (b) 3a.9 (PBANDERA): ¿Oracle guarda UNA respuesta por hogar+pregunta, o varias?
+--     Si es siempre 1, la app vieja borra antes de insertar (PBANDERA=1) y lo sabemos
+--     sin arriesgar el lado destructivo. Si hay N>1, acumula (PBANDERA=0).
+SELECT N_POR_PREGUNTA, COUNT(*) AS HOGARES FROM (
+  SELECT re.HOG_CODIGO, rs.PRE_IDPREGUNTA, COUNT(*) AS N_POR_PREGUNTA
+  FROM GIC_N_RESPUESTASENCUESTA re
+  JOIN GIC_N_RESPUESTAS rs ON rs.RES_IDRESPUESTA = re.RES_IDRESPUESTA
+  GROUP BY re.HOG_CODIGO, rs.PRE_IDPREGUNTA)
+GROUP BY N_POR_PREGUNTA ORDER BY N_POR_PREGUNTA;
+
+-- (c) Control pendiente de RXP_TIPOPREGUNTA (§3b-bis-E.4): el DISTINCT probó el
+--     dominio, esto prueba la correspondencia fila a fila. Si la diagonal GE/GE + IN/IN
+--     no concentra casi todo, hay que descablearlo.
+SELECT re.RXP_TIPOPREGUNTA, ip.PRE_TIPOPREGUNTA, COUNT(*) AS N
+FROM GIC_N_RESPUESTASENCUESTA re
+JOIN GIC_N_RESPUESTAS rs ON rs.RES_IDRESPUESTA = re.RES_IDRESPUESTA
+JOIN GIC_N_INSTRUMENTOXPREG ip ON ip.PRE_IDPREGUNTA = rs.PRE_IDPREGUNTA
+GROUP BY re.RXP_TIPOPREGUNTA, ip.PRE_TIPOPREGUNTA ORDER BY N DESC;
+```
+
+**3. Para la reunión con Oscar** — solo lo que el manual no puede responder:
+- **3a.13 Cédula:** *¿qué representa el id 3854 (8.620 usos)?* Llevar los 4 números.
+  Truco: las fechas `PRIMERO`/`ULTIMO` de la consulta de §3b-bis-E.1 puede que ya lo
+  expliquen solas ⇒ mirarlas antes y convertir la pregunta en una confirmación.
+- **3a.5 rotar la clave de RNIENTREVISTA** (con OTI). Es el pendiente más viejo.
+- **3a.11 catálogo oficial de puntos de atención** (7 Centros Regionales de SICAV no
+  existen en Oracle).
+- 3a.2 (mapeo P8) y 3a.3 (PE/NES).
+
+**4. Commitear** lo de julio cuando lo revises (hoy quedó todo sin commitear a
+propósito).
+
+**Lo que NO hay que hacer mañana:** escalar lo de las 7 opciones de parentesco. Es
+falsa alarma cerrada (§3b-bis-E.3).
+
+---
+
 ## 4. Con qué EMPEZAR la próxima sesión (recomendación)
 
-Los incrementos técnicos 6+7 ya están. **Lo que queda está bloqueado por dato/negocio,
-no por código**, así que la recomendación cambia de "seguir picando" a "desbloquear":
+**El resolver de respuestas ya está y funciona** (2/2 del demo a ids reales). Lo que
+queda no lo desbloquea el código:
 
-1. **El desbloqueo más barato y de mayor impacto: un `SELECT` de solo lectura** a
-   `GIC_N_RESPUESTAS` y `GIC_N_INSTRUMENTOXPREG` en prod (o el volcado de esas dos
-   tablas). Confirma o descarta la hipótesis `id_resp_vivanto == RES_IDRESPUESTA`
-   (3a.7) y da el `INS_IDINSTRUMENTO` (3a.6) — los dos bloqueantes duros de RESPUESTA.
-   Ojo: la clave de RNIENTREVISTA **está pendiente de rotar** (3a.5); coordinar ambas.
-2. **En paralelo, con Oscar:** 3a.8 (PPER_IDPERSONA de nivel hogar), 3a.9 (PBANDERA)
-   y 3a.11 (catálogo oficial de puntos de atención).
-3. Con eso resuelto, el siguiente incremento técnico sale solo: quitar los pendientes
-   de `binds_respuesta` y hacer el escalón 1 contra el Oracle **local**.
+1. **Reexportar la Query A v2 SIN que la corte el cliente** (§3b-bis-D). Es lo más
+   barato y lo que más destraba: da el catálogo de los ~228 preguntas que faltan, la
+   lista completa de huérfanas (van 10 de 153) y el resto de casos de curaduría.
+   **A archivo, no a la rejilla.** Luego:
+   `python manage.py generar_catalogo_respuestas <tsv> --fecha <YYYY-MM-DD>` y listo.
+2. **Dos consultas de un renglón que pueden cerrar pendientes enteros** (solo lectura):
+   - `SELECT DISTINCT RXP_TIPOPREGUNTA FROM GIC_N_RESPUESTASENCUESTA;` → si sale
+     `{GE, IN}`, **3a.10 se resuelve sin negocio** (§3b-bis-E.4).
+   - El conteo de usos de los 4 ids de Cédula (§3b-bis-E.1) → convierte la pregunta a
+     Oscar en un dato, no en una opinión.
+   Ojo: la clave de RNIENTREVISTA **está pendiente de rotar** (3a.5); coordinar.
+3. **Con Oscar** (lo que el manual no cubre): 3a.8 (`PPER_IDPERSONA` nivel hogar),
+   3a.9 (`PBANDERA`), 3a.11 (puntos de atención), 3a.12 (las 7 opciones de parentesco
+   que Oracle no sabe guardar) y 3a.13 (cuál id de Cédula).
+4. Con eso, el escalón 1 contra el Oracle **local** sale solo.
 
 ---
 
 ## 5. Qué DECIR la próxima sesión (prompt listo para pegar)
 
-**Si ya tienes el volcado / los datos de Oracle** (lo más probable y lo más útil):
+**Si ya reexportaste la Query A v2 completa** (el camino previsto):
 
 > Retomamos la migración Oracle legacy → SICAV, worktree `feat/oracle-legacy-writer`.
-> Lee `docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md` para el contexto completo.
-> Sigue todo en **DRY-RUN, solo lectura** contra Oracle.
+> Lee `docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md`; el estado está en **§3b-bis-B/C**.
+> Sigue todo en **DRY-RUN, solo lectura**.
 >
-> Ya traigo esto de la sección 3a: [pega aquí lo que tengas — volcado de
-> `GIC_N_RESPUESTAS` / `GIC_N_INSTRUMENTOXPREG`, el `INS_IDINSTRUMENTO` por
-> instrumento, qué `PPER_IDPERSONA` va en preguntas de hogar, qué `PBANDERA`, el
-> catálogo oficial de puntos de atención].
->
-> Tarea: quitar los pendientes correspondientes de `binds_respuesta` /
-> `ResolverCatalogos`, con tests, y dejar el DRY-RUN de un hogar mostrando el flujo
-> completo **sin marcadores ‹PEND:›** en lo que ya esté resuelto. Lo que siga sin
-> dato, sigue pendiente: no lo adivines. No commitees hasta que yo revise.
+> Ya tengo el export completo de la Query A v2 (sin truncar) en `<ruta del TSV>`.
+> Regenera el catálogo con `generar_catalogo_respuestas`, comprueba que `completo`
+> quede en `true`, y dime: (a) cuántas de las 153 huérfanas aparecen y en qué
+> preguntas — sobre todo si hay más agujeros como el de parentesco (§3b-bis-E.3);
+> (b) cuántas opciones de SICAV **no cruzan por texto** con Oracle, que es la lista
+> de curaduría real contra el manual; (c) si sigue habiendo textos duplicados con
+> varios ids escribibles además del de Cédula.
+> Tests + re-correr `escribir_a_oracle --hogar LISTO-96001` en DRY-RUN.
+> Lo que no cruce, pendiente: **nada de fuzzy matching**, y ante duda funcional manda
+> el **manual** (11-MU/14-MU) antes que escalar a Oscar. No commitees hasta que revise.
 
-**Si todavía no hay datos**, no hay incremento técnico que valga la pena: lo que
-queda son los bloqueantes 3a.6-3a.11. Ver §4.
+**Si además corriste el `SELECT DISTINCT RXP_TIPOPREGUNTA`**, añade:
+
+> Y el `SELECT DISTINCT RXP_TIPOPREGUNTA FROM GIC_N_RESPUESTASENCUESTA` dio: `<...>`.
+> Si es `{GE, IN}`, cablea `RXP_TIPOPREGUNTA` desde el `pre_tipopregunta` del catálogo
+> (§3b-bis-E.4) y quita ese pendiente.
+
+**Si todavía no hay export**, lo que queda son los bloqueantes de §3a. Ver §4.
 
 ---
 
@@ -174,6 +800,9 @@ queda son los bloqueantes 3a.6-3a.11. Ver §4.
 
 - Código Etapa A: `srni-backend/apps/sincronizacion/` (models, oracle/, management/, tests/).
 - Crosswalk catálogos: `apps/sincronizacion/oracle/catalogos.py` + `catalogos_oracle.json`.
+- Catálogo de respuestas: `apps/sincronizacion/oracle/respuestas_oracle.json` (**generado,
+  no se edita a mano**) ← `docs/oracle-legacy/query_a_v2_parcial_temas_1_2.tsv`
+  vía `python manage.py generar_catalogo_respuestas <tsv> --fecha <YYYY-MM-DD>`.
 - Diseño Etapa A: `docs/oracle-legacy/diseno_etapa_a_escritura.md`.
 - Auditoría + veredicto a1/a2: `docs/oracle-legacy/auditoria_diseno_legacy.md`.
 - Ruta de escritura (análisis PL/SQL): `docs/oracle-legacy/ruta_escritura.md`.

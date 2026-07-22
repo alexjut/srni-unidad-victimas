@@ -252,18 +252,30 @@ class _Instrumento:
     codigo = "TERRITORIAL"
 
 
-def test_ins_idinstrumento_pendiente_lanza():
-    with pytest.raises(MapeoPendienteNegocio) as exc:
-        _r().resolver_ins_idinstrumento(_Instrumento())
-    assert "INS_IDINSTRUMENTO" in str(exc.value)
+def test_ins_idinstrumento_resuelto_es_constante():
+    # Ya NO es pendiente: Query B mostró que GIC_INSTRUMENTO tiene una sola fila
+    # (1='CARACTERIZACION'). Oracle no separa por instrumento como SICAV (8) ⇒ no hay
+    # crosswalk, es constante. Los tests detallados están en test_resolver_respuestas.
+    assert _r().resolver_ins_idinstrumento(_Instrumento()) == 1
+    assert _r(estricto=False).resolver_ins_idinstrumento(_Instrumento()) == 1
 
 
-def test_ins_idinstrumento_dry_run_marcador():
-    assert _r(estricto=False).resolver_ins_idinstrumento(_Instrumento()) == \
-        "‹PEND:INS_IDINSTRUMENTO(TERRITORIAL)›"
+def test_tipo_pregunta_se_copia_del_catalogo_de_oracle():
+    # Antes esto era pendiente de negocio "sin dominio conocido". Ya no: el DISTINCT
+    # en prod (2026-07-16) dio {GE, IN} — el mismo dominio que PRE_TIPOPREGUNTA. No es
+    # el tipo de widget, es el NIVEL, y Oracle ya lo tiene ⇒ se copia, no se mapea.
+    class _P:
+        tipo = "RADIO"          # el widget de SICAV ya no pinta nada aquí
+        id_preg = 5             # 'Zona de residencia' → GE (hogar) en el volcado real
+        codigo_externo = "Z6"
+    assert _r().resolver_tipo_pregunta(_P()) == "GE"
 
 
-def test_tipo_pregunta_pendiente_lanza():
-    class _P: tipo = "RADIO"
+def test_tipo_pregunta_sin_id_preg_no_se_inventa():
+    # Sin el puente a Oracle no se sabe el nivel. Falla en vez de suponer.
+    class _P:
+        tipo = "RADIO"
+        id_preg = None
+        codigo_externo = "SIN_PUENTE"
     with pytest.raises(MapeoPendienteNegocio):
         _r().resolver_tipo_pregunta(_P())
