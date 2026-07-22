@@ -501,7 +501,7 @@
     },
     {
      "valor": "3",
-     "etiqueta": "Rural disperso (vereda,)",
+     "etiqueta": "Rural disperso (vereda)",
      "id_resp_vivanto": 3811,
      "orden": 3
     }
@@ -632,7 +632,7 @@
     },
     {
      "valor": "98",
-     "etiqueta": "Otra vivienda  (carpa, vagón, cueva, refugio natural,albergue, embarcación, campamento, Asentameinto fluvial, rancho, etc)",
+     "etiqueta": "Otra vivienda  (carpa, vagón, cueva, refugio natural,albergue, embarcación, campamento, Asentamiento fluvial, rancho, etc)",
      "id_resp_vivanto": 1064,
      "orden": 11
     }
@@ -667,7 +667,7 @@
     },
     {
      "valor": "3",
-     "etiqueta": "En Usufructo**",
+     "etiqueta": "Usufructo",
      "id_resp_vivanto": 164,
      "orden": 3
     },
@@ -1134,7 +1134,7 @@
    "opciones": [
     {
      "valor": "2",
-     "etiqueta": "De ota fuente por tubería (Redes comunitarias)",
+     "etiqueta": "De otra fuente por tubería (Redes comunitarias)",
      "id_resp_vivanto": 2369,
      "orden": 1
     },
@@ -1211,7 +1211,7 @@
    "opciones": [
     {
      "valor": "1",
-     "etiqueta": "Por recolecion pública o privada",
+     "etiqueta": "Por recolección pública o privada",
      "id_resp_vivanto": 176,
      "orden": 1
     },
@@ -1235,7 +1235,7 @@
     },
     {
      "valor": "5",
-     "etiqueta": "la queman o entierran",
+     "etiqueta": "Las queman o entierran",
      "id_resp_vivanto": 179,
      "orden": 5
     },
@@ -1521,7 +1521,7 @@
     },
     {
      "valor": "2",
-     "etiqueta": "Exploración y exploración minero-energética (petróleo, gas etc)",
+     "etiqueta": "Exploración y explotación minero-energética (petróleo, gas etc)",
      "id_resp_vivanto": 2642,
      "orden": 2
     },
@@ -1533,7 +1533,7 @@
     },
     {
      "valor": "4",
-     "etiqueta": "Combares o bombardeos",
+     "etiqueta": "Combates o bombardeos",
      "id_resp_vivanto": 2644,
      "orden": 4
     },
@@ -1551,7 +1551,7 @@
     },
     {
      "valor": "7",
-     "etiqueta": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
+     "etiqueta": "Megaproyectos de infraestructura y/o turísticos (represas, hotelería etc)",
      "id_resp_vivanto": 2647,
      "orden": 7
     },
@@ -6321,19 +6321,19 @@
     },
     {
      "valor": "2",
-     "etiqueta": "Básica_primaria_1°_a_5°",
+     "etiqueta": "Básica primaria (1º - 5º)",
      "id_resp_vivanto": 263,
      "orden": 2
     },
     {
      "valor": "3",
-     "etiqueta": "Básica_Secundaria_6°_a_9°",
+     "etiqueta": "Básica secundaria (6º - 9º)",
      "id_resp_vivanto": 264,
      "orden": 3
     },
     {
      "valor": "4",
-     "etiqueta": "Media_10°_a_13°",
+     "etiqueta": "Media (10º - 13º)",
      "id_resp_vivanto": 265,
      "orden": 4
     },
@@ -6393,7 +6393,7 @@
     },
     {
      "valor": "14",
-     "etiqueta": "Ninguna",
+     "etiqueta": "Ninguno",
      "id_resp_vivanto": 261,
      "orden": 14
     },
@@ -7026,7 +7026,7 @@
     },
     {
      "valor": "4",
-     "etiqueta": "Comunitaria",
+     "etiqueta": "Comunitario",
      "id_resp_vivanto": 2414,
      "orden": 4
     }
@@ -7316,7 +7316,7 @@
     },
     {
      "valor": "4",
-     "etiqueta": "Puso consultó avisos clasificados",
+     "etiqueta": "Puso o consultó avisos clasificados",
      "id_resp_vivanto": 424,
      "orden": 4
     },
@@ -10881,7 +10881,7 @@
     },
     {
      "valor": "1",
-     "etiqueta": "Otra ¿Cuál?",
+     "etiqueta": "Otro ¿Cuál?",
      "id_resp_vivanto": 2592,
      "orden": 4
     },
