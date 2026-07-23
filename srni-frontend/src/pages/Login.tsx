@@ -163,16 +163,17 @@ export default function LoginPage() {
             {/* Botón */}
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-2"
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-2"
               style={{
-                background: 'linear-gradient(135deg, #1565C0, #1976D2)',
-                boxShadow: '0 4px 20px rgba(21, 101, 192, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                background: 'linear-gradient(135deg, #FFCC03, #F5BF04)',
+                color: '#003A80',
+                boxShadow: '0 4px 20px rgba(245, 191, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
               }}
               disabled={cargando}
             >
               {cargando ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-gov-azulOscuro/30 border-t-gov-azulOscuro rounded-full animate-spin" />
                   Verificando…
                 </>
               ) : (

@@ -73,8 +73,11 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Versión */}
-      <div className="px-5 py-3 border-t border-white/[0.06]">
+      {/* Info institucional + versión */}
+      <div className="px-5 py-3 border-t border-white/[0.06] space-y-2">
+        <p className="text-[10px] text-white/40 leading-relaxed">
+          Subdirección Red Nacional de Información
+        </p>
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-gov-amarillo shrink-0" />
           <p className="text-[10px] text-white/50 font-mono">v2026.01</p>

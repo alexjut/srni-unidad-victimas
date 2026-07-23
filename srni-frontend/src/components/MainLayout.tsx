@@ -265,6 +265,7 @@ export default function MainLayout() {
           <div key={location.pathname} className="page-content">
             <Outlet />
           </div>
+
         </main>
       </div>
 
