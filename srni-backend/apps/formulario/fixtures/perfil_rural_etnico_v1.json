@@ -1282,7 +1282,7 @@
     {
       "no_pregunta": "PR1",
       "codigo_externo": "PR1_re",
-      "id_preg": 90,
+      "id_preg": null,
       "texto": "¿El hogar está vinculado a Familias en Acción?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
@@ -1298,7 +1298,7 @@
     {
       "no_pregunta": "PR2",
       "codigo_externo": "PR2_re",
-      "id_preg": 91,
+      "id_preg": 353,
       "texto": "¿El hogar ha recibido alguna Ayuda Humanitaria de Emergencia (AHE)?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
@@ -1330,7 +1330,7 @@
     {
       "no_pregunta": "PR4",
       "codigo_externo": "PR4_re",
-      "id_preg": 93,
+      "id_preg": 228,
       "texto": "¿El hogar ha recibido indemnización administrativa?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
@@ -1346,7 +1346,7 @@
     {
       "no_pregunta": "PR5",
       "codigo_externo": "PR5_re",
-      "id_preg": 94,
+      "id_preg": null,
       "texto": "¿El hogar conoce el Plan de Atención, Asistencia y Reparación Integral (PAARI)?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
