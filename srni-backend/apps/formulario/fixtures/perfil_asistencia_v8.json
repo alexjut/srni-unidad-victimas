@@ -193,7 +193,7 @@
     },
     {
      "valor": "3",
-     "etiqueta": "Rural disperso (vereda,)",
+     "etiqueta": "Rural disperso (vereda)",
      "id_resp_vivanto": 4574,
      "orden": 3
     }
@@ -369,7 +369,7 @@
     },
     {
      "valor": "3",
-     "etiqueta": "Rural disperso (vereda,)",
+     "etiqueta": "Rural disperso (vereda)",
      "id_resp_vivanto": 4586,
      "orden": 3
     }
@@ -480,7 +480,7 @@
     },
     {
      "valor": "98",
-     "etiqueta": "Otra vivienda  (carpa, vagón, cueva, refugio natural,albergue, embarcación, campamento, Asentameinto fluvial, rancho, etc)",
+     "etiqueta": "Otra vivienda  (carpa, vagón, cueva, refugio natural,albergue, embarcación, campamento, Asentamiento fluvial, rancho, etc)",
      "id_resp_vivanto": 4701,
      "orden": 13
     }
@@ -515,7 +515,7 @@
     },
     {
      "valor": "3",
-     "etiqueta": "En Usufructo**",
+     "etiqueta": "Usufructo",
      "id_resp_vivanto": 4704,
      "orden": 3
     },
@@ -1001,7 +1001,7 @@
    "opciones": [
     {
      "valor": "1",
-     "etiqueta": "Por recolecion pública o privada",
+     "etiqueta": "Por recolección pública o privada",
      "id_resp_vivanto": 4754,
      "orden": 1
     }
