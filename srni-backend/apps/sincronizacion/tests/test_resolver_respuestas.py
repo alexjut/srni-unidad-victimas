@@ -278,6 +278,21 @@ def test_crosswalk_resuelve_wording_que_sigue_divergiendo():
     assert _r().resolver_res_idrespuesta(_Respuesta(p, "6")) == 3811
 
 
+def test_crosswalk_resuelve_pr3_ayuda_humanitaria_reenganchada():
+    """
+    (d) PR3_re re-enganchada de rehabilitación (id_preg 92) a AHE (id_preg 354, 2026-07-23).
+    'Alojamiento temporal' (SICAV) no cruza directo con Oracle 'Alojamiento'; el crosswalk
+    curado la lleva a res 1230. (Alimentación/Vestuario cruzan directo; funerario/apoyo
+    económico no tienen equivalente en Oracle → pendiente Oscar.)
+    """
+    objetivo = catalogos.normalizar_nombre("Alojamiento temporal")
+    cat = catalogos.cargar_respuestas()
+    assert not any(o["_texto"] == objetivo for o in cat["preguntas"][354]["respuestas"])
+    assert catalogos.cargar_crosswalk_opciones()[(354, objetivo)] == 1230
+    p = _Pregunta(354, "PR3_re", _Opcion("2", "Alojamiento temporal"))
+    assert _r().resolver_res_idrespuesta(_Respuesta(p, "2")) == 1230
+
+
 def test_crosswalk_es_exacto_no_traga_lo_no_curado():
     """
     (c) Regresión del wireo: el crosswalk es un mapa EXACTO, no un colador. Una opción

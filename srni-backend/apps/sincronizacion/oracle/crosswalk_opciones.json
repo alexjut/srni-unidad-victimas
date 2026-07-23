@@ -2,9 +2,10 @@
   "_meta": {
     "fuente": "curacion_crosswalk_propuesta.md",
     "verificado": "2026-07-22: 164/164 res_id existen y escribibles",
-    "total": 148,
+    "total": 151,
     "clasificacion": "2026-07-22 refinada: FIXTURE_FIX_TYPO=seguro; FIXTURE_REVISAR=caso a caso; CROSSWALK_SOLO=solo dato, no toca instrumento",
-    "reconciliado": "2026-07-23: tras el batch de fixture, quitadas 16 entradas redundantes (nuevo label ya == Oracle → cruce directo) y re-clavadas 3 al label nuevo (Rural disperso). Ver docs/gestion/batch_fixture_correcciones.md"
+    "reconciliado": "2026-07-23: tras el batch de fixture, quitadas 16 entradas redundantes (nuevo label ya == Oracle → cruce directo) y re-clavadas 3 al label nuevo (Rural disperso). Ver docs/gestion/batch_fixture_correcciones.md",
+    "pr3_re": "2026-07-23: 3 entradas para PR3_re->pre354 (AHE). 5/9 opciones mapean; resto a Oscar."
   },
   "mapeos": [
     {
@@ -1634,6 +1635,39 @@
       "pagina_manual": "ASIS p57",
       "nota": "Manual (p72/57): opcion oficial 'Carrotanque' (agua por carrotanque). SICAV usa etiqueta DANE antigua 'Agua de carro tanques'; en pre1503 la unica escribible equivalente es 'Carrotanque' res 4751. Alinear al manual.",
       "accion": "FIXTURE_REVISAR"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Alojamiento temporal",
+      "etiqueta_manual": "Alojamiento",
+      "res_id": 1230,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "11-MU glosario Art.64 (AHE)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "PR3_re re-enganchado a pre 354 (AHE). Alimentacion/Vestuario cruzan directo; el resto (funerario, apoyo economico, aseo, split medica/psicosocial) pendiente Oscar. Ver curacion_pr3_ayuda_humanitaria.md"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Transporte de emergencia",
+      "etiqueta_manual": "Transporte",
+      "res_id": 1234,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "11-MU glosario Art.64 (AHE)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "PR3_re re-enganchado a pre 354 (AHE). Alimentacion/Vestuario cruzan directo; el resto (funerario, apoyo economico, aseo, split medica/psicosocial) pendiente Oscar. Ver curacion_pr3_ayuda_humanitaria.md"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Otra ayuda",
+      "etiqueta_manual": "Otra, Cuál?",
+      "res_id": 1241,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "11-MU glosario Art.64 (AHE)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "PR3_re re-enganchado a pre 354 (AHE). Alimentacion/Vestuario cruzan directo; el resto (funerario, apoyo economico, aseo, split medica/psicosocial) pendiente Oscar. Ver curacion_pr3_ayuda_humanitaria.md"
     }
   ]
 }
