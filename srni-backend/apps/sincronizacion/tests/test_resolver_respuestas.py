@@ -255,18 +255,27 @@ def test_crosswalk_resuelve_otro_cuando_el_texto_no_cruza():
     assert _r().resolver_res_idrespuesta(_Respuesta(p, "1")) == 5
 
 
-def test_crosswalk_resuelve_typo_de_sicav_combares():
+def test_crosswalk_resuelve_wording_que_sigue_divergiendo():
     """
-    (b) pre_id=872, 'Combares o bombardeos' (typo de SICAV) → res_id=2644
-    ('Combates o bombardeos' en Oracle).
+    (b) pre_id=1164, 'Rural disperso (vereda)' → res_id=3811.
 
-    Un carácter de diferencia (r/t) rompe el cruce exacto —y así debe ser, nada de
-    fuzzy—; la curaduría humana es la que sabe que es la misma opción.
+    Caso de crosswalk que SOBREVIVE tras alinear el instrumento al manual (2026-07-23):
+    SICAV ya dice 'Rural disperso (vereda)' (redacción del manual), pero Oracle guarda
+    'Parte rural disperso (vereda, campo)'. El texto sigue SIN cruzar directo —nada de
+    fuzzy— y el crosswalk curado, única autoridad, lo resuelve.
+
+    (Los typos como 'Combares'→'Combates' ya se corrigieron en el fixture; ahora cruzan
+    DIRECTO con Oracle y su entrada de crosswalk se quitó por redundante en la
+    reconciliación — ver crosswalk_opciones.json `_meta.reconciliado`.)
     """
-    objetivo = catalogos.normalizar_nombre("Combares o bombardeos")
-    assert catalogos.cargar_crosswalk_opciones()[(872, objetivo)] == 2644
-    p = _Pregunta(872, "SOC_ECON", _Opcion("1", "Combares o bombardeos"))
-    assert _r().resolver_res_idrespuesta(_Respuesta(p, "1")) == 2644
+    objetivo = catalogos.normalizar_nombre("Rural disperso (vereda)")
+    cat = catalogos.cargar_respuestas()
+    # Premisa: no cruza por texto directo con ninguna opción de la pregunta 1164…
+    assert not any(o["_texto"] == objetivo for o in cat["preguntas"][1164]["respuestas"])
+    # …y el crosswalk sí la tiene curada a 3811.
+    assert catalogos.cargar_crosswalk_opciones()[(1164, objetivo)] == 3811
+    p = _Pregunta(1164, "Z16", _Opcion("6", "Rural disperso (vereda)"))
+    assert _r().resolver_res_idrespuesta(_Respuesta(p, "6")) == 3811
 
 
 def test_crosswalk_es_exacto_no_traga_lo_no_curado():

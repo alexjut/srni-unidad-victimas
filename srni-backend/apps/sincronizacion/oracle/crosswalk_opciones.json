@@ -2,8 +2,9 @@
   "_meta": {
     "fuente": "curacion_crosswalk_propuesta.md",
     "verificado": "2026-07-22: 164/164 res_id existen y escribibles",
-    "total": 164,
-    "clasificacion": "2026-07-22 refinada: FIXTURE_FIX_TYPO=seguro; FIXTURE_REVISAR=caso a caso; CROSSWALK_SOLO=solo dato, no toca instrumento"
+    "total": 148,
+    "clasificacion": "2026-07-22 refinada: FIXTURE_FIX_TYPO=seguro; FIXTURE_REVISAR=caso a caso; CROSSWALK_SOLO=solo dato, no toca instrumento",
+    "reconciliado": "2026-07-23: tras el batch de fixture, quitadas 16 entradas redundantes (nuevo label ya == Oracle → cruce directo) y re-clavadas 3 al label nuevo (Rural disperso). Ver docs/gestion/batch_fixture_correcciones.md"
   },
   "mapeos": [
     {
@@ -62,39 +63,6 @@
       "accion": "FIXTURE_REVISAR"
     },
     {
-      "pre_id": 45,
-      "cod_sicav": "D5",
-      "opcion_sicav": "En Usufructo**",
-      "etiqueta_manual": "Usufructo",
-      "res_id": 164,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p67",
-      "nota": "Prefijo 'En' y '**' de SICAV; misma opcion.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 49,
-      "cod_sicav": "D13A",
-      "opcion_sicav": "la queman o entierran",
-      "etiqueta_manual": "Las queman o entierran",
-      "res_id": 179,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p73",
-      "nota": "Mayuscula/plural.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 49,
-      "cod_sicav": "D13A",
-      "opcion_sicav": "Por recolecion pública o privada",
-      "etiqueta_manual": "Por recolección pública o privada",
-      "res_id": 176,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p73",
-      "nota": "Typo SICAV 'recolecion'.",
-      "accion": "FIXTURE_FIX_TYPO"
-    },
-    {
       "pre_id": 50,
       "cod_sicav": "D14",
       "opcion_sicav": "No tiene servicio sanitario",
@@ -115,50 +83,6 @@
       "pagina_manual": "TERR p83",
       "nota": "Formato.",
       "accion": "CROSSWALK_SOLO"
-    },
-    {
-      "pre_id": 76,
-      "cod_sicav": "G7B_GRADO",
-      "opcion_sicav": "Básica_primaria_1°_a_5°",
-      "etiqueta_manual": "Básica primaria (1º - 5º)",
-      "res_id": 263,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p84",
-      "nota": "Guiones bajos y grado; misma opcion.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 76,
-      "cod_sicav": "G7B_GRADO",
-      "opcion_sicav": "Básica_Secundaria_6°_a_9°",
-      "etiqueta_manual": "Básica secundaria (6º - 9º)",
-      "res_id": 264,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p84",
-      "nota": "Guiones bajos y grado; misma opcion.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 76,
-      "cod_sicav": "G7B_GRADO",
-      "opcion_sicav": "Media_10°_a_13°",
-      "etiqueta_manual": "Media (10º - 13º)",
-      "res_id": 265,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p84",
-      "nota": "Guiones bajos y grado; misma opcion.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 76,
-      "cod_sicav": "G7B_GRADO",
-      "opcion_sicav": "Ninguna",
-      "etiqueta_manual": "Ninguno",
-      "res_id": 261,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p84",
-      "nota": "'Ninguna' vs 'Ninguno'; misma opcion (nivel educativo).",
-      "accion": "FIXTURE_REVISAR"
     },
     {
       "pre_id": 79,
@@ -400,17 +324,6 @@
       "categoria": "TRIVIAL",
       "pagina_manual": "TERR p108",
       "nota": "Variante 'informa'/'responde'.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 124,
-      "cod_sicav": "L6",
-      "opcion_sicav": "Puso consultó avisos clasificados",
-      "etiqueta_manual": "Puso o consultó avisos clasificados",
-      "res_id": 424,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p108",
-      "nota": "Falta 'o' en SICAV.",
       "accion": "FIXTURE_REVISAR"
     },
     {
@@ -788,17 +701,6 @@
       "accion": "FIXTURE_REVISAR"
     },
     {
-      "pre_id": 300,
-      "cod_sicav": "D10",
-      "opcion_sicav": "De ota fuente por tubería (Redes comunitarias)",
-      "etiqueta_manual": "De otra fuente por tubería (Redes comunitarias)",
-      "res_id": 2369,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p72",
-      "nota": "Typo SICAV 'ota'.",
-      "accion": "FIXTURE_FIX_TYPO"
-    },
-    {
       "pre_id": 318,
       "cod_sicav": "D8A",
       "opcion_sicav": "Si",
@@ -920,17 +822,6 @@
       "accion": "FIXTURE_REVISAR"
     },
     {
-      "pre_id": 812,
-      "cod_sicav": "I28A",
-      "opcion_sicav": "Comunitaria",
-      "etiqueta_manual": "Comunitario",
-      "res_id": 2414,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p97",
-      "nota": "Genero; misma opcion.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
       "pre_id": 814,
       "cod_sicav": "PL2",
       "opcion_sicav": "Si",
@@ -1041,17 +932,6 @@
       "accion": "CROSSWALK_SOLO"
     },
     {
-      "pre_id": 849,
-      "cod_sicav": "PL24",
-      "opcion_sicav": "Otra ¿Cuál?",
-      "etiqueta_manual": "Otro ¿Cuál?",
-      "res_id": 2592,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p133",
-      "nota": "Genero/formato.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
       "pre_id": 865,
       "cod_sicav": "B13A",
       "opcion_sicav": "Trasplante renal",
@@ -1083,39 +963,6 @@
       "pagina_manual": "TERR p58",
       "nota": "Oracle typo 'Terrritorio'; misma opcion.",
       "accion": "CROSSWALK_SOLO"
-    },
-    {
-      "pre_id": 872,
-      "cod_sicav": "C17A",
-      "opcion_sicav": "Combares o bombardeos",
-      "etiqueta_manual": "Combates o bombardeos",
-      "res_id": 2644,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p76",
-      "nota": "Typo SICAV 'Combares'.",
-      "accion": "FIXTURE_FIX_TYPO"
-    },
-    {
-      "pre_id": 872,
-      "cod_sicav": "C17A",
-      "opcion_sicav": "Exploración y exploración minero-energética (petróleo, gas etc)",
-      "etiqueta_manual": "Exploración y explotación minero-energética (petróleo, gas etc)",
-      "res_id": 2642,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p76",
-      "nota": "Typo SICAV ('exploracion' repetido).",
-      "accion": "FIXTURE_FIX_TYPO"
-    },
-    {
-      "pre_id": 872,
-      "cod_sicav": "C17A",
-      "opcion_sicav": "Megaproyectos de infraestructura y/o turiísticos (represas, hotelería etc.)",
-      "etiqueta_manual": "Megaproyectos de infraestructura y/o turísticos (represas, hotelería etc)",
-      "res_id": 2647,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "TERR p76",
-      "nota": "Typo SICAV 'turiisticos'.",
-      "accion": "FIXTURE_FIX_TYPO"
     },
     {
       "pre_id": 872,
@@ -1428,17 +1275,6 @@
     {
       "pre_id": 1494,
       "cod_sicav": "D5_tel",
-      "opcion_sicav": "En Usufructo**",
-      "etiqueta_manual": "Usufructo",
-      "res_id": 4704,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "ASIS p52",
-      "nota": "Prefijo/'**'.",
-      "accion": "FIXTURE_REVISAR"
-    },
-    {
-      "pre_id": 1494,
-      "cod_sicav": "D5_tel",
       "opcion_sicav": "Otra ¿Cuál?",
       "etiqueta_manual": "Otro. ¿Cuál? ____________",
       "res_id": 4711,
@@ -1468,17 +1304,6 @@
       "pagina_manual": "ASIS p55",
       "nota": "Boolean; sub-campo.",
       "accion": "CROSSWALK_SOLO"
-    },
-    {
-      "pre_id": 1504,
-      "cod_sicav": "D13A_tel",
-      "opcion_sicav": "Por recolecion pública o privada",
-      "etiqueta_manual": "Por recolección pública o privada",
-      "res_id": 4754,
-      "categoria": "TRIVIAL",
-      "pagina_manual": "ASIS p58",
-      "nota": "Typo SICAV.",
-      "accion": "FIXTURE_FIX_TYPO"
     },
     {
       "pre_id": 1509,
@@ -1747,12 +1572,12 @@
     {
       "pre_id": 1164,
       "cod_sicav": "Z16",
-      "opcion_sicav": "Rural disperso (vereda,)",
+      "opcion_sicav": "Rural disperso (vereda)",
       "etiqueta_manual": "Rural disperso (vereda)",
       "res_id": 3811,
       "categoria": "SUSTANTIVA",
       "pagina_manual": "TERR p45-46",
-      "nota": "Manual (p46). Limpiar coma; Oracle anade 'Parte...campo'. res 3811.",
+      "nota": "Manual (p46). Limpiar coma; Oracle anade 'Parte...campo'. res 3811. [reconciliado 2026-07-23: label alineado al manual]",
       "accion": "FIXTURE_REVISAR"
     },
     {
@@ -1780,23 +1605,23 @@
     {
       "pre_id": 1452,
       "cod_sicav": "Z6_tel",
-      "opcion_sicav": "Rural disperso (vereda,)",
+      "opcion_sicav": "Rural disperso (vereda)",
       "etiqueta_manual": "Rural disperso (vereda)",
       "res_id": 4574,
       "categoria": "SUSTANTIVA",
       "pagina_manual": "ASIS p30-31",
-      "nota": "Manual (p30-31). res 4574.",
+      "nota": "Manual (p30-31). res 4574. [reconciliado 2026-07-23: label alineado al manual]",
       "accion": "FIXTURE_REVISAR"
     },
     {
       "pre_id": 1461,
       "cod_sicav": "Z16_tel",
-      "opcion_sicav": "Rural disperso (vereda,)",
+      "opcion_sicav": "Rural disperso (vereda)",
       "etiqueta_manual": "Rural disperso (vereda)",
       "res_id": 4586,
       "categoria": "SUSTANTIVA",
       "pagina_manual": "ASIS (zona corresp.)",
-      "nota": "Manual. res 4586.",
+      "nota": "Manual. res 4586. [reconciliado 2026-07-23: label alineado al manual]",
       "accion": "FIXTURE_REVISAR"
     },
     {

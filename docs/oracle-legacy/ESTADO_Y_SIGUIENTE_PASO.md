@@ -66,11 +66,17 @@ se trajo el catálogo entero desde prod al Oracle **local**:
    Detalle: `docs/gestion/batch_fixture_correcciones.md`. NO se bumpeó versión (correcciones
    cosméticas, in-place; el APK las toma en el próximo build).
 
+**Avance 2026-07-23 — crosswalk reconciliado:**
+- `main` mergeado al worktree (merge `1dd5928`): el worktree ya tiene el instrumento corregido.
+- **Crosswalk reconciliado** (`crosswalk_opciones.json`): **164 → 148** mapeos. Se quitaron
+  **16 entradas redundantes** (el label corregido ya == Oracle ⇒ el resolver cruza DIRECTO,
+  p.ej. `Combates o bombardeos`, `Ninguno`, `Usufructo`) y se **re-clavaron 3** al label nuevo
+  (`Rural disperso (vereda)`, pre 1164/1452/1461, que sigue ≠ Oracle `Parte rural disperso…`).
+  `_meta.reconciliado` lo documenta. Test del typo reemplazado por uno del caso que sobrevive.
+  **100 tests verdes.**
+
 **Siguiente:**
-1. **Reconciliar el crosswalk con las etiquetas nuevas** (migración, worktree): tras corregir
-   los labels, algunas claves del crosswalk quedaron en el texto viejo (p.ej. wording como
-   `Rural disperso (vereda)` que ya no cruza directo con Oracle). Refrescar las claves afectadas.
-2. **A Oscar:** familia NS/NR (M-series), pre1435 `del jefe`→`del responsable`, pre1503 mismatch,
+1. **A Oscar:** familia NS/NR (M-series), pre1435 `del jefe`→`del responsable`, pre1503 mismatch,
    PR3_re id_preg, "Autodiligenciada"/"Cara a cara" (pre 2), Cédula 3854.
 3. **`cargar_perfil --reemplazar`** de los 7 perfiles editados en el server (en el próximo deploy;
    el fixture es la fuente, la BD se regenera). ¿Bump de versión? Solo si se quiere que el sync
