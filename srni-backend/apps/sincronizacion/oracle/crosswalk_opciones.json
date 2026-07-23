@@ -2,10 +2,11 @@
   "_meta": {
     "fuente": "curacion_crosswalk_propuesta.md",
     "verificado": "2026-07-22: 164/164 res_id existen y escribibles",
-    "total": 151,
+    "total": 156,
     "clasificacion": "2026-07-22 refinada: FIXTURE_FIX_TYPO=seguro; FIXTURE_REVISAR=caso a caso; CROSSWALK_SOLO=solo dato, no toca instrumento",
     "reconciliado": "2026-07-23: tras el batch de fixture, quitadas 16 entradas redundantes (nuevo label ya == Oracle → cruce directo) y re-clavadas 3 al label nuevo (Rural disperso). Ver docs/gestion/batch_fixture_correcciones.md",
-    "pr3_re": "2026-07-23: 3 entradas para PR3_re->pre354 (AHE). 5/9 opciones mapean; resto a Oscar."
+    "pr3_re": "2026-07-23: 3 entradas para PR3_re->pre354 (AHE). 5/9 opciones mapean; resto a Oscar.",
+    "decisiones_javier_20260723": "PR3: aseo->1235, funerario/apoyo economico->1241(Otra). Metodo: Cara a cara->2, Autodiligenciada->5. Split medica/psicosocial: en instrumento (aparte)."
   },
   "mapeos": [
     {
@@ -1668,6 +1669,61 @@
       "pagina_manual": "11-MU glosario Art.64 (AHE)",
       "accion": "CROSSWALK_SOLO",
       "nota": "PR3_re re-enganchado a pre 354 (AHE). Alimentacion/Vestuario cruzan directo; el resto (funerario, apoyo economico, aseo, split medica/psicosocial) pendiente Oscar. Ver curacion_pr3_ayuda_humanitaria.md"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Aseo personal y elementos de hábitat",
+      "etiqueta_manual": "Kit de habitabilidad",
+      "res_id": 1235,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "decision de negocio (Javier)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "decision Javier 2026-07-23: aseo -> Kit de habitabilidad"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Auxilio funerario",
+      "etiqueta_manual": "Otra, Cuál?",
+      "res_id": 1241,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "decision de negocio (Javier)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "decision Javier: sin equiv Oracle -> Otra (1241), detalle 'Auxilio funerario' en el cual"
+    },
+    {
+      "pre_id": 354,
+      "cod_sicav": "PR3_re",
+      "opcion_sicav": "Apoyo económico (transferencia monetaria)",
+      "etiqueta_manual": "Otra, Cuál?",
+      "res_id": 1241,
+      "categoria": "PR3_AYUDA_HUMANITARIA",
+      "pagina_manual": "decision de negocio (Javier)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "decision Javier: sin equiv Oracle -> Otra (1241), detalle en el cual"
+    },
+    {
+      "pre_id": 2,
+      "cod_sicav": "Z3",
+      "opcion_sicav": "Cara a cara",
+      "etiqueta_manual": "Vivienda de residencia",
+      "res_id": 2,
+      "categoria": "METODO_RECOLECCION",
+      "pagina_manual": "decision de negocio (Javier)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "decision Javier: Cara a cara -> Vivienda de residencia (2)"
+    },
+    {
+      "pre_id": 2,
+      "cod_sicav": "Z3",
+      "opcion_sicav": "Autodiligenciada",
+      "etiqueta_manual": "Otro, Cuál?",
+      "res_id": 5,
+      "categoria": "METODO_RECOLECCION",
+      "pagina_manual": "decision de negocio (Javier)",
+      "accion": "CROSSWALK_SOLO",
+      "nota": "decision Javier: sin equiv Oracle -> Otro (5), detalle 'Autodiligenciada'"
     }
   ]
 }
