@@ -1314,7 +1314,7 @@
     {
       "no_pregunta": "PR3",
       "codigo_externo": "PR3_re",
-      "id_preg": 92,
+      "id_preg": 354,
       "texto": "¿Qué tipo de ayuda humanitaria ha recibido?",
       "tipo": "LISTA_MULTIPLE",
       "nivel": "HOGAR",
