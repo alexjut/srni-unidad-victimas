@@ -167,29 +167,19 @@ class ResolverCatalogos:
 
     def resolver_t_victima(self, miembro):
         """
-        T_VICTIMA (GIC_PERSONA.PER_TIPOVICTIMA) a partir del miembro SICAV.
+        T_VICTIMA (GIC_PERSONA.PER_TIPOVICTIMA) → **NULL**.
 
-        Hoy falla SIEMPRE, y es correcto que lo haga: `MiembroHogar` **no define**
-        `tipo_victima` (solo figura en docs/base-datos/MODELOS.md como campo planeado
-        que nunca se implementó). Antes se leía con `getattr(miembro, "tipo_victima",
-        None)` y ese default silencioso hacía que el fallo se reportara como "sin
-        mapeo Oracle para None" — un diagnóstico falso, que manda a buscar en el
-        catálogo de Oracle un problema que está en el modelo SICAV.
+        RESUELTO CON DATO (2026-07-24). `SELECT PER_TIPOVICTIMA, COUNT(*) FROM
+        GIC_PERSONA` en prod dio: **NULL = 7.755.818** personas · 'DIRECTA' = 25 ·
+        'INDIRECTA (DESTINATARIO)' = 1. O sea el campo está en **DESUSO** (26 valores
+        en ~7,76 M personas, 0,0003 %). Decisión de Javier (delegada por Oscar): SICAV
+        **escribe NULL**, tal cual el 99,9997 % de Oracle — no se deriva ni se inventa,
+        y `MiembroHogar` no necesita el campo. Disuelve el pendiente P8/T_VICTIMA (antes
+        fallaba porque el modelo SICAV no traía `tipo_victima`; ya no hay nada que traer).
 
-        Son dos pendientes encadenados y conviene no confundirlos:
-        1. **campo origen inexistente** (esto) → lo arregla el modelo SICAV.
-        2. **mapeo de negocio de T_VICTIMA** (P8, pendiente de Oscar) → aunque el
-           campo existiera, `catalogos.TIPO_VICTIMA` sigue vacío a propósito.
+        `miembro` se ignora a propósito: no hay origen que leer.
         """
-        try:
-            valor = _campo_origen(miembro, "tipo_victima")
-        except CampoOrigenFaltante:
-            if self.estricto:
-                raise  # ruta confirmada: no se escribe con un origen inventado
-            # DRY-RUN: marcador que dice la causa REAL, no un ‹PEND:...(None)› que
-            # aparentaría un simple hueco de catálogo.
-            return self._pendiente("T_VICTIMA", "MiembroHogar SIN campo tipo_victima")
-        return self._resolver(self._tipo_victima, valor, "tipo_victima")
+        return None
 
     # ── catálogo 5 — territorio (cascada) ──────────────────────────────────────
     def resolver_territorio(self, sesion) -> dict:

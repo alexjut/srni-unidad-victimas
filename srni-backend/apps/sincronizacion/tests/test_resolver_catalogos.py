@@ -71,52 +71,25 @@ def test_relac_vacio_lanza():
         _r().resolver_relac("")
 
 
-# ── catálogo 4b — tipo de víctima (el campo origen NO existe en el modelo) ───
+# ── catálogo 4b — tipo de víctima → NULL (campo en desuso en Oracle) ─────────
 class _MiembroSinCampo:
     """Como el MiembroHogar REAL: no define `tipo_victima`."""
     parentesco = "HIJO_A"
 
 
-class _MiembroConCampo:
-    """Hipotético: si algún día el modelo tuviera el campo."""
-    tipo_victima = "DIRECTA"
-
-
-def test_t_victima_sin_campo_lanza_campo_faltante():
-    # MiembroHogar no define tipo_victima: debe fallar señalando el CAMPO, no el
-    # catálogo Oracle. Antes el getattr(..., None) lo disfrazaba de "sin mapeo None".
-    with pytest.raises(CampoOrigenFaltante) as exc:
-        _r().resolver_t_victima(_MiembroSinCampo())
-    assert "tipo_victima" in str(exc.value)
-    assert "no define el campo" in str(exc.value)
+def test_t_victima_es_null_por_desuso_en_oracle():
+    # Medido en prod (2026-07-24): PER_TIPOVICTIMA es NULL en 7.755.818 de ~7,76 M
+    # personas (26 con valor). Campo en DESUSO ⇒ SICAV escribe NULL (decisión Javier,
+    # delegada por Oscar). No falla ni marca pendiente: NULL es el valor correcto, tal
+    # cual el 99,9997 % de Oracle. Antes fallaba porque el modelo SICAV no traía el campo.
+    assert _r().resolver_t_victima(_MiembroSinCampo()) is None
+    assert _r(estricto=False).resolver_t_victima(_MiembroSinCampo()) is None
+    assert _r().resolver_t_victima(object()) is None   # ni siquiera mira el miembro
 
 
 def test_campo_faltante_es_mapeo_desconocido():
     # Subclase: los `except MapeoDesconocido` existentes lo siguen atrapando.
     assert issubclass(CampoOrigenFaltante, MapeoDesconocido)
-
-
-def test_t_victima_sin_campo_no_devuelve_default_silencioso():
-    # El pecado a evitar: devolver None calladamente como si fuera un valor.
-    with pytest.raises(MapeoDesconocido):
-        _r().resolver_t_victima(_MiembroSinCampo())
-
-
-def test_t_victima_dry_run_marca_la_causa_real():
-    # En dry-run no se rompe el flujo, pero el marcador dice POR QUÉ falta: el
-    # campo no existe. No un ‹PEND:TIPO_VICTIMA(None)› que aparenta hueco de catálogo.
-    marcador = _r(estricto=False).resolver_t_victima(_MiembroSinCampo())
-    assert marcador == "‹PEND:T_VICTIMA(MiembroHogar SIN campo tipo_victima)›"
-    assert "None" not in marcador
-
-
-def test_t_victima_con_campo_sigue_siendo_pendiente_de_negocio():
-    # Aunque el campo existiera, TIPO_VICTIMA está vacío a propósito (P8, Oscar):
-    # el fallo pasa a ser de CATÁLOGO, y ya no de campo faltante.
-    with pytest.raises(MapeoDesconocido) as exc:
-        _r().resolver_t_victima(_MiembroConCampo())
-    assert not isinstance(exc.value, CampoOrigenFaltante)
-    assert "PER_TIPOVICTIMA" in str(exc.value)
 
 
 # ── catálogo 1 — usuario/perfil de servicio (pendiente de negocio) ───────────
