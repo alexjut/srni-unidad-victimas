@@ -482,9 +482,10 @@
       {"valor": "4", "etiqueta": "Vestuario",                               "id_resp_vivanto": 0, "orden": 4},
       {"valor": "5", "etiqueta": "Aseo personal y elementos de hábitat",    "id_resp_vivanto": 0, "orden": 5},
       {"valor": "6", "etiqueta": "Transporte de emergencia",                "id_resp_vivanto": 0, "orden": 6},
-      {"valor": "7", "etiqueta": "Atención médica y psicosocial",           "id_resp_vivanto": 0, "orden": 7},
-      {"valor": "8", "etiqueta": "Apoyo económico (transferencia monetaria)","id_resp_vivanto": 0, "orden": 8},
-      {"valor": "98", "etiqueta": "Otra ayuda",                             "id_resp_vivanto": 0, "orden": 9}
+      {"valor": "7", "etiqueta": "Atención médica",           "id_resp_vivanto": 0, "orden": 7},
+      {"valor": "9", "etiqueta": "Atención psicosocial",                  "id_resp_vivanto": 0, "orden": 8},
+      {"valor": "8", "etiqueta": "Apoyo económico (transferencia monetaria)","id_resp_vivanto": 0, "orden": 9},
+      {"valor": "98", "etiqueta": "Otra ayuda",                             "id_resp_vivanto": 0, "orden": 10}
     ],
     "TIPO_DISCAPACIDAD": [
       {"valor": "1", "etiqueta": "Física / Motora",                  "id_resp_vivanto": 0, "orden": 1},
