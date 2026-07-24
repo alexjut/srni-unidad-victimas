@@ -59,12 +59,14 @@ Oracle (pre 2): Vivienda de residencia (2), Entrevista Telefónica (3), **Entrev
 
 ---
 
-## 3. Cédula — ¿qué id usa SICAV? (93 vs 3854) — ⏸️ pendiente de análisis
+## 3. Cédula — ¿qué id usa SICAV? (93 vs 3854) — ✅ RESUELTO → **93**
 
-En Oracle, "Cédula de ciudadanía" tiene 4 ids escribibles; **93** (29.338 usos) y **3854**
-(8.620 usos) son los reales. **Bloqueado:** la VPN a prod está caída; en cuanto vuelva corro
-el análisis de fechas/uso (tu hipótesis: 3854 = víctimas con acciones victimizantes) y te
-traigo el dato para que decidas. **No decidir aún** — falta el análisis.
+Análisis en prod (2026-07-23): 93 existe desde 2015 (29.272 usos); 3854 aparece en **2020**
+y **convive** con 93 (no lo reemplaza). Ambos son **nivel PERSONA, mismo instrumento, y los
+MISMOS encuestadores** cargan los dos indistintamente. ⇒ La hipótesis "3854 = víctimas con
+acciones victimizantes" **queda refutada**: 3854 es un **id DUPLICADO** de catálogo (calidad
+de dato de Oracle), no otro canal ni categoría. **Decisión (Javier): SICAV usa el 93**
+(canónico/mayoritario). Cableado en el crosswalk (pre 30 → 93).
 
 ---
 

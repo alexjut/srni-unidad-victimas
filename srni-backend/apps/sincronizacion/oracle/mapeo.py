@@ -529,13 +529,27 @@ class ResolverCatalogos:
 
     @staticmethod
     def _etiqueta_opcion(respuesta):
-        """Texto de la opción elegida en SICAV — es lo que se cruza contra Oracle."""
+        """
+        Texto de la opción elegida en SICAV — es lo que se cruza contra Oracle.
+
+        Las preguntas BOOLEAN no tienen `OpcionRespuesta`: su respuesta es 'true'/'false'.
+        Oracle guarda esas preguntas con opciones 'Sí'/'No' (p.ej. AHE pre 353,
+        indemnización pre 228), así que la respuesta booleana se renderiza a 'Sí'/'No' y
+        el cruce por texto la resuelve como cualquier otra. Ver curacion_bloque_pr.md.
+        """
         pregunta = getattr(respuesta, "pregunta", None)
         opciones = getattr(pregunta, "opciones", None)
-        if opciones is None:
-            return None
-        opcion = opciones.filter(valor=respuesta.valor).first()
-        return getattr(opcion, "etiqueta", None)
+        if opciones is not None:
+            opcion = opciones.filter(valor=respuesta.valor).first()
+            if opcion is not None:
+                return opcion.etiqueta
+        if getattr(pregunta, "tipo", None) == "BOOLEAN":
+            v = str(getattr(respuesta, "valor", "") or "").strip().lower()
+            if v in ("true", "1", "si", "sí", "verdadero"):
+                return "Sí"
+            if v in ("false", "0", "no", "falso"):
+                return "No"
+        return None
 
     def resolver_tipo_pregunta(self, pregunta):
         """

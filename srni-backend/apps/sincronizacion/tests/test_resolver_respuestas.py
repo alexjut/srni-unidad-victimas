@@ -293,6 +293,28 @@ def test_crosswalk_resuelve_pr3_ayuda_humanitaria_reenganchada():
     assert _r().resolver_res_idrespuesta(_Respuesta(p, "2")) == 1230
 
 
+def test_boolean_se_resuelve_como_si_no():
+    """
+    (e) Preguntas BOOLEAN (PR2/PR4) NO tienen opciones: su respuesta 'true'/'false' se
+    renderiza a 'Sí'/'No' y cruza DIRECTO con Oracle (pre 353 AHE: Sí=1225, No=1226).
+    """
+    p = _Pregunta(353, "PR2_re", tipo="BOOLEAN")
+    assert _r().resolver_res_idrespuesta(_Respuesta(p, "true")) == 1225
+    assert _r().resolver_res_idrespuesta(_Respuesta(p, "false")) == 1226
+
+
+def test_crosswalk_desempata_cedula_a_93():
+    """
+    (f) Cédula (pregunta 30) tiene 4 ids escribibles con el mismo texto (93/3852/3853/
+    3854) ⇒ ambigüedad. Decisión (Javier, 2026-07-23, tras análisis en prod: 3854 es un
+    id DUPLICADO, no otro canal): SICAV usa 93. El crosswalk lo desempata.
+    """
+    objetivo = catalogos.normalizar_nombre("Cédula de Ciudadanía/Contraseña")
+    assert catalogos.cargar_crosswalk_opciones()[(30, objetivo)] == 93
+    p = _Pregunta(30, "A3", _Opcion("1", "Cédula de Ciudadanía/Contraseña"))
+    assert _r().resolver_res_idrespuesta(_Respuesta(p, "1")) == 93
+
+
 def test_crosswalk_es_exacto_no_traga_lo_no_curado():
     """
     (c) Regresión del wireo: el crosswalk es un mapa EXACTO, no un colador. Una opción
@@ -329,12 +351,31 @@ def _tipo_doc():
     return _Respuesta(p, "CC")
 
 
-def test_opcion_ambigua_falla_y_no_elige_ninguna():
+def test_opcion_ambigua_falla_y_no_elige_ninguna(monkeypatch):
+    # Cédula (pre 30) —el ÚNICO caso real de ambigüedad del catálogo— ya se desempata a
+    # 93 por decisión (ver test_crosswalk_desempata_cedula_a_93). El GUARD de ambigüedad
+    # sigue vivo y aquí se ejercita con un caso SINTÉTICO no curado (fuera del crosswalk).
+    cat = dict(catalogos.cargar_respuestas())
+    dup = catalogos.normalizar_nombre("Opción duplicada")
+    preguntas = dict(cat["preguntas"])
+    preguntas[999999] = {
+        "pre_idpregunta": 999999, "tem_idtema": 0, "ixp_orden": 0,
+        "pre_tipopregunta": "IN", "pre_pregunta": "Sintética ambigua",
+        "respuestas": [
+            {"res_idrespuesta": 9999801, "res_respuesta": "Opción duplicada",
+             "_texto": dup, "res_activa": "SI", "escribible": True},
+            {"res_idrespuesta": 9999802, "res_respuesta": "Opción duplicada",
+             "_texto": dup, "res_activa": "SI", "escribible": True},
+        ],
+    }
+    cat["preguntas"] = preguntas
+    monkeypatch.setattr(catalogos, "cargar_respuestas", lambda: cat)
+    p = _Pregunta(999999, "SYN", _Opcion("1", "Opción duplicada"))
     with pytest.raises(MapeoPendienteNegocio) as exc:
-        _r().resolver_res_idrespuesta(_tipo_doc())
+        _r().resolver_res_idrespuesta(_Respuesta(p, "1"))
     msg = str(exc.value)
-    assert "93" in msg and "3852" in msg and "3853" in msg and "3854" in msg
-    assert "MANUAL OFICIAL" in msg          # peldaño 3 antes que Oscar
+    assert "9999801" in msg and "9999802" in msg   # lista las candidatas reales
+    assert "MANUAL OFICIAL" in msg                  # peldaño 3 antes que Oscar
     assert msg.index("MANUAL OFICIAL") < msg.index("Oscar")
 
 

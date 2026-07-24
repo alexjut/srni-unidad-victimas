@@ -2,12 +2,13 @@
   "_meta": {
     "fuente": "curacion_crosswalk_propuesta.md",
     "verificado": "2026-07-22: 164/164 res_id existen y escribibles",
-    "total": 160,
+    "total": 161,
     "clasificacion": "2026-07-22 refinada: FIXTURE_FIX_TYPO=seguro; FIXTURE_REVISAR=caso a caso; CROSSWALK_SOLO=solo dato, no toca instrumento",
     "reconciliado": "2026-07-23: tras el batch de fixture, quitadas 16 entradas redundantes (nuevo label ya == Oracle → cruce directo) y re-clavadas 3 al label nuevo (Rural disperso). Ver docs/gestion/batch_fixture_correcciones.md",
     "pr3_re": "2026-07-23: 3 entradas para PR3_re->pre354 (AHE). 5/9 opciones mapean; resto a Oscar.",
     "decisiones_javier_20260723": "PR3: aseo->1235, funerario/apoyo economico->1241(Otra). Metodo: Cara a cara->2, Autodiligenciada->5. Split medica/psicosocial: en instrumento (aparte).",
-    "bloque_pr": "2026-07-23: PR2->353, PR4->228 (id_preg en fixture) + 4 entradas booleanas Si/No. PR1/PR5 desenganchadas (SICAV-only)."
+    "bloque_pr": "2026-07-23: PR2->353, PR4->228 (id_preg en fixture) + 4 entradas booleanas Si/No. PR1/PR5 desenganchadas (SICAV-only).",
+    "cedula": "2026-07-23: pregunta 30 Cedula -> 93 (canonico). 3854 refutado como duplicado por analisis prod."
   },
   "mapeos": [
     {
@@ -1769,6 +1770,17 @@
       "accion": "CROSSWALK_SOLO",
       "pagina_manual": "decision Javier 2026-07-23",
       "nota": "PR BOOLEAN: el resolver debe renderizar true->'Sí'/false->'No' para usar esta clave (rama BOOLEAN pendiente en escritor)"
+    },
+    {
+      "pre_id": 30,
+      "cod_sicav": "A3",
+      "opcion_sicav": "Cédula de Ciudadanía/Contraseña",
+      "etiqueta_manual": "Cédula de ciudadanía / Contraseña",
+      "res_id": 93,
+      "categoria": "TIPO_DOCUMENTO",
+      "accion": "CROSSWALK_SOLO",
+      "pagina_manual": "decision Javier 2026-07-23",
+      "nota": "Cedula pregunta 30: 4 ids escribibles (93/3852/3853/3854). Analisis en prod: 3854 es un id DUPLICADO (2020, mismos usuarios/nivel), no otro canal. Se elige 93 (canonico, mayoritario 29k usos)."
     }
   ]
 }
