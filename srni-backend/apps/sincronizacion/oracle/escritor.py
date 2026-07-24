@@ -105,6 +105,19 @@ class EscritorOracle:
             estado=EstadoPaso.VERIFICADO,
         ).exists()
 
+    def _registro_verificado(self, hogar, paso, origen_id):
+        """
+        El registro VERIFICADO de este paso (o None).
+
+        Sirve para que un re-run idempotente recupere el destino ya escrito
+        (HOG_CODIGO / PER_IDPERSONA): los pasos siguientes lo necesitan y, si no se
+        recuperara, se anclarían con el código SICAV en vez del real de Oracle.
+        """
+        return RegistroEscrituraOracle.objects.filter(
+            hogar=hogar, paso=paso, origen_id=str(origen_id),
+            estado=EstadoPaso.VERIFICADO,
+        ).first()
+
     @staticmethod
     def _id_oracle(valor):
         """
@@ -159,9 +172,12 @@ class EscritorOracle:
     # ── pasos de la máquina ──────────────────────────────────────────────────
     def paso_hogar(self, hogar, *, user, instrumento_codigo=None) -> ResultadoPaso:
         origen = hogar.pk
-        if self._ya_verificado(hogar, PasoEscritura.HOGAR, origen):
+        reg = self._registro_verificado(hogar, PasoEscritura.HOGAR, origen)
+        if reg is not None:
+            # Re-run: recupera el HOG_CODIGO real ya escrito para que territorio y
+            # respuestas se anclen a él, no al código SICAV de referencia.
             return ResultadoPaso(PasoEscritura.HOGAR, str(origen), EstadoPaso.VERIFICADO,
-                                 "", {"idempotente": True})
+                                 "", {"idempotente": True, "hog_codigo": reg.destino_hog_codigo})
         binds = mapeo.binds_hogar(hogar, user=user, catalogos=self.catalogos,
                                   instrumento_codigo=instrumento_codigo)
         res = self._ejecutar_paso(P.GIC_INSERT_HOGAR1, binds)
@@ -180,9 +196,11 @@ class EscritorOracle:
 
     def paso_persona(self, hogar, miembro, *, user, hog_codigo) -> ResultadoPaso:
         origen = miembro.pk
-        if self._ya_verificado(hogar, PasoEscritura.PERSONA, origen):
+        reg = self._registro_verificado(hogar, PasoEscritura.PERSONA, origen)
+        if reg is not None:
+            # Re-run: recupera el PER_IDPERSONA real para el mapa que ancla respuestas.
             return ResultadoPaso(PasoEscritura.PERSONA, str(origen), EstadoPaso.VERIFICADO,
-                                 "", {"idempotente": True})
+                                 "", {"idempotente": True, "per_idpersona": reg.destino_per_idpersona})
         binds = mapeo.binds_persona(
             miembro, user=user, estado_oracle=ESTADO_ORACLE_ABIERTO, catalogos=self.catalogos,
         )
@@ -313,10 +331,14 @@ class EscritorOracle:
         # 3. TERRITORIO (cascada de 4 procedures, ver paso_territorio)
         rh.pasos.append(self.paso_territorio(hogar, sesion, hog_codigo=hog_codigo))
 
-        # 4. RESPUESTAS del instrumento
+        # 4. RESPUESTAS del instrumento. Las de nivel HOGAR se anclan al autorizado
+        #    (jefe); las de nivel PERSONA a su propio miembro (mapa_personas).
+        jefe = hogar.miembros.filter(es_autorizado=True).first()
+        jefe_per_id = mapa_personas.get(jefe.pk) if jefe else None
         respuestas = sesion.respuestas.select_related("pregunta").all()
         for respuesta in respuestas:
-            per_id = mapeo.per_idpersona_de_respuesta(respuesta, mapa_personas, self.catalogos)
+            per_id = mapeo.per_idpersona_de_respuesta(
+                respuesta, mapa_personas, self.catalogos, jefe_per_idpersona=jefe_per_id)
             rh.pasos.append(
                 self.paso_respuesta(hogar, respuesta, user=user, hog_codigo=hog_codigo,
                                     per_idpersona=per_id, instrumento=sesion.instrumento)

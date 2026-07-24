@@ -228,7 +228,12 @@ def invocar(proc: Procedimiento, valores: dict, *, confirmar: bool = False, curs
         else:
             # OUT: REF CURSOR para los cascade; NUMBER/STRING para el resto.
             if p.nombre == "CUR_OUT":
-                var = cursor.var(oracledb.DB_TYPE_CURSOR)
+                # DEBE ser un OBJETO cursor separado, NO cursor.var(DB_TYPE_CURSOR)
+                # sobre el mismo cursor que ejecuta el bloque: esos procedures hacen
+                # INSERT+COMMIT y luego OPEN cur_OUT, y con cursor.var la llamada CUELGA
+                # indefinidamente. Verificado 2026-07-24 en la réplica local: cursor
+                # separado / callproc = 0.01 s; cursor.var(mismo cursor) = timeout.
+                var = cursor.connection.cursor()
             elif p.nombre in ("VALSECUENCIA",):
                 var = cursor.var(oracledb.DB_TYPE_NUMBER)
             else:  # MARCADOR y afines

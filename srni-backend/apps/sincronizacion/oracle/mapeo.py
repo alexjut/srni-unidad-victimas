@@ -165,6 +165,52 @@ class ResolverCatalogos:
             return self._pendiente("PARENTESCO", "None")
         return self._resolver(self._parentesco, parentesco, "parentesco")
 
+    def resolver_relac_de_miembro(self, miembro):
+        """RELAC del miembro considerando el rol.
+
+        El **autorizado** (`es_autorizado=True`) es el jefe/responsable del hogar y
+        SICAV le deja `parentesco=''` (no es pariente de sí mismo). Oracle sí modela
+        esa relación: GIC_PARENTESCOGENEALOGICO 1 = 'Jefe de hogar'. Por eso el
+        autorizado resuelve a **RELAC=1** en vez de fallar por parentesco vacío; el
+        resto de miembros cruza por su parentesco normal.
+        """
+        if getattr(miembro, "es_autorizado", False):
+            return 1
+        return self.resolver_relac(miembro.parentesco)
+
+    # ── extras de escritura decididos CON DATO (2026-07-24) ────────────────────
+    # No inventan un mapeo de catálogo (eso lo sigue prohibiendo el modo estricto):
+    # son decisiones de negocio ya tomadas y respaldadas por la estructura real.
+    def resolver_extra_persona(self, nombre):
+        """ID_DECLAR / ID_PERS_FUENTE / ID_SINIESTRO / IDPERMI → **NULL**.
+
+        Son ids de enlace internos de Oracle (declaración FUD, persona fuente,
+        siniestro, permiso) que una caracterización SICAV nueva NO origina. La
+        estructura de la réplica los confirma **nullable** (PER_IDDECLARACION /
+        PER_IDPERSONAFUENTE / PER_IDSINIESTRO), así que NULL es fiel: se escribe lo
+        que SICAV tiene = nada. `nombre` se acepta por si algún extra futuro difiere.
+        """
+        return None
+
+    def resolver_pregunta_padre(self):
+        """PPER_IDPREGUNTAPADRE → **NULL**.
+
+        SICAV no modela 'pregunta padre' (derivadas de Oracle) y NO es columna
+        almacenada de GIC_N_RESPUESTASENCUESTA: el procedure solo lo usa como
+        pId_Pregunta para SP_BORRADORESPUESTAS/validadores. En un hogar nuevo no hay
+        respuestas previas que borrar.
+        """
+        return None
+
+    def resolver_pbandera(self):
+        """PBANDERA → **1** (upsert idempotente).
+
+        1 = borra+inserta la respuesta del par (hogar, pregunta); 0 = solo inserta.
+        En un hogar NUEVO el borrado es no-op, y 1 hace que re-correr el Escalón 1 no
+        duplique respuestas. Tampoco es columna almacenada (control del procedure).
+        """
+        return 1
+
     def resolver_t_victima(self, miembro):
         """
         T_VICTIMA (GIC_PERSONA.PER_TIPOVICTIMA) → **NULL**.
@@ -653,7 +699,7 @@ def binds_persona(miembro, *, user, estado_oracle, catalogos: ResolverCatalogos)
         "usuario": _cod_usuario(user),
         "usu_fcreacion": timezone.now(),
         "ndocu": numero,
-        "relac": catalogos.resolver_relac(miembro.parentesco),
+        "relac": catalogos.resolver_relac_de_miembro(miembro),
         # Se pasa el miembro entero, no un getattr con default: el resolver debe poder
         # distinguir "el campo no existe" de "existe y vale None". Ver resolver_t_victima.
         "t_victima": catalogos.resolver_t_victima(miembro),
@@ -661,7 +707,7 @@ def binds_persona(miembro, *, user, estado_oracle, catalogos: ResolverCatalogos)
         "estado": estado_oracle,          # 'ACTIVA' (abierto)
     }
     for extra in _EXTRAS_PERSONA:
-        binds[extra] = _extra_pendiente(catalogos, extra)
+        binds[extra] = catalogos.resolver_extra_persona(extra)
     return binds
 
 
@@ -710,23 +756,25 @@ def binds_territorio(hog_codigo, territorio: dict) -> list:
 
 
 # ── respuestas del instrumento ────────────────────────────────────────────────
-def per_idpersona_de_respuesta(respuesta, mapa_personas, catalogos: ResolverCatalogos):
+def per_idpersona_de_respuesta(respuesta, mapa_personas, catalogos: ResolverCatalogos,
+                               jefe_per_idpersona=None):
     """
     PER_IDPERSONA para una respuesta.
 
     Las de nivel PERSONA salen del mapa {miembro_pk: per_idpersona} que dejó el paso
-    PERSONA. Las de nivel HOGAR llegan con `miembro=NULL` en SICAV, y el procedure
-    exige un NUMBER: no sabemos qué manda ahí la app vieja. La cascada territorial
-    usa el literal '1' como "persona del hogar" (GIC_N_RELACION_DT_PUNTO.IDPERSONA),
-    así que '1' es la sospecha razonable — pero es una SOSPECHA y aquí no se adivina.
+    PERSONA. Las de nivel HOGAR llegan con `miembro=NULL` en SICAV y se anclan al
+    **autorizado/jefe del hogar** (`jefe_per_idpersona`): es la persona que responde
+    por el hogar, y GIC_N_RESPUESTASENCUESTA.PER_IDPERSONA es nullable, así que el
+    jefe es la elección fiel (no un literal inventado). Sin jefe no se puede anclar.
     """
     if respuesta.miembro_id is None:
+        if jefe_per_idpersona is not None:
+            return jefe_per_idpersona
         if catalogos.estricto:
             raise MapeoPendienteNegocio(
-                "PPER_IDPERSONA: respuesta de nivel HOGAR (miembro NULL) — falta "
-                "confirmar qué PER_IDPERSONA espera SP_SET_RESPUESTAS_DE_ENCUESTA "
-                "para preguntas de hogar (¿el literal '1', como IDPERSONA en la "
-                "cascada territorial?). PENDIENTE de negocio."
+                "PPER_IDPERSONA: respuesta de nivel HOGAR (miembro NULL) y el hogar no "
+                "tiene miembro autorizado (es_autorizado=True) al que anclarla. Marca un "
+                "autorizado en el hogar."
             )
         return "‹PEND:PPER_IDPERSONA(nivel_hogar)›"
     return mapa_personas.get(respuesta.miembro_id)
@@ -754,11 +802,9 @@ def binds_respuesta(respuesta, *, user, catalogos: ResolverCatalogos, hog_codigo
         # PPER_IDPREGUNTAPADRE: el procedure lo usa como pId_Pregunta/pID_RESPUESTA
         # para SP_BORRADORESPUESTAS, SP_BORRADOVALIDADORES y las preguntas derivadas.
         # SICAV no modela "pregunta padre" con id Oracle ⇒ pendiente.
-        "pper_idpreguntapadre": _extra_pendiente(
-            catalogos, "pper_idpreguntapadre", "SP_SET_RESPUESTAS_DE_ENCUESTA"),
-        # PBANDERA=1 dispara SP_BORRADORESPUESTAS (¡BORRA respuestas previas del
-        # hogar/instrumento!). 0 solo inserta. Cuál corresponde a una migración
-        # SICAV→Oracle es decisión de negocio, y el lado destructivo no se asume.
-        "pbandera": _extra_pendiente(
-            catalogos, "pbandera", "SP_SET_RESPUESTAS_DE_ENCUESTA"),
+        "pper_idpreguntapadre": catalogos.resolver_pregunta_padre(),
+        # PBANDERA=1 dispara SP_BORRADORESPUESTAS (borra+inserta la respuesta del par
+        # hogar/pregunta). En un hogar NUEVO el borrado es no-op y hace la escritura
+        # idempotente (re-correr no duplica). Decidido con dato (2026-07-24).
+        "pbandera": catalogos.resolver_pbandera(),
     }

@@ -95,12 +95,20 @@ class _Respuesta:
     pregunta = _Pregunta()
 
 
-def test_respuesta_nivel_hogar_es_pendiente_no_asume_uno():
-    # La cascada usa IDPERSONA='1' para el hogar; extrapolarlo a las respuestas
-    # sería una suposición. Debe lanzar, no adivinar.
+def test_respuesta_nivel_hogar_sin_jefe_lanza():
+    # Respuesta de hogar (miembro NULL) SIN jefe al que anclarla: debe lanzar, no
+    # adivinar un IDPERSONA. (El hogar debe tener un autorizado/es_autorizado.)
     with pytest.raises(mapeo.MapeoPendienteNegocio) as exc:
         mapeo.per_idpersona_de_respuesta(_Respuesta(), {}, ResolverCatalogos(estricto=True))
     assert "PPER_IDPERSONA" in str(exc.value)
+
+
+def test_respuesta_nivel_hogar_se_ancla_al_jefe():
+    # La respuesta de nivel HOGAR (miembro NULL) se ancla al per_idpersona del
+    # autorizado/jefe: es quien responde por el hogar. PER_IDPERSONA es nullable en
+    # Oracle, así que el jefe es la elección fiel (no un literal inventado).
+    assert mapeo.per_idpersona_de_respuesta(
+        _Respuesta(), {}, ResolverCatalogos(estricto=True), jefe_per_idpersona=9177005) == 9177005
 
 
 def test_respuesta_nivel_persona_usa_el_mapa_del_paso_persona():
@@ -125,19 +133,24 @@ def test_binds_respuesta_mezcla_ids_reales_y_pendientes_en_dry_run():
     # RXP_TIPOPREGUNTA se copia del catálogo de Oracle: la pregunta 5 es de hogar ⇒ GE.
     # (Antes era ‹PEND:RXP_TIPOPREGUNTA(RADIO)›, mandando el widget de SICAV.)
     assert binds["prxp_tipopreguntarespuesta"] == "GE"
-    # Los que siguen sin dato/decisión, marcados y nunca inventados:
-    for clave in ("pper_idpreguntapadre", "pbandera"):
-        assert str(binds[clave]).startswith("‹PEND:"), clave
+    # Extras decididos CON DATO (2026-07-24), ya no son marcadores:
+    #  - PPER_IDPREGUNTAPADRE → NULL: SICAV no modela 'pregunta padre' (derivadas de
+    #    Oracle) y no es columna almacenada de GIC_N_RESPUESTASENCUESTA.
+    #  - PBANDERA → 1: upsert idempotente; en un hogar nuevo el borrado es no-op.
+    assert binds["pper_idpreguntapadre"] is None
+    assert binds["pbandera"] == 1
 
 
-def test_pbandera_no_asume_el_valor_destructivo():
-    # PBANDERA=1 dispara SP_BORRADORESPUESTAS (borra respuestas previas). Que quede
-    # pendiente y no en 1 por descuido es la línea entre migrar y borrar datos.
+def test_pbandera_es_1_upsert_idempotente_decidido():
+    # PBANDERA=1 dispara SP_BORRADORESPUESTAS (borra+inserta la respuesta del par
+    # hogar/pregunta). Se decidió 1 CON DATO (2026-07-24): en un hogar NUEVO el borrado
+    # es no-op y 1 hace la escritura idempotente (re-correr no duplica). Es una decisión
+    # deliberada y documentada — no un 1 por descuido, que era el riesgo original.
     binds = mapeo.binds_respuesta(
         _Respuesta(), user=None, catalogos=ResolverCatalogos(estricto=False),
         hog_codigo="HOG-1", per_idpersona=555, instrumento=type("I", (), {"codigo": "X"})(),
     )
-    assert binds["pbandera"] != 1
+    assert binds["pbandera"] == 1
 
 
 def test_texto_respuesta_se_redacta_por_ser_pii_potencial():

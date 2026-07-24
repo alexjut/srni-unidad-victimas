@@ -103,6 +103,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         hogar = self._hogar(opts["hogar"])
         self._asegurar_creador(hogar)
+        self._completar_miembros(hogar)
         dt, depto, muni, punto = self._territorio()
         instrumento = self._instrumento()
 
@@ -177,6 +178,60 @@ class Command(BaseCommand):
             f"asignado {user.codigo_usuario}; sin él USUA_CREACION iría vacío y Oracle "
             f"lo trataría como NULL."
         ))
+
+    def _completar_miembros(self, hogar):
+        """
+        Deja los miembros del fixture LISTOS para escribir a Oracle.
+
+        El fixture `hogares_demo_10` los trae esqueléticos: `tipo_documento` NULL,
+        `numero_documento` vacío, sin `es_autorizado` y sin fecha de nacimiento. El
+        resolver estricto —con razón— aborta sin tipo de documento o sin jefe. Aquí se
+        completan con datos de PRUEBA coherentes (hogar sintético LISTO-*, sin PII
+        real): el primero es el **autorizado** (jefe de hogar), cada uno recibe un
+        tipo de documento válido del catálogo Oracle (menor→TI, adulto→CC) y un nombre
+        de 4 tokens para que GIC_INSERT_PERSONAS parta bien nombres/apellidos.
+        """
+        from datetime import date
+        from apps.parametricas.models import TipoDocumento
+        # get_or_create: el andamio no debe depender de que la paramétrica esté
+        # precargada (en tests no lo está); CC/TI mapean a Oracle 1/2.
+        cc, _ = TipoDocumento.objects.get_or_create(
+            codigo="CC", defaults={"nombre": "Cédula de Ciudadanía"})
+        ti, _ = TipoDocumento.objects.get_or_create(
+            codigo="TI", defaults={"nombre": "Tarjeta de Identidad"})
+        # Nombres de prueba de 4 tokens (N1 N2 A1 A2) por orden estable de creación.
+        nombres = [
+            "AMPARO LUCIA RENDON GOMEZ",
+            "CARLOS ALBERTO PEREZ LOPEZ",
+            "JUAN DAVID PEREZ RENDON",
+        ]
+        miembros = list(hogar.miembros.order_by("created_at"))
+        for i, m in enumerate(miembros):
+            cambios = []
+            es_jefe = (i == 0)
+            if m.es_autorizado != es_jefe:
+                m.es_autorizado = es_jefe
+                cambios.append("es_autorizado")
+            doc = ti if m.parentesco == "HIJO_A" else cc
+            if m.tipo_documento_id != doc.pk:
+                m.tipo_documento = doc
+                cambios.append("tipo_documento")
+            if not (m.numero_documento or "").strip():
+                m.numero_documento = str(96001000 + i)
+                cambios.append("numero_documento")
+            if m.fecha_nacimiento is None:
+                m.fecha_nacimiento = date(2012, 3, 8) if doc is ti else date(1985, 6, 15)
+                cambios.append("fecha_nacimiento")
+            if i < len(nombres) and (m.nombre_completo or "").strip() != nombres[i]:
+                m.nombre_completo = nombres[i]
+                cambios.append("nombre_completo")
+            if cambios:
+                m.save(update_fields=cambios)
+        if miembros:
+            self.stdout.write(
+                f"  miembros completados: {len(miembros)} — jefe autorizado = "
+                f"{miembros[0].nombre_completo!r} (CC), respuestas de hogar se anclan a él."
+            )
 
     def _territorio(self):
         try:

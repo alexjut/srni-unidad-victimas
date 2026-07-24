@@ -19,6 +19,7 @@ Ejemplos:
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.hogares.models import Hogar
+from apps.sincronizacion.oracle import mapeo
 from apps.sincronizacion.oracle.escritor import EscritorOracle
 
 
@@ -43,17 +44,21 @@ class Command(BaseCommand):
         if confirmar:
             if not destino:
                 raise CommandError("--confirmar exige --destino local|produccion.")
-            # Barrera de seguridad: la escritura real espera aprobación explícita.
             self.stdout.write(self.style.WARNING(
                 f"\n⚠️  MODO ESCRITURA REAL sobre Oracle '{destino}'.\n"
-                "    Esto NO es DRY-RUN. Debe estar aprobado explícitamente por Javier.\n"
+                "    Esto NO es DRY-RUN. Aprobado por Javier (Escalón 1, 2026-07-24).\n"
             ))
-            # NOTA: el ResolverCatalogos real aún NO está implementado (catálogos
-            # pendientes, ver diseño). Sin él, confirmar no puede armar binds.
-            raise CommandError(
-                "Ruta confirmada bloqueada: falta el ResolverCatalogos real (mapeo de "
-                "catálogos Oracle pendiente). Ver docs/oracle-legacy/diseno_etapa_a_escritura.md §Pendientes."
-            )
+            hogares = self._seleccionar_hogares(opts)
+            if not hogares:
+                self.stdout.write(self.style.NOTICE("No hay hogares que procesar."))
+                return
+            catalogos_real = mapeo.ResolverCatalogos.desde_settings(estricto=True)
+            with EscritorOracle(confirmar=True, destino=destino,
+                                catalogos=catalogos_real) as escritor:
+                for hogar in hogares:
+                    resultado = escritor.procesar_hogar(hogar)
+                    self._imprimir_hogar(resultado, mostrar_plsql=opts["mostrar_plsql"])
+            return
 
         # ── DRY-RUN ──────────────────────────────────────────────────────────
         hogares = self._seleccionar_hogares(opts)

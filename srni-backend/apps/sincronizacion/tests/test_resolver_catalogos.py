@@ -71,6 +71,38 @@ def test_relac_vacio_lanza():
         _r().resolver_relac("")
 
 
+# ── RELAC del miembro según rol: el autorizado es el jefe de hogar (Oracle 1) ─
+class _MiembroRol:
+    def __init__(self, es_autorizado, parentesco):
+        self.es_autorizado = es_autorizado
+        self.parentesco = parentesco
+
+
+def test_relac_de_miembro_autorizado_es_jefe_aunque_parentesco_vacio():
+    # El autorizado (es_autorizado=True) es el jefe: SICAV le deja parentesco='' y
+    # Oracle tiene 1='Jefe de hogar'. Resuelve a 1 en vez de fallar por vacío.
+    assert _r().resolver_relac_de_miembro(_MiembroRol(True, "")) == 1
+
+
+def test_relac_de_miembro_normal_cruza_por_parentesco():
+    assert _r().resolver_relac_de_miembro(_MiembroRol(False, "CONYUGE")) == 4
+    assert _r().resolver_relac_de_miembro(_MiembroRol(False, "HIJO_A")) == 3
+
+
+# ── extras decididos CON DATO: escriben NULL / 1, nunca marcador ni inventado ─
+def test_extras_persona_escriben_null():
+    # ID_DECLAR/ID_PERS_FUENTE/ID_SINIESTRO/IDPERMI → NULL: SICAV no origina esos
+    # enlaces internos de Oracle y la estructura los confirma nullable.
+    for extra in ("id_declar", "id_pers_fuente", "id_siniestro", "idpermi"):
+        assert _r().resolver_extra_persona(extra) is None
+        assert _r(estricto=False).resolver_extra_persona(extra) is None
+
+
+def test_pregunta_padre_null_y_pbandera_uno():
+    assert _r().resolver_pregunta_padre() is None
+    assert _r().resolver_pbandera() == 1
+
+
 # ── catálogo 4b — tipo de víctima → NULL (campo en desuso en Oracle) ─────────
 class _MiembroSinCampo:
     """Como el MiembroHogar REAL: no define `tipo_victima`."""
