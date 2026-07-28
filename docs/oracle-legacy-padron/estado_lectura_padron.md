@@ -1,0 +1,77 @@
+# Lectura del padrón real — estado y camino
+
+> **Fecha:** 2026-07-28 · **Estado: NO IMPLEMENTADO.** La APK sigue buscando contra el
+> mock. Este documento existe para que el siguiente que lo retome no empiece por donde
+> empezamos nosotros — que resultó ser un callejón.
+
+## El callejón: la referencia que teníamos era falsa
+
+El proyecto arrastraba una nota de referencia que situaba el padrón en
+`RNIENTREVISTA.INH_REPORTE_GAVE@CONSULTAMODELO110`, con una lista de columnas
+(`HOG_CODIGO`, `PER_IDPERSONA`, `PNOMBRE_1`, `P1541..P1655`…).
+
+**Verificado contra producción el 28-jul: ni esa tabla ni ese dblink existen.**
+
+- Objetos `INH_*` en el esquema: **25**, todas de *reportes de entrevistas*
+  (`INH_REP_RESPUESTAENCUESTA`, `INH_MIEMBROS_SAAH`, `INH_RESPUESTAS_HOGAR_RURAL`…).
+  Ninguna es un padrón de personas.
+- Lo único con "GAVE" en el nombre de todo el esquema es el procedure
+  `SP_CONSTANCIA_GAVE`.
+- `CONSULTAMODELO110` no está entre los dblinks.
+
+La nota se corrigió. **No usar aquella estructura de columnas para nada.**
+
+## Lo que sí hay — medido
+
+Dblinks desde `RNIENTREVISTA@30.0.1.9/ENTREVISTARN`:
+
+| dblink | Host | Estado |
+|---|---|---|
+| **`DBL_VIVANTO`** | VIVANTO | ✅ **ALCANZABLE** — el camino probable al RUV |
+| `CONSULTAATENCION` | ATENCION | ✅ alcanzable |
+| `DBL_RNIENTREVISTA` | MODELO | el que usa `SP_CONSTANCIA_GAVE` para `AP_GEOGRAFIA` |
+| `CONSULTACARACT` | RNI | ❌ `ORA-01017` credenciales inválidas |
+| `DB_PRE` | fuentes | ❌ `ORA-01017` |
+
+Al otro lado de `DBL_VIVANTO` hay tres esquemas con pinta de servir:
+
+- **`MODELOINTEGRADO`** — `MI_ESTADOPERSONAS`, `MI_ESTADOVICTIMA`, `MI_TIPODOCUMENTO`,
+  `MI_PERSONAS_CONTACTO`, `MI_PERSONAS_FUENTES`, `MI_PERSONAS_SOPORTES`.
+  ⚠️ Ojo: buena parte de este esquema son tablas `DMRS_*`, que son **metadatos de Oracle
+  Data Modeler**, no datos. No confundir el modelo con el padrón.
+- **`RNIPAQUETES`** — `PRY_PERSONAS`, `GIC_REP_PERSONA_*` (con fecha en el nombre: son
+  cortes históricos), `M_REP_AHE_PERSONAS`.
+- **`ADMINUSUARIOS`** — `TM_PERSONA`, `TM_IDPERSONA_NUEVOS`.
+
+## Lo que el contrato exige (y por qué no se puede improvisar)
+
+`apps/victimas/repository/base.py` ya define la interfaz completa, y no pide solo un
+nombre y un documento. `VictimaResumen` exige:
+
+| Campo | Dificultad |
+|---|---|
+| identificación, nombres, fecha nac., género | mecánico |
+| **`estado_ruv`** (INCLUIDO / NO_INCLUIDO / EN_PROCESO / EXCLUIDO) | semántica de negocio |
+| **`habilitado_para_caracterizacion`** | regla de negocio, no una columna |
+| `pertenencia_etnica`, `pueblo_indigena` | catálogo a homologar |
+| `discapacidad`, `tipo_discapacidad` | catálogo a homologar |
+| **`hechos_victimizantes`** (lista, con fecha y municipio) | otra tabla, otra relación |
+| `municipio_residencia_codigo` (DIVIPOLA) | ojo: aquí también aplica lo del cero a la izquierda |
+
+Improvisar el mapeo de `estado_ruv` o de `habilitado_para_caracterizacion` sería peor que
+no tenerlo: el encuestador decide **a quién caracteriza** con ese dato.
+
+## Camino propuesto
+
+1. **Descubrir la tabla operativa de personas** en `DBL_VIVANTO` (empezar por
+   `MODELOINTEGRADO.MI_ESTADOPERSONAS` y `MI_ESTADOVICTIMA`, y mirar volumen y columnas).
+2. **Medir**, no suponer: cuántas filas, qué valores toma el estado, cómo se relaciona
+   con los hechos victimizantes. El mismo método que resolvió la geografía (28.157/28.157).
+3. **Resolver las credenciales de `CONSULTACARACT`** si resulta ser la fuente buena — hoy
+   da `ORA-01017`.
+4. Recién entonces implementar `OracleVictimaRepository` contra el contrato existente,
+   con `settings.VICTIMA_REPOSITORY='ORACLE'` como interruptor, y el mock intacto como
+   fallback.
+
+**Estimación honesta:** es una fase con su propio descubrimiento, comparable a lo que
+costó el Escalón 2. No entra en una tarde.
