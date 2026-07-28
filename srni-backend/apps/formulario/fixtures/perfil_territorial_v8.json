@@ -11033,7 +11033,7 @@
     {
       "no_pregunta": "F9",
       "codigo_externo": "OBS_F",
-      "id_preg": 1438,
+      "id_preg": null,
       "capitulo_codigo": "F",
       "texto": "Observaciones a este capitulo",
       "tipo": "TEXTO_LARGO",
@@ -11049,7 +11049,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "OBS_JA",
-      "id_preg": 1439,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "Observaciones a este capitulo",
       "tipo": "TEXTO_LARGO",
@@ -11065,7 +11065,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "OBS_JF",
-      "id_preg": 1440,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "Observaciones a este capitulo",
       "tipo": "TEXTO_LARGO",
@@ -11097,7 +11097,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "OBS_L",
-      "id_preg": 1442,
+      "id_preg": null,
       "capitulo_codigo": "L",
       "texto": "Observaciones a este capitulo",
       "tipo": "TEXTO_LARGO",
@@ -11113,7 +11113,7 @@
     {
       "no_pregunta": "C7_1",
       "codigo_externo": "D8A_ESTRATO",
-      "id_preg": 1443,
+      "id_preg": null,
       "capitulo_codigo": "C",
       "texto": "¿Cuál es el estrato de la vivienda?",
       "tipo": "LISTA",
@@ -11172,7 +11172,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL9A_INST",
-      "id_preg": 1444,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Institución",
       "tipo": "TEXTO",
@@ -11188,7 +11188,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL9A_TIPO",
-      "id_preg": 1445,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Tipo",
       "tipo": "TEXTO",
@@ -11204,7 +11204,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL9A_CERT",
-      "id_preg": 1446,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "¿Terminó y obtuvo certificación?",
       "tipo": "BOOLEAN",
@@ -11233,7 +11233,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL10A_INST",
-      "id_preg": 1447,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Institución",
       "tipo": "TEXTO",
@@ -11249,7 +11249,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL10A_TIPO",
-      "id_preg": 1448,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Tipo",
       "tipo": "TEXTO",
@@ -11265,7 +11265,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL10A_CERT",
-      "id_preg": 1449,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "¿Terminó y obtuvo certificación?",
       "tipo": "BOOLEAN",
@@ -11294,7 +11294,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL11A_INST",
-      "id_preg": 1450,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Institución",
       "tipo": "TEXTO",
@@ -11310,7 +11310,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL11A_TIPO",
-      "id_preg": 1451,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "Tipo",
       "tipo": "TEXTO",
@@ -11326,7 +11326,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL11A_CERT",
-      "id_preg": 1452,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "¿Terminó y obtuvo certificación?",
       "tipo": "BOOLEAN",
@@ -11355,7 +11355,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL23_CUAL",
-      "id_preg": 1453,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "¿Cuál servicio?",
       "tipo": "TEXTO",
@@ -11371,7 +11371,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M2A_VALOR",
-      "id_preg": 1454,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11387,7 +11387,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M2B_VALOR",
-      "id_preg": 1455,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11403,7 +11403,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M2C_VALOR",
-      "id_preg": 1456,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11419,7 +11419,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M5_VALOR",
-      "id_preg": 1457,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11435,7 +11435,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M6_VALOR",
-      "id_preg": 1458,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11451,7 +11451,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M7_VALOR",
-      "id_preg": 1459,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11467,7 +11467,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M8_VALOR",
-      "id_preg": 1460,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11483,7 +11483,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M9_VALOR",
-      "id_preg": 1461,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11499,7 +11499,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M10_VALOR",
-      "id_preg": 1462,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11515,7 +11515,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "M11_VALOR",
-      "id_preg": 1463,
+      "id_preg": null,
       "capitulo_codigo": "JF",
       "texto": "¿Valor recibido el mes pasado? $",
       "tipo": "NUMERICO",
@@ -11531,7 +11531,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1A_DIAS",
-      "id_preg": 1464,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11547,7 +11547,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1B_DIAS",
-      "id_preg": 1465,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11563,7 +11563,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1C_DIAS",
-      "id_preg": 1466,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11579,7 +11579,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1D_DIAS",
-      "id_preg": 1467,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11595,7 +11595,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1E_DIAS",
-      "id_preg": 1468,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11611,7 +11611,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1F_DIAS",
-      "id_preg": 1469,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11627,7 +11627,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1T_DIAS",
-      "id_preg": 1470,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11643,7 +11643,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1G_DIAS",
-      "id_preg": 1471,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11659,7 +11659,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1H_DIAS",
-      "id_preg": 1472,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11675,7 +11675,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1J_DIAS",
-      "id_preg": 1473,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11691,7 +11691,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1K_DIAS",
-      "id_preg": 1474,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11707,7 +11707,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1L_DIAS",
-      "id_preg": 1475,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11723,7 +11723,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1M_DIAS",
-      "id_preg": 1476,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11739,7 +11739,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "J1N_DIAS",
-      "id_preg": 1477,
+      "id_preg": null,
       "capitulo_codigo": "JA",
       "texto": "¿En cuántos de los últimos 7 días lo consumió? (1 a 7)",
       "tipo": "NUMERICO",
@@ -11771,7 +11771,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "PL20_CUAL",
-      "id_preg": 1479,
+      "id_preg": null,
       "capitulo_codigo": "K",
       "texto": "¿Cuál institución?",
       "tipo": "TEXTO",
@@ -11787,7 +11787,7 @@
     {
       "no_pregunta": "",
       "codigo_externo": "AT2_PORQUE",
-      "id_preg": 1480,
+      "id_preg": null,
       "capitulo_codigo": "M",
       "texto": "¿Por qué? (Histórico)",
       "tipo": "TEXTO",

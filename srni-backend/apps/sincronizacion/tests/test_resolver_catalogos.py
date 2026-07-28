@@ -41,11 +41,24 @@ def test_tdoc_por_instancia():
     assert _r().resolver_tdoc(_TD("CC")) == 1
 
 
-@pytest.mark.parametrize("codigo", ["PE", "NES"])
-def test_tdoc_sin_equivalente_lanza(codigo):
-    # PE (PEP) y NES no tienen equivalente en GIC_TIPODOC → nunca se inventan.
-    with pytest.raises(MapeoDesconocido):
-        _r().resolver_tdoc(codigo)
+@pytest.mark.parametrize("codigo,esperado", [("PE", 13), ("NES", 14)])
+def test_tdoc_sin_fila_propia_usa_la_opcion_honesta(codigo, esperado):
+    """
+    3a.3 (resuelto 2026-07-28). Ni el PEP ni el NES tienen fila propia en
+    GIC_TIPODOC: el catálogo se creó en 2014 y el PEP es de 2017. Se mapean a la
+    opción existente que NO miente — 'Otro' y 'Indocumentado' — en vez de quedar
+    sin resolver y abortar la escritura de esa persona.
+    """
+    assert _r().resolver_tdoc(codigo) == esperado
+
+
+def test_pep_no_se_hace_pasar_por_cedula_de_extranjeria():
+    """
+    Regresión de la decisión: 'Cédula de Extranjería' (3) era el candidato
+    tentador, pero un permiso migratorio no es una cédula. Mapearlo así
+    afirmaría un documento que la persona no tiene.
+    """
+    assert _r().resolver_tdoc("PE") != _r().resolver_tdoc("CE")
 
 
 def test_tdoc_sin_documento_lanza():
@@ -53,8 +66,9 @@ def test_tdoc_sin_documento_lanza():
         _r().resolver_tdoc(None)
 
 
-def test_tdoc_dry_run_marcador():
-    assert _r(estricto=False).resolver_tdoc("PE") == "‹PEND:TIPO_DOCUMENTO(PE)›"
+def test_tdoc_desconocido_dry_run_marcador():
+    """Un código que no está en el mapa sigue sin inventarse."""
+    assert _r(estricto=False).resolver_tdoc("XX") == "‹PEND:TIPO_DOCUMENTO(XX)›"
 
 
 # ── catálogo 4 — parentesco (valores reales GIC_PARENTESCOGENEALOGICO) ───────
