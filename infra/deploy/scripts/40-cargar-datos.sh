@@ -21,7 +21,11 @@ echo "===== PARAMÉTRICAS ====="
 run cargar_tipos_documento
 run cargar_departamentos_municipios
 run cargar_direcciones_territoriales
-run cargar_puntos_atencion
+# Catálogo REAL de Oracle (266 puntos, pendiente 3a.11). Sustituye al placeholder
+# `cargar_puntos_atencion` (2 puntos inventados por DT): sus nombres no existen en
+# Oracle y el cruce territorial es por nombre, así que un hogar atendido en uno de
+# ellos no resolvía su territorio. El comando nuevo desactiva los que queden.
+run cargar_puntos_atencion_oracle
 
 echo "===== INSTRUMENTOS ====="
 run crear_instrumentos_base

@@ -1,0 +1,36 @@
+# Oracle Database Free — instancia LOCAL para validación de estructura de
+# RNIENTREVISTA (feat/oracle-legacy-writer). NO es producción, NO lleva datos
+# reales: solo se importa un export de ESTRUCTURA (metadata) sin filas.
+#
+# Levantar:   cd infra/oracle-local && docker compose --env-file .env up -d
+# Estado:     docker compose ps        (esperar STATUS = healthy, ~1-2 min 1ª vez)
+# Bajar:      docker compose down      (los datos persisten en el volumen)
+# Borrar todo: docker compose down -v  (elimina el volumen)
+services:
+  oracle-local:
+    image: gvenzl/oracle-free:slim
+    container_name: srni-oracle-local
+    ports:
+      # Puerto host:contenedor. Cambiar el host si 1521 está ocupado.
+      - "${ORACLE_LEGACY_PORT:-1521}:1521"
+    environment:
+      # Password de SYS / SYSTEM / PDBADMIN (obligatorio, viene de .env).
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:?Define ORACLE_SYS_PASSWORD en infra/oracle-local/.env}
+      # gvenzl auto-crea este usuario en el PDB FREEPDB1 → esquema destino del impdp.
+      APP_USER: ${ORACLE_LEGACY_USER:-RNIENTREVISTA}
+      APP_USER_PASSWORD: ${ORACLE_LEGACY_PASSWORD:?Define ORACLE_LEGACY_PASSWORD en infra/oracle-local/.env}
+    volumes:
+      # Persistencia de la base entre reinicios.
+      - oracle-local-data:/opt/oracle/oradata
+      # Carpeta compartida para dejar el .dmp visible dentro del contenedor.
+      - ./dumps:/opt/oracle/dumps
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+volumes:
+  oracle-local-data:
+    name: srni-oracle-local-data

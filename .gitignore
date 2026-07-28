@@ -81,6 +81,32 @@ docs/analisis-bd-oracle-*.txt
 docs/analisis-bd-oracle*.md
 docs/solicitud-acceso-oracle-uariv.md
 srni-backend/scripts/analizar_bd_oracle.py
+# Migración a Oracle legacy (Agente 1/2) — fuente PL/SQL de prod y ruta de escritura.
+docs/oracle-legacy/*
+# Excepciones: documentos de traspaso/arquitectura, sin datos de prod → sí se versionan.
+# (se usa /* arriba, no el dir, para poder re-incluir estos archivos)
+!docs/oracle-legacy/oracle-local-setup.md
+!docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+# Los planes/resultados de cada escalón del rollout: son el ÚNICO registro de qué se
+# escribió, cómo se verificó y con qué decisiones. Sin ellos, un escalón logrado solo
+# existe en el disco de quien lo corrió. No llevan datos de prod ni credenciales.
+!docs/oracle-legacy/plan_escalon_1.md
+!docs/oracle-legacy/plan_escalon_2.md
+# Registro de defectos de la BD legacy y veredicto de calidad de datos: son el
+# insumo del trabajo POST-migración. Solo conclusiones y cifras agregadas, sin PII.
+!docs/oracle-legacy/defectos_bd_legacy.md
+!docs/oracle-legacy/veredicto_calidad_bd.md
+# Export del catálogo de preguntas/respuestas de Oracle (Query A v2): es el ORIGEN de
+# `respuestas_oracle.json`, y sin él ese JSON no se puede regenerar ni auditar. Sin PII:
+# son textos de preguntas y opciones del instrumento, no respuestas de nadie.
+!docs/oracle-legacy/query_a_v2_*.tsv
+srni-backend/scripts/investigar_ruta_escritura.py
+srni-backend/scripts/validar_paridad_pruebas.py
+srni-backend/scripts/verificar_factibilidad_expdp.py
+
+# Oracle local (Docker) — nunca commitear credenciales ni dumps.
+infra/oracle-local/.env
+infra/oracle-local/dumps/*.dmp
 
 # QR de pruebas locales (Expo) — efímeros, no van al repo
 qr-expo*.png
@@ -107,3 +133,11 @@ desktop.ini
 # ─── Material local sin versionar (depósitos de fotos crudas / sueltas) ──────
 srni-mobile/assets/regiones/loguin/
 image*.png
+
+# Credenciales de PROD (lectura) — jamás al repo, jamás impresas.
+infra/oracle-local/.secret-oracle-prod
+# Logs de export/import Data Pump (listan nombres de objetos del esquema prod).
+infra/oracle-local/dumps/*.log
+
+# Credenciales de PROD Oracle (solo local, NUNCA versionar)
+infra/oracle-local/.env.prod
