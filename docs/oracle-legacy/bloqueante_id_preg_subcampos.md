@@ -111,6 +111,65 @@ detector la marcó porque comparte pocas palabras. Aquí no hay nada que arregla
 > el manual oficial**, más una medición de uso en prod para desempatar los ids duplicados.
 > No admiten arreglo masivo. Es media jornada de trabajo, no diez minutos.
 
+---
+
+## ✅ telefonico_v8 y rural_etnico_v1 — CERRADOS (2026-07-28, tarde)
+
+Curados con el método que resolvió la geografía: **medir el uso real en producción**,
+no adivinar. Resultado sobre los 34 casos:
+
+| Decisión | Cuántos | Criterio |
+|---|---:|---|
+| **CORREGIR** | 3 | hay candidato con el mismo texto **y** el uso lo desempata |
+| **DEJAR** | 4 | falso positivo del detector: misma pregunta, otra redacción |
+| **A NULL** | 27 | Oracle no la tiene, o el candidato no tiene evidencia de uso |
+
+### Las 3 correcciones, con su dato
+
+| Pregunta | Tenía | Pasa a | Por qué |
+|---|---:|---:|---|
+| `C1_re` "¿Cuál es el tipo de vivienda?" | 42 | **36** | Oracle repite *"¿En qué tipo de vivienda habita el hogar?"* en 36 y 1493. **36 tiene 15.948 usos; 1493 solo 1.165.** El id 42 que tenía es *"¿de cuántos cuartos dispone?"*, con 15.009 usos: escribíamos en una pregunta muy transitada |
+| `I7E_tel` "enfermedades ruinosas" | 400 | **794** | El mismo texto existe en 794, 1477 y 1567. **794: 33.051 usos** · 1477: 5.800 · 1567: 20 |
+| `H14_tel` "¿Cuál enfermedad?" | 808 | **865** | 865: 740 usos · 1478: 309 · 1568: 0 |
+
+### Las 4 que NO se tocaron — y por qué importa
+
+El detector las marcó, y hacerle caso habría **roto** mapeos correctos:
+
+- `G4_re` / `G4_tel` (73): *"¿Por qué no asiste a un establecimiento educativo?"* y
+  *"¿Cuál es la razón principal para que no estudie?"* son **la misma pregunta**.
+- `Z4_ETNIA_re` (35): *"Pertenencia étnica"* == *"De acuerdo con su cultura… se
+  autoreconoce como:"*. La 35 **es** la del autorreconocimiento étnico.
+- `PR3_re` (354): el detector proponía moverla a **92**… que es justo el error que se
+  corrigió el 22-jul. **El detector no distingue una corrección deliberada de un fallo.**
+
+Estas cuatro quedaron como `EQUIVALENCIAS_REVISADAS` en el test, cada una con su razón
+escrita — y hay un test que exige que la razón exista y sea algo más que "ok".
+
+### ⚠️ La deuda que queda (importante)
+
+De las **27 que fueron a `null`**, una parte son campos que Oracle sencillamente no
+modela como pregunta y ahí no hay nada que recuperar: `A2` "Segundo nombre", `A20`
+"Estado de inclusión en el RUV", `A22` "Fecha de ocurrencia", `A23A` "Municipio de
+ocurrencia", `A11` "¿la Unidad lo incluyó?". **Son datos del padrón/RUV, no respuestas
+del instrumento**, y viajan por el paso PERSONA o vienen del propio RUV.
+
+Pero otras **sí son preguntas legítimas que Oracle muy probablemente tiene con otro
+texto**, y no logré identificar su id con certeza: `C2_re` (paredes), `C3_re` (piso),
+`C4_re` (techo), `C5_re` (agua), `C6_re` (saneamiento), `H8_re` (régimen de salud),
+`H9_re`, `H13_re`/`H13_tel` (enfermedad crónica), `L15_tel` (horas trabajadas),
+`I8_tel` (salud mental), `I27_tel`/`I28A_tel` (rehabilitación)…
+
+**Con `null` esas respuestas no se migran a Oracle.** El dato queda completo en
+PostgreSQL, pero no llega al sistema de la UARIV. **Es pérdida de alcance, no de datos**,
+y es deliberada: la alternativa era escribirlas en una pregunta ajena.
+
+**Para cerrarlo hace falta el manual oficial** (11-MU / 14-MU) y cotejar pregunta por
+pregunta contra el catálogo de Oracle. El caso `C5_re` ilustra por qué no se puede
+automatizar: su candidato (1305, *"¿DE DÓNDE OBTIENE PRINCIPALMENTE ESTE HOGAR EL AGUA…"*)
+calza al 71 % pero tiene **0 usos** en producción — no hay evidencia de que sea el id
+vigente, y escribir en una pregunta muerta es tan inútil como escribir en la equivocada.
+
 ## Qué hacer
 
 **Nada de arreglos masivos automáticos.** Un `id_preg` mal puesto se arregla con criterio,
