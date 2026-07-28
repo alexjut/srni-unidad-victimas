@@ -1,6 +1,19 @@
 """
 Management command: cargar_puntos_atencion
 
+⚠️ OBSOLETO (2026-07-28) — usar `cargar_puntos_atencion_oracle`.
+--------------------------------------------------------------
+Los nombres que inventa este comando ('Centro Regional Medellín', 'ATENCIÓN
+TELEFÓNICA') **no existen en Oracle**, y el cruce territorial hacia el legacy es por
+NOMBRE (`sincronizacion/oracle/mapeo.resolver_territorio`). Un hogar atendido en uno
+de estos puntos no resuelve su territorio: la cascada deja GIC_N_RELACION_DT_PUNTO
+incompleto y el hogar se cae de los reportes territoriales, sin lanzar ningún error.
+
+Ya tenemos el catálogo real (266 puntos, volcado de producción en
+`catalogos_oracle.json` → `dt_puntos`), así que la razón de ser de este placeholder
+—"mientras UARIV nos entrega el catálogo"— dejó de aplicar. Se conserva solo por si
+hace falta reconstruir un entorno sin ese volcado; el despliegue ya no lo llama.
+
 Carga un conjunto MÍNIMO de Puntos de Atención por Dirección Territorial UARIV,
 suficiente para que la UI cascada del mobile funcione end-to-end mientras UARIV
 nos entrega el catálogo oficial completo.
