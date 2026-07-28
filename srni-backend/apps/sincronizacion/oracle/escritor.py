@@ -100,22 +100,31 @@ class EscritorOracle:
 
     # ── helpers de ledger (idempotencia + auditoría) ─────────────────────────
     def _ya_verificado(self, hogar, paso, origen_id) -> bool:
-        return RegistroEscrituraOracle.objects.filter(
-            hogar=hogar, paso=paso, origen_id=str(origen_id),
-            estado=EstadoPaso.VERIFICADO,
-        ).exists()
+        return self._registro_verificado(hogar, paso, origen_id) is not None
 
     def _registro_verificado(self, hogar, paso, origen_id):
         """
-        El registro VERIFICADO de este paso (o None).
+        El registro VERIFICADO de este paso **en ESTE destino** (o None).
 
         Sirve para que un re-run idempotente recupere el destino ya escrito
         (HOG_CODIGO / PER_IDPERSONA): los pasos siguientes lo necesitan y, si no se
         recuperara, se anclarían con el código SICAV en vez del real de Oracle.
+
+        ⚠️ El filtro por `destino_entorno` NO es cosmético (bug encontrado el
+        2026-07-28, antes del primer piloto). Sin él, un hogar ya escrito contra la
+        réplica LOCAL se daba por hecho al correr contra PRODUCCIÓN: el paso HOGAR
+        devolvía `idempotente=True` sin escribir una sola fila, y los pasos
+        siguientes se anclaban a un HOG_CODIGO que en producción no existe. El
+        comando habría reportado "VERIFICADO" en todos los pasos **sin haber
+        migrado nada** — el fallo silencioso exacto que esta capa existe para evitar.
+
+        Cada destino lleva su propia contabilidad: escribir en local no adelanta
+        trabajo en producción, ni al revés.
         """
         return RegistroEscrituraOracle.objects.filter(
             hogar=hogar, paso=paso, origen_id=str(origen_id),
             estado=EstadoPaso.VERIFICADO,
+            destino_entorno=self.destino,
         ).first()
 
     @staticmethod
@@ -132,8 +141,12 @@ class EscritorOracle:
 
     def _registrar(self, hogar, paso, origen_id, *, res: P.ResultadoInvocacion,
                    estado, hog_codigo="", per_idpersona=None, detalle=None):
+        # `destino_entorno` forma parte de la CLAVE, no de los defaults: si fuera un
+        # default, escribir en producción sobrescribiría el registro de la corrida
+        # local en vez de convivir con él (ver la constraint del modelo).
         reg, _ = RegistroEscrituraOracle.objects.update_or_create(
             hogar=hogar, paso=paso, origen_id=str(origen_id),
+            destino_entorno="" if not self.confirmar else self.destino,
             defaults=dict(
                 estado=estado,
                 bloque_plsql=res.bloque,
@@ -141,7 +154,6 @@ class EscritorOracle:
                 resultado=detalle or {},
                 destino_hog_codigo=hog_codigo or "",
                 destino_per_idpersona=self._id_oracle(per_idpersona),
-                destino_entorno="" if not self.confirmar else self.destino,
             ),
         )
         reg.intento = (reg.intento or 0) + 1
