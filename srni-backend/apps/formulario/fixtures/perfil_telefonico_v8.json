@@ -382,7 +382,7 @@
     {
       "no_pregunta": "B2",
       "codigo_externo": "A2_tel",
-      "id_preg": 15,
+      "id_preg": null,
       "texto": "Segundo nombre",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
@@ -618,7 +618,7 @@
     {
       "no_pregunta": "B14",
       "codigo_externo": "A11_tel",
-      "id_preg": 289,
+      "id_preg": null,
       "texto": "¿La Unidad para las Víctimas incluyó a … en el RUPD/RUV?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -634,7 +634,7 @@
     {
       "no_pregunta": "B15",
       "codigo_externo": "A20_tel",
-      "id_preg": 16,
+      "id_preg": null,
       "texto": "Estado de inclusión en el RUV",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -650,7 +650,7 @@
     {
       "no_pregunta": "B16",
       "codigo_externo": "A21_tel",
-      "id_preg": 17,
+      "id_preg": null,
       "texto": "Hecho victimizante principal",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -666,7 +666,7 @@
     {
       "no_pregunta": "B17",
       "codigo_externo": "A22_tel",
-      "id_preg": 18,
+      "id_preg": null,
       "texto": "Fecha de ocurrencia del hecho victimizante",
       "tipo": "FECHA",
       "nivel": "PERSONA",
@@ -682,7 +682,7 @@
     {
       "no_pregunta": "B18",
       "codigo_externo": "A23A_tel",
-      "id_preg": 19,
+      "id_preg": null,
       "texto": "Municipio de ocurrencia del hecho victimizante",
       "tipo": "COMBO_DINAMICO",
       "nivel": "PERSONA",
@@ -810,7 +810,7 @@
     {
       "no_pregunta": "D3",
       "codigo_externo": "H13_tel",
-      "id_preg": 807,
+      "id_preg": null,
       "texto": "¿Tiene diagnóstico de enfermedad crónica no transmisible?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -826,7 +826,7 @@
     {
       "no_pregunta": "D4",
       "codigo_externo": "H14_tel",
-      "id_preg": 808,
+      "id_preg": 865,
       "texto": "¿Cuál enfermedad crónica?",
       "tipo": "LISTA_MULTIPLE",
       "nivel": "PERSONA",
@@ -861,7 +861,7 @@
     {
       "no_pregunta": "D5",
       "codigo_externo": "I7E_tel",
-      "id_preg": 400,
+      "id_preg": 794,
       "texto": "¿Presenta diagnóstico de enfermedades ruinosas o de alto costo?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -1023,7 +1023,7 @@
     {
       "no_pregunta": "E8",
       "codigo_externo": "L15_tel",
-      "id_preg": 133,
+      "id_preg": null,
       "texto": "¿Cuántas horas trabajó la semana pasada?",
       "tipo": "NUMERICO",
       "nivel": "PERSONA",
@@ -1092,7 +1092,7 @@
     {
       "no_pregunta": "E12",
       "codigo_externo": "M4C1A_tel",
-      "id_preg": 161,
+      "id_preg": null,
       "texto": "Observaciones al capítulo Fuerza de Trabajo",
       "tipo": "TEXTO_LARGO",
       "nivel": "PERSONA",
@@ -1110,7 +1110,7 @@
     {
       "no_pregunta": "F1",
       "codigo_externo": "I8_tel",
-      "id_preg": 90,
+      "id_preg": null,
       "texto": "¿Necesita o requiere atención en salud mental?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -1189,7 +1189,7 @@
     {
       "no_pregunta": "F4",
       "codigo_externo": "I25B_tel",
-      "id_preg": 809,
+      "id_preg": null,
       "texto": "¿Qué institución le brindó atención psicosocial?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -1224,7 +1224,7 @@
     {
       "no_pregunta": "F5",
       "codigo_externo": "I27_tel",
-      "id_preg": 811,
+      "id_preg": null,
       "texto": "¿Ha recibido medidas de rehabilitación física o psicológica?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -1240,7 +1240,7 @@
     {
       "no_pregunta": "F6",
       "codigo_externo": "I28A_tel",
-      "id_preg": 812,
+      "id_preg": null,
       "texto": "¿Qué tipo de medidas de rehabilitación?",
       "tipo": "LISTA_MULTIPLE",
       "nivel": "PERSONA",

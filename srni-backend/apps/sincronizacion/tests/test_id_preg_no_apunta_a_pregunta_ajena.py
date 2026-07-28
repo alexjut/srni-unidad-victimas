@@ -30,10 +30,28 @@ from apps.sincronizacion.oracle import catalogos as _catalogos_mod
 CATALOGO = pathlib.Path(_catalogos_mod.__file__).with_name("respuestas_oracle.json")
 FIXTURES = pathlib.Path(_catalogos_mod.__file__).parents[2] / "formulario/fixtures"
 
-# Perfiles con el defecto todavía abierto (ver bloqueante_id_preg_subcampos.md).
-# Se corrigen en su turno; mientras tanto no deben romper la suite, pero tampoco
-# desaparecer del radar: cuando se arreglen, hay que sacarlos de aquí.
-PENDIENTES = {"perfil_rural_etnico_v1", "perfil_telefonico_v8"}
+# Ya no queda ningún perfil con el defecto abierto: territorial_v8 se curó el 28-jul
+# por la mañana y rural_etnico_v1 / telefonico_v8 esa misma tarde. Se deja la lista
+# (vacía) porque es el lugar donde anotar un perfil nuevo que entre con el problema,
+# en vez de bajarle el umbral al test.
+PENDIENTES = set()
+
+# Excepciones JUSTIFICADAS, por pregunta y con su razón. El detector compara
+# palabras, así que marca como ajenas dos preguntas que son la misma con distinta
+# redacción. Cada entrada es una decisión revisada a mano, no un silencio.
+#
+# Se listan por (codigo_externo, id_preg): si alguien cambia el id, la excepción
+# deja de aplicar y el test vuelve a mirar el caso — que es lo que se quiere.
+EQUIVALENCIAS_REVISADAS = {
+    ("G4_re", 73): "'¿Por qué no asiste a un establecimiento educativo?' == "
+                   "'¿Cuál es la razón principal para que no estudie?'",
+    ("G4_tel", 73): "misma pregunta que G4_re, en el perfil telefónico: no asistir a "
+                    "un establecimiento educativo y no estudiar son lo mismo",
+    ("Z4_ETNIA_re", 35): "'Pertenencia étnica' == 'De acuerdo con su cultura… se "
+                         "autoreconoce como:' — la 35 ES la del autorreconocimiento",
+    ("PR3_re", 354): "corrección deliberada del 22-jul: PR3_re estaba mal en 92 "
+                     "(rehabilitación) y se movió al bloque de ayuda humanitaria",
+}
 # territorial_v7 está desactivado en la BD (comando desactivar_instrumento).
 IGNORADOS = {"perfil_territorial_v7"}
 
@@ -73,6 +91,8 @@ def test_ningun_id_preg_apunta_a_una_pregunta_ajena(perfil):
         idp = pregunta.get("id_preg")
         if idp in (None, "") or int(idp) not in oracle:
             continue                      # sin puente, o pregunta propia de SICAV
+        if (pregunta.get("codigo_externo"), int(idp)) in EQUIVALENCIAS_REVISADAS:
+            continue                      # misma pregunta, otra redacción (revisado)
         a, b = _tokens(pregunta.get("texto")), _tokens(oracle[int(idp)])
         if not a or not b:
             continue
@@ -89,11 +109,27 @@ def test_ningun_id_preg_apunta_a_una_pregunta_ajena(perfil):
         "Si SÍ existe con otro id, corrige el id.\n")
 
 
-def test_la_lista_de_pendientes_no_crece_en_silencio():
+def test_no_se_excluye_ningun_perfil():
     """
-    Si alguien corrige rural_etnico o telefonico, que lo saque de PENDIENTES; y si
-    aparece un perfil nuevo, que pase por el test en vez de sumarse a la excepción.
+    La lista de excepciones debe quedar vacía. Si alguien vuelve a llenarla para que
+    la suite pase, este test lo delata: la salida correcta ante un id_preg dudoso es
+    ponerlo a `null` —el resolver lo declara pendiente y no escribe— no esconderlo.
     """
-    assert PENDIENTES == {"perfil_rural_etnico_v1", "perfil_telefonico_v8"}, (
-        "Cambió la lista de perfiles con el defecto abierto: actualiza también "
-        "docs/oracle-legacy/bloqueante_id_preg_subcampos.md")
+    assert PENDIENTES == set(), (
+        f"Se excluyeron perfiles del control de id_preg: {PENDIENTES}. "
+        "Si un perfil trae el defecto, cúralo o pon sus id_preg dudosos a null; "
+        "documenta en docs/oracle-legacy/bloqueante_id_preg_subcampos.md")
+
+
+def test_todos_los_perfiles_pasan_por_el_control():
+    """Que ningún perfil quede fuera del barrido por un descuido de configuración."""
+    assert len(_perfiles_vigentes()) >= 8
+
+
+def test_cada_equivalencia_esta_justificada():
+    """
+    Una excepción sin razón escrita es una excepción que nadie va a poder revisar
+    dentro de seis meses. Se exige texto, y que sea algo más que 'ok'.
+    """
+    for clave, razon in EQUIVALENCIAS_REVISADAS.items():
+        assert isinstance(razon, str) and len(razon) > 15, f"{clave} sin justificación"

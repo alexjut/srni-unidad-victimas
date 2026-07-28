@@ -295,7 +295,7 @@
     {
       "no_pregunta": "A10",
       "codigo_externo": "T6_re",
-      "id_preg": 10,
+      "id_preg": null,
       "texto": "Encuestador(a) responsable",
       "tipo": "TEXTO",
       "nivel": "HOGAR",
@@ -459,7 +459,7 @@
     {
       "no_pregunta": "C1",
       "codigo_externo": "C1_re",
-      "id_preg": 42,
+      "id_preg": 36,
       "texto": "¿Cuál es el tipo de vivienda?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -475,7 +475,7 @@
     {
       "no_pregunta": "C2",
       "codigo_externo": "C2_re",
-      "id_preg": 43,
+      "id_preg": null,
       "texto": "¿Las paredes exteriores son principalmente de?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -491,7 +491,7 @@
     {
       "no_pregunta": "C3",
       "codigo_externo": "C3_re",
-      "id_preg": 44,
+      "id_preg": null,
       "texto": "¿El piso es principalmente de?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -507,7 +507,7 @@
     {
       "no_pregunta": "C4",
       "codigo_externo": "C4_re",
-      "id_preg": 45,
+      "id_preg": null,
       "texto": "¿El techo es principalmente de?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -523,7 +523,7 @@
     {
       "no_pregunta": "C5",
       "codigo_externo": "C5_re",
-      "id_preg": 46,
+      "id_preg": null,
       "texto": "¿De dónde obtiene principalmente el agua para el consumo?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -539,7 +539,7 @@
     {
       "no_pregunta": "C6",
       "codigo_externo": "C6_re",
-      "id_preg": 47,
+      "id_preg": null,
       "texto": "¿Cuál es el servicio de saneamiento básico?",
       "tipo": "LISTA",
       "nivel": "HOGAR",
@@ -1380,7 +1380,7 @@
     {
       "no_pregunta": "B2",
       "codigo_externo": "A2_re",
-      "id_preg": 15,
+      "id_preg": null,
       "texto": "Segundo nombre",
       "tipo": "TEXTO",
       "nivel": "PERSONA",
@@ -1515,7 +1515,7 @@
     {
       "no_pregunta": "B10",
       "codigo_externo": "A11_re",
-      "id_preg": 289,
+      "id_preg": null,
       "texto": "¿La Unidad para las Víctimas incluyó a esta persona en el RUV?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -1531,7 +1531,7 @@
     {
       "no_pregunta": "B11",
       "codigo_externo": "A21_re",
-      "id_preg": 17,
+      "id_preg": null,
       "texto": "Hecho victimizante principal",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -1729,7 +1729,7 @@
     {
       "no_pregunta": "G1",
       "codigo_externo": "H8_re",
-      "id_preg": 140,
+      "id_preg": null,
       "texto": "¿Está afiliado a algún régimen de seguridad social en salud?",
       "tipo": "LISTA",
       "nivel": "PERSONA",
@@ -1745,7 +1745,7 @@
     {
       "no_pregunta": "G2",
       "codigo_externo": "H9_re",
-      "id_preg": 141,
+      "id_preg": null,
       "texto": "¿Tuvo algún problema de salud en los últimos 30 días?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -1761,7 +1761,7 @@
     {
       "no_pregunta": "G3",
       "codigo_externo": "H13_re",
-      "id_preg": 145,
+      "id_preg": null,
       "texto": "¿Tiene diagnóstico de enfermedad crónica no transmisible?",
       "tipo": "BOOLEAN",
       "nivel": "PERSONA",
@@ -2103,7 +2103,7 @@
     {
       "no_pregunta": "T1",
       "codigo_externo": "T1_re",
-      "id_preg": 170,
+      "id_preg": null,
       "texto": "Encuestador: ¿La entrevista fue completada?",
       "tipo": "BOOLEAN",
       "nivel": "HOGAR",
@@ -2138,7 +2138,7 @@
     {
       "no_pregunta": "T3",
       "codigo_externo": "T3_re",
-      "id_preg": 172,
+      "id_preg": null,
       "texto": "Observaciones generales del encuestador",
       "tipo": "TEXTO_LARGO",
       "nivel": "HOGAR",
