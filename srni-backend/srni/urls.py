@@ -60,6 +60,10 @@ def api_root(request, format=None):
             'auditoria': {
                 'logs': request.build_absolute_uri('/api/auditoria/logs/'),
             },
+            'sincronizacion_oracle': {
+                'registros': request.build_absolute_uri('/api/sincronizacion/registros/'),
+                'estado_por_hogar': request.build_absolute_uri('/api/sincronizacion/registros/estado/'),
+            },
         },
         'health': request.build_absolute_uri('/health/'),
     })
@@ -92,6 +96,10 @@ urlpatterns = [
 
     # Auditoría — endpoint de logs para el panel web (Brando, Sprint integración jun-2026)
     path('api/auditoria/', include('apps.auditoria.urls')),
+
+    # Sincronización SICAV → Oracle legacy: consulta del ledger de escritura.
+    # Solo lectura; la escritura se dispara al cerrar la encuesta o por comando.
+    path('api/sincronizacion/', include('apps.sincronizacion.urls')),
 
     # Distribución móvil — versión y descarga auditada de la APK
     path('api/movil/', include('apps.movil.urls')),

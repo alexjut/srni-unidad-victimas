@@ -343,3 +343,37 @@ ORACLE_LEGACY = {
     'USUARIO_SERVICIO_ID': config('ORACLE_USUARIO_SERVICIO_ID', default=None),
     'PERFIL_SERVICIO_ID':  config('ORACLE_PERFIL_SERVICIO_ID', default=None),
 }
+
+# --- Celery ---------------------------------------------------------------
+# El broker sale de REDIS_URL, que el compose ya inyecta al backend y al worker.
+#
+# Hasta el 2026-07-28 esto NO estaba configurado: Celery caía a su default
+# (`amqp://guest@localhost:5672`, RabbitMQ) y el contenedor `cz_celery` llevaba
+# semanas reintentando contra un broker inexistente — "Cannot connect to
+# amqp://... Connection refused", 100 reintentos— mientras Redis corría al lado
+# sin que nadie lo usara. Por eso no había ninguna tarea ejecutándose.
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=config('REDIS_URL', default=''))
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=CELERY_BROKER_URL)
+CELERY_TASK_DEFAULT_QUEUE = 'sync'
+# Las colas que el worker de producción escucha (`celery -A srni worker -Q sync,reports`).
+CELERY_TASK_ROUTES = {
+    'apps.sincronizacion.tasks.*': {'queue': 'sync'},
+}
+CELERY_TASK_ACKS_LATE = True            # si el worker muere, la tarea se re-entrega
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1   # una escritura a Oracle por vez, sin acaparar
+CELERY_TASK_TIME_LIMIT = 600
+CELERY_TASK_SOFT_TIME_LIMIT = 540
+
+# --- Sincronización SICAV → Oracle legacy ---------------------------------
+# Interruptor de la escritura AUTOMÁTICA al cerrar una encuesta.
+#
+# Apagado por defecto, y a propósito: escribir en el Oracle de la UARIV es
+# irreversible (los procedures hacen COMMIT interno). Encenderlo es una decisión
+# operativa explícita, no algo que deba pasar porque alguien despliegue.
+#
+# Con AUTOMATICA=False la sesión finalizada igual queda registrada como pendiente
+# de sincronizar: no se pierde nada, solo no se escribe todavía.
+ORACLE_SYNC = {
+    'AUTOMATICA': config('ORACLE_SYNC_AUTOMATICA', default=False, cast=bool),
+    'DESTINO':    config('ORACLE_SYNC_DESTINO', default=''),   # 'local' | 'produccion'
+}

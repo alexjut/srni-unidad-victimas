@@ -21,6 +21,7 @@ from apps.autenticacion.permissions import PuedeConsultarOperacion
 from apps.auditoria.models import LogAcceso
 from apps.formulario.models import Pregunta
 from apps.hogares.models import MiembroHogar
+from apps.sincronizacion.tasks import encolar_hogar
 from srni.pagination import CursorTimePagination
 from .models import SesionEncuesta, RespuestaEncuesta
 from .filters import SesionEncuestaFilterSet
@@ -287,6 +288,18 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             resultado='EXITO',
             detalle={'porcentaje_completado': pct_final, 'hogar_id': str(sesion.hogar_id)},
         )
+
+        # Cerrar la encuesta es lo que dispara la escritura hacia el Oracle legacy.
+        #
+        # Va en `on_commit` a propósito: encolar dentro de la transacción dejaría al
+        # worker leyendo un hogar que la base todavía no expone —o que desaparece si
+        # la transacción revierte—. Y `encolar_hogar` no propaga excepciones: que el
+        # broker esté caído no puede impedir que un encuestador cierre su encuesta;
+        # el hogar queda en PostgreSQL y se reprocesa con `escribir_a_oracle`.
+        #
+        # Si ORACLE_SYNC.AUTOMATICA está apagado (el default), la tarea corre y se
+        # marca omitida sin tocar Oracle.
+        transaction.on_commit(lambda: encolar_hogar(sesion.hogar_id))
 
         return Response(SesionEncuestaDetalleSerializer(sesion).data)
 
