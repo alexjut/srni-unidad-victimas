@@ -9,6 +9,32 @@
 
 ---
 
+## 0-bis. Actualización 2026-07-28 — **ESCALÓN 2 LOGRADO** (leer esto primero)
+
+El corte de este documento (16-jul) quedó viejo. Estado real al 28-jul:
+
+- ✅ **Escalón 1** (24-jul): primera escritura real end-to-end contra la réplica local.
+- ✅ **Escalón 2** (28-jul): la **ruta geográfica** verificada. `11/11 VERIFICADO`,
+  idempotente, y la respuesta geográfica **la resuelve Oracle**: `'5001' → Medellin /
+  Antioquia`, con el mismo join que usan sus reportes.
+- ✅ **El bloqueante del "entorno de Pruebas de OTI" se disolvió**: se probó que la ruta
+  de escritura no lee `AP_GEOGRAFIA` (las 18 referencias están en `SP_CONSTANCIA_GAVE`,
+  que no tiene llamadores; el cierre transitivo de la escritura son 17 subprogramas y
+  ninguno usa dblink).
+- 🐞 **Defecto real encontrado y corregido**: las preguntas de departamento/municipio
+  guardaban el DANE **con** cero a la izquierda (`'05001'`) y Oracle espera `'5001'`
+  (`GIC_MUNICIPIO.ID_MUNI_DEPTO`, medido: **28.151/28.151 = 100 %**). Rompía en silencio
+  en 8 departamentos.
+- 🔒 **Riesgo crítico corregido**: `--destino local` podía resolver a producción si la
+  sesión tenía `ORACLE_LEGACY_HOST` exportado. Ahora aborta, y el comando imprime el DSN.
+- 📋 **3a.11 con dato**: volcados los **266 puntos de atención** reales.
+- **Tests: 134/134** en `apps/sincronizacion`. **Escrituras en producción: 0.**
+
+> **Detalle completo en [`plan_escalon_2.md`](plan_escalon_2.md).** Lo de abajo es
+> historia previa; donde contradiga a esta sección, manda esta sección.
+
+---
+
 ## 0. Actualización 2026-07-22 — el catálogo COMPLETO ya está en el Oracle local
 
 **Se cerró el bloqueo #1 (catálogo truncado).** En vez de reexportar por el cliente SQL,

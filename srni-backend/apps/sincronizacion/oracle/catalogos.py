@@ -262,6 +262,66 @@ def cargar_crosswalk_opciones() -> dict:
     return indice
 
 
+# ── geografía: DANE de SICAV → ID_MUNI_DEPTO de Oracle ───────────────────────
+# Las preguntas de "departamento y municipio" (PRE_TIPOCAMPO='DP') NO guardan un
+# RES_IDRESPUESTA por municipio: cada una tiene UNA respuesta contenedora y el
+# municipio viaja como texto en RXP_TEXTORESPUESTA.
+#
+# La convención está MEDIDA EN PRODUCCIÓN (2026-07-28), no supuesta: el texto es
+# `GIC_MUNICIPIO.ID_MUNI_DEPTO` — que resultó ser el propio código DIVIPOLA/DANE
+# como número, SIN el cero a la izquierda:
+#     Medellín '5001' (DANE 05001) · Alvarado '73026' · Cali '76001' · Ibagué '73001'
+# Cruce total contra el catálogo: **28.151 de 28.151 respuestas reales (100%)**.
+#
+# SICAV escribe el DANE de 5 dígitos CON cero ('05001'), porque así lo guarda el
+# selector de municipio del móvil. Sin normalizar, el INSERT entra con un texto que
+# ningún reporte territorial resuelve — y el `WHEN OTHERS` del procedure no avisa.
+#
+# La otra convención que existe en el legacy (`SP_CONSTANCIA_GAVE`, que parte el
+# texto por '-' contra AP_GEOGRAFIA) NO aparece en los datos reales de estas
+# preguntas: en el propio paquete, las líneas de la convención escalar quedaron
+# comentadas al lado de la nueva (body 4510-4511). Se implementa lo medido.
+ARCHIVO_GEOGRAFIA = pathlib.Path(__file__).with_name("geografia_oracle.json")
+
+
+@functools.lru_cache(maxsize=1)
+def cargar_geografia() -> dict:
+    """
+    {'preguntas_dp': frozenset[int], 'preguntas_dt': frozenset[int],
+     'municipios': dict[str, str]}  — municipios indexado por ID_MUNI_DEPTO (texto).
+
+    Volcado de producción (catálogo, sin PII): 1.126 municipios, 33 departamentos y
+    las 19 preguntas con tipo de campo DP/DT.
+    """
+    with open(ARCHIVO_GEOGRAFIA, encoding="utf-8") as fh:
+        datos = json.load(fh)
+    dp, dt = set(), set()
+    for p in datos["preguntas_geograficas"]:
+        (dp if p["tipo_campo"] == "DP" else dt).add(int(p["id_preg"]))
+    return {
+        "preguntas_dp": frozenset(dp),
+        "preguntas_dt": frozenset(dt),
+        "municipios": {str(m["id_muni_depto"]): m["nombre"] for m in datos["municipios"]},
+    }
+
+
+def normalizar_codigo_municipio(valor):
+    """
+    DANE de SICAV → ID_MUNI_DEPTO de Oracle. Devuelve None si no cruza.
+
+    Es quitar el cero a la izquierda ('05001'→'5001') y comprobar contra el catálogo
+    real. NO inventa: un municipio que Oracle no tiene devuelve None y el llamador
+    decide (estricto → excepción; dry-run → marcador).
+    """
+    if valor is None:
+        return None
+    crudo = str(valor).strip()
+    if not crudo.isdigit():
+        return None
+    normalizado = str(int(crudo))  # '05001' → '5001'; '5001' → '5001'
+    return normalizado if normalizado in cargar_geografia()["municipios"] else None
+
+
 # ── PRE_TIPOPREGUNTA — pista fuerte, todavía SIN confirmar ───────────────────
 # GIC_N_INSTRUMENTOXPREG.PRE_TIPOPREGUNTA vale 'GE' o 'IN'. Pese al nombre NO es el
 # tipo de pregunta (radio/texto/…): es el NIVEL. Evidencia (2026-07-16), cruzando las

@@ -57,9 +57,29 @@ class CargarHogarDemoOracleTests(TestCase):
         dt.departamentos.add(self.depto)
 
     def test_monta_el_escenario_completo(self):
+        from apps.sincronizacion.management.commands.cargar_hogar_demo_oracle import (
+            PREGUNTAS_DEMO,
+        )
         call_command("cargar_hogar_demo_oracle", verbosity=0)
         sesion = SesionEncuesta.objects.get(hogar=self.hogar)
-        self.assertEqual(sesion.respuestas.count(), 2)
+        self.assertEqual(sesion.respuestas.count(), len(PREGUNTAS_DEMO))
+
+    def test_siembra_la_respuesta_geografica_con_el_dane_sin_normalizar(self):
+        """
+        El escenario debe traer el DANE tal como lo manda el móvil ('05001', con el
+        cero), no ya traducido: si se sembrara '5001' el demo pasaría aunque la
+        traducción estuviera rota, y el Escalón 2 no probaría nada.
+        """
+        from apps.sincronizacion.oracle import mapeo
+        call_command("cargar_hogar_demo_oracle", verbosity=0)
+        sesion = SesionEncuesta.objects.get(hogar=self.hogar)
+        geo = sesion.respuestas.get(pregunta__id_preg=3)
+        self.assertEqual(geo.valor, "05001")
+        self.assertIsNone(geo.miembro_id)          # 'Lugar de Residencia' es de hogar
+        resolver = mapeo.ResolverCatalogos(estricto=True)
+        # y al escribir se traduce a lo que Oracle sabe resolver
+        self.assertEqual(mapeo._texto_respuesta(geo, resolver), "5001")
+        self.assertEqual(resolver.resolver_res_idrespuesta(geo), 6)
 
     def test_territorio_sembrado_cruza_a_los_ids_reales_de_oracle(self):
         # Es la razón de ser del escenario: si no cruza, el Escalón 1 no prueba nada.
@@ -98,11 +118,14 @@ class CargarHogarDemoOracleTests(TestCase):
         self.assertNotEqual(binds["usua_creacion"], "")
 
     def test_es_idempotente(self):
+        from apps.sincronizacion.management.commands.cargar_hogar_demo_oracle import (
+            PREGUNTAS_DEMO,
+        )
         call_command("cargar_hogar_demo_oracle", verbosity=0)
         call_command("cargar_hogar_demo_oracle", verbosity=0)
         self.assertEqual(SesionEncuesta.objects.filter(hogar=self.hogar).count(), 1)
         sesion = SesionEncuesta.objects.get(hogar=self.hogar)
-        self.assertEqual(sesion.respuestas.count(), 2)
+        self.assertEqual(sesion.respuestas.count(), len(PREGUNTAS_DEMO))
 
     def test_sin_hogar_da_error_accionable(self):
         Hogar.objects.all().delete()

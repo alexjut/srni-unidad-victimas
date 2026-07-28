@@ -1,0 +1,6974 @@
+{
+ "_meta": {
+  "generado": "2026-07-28",
+  "origen": "PRODUCCION 30.0.1.9/ENTREVISTARN (solo SELECT, catalogo sin PII)",
+  "para": "crosswalk geografico SICAV(DANE) -> Oracle(ID_MUNI_DEPTO) + pendiente 3a.11",
+  "convencion_medida": "RXP_TEXTORESPUESTA de las preguntas DP guarda ID_MUNI_DEPTO como texto SIN cero a la izquierda ('5045', no '05045'). Medido: 28.151/28.151 respuestas reales cruzan (100%)."
+ },
+ "preguntas_geograficas": [
+  {
+   "id_preg": 1,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "Lugar de la Encuesta",
+   "res_contenedoras": [
+    1
+   ]
+  },
+  {
+   "id_preg": 3,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "Lugar de Residencia",
+   "res_contenedoras": [
+    6
+   ]
+  },
+  {
+   "id_preg": 167,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "<i><font color=\"#006600\">Donde esta ubicado el primer inmueble </font></i>",
+   "res_contenedoras": [
+    589
+   ]
+  },
+  {
+   "id_preg": 177,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "<i><font color=\"#006600\">Donde esta ubicado el segundo inmueble </font></i>",
+   "res_contenedoras": [
+    624
+   ]
+  },
+  {
+   "id_preg": 187,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "<i><font color=\"#006600\">Donde esta ubicado el tercer inmueble </font></i>",
+   "res_contenedoras": [
+    659
+   ]
+  },
+  {
+   "id_preg": 197,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "<i><font color=\"#006600\">Donde esta ubicado el cuarto inmueble </font></i>",
+   "res_contenedoras": [
+    694
+   ]
+  },
+  {
+   "id_preg": 207,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "<i><font color=\"#006600\">Donde esta ubicado el quinto inmueble </font></i>",
+   "res_contenedoras": [
+    729
+   ]
+  },
+  {
+   "id_preg": 473,
+   "tipo_campo": "DP",
+   "nivel": "IN",
+   "texto": "¿En donde nacio?",
+   "res_contenedoras": [
+    1555
+   ]
+  },
+  {
+   "id_preg": 800,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿Cuál fue el Departamento y municipio en el cual se Retornó o Reubicó?",
+   "res_contenedoras": [
+    2384
+   ]
+  },
+  {
+   "id_preg": 801,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿A qué departamento y municipio quiere retornar o reubicarse?",
+   "res_contenedoras": [
+    2385
+   ]
+  },
+  {
+   "id_preg": 841,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿Dónde se encuentra su negocio?",
+   "res_contenedoras": [
+    2564
+   ]
+  },
+  {
+   "id_preg": 1163,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "Departamento y municipio de Correspondencia",
+   "res_contenedoras": [
+    3808
+   ]
+  },
+  {
+   "id_preg": 1261,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿DE QUE LUGAR PROVIENE LA COMUNIDAD DESPLAZADA?",
+   "res_contenedoras": [
+    4111
+   ]
+  },
+  {
+   "id_preg": 1269,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿EN QUE LUGAR SE ENCUENTRA ASENTADA LA COMUNIDAD DESPLAZADA EN ESTE MOMENTO?",
+   "res_contenedoras": [
+    4144
+   ]
+  },
+  {
+   "id_preg": 1451,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "Lugar de Residencia",
+   "res_contenedoras": [
+    4571
+   ]
+  },
+  {
+   "id_preg": 1460,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "Departamento y municipio de Correspondencia",
+   "res_contenedoras": [
+    4583
+   ]
+  },
+  {
+   "id_preg": 1597,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿Dónde vivía usted antes de salir de Colombia?",
+   "res_contenedoras": [
+    5109
+   ]
+  },
+  {
+   "id_preg": 1641,
+   "tipo_campo": "DP",
+   "nivel": "GE",
+   "texto": "¿Dónde se encontraba ubicado su predio?",
+   "res_contenedoras": [
+    5304
+   ]
+  },
+  {
+   "id_preg": 1161,
+   "tipo_campo": "DT",
+   "nivel": "GE",
+   "texto": "Dirección Territorial",
+   "res_contenedoras": [
+    3806
+   ]
+  }
+ ],
+ "departamentos": {
+  "5": "Antioquia",
+  "8": "Atlantico",
+  "11": "Bogota, D.C.",
+  "13": "Bolivar",
+  "15": "Boyaca",
+  "17": "Caldas",
+  "18": "Caqueta",
+  "19": "Cauca",
+  "20": "Cesar",
+  "23": "Cordoba",
+  "25": "Cundinamarca",
+  "27": "Choco",
+  "41": "Huila",
+  "44": "La Guajira",
+  "47": "Magdalena",
+  "50": "Meta",
+  "52": "Nariño",
+  "54": "Norte De Santander",
+  "63": "Quindio",
+  "66": "Risaralda",
+  "68": "Santander",
+  "70": "Sucre",
+  "73": "Tolima",
+  "76": "Valle del Cauca",
+  "81": "Arauca",
+  "85": "Casanare",
+  "86": "Putumayo",
+  "88": "Archip.De San Andres, Providencia y Santa Catalina",
+  "91": "Amazonas",
+  "94": "Guainia",
+  "95": "Guaviare",
+  "97": "Vaupes",
+  "99": "Vichada"
+ },
+ "municipios": [
+  {
+   "id_muni_depto": 0,
+   "id_depto": 0,
+   "id_municipio": 0,
+   "nombre": "SIN DEFINIR"
+  },
+  {
+   "id_muni_depto": 5001,
+   "id_depto": 5,
+   "id_municipio": 1,
+   "nombre": "Medellin"
+  },
+  {
+   "id_muni_depto": 5002,
+   "id_depto": 5,
+   "id_municipio": 2,
+   "nombre": "Abejorral"
+  },
+  {
+   "id_muni_depto": 5004,
+   "id_depto": 5,
+   "id_municipio": 4,
+   "nombre": "Abriaqui"
+  },
+  {
+   "id_muni_depto": 5021,
+   "id_depto": 5,
+   "id_municipio": 21,
+   "nombre": "Alejandria"
+  },
+  {
+   "id_muni_depto": 5030,
+   "id_depto": 5,
+   "id_municipio": 30,
+   "nombre": "Amaga"
+  },
+  {
+   "id_muni_depto": 5031,
+   "id_depto": 5,
+   "id_municipio": 31,
+   "nombre": "Amalfi"
+  },
+  {
+   "id_muni_depto": 5034,
+   "id_depto": 5,
+   "id_municipio": 34,
+   "nombre": "Andes"
+  },
+  {
+   "id_muni_depto": 5036,
+   "id_depto": 5,
+   "id_municipio": 36,
+   "nombre": "Angelopolis"
+  },
+  {
+   "id_muni_depto": 5038,
+   "id_depto": 5,
+   "id_municipio": 38,
+   "nombre": "Angostura"
+  },
+  {
+   "id_muni_depto": 5040,
+   "id_depto": 5,
+   "id_municipio": 40,
+   "nombre": "Anori"
+  },
+  {
+   "id_muni_depto": 5042,
+   "id_depto": 5,
+   "id_municipio": 42,
+   "nombre": "Santafe De Antioquia"
+  },
+  {
+   "id_muni_depto": 5044,
+   "id_depto": 5,
+   "id_municipio": 44,
+   "nombre": "Anza"
+  },
+  {
+   "id_muni_depto": 5045,
+   "id_depto": 5,
+   "id_municipio": 45,
+   "nombre": "Apartado"
+  },
+  {
+   "id_muni_depto": 5051,
+   "id_depto": 5,
+   "id_municipio": 51,
+   "nombre": "Arboletes"
+  },
+  {
+   "id_muni_depto": 5055,
+   "id_depto": 5,
+   "id_municipio": 55,
+   "nombre": "Argelia"
+  },
+  {
+   "id_muni_depto": 5059,
+   "id_depto": 5,
+   "id_municipio": 59,
+   "nombre": "Armenia"
+  },
+  {
+   "id_muni_depto": 5079,
+   "id_depto": 5,
+   "id_municipio": 79,
+   "nombre": "Barbosa"
+  },
+  {
+   "id_muni_depto": 5086,
+   "id_depto": 5,
+   "id_municipio": 86,
+   "nombre": "Belmira"
+  },
+  {
+   "id_muni_depto": 5088,
+   "id_depto": 5,
+   "id_municipio": 88,
+   "nombre": "Bello"
+  },
+  {
+   "id_muni_depto": 5091,
+   "id_depto": 5,
+   "id_municipio": 91,
+   "nombre": "Betania"
+  },
+  {
+   "id_muni_depto": 5093,
+   "id_depto": 5,
+   "id_municipio": 93,
+   "nombre": "Betulia"
+  },
+  {
+   "id_muni_depto": 5101,
+   "id_depto": 5,
+   "id_municipio": 101,
+   "nombre": "Ciudad Bolivar"
+  },
+  {
+   "id_muni_depto": 5107,
+   "id_depto": 5,
+   "id_municipio": 107,
+   "nombre": "Briceño"
+  },
+  {
+   "id_muni_depto": 5113,
+   "id_depto": 5,
+   "id_municipio": 113,
+   "nombre": "Buritica"
+  },
+  {
+   "id_muni_depto": 5120,
+   "id_depto": 5,
+   "id_municipio": 120,
+   "nombre": "Caceres"
+  },
+  {
+   "id_muni_depto": 5125,
+   "id_depto": 5,
+   "id_municipio": 125,
+   "nombre": "Caicedo"
+  },
+  {
+   "id_muni_depto": 5129,
+   "id_depto": 5,
+   "id_municipio": 129,
+   "nombre": "Caldas"
+  },
+  {
+   "id_muni_depto": 5134,
+   "id_depto": 5,
+   "id_municipio": 134,
+   "nombre": "Campamento"
+  },
+  {
+   "id_muni_depto": 5138,
+   "id_depto": 5,
+   "id_municipio": 138,
+   "nombre": "Cañasgordas"
+  },
+  {
+   "id_muni_depto": 5142,
+   "id_depto": 5,
+   "id_municipio": 142,
+   "nombre": "Caracoli"
+  },
+  {
+   "id_muni_depto": 5145,
+   "id_depto": 5,
+   "id_municipio": 145,
+   "nombre": "Caramanta"
+  },
+  {
+   "id_muni_depto": 5147,
+   "id_depto": 5,
+   "id_municipio": 147,
+   "nombre": "Carepa"
+  },
+  {
+   "id_muni_depto": 5148,
+   "id_depto": 5,
+   "id_municipio": 148,
+   "nombre": "El Carmen De Viboral"
+  },
+  {
+   "id_muni_depto": 5150,
+   "id_depto": 5,
+   "id_municipio": 150,
+   "nombre": "Carolina"
+  },
+  {
+   "id_muni_depto": 5154,
+   "id_depto": 5,
+   "id_municipio": 154,
+   "nombre": "Caucasia"
+  },
+  {
+   "id_muni_depto": 5172,
+   "id_depto": 5,
+   "id_municipio": 172,
+   "nombre": "Chigorodo"
+  },
+  {
+   "id_muni_depto": 5190,
+   "id_depto": 5,
+   "id_municipio": 190,
+   "nombre": "Cisneros"
+  },
+  {
+   "id_muni_depto": 5197,
+   "id_depto": 5,
+   "id_municipio": 197,
+   "nombre": "Cocorna"
+  },
+  {
+   "id_muni_depto": 5206,
+   "id_depto": 5,
+   "id_municipio": 206,
+   "nombre": "Concepcion"
+  },
+  {
+   "id_muni_depto": 5209,
+   "id_depto": 5,
+   "id_municipio": 209,
+   "nombre": "Concordia"
+  },
+  {
+   "id_muni_depto": 5212,
+   "id_depto": 5,
+   "id_municipio": 212,
+   "nombre": "Copacabana"
+  },
+  {
+   "id_muni_depto": 5234,
+   "id_depto": 5,
+   "id_municipio": 234,
+   "nombre": "Dabeiba"
+  },
+  {
+   "id_muni_depto": 5237,
+   "id_depto": 5,
+   "id_municipio": 237,
+   "nombre": "Donmatias"
+  },
+  {
+   "id_muni_depto": 5240,
+   "id_depto": 5,
+   "id_municipio": 240,
+   "nombre": "Ebejico"
+  },
+  {
+   "id_muni_depto": 5250,
+   "id_depto": 5,
+   "id_municipio": 250,
+   "nombre": "El Bagre"
+  },
+  {
+   "id_muni_depto": 5264,
+   "id_depto": 5,
+   "id_municipio": 264,
+   "nombre": "Entrerrios"
+  },
+  {
+   "id_muni_depto": 5266,
+   "id_depto": 5,
+   "id_municipio": 266,
+   "nombre": "Envigado"
+  },
+  {
+   "id_muni_depto": 5282,
+   "id_depto": 5,
+   "id_municipio": 282,
+   "nombre": "Fredonia"
+  },
+  {
+   "id_muni_depto": 5284,
+   "id_depto": 5,
+   "id_municipio": 284,
+   "nombre": "Frontino"
+  },
+  {
+   "id_muni_depto": 5306,
+   "id_depto": 5,
+   "id_municipio": 306,
+   "nombre": "Giraldo"
+  },
+  {
+   "id_muni_depto": 5308,
+   "id_depto": 5,
+   "id_municipio": 308,
+   "nombre": "Girardota"
+  },
+  {
+   "id_muni_depto": 5310,
+   "id_depto": 5,
+   "id_municipio": 310,
+   "nombre": "Gomez Plata"
+  },
+  {
+   "id_muni_depto": 5313,
+   "id_depto": 5,
+   "id_municipio": 313,
+   "nombre": "Granada"
+  },
+  {
+   "id_muni_depto": 5315,
+   "id_depto": 5,
+   "id_municipio": 315,
+   "nombre": "Guadalupe"
+  },
+  {
+   "id_muni_depto": 5318,
+   "id_depto": 5,
+   "id_municipio": 318,
+   "nombre": "Guarne"
+  },
+  {
+   "id_muni_depto": 5321,
+   "id_depto": 5,
+   "id_municipio": 321,
+   "nombre": "Guatape"
+  },
+  {
+   "id_muni_depto": 5347,
+   "id_depto": 5,
+   "id_municipio": 347,
+   "nombre": "Heliconia"
+  },
+  {
+   "id_muni_depto": 5353,
+   "id_depto": 5,
+   "id_municipio": 353,
+   "nombre": "Hispania"
+  },
+  {
+   "id_muni_depto": 5360,
+   "id_depto": 5,
+   "id_municipio": 360,
+   "nombre": "Itagui"
+  },
+  {
+   "id_muni_depto": 5361,
+   "id_depto": 5,
+   "id_municipio": 361,
+   "nombre": "Ituango"
+  },
+  {
+   "id_muni_depto": 5364,
+   "id_depto": 5,
+   "id_municipio": 364,
+   "nombre": "Jardin"
+  },
+  {
+   "id_muni_depto": 5368,
+   "id_depto": 5,
+   "id_municipio": 368,
+   "nombre": "Jerico"
+  },
+  {
+   "id_muni_depto": 5376,
+   "id_depto": 5,
+   "id_municipio": 376,
+   "nombre": "La Ceja"
+  },
+  {
+   "id_muni_depto": 5380,
+   "id_depto": 5,
+   "id_municipio": 380,
+   "nombre": "La Estrella"
+  },
+  {
+   "id_muni_depto": 5390,
+   "id_depto": 5,
+   "id_municipio": 390,
+   "nombre": "La Pintada"
+  },
+  {
+   "id_muni_depto": 5400,
+   "id_depto": 5,
+   "id_municipio": 400,
+   "nombre": "La Union"
+  },
+  {
+   "id_muni_depto": 5411,
+   "id_depto": 5,
+   "id_municipio": 411,
+   "nombre": "Liborina"
+  },
+  {
+   "id_muni_depto": 5425,
+   "id_depto": 5,
+   "id_municipio": 425,
+   "nombre": "Maceo"
+  },
+  {
+   "id_muni_depto": 5440,
+   "id_depto": 5,
+   "id_municipio": 440,
+   "nombre": "Marinilla"
+  },
+  {
+   "id_muni_depto": 5467,
+   "id_depto": 5,
+   "id_municipio": 467,
+   "nombre": "Montebello"
+  },
+  {
+   "id_muni_depto": 5475,
+   "id_depto": 5,
+   "id_municipio": 475,
+   "nombre": "Murindo"
+  },
+  {
+   "id_muni_depto": 5480,
+   "id_depto": 5,
+   "id_municipio": 480,
+   "nombre": "Mutata"
+  },
+  {
+   "id_muni_depto": 5483,
+   "id_depto": 5,
+   "id_municipio": 483,
+   "nombre": "Nariño"
+  },
+  {
+   "id_muni_depto": 5490,
+   "id_depto": 5,
+   "id_municipio": 490,
+   "nombre": "Necocli"
+  },
+  {
+   "id_muni_depto": 5495,
+   "id_depto": 5,
+   "id_municipio": 495,
+   "nombre": "Nechi"
+  },
+  {
+   "id_muni_depto": 5501,
+   "id_depto": 5,
+   "id_municipio": 501,
+   "nombre": "Olaya"
+  },
+  {
+   "id_muni_depto": 5541,
+   "id_depto": 5,
+   "id_municipio": 541,
+   "nombre": "Peñol"
+  },
+  {
+   "id_muni_depto": 5543,
+   "id_depto": 5,
+   "id_municipio": 543,
+   "nombre": "Peque"
+  },
+  {
+   "id_muni_depto": 5576,
+   "id_depto": 5,
+   "id_municipio": 576,
+   "nombre": "Pueblorrico"
+  },
+  {
+   "id_muni_depto": 5579,
+   "id_depto": 5,
+   "id_municipio": 579,
+   "nombre": "Puerto Berrio"
+  },
+  {
+   "id_muni_depto": 5585,
+   "id_depto": 5,
+   "id_municipio": 585,
+   "nombre": "Puerto Nare"
+  },
+  {
+   "id_muni_depto": 5591,
+   "id_depto": 5,
+   "id_municipio": 591,
+   "nombre": "Puerto Triunfo"
+  },
+  {
+   "id_muni_depto": 5604,
+   "id_depto": 5,
+   "id_municipio": 604,
+   "nombre": "Remedios"
+  },
+  {
+   "id_muni_depto": 5607,
+   "id_depto": 5,
+   "id_municipio": 607,
+   "nombre": "Retiro"
+  },
+  {
+   "id_muni_depto": 5615,
+   "id_depto": 5,
+   "id_municipio": 615,
+   "nombre": "Rionegro"
+  },
+  {
+   "id_muni_depto": 5628,
+   "id_depto": 5,
+   "id_municipio": 628,
+   "nombre": "Sabanalarga"
+  },
+  {
+   "id_muni_depto": 5631,
+   "id_depto": 5,
+   "id_municipio": 631,
+   "nombre": "Sabaneta"
+  },
+  {
+   "id_muni_depto": 5642,
+   "id_depto": 5,
+   "id_municipio": 642,
+   "nombre": "Salgar"
+  },
+  {
+   "id_muni_depto": 5647,
+   "id_depto": 5,
+   "id_municipio": 647,
+   "nombre": "San Andres De Cuerquia"
+  },
+  {
+   "id_muni_depto": 5649,
+   "id_depto": 5,
+   "id_municipio": 649,
+   "nombre": "San Carlos"
+  },
+  {
+   "id_muni_depto": 5652,
+   "id_depto": 5,
+   "id_municipio": 652,
+   "nombre": "San Francisco"
+  },
+  {
+   "id_muni_depto": 5656,
+   "id_depto": 5,
+   "id_municipio": 656,
+   "nombre": "San Jeronimo"
+  },
+  {
+   "id_muni_depto": 5658,
+   "id_depto": 5,
+   "id_municipio": 658,
+   "nombre": "San Jose De La Montaña"
+  },
+  {
+   "id_muni_depto": 5659,
+   "id_depto": 5,
+   "id_municipio": 659,
+   "nombre": "San Juan De Uraba"
+  },
+  {
+   "id_muni_depto": 5660,
+   "id_depto": 5,
+   "id_municipio": 660,
+   "nombre": "San Luis"
+  },
+  {
+   "id_muni_depto": 5664,
+   "id_depto": 5,
+   "id_municipio": 664,
+   "nombre": "San Pedro De Los Milagros"
+  },
+  {
+   "id_muni_depto": 5665,
+   "id_depto": 5,
+   "id_municipio": 665,
+   "nombre": "San Pedro De Uraba"
+  },
+  {
+   "id_muni_depto": 5667,
+   "id_depto": 5,
+   "id_municipio": 667,
+   "nombre": "San Rafael"
+  },
+  {
+   "id_muni_depto": 5670,
+   "id_depto": 5,
+   "id_municipio": 670,
+   "nombre": "San Roque"
+  },
+  {
+   "id_muni_depto": 5674,
+   "id_depto": 5,
+   "id_municipio": 674,
+   "nombre": "San Vicente"
+  },
+  {
+   "id_muni_depto": 5679,
+   "id_depto": 5,
+   "id_municipio": 679,
+   "nombre": "Santa Barbara"
+  },
+  {
+   "id_muni_depto": 5686,
+   "id_depto": 5,
+   "id_municipio": 686,
+   "nombre": "Santa Rosa De Osos"
+  },
+  {
+   "id_muni_depto": 5690,
+   "id_depto": 5,
+   "id_municipio": 690,
+   "nombre": "Santo Domingo"
+  },
+  {
+   "id_muni_depto": 5697,
+   "id_depto": 5,
+   "id_municipio": 697,
+   "nombre": "El Santuario"
+  },
+  {
+   "id_muni_depto": 5736,
+   "id_depto": 5,
+   "id_municipio": 736,
+   "nombre": "Segovia"
+  },
+  {
+   "id_muni_depto": 5756,
+   "id_depto": 5,
+   "id_municipio": 756,
+   "nombre": "Sonson"
+  },
+  {
+   "id_muni_depto": 5761,
+   "id_depto": 5,
+   "id_municipio": 761,
+   "nombre": "Sopetran"
+  },
+  {
+   "id_muni_depto": 5789,
+   "id_depto": 5,
+   "id_municipio": 789,
+   "nombre": "Tamesis"
+  },
+  {
+   "id_muni_depto": 5790,
+   "id_depto": 5,
+   "id_municipio": 790,
+   "nombre": "Taraza"
+  },
+  {
+   "id_muni_depto": 5792,
+   "id_depto": 5,
+   "id_municipio": 792,
+   "nombre": "Tarso"
+  },
+  {
+   "id_muni_depto": 5809,
+   "id_depto": 5,
+   "id_municipio": 809,
+   "nombre": "Titiribi"
+  },
+  {
+   "id_muni_depto": 5819,
+   "id_depto": 5,
+   "id_municipio": 819,
+   "nombre": "Toledo"
+  },
+  {
+   "id_muni_depto": 5837,
+   "id_depto": 5,
+   "id_municipio": 837,
+   "nombre": "Turbo"
+  },
+  {
+   "id_muni_depto": 5842,
+   "id_depto": 5,
+   "id_municipio": 842,
+   "nombre": "Uramita"
+  },
+  {
+   "id_muni_depto": 5847,
+   "id_depto": 5,
+   "id_municipio": 847,
+   "nombre": "Urrao"
+  },
+  {
+   "id_muni_depto": 5854,
+   "id_depto": 5,
+   "id_municipio": 854,
+   "nombre": "Valdivia"
+  },
+  {
+   "id_muni_depto": 5856,
+   "id_depto": 5,
+   "id_municipio": 856,
+   "nombre": "Valparaiso"
+  },
+  {
+   "id_muni_depto": 5858,
+   "id_depto": 5,
+   "id_municipio": 858,
+   "nombre": "Vegachi"
+  },
+  {
+   "id_muni_depto": 5861,
+   "id_depto": 5,
+   "id_municipio": 861,
+   "nombre": "Venecia"
+  },
+  {
+   "id_muni_depto": 5873,
+   "id_depto": 5,
+   "id_municipio": 873,
+   "nombre": "Vigia Del Fuerte"
+  },
+  {
+   "id_muni_depto": 5885,
+   "id_depto": 5,
+   "id_municipio": 885,
+   "nombre": "Yali"
+  },
+  {
+   "id_muni_depto": 5887,
+   "id_depto": 5,
+   "id_municipio": 887,
+   "nombre": "Yarumal"
+  },
+  {
+   "id_muni_depto": 5890,
+   "id_depto": 5,
+   "id_municipio": 890,
+   "nombre": "Yolombo"
+  },
+  {
+   "id_muni_depto": 5893,
+   "id_depto": 5,
+   "id_municipio": 893,
+   "nombre": "Yondo"
+  },
+  {
+   "id_muni_depto": 5895,
+   "id_depto": 5,
+   "id_municipio": 895,
+   "nombre": "Zaragoza"
+  },
+  {
+   "id_muni_depto": 8001,
+   "id_depto": 8,
+   "id_municipio": 1,
+   "nombre": "Barranquilla"
+  },
+  {
+   "id_muni_depto": 8078,
+   "id_depto": 8,
+   "id_municipio": 78,
+   "nombre": "Baranoa"
+  },
+  {
+   "id_muni_depto": 8137,
+   "id_depto": 8,
+   "id_municipio": 137,
+   "nombre": "Campo De La Cruz"
+  },
+  {
+   "id_muni_depto": 8141,
+   "id_depto": 8,
+   "id_municipio": 141,
+   "nombre": "Candelaria"
+  },
+  {
+   "id_muni_depto": 8296,
+   "id_depto": 8,
+   "id_municipio": 296,
+   "nombre": "Galapa"
+  },
+  {
+   "id_muni_depto": 8372,
+   "id_depto": 8,
+   "id_municipio": 372,
+   "nombre": "Juan De Acosta"
+  },
+  {
+   "id_muni_depto": 8421,
+   "id_depto": 8,
+   "id_municipio": 421,
+   "nombre": "Luruaco"
+  },
+  {
+   "id_muni_depto": 8433,
+   "id_depto": 8,
+   "id_municipio": 433,
+   "nombre": "Malambo"
+  },
+  {
+   "id_muni_depto": 8436,
+   "id_depto": 8,
+   "id_municipio": 436,
+   "nombre": "Manati"
+  },
+  {
+   "id_muni_depto": 8520,
+   "id_depto": 8,
+   "id_municipio": 520,
+   "nombre": "Palmar De Varela"
+  },
+  {
+   "id_muni_depto": 8549,
+   "id_depto": 8,
+   "id_municipio": 549,
+   "nombre": "Piojo"
+  },
+  {
+   "id_muni_depto": 8558,
+   "id_depto": 8,
+   "id_municipio": 558,
+   "nombre": "Polonuevo"
+  },
+  {
+   "id_muni_depto": 8560,
+   "id_depto": 8,
+   "id_municipio": 560,
+   "nombre": "Ponedera"
+  },
+  {
+   "id_muni_depto": 8573,
+   "id_depto": 8,
+   "id_municipio": 573,
+   "nombre": "Puerto Colombia"
+  },
+  {
+   "id_muni_depto": 8606,
+   "id_depto": 8,
+   "id_municipio": 606,
+   "nombre": "Repelon"
+  },
+  {
+   "id_muni_depto": 8634,
+   "id_depto": 8,
+   "id_municipio": 634,
+   "nombre": "Sabanagrande"
+  },
+  {
+   "id_muni_depto": 8638,
+   "id_depto": 8,
+   "id_municipio": 638,
+   "nombre": "Sabanalarga"
+  },
+  {
+   "id_muni_depto": 8675,
+   "id_depto": 8,
+   "id_municipio": 675,
+   "nombre": "Santa Lucia"
+  },
+  {
+   "id_muni_depto": 8685,
+   "id_depto": 8,
+   "id_municipio": 685,
+   "nombre": "Santo Tomas"
+  },
+  {
+   "id_muni_depto": 8758,
+   "id_depto": 8,
+   "id_municipio": 758,
+   "nombre": "Soledad"
+  },
+  {
+   "id_muni_depto": 8770,
+   "id_depto": 8,
+   "id_municipio": 770,
+   "nombre": "Suan"
+  },
+  {
+   "id_muni_depto": 8832,
+   "id_depto": 8,
+   "id_municipio": 832,
+   "nombre": "Tubara"
+  },
+  {
+   "id_muni_depto": 8849,
+   "id_depto": 8,
+   "id_municipio": 849,
+   "nombre": "Usiacuri"
+  },
+  {
+   "id_muni_depto": 11001,
+   "id_depto": 11,
+   "id_municipio": 1,
+   "nombre": "Bogota, D.C."
+  },
+  {
+   "id_muni_depto": 13001,
+   "id_depto": 13,
+   "id_municipio": 1,
+   "nombre": "Cartagena"
+  },
+  {
+   "id_muni_depto": 13006,
+   "id_depto": 13,
+   "id_municipio": 6,
+   "nombre": "Achi"
+  },
+  {
+   "id_muni_depto": 13030,
+   "id_depto": 13,
+   "id_municipio": 30,
+   "nombre": "Altos Del Rosario"
+  },
+  {
+   "id_muni_depto": 13042,
+   "id_depto": 13,
+   "id_municipio": 42,
+   "nombre": "Arenal"
+  },
+  {
+   "id_muni_depto": 13052,
+   "id_depto": 13,
+   "id_municipio": 52,
+   "nombre": "Arjona"
+  },
+  {
+   "id_muni_depto": 13062,
+   "id_depto": 13,
+   "id_municipio": 62,
+   "nombre": "Arroyohondo"
+  },
+  {
+   "id_muni_depto": 13074,
+   "id_depto": 13,
+   "id_municipio": 74,
+   "nombre": "Barranco De Loba"
+  },
+  {
+   "id_muni_depto": 13140,
+   "id_depto": 13,
+   "id_municipio": 140,
+   "nombre": "Calamar"
+  },
+  {
+   "id_muni_depto": 13160,
+   "id_depto": 13,
+   "id_municipio": 160,
+   "nombre": "Cantagallo"
+  },
+  {
+   "id_muni_depto": 13188,
+   "id_depto": 13,
+   "id_municipio": 188,
+   "nombre": "Cicuco"
+  },
+  {
+   "id_muni_depto": 13212,
+   "id_depto": 13,
+   "id_municipio": 212,
+   "nombre": "Cordoba"
+  },
+  {
+   "id_muni_depto": 13222,
+   "id_depto": 13,
+   "id_municipio": 222,
+   "nombre": "Clemencia"
+  },
+  {
+   "id_muni_depto": 13244,
+   "id_depto": 13,
+   "id_municipio": 244,
+   "nombre": "El Carmen De Bolivar"
+  },
+  {
+   "id_muni_depto": 13248,
+   "id_depto": 13,
+   "id_municipio": 248,
+   "nombre": "El Guamo"
+  },
+  {
+   "id_muni_depto": 13268,
+   "id_depto": 13,
+   "id_municipio": 268,
+   "nombre": "El Peñon"
+  },
+  {
+   "id_muni_depto": 13300,
+   "id_depto": 13,
+   "id_municipio": 300,
+   "nombre": "Hatillo De Loba"
+  },
+  {
+   "id_muni_depto": 13430,
+   "id_depto": 13,
+   "id_municipio": 430,
+   "nombre": "Magangue"
+  },
+  {
+   "id_muni_depto": 13433,
+   "id_depto": 13,
+   "id_municipio": 433,
+   "nombre": "Mahates"
+  },
+  {
+   "id_muni_depto": 13440,
+   "id_depto": 13,
+   "id_municipio": 440,
+   "nombre": "Margarita"
+  },
+  {
+   "id_muni_depto": 13442,
+   "id_depto": 13,
+   "id_municipio": 442,
+   "nombre": "Maria La Baja"
+  },
+  {
+   "id_muni_depto": 13458,
+   "id_depto": 13,
+   "id_municipio": 458,
+   "nombre": "Montecristo"
+  },
+  {
+   "id_muni_depto": 13468,
+   "id_depto": 13,
+   "id_municipio": 468,
+   "nombre": "Mompos"
+  },
+  {
+   "id_muni_depto": 13473,
+   "id_depto": 13,
+   "id_municipio": 473,
+   "nombre": "Morales"
+  },
+  {
+   "id_muni_depto": 13490,
+   "id_depto": 13,
+   "id_municipio": 490,
+   "nombre": "Norosi"
+  },
+  {
+   "id_muni_depto": 13549,
+   "id_depto": 13,
+   "id_municipio": 549,
+   "nombre": "Pinillos"
+  },
+  {
+   "id_muni_depto": 13580,
+   "id_depto": 13,
+   "id_municipio": 580,
+   "nombre": "Regidor"
+  },
+  {
+   "id_muni_depto": 13600,
+   "id_depto": 13,
+   "id_municipio": 600,
+   "nombre": "Rio Viejo"
+  },
+  {
+   "id_muni_depto": 13620,
+   "id_depto": 13,
+   "id_municipio": 620,
+   "nombre": "San Cristobal"
+  },
+  {
+   "id_muni_depto": 13647,
+   "id_depto": 13,
+   "id_municipio": 647,
+   "nombre": "San Estanislao"
+  },
+  {
+   "id_muni_depto": 13650,
+   "id_depto": 13,
+   "id_municipio": 650,
+   "nombre": "San Fernando"
+  },
+  {
+   "id_muni_depto": 13654,
+   "id_depto": 13,
+   "id_municipio": 654,
+   "nombre": "San Jacinto"
+  },
+  {
+   "id_muni_depto": 13655,
+   "id_depto": 13,
+   "id_municipio": 655,
+   "nombre": "San Jacinto Del Cauca"
+  },
+  {
+   "id_muni_depto": 13657,
+   "id_depto": 13,
+   "id_municipio": 657,
+   "nombre": "San Juan Nepomuceno"
+  },
+  {
+   "id_muni_depto": 13667,
+   "id_depto": 13,
+   "id_municipio": 667,
+   "nombre": "San Martin De Loba"
+  },
+  {
+   "id_muni_depto": 13670,
+   "id_depto": 13,
+   "id_municipio": 670,
+   "nombre": "San Pablo"
+  },
+  {
+   "id_muni_depto": 13673,
+   "id_depto": 13,
+   "id_municipio": 673,
+   "nombre": "Santa Catalina"
+  },
+  {
+   "id_muni_depto": 13683,
+   "id_depto": 13,
+   "id_municipio": 683,
+   "nombre": "Santa Rosa"
+  },
+  {
+   "id_muni_depto": 13688,
+   "id_depto": 13,
+   "id_municipio": 688,
+   "nombre": "Santa Rosa Del Sur"
+  },
+  {
+   "id_muni_depto": 13744,
+   "id_depto": 13,
+   "id_municipio": 744,
+   "nombre": "Simiti"
+  },
+  {
+   "id_muni_depto": 13760,
+   "id_depto": 13,
+   "id_municipio": 760,
+   "nombre": "Soplaviento"
+  },
+  {
+   "id_muni_depto": 13780,
+   "id_depto": 13,
+   "id_municipio": 780,
+   "nombre": "Talaigua Nuevo"
+  },
+  {
+   "id_muni_depto": 13810,
+   "id_depto": 13,
+   "id_municipio": 810,
+   "nombre": "Tiquisio"
+  },
+  {
+   "id_muni_depto": 13836,
+   "id_depto": 13,
+   "id_municipio": 836,
+   "nombre": "Turbaco"
+  },
+  {
+   "id_muni_depto": 13838,
+   "id_depto": 13,
+   "id_municipio": 838,
+   "nombre": "Turbana"
+  },
+  {
+   "id_muni_depto": 13873,
+   "id_depto": 13,
+   "id_municipio": 873,
+   "nombre": "Villanueva"
+  },
+  {
+   "id_muni_depto": 13894,
+   "id_depto": 13,
+   "id_municipio": 894,
+   "nombre": "Zambrano"
+  },
+  {
+   "id_muni_depto": 15001,
+   "id_depto": 15,
+   "id_municipio": 1,
+   "nombre": "Tunja"
+  },
+  {
+   "id_muni_depto": 15022,
+   "id_depto": 15,
+   "id_municipio": 22,
+   "nombre": "Almeida"
+  },
+  {
+   "id_muni_depto": 15047,
+   "id_depto": 15,
+   "id_municipio": 47,
+   "nombre": "Aquitania"
+  },
+  {
+   "id_muni_depto": 15051,
+   "id_depto": 15,
+   "id_municipio": 51,
+   "nombre": "Arcabuco"
+  },
+  {
+   "id_muni_depto": 15087,
+   "id_depto": 15,
+   "id_municipio": 87,
+   "nombre": "Belen"
+  },
+  {
+   "id_muni_depto": 15090,
+   "id_depto": 15,
+   "id_municipio": 90,
+   "nombre": "Berbeo"
+  },
+  {
+   "id_muni_depto": 15092,
+   "id_depto": 15,
+   "id_municipio": 92,
+   "nombre": "Beteitiva"
+  },
+  {
+   "id_muni_depto": 15097,
+   "id_depto": 15,
+   "id_municipio": 97,
+   "nombre": "Boavita"
+  },
+  {
+   "id_muni_depto": 15104,
+   "id_depto": 15,
+   "id_municipio": 104,
+   "nombre": "Boyaca"
+  },
+  {
+   "id_muni_depto": 15106,
+   "id_depto": 15,
+   "id_municipio": 106,
+   "nombre": "Briceño"
+  },
+  {
+   "id_muni_depto": 15109,
+   "id_depto": 15,
+   "id_municipio": 109,
+   "nombre": "Buenavista"
+  },
+  {
+   "id_muni_depto": 15114,
+   "id_depto": 15,
+   "id_municipio": 114,
+   "nombre": "Busbanza"
+  },
+  {
+   "id_muni_depto": 15131,
+   "id_depto": 15,
+   "id_municipio": 131,
+   "nombre": "Caldas"
+  },
+  {
+   "id_muni_depto": 15135,
+   "id_depto": 15,
+   "id_municipio": 135,
+   "nombre": "Campohermoso"
+  },
+  {
+   "id_muni_depto": 15162,
+   "id_depto": 15,
+   "id_municipio": 162,
+   "nombre": "Cerinza"
+  },
+  {
+   "id_muni_depto": 15172,
+   "id_depto": 15,
+   "id_municipio": 172,
+   "nombre": "Chinavita"
+  },
+  {
+   "id_muni_depto": 15176,
+   "id_depto": 15,
+   "id_municipio": 176,
+   "nombre": "Chiquinquira"
+  },
+  {
+   "id_muni_depto": 15180,
+   "id_depto": 15,
+   "id_municipio": 180,
+   "nombre": "Chiscas"
+  },
+  {
+   "id_muni_depto": 15183,
+   "id_depto": 15,
+   "id_municipio": 183,
+   "nombre": "Chita"
+  },
+  {
+   "id_muni_depto": 15185,
+   "id_depto": 15,
+   "id_municipio": 185,
+   "nombre": "Chitaraque"
+  },
+  {
+   "id_muni_depto": 15187,
+   "id_depto": 15,
+   "id_municipio": 187,
+   "nombre": "Chivata"
+  },
+  {
+   "id_muni_depto": 15189,
+   "id_depto": 15,
+   "id_municipio": 189,
+   "nombre": "Cienega"
+  },
+  {
+   "id_muni_depto": 15204,
+   "id_depto": 15,
+   "id_municipio": 204,
+   "nombre": "Combita"
+  },
+  {
+   "id_muni_depto": 15212,
+   "id_depto": 15,
+   "id_municipio": 212,
+   "nombre": "Coper"
+  },
+  {
+   "id_muni_depto": 15215,
+   "id_depto": 15,
+   "id_municipio": 215,
+   "nombre": "Corrales"
+  },
+  {
+   "id_muni_depto": 15218,
+   "id_depto": 15,
+   "id_municipio": 218,
+   "nombre": "Covarachia"
+  },
+  {
+   "id_muni_depto": 15223,
+   "id_depto": 15,
+   "id_municipio": 223,
+   "nombre": "Cubara"
+  },
+  {
+   "id_muni_depto": 15224,
+   "id_depto": 15,
+   "id_municipio": 224,
+   "nombre": "Cucaita"
+  },
+  {
+   "id_muni_depto": 15226,
+   "id_depto": 15,
+   "id_municipio": 226,
+   "nombre": "Cuitiva"
+  },
+  {
+   "id_muni_depto": 15232,
+   "id_depto": 15,
+   "id_municipio": 232,
+   "nombre": "Chiquiza"
+  },
+  {
+   "id_muni_depto": 15236,
+   "id_depto": 15,
+   "id_municipio": 236,
+   "nombre": "Chivor"
+  },
+  {
+   "id_muni_depto": 15238,
+   "id_depto": 15,
+   "id_municipio": 238,
+   "nombre": "Duitama"
+  },
+  {
+   "id_muni_depto": 15244,
+   "id_depto": 15,
+   "id_municipio": 244,
+   "nombre": "El Cocuy"
+  },
+  {
+   "id_muni_depto": 15248,
+   "id_depto": 15,
+   "id_municipio": 248,
+   "nombre": "El Espino"
+  },
+  {
+   "id_muni_depto": 15272,
+   "id_depto": 15,
+   "id_municipio": 272,
+   "nombre": "Firavitoba"
+  },
+  {
+   "id_muni_depto": 15276,
+   "id_depto": 15,
+   "id_municipio": 276,
+   "nombre": "Floresta"
+  },
+  {
+   "id_muni_depto": 15293,
+   "id_depto": 15,
+   "id_municipio": 293,
+   "nombre": "Gachantiva"
+  },
+  {
+   "id_muni_depto": 15296,
+   "id_depto": 15,
+   "id_municipio": 296,
+   "nombre": "Gameza"
+  },
+  {
+   "id_muni_depto": 15299,
+   "id_depto": 15,
+   "id_municipio": 299,
+   "nombre": "Garagoa"
+  },
+  {
+   "id_muni_depto": 15317,
+   "id_depto": 15,
+   "id_municipio": 317,
+   "nombre": "Guacamayas"
+  },
+  {
+   "id_muni_depto": 15322,
+   "id_depto": 15,
+   "id_municipio": 322,
+   "nombre": "Guateque"
+  },
+  {
+   "id_muni_depto": 15325,
+   "id_depto": 15,
+   "id_municipio": 325,
+   "nombre": "Guayata"
+  },
+  {
+   "id_muni_depto": 15332,
+   "id_depto": 15,
+   "id_municipio": 332,
+   "nombre": "Guican"
+  },
+  {
+   "id_muni_depto": 15362,
+   "id_depto": 15,
+   "id_municipio": 362,
+   "nombre": "Iza"
+  },
+  {
+   "id_muni_depto": 15367,
+   "id_depto": 15,
+   "id_municipio": 367,
+   "nombre": "Jenesano"
+  },
+  {
+   "id_muni_depto": 15368,
+   "id_depto": 15,
+   "id_municipio": 368,
+   "nombre": "Jerico"
+  },
+  {
+   "id_muni_depto": 15377,
+   "id_depto": 15,
+   "id_municipio": 377,
+   "nombre": "Labranzagrande"
+  },
+  {
+   "id_muni_depto": 15380,
+   "id_depto": 15,
+   "id_municipio": 380,
+   "nombre": "La Capilla"
+  },
+  {
+   "id_muni_depto": 15401,
+   "id_depto": 15,
+   "id_municipio": 401,
+   "nombre": "La Victoria"
+  },
+  {
+   "id_muni_depto": 15403,
+   "id_depto": 15,
+   "id_municipio": 403,
+   "nombre": "La Uvita"
+  },
+  {
+   "id_muni_depto": 15407,
+   "id_depto": 15,
+   "id_municipio": 407,
+   "nombre": "Villa De Leyva"
+  },
+  {
+   "id_muni_depto": 15425,
+   "id_depto": 15,
+   "id_municipio": 425,
+   "nombre": "Macanal"
+  },
+  {
+   "id_muni_depto": 15442,
+   "id_depto": 15,
+   "id_municipio": 442,
+   "nombre": "Maripi"
+  },
+  {
+   "id_muni_depto": 15455,
+   "id_depto": 15,
+   "id_municipio": 455,
+   "nombre": "Miraflores"
+  },
+  {
+   "id_muni_depto": 15464,
+   "id_depto": 15,
+   "id_municipio": 464,
+   "nombre": "Mongua"
+  },
+  {
+   "id_muni_depto": 15466,
+   "id_depto": 15,
+   "id_municipio": 466,
+   "nombre": "Mongui"
+  },
+  {
+   "id_muni_depto": 15469,
+   "id_depto": 15,
+   "id_municipio": 469,
+   "nombre": "Moniquira"
+  },
+  {
+   "id_muni_depto": 15476,
+   "id_depto": 15,
+   "id_municipio": 476,
+   "nombre": "Motavita"
+  },
+  {
+   "id_muni_depto": 15480,
+   "id_depto": 15,
+   "id_municipio": 480,
+   "nombre": "Muzo"
+  },
+  {
+   "id_muni_depto": 15491,
+   "id_depto": 15,
+   "id_municipio": 491,
+   "nombre": "Nobsa"
+  },
+  {
+   "id_muni_depto": 15494,
+   "id_depto": 15,
+   "id_municipio": 494,
+   "nombre": "Nuevo Colon"
+  },
+  {
+   "id_muni_depto": 15500,
+   "id_depto": 15,
+   "id_municipio": 500,
+   "nombre": "Oicata"
+  },
+  {
+   "id_muni_depto": 15507,
+   "id_depto": 15,
+   "id_municipio": 507,
+   "nombre": "Otanche"
+  },
+  {
+   "id_muni_depto": 15511,
+   "id_depto": 15,
+   "id_municipio": 511,
+   "nombre": "Pachavita"
+  },
+  {
+   "id_muni_depto": 15514,
+   "id_depto": 15,
+   "id_municipio": 514,
+   "nombre": "Paez"
+  },
+  {
+   "id_muni_depto": 15516,
+   "id_depto": 15,
+   "id_municipio": 516,
+   "nombre": "Paipa"
+  },
+  {
+   "id_muni_depto": 15518,
+   "id_depto": 15,
+   "id_municipio": 518,
+   "nombre": "Pajarito"
+  },
+  {
+   "id_muni_depto": 15522,
+   "id_depto": 15,
+   "id_municipio": 522,
+   "nombre": "Panqueba"
+  },
+  {
+   "id_muni_depto": 15531,
+   "id_depto": 15,
+   "id_municipio": 531,
+   "nombre": "Pauna"
+  },
+  {
+   "id_muni_depto": 15533,
+   "id_depto": 15,
+   "id_municipio": 533,
+   "nombre": "Paya"
+  },
+  {
+   "id_muni_depto": 15537,
+   "id_depto": 15,
+   "id_municipio": 537,
+   "nombre": "Paz De Rio"
+  },
+  {
+   "id_muni_depto": 15542,
+   "id_depto": 15,
+   "id_municipio": 542,
+   "nombre": "Pesca"
+  },
+  {
+   "id_muni_depto": 15550,
+   "id_depto": 15,
+   "id_municipio": 550,
+   "nombre": "Pisba"
+  },
+  {
+   "id_muni_depto": 15572,
+   "id_depto": 15,
+   "id_municipio": 572,
+   "nombre": "Puerto Boyaca"
+  },
+  {
+   "id_muni_depto": 15580,
+   "id_depto": 15,
+   "id_municipio": 580,
+   "nombre": "Quipama"
+  },
+  {
+   "id_muni_depto": 15599,
+   "id_depto": 15,
+   "id_municipio": 599,
+   "nombre": "Ramiriqui"
+  },
+  {
+   "id_muni_depto": 15600,
+   "id_depto": 15,
+   "id_municipio": 600,
+   "nombre": "Raquira"
+  },
+  {
+   "id_muni_depto": 15621,
+   "id_depto": 15,
+   "id_municipio": 621,
+   "nombre": "Rondon"
+  },
+  {
+   "id_muni_depto": 15632,
+   "id_depto": 15,
+   "id_municipio": 632,
+   "nombre": "Saboya"
+  },
+  {
+   "id_muni_depto": 15638,
+   "id_depto": 15,
+   "id_municipio": 638,
+   "nombre": "Sachica"
+  },
+  {
+   "id_muni_depto": 15646,
+   "id_depto": 15,
+   "id_municipio": 646,
+   "nombre": "Samaca"
+  },
+  {
+   "id_muni_depto": 15660,
+   "id_depto": 15,
+   "id_municipio": 660,
+   "nombre": "San Eduardo"
+  },
+  {
+   "id_muni_depto": 15664,
+   "id_depto": 15,
+   "id_municipio": 664,
+   "nombre": "San Jose De Pare"
+  },
+  {
+   "id_muni_depto": 15667,
+   "id_depto": 15,
+   "id_municipio": 667,
+   "nombre": "San Luis De Gaceno"
+  },
+  {
+   "id_muni_depto": 15673,
+   "id_depto": 15,
+   "id_municipio": 673,
+   "nombre": "San Mateo"
+  },
+  {
+   "id_muni_depto": 15676,
+   "id_depto": 15,
+   "id_municipio": 676,
+   "nombre": "San Miguel De Sema"
+  },
+  {
+   "id_muni_depto": 15681,
+   "id_depto": 15,
+   "id_municipio": 681,
+   "nombre": "San Pablo De Borbur"
+  },
+  {
+   "id_muni_depto": 15686,
+   "id_depto": 15,
+   "id_municipio": 686,
+   "nombre": "Santana"
+  },
+  {
+   "id_muni_depto": 15690,
+   "id_depto": 15,
+   "id_municipio": 690,
+   "nombre": "Santa Maria"
+  },
+  {
+   "id_muni_depto": 15693,
+   "id_depto": 15,
+   "id_municipio": 693,
+   "nombre": "Santa Rosa De Viterbo"
+  },
+  {
+   "id_muni_depto": 15696,
+   "id_depto": 15,
+   "id_municipio": 696,
+   "nombre": "Santa Sofia"
+  },
+  {
+   "id_muni_depto": 15720,
+   "id_depto": 15,
+   "id_municipio": 720,
+   "nombre": "Sativanorte"
+  },
+  {
+   "id_muni_depto": 15723,
+   "id_depto": 15,
+   "id_municipio": 723,
+   "nombre": "Sativasur"
+  },
+  {
+   "id_muni_depto": 15740,
+   "id_depto": 15,
+   "id_municipio": 740,
+   "nombre": "Siachoque"
+  },
+  {
+   "id_muni_depto": 15753,
+   "id_depto": 15,
+   "id_municipio": 753,
+   "nombre": "Soata"
+  },
+  {
+   "id_muni_depto": 15755,
+   "id_depto": 15,
+   "id_municipio": 755,
+   "nombre": "Socota"
+  },
+  {
+   "id_muni_depto": 15757,
+   "id_depto": 15,
+   "id_municipio": 757,
+   "nombre": "Socha"
+  },
+  {
+   "id_muni_depto": 15759,
+   "id_depto": 15,
+   "id_municipio": 759,
+   "nombre": "Sogamoso"
+  },
+  {
+   "id_muni_depto": 15761,
+   "id_depto": 15,
+   "id_municipio": 761,
+   "nombre": "Somondoco"
+  },
+  {
+   "id_muni_depto": 15762,
+   "id_depto": 15,
+   "id_municipio": 762,
+   "nombre": "Sora"
+  },
+  {
+   "id_muni_depto": 15763,
+   "id_depto": 15,
+   "id_municipio": 763,
+   "nombre": "Sotaquira"
+  },
+  {
+   "id_muni_depto": 15764,
+   "id_depto": 15,
+   "id_municipio": 764,
+   "nombre": "Soraca"
+  },
+  {
+   "id_muni_depto": 15774,
+   "id_depto": 15,
+   "id_municipio": 774,
+   "nombre": "Susacon"
+  },
+  {
+   "id_muni_depto": 15776,
+   "id_depto": 15,
+   "id_municipio": 776,
+   "nombre": "Sutamarchan"
+  },
+  {
+   "id_muni_depto": 15778,
+   "id_depto": 15,
+   "id_municipio": 778,
+   "nombre": "Sutatenza"
+  },
+  {
+   "id_muni_depto": 15790,
+   "id_depto": 15,
+   "id_municipio": 790,
+   "nombre": "Tasco"
+  },
+  {
+   "id_muni_depto": 15798,
+   "id_depto": 15,
+   "id_municipio": 798,
+   "nombre": "Tenza"
+  },
+  {
+   "id_muni_depto": 15804,
+   "id_depto": 15,
+   "id_municipio": 804,
+   "nombre": "Tibana"
+  },
+  {
+   "id_muni_depto": 15806,
+   "id_depto": 15,
+   "id_municipio": 806,
+   "nombre": "Tibasosa"
+  },
+  {
+   "id_muni_depto": 15808,
+   "id_depto": 15,
+   "id_municipio": 808,
+   "nombre": "Tinjaca"
+  },
+  {
+   "id_muni_depto": 15810,
+   "id_depto": 15,
+   "id_municipio": 810,
+   "nombre": "Tipacoque"
+  },
+  {
+   "id_muni_depto": 15814,
+   "id_depto": 15,
+   "id_municipio": 814,
+   "nombre": "Toca"
+  },
+  {
+   "id_muni_depto": 15816,
+   "id_depto": 15,
+   "id_municipio": 816,
+   "nombre": "Togui"
+  },
+  {
+   "id_muni_depto": 15820,
+   "id_depto": 15,
+   "id_municipio": 820,
+   "nombre": "Topaga"
+  },
+  {
+   "id_muni_depto": 15822,
+   "id_depto": 15,
+   "id_municipio": 822,
+   "nombre": "Tota"
+  },
+  {
+   "id_muni_depto": 15832,
+   "id_depto": 15,
+   "id_municipio": 832,
+   "nombre": "Tunungua"
+  },
+  {
+   "id_muni_depto": 15835,
+   "id_depto": 15,
+   "id_municipio": 835,
+   "nombre": "Turmeque"
+  },
+  {
+   "id_muni_depto": 15837,
+   "id_depto": 15,
+   "id_municipio": 837,
+   "nombre": "Tuta"
+  },
+  {
+   "id_muni_depto": 15839,
+   "id_depto": 15,
+   "id_municipio": 839,
+   "nombre": "Tutaza"
+  },
+  {
+   "id_muni_depto": 15842,
+   "id_depto": 15,
+   "id_municipio": 842,
+   "nombre": "Umbita"
+  },
+  {
+   "id_muni_depto": 15861,
+   "id_depto": 15,
+   "id_municipio": 861,
+   "nombre": "Ventaquemada"
+  },
+  {
+   "id_muni_depto": 15879,
+   "id_depto": 15,
+   "id_municipio": 879,
+   "nombre": "Viracacha"
+  },
+  {
+   "id_muni_depto": 15897,
+   "id_depto": 15,
+   "id_municipio": 897,
+   "nombre": "Zetaquira"
+  },
+  {
+   "id_muni_depto": 17001,
+   "id_depto": 17,
+   "id_municipio": 1,
+   "nombre": "Manizales"
+  },
+  {
+   "id_muni_depto": 17013,
+   "id_depto": 17,
+   "id_municipio": 13,
+   "nombre": "Aguadas"
+  },
+  {
+   "id_muni_depto": 17042,
+   "id_depto": 17,
+   "id_municipio": 42,
+   "nombre": "Anserma"
+  },
+  {
+   "id_muni_depto": 17050,
+   "id_depto": 17,
+   "id_municipio": 50,
+   "nombre": "Aranzazu"
+  },
+  {
+   "id_muni_depto": 17088,
+   "id_depto": 17,
+   "id_municipio": 88,
+   "nombre": "Belalcazar"
+  },
+  {
+   "id_muni_depto": 17174,
+   "id_depto": 17,
+   "id_municipio": 174,
+   "nombre": "Chinchina"
+  },
+  {
+   "id_muni_depto": 17272,
+   "id_depto": 17,
+   "id_municipio": 272,
+   "nombre": "Filadelfia"
+  },
+  {
+   "id_muni_depto": 17380,
+   "id_depto": 17,
+   "id_municipio": 380,
+   "nombre": "La Dorada"
+  },
+  {
+   "id_muni_depto": 17388,
+   "id_depto": 17,
+   "id_municipio": 388,
+   "nombre": "La Merced"
+  },
+  {
+   "id_muni_depto": 17433,
+   "id_depto": 17,
+   "id_municipio": 433,
+   "nombre": "Manzanares"
+  },
+  {
+   "id_muni_depto": 17442,
+   "id_depto": 17,
+   "id_municipio": 442,
+   "nombre": "Marmato"
+  },
+  {
+   "id_muni_depto": 17444,
+   "id_depto": 17,
+   "id_municipio": 444,
+   "nombre": "Marquetalia"
+  },
+  {
+   "id_muni_depto": 17446,
+   "id_depto": 17,
+   "id_municipio": 446,
+   "nombre": "Marulanda"
+  },
+  {
+   "id_muni_depto": 17486,
+   "id_depto": 17,
+   "id_municipio": 486,
+   "nombre": "Neira"
+  },
+  {
+   "id_muni_depto": 17495,
+   "id_depto": 17,
+   "id_municipio": 495,
+   "nombre": "Norcasia"
+  },
+  {
+   "id_muni_depto": 17513,
+   "id_depto": 17,
+   "id_municipio": 513,
+   "nombre": "Pacora"
+  },
+  {
+   "id_muni_depto": 17524,
+   "id_depto": 17,
+   "id_municipio": 524,
+   "nombre": "Palestina"
+  },
+  {
+   "id_muni_depto": 17541,
+   "id_depto": 17,
+   "id_municipio": 541,
+   "nombre": "Pensilvania"
+  },
+  {
+   "id_muni_depto": 17614,
+   "id_depto": 17,
+   "id_municipio": 614,
+   "nombre": "Riosucio"
+  },
+  {
+   "id_muni_depto": 17616,
+   "id_depto": 17,
+   "id_municipio": 616,
+   "nombre": "Risaralda"
+  },
+  {
+   "id_muni_depto": 17653,
+   "id_depto": 17,
+   "id_municipio": 653,
+   "nombre": "Salamina"
+  },
+  {
+   "id_muni_depto": 17662,
+   "id_depto": 17,
+   "id_municipio": 662,
+   "nombre": "Samana"
+  },
+  {
+   "id_muni_depto": 17665,
+   "id_depto": 17,
+   "id_municipio": 665,
+   "nombre": "San Jose"
+  },
+  {
+   "id_muni_depto": 17777,
+   "id_depto": 17,
+   "id_municipio": 777,
+   "nombre": "Supia"
+  },
+  {
+   "id_muni_depto": 17867,
+   "id_depto": 17,
+   "id_municipio": 867,
+   "nombre": "Victoria"
+  },
+  {
+   "id_muni_depto": 17873,
+   "id_depto": 17,
+   "id_municipio": 873,
+   "nombre": "Villamaria"
+  },
+  {
+   "id_muni_depto": 17877,
+   "id_depto": 17,
+   "id_municipio": 877,
+   "nombre": "Viterbo"
+  },
+  {
+   "id_muni_depto": 18001,
+   "id_depto": 18,
+   "id_municipio": 1,
+   "nombre": "Florencia"
+  },
+  {
+   "id_muni_depto": 18029,
+   "id_depto": 18,
+   "id_municipio": 29,
+   "nombre": "Albania"
+  },
+  {
+   "id_muni_depto": 18094,
+   "id_depto": 18,
+   "id_municipio": 94,
+   "nombre": "Belen De Los Andaquies"
+  },
+  {
+   "id_muni_depto": 18150,
+   "id_depto": 18,
+   "id_municipio": 150,
+   "nombre": "Cartagena Del Chaira"
+  },
+  {
+   "id_muni_depto": 18205,
+   "id_depto": 18,
+   "id_municipio": 205,
+   "nombre": "Curillo"
+  },
+  {
+   "id_muni_depto": 18247,
+   "id_depto": 18,
+   "id_municipio": 247,
+   "nombre": "El Doncello"
+  },
+  {
+   "id_muni_depto": 18256,
+   "id_depto": 18,
+   "id_municipio": 256,
+   "nombre": "El Paujil"
+  },
+  {
+   "id_muni_depto": 18410,
+   "id_depto": 18,
+   "id_municipio": 410,
+   "nombre": "La Montañita"
+  },
+  {
+   "id_muni_depto": 18460,
+   "id_depto": 18,
+   "id_municipio": 460,
+   "nombre": "Milan"
+  },
+  {
+   "id_muni_depto": 18479,
+   "id_depto": 18,
+   "id_municipio": 479,
+   "nombre": "Morelia"
+  },
+  {
+   "id_muni_depto": 18592,
+   "id_depto": 18,
+   "id_municipio": 592,
+   "nombre": "Puerto Rico"
+  },
+  {
+   "id_muni_depto": 18610,
+   "id_depto": 18,
+   "id_municipio": 610,
+   "nombre": "San Jose Del Fragua"
+  },
+  {
+   "id_muni_depto": 18753,
+   "id_depto": 18,
+   "id_municipio": 753,
+   "nombre": "San Vicente Del Caguan"
+  },
+  {
+   "id_muni_depto": 18756,
+   "id_depto": 18,
+   "id_municipio": 756,
+   "nombre": "Solano"
+  },
+  {
+   "id_muni_depto": 18785,
+   "id_depto": 18,
+   "id_municipio": 785,
+   "nombre": "Solita"
+  },
+  {
+   "id_muni_depto": 18860,
+   "id_depto": 18,
+   "id_municipio": 860,
+   "nombre": "Valparaiso"
+  },
+  {
+   "id_muni_depto": 19001,
+   "id_depto": 19,
+   "id_municipio": 1,
+   "nombre": "Popayan"
+  },
+  {
+   "id_muni_depto": 19022,
+   "id_depto": 19,
+   "id_municipio": 22,
+   "nombre": "Almaguer"
+  },
+  {
+   "id_muni_depto": 19050,
+   "id_depto": 19,
+   "id_municipio": 50,
+   "nombre": "Argelia"
+  },
+  {
+   "id_muni_depto": 19075,
+   "id_depto": 19,
+   "id_municipio": 75,
+   "nombre": "Balboa"
+  },
+  {
+   "id_muni_depto": 19100,
+   "id_depto": 19,
+   "id_municipio": 100,
+   "nombre": "Bolivar"
+  },
+  {
+   "id_muni_depto": 19110,
+   "id_depto": 19,
+   "id_municipio": 110,
+   "nombre": "Buenos Aires"
+  },
+  {
+   "id_muni_depto": 19130,
+   "id_depto": 19,
+   "id_municipio": 130,
+   "nombre": "Cajibio"
+  },
+  {
+   "id_muni_depto": 19137,
+   "id_depto": 19,
+   "id_municipio": 137,
+   "nombre": "Caldono"
+  },
+  {
+   "id_muni_depto": 19142,
+   "id_depto": 19,
+   "id_municipio": 142,
+   "nombre": "Caloto"
+  },
+  {
+   "id_muni_depto": 19212,
+   "id_depto": 19,
+   "id_municipio": 212,
+   "nombre": "Corinto"
+  },
+  {
+   "id_muni_depto": 19256,
+   "id_depto": 19,
+   "id_municipio": 256,
+   "nombre": "El Tambo"
+  },
+  {
+   "id_muni_depto": 19290,
+   "id_depto": 19,
+   "id_municipio": 290,
+   "nombre": "Florencia"
+  },
+  {
+   "id_muni_depto": 19300,
+   "id_depto": 19,
+   "id_municipio": 300,
+   "nombre": "Guachene"
+  },
+  {
+   "id_muni_depto": 19318,
+   "id_depto": 19,
+   "id_municipio": 318,
+   "nombre": "Guapi"
+  },
+  {
+   "id_muni_depto": 19355,
+   "id_depto": 19,
+   "id_municipio": 355,
+   "nombre": "Inza"
+  },
+  {
+   "id_muni_depto": 19364,
+   "id_depto": 19,
+   "id_municipio": 364,
+   "nombre": "Jambalo"
+  },
+  {
+   "id_muni_depto": 19392,
+   "id_depto": 19,
+   "id_municipio": 392,
+   "nombre": "La Sierra"
+  },
+  {
+   "id_muni_depto": 19397,
+   "id_depto": 19,
+   "id_municipio": 397,
+   "nombre": "La Vega"
+  },
+  {
+   "id_muni_depto": 19418,
+   "id_depto": 19,
+   "id_municipio": 418,
+   "nombre": "Lopez"
+  },
+  {
+   "id_muni_depto": 19450,
+   "id_depto": 19,
+   "id_municipio": 450,
+   "nombre": "Mercaderes"
+  },
+  {
+   "id_muni_depto": 19455,
+   "id_depto": 19,
+   "id_municipio": 455,
+   "nombre": "Miranda"
+  },
+  {
+   "id_muni_depto": 19473,
+   "id_depto": 19,
+   "id_municipio": 473,
+   "nombre": "Morales"
+  },
+  {
+   "id_muni_depto": 19513,
+   "id_depto": 19,
+   "id_municipio": 513,
+   "nombre": "Padilla"
+  },
+  {
+   "id_muni_depto": 19517,
+   "id_depto": 19,
+   "id_municipio": 517,
+   "nombre": "Paez"
+  },
+  {
+   "id_muni_depto": 19532,
+   "id_depto": 19,
+   "id_municipio": 532,
+   "nombre": "Patia"
+  },
+  {
+   "id_muni_depto": 19533,
+   "id_depto": 19,
+   "id_municipio": 533,
+   "nombre": "Piamonte"
+  },
+  {
+   "id_muni_depto": 19548,
+   "id_depto": 19,
+   "id_municipio": 548,
+   "nombre": "Piendamo"
+  },
+  {
+   "id_muni_depto": 19573,
+   "id_depto": 19,
+   "id_municipio": 573,
+   "nombre": "Puerto Tejada"
+  },
+  {
+   "id_muni_depto": 19585,
+   "id_depto": 19,
+   "id_municipio": 585,
+   "nombre": "Purace"
+  },
+  {
+   "id_muni_depto": 19622,
+   "id_depto": 19,
+   "id_municipio": 622,
+   "nombre": "Rosas"
+  },
+  {
+   "id_muni_depto": 19693,
+   "id_depto": 19,
+   "id_municipio": 693,
+   "nombre": "San Sebastian"
+  },
+  {
+   "id_muni_depto": 19698,
+   "id_depto": 19,
+   "id_municipio": 698,
+   "nombre": "Santander De Quilichao"
+  },
+  {
+   "id_muni_depto": 19701,
+   "id_depto": 19,
+   "id_municipio": 701,
+   "nombre": "Santa Rosa"
+  },
+  {
+   "id_muni_depto": 19743,
+   "id_depto": 19,
+   "id_municipio": 743,
+   "nombre": "Silvia"
+  },
+  {
+   "id_muni_depto": 19760,
+   "id_depto": 19,
+   "id_municipio": 760,
+   "nombre": "Sotara"
+  },
+  {
+   "id_muni_depto": 19780,
+   "id_depto": 19,
+   "id_municipio": 780,
+   "nombre": "Suarez"
+  },
+  {
+   "id_muni_depto": 19785,
+   "id_depto": 19,
+   "id_municipio": 785,
+   "nombre": "Sucre"
+  },
+  {
+   "id_muni_depto": 19807,
+   "id_depto": 19,
+   "id_municipio": 807,
+   "nombre": "Timbio"
+  },
+  {
+   "id_muni_depto": 19809,
+   "id_depto": 19,
+   "id_municipio": 809,
+   "nombre": "Timbiqui"
+  },
+  {
+   "id_muni_depto": 19821,
+   "id_depto": 19,
+   "id_municipio": 821,
+   "nombre": "Toribio"
+  },
+  {
+   "id_muni_depto": 19824,
+   "id_depto": 19,
+   "id_municipio": 824,
+   "nombre": "Totoro"
+  },
+  {
+   "id_muni_depto": 19845,
+   "id_depto": 19,
+   "id_municipio": 845,
+   "nombre": "Villa Rica"
+  },
+  {
+   "id_muni_depto": 20001,
+   "id_depto": 20,
+   "id_municipio": 1,
+   "nombre": "Valledupar"
+  },
+  {
+   "id_muni_depto": 20011,
+   "id_depto": 20,
+   "id_municipio": 11,
+   "nombre": "Aguachica"
+  },
+  {
+   "id_muni_depto": 20013,
+   "id_depto": 20,
+   "id_municipio": 13,
+   "nombre": "Agustin Codazzi"
+  },
+  {
+   "id_muni_depto": 20032,
+   "id_depto": 20,
+   "id_municipio": 32,
+   "nombre": "Astrea"
+  },
+  {
+   "id_muni_depto": 20045,
+   "id_depto": 20,
+   "id_municipio": 45,
+   "nombre": "Becerril"
+  },
+  {
+   "id_muni_depto": 20060,
+   "id_depto": 20,
+   "id_municipio": 60,
+   "nombre": "Bosconia"
+  },
+  {
+   "id_muni_depto": 20175,
+   "id_depto": 20,
+   "id_municipio": 175,
+   "nombre": "Chimichagua"
+  },
+  {
+   "id_muni_depto": 20178,
+   "id_depto": 20,
+   "id_municipio": 178,
+   "nombre": "Chiriguana"
+  },
+  {
+   "id_muni_depto": 20228,
+   "id_depto": 20,
+   "id_municipio": 228,
+   "nombre": "Curumani"
+  },
+  {
+   "id_muni_depto": 20238,
+   "id_depto": 20,
+   "id_municipio": 238,
+   "nombre": "El Copey"
+  },
+  {
+   "id_muni_depto": 20250,
+   "id_depto": 20,
+   "id_municipio": 250,
+   "nombre": "El Paso"
+  },
+  {
+   "id_muni_depto": 20295,
+   "id_depto": 20,
+   "id_municipio": 295,
+   "nombre": "Gamarra"
+  },
+  {
+   "id_muni_depto": 20310,
+   "id_depto": 20,
+   "id_municipio": 310,
+   "nombre": "Gonzalez"
+  },
+  {
+   "id_muni_depto": 20383,
+   "id_depto": 20,
+   "id_municipio": 383,
+   "nombre": "La Gloria"
+  },
+  {
+   "id_muni_depto": 20400,
+   "id_depto": 20,
+   "id_municipio": 400,
+   "nombre": "La Jagua De Ibirico"
+  },
+  {
+   "id_muni_depto": 20443,
+   "id_depto": 20,
+   "id_municipio": 443,
+   "nombre": "Manaure"
+  },
+  {
+   "id_muni_depto": 20517,
+   "id_depto": 20,
+   "id_municipio": 517,
+   "nombre": "Pailitas"
+  },
+  {
+   "id_muni_depto": 20550,
+   "id_depto": 20,
+   "id_municipio": 550,
+   "nombre": "Pelaya"
+  },
+  {
+   "id_muni_depto": 20570,
+   "id_depto": 20,
+   "id_municipio": 570,
+   "nombre": "Pueblo Bello"
+  },
+  {
+   "id_muni_depto": 20614,
+   "id_depto": 20,
+   "id_municipio": 614,
+   "nombre": "Rio De Oro"
+  },
+  {
+   "id_muni_depto": 20621,
+   "id_depto": 20,
+   "id_municipio": 621,
+   "nombre": "La Paz"
+  },
+  {
+   "id_muni_depto": 20710,
+   "id_depto": 20,
+   "id_municipio": 710,
+   "nombre": "San Alberto"
+  },
+  {
+   "id_muni_depto": 20750,
+   "id_depto": 20,
+   "id_municipio": 750,
+   "nombre": "San Diego"
+  },
+  {
+   "id_muni_depto": 20770,
+   "id_depto": 20,
+   "id_municipio": 770,
+   "nombre": "San Martin"
+  },
+  {
+   "id_muni_depto": 20787,
+   "id_depto": 20,
+   "id_municipio": 787,
+   "nombre": "Tamalameque"
+  },
+  {
+   "id_muni_depto": 23001,
+   "id_depto": 23,
+   "id_municipio": 1,
+   "nombre": "Monteria"
+  },
+  {
+   "id_muni_depto": 23068,
+   "id_depto": 23,
+   "id_municipio": 68,
+   "nombre": "Ayapel"
+  },
+  {
+   "id_muni_depto": 23079,
+   "id_depto": 23,
+   "id_municipio": 79,
+   "nombre": "Buenavista"
+  },
+  {
+   "id_muni_depto": 23090,
+   "id_depto": 23,
+   "id_municipio": 90,
+   "nombre": "Canalete"
+  },
+  {
+   "id_muni_depto": 23162,
+   "id_depto": 23,
+   "id_municipio": 162,
+   "nombre": "Cerete"
+  },
+  {
+   "id_muni_depto": 23168,
+   "id_depto": 23,
+   "id_municipio": 168,
+   "nombre": "Chima"
+  },
+  {
+   "id_muni_depto": 23182,
+   "id_depto": 23,
+   "id_municipio": 182,
+   "nombre": "Chinu"
+  },
+  {
+   "id_muni_depto": 23189,
+   "id_depto": 23,
+   "id_municipio": 189,
+   "nombre": "Cienaga De Oro"
+  },
+  {
+   "id_muni_depto": 23300,
+   "id_depto": 23,
+   "id_municipio": 300,
+   "nombre": "Cotorra"
+  },
+  {
+   "id_muni_depto": 23350,
+   "id_depto": 23,
+   "id_municipio": 350,
+   "nombre": "La Apartada"
+  },
+  {
+   "id_muni_depto": 23417,
+   "id_depto": 23,
+   "id_municipio": 417,
+   "nombre": "Lorica"
+  },
+  {
+   "id_muni_depto": 23419,
+   "id_depto": 23,
+   "id_municipio": 419,
+   "nombre": "Los Cordobas"
+  },
+  {
+   "id_muni_depto": 23464,
+   "id_depto": 23,
+   "id_municipio": 464,
+   "nombre": "Momil"
+  },
+  {
+   "id_muni_depto": 23466,
+   "id_depto": 23,
+   "id_municipio": 466,
+   "nombre": "Montelibano"
+  },
+  {
+   "id_muni_depto": 23500,
+   "id_depto": 23,
+   "id_municipio": 500,
+   "nombre": "Moñitos"
+  },
+  {
+   "id_muni_depto": 23555,
+   "id_depto": 23,
+   "id_municipio": 555,
+   "nombre": "Planeta Rica"
+  },
+  {
+   "id_muni_depto": 23570,
+   "id_depto": 23,
+   "id_municipio": 570,
+   "nombre": "Pueblo Nuevo"
+  },
+  {
+   "id_muni_depto": 23574,
+   "id_depto": 23,
+   "id_municipio": 574,
+   "nombre": "Puerto Escondido"
+  },
+  {
+   "id_muni_depto": 23580,
+   "id_depto": 23,
+   "id_municipio": 580,
+   "nombre": "Puerto Libertador"
+  },
+  {
+   "id_muni_depto": 23586,
+   "id_depto": 23,
+   "id_municipio": 586,
+   "nombre": "Purisima"
+  },
+  {
+   "id_muni_depto": 23660,
+   "id_depto": 23,
+   "id_municipio": 660,
+   "nombre": "Sahagun"
+  },
+  {
+   "id_muni_depto": 23670,
+   "id_depto": 23,
+   "id_municipio": 670,
+   "nombre": "San Andres Sotavento"
+  },
+  {
+   "id_muni_depto": 23672,
+   "id_depto": 23,
+   "id_municipio": 672,
+   "nombre": "San Antero"
+  },
+  {
+   "id_muni_depto": 23675,
+   "id_depto": 23,
+   "id_municipio": 675,
+   "nombre": "San Bernardo Del Viento"
+  },
+  {
+   "id_muni_depto": 23678,
+   "id_depto": 23,
+   "id_municipio": 678,
+   "nombre": "San Carlos"
+  },
+  {
+   "id_muni_depto": 23682,
+   "id_depto": 23,
+   "id_municipio": 682,
+   "nombre": "San Jose de Ure"
+  },
+  {
+   "id_muni_depto": 23686,
+   "id_depto": 23,
+   "id_municipio": 686,
+   "nombre": "San Pelayo"
+  },
+  {
+   "id_muni_depto": 23807,
+   "id_depto": 23,
+   "id_municipio": 807,
+   "nombre": "Tierralta"
+  },
+  {
+   "id_muni_depto": 23815,
+   "id_depto": 23,
+   "id_municipio": 815,
+   "nombre": "Tuchin"
+  },
+  {
+   "id_muni_depto": 23855,
+   "id_depto": 23,
+   "id_municipio": 855,
+   "nombre": "Valencia"
+  },
+  {
+   "id_muni_depto": 25001,
+   "id_depto": 25,
+   "id_municipio": 1,
+   "nombre": "Agua De Dios"
+  },
+  {
+   "id_muni_depto": 25019,
+   "id_depto": 25,
+   "id_municipio": 19,
+   "nombre": "Alban"
+  },
+  {
+   "id_muni_depto": 25035,
+   "id_depto": 25,
+   "id_municipio": 35,
+   "nombre": "Anapoima"
+  },
+  {
+   "id_muni_depto": 25040,
+   "id_depto": 25,
+   "id_municipio": 40,
+   "nombre": "Anolaima"
+  },
+  {
+   "id_muni_depto": 25053,
+   "id_depto": 25,
+   "id_municipio": 53,
+   "nombre": "Arbelaez"
+  },
+  {
+   "id_muni_depto": 25086,
+   "id_depto": 25,
+   "id_municipio": 86,
+   "nombre": "Beltran"
+  },
+  {
+   "id_muni_depto": 25095,
+   "id_depto": 25,
+   "id_municipio": 95,
+   "nombre": "Bituima"
+  },
+  {
+   "id_muni_depto": 25099,
+   "id_depto": 25,
+   "id_municipio": 99,
+   "nombre": "Bojaca"
+  },
+  {
+   "id_muni_depto": 25120,
+   "id_depto": 25,
+   "id_municipio": 120,
+   "nombre": "Cabrera"
+  },
+  {
+   "id_muni_depto": 25123,
+   "id_depto": 25,
+   "id_municipio": 123,
+   "nombre": "Cachipay"
+  },
+  {
+   "id_muni_depto": 25126,
+   "id_depto": 25,
+   "id_municipio": 126,
+   "nombre": "Cajica"
+  },
+  {
+   "id_muni_depto": 25148,
+   "id_depto": 25,
+   "id_municipio": 148,
+   "nombre": "Caparrapi"
+  },
+  {
+   "id_muni_depto": 25151,
+   "id_depto": 25,
+   "id_municipio": 151,
+   "nombre": "Caqueza"
+  },
+  {
+   "id_muni_depto": 25154,
+   "id_depto": 25,
+   "id_municipio": 154,
+   "nombre": "Carmen De Carupa"
+  },
+  {
+   "id_muni_depto": 25168,
+   "id_depto": 25,
+   "id_municipio": 168,
+   "nombre": "Chaguani"
+  },
+  {
+   "id_muni_depto": 25175,
+   "id_depto": 25,
+   "id_municipio": 175,
+   "nombre": "Chia"
+  },
+  {
+   "id_muni_depto": 25178,
+   "id_depto": 25,
+   "id_municipio": 178,
+   "nombre": "Chipaque"
+  },
+  {
+   "id_muni_depto": 25181,
+   "id_depto": 25,
+   "id_municipio": 181,
+   "nombre": "Choachi"
+  },
+  {
+   "id_muni_depto": 25183,
+   "id_depto": 25,
+   "id_municipio": 183,
+   "nombre": "Choconta"
+  },
+  {
+   "id_muni_depto": 25200,
+   "id_depto": 25,
+   "id_municipio": 200,
+   "nombre": "Cogua"
+  },
+  {
+   "id_muni_depto": 25214,
+   "id_depto": 25,
+   "id_municipio": 214,
+   "nombre": "Cota"
+  },
+  {
+   "id_muni_depto": 25224,
+   "id_depto": 25,
+   "id_municipio": 224,
+   "nombre": "Cucunuba"
+  },
+  {
+   "id_muni_depto": 25245,
+   "id_depto": 25,
+   "id_municipio": 245,
+   "nombre": "El Colegio"
+  },
+  {
+   "id_muni_depto": 25258,
+   "id_depto": 25,
+   "id_municipio": 258,
+   "nombre": "El Peñon"
+  },
+  {
+   "id_muni_depto": 25260,
+   "id_depto": 25,
+   "id_municipio": 260,
+   "nombre": "El Rosal"
+  },
+  {
+   "id_muni_depto": 25269,
+   "id_depto": 25,
+   "id_municipio": 269,
+   "nombre": "Facatativa"
+  },
+  {
+   "id_muni_depto": 25279,
+   "id_depto": 25,
+   "id_municipio": 279,
+   "nombre": "Fomeque"
+  },
+  {
+   "id_muni_depto": 25281,
+   "id_depto": 25,
+   "id_municipio": 281,
+   "nombre": "Fosca"
+  },
+  {
+   "id_muni_depto": 25286,
+   "id_depto": 25,
+   "id_municipio": 286,
+   "nombre": "Funza"
+  },
+  {
+   "id_muni_depto": 25288,
+   "id_depto": 25,
+   "id_municipio": 288,
+   "nombre": "Fuquene"
+  },
+  {
+   "id_muni_depto": 25290,
+   "id_depto": 25,
+   "id_municipio": 290,
+   "nombre": "Fusagasuga"
+  },
+  {
+   "id_muni_depto": 25293,
+   "id_depto": 25,
+   "id_municipio": 293,
+   "nombre": "Gachala"
+  },
+  {
+   "id_muni_depto": 25295,
+   "id_depto": 25,
+   "id_municipio": 295,
+   "nombre": "Gachancipa"
+  },
+  {
+   "id_muni_depto": 25297,
+   "id_depto": 25,
+   "id_municipio": 297,
+   "nombre": "Gacheta"
+  },
+  {
+   "id_muni_depto": 25299,
+   "id_depto": 25,
+   "id_municipio": 299,
+   "nombre": "Gama"
+  },
+  {
+   "id_muni_depto": 25307,
+   "id_depto": 25,
+   "id_municipio": 307,
+   "nombre": "Girardot"
+  },
+  {
+   "id_muni_depto": 25312,
+   "id_depto": 25,
+   "id_municipio": 312,
+   "nombre": "Granada"
+  },
+  {
+   "id_muni_depto": 25317,
+   "id_depto": 25,
+   "id_municipio": 317,
+   "nombre": "Guacheta"
+  },
+  {
+   "id_muni_depto": 25320,
+   "id_depto": 25,
+   "id_municipio": 320,
+   "nombre": "Guaduas"
+  },
+  {
+   "id_muni_depto": 25322,
+   "id_depto": 25,
+   "id_municipio": 322,
+   "nombre": "Guasca"
+  },
+  {
+   "id_muni_depto": 25324,
+   "id_depto": 25,
+   "id_municipio": 324,
+   "nombre": "Guataqui"
+  },
+  {
+   "id_muni_depto": 25326,
+   "id_depto": 25,
+   "id_municipio": 326,
+   "nombre": "Guatavita"
+  },
+  {
+   "id_muni_depto": 25328,
+   "id_depto": 25,
+   "id_municipio": 328,
+   "nombre": "Guayabal De Siquima"
+  },
+  {
+   "id_muni_depto": 25335,
+   "id_depto": 25,
+   "id_municipio": 335,
+   "nombre": "Guayabetal"
+  },
+  {
+   "id_muni_depto": 25339,
+   "id_depto": 25,
+   "id_municipio": 339,
+   "nombre": "Gutierrez"
+  },
+  {
+   "id_muni_depto": 25368,
+   "id_depto": 25,
+   "id_municipio": 368,
+   "nombre": "Jerusalen"
+  },
+  {
+   "id_muni_depto": 25372,
+   "id_depto": 25,
+   "id_municipio": 372,
+   "nombre": "Junin"
+  },
+  {
+   "id_muni_depto": 25377,
+   "id_depto": 25,
+   "id_municipio": 377,
+   "nombre": "La Calera"
+  },
+  {
+   "id_muni_depto": 25386,
+   "id_depto": 25,
+   "id_municipio": 386,
+   "nombre": "La Mesa"
+  },
+  {
+   "id_muni_depto": 25394,
+   "id_depto": 25,
+   "id_municipio": 394,
+   "nombre": "La Palma"
+  },
+  {
+   "id_muni_depto": 25398,
+   "id_depto": 25,
+   "id_municipio": 398,
+   "nombre": "La Peña"
+  },
+  {
+   "id_muni_depto": 25402,
+   "id_depto": 25,
+   "id_municipio": 402,
+   "nombre": "La Vega"
+  },
+  {
+   "id_muni_depto": 25407,
+   "id_depto": 25,
+   "id_municipio": 407,
+   "nombre": "Lenguazaque"
+  },
+  {
+   "id_muni_depto": 25426,
+   "id_depto": 25,
+   "id_municipio": 426,
+   "nombre": "Macheta"
+  },
+  {
+   "id_muni_depto": 25430,
+   "id_depto": 25,
+   "id_municipio": 430,
+   "nombre": "Madrid"
+  },
+  {
+   "id_muni_depto": 25436,
+   "id_depto": 25,
+   "id_municipio": 436,
+   "nombre": "Manta"
+  },
+  {
+   "id_muni_depto": 25438,
+   "id_depto": 25,
+   "id_municipio": 438,
+   "nombre": "Medina"
+  },
+  {
+   "id_muni_depto": 25473,
+   "id_depto": 25,
+   "id_municipio": 473,
+   "nombre": "Mosquera"
+  },
+  {
+   "id_muni_depto": 25483,
+   "id_depto": 25,
+   "id_municipio": 483,
+   "nombre": "Nariño"
+  },
+  {
+   "id_muni_depto": 25486,
+   "id_depto": 25,
+   "id_municipio": 486,
+   "nombre": "Nemocon"
+  },
+  {
+   "id_muni_depto": 25488,
+   "id_depto": 25,
+   "id_municipio": 488,
+   "nombre": "Nilo"
+  },
+  {
+   "id_muni_depto": 25489,
+   "id_depto": 25,
+   "id_municipio": 489,
+   "nombre": "Nimaima"
+  },
+  {
+   "id_muni_depto": 25491,
+   "id_depto": 25,
+   "id_municipio": 491,
+   "nombre": "Nocaima"
+  },
+  {
+   "id_muni_depto": 25506,
+   "id_depto": 25,
+   "id_municipio": 506,
+   "nombre": "Venecia"
+  },
+  {
+   "id_muni_depto": 25513,
+   "id_depto": 25,
+   "id_municipio": 513,
+   "nombre": "Pacho"
+  },
+  {
+   "id_muni_depto": 25518,
+   "id_depto": 25,
+   "id_municipio": 518,
+   "nombre": "Paime"
+  },
+  {
+   "id_muni_depto": 25524,
+   "id_depto": 25,
+   "id_municipio": 524,
+   "nombre": "Pandi"
+  },
+  {
+   "id_muni_depto": 25530,
+   "id_depto": 25,
+   "id_municipio": 530,
+   "nombre": "Paratebueno"
+  },
+  {
+   "id_muni_depto": 25535,
+   "id_depto": 25,
+   "id_municipio": 535,
+   "nombre": "Pasca"
+  },
+  {
+   "id_muni_depto": 25572,
+   "id_depto": 25,
+   "id_municipio": 572,
+   "nombre": "Puerto Salgar"
+  },
+  {
+   "id_muni_depto": 25580,
+   "id_depto": 25,
+   "id_municipio": 580,
+   "nombre": "Puli"
+  },
+  {
+   "id_muni_depto": 25592,
+   "id_depto": 25,
+   "id_municipio": 592,
+   "nombre": "Quebradanegra"
+  },
+  {
+   "id_muni_depto": 25594,
+   "id_depto": 25,
+   "id_municipio": 594,
+   "nombre": "Quetame"
+  },
+  {
+   "id_muni_depto": 25596,
+   "id_depto": 25,
+   "id_municipio": 596,
+   "nombre": "Quipile"
+  },
+  {
+   "id_muni_depto": 25599,
+   "id_depto": 25,
+   "id_municipio": 599,
+   "nombre": "Apulo"
+  },
+  {
+   "id_muni_depto": 25612,
+   "id_depto": 25,
+   "id_municipio": 612,
+   "nombre": "Ricaurte"
+  },
+  {
+   "id_muni_depto": 25645,
+   "id_depto": 25,
+   "id_municipio": 645,
+   "nombre": "San Antonio Del Tequendama"
+  },
+  {
+   "id_muni_depto": 25649,
+   "id_depto": 25,
+   "id_municipio": 649,
+   "nombre": "San Bernardo"
+  },
+  {
+   "id_muni_depto": 25653,
+   "id_depto": 25,
+   "id_municipio": 653,
+   "nombre": "San Cayetano"
+  },
+  {
+   "id_muni_depto": 25658,
+   "id_depto": 25,
+   "id_municipio": 658,
+   "nombre": "San Francisco"
+  },
+  {
+   "id_muni_depto": 25662,
+   "id_depto": 25,
+   "id_municipio": 662,
+   "nombre": "San Juan De Rio Seco"
+  },
+  {
+   "id_muni_depto": 25718,
+   "id_depto": 25,
+   "id_municipio": 718,
+   "nombre": "Sasaima"
+  },
+  {
+   "id_muni_depto": 25736,
+   "id_depto": 25,
+   "id_municipio": 736,
+   "nombre": "Sesquile"
+  },
+  {
+   "id_muni_depto": 25740,
+   "id_depto": 25,
+   "id_municipio": 740,
+   "nombre": "Sibate"
+  },
+  {
+   "id_muni_depto": 25743,
+   "id_depto": 25,
+   "id_municipio": 743,
+   "nombre": "Silvania"
+  },
+  {
+   "id_muni_depto": 25745,
+   "id_depto": 25,
+   "id_municipio": 745,
+   "nombre": "Simijaca"
+  },
+  {
+   "id_muni_depto": 25754,
+   "id_depto": 25,
+   "id_municipio": 754,
+   "nombre": "Soacha"
+  },
+  {
+   "id_muni_depto": 25758,
+   "id_depto": 25,
+   "id_municipio": 758,
+   "nombre": "Sopo"
+  },
+  {
+   "id_muni_depto": 25769,
+   "id_depto": 25,
+   "id_municipio": 769,
+   "nombre": "Subachoque"
+  },
+  {
+   "id_muni_depto": 25772,
+   "id_depto": 25,
+   "id_municipio": 772,
+   "nombre": "Suesca"
+  },
+  {
+   "id_muni_depto": 25777,
+   "id_depto": 25,
+   "id_municipio": 777,
+   "nombre": "Supata"
+  },
+  {
+   "id_muni_depto": 25779,
+   "id_depto": 25,
+   "id_municipio": 779,
+   "nombre": "Susa"
+  },
+  {
+   "id_muni_depto": 25781,
+   "id_depto": 25,
+   "id_municipio": 781,
+   "nombre": "Sutatausa"
+  },
+  {
+   "id_muni_depto": 25785,
+   "id_depto": 25,
+   "id_municipio": 785,
+   "nombre": "Tabio"
+  },
+  {
+   "id_muni_depto": 25793,
+   "id_depto": 25,
+   "id_municipio": 793,
+   "nombre": "Tausa"
+  },
+  {
+   "id_muni_depto": 25797,
+   "id_depto": 25,
+   "id_municipio": 797,
+   "nombre": "Tena"
+  },
+  {
+   "id_muni_depto": 25799,
+   "id_depto": 25,
+   "id_municipio": 799,
+   "nombre": "Tenjo"
+  },
+  {
+   "id_muni_depto": 25805,
+   "id_depto": 25,
+   "id_municipio": 805,
+   "nombre": "Tibacuy"
+  },
+  {
+   "id_muni_depto": 25807,
+   "id_depto": 25,
+   "id_municipio": 807,
+   "nombre": "Tibirita"
+  },
+  {
+   "id_muni_depto": 25815,
+   "id_depto": 25,
+   "id_municipio": 815,
+   "nombre": "Tocaima"
+  },
+  {
+   "id_muni_depto": 25817,
+   "id_depto": 25,
+   "id_municipio": 817,
+   "nombre": "Tocancipa"
+  },
+  {
+   "id_muni_depto": 25823,
+   "id_depto": 25,
+   "id_municipio": 823,
+   "nombre": "Topaipi"
+  },
+  {
+   "id_muni_depto": 25839,
+   "id_depto": 25,
+   "id_municipio": 839,
+   "nombre": "Ubala"
+  },
+  {
+   "id_muni_depto": 25841,
+   "id_depto": 25,
+   "id_municipio": 841,
+   "nombre": "Ubaque"
+  },
+  {
+   "id_muni_depto": 25843,
+   "id_depto": 25,
+   "id_municipio": 843,
+   "nombre": "Villa de San Diego de Ubate"
+  },
+  {
+   "id_muni_depto": 25845,
+   "id_depto": 25,
+   "id_municipio": 845,
+   "nombre": "Une"
+  },
+  {
+   "id_muni_depto": 25851,
+   "id_depto": 25,
+   "id_municipio": 851,
+   "nombre": "Utica"
+  },
+  {
+   "id_muni_depto": 25862,
+   "id_depto": 25,
+   "id_municipio": 862,
+   "nombre": "Vergara"
+  },
+  {
+   "id_muni_depto": 25867,
+   "id_depto": 25,
+   "id_municipio": 867,
+   "nombre": "Viani"
+  },
+  {
+   "id_muni_depto": 25871,
+   "id_depto": 25,
+   "id_municipio": 871,
+   "nombre": "Villagomez"
+  },
+  {
+   "id_muni_depto": 25873,
+   "id_depto": 25,
+   "id_municipio": 873,
+   "nombre": "Villapinzon"
+  },
+  {
+   "id_muni_depto": 25875,
+   "id_depto": 25,
+   "id_municipio": 875,
+   "nombre": "Villeta"
+  },
+  {
+   "id_muni_depto": 25878,
+   "id_depto": 25,
+   "id_municipio": 878,
+   "nombre": "Viota"
+  },
+  {
+   "id_muni_depto": 25885,
+   "id_depto": 25,
+   "id_municipio": 885,
+   "nombre": "Yacopi"
+  },
+  {
+   "id_muni_depto": 25898,
+   "id_depto": 25,
+   "id_municipio": 898,
+   "nombre": "Zipacon"
+  },
+  {
+   "id_muni_depto": 25899,
+   "id_depto": 25,
+   "id_municipio": 899,
+   "nombre": "Zipaquira"
+  },
+  {
+   "id_muni_depto": 27001,
+   "id_depto": 27,
+   "id_municipio": 1,
+   "nombre": "Quibdo"
+  },
+  {
+   "id_muni_depto": 27006,
+   "id_depto": 27,
+   "id_municipio": 6,
+   "nombre": "Acandi"
+  },
+  {
+   "id_muni_depto": 27025,
+   "id_depto": 27,
+   "id_municipio": 25,
+   "nombre": "Alto Baudo"
+  },
+  {
+   "id_muni_depto": 27050,
+   "id_depto": 27,
+   "id_municipio": 50,
+   "nombre": "Atrato"
+  },
+  {
+   "id_muni_depto": 27073,
+   "id_depto": 27,
+   "id_municipio": 73,
+   "nombre": "Bagado"
+  },
+  {
+   "id_muni_depto": 27075,
+   "id_depto": 27,
+   "id_municipio": 75,
+   "nombre": "Bahia Solano"
+  },
+  {
+   "id_muni_depto": 27077,
+   "id_depto": 27,
+   "id_municipio": 77,
+   "nombre": "Bajo Baudo"
+  },
+  {
+   "id_muni_depto": 27086,
+   "id_depto": 27,
+   "id_municipio": 86,
+   "nombre": "Belen De Bajira"
+  },
+  {
+   "id_muni_depto": 27099,
+   "id_depto": 27,
+   "id_municipio": 99,
+   "nombre": "Bojaya"
+  },
+  {
+   "id_muni_depto": 27135,
+   "id_depto": 27,
+   "id_municipio": 135,
+   "nombre": "El Canton Del San Pablo"
+  },
+  {
+   "id_muni_depto": 27150,
+   "id_depto": 27,
+   "id_municipio": 150,
+   "nombre": "Carmen Del Darien"
+  },
+  {
+   "id_muni_depto": 27160,
+   "id_depto": 27,
+   "id_municipio": 160,
+   "nombre": "Certegui"
+  },
+  {
+   "id_muni_depto": 27205,
+   "id_depto": 27,
+   "id_municipio": 205,
+   "nombre": "Condoto"
+  },
+  {
+   "id_muni_depto": 27245,
+   "id_depto": 27,
+   "id_municipio": 245,
+   "nombre": "El Carmen De Atrato"
+  },
+  {
+   "id_muni_depto": 27250,
+   "id_depto": 27,
+   "id_municipio": 250,
+   "nombre": "El Litoral Del San Juan"
+  },
+  {
+   "id_muni_depto": 27361,
+   "id_depto": 27,
+   "id_municipio": 361,
+   "nombre": "Istmina"
+  },
+  {
+   "id_muni_depto": 27372,
+   "id_depto": 27,
+   "id_municipio": 372,
+   "nombre": "Jurado"
+  },
+  {
+   "id_muni_depto": 27413,
+   "id_depto": 27,
+   "id_municipio": 413,
+   "nombre": "Lloro"
+  },
+  {
+   "id_muni_depto": 27425,
+   "id_depto": 27,
+   "id_municipio": 425,
+   "nombre": "Medio Atrato"
+  },
+  {
+   "id_muni_depto": 27430,
+   "id_depto": 27,
+   "id_municipio": 430,
+   "nombre": "Medio Baudo"
+  },
+  {
+   "id_muni_depto": 27450,
+   "id_depto": 27,
+   "id_municipio": 450,
+   "nombre": "Medio San Juan"
+  },
+  {
+   "id_muni_depto": 27491,
+   "id_depto": 27,
+   "id_municipio": 491,
+   "nombre": "Novita"
+  },
+  {
+   "id_muni_depto": 27495,
+   "id_depto": 27,
+   "id_municipio": 495,
+   "nombre": "Nuqui"
+  },
+  {
+   "id_muni_depto": 27580,
+   "id_depto": 27,
+   "id_municipio": 580,
+   "nombre": "Rio Iro"
+  },
+  {
+   "id_muni_depto": 27600,
+   "id_depto": 27,
+   "id_municipio": 600,
+   "nombre": "Rio Quito"
+  },
+  {
+   "id_muni_depto": 27615,
+   "id_depto": 27,
+   "id_municipio": 615,
+   "nombre": "Riosucio"
+  },
+  {
+   "id_muni_depto": 27660,
+   "id_depto": 27,
+   "id_municipio": 660,
+   "nombre": "San Jose Del Palmar"
+  },
+  {
+   "id_muni_depto": 27745,
+   "id_depto": 27,
+   "id_municipio": 745,
+   "nombre": "Sipi"
+  },
+  {
+   "id_muni_depto": 27787,
+   "id_depto": 27,
+   "id_municipio": 787,
+   "nombre": "Tado"
+  },
+  {
+   "id_muni_depto": 27800,
+   "id_depto": 27,
+   "id_municipio": 800,
+   "nombre": "Unguia"
+  },
+  {
+   "id_muni_depto": 27810,
+   "id_depto": 27,
+   "id_municipio": 810,
+   "nombre": "Union Panamericana"
+  },
+  {
+   "id_muni_depto": 41001,
+   "id_depto": 41,
+   "id_municipio": 1,
+   "nombre": "Neiva"
+  },
+  {
+   "id_muni_depto": 41006,
+   "id_depto": 41,
+   "id_municipio": 6,
+   "nombre": "Acevedo"
+  },
+  {
+   "id_muni_depto": 41013,
+   "id_depto": 41,
+   "id_municipio": 13,
+   "nombre": "Agrado"
+  },
+  {
+   "id_muni_depto": 41016,
+   "id_depto": 41,
+   "id_municipio": 16,
+   "nombre": "Aipe"
+  },
+  {
+   "id_muni_depto": 41020,
+   "id_depto": 41,
+   "id_municipio": 20,
+   "nombre": "Algeciras"
+  },
+  {
+   "id_muni_depto": 41026,
+   "id_depto": 41,
+   "id_municipio": 26,
+   "nombre": "Altamira"
+  },
+  {
+   "id_muni_depto": 41078,
+   "id_depto": 41,
+   "id_municipio": 78,
+   "nombre": "Baraya"
+  },
+  {
+   "id_muni_depto": 41132,
+   "id_depto": 41,
+   "id_municipio": 132,
+   "nombre": "Campoalegre"
+  },
+  {
+   "id_muni_depto": 41206,
+   "id_depto": 41,
+   "id_municipio": 206,
+   "nombre": "Colombia"
+  },
+  {
+   "id_muni_depto": 41244,
+   "id_depto": 41,
+   "id_municipio": 244,
+   "nombre": "Elias"
+  },
+  {
+   "id_muni_depto": 41298,
+   "id_depto": 41,
+   "id_municipio": 298,
+   "nombre": "Garzon"
+  },
+  {
+   "id_muni_depto": 41306,
+   "id_depto": 41,
+   "id_municipio": 306,
+   "nombre": "Gigante"
+  },
+  {
+   "id_muni_depto": 41319,
+   "id_depto": 41,
+   "id_municipio": 319,
+   "nombre": "Guadalupe"
+  },
+  {
+   "id_muni_depto": 41349,
+   "id_depto": 41,
+   "id_municipio": 349,
+   "nombre": "Hobo"
+  },
+  {
+   "id_muni_depto": 41357,
+   "id_depto": 41,
+   "id_municipio": 357,
+   "nombre": "Iquira"
+  },
+  {
+   "id_muni_depto": 41359,
+   "id_depto": 41,
+   "id_municipio": 359,
+   "nombre": "Isnos"
+  },
+  {
+   "id_muni_depto": 41378,
+   "id_depto": 41,
+   "id_municipio": 378,
+   "nombre": "La Argentina"
+  },
+  {
+   "id_muni_depto": 41396,
+   "id_depto": 41,
+   "id_municipio": 396,
+   "nombre": "La Plata"
+  },
+  {
+   "id_muni_depto": 41483,
+   "id_depto": 41,
+   "id_municipio": 483,
+   "nombre": "Nataga"
+  },
+  {
+   "id_muni_depto": 41503,
+   "id_depto": 41,
+   "id_municipio": 503,
+   "nombre": "Oporapa"
+  },
+  {
+   "id_muni_depto": 41518,
+   "id_depto": 41,
+   "id_municipio": 518,
+   "nombre": "Paicol"
+  },
+  {
+   "id_muni_depto": 41524,
+   "id_depto": 41,
+   "id_municipio": 524,
+   "nombre": "Palermo"
+  },
+  {
+   "id_muni_depto": 41530,
+   "id_depto": 41,
+   "id_municipio": 530,
+   "nombre": "Palestina"
+  },
+  {
+   "id_muni_depto": 41548,
+   "id_depto": 41,
+   "id_municipio": 548,
+   "nombre": "Pital"
+  },
+  {
+   "id_muni_depto": 41551,
+   "id_depto": 41,
+   "id_municipio": 551,
+   "nombre": "Pitalito"
+  },
+  {
+   "id_muni_depto": 41615,
+   "id_depto": 41,
+   "id_municipio": 615,
+   "nombre": "Rivera"
+  },
+  {
+   "id_muni_depto": 41660,
+   "id_depto": 41,
+   "id_municipio": 660,
+   "nombre": "Saladoblanco"
+  },
+  {
+   "id_muni_depto": 41668,
+   "id_depto": 41,
+   "id_municipio": 668,
+   "nombre": "San Agustin"
+  },
+  {
+   "id_muni_depto": 41676,
+   "id_depto": 41,
+   "id_municipio": 676,
+   "nombre": "Santa Maria"
+  },
+  {
+   "id_muni_depto": 41770,
+   "id_depto": 41,
+   "id_municipio": 770,
+   "nombre": "Suaza"
+  },
+  {
+   "id_muni_depto": 41791,
+   "id_depto": 41,
+   "id_municipio": 791,
+   "nombre": "Tarqui"
+  },
+  {
+   "id_muni_depto": 41797,
+   "id_depto": 41,
+   "id_municipio": 797,
+   "nombre": "Tesalia"
+  },
+  {
+   "id_muni_depto": 41799,
+   "id_depto": 41,
+   "id_municipio": 799,
+   "nombre": "Tello"
+  },
+  {
+   "id_muni_depto": 41801,
+   "id_depto": 41,
+   "id_municipio": 801,
+   "nombre": "Teruel"
+  },
+  {
+   "id_muni_depto": 41807,
+   "id_depto": 41,
+   "id_municipio": 807,
+   "nombre": "Timana"
+  },
+  {
+   "id_muni_depto": 41872,
+   "id_depto": 41,
+   "id_municipio": 872,
+   "nombre": "Villavieja"
+  },
+  {
+   "id_muni_depto": 41885,
+   "id_depto": 41,
+   "id_municipio": 885,
+   "nombre": "Yaguara"
+  },
+  {
+   "id_muni_depto": 44001,
+   "id_depto": 44,
+   "id_municipio": 1,
+   "nombre": "Riohacha"
+  },
+  {
+   "id_muni_depto": 44035,
+   "id_depto": 44,
+   "id_municipio": 35,
+   "nombre": "Albania"
+  },
+  {
+   "id_muni_depto": 44078,
+   "id_depto": 44,
+   "id_municipio": 78,
+   "nombre": "Barrancas"
+  },
+  {
+   "id_muni_depto": 44090,
+   "id_depto": 44,
+   "id_municipio": 90,
+   "nombre": "Dibulla"
+  },
+  {
+   "id_muni_depto": 44098,
+   "id_depto": 44,
+   "id_municipio": 98,
+   "nombre": "Distraccion"
+  },
+  {
+   "id_muni_depto": 44110,
+   "id_depto": 44,
+   "id_municipio": 110,
+   "nombre": "El Molino"
+  },
+  {
+   "id_muni_depto": 44279,
+   "id_depto": 44,
+   "id_municipio": 279,
+   "nombre": "Fonseca"
+  },
+  {
+   "id_muni_depto": 44378,
+   "id_depto": 44,
+   "id_municipio": 378,
+   "nombre": "Hatonuevo"
+  },
+  {
+   "id_muni_depto": 44420,
+   "id_depto": 44,
+   "id_municipio": 420,
+   "nombre": "La Jagua Del Pilar"
+  },
+  {
+   "id_muni_depto": 44430,
+   "id_depto": 44,
+   "id_municipio": 430,
+   "nombre": "Maicao"
+  },
+  {
+   "id_muni_depto": 44560,
+   "id_depto": 44,
+   "id_municipio": 560,
+   "nombre": "Manaure"
+  },
+  {
+   "id_muni_depto": 44650,
+   "id_depto": 44,
+   "id_municipio": 650,
+   "nombre": "San Juan Del Cesar"
+  },
+  {
+   "id_muni_depto": 44847,
+   "id_depto": 44,
+   "id_municipio": 847,
+   "nombre": "Uribia"
+  },
+  {
+   "id_muni_depto": 44855,
+   "id_depto": 44,
+   "id_municipio": 855,
+   "nombre": "Urumita"
+  },
+  {
+   "id_muni_depto": 44874,
+   "id_depto": 44,
+   "id_municipio": 874,
+   "nombre": "Villanueva"
+  },
+  {
+   "id_muni_depto": 47001,
+   "id_depto": 47,
+   "id_municipio": 1,
+   "nombre": "Santa Marta"
+  },
+  {
+   "id_muni_depto": 47030,
+   "id_depto": 47,
+   "id_municipio": 30,
+   "nombre": "Algarrobo"
+  },
+  {
+   "id_muni_depto": 47053,
+   "id_depto": 47,
+   "id_municipio": 53,
+   "nombre": "Aracataca"
+  },
+  {
+   "id_muni_depto": 47058,
+   "id_depto": 47,
+   "id_municipio": 58,
+   "nombre": "Ariguani"
+  },
+  {
+   "id_muni_depto": 47161,
+   "id_depto": 47,
+   "id_municipio": 161,
+   "nombre": "Cerro San Antonio"
+  },
+  {
+   "id_muni_depto": 47170,
+   "id_depto": 47,
+   "id_municipio": 170,
+   "nombre": "Chibolo"
+  },
+  {
+   "id_muni_depto": 47189,
+   "id_depto": 47,
+   "id_municipio": 189,
+   "nombre": "Cienaga"
+  },
+  {
+   "id_muni_depto": 47205,
+   "id_depto": 47,
+   "id_municipio": 205,
+   "nombre": "Concordia"
+  },
+  {
+   "id_muni_depto": 47245,
+   "id_depto": 47,
+   "id_municipio": 245,
+   "nombre": "El Banco"
+  },
+  {
+   "id_muni_depto": 47258,
+   "id_depto": 47,
+   "id_municipio": 258,
+   "nombre": "El Piñon"
+  },
+  {
+   "id_muni_depto": 47268,
+   "id_depto": 47,
+   "id_municipio": 268,
+   "nombre": "El Reten"
+  },
+  {
+   "id_muni_depto": 47288,
+   "id_depto": 47,
+   "id_municipio": 288,
+   "nombre": "Fundacion"
+  },
+  {
+   "id_muni_depto": 47318,
+   "id_depto": 47,
+   "id_municipio": 318,
+   "nombre": "Guamal"
+  },
+  {
+   "id_muni_depto": 47460,
+   "id_depto": 47,
+   "id_municipio": 460,
+   "nombre": "Nueva Granada"
+  },
+  {
+   "id_muni_depto": 47541,
+   "id_depto": 47,
+   "id_municipio": 541,
+   "nombre": "Pedraza"
+  },
+  {
+   "id_muni_depto": 47545,
+   "id_depto": 47,
+   "id_municipio": 545,
+   "nombre": "Pijiño Del Carmen"
+  },
+  {
+   "id_muni_depto": 47551,
+   "id_depto": 47,
+   "id_municipio": 551,
+   "nombre": "Pivijay"
+  },
+  {
+   "id_muni_depto": 47555,
+   "id_depto": 47,
+   "id_municipio": 555,
+   "nombre": "Plato"
+  },
+  {
+   "id_muni_depto": 47570,
+   "id_depto": 47,
+   "id_municipio": 570,
+   "nombre": "Puebloviejo"
+  },
+  {
+   "id_muni_depto": 47605,
+   "id_depto": 47,
+   "id_municipio": 605,
+   "nombre": "Remolino"
+  },
+  {
+   "id_muni_depto": 47660,
+   "id_depto": 47,
+   "id_municipio": 660,
+   "nombre": "Sabanas de San Angel"
+  },
+  {
+   "id_muni_depto": 47675,
+   "id_depto": 47,
+   "id_municipio": 675,
+   "nombre": "Salamina"
+  },
+  {
+   "id_muni_depto": 47692,
+   "id_depto": 47,
+   "id_municipio": 692,
+   "nombre": "San Sebastian De Buenavista"
+  },
+  {
+   "id_muni_depto": 47703,
+   "id_depto": 47,
+   "id_municipio": 703,
+   "nombre": "San Zenon"
+  },
+  {
+   "id_muni_depto": 47707,
+   "id_depto": 47,
+   "id_municipio": 707,
+   "nombre": "Santa Ana"
+  },
+  {
+   "id_muni_depto": 47720,
+   "id_depto": 47,
+   "id_municipio": 720,
+   "nombre": "Santa Barbara de Pinto"
+  },
+  {
+   "id_muni_depto": 47745,
+   "id_depto": 47,
+   "id_municipio": 745,
+   "nombre": "Sitionuevo"
+  },
+  {
+   "id_muni_depto": 47798,
+   "id_depto": 47,
+   "id_municipio": 798,
+   "nombre": "Tenerife"
+  },
+  {
+   "id_muni_depto": 47960,
+   "id_depto": 47,
+   "id_municipio": 960,
+   "nombre": "Zapayan"
+  },
+  {
+   "id_muni_depto": 47980,
+   "id_depto": 47,
+   "id_municipio": 980,
+   "nombre": "Zona Bananera"
+  },
+  {
+   "id_muni_depto": 50001,
+   "id_depto": 50,
+   "id_municipio": 1,
+   "nombre": "Villavicencio"
+  },
+  {
+   "id_muni_depto": 50006,
+   "id_depto": 50,
+   "id_municipio": 6,
+   "nombre": "Acacias"
+  },
+  {
+   "id_muni_depto": 50110,
+   "id_depto": 50,
+   "id_municipio": 110,
+   "nombre": "Barranca De Upia"
+  },
+  {
+   "id_muni_depto": 50124,
+   "id_depto": 50,
+   "id_municipio": 124,
+   "nombre": "Cabuyaro"
+  },
+  {
+   "id_muni_depto": 50150,
+   "id_depto": 50,
+   "id_municipio": 150,
+   "nombre": "Castilla La Nueva"
+  },
+  {
+   "id_muni_depto": 50223,
+   "id_depto": 50,
+   "id_municipio": 223,
+   "nombre": "Cubarral"
+  },
+  {
+   "id_muni_depto": 50226,
+   "id_depto": 50,
+   "id_municipio": 226,
+   "nombre": "Cumaral"
+  },
+  {
+   "id_muni_depto": 50245,
+   "id_depto": 50,
+   "id_municipio": 245,
+   "nombre": "El Calvario"
+  },
+  {
+   "id_muni_depto": 50251,
+   "id_depto": 50,
+   "id_municipio": 251,
+   "nombre": "El Castillo"
+  },
+  {
+   "id_muni_depto": 50270,
+   "id_depto": 50,
+   "id_municipio": 270,
+   "nombre": "El Dorado"
+  },
+  {
+   "id_muni_depto": 50287,
+   "id_depto": 50,
+   "id_municipio": 287,
+   "nombre": "Fuente De Oro"
+  },
+  {
+   "id_muni_depto": 50313,
+   "id_depto": 50,
+   "id_municipio": 313,
+   "nombre": "Granada"
+  },
+  {
+   "id_muni_depto": 50318,
+   "id_depto": 50,
+   "id_municipio": 318,
+   "nombre": "Guamal"
+  },
+  {
+   "id_muni_depto": 50325,
+   "id_depto": 50,
+   "id_municipio": 325,
+   "nombre": "Mapiripan"
+  },
+  {
+   "id_muni_depto": 50330,
+   "id_depto": 50,
+   "id_municipio": 330,
+   "nombre": "Mesetas"
+  },
+  {
+   "id_muni_depto": 50350,
+   "id_depto": 50,
+   "id_municipio": 350,
+   "nombre": "La Macarena"
+  },
+  {
+   "id_muni_depto": 50370,
+   "id_depto": 50,
+   "id_municipio": 370,
+   "nombre": "Uribe"
+  },
+  {
+   "id_muni_depto": 50400,
+   "id_depto": 50,
+   "id_municipio": 400,
+   "nombre": "Lejanias"
+  },
+  {
+   "id_muni_depto": 50450,
+   "id_depto": 50,
+   "id_municipio": 450,
+   "nombre": "Puerto Concordia"
+  },
+  {
+   "id_muni_depto": 50568,
+   "id_depto": 50,
+   "id_municipio": 568,
+   "nombre": "Puerto Gaitan"
+  },
+  {
+   "id_muni_depto": 50573,
+   "id_depto": 50,
+   "id_municipio": 573,
+   "nombre": "Puerto Lopez"
+  },
+  {
+   "id_muni_depto": 50577,
+   "id_depto": 50,
+   "id_municipio": 577,
+   "nombre": "Puerto Lleras"
+  },
+  {
+   "id_muni_depto": 50590,
+   "id_depto": 50,
+   "id_municipio": 590,
+   "nombre": "Puerto Rico"
+  },
+  {
+   "id_muni_depto": 50606,
+   "id_depto": 50,
+   "id_municipio": 606,
+   "nombre": "Restrepo"
+  },
+  {
+   "id_muni_depto": 50680,
+   "id_depto": 50,
+   "id_municipio": 680,
+   "nombre": "San Carlos De Guaroa"
+  },
+  {
+   "id_muni_depto": 50683,
+   "id_depto": 50,
+   "id_municipio": 683,
+   "nombre": "San Juan De Arama"
+  },
+  {
+   "id_muni_depto": 50686,
+   "id_depto": 50,
+   "id_municipio": 686,
+   "nombre": "San Juanito"
+  },
+  {
+   "id_muni_depto": 50689,
+   "id_depto": 50,
+   "id_municipio": 689,
+   "nombre": "San Martin"
+  },
+  {
+   "id_muni_depto": 50711,
+   "id_depto": 50,
+   "id_municipio": 711,
+   "nombre": "Vistahermosa"
+  },
+  {
+   "id_muni_depto": 52001,
+   "id_depto": 52,
+   "id_municipio": 1,
+   "nombre": "Pasto"
+  },
+  {
+   "id_muni_depto": 52019,
+   "id_depto": 52,
+   "id_municipio": 19,
+   "nombre": "Alban"
+  },
+  {
+   "id_muni_depto": 52022,
+   "id_depto": 52,
+   "id_municipio": 22,
+   "nombre": "Aldana"
+  },
+  {
+   "id_muni_depto": 52036,
+   "id_depto": 52,
+   "id_municipio": 36,
+   "nombre": "Ancuya"
+  },
+  {
+   "id_muni_depto": 52051,
+   "id_depto": 52,
+   "id_municipio": 51,
+   "nombre": "Arboleda"
+  },
+  {
+   "id_muni_depto": 52079,
+   "id_depto": 52,
+   "id_municipio": 79,
+   "nombre": "Barbacoas"
+  },
+  {
+   "id_muni_depto": 52083,
+   "id_depto": 52,
+   "id_municipio": 83,
+   "nombre": "Belen"
+  },
+  {
+   "id_muni_depto": 52110,
+   "id_depto": 52,
+   "id_municipio": 110,
+   "nombre": "Buesaco"
+  },
+  {
+   "id_muni_depto": 52203,
+   "id_depto": 52,
+   "id_municipio": 203,
+   "nombre": "Colon"
+  },
+  {
+   "id_muni_depto": 52207,
+   "id_depto": 52,
+   "id_municipio": 207,
+   "nombre": "Consaca"
+  },
+  {
+   "id_muni_depto": 52210,
+   "id_depto": 52,
+   "id_municipio": 210,
+   "nombre": "Contadero"
+  },
+  {
+   "id_muni_depto": 52215,
+   "id_depto": 52,
+   "id_municipio": 215,
+   "nombre": "Cordoba"
+  },
+  {
+   "id_muni_depto": 52224,
+   "id_depto": 52,
+   "id_municipio": 224,
+   "nombre": "Cuaspud"
+  },
+  {
+   "id_muni_depto": 52227,
+   "id_depto": 52,
+   "id_municipio": 227,
+   "nombre": "Cumbal"
+  },
+  {
+   "id_muni_depto": 52233,
+   "id_depto": 52,
+   "id_municipio": 233,
+   "nombre": "Cumbitara"
+  },
+  {
+   "id_muni_depto": 52240,
+   "id_depto": 52,
+   "id_municipio": 240,
+   "nombre": "Chachagui"
+  },
+  {
+   "id_muni_depto": 52250,
+   "id_depto": 52,
+   "id_municipio": 250,
+   "nombre": "El Charco"
+  },
+  {
+   "id_muni_depto": 52254,
+   "id_depto": 52,
+   "id_municipio": 254,
+   "nombre": "El Peñol"
+  },
+  {
+   "id_muni_depto": 52256,
+   "id_depto": 52,
+   "id_municipio": 256,
+   "nombre": "El Rosario"
+  },
+  {
+   "id_muni_depto": 52258,
+   "id_depto": 52,
+   "id_municipio": 258,
+   "nombre": "El Tablon de Gomez"
+  },
+  {
+   "id_muni_depto": 52260,
+   "id_depto": 52,
+   "id_municipio": 260,
+   "nombre": "El Tambo"
+  },
+  {
+   "id_muni_depto": 52287,
+   "id_depto": 52,
+   "id_municipio": 287,
+   "nombre": "Funes"
+  },
+  {
+   "id_muni_depto": 52317,
+   "id_depto": 52,
+   "id_municipio": 317,
+   "nombre": "Guachucal"
+  },
+  {
+   "id_muni_depto": 52320,
+   "id_depto": 52,
+   "id_municipio": 320,
+   "nombre": "Guaitarilla"
+  },
+  {
+   "id_muni_depto": 52323,
+   "id_depto": 52,
+   "id_municipio": 323,
+   "nombre": "Gualmatan"
+  },
+  {
+   "id_muni_depto": 52352,
+   "id_depto": 52,
+   "id_municipio": 352,
+   "nombre": "Iles"
+  },
+  {
+   "id_muni_depto": 52354,
+   "id_depto": 52,
+   "id_municipio": 354,
+   "nombre": "Imues"
+  },
+  {
+   "id_muni_depto": 52356,
+   "id_depto": 52,
+   "id_municipio": 356,
+   "nombre": "Ipiales"
+  },
+  {
+   "id_muni_depto": 52378,
+   "id_depto": 52,
+   "id_municipio": 378,
+   "nombre": "La Cruz"
+  },
+  {
+   "id_muni_depto": 52381,
+   "id_depto": 52,
+   "id_municipio": 381,
+   "nombre": "La Florida"
+  },
+  {
+   "id_muni_depto": 52385,
+   "id_depto": 52,
+   "id_municipio": 385,
+   "nombre": "La Llanada"
+  },
+  {
+   "id_muni_depto": 52390,
+   "id_depto": 52,
+   "id_municipio": 390,
+   "nombre": "La Tola"
+  },
+  {
+   "id_muni_depto": 52399,
+   "id_depto": 52,
+   "id_municipio": 399,
+   "nombre": "La Union"
+  },
+  {
+   "id_muni_depto": 52405,
+   "id_depto": 52,
+   "id_municipio": 405,
+   "nombre": "Leiva"
+  },
+  {
+   "id_muni_depto": 52411,
+   "id_depto": 52,
+   "id_municipio": 411,
+   "nombre": "Linares"
+  },
+  {
+   "id_muni_depto": 52418,
+   "id_depto": 52,
+   "id_municipio": 418,
+   "nombre": "Los Andes"
+  },
+  {
+   "id_muni_depto": 52427,
+   "id_depto": 52,
+   "id_municipio": 427,
+   "nombre": "Magui"
+  },
+  {
+   "id_muni_depto": 52435,
+   "id_depto": 52,
+   "id_municipio": 435,
+   "nombre": "Mallama"
+  },
+  {
+   "id_muni_depto": 52473,
+   "id_depto": 52,
+   "id_municipio": 473,
+   "nombre": "Mosquera"
+  },
+  {
+   "id_muni_depto": 52480,
+   "id_depto": 52,
+   "id_municipio": 480,
+   "nombre": "Nariño"
+  },
+  {
+   "id_muni_depto": 52490,
+   "id_depto": 52,
+   "id_municipio": 490,
+   "nombre": "Olaya Herrera"
+  },
+  {
+   "id_muni_depto": 52506,
+   "id_depto": 52,
+   "id_municipio": 506,
+   "nombre": "Ospina"
+  },
+  {
+   "id_muni_depto": 52520,
+   "id_depto": 52,
+   "id_municipio": 520,
+   "nombre": "Francisco Pizarro"
+  },
+  {
+   "id_muni_depto": 52540,
+   "id_depto": 52,
+   "id_municipio": 540,
+   "nombre": "Policarpa"
+  },
+  {
+   "id_muni_depto": 52560,
+   "id_depto": 52,
+   "id_municipio": 560,
+   "nombre": "Potosi"
+  },
+  {
+   "id_muni_depto": 52565,
+   "id_depto": 52,
+   "id_municipio": 565,
+   "nombre": "Providencia"
+  },
+  {
+   "id_muni_depto": 52573,
+   "id_depto": 52,
+   "id_municipio": 573,
+   "nombre": "Puerres"
+  },
+  {
+   "id_muni_depto": 52585,
+   "id_depto": 52,
+   "id_municipio": 585,
+   "nombre": "Pupiales"
+  },
+  {
+   "id_muni_depto": 52612,
+   "id_depto": 52,
+   "id_municipio": 612,
+   "nombre": "Ricaurte"
+  },
+  {
+   "id_muni_depto": 52621,
+   "id_depto": 52,
+   "id_municipio": 621,
+   "nombre": "Roberto Payan"
+  },
+  {
+   "id_muni_depto": 52678,
+   "id_depto": 52,
+   "id_municipio": 678,
+   "nombre": "Samaniego"
+  },
+  {
+   "id_muni_depto": 52683,
+   "id_depto": 52,
+   "id_municipio": 683,
+   "nombre": "Sandona"
+  },
+  {
+   "id_muni_depto": 52685,
+   "id_depto": 52,
+   "id_municipio": 685,
+   "nombre": "San Bernardo"
+  },
+  {
+   "id_muni_depto": 52687,
+   "id_depto": 52,
+   "id_municipio": 687,
+   "nombre": "San Lorenzo"
+  },
+  {
+   "id_muni_depto": 52693,
+   "id_depto": 52,
+   "id_municipio": 693,
+   "nombre": "San Pablo"
+  },
+  {
+   "id_muni_depto": 52694,
+   "id_depto": 52,
+   "id_municipio": 694,
+   "nombre": "San Pedro De Cartago"
+  },
+  {
+   "id_muni_depto": 52696,
+   "id_depto": 52,
+   "id_municipio": 696,
+   "nombre": "Santa Barbara"
+  },
+  {
+   "id_muni_depto": 52699,
+   "id_depto": 52,
+   "id_municipio": 699,
+   "nombre": "Santacruz"
+  },
+  {
+   "id_muni_depto": 52720,
+   "id_depto": 52,
+   "id_municipio": 720,
+   "nombre": "Sapuyes"
+  },
+  {
+   "id_muni_depto": 52786,
+   "id_depto": 52,
+   "id_municipio": 786,
+   "nombre": "Taminango"
+  },
+  {
+   "id_muni_depto": 52788,
+   "id_depto": 52,
+   "id_municipio": 788,
+   "nombre": "Tangua"
+  },
+  {
+   "id_muni_depto": 52835,
+   "id_depto": 52,
+   "id_municipio": 835,
+   "nombre": "San Andres De Tumaco"
+  },
+  {
+   "id_muni_depto": 52838,
+   "id_depto": 52,
+   "id_municipio": 838,
+   "nombre": "Tuquerres"
+  },
+  {
+   "id_muni_depto": 52885,
+   "id_depto": 52,
+   "id_municipio": 885,
+   "nombre": "Yacuanquer"
+  },
+  {
+   "id_muni_depto": 54001,
+   "id_depto": 54,
+   "id_municipio": 1,
+   "nombre": "Cucuta"
+  },
+  {
+   "id_muni_depto": 54003,
+   "id_depto": 54,
+   "id_municipio": 3,
+   "nombre": "Abrego"
+  },
+  {
+   "id_muni_depto": 54051,
+   "id_depto": 54,
+   "id_municipio": 51,
+   "nombre": "Arboledas"
+  },
+  {
+   "id_muni_depto": 54099,
+   "id_depto": 54,
+   "id_municipio": 99,
+   "nombre": "Bochalema"
+  },
+  {
+   "id_muni_depto": 54109,
+   "id_depto": 54,
+   "id_municipio": 109,
+   "nombre": "Bucarasica"
+  },
+  {
+   "id_muni_depto": 54125,
+   "id_depto": 54,
+   "id_municipio": 125,
+   "nombre": "Cacota"
+  },
+  {
+   "id_muni_depto": 54128,
+   "id_depto": 54,
+   "id_municipio": 128,
+   "nombre": "Cachira"
+  },
+  {
+   "id_muni_depto": 54172,
+   "id_depto": 54,
+   "id_municipio": 172,
+   "nombre": "Chinacota"
+  },
+  {
+   "id_muni_depto": 54174,
+   "id_depto": 54,
+   "id_municipio": 174,
+   "nombre": "Chitaga"
+  },
+  {
+   "id_muni_depto": 54206,
+   "id_depto": 54,
+   "id_municipio": 206,
+   "nombre": "Convencion"
+  },
+  {
+   "id_muni_depto": 54223,
+   "id_depto": 54,
+   "id_municipio": 223,
+   "nombre": "Cucutilla"
+  },
+  {
+   "id_muni_depto": 54239,
+   "id_depto": 54,
+   "id_municipio": 239,
+   "nombre": "Durania"
+  },
+  {
+   "id_muni_depto": 54245,
+   "id_depto": 54,
+   "id_municipio": 245,
+   "nombre": "El Carmen"
+  },
+  {
+   "id_muni_depto": 54250,
+   "id_depto": 54,
+   "id_municipio": 250,
+   "nombre": "El Tarra"
+  },
+  {
+   "id_muni_depto": 54261,
+   "id_depto": 54,
+   "id_municipio": 261,
+   "nombre": "El Zulia"
+  },
+  {
+   "id_muni_depto": 54313,
+   "id_depto": 54,
+   "id_municipio": 313,
+   "nombre": "Gramalote"
+  },
+  {
+   "id_muni_depto": 54344,
+   "id_depto": 54,
+   "id_municipio": 344,
+   "nombre": "Hacari"
+  },
+  {
+   "id_muni_depto": 54347,
+   "id_depto": 54,
+   "id_municipio": 347,
+   "nombre": "Herran"
+  },
+  {
+   "id_muni_depto": 54377,
+   "id_depto": 54,
+   "id_municipio": 377,
+   "nombre": "Labateca"
+  },
+  {
+   "id_muni_depto": 54385,
+   "id_depto": 54,
+   "id_municipio": 385,
+   "nombre": "La Esperanza"
+  },
+  {
+   "id_muni_depto": 54398,
+   "id_depto": 54,
+   "id_municipio": 398,
+   "nombre": "La Playa"
+  },
+  {
+   "id_muni_depto": 54405,
+   "id_depto": 54,
+   "id_municipio": 405,
+   "nombre": "Los Patios"
+  },
+  {
+   "id_muni_depto": 54418,
+   "id_depto": 54,
+   "id_municipio": 418,
+   "nombre": "Lourdes"
+  },
+  {
+   "id_muni_depto": 54480,
+   "id_depto": 54,
+   "id_municipio": 480,
+   "nombre": "Mutiscua"
+  },
+  {
+   "id_muni_depto": 54498,
+   "id_depto": 54,
+   "id_municipio": 498,
+   "nombre": "Ocaña"
+  },
+  {
+   "id_muni_depto": 54518,
+   "id_depto": 54,
+   "id_municipio": 518,
+   "nombre": "Pamplona"
+  },
+  {
+   "id_muni_depto": 54520,
+   "id_depto": 54,
+   "id_municipio": 520,
+   "nombre": "Pamplonita"
+  },
+  {
+   "id_muni_depto": 54553,
+   "id_depto": 54,
+   "id_municipio": 553,
+   "nombre": "Puerto Santander"
+  },
+  {
+   "id_muni_depto": 54599,
+   "id_depto": 54,
+   "id_municipio": 599,
+   "nombre": "Ragonvalia"
+  },
+  {
+   "id_muni_depto": 54660,
+   "id_depto": 54,
+   "id_municipio": 660,
+   "nombre": "Salazar"
+  },
+  {
+   "id_muni_depto": 54670,
+   "id_depto": 54,
+   "id_municipio": 670,
+   "nombre": "San Calixto"
+  },
+  {
+   "id_muni_depto": 54673,
+   "id_depto": 54,
+   "id_municipio": 673,
+   "nombre": "San Cayetano"
+  },
+  {
+   "id_muni_depto": 54680,
+   "id_depto": 54,
+   "id_municipio": 680,
+   "nombre": "Santiago"
+  },
+  {
+   "id_muni_depto": 54720,
+   "id_depto": 54,
+   "id_municipio": 720,
+   "nombre": "Sardinata"
+  },
+  {
+   "id_muni_depto": 54743,
+   "id_depto": 54,
+   "id_municipio": 743,
+   "nombre": "Silos"
+  },
+  {
+   "id_muni_depto": 54800,
+   "id_depto": 54,
+   "id_municipio": 800,
+   "nombre": "Teorama"
+  },
+  {
+   "id_muni_depto": 54810,
+   "id_depto": 54,
+   "id_municipio": 810,
+   "nombre": "Tibu"
+  },
+  {
+   "id_muni_depto": 54820,
+   "id_depto": 54,
+   "id_municipio": 820,
+   "nombre": "Toledo"
+  },
+  {
+   "id_muni_depto": 54871,
+   "id_depto": 54,
+   "id_municipio": 871,
+   "nombre": "Villa Caro"
+  },
+  {
+   "id_muni_depto": 54874,
+   "id_depto": 54,
+   "id_municipio": 874,
+   "nombre": "Villa Del Rosario"
+  },
+  {
+   "id_muni_depto": 63001,
+   "id_depto": 63,
+   "id_municipio": 1,
+   "nombre": "Armenia"
+  },
+  {
+   "id_muni_depto": 63111,
+   "id_depto": 63,
+   "id_municipio": 111,
+   "nombre": "Buenavista"
+  },
+  {
+   "id_muni_depto": 63130,
+   "id_depto": 63,
+   "id_municipio": 130,
+   "nombre": "Calarca"
+  },
+  {
+   "id_muni_depto": 63190,
+   "id_depto": 63,
+   "id_municipio": 190,
+   "nombre": "Circasia"
+  },
+  {
+   "id_muni_depto": 63212,
+   "id_depto": 63,
+   "id_municipio": 212,
+   "nombre": "Cordoba"
+  },
+  {
+   "id_muni_depto": 63272,
+   "id_depto": 63,
+   "id_municipio": 272,
+   "nombre": "Filandia"
+  },
+  {
+   "id_muni_depto": 63302,
+   "id_depto": 63,
+   "id_municipio": 302,
+   "nombre": "Genova"
+  },
+  {
+   "id_muni_depto": 63401,
+   "id_depto": 63,
+   "id_municipio": 401,
+   "nombre": "La Tebaida"
+  },
+  {
+   "id_muni_depto": 63470,
+   "id_depto": 63,
+   "id_municipio": 470,
+   "nombre": "Montenegro"
+  },
+  {
+   "id_muni_depto": 63548,
+   "id_depto": 63,
+   "id_municipio": 548,
+   "nombre": "Pijao"
+  },
+  {
+   "id_muni_depto": 63594,
+   "id_depto": 63,
+   "id_municipio": 594,
+   "nombre": "Quimbaya"
+  },
+  {
+   "id_muni_depto": 63690,
+   "id_depto": 63,
+   "id_municipio": 690,
+   "nombre": "Salento"
+  },
+  {
+   "id_muni_depto": 66001,
+   "id_depto": 66,
+   "id_municipio": 1,
+   "nombre": "Pereira"
+  },
+  {
+   "id_muni_depto": 66045,
+   "id_depto": 66,
+   "id_municipio": 45,
+   "nombre": "Apia"
+  },
+  {
+   "id_muni_depto": 66075,
+   "id_depto": 66,
+   "id_municipio": 75,
+   "nombre": "Balboa"
+  },
+  {
+   "id_muni_depto": 66088,
+   "id_depto": 66,
+   "id_municipio": 88,
+   "nombre": "Belen De Umbria"
+  },
+  {
+   "id_muni_depto": 66170,
+   "id_depto": 66,
+   "id_municipio": 170,
+   "nombre": "Dosquebradas"
+  },
+  {
+   "id_muni_depto": 66318,
+   "id_depto": 66,
+   "id_municipio": 318,
+   "nombre": "Guatica"
+  },
+  {
+   "id_muni_depto": 66383,
+   "id_depto": 66,
+   "id_municipio": 383,
+   "nombre": "La Celia"
+  },
+  {
+   "id_muni_depto": 66400,
+   "id_depto": 66,
+   "id_municipio": 400,
+   "nombre": "La Virginia"
+  },
+  {
+   "id_muni_depto": 66440,
+   "id_depto": 66,
+   "id_municipio": 440,
+   "nombre": "Marsella"
+  },
+  {
+   "id_muni_depto": 66456,
+   "id_depto": 66,
+   "id_municipio": 456,
+   "nombre": "Mistrato"
+  },
+  {
+   "id_muni_depto": 66572,
+   "id_depto": 66,
+   "id_municipio": 572,
+   "nombre": "Pueblo Rico"
+  },
+  {
+   "id_muni_depto": 66594,
+   "id_depto": 66,
+   "id_municipio": 594,
+   "nombre": "Quinchia"
+  },
+  {
+   "id_muni_depto": 66682,
+   "id_depto": 66,
+   "id_municipio": 682,
+   "nombre": "Santa Rosa De Cabal"
+  },
+  {
+   "id_muni_depto": 66687,
+   "id_depto": 66,
+   "id_municipio": 687,
+   "nombre": "Santuario"
+  },
+  {
+   "id_muni_depto": 68001,
+   "id_depto": 68,
+   "id_municipio": 1,
+   "nombre": "Bucaramanga"
+  },
+  {
+   "id_muni_depto": 68013,
+   "id_depto": 68,
+   "id_municipio": 13,
+   "nombre": "Aguada"
+  },
+  {
+   "id_muni_depto": 68020,
+   "id_depto": 68,
+   "id_municipio": 20,
+   "nombre": "Albania"
+  },
+  {
+   "id_muni_depto": 68051,
+   "id_depto": 68,
+   "id_municipio": 51,
+   "nombre": "Aratoca"
+  },
+  {
+   "id_muni_depto": 68077,
+   "id_depto": 68,
+   "id_municipio": 77,
+   "nombre": "Barbosa"
+  },
+  {
+   "id_muni_depto": 68079,
+   "id_depto": 68,
+   "id_municipio": 79,
+   "nombre": "Barichara"
+  },
+  {
+   "id_muni_depto": 68081,
+   "id_depto": 68,
+   "id_municipio": 81,
+   "nombre": "Barrancabermeja"
+  },
+  {
+   "id_muni_depto": 68092,
+   "id_depto": 68,
+   "id_municipio": 92,
+   "nombre": "Betulia"
+  },
+  {
+   "id_muni_depto": 68101,
+   "id_depto": 68,
+   "id_municipio": 101,
+   "nombre": "Bolivar"
+  },
+  {
+   "id_muni_depto": 68121,
+   "id_depto": 68,
+   "id_municipio": 121,
+   "nombre": "Cabrera"
+  },
+  {
+   "id_muni_depto": 68132,
+   "id_depto": 68,
+   "id_municipio": 132,
+   "nombre": "California"
+  },
+  {
+   "id_muni_depto": 68147,
+   "id_depto": 68,
+   "id_municipio": 147,
+   "nombre": "Capitanejo"
+  },
+  {
+   "id_muni_depto": 68152,
+   "id_depto": 68,
+   "id_municipio": 152,
+   "nombre": "Carcasi"
+  },
+  {
+   "id_muni_depto": 68160,
+   "id_depto": 68,
+   "id_municipio": 160,
+   "nombre": "Cepita"
+  },
+  {
+   "id_muni_depto": 68162,
+   "id_depto": 68,
+   "id_municipio": 162,
+   "nombre": "Cerrito"
+  },
+  {
+   "id_muni_depto": 68167,
+   "id_depto": 68,
+   "id_municipio": 167,
+   "nombre": "Charala"
+  },
+  {
+   "id_muni_depto": 68169,
+   "id_depto": 68,
+   "id_municipio": 169,
+   "nombre": "Charta"
+  },
+  {
+   "id_muni_depto": 68176,
+   "id_depto": 68,
+   "id_municipio": 176,
+   "nombre": "Chima"
+  },
+  {
+   "id_muni_depto": 68179,
+   "id_depto": 68,
+   "id_municipio": 179,
+   "nombre": "Chipata"
+  },
+  {
+   "id_muni_depto": 68190,
+   "id_depto": 68,
+   "id_municipio": 190,
+   "nombre": "Cimitarra"
+  },
+  {
+   "id_muni_depto": 68207,
+   "id_depto": 68,
+   "id_municipio": 207,
+   "nombre": "Concepcion"
+  },
+  {
+   "id_muni_depto": 68209,
+   "id_depto": 68,
+   "id_municipio": 209,
+   "nombre": "Confines"
+  },
+  {
+   "id_muni_depto": 68211,
+   "id_depto": 68,
+   "id_municipio": 211,
+   "nombre": "Contratacion"
+  },
+  {
+   "id_muni_depto": 68217,
+   "id_depto": 68,
+   "id_municipio": 217,
+   "nombre": "Coromoro"
+  },
+  {
+   "id_muni_depto": 68229,
+   "id_depto": 68,
+   "id_municipio": 229,
+   "nombre": "Curiti"
+  },
+  {
+   "id_muni_depto": 68235,
+   "id_depto": 68,
+   "id_municipio": 235,
+   "nombre": "El Carmen De Chucuri"
+  },
+  {
+   "id_muni_depto": 68245,
+   "id_depto": 68,
+   "id_municipio": 245,
+   "nombre": "El Guacamayo"
+  },
+  {
+   "id_muni_depto": 68250,
+   "id_depto": 68,
+   "id_municipio": 250,
+   "nombre": "El Peñon"
+  },
+  {
+   "id_muni_depto": 68255,
+   "id_depto": 68,
+   "id_municipio": 255,
+   "nombre": "El Playon"
+  },
+  {
+   "id_muni_depto": 68264,
+   "id_depto": 68,
+   "id_municipio": 264,
+   "nombre": "Encino"
+  },
+  {
+   "id_muni_depto": 68266,
+   "id_depto": 68,
+   "id_municipio": 266,
+   "nombre": "Enciso"
+  },
+  {
+   "id_muni_depto": 68271,
+   "id_depto": 68,
+   "id_municipio": 271,
+   "nombre": "Florian"
+  },
+  {
+   "id_muni_depto": 68276,
+   "id_depto": 68,
+   "id_municipio": 276,
+   "nombre": "Floridablanca"
+  },
+  {
+   "id_muni_depto": 68296,
+   "id_depto": 68,
+   "id_municipio": 296,
+   "nombre": "Galan"
+  },
+  {
+   "id_muni_depto": 68298,
+   "id_depto": 68,
+   "id_municipio": 298,
+   "nombre": "Gambita"
+  },
+  {
+   "id_muni_depto": 68307,
+   "id_depto": 68,
+   "id_municipio": 307,
+   "nombre": "Giron"
+  },
+  {
+   "id_muni_depto": 68318,
+   "id_depto": 68,
+   "id_municipio": 318,
+   "nombre": "Guaca"
+  },
+  {
+   "id_muni_depto": 68320,
+   "id_depto": 68,
+   "id_municipio": 320,
+   "nombre": "Guadalupe"
+  },
+  {
+   "id_muni_depto": 68322,
+   "id_depto": 68,
+   "id_municipio": 322,
+   "nombre": "Guapota"
+  },
+  {
+   "id_muni_depto": 68324,
+   "id_depto": 68,
+   "id_municipio": 324,
+   "nombre": "Guavata"
+  },
+  {
+   "id_muni_depto": 68327,
+   "id_depto": 68,
+   "id_municipio": 327,
+   "nombre": "Guepsa"
+  },
+  {
+   "id_muni_depto": 68344,
+   "id_depto": 68,
+   "id_municipio": 344,
+   "nombre": "Hato"
+  },
+  {
+   "id_muni_depto": 68368,
+   "id_depto": 68,
+   "id_municipio": 368,
+   "nombre": "Jesus Maria"
+  },
+  {
+   "id_muni_depto": 68370,
+   "id_depto": 68,
+   "id_municipio": 370,
+   "nombre": "Jordan"
+  },
+  {
+   "id_muni_depto": 68377,
+   "id_depto": 68,
+   "id_municipio": 377,
+   "nombre": "La Belleza"
+  },
+  {
+   "id_muni_depto": 68385,
+   "id_depto": 68,
+   "id_municipio": 385,
+   "nombre": "Landazuri"
+  },
+  {
+   "id_muni_depto": 68397,
+   "id_depto": 68,
+   "id_municipio": 397,
+   "nombre": "La Paz"
+  },
+  {
+   "id_muni_depto": 68406,
+   "id_depto": 68,
+   "id_municipio": 406,
+   "nombre": "Lebrija"
+  },
+  {
+   "id_muni_depto": 68418,
+   "id_depto": 68,
+   "id_municipio": 418,
+   "nombre": "Los Santos"
+  },
+  {
+   "id_muni_depto": 68425,
+   "id_depto": 68,
+   "id_municipio": 425,
+   "nombre": "Macaravita"
+  },
+  {
+   "id_muni_depto": 68432,
+   "id_depto": 68,
+   "id_municipio": 432,
+   "nombre": "Malaga"
+  },
+  {
+   "id_muni_depto": 68444,
+   "id_depto": 68,
+   "id_municipio": 444,
+   "nombre": "Matanza"
+  },
+  {
+   "id_muni_depto": 68464,
+   "id_depto": 68,
+   "id_municipio": 464,
+   "nombre": "Mogotes"
+  },
+  {
+   "id_muni_depto": 68468,
+   "id_depto": 68,
+   "id_municipio": 468,
+   "nombre": "Molagavita"
+  },
+  {
+   "id_muni_depto": 68498,
+   "id_depto": 68,
+   "id_municipio": 498,
+   "nombre": "Ocamonte"
+  },
+  {
+   "id_muni_depto": 68500,
+   "id_depto": 68,
+   "id_municipio": 500,
+   "nombre": "Oiba"
+  },
+  {
+   "id_muni_depto": 68502,
+   "id_depto": 68,
+   "id_municipio": 502,
+   "nombre": "Onzaga"
+  },
+  {
+   "id_muni_depto": 68522,
+   "id_depto": 68,
+   "id_municipio": 522,
+   "nombre": "Palmar"
+  },
+  {
+   "id_muni_depto": 68524,
+   "id_depto": 68,
+   "id_municipio": 524,
+   "nombre": "Palmas Del Socorro"
+  },
+  {
+   "id_muni_depto": 68533,
+   "id_depto": 68,
+   "id_municipio": 533,
+   "nombre": "Paramo"
+  },
+  {
+   "id_muni_depto": 68547,
+   "id_depto": 68,
+   "id_municipio": 547,
+   "nombre": "Piedecuesta"
+  },
+  {
+   "id_muni_depto": 68549,
+   "id_depto": 68,
+   "id_municipio": 549,
+   "nombre": "Pinchote"
+  },
+  {
+   "id_muni_depto": 68572,
+   "id_depto": 68,
+   "id_municipio": 572,
+   "nombre": "Puente Nacional"
+  },
+  {
+   "id_muni_depto": 68573,
+   "id_depto": 68,
+   "id_municipio": 573,
+   "nombre": "Puerto Parra"
+  },
+  {
+   "id_muni_depto": 68575,
+   "id_depto": 68,
+   "id_municipio": 575,
+   "nombre": "Puerto Wilches"
+  },
+  {
+   "id_muni_depto": 68615,
+   "id_depto": 68,
+   "id_municipio": 615,
+   "nombre": "Rionegro"
+  },
+  {
+   "id_muni_depto": 68655,
+   "id_depto": 68,
+   "id_municipio": 655,
+   "nombre": "Sabana De Torres"
+  },
+  {
+   "id_muni_depto": 68669,
+   "id_depto": 68,
+   "id_municipio": 669,
+   "nombre": "San Andres"
+  },
+  {
+   "id_muni_depto": 68673,
+   "id_depto": 68,
+   "id_municipio": 673,
+   "nombre": "San Benito"
+  },
+  {
+   "id_muni_depto": 68679,
+   "id_depto": 68,
+   "id_municipio": 679,
+   "nombre": "San Gil"
+  },
+  {
+   "id_muni_depto": 68682,
+   "id_depto": 68,
+   "id_municipio": 682,
+   "nombre": "San Joaquin"
+  },
+  {
+   "id_muni_depto": 68684,
+   "id_depto": 68,
+   "id_municipio": 684,
+   "nombre": "San Jose De Miranda"
+  },
+  {
+   "id_muni_depto": 68686,
+   "id_depto": 68,
+   "id_municipio": 686,
+   "nombre": "San Miguel"
+  },
+  {
+   "id_muni_depto": 68689,
+   "id_depto": 68,
+   "id_municipio": 689,
+   "nombre": "San Vicente De Chucuri"
+  },
+  {
+   "id_muni_depto": 68705,
+   "id_depto": 68,
+   "id_municipio": 705,
+   "nombre": "Santa Barbara"
+  },
+  {
+   "id_muni_depto": 68720,
+   "id_depto": 68,
+   "id_municipio": 720,
+   "nombre": "Santa Helena Del Opon"
+  },
+  {
+   "id_muni_depto": 68745,
+   "id_depto": 68,
+   "id_municipio": 745,
+   "nombre": "Simacota"
+  },
+  {
+   "id_muni_depto": 68755,
+   "id_depto": 68,
+   "id_municipio": 755,
+   "nombre": "Socorro"
+  },
+  {
+   "id_muni_depto": 68770,
+   "id_depto": 68,
+   "id_municipio": 770,
+   "nombre": "Suaita"
+  },
+  {
+   "id_muni_depto": 68773,
+   "id_depto": 68,
+   "id_municipio": 773,
+   "nombre": "Sucre"
+  },
+  {
+   "id_muni_depto": 68780,
+   "id_depto": 68,
+   "id_municipio": 780,
+   "nombre": "Surata"
+  },
+  {
+   "id_muni_depto": 68820,
+   "id_depto": 68,
+   "id_municipio": 820,
+   "nombre": "Tona"
+  },
+  {
+   "id_muni_depto": 68855,
+   "id_depto": 68,
+   "id_municipio": 855,
+   "nombre": "Valle De San Jose"
+  },
+  {
+   "id_muni_depto": 68861,
+   "id_depto": 68,
+   "id_municipio": 861,
+   "nombre": "Velez"
+  },
+  {
+   "id_muni_depto": 68867,
+   "id_depto": 68,
+   "id_municipio": 867,
+   "nombre": "Vetas"
+  },
+  {
+   "id_muni_depto": 68872,
+   "id_depto": 68,
+   "id_municipio": 872,
+   "nombre": "Villanueva"
+  },
+  {
+   "id_muni_depto": 68895,
+   "id_depto": 68,
+   "id_municipio": 895,
+   "nombre": "Zapatoca"
+  },
+  {
+   "id_muni_depto": 70001,
+   "id_depto": 70,
+   "id_municipio": 1,
+   "nombre": "Sincelejo"
+  },
+  {
+   "id_muni_depto": 70110,
+   "id_depto": 70,
+   "id_municipio": 110,
+   "nombre": "Buenavista"
+  },
+  {
+   "id_muni_depto": 70124,
+   "id_depto": 70,
+   "id_municipio": 124,
+   "nombre": "Caimito"
+  },
+  {
+   "id_muni_depto": 70204,
+   "id_depto": 70,
+   "id_municipio": 204,
+   "nombre": "Coloso"
+  },
+  {
+   "id_muni_depto": 70215,
+   "id_depto": 70,
+   "id_municipio": 215,
+   "nombre": "Corozal"
+  },
+  {
+   "id_muni_depto": 70221,
+   "id_depto": 70,
+   "id_municipio": 221,
+   "nombre": "Coveñas"
+  },
+  {
+   "id_muni_depto": 70230,
+   "id_depto": 70,
+   "id_municipio": 230,
+   "nombre": "Chalan"
+  },
+  {
+   "id_muni_depto": 70233,
+   "id_depto": 70,
+   "id_municipio": 233,
+   "nombre": "El Roble"
+  },
+  {
+   "id_muni_depto": 70235,
+   "id_depto": 70,
+   "id_municipio": 235,
+   "nombre": "Galeras"
+  },
+  {
+   "id_muni_depto": 70265,
+   "id_depto": 70,
+   "id_municipio": 265,
+   "nombre": "Guaranda"
+  },
+  {
+   "id_muni_depto": 70400,
+   "id_depto": 70,
+   "id_municipio": 400,
+   "nombre": "La Union"
+  },
+  {
+   "id_muni_depto": 70418,
+   "id_depto": 70,
+   "id_municipio": 418,
+   "nombre": "Los Palmitos"
+  },
+  {
+   "id_muni_depto": 70429,
+   "id_depto": 70,
+   "id_municipio": 429,
+   "nombre": "Majagual"
+  },
+  {
+   "id_muni_depto": 70473,
+   "id_depto": 70,
+   "id_municipio": 473,
+   "nombre": "Morroa"
+  },
+  {
+   "id_muni_depto": 70508,
+   "id_depto": 70,
+   "id_municipio": 508,
+   "nombre": "Ovejas"
+  },
+  {
+   "id_muni_depto": 70523,
+   "id_depto": 70,
+   "id_municipio": 523,
+   "nombre": "Palmito"
+  },
+  {
+   "id_muni_depto": 70670,
+   "id_depto": 70,
+   "id_municipio": 670,
+   "nombre": "Sampues"
+  },
+  {
+   "id_muni_depto": 70678,
+   "id_depto": 70,
+   "id_municipio": 678,
+   "nombre": "San Benito Abad"
+  },
+  {
+   "id_muni_depto": 70702,
+   "id_depto": 70,
+   "id_municipio": 702,
+   "nombre": "San Juan De Betulia"
+  },
+  {
+   "id_muni_depto": 70708,
+   "id_depto": 70,
+   "id_municipio": 708,
+   "nombre": "San Marcos"
+  },
+  {
+   "id_muni_depto": 70713,
+   "id_depto": 70,
+   "id_municipio": 713,
+   "nombre": "San Onofre"
+  },
+  {
+   "id_muni_depto": 70717,
+   "id_depto": 70,
+   "id_municipio": 717,
+   "nombre": "San Pedro"
+  },
+  {
+   "id_muni_depto": 70742,
+   "id_depto": 70,
+   "id_municipio": 742,
+   "nombre": "San Luis De Since"
+  },
+  {
+   "id_muni_depto": 70771,
+   "id_depto": 70,
+   "id_municipio": 771,
+   "nombre": "Sucre"
+  },
+  {
+   "id_muni_depto": 70820,
+   "id_depto": 70,
+   "id_municipio": 820,
+   "nombre": "Santiago De Tolu"
+  },
+  {
+   "id_muni_depto": 70823,
+   "id_depto": 70,
+   "id_municipio": 823,
+   "nombre": "Tolu Viejo"
+  },
+  {
+   "id_muni_depto": 73001,
+   "id_depto": 73,
+   "id_municipio": 1,
+   "nombre": "Ibague"
+  },
+  {
+   "id_muni_depto": 73024,
+   "id_depto": 73,
+   "id_municipio": 24,
+   "nombre": "Alpujarra"
+  },
+  {
+   "id_muni_depto": 73026,
+   "id_depto": 73,
+   "id_municipio": 26,
+   "nombre": "Alvarado"
+  },
+  {
+   "id_muni_depto": 73030,
+   "id_depto": 73,
+   "id_municipio": 30,
+   "nombre": "Ambalema"
+  },
+  {
+   "id_muni_depto": 73043,
+   "id_depto": 73,
+   "id_municipio": 43,
+   "nombre": "Anzoategui"
+  },
+  {
+   "id_muni_depto": 73055,
+   "id_depto": 73,
+   "id_municipio": 55,
+   "nombre": "Armero"
+  },
+  {
+   "id_muni_depto": 73067,
+   "id_depto": 73,
+   "id_municipio": 67,
+   "nombre": "Ataco"
+  },
+  {
+   "id_muni_depto": 73124,
+   "id_depto": 73,
+   "id_municipio": 124,
+   "nombre": "Cajamarca"
+  },
+  {
+   "id_muni_depto": 73148,
+   "id_depto": 73,
+   "id_municipio": 148,
+   "nombre": "Carmen De Apicala"
+  },
+  {
+   "id_muni_depto": 73152,
+   "id_depto": 73,
+   "id_municipio": 152,
+   "nombre": "Casabianca"
+  },
+  {
+   "id_muni_depto": 73168,
+   "id_depto": 73,
+   "id_municipio": 168,
+   "nombre": "Chaparral"
+  },
+  {
+   "id_muni_depto": 73200,
+   "id_depto": 73,
+   "id_municipio": 200,
+   "nombre": "Coello"
+  },
+  {
+   "id_muni_depto": 73217,
+   "id_depto": 73,
+   "id_municipio": 217,
+   "nombre": "Coyaima"
+  },
+  {
+   "id_muni_depto": 73226,
+   "id_depto": 73,
+   "id_municipio": 226,
+   "nombre": "Cunday"
+  },
+  {
+   "id_muni_depto": 73236,
+   "id_depto": 73,
+   "id_municipio": 236,
+   "nombre": "Dolores"
+  },
+  {
+   "id_muni_depto": 73268,
+   "id_depto": 73,
+   "id_municipio": 268,
+   "nombre": "Espinal"
+  },
+  {
+   "id_muni_depto": 73270,
+   "id_depto": 73,
+   "id_municipio": 270,
+   "nombre": "Falan"
+  },
+  {
+   "id_muni_depto": 73275,
+   "id_depto": 73,
+   "id_municipio": 275,
+   "nombre": "Flandes"
+  },
+  {
+   "id_muni_depto": 73283,
+   "id_depto": 73,
+   "id_municipio": 283,
+   "nombre": "Fresno"
+  },
+  {
+   "id_muni_depto": 73319,
+   "id_depto": 73,
+   "id_municipio": 319,
+   "nombre": "Guamo"
+  },
+  {
+   "id_muni_depto": 73347,
+   "id_depto": 73,
+   "id_municipio": 347,
+   "nombre": "Herveo"
+  },
+  {
+   "id_muni_depto": 73349,
+   "id_depto": 73,
+   "id_municipio": 349,
+   "nombre": "Honda"
+  },
+  {
+   "id_muni_depto": 73352,
+   "id_depto": 73,
+   "id_municipio": 352,
+   "nombre": "Icononzo"
+  },
+  {
+   "id_muni_depto": 73408,
+   "id_depto": 73,
+   "id_municipio": 408,
+   "nombre": "Lerida"
+  },
+  {
+   "id_muni_depto": 73411,
+   "id_depto": 73,
+   "id_municipio": 411,
+   "nombre": "Libano"
+  },
+  {
+   "id_muni_depto": 73443,
+   "id_depto": 73,
+   "id_municipio": 443,
+   "nombre": "San Sebastian De Mariquita"
+  },
+  {
+   "id_muni_depto": 73449,
+   "id_depto": 73,
+   "id_municipio": 449,
+   "nombre": "Melgar"
+  },
+  {
+   "id_muni_depto": 73461,
+   "id_depto": 73,
+   "id_municipio": 461,
+   "nombre": "Murillo"
+  },
+  {
+   "id_muni_depto": 73483,
+   "id_depto": 73,
+   "id_municipio": 483,
+   "nombre": "Natagaima"
+  },
+  {
+   "id_muni_depto": 73504,
+   "id_depto": 73,
+   "id_municipio": 504,
+   "nombre": "Ortega"
+  },
+  {
+   "id_muni_depto": 73520,
+   "id_depto": 73,
+   "id_municipio": 520,
+   "nombre": "Palocabildo"
+  },
+  {
+   "id_muni_depto": 73547,
+   "id_depto": 73,
+   "id_municipio": 547,
+   "nombre": "Piedras"
+  },
+  {
+   "id_muni_depto": 73555,
+   "id_depto": 73,
+   "id_municipio": 555,
+   "nombre": "Planadas"
+  },
+  {
+   "id_muni_depto": 73563,
+   "id_depto": 73,
+   "id_municipio": 563,
+   "nombre": "Prado"
+  },
+  {
+   "id_muni_depto": 73585,
+   "id_depto": 73,
+   "id_municipio": 585,
+   "nombre": "Purificacion"
+  },
+  {
+   "id_muni_depto": 73616,
+   "id_depto": 73,
+   "id_municipio": 616,
+   "nombre": "Rioblanco"
+  },
+  {
+   "id_muni_depto": 73622,
+   "id_depto": 73,
+   "id_municipio": 622,
+   "nombre": "Roncesvalles"
+  },
+  {
+   "id_muni_depto": 73624,
+   "id_depto": 73,
+   "id_municipio": 624,
+   "nombre": "Rovira"
+  },
+  {
+   "id_muni_depto": 73671,
+   "id_depto": 73,
+   "id_municipio": 671,
+   "nombre": "Saldaña"
+  },
+  {
+   "id_muni_depto": 73675,
+   "id_depto": 73,
+   "id_municipio": 675,
+   "nombre": "San Antonio"
+  },
+  {
+   "id_muni_depto": 73678,
+   "id_depto": 73,
+   "id_municipio": 678,
+   "nombre": "San Luis"
+  },
+  {
+   "id_muni_depto": 73686,
+   "id_depto": 73,
+   "id_municipio": 686,
+   "nombre": "Santa Isabel"
+  },
+  {
+   "id_muni_depto": 73770,
+   "id_depto": 73,
+   "id_municipio": 770,
+   "nombre": "Suarez"
+  },
+  {
+   "id_muni_depto": 73854,
+   "id_depto": 73,
+   "id_municipio": 854,
+   "nombre": "Valle De San Juan"
+  },
+  {
+   "id_muni_depto": 73861,
+   "id_depto": 73,
+   "id_municipio": 861,
+   "nombre": "Venadillo"
+  },
+  {
+   "id_muni_depto": 73870,
+   "id_depto": 73,
+   "id_municipio": 870,
+   "nombre": "Villahermosa"
+  },
+  {
+   "id_muni_depto": 73873,
+   "id_depto": 73,
+   "id_municipio": 873,
+   "nombre": "Villarrica"
+  },
+  {
+   "id_muni_depto": 76001,
+   "id_depto": 76,
+   "id_municipio": 1,
+   "nombre": "Cali"
+  },
+  {
+   "id_muni_depto": 76020,
+   "id_depto": 76,
+   "id_municipio": 20,
+   "nombre": "Alcala"
+  },
+  {
+   "id_muni_depto": 76036,
+   "id_depto": 76,
+   "id_municipio": 36,
+   "nombre": "Andalucia"
+  },
+  {
+   "id_muni_depto": 76041,
+   "id_depto": 76,
+   "id_municipio": 41,
+   "nombre": "Ansermanuevo"
+  },
+  {
+   "id_muni_depto": 76054,
+   "id_depto": 76,
+   "id_municipio": 54,
+   "nombre": "Argelia"
+  },
+  {
+   "id_muni_depto": 76100,
+   "id_depto": 76,
+   "id_municipio": 100,
+   "nombre": "Bolivar"
+  },
+  {
+   "id_muni_depto": 76109,
+   "id_depto": 76,
+   "id_municipio": 109,
+   "nombre": "Buenaventura"
+  },
+  {
+   "id_muni_depto": 76111,
+   "id_depto": 76,
+   "id_municipio": 111,
+   "nombre": "Guadalajara de Buga"
+  },
+  {
+   "id_muni_depto": 76113,
+   "id_depto": 76,
+   "id_municipio": 113,
+   "nombre": "Bugalagrande"
+  },
+  {
+   "id_muni_depto": 76122,
+   "id_depto": 76,
+   "id_municipio": 122,
+   "nombre": "Caicedonia"
+  },
+  {
+   "id_muni_depto": 76126,
+   "id_depto": 76,
+   "id_municipio": 126,
+   "nombre": "Calima"
+  },
+  {
+   "id_muni_depto": 76130,
+   "id_depto": 76,
+   "id_municipio": 130,
+   "nombre": "Candelaria"
+  },
+  {
+   "id_muni_depto": 76147,
+   "id_depto": 76,
+   "id_municipio": 147,
+   "nombre": "Cartago"
+  },
+  {
+   "id_muni_depto": 76233,
+   "id_depto": 76,
+   "id_municipio": 233,
+   "nombre": "Dagua"
+  },
+  {
+   "id_muni_depto": 76243,
+   "id_depto": 76,
+   "id_municipio": 243,
+   "nombre": "El Aguila"
+  },
+  {
+   "id_muni_depto": 76246,
+   "id_depto": 76,
+   "id_municipio": 246,
+   "nombre": "El Cairo"
+  },
+  {
+   "id_muni_depto": 76248,
+   "id_depto": 76,
+   "id_municipio": 248,
+   "nombre": "El Cerrito"
+  },
+  {
+   "id_muni_depto": 76250,
+   "id_depto": 76,
+   "id_municipio": 250,
+   "nombre": "El Dovio"
+  },
+  {
+   "id_muni_depto": 76275,
+   "id_depto": 76,
+   "id_municipio": 275,
+   "nombre": "Florida"
+  },
+  {
+   "id_muni_depto": 76306,
+   "id_depto": 76,
+   "id_municipio": 306,
+   "nombre": "Ginebra"
+  },
+  {
+   "id_muni_depto": 76318,
+   "id_depto": 76,
+   "id_municipio": 318,
+   "nombre": "Guacari"
+  },
+  {
+   "id_muni_depto": 76364,
+   "id_depto": 76,
+   "id_municipio": 364,
+   "nombre": "Jamundi"
+  },
+  {
+   "id_muni_depto": 76377,
+   "id_depto": 76,
+   "id_municipio": 377,
+   "nombre": "La Cumbre"
+  },
+  {
+   "id_muni_depto": 76400,
+   "id_depto": 76,
+   "id_municipio": 400,
+   "nombre": "La Union"
+  },
+  {
+   "id_muni_depto": 76403,
+   "id_depto": 76,
+   "id_municipio": 403,
+   "nombre": "La Victoria"
+  },
+  {
+   "id_muni_depto": 76497,
+   "id_depto": 76,
+   "id_municipio": 497,
+   "nombre": "Obando"
+  },
+  {
+   "id_muni_depto": 76520,
+   "id_depto": 76,
+   "id_municipio": 520,
+   "nombre": "Palmira"
+  },
+  {
+   "id_muni_depto": 76563,
+   "id_depto": 76,
+   "id_municipio": 563,
+   "nombre": "Pradera"
+  },
+  {
+   "id_muni_depto": 76606,
+   "id_depto": 76,
+   "id_municipio": 606,
+   "nombre": "Restrepo"
+  },
+  {
+   "id_muni_depto": 76616,
+   "id_depto": 76,
+   "id_municipio": 616,
+   "nombre": "Riofrio"
+  },
+  {
+   "id_muni_depto": 76622,
+   "id_depto": 76,
+   "id_municipio": 622,
+   "nombre": "Roldanillo"
+  },
+  {
+   "id_muni_depto": 76670,
+   "id_depto": 76,
+   "id_municipio": 670,
+   "nombre": "San Pedro"
+  },
+  {
+   "id_muni_depto": 76736,
+   "id_depto": 76,
+   "id_municipio": 736,
+   "nombre": "Sevilla"
+  },
+  {
+   "id_muni_depto": 76823,
+   "id_depto": 76,
+   "id_municipio": 823,
+   "nombre": "Toro"
+  },
+  {
+   "id_muni_depto": 76828,
+   "id_depto": 76,
+   "id_municipio": 828,
+   "nombre": "Trujillo"
+  },
+  {
+   "id_muni_depto": 76834,
+   "id_depto": 76,
+   "id_municipio": 834,
+   "nombre": "Tulua"
+  },
+  {
+   "id_muni_depto": 76845,
+   "id_depto": 76,
+   "id_municipio": 845,
+   "nombre": "Ulloa"
+  },
+  {
+   "id_muni_depto": 76863,
+   "id_depto": 76,
+   "id_municipio": 863,
+   "nombre": "Versalles"
+  },
+  {
+   "id_muni_depto": 76869,
+   "id_depto": 76,
+   "id_municipio": 869,
+   "nombre": "Vijes"
+  },
+  {
+   "id_muni_depto": 76890,
+   "id_depto": 76,
+   "id_municipio": 890,
+   "nombre": "Yotoco"
+  },
+  {
+   "id_muni_depto": 76892,
+   "id_depto": 76,
+   "id_municipio": 892,
+   "nombre": "Yumbo"
+  },
+  {
+   "id_muni_depto": 76895,
+   "id_depto": 76,
+   "id_municipio": 895,
+   "nombre": "Zarzal"
+  },
+  {
+   "id_muni_depto": 81001,
+   "id_depto": 81,
+   "id_municipio": 1,
+   "nombre": "Arauca"
+  },
+  {
+   "id_muni_depto": 81065,
+   "id_depto": 81,
+   "id_municipio": 65,
+   "nombre": "Arauquita"
+  },
+  {
+   "id_muni_depto": 81220,
+   "id_depto": 81,
+   "id_municipio": 220,
+   "nombre": "Cravo Norte"
+  },
+  {
+   "id_muni_depto": 81300,
+   "id_depto": 81,
+   "id_municipio": 300,
+   "nombre": "Fortul"
+  },
+  {
+   "id_muni_depto": 81591,
+   "id_depto": 81,
+   "id_municipio": 591,
+   "nombre": "Puerto Rondon"
+  },
+  {
+   "id_muni_depto": 81736,
+   "id_depto": 81,
+   "id_municipio": 736,
+   "nombre": "Saravena"
+  },
+  {
+   "id_muni_depto": 81794,
+   "id_depto": 81,
+   "id_municipio": 794,
+   "nombre": "Tame"
+  },
+  {
+   "id_muni_depto": 85001,
+   "id_depto": 85,
+   "id_municipio": 1,
+   "nombre": "Yopal"
+  },
+  {
+   "id_muni_depto": 85010,
+   "id_depto": 85,
+   "id_municipio": 10,
+   "nombre": "Aguazul"
+  },
+  {
+   "id_muni_depto": 85015,
+   "id_depto": 85,
+   "id_municipio": 15,
+   "nombre": "Chameza"
+  },
+  {
+   "id_muni_depto": 85125,
+   "id_depto": 85,
+   "id_municipio": 125,
+   "nombre": "Hato Corozal"
+  },
+  {
+   "id_muni_depto": 85136,
+   "id_depto": 85,
+   "id_municipio": 136,
+   "nombre": "La Salina"
+  },
+  {
+   "id_muni_depto": 85139,
+   "id_depto": 85,
+   "id_municipio": 139,
+   "nombre": "Mani"
+  },
+  {
+   "id_muni_depto": 85162,
+   "id_depto": 85,
+   "id_municipio": 162,
+   "nombre": "Monterrey"
+  },
+  {
+   "id_muni_depto": 85225,
+   "id_depto": 85,
+   "id_municipio": 225,
+   "nombre": "Nunchia"
+  },
+  {
+   "id_muni_depto": 85230,
+   "id_depto": 85,
+   "id_municipio": 230,
+   "nombre": "Orocue"
+  },
+  {
+   "id_muni_depto": 85250,
+   "id_depto": 85,
+   "id_municipio": 250,
+   "nombre": "Paz De Ariporo"
+  },
+  {
+   "id_muni_depto": 85263,
+   "id_depto": 85,
+   "id_municipio": 263,
+   "nombre": "Pore"
+  },
+  {
+   "id_muni_depto": 85279,
+   "id_depto": 85,
+   "id_municipio": 279,
+   "nombre": "Recetor"
+  },
+  {
+   "id_muni_depto": 85300,
+   "id_depto": 85,
+   "id_municipio": 300,
+   "nombre": "Sabanalarga"
+  },
+  {
+   "id_muni_depto": 85315,
+   "id_depto": 85,
+   "id_municipio": 315,
+   "nombre": "Sacama"
+  },
+  {
+   "id_muni_depto": 85325,
+   "id_depto": 85,
+   "id_municipio": 325,
+   "nombre": "San Luis De Palenque"
+  },
+  {
+   "id_muni_depto": 85400,
+   "id_depto": 85,
+   "id_municipio": 400,
+   "nombre": "Tamara"
+  },
+  {
+   "id_muni_depto": 85410,
+   "id_depto": 85,
+   "id_municipio": 410,
+   "nombre": "Tauramena"
+  },
+  {
+   "id_muni_depto": 85430,
+   "id_depto": 85,
+   "id_municipio": 430,
+   "nombre": "Trinidad"
+  },
+  {
+   "id_muni_depto": 85440,
+   "id_depto": 85,
+   "id_municipio": 440,
+   "nombre": "Villanueva"
+  },
+  {
+   "id_muni_depto": 86001,
+   "id_depto": 86,
+   "id_municipio": 1,
+   "nombre": "Mocoa"
+  },
+  {
+   "id_muni_depto": 86219,
+   "id_depto": 86,
+   "id_municipio": 219,
+   "nombre": "Colon"
+  },
+  {
+   "id_muni_depto": 86320,
+   "id_depto": 86,
+   "id_municipio": 320,
+   "nombre": "Orito"
+  },
+  {
+   "id_muni_depto": 86568,
+   "id_depto": 86,
+   "id_municipio": 568,
+   "nombre": "Puerto Asis"
+  },
+  {
+   "id_muni_depto": 86569,
+   "id_depto": 86,
+   "id_municipio": 569,
+   "nombre": "Puerto Caicedo"
+  },
+  {
+   "id_muni_depto": 86571,
+   "id_depto": 86,
+   "id_municipio": 571,
+   "nombre": "Puerto Guzman"
+  },
+  {
+   "id_muni_depto": 86573,
+   "id_depto": 86,
+   "id_municipio": 573,
+   "nombre": "Puerto Leguizamo"
+  },
+  {
+   "id_muni_depto": 86749,
+   "id_depto": 86,
+   "id_municipio": 749,
+   "nombre": "Sibundoy"
+  },
+  {
+   "id_muni_depto": 86755,
+   "id_depto": 86,
+   "id_municipio": 755,
+   "nombre": "San Francisco"
+  },
+  {
+   "id_muni_depto": 86757,
+   "id_depto": 86,
+   "id_municipio": 757,
+   "nombre": "San Miguel"
+  },
+  {
+   "id_muni_depto": 86760,
+   "id_depto": 86,
+   "id_municipio": 760,
+   "nombre": "Santiago"
+  },
+  {
+   "id_muni_depto": 86865,
+   "id_depto": 86,
+   "id_municipio": 865,
+   "nombre": "Valle del Guamuez"
+  },
+  {
+   "id_muni_depto": 86885,
+   "id_depto": 86,
+   "id_municipio": 885,
+   "nombre": "Villagarzon"
+  },
+  {
+   "id_muni_depto": 88001,
+   "id_depto": 88,
+   "id_municipio": 1,
+   "nombre": "San Andres"
+  },
+  {
+   "id_muni_depto": 88564,
+   "id_depto": 88,
+   "id_municipio": 564,
+   "nombre": "Providencia"
+  },
+  {
+   "id_muni_depto": 91001,
+   "id_depto": 91,
+   "id_municipio": 1,
+   "nombre": "Leticia"
+  },
+  {
+   "id_muni_depto": 91263,
+   "id_depto": 91,
+   "id_municipio": 263,
+   "nombre": "El Encanto"
+  },
+  {
+   "id_muni_depto": 91405,
+   "id_depto": 91,
+   "id_municipio": 405,
+   "nombre": "La Chorrera"
+  },
+  {
+   "id_muni_depto": 91407,
+   "id_depto": 91,
+   "id_municipio": 407,
+   "nombre": "La Pedrera"
+  },
+  {
+   "id_muni_depto": 91430,
+   "id_depto": 91,
+   "id_municipio": 430,
+   "nombre": "La Victoria"
+  },
+  {
+   "id_muni_depto": 91460,
+   "id_depto": 91,
+   "id_municipio": 460,
+   "nombre": "Miriti - Parana"
+  },
+  {
+   "id_muni_depto": 91530,
+   "id_depto": 91,
+   "id_municipio": 530,
+   "nombre": "Puerto Alegria"
+  },
+  {
+   "id_muni_depto": 91536,
+   "id_depto": 91,
+   "id_municipio": 536,
+   "nombre": "Puerto Arica"
+  },
+  {
+   "id_muni_depto": 91540,
+   "id_depto": 91,
+   "id_municipio": 540,
+   "nombre": "Puerto Nariño"
+  },
+  {
+   "id_muni_depto": 91669,
+   "id_depto": 91,
+   "id_municipio": 669,
+   "nombre": "Puerto Santander"
+  },
+  {
+   "id_muni_depto": 91798,
+   "id_depto": 91,
+   "id_municipio": 798,
+   "nombre": "Tarapaca"
+  },
+  {
+   "id_muni_depto": 94001,
+   "id_depto": 94,
+   "id_municipio": 1,
+   "nombre": "Inirida"
+  },
+  {
+   "id_muni_depto": 94343,
+   "id_depto": 94,
+   "id_municipio": 343,
+   "nombre": "Barranco Minas"
+  },
+  {
+   "id_muni_depto": 94663,
+   "id_depto": 94,
+   "id_municipio": 663,
+   "nombre": "Mapiripana"
+  },
+  {
+   "id_muni_depto": 94883,
+   "id_depto": 94,
+   "id_municipio": 883,
+   "nombre": "San Felipe"
+  },
+  {
+   "id_muni_depto": 94884,
+   "id_depto": 94,
+   "id_municipio": 884,
+   "nombre": "Puerto Colombia"
+  },
+  {
+   "id_muni_depto": 94885,
+   "id_depto": 94,
+   "id_municipio": 885,
+   "nombre": "La Guadalupe"
+  },
+  {
+   "id_muni_depto": 94886,
+   "id_depto": 94,
+   "id_municipio": 886,
+   "nombre": "Cacahual"
+  },
+  {
+   "id_muni_depto": 94887,
+   "id_depto": 94,
+   "id_municipio": 887,
+   "nombre": "Pana Pana"
+  },
+  {
+   "id_muni_depto": 94888,
+   "id_depto": 94,
+   "id_municipio": 888,
+   "nombre": "Morichal"
+  },
+  {
+   "id_muni_depto": 95001,
+   "id_depto": 95,
+   "id_municipio": 1,
+   "nombre": "San Jose Del Guaviare"
+  },
+  {
+   "id_muni_depto": 95015,
+   "id_depto": 95,
+   "id_municipio": 15,
+   "nombre": "Calamar"
+  },
+  {
+   "id_muni_depto": 95025,
+   "id_depto": 95,
+   "id_municipio": 25,
+   "nombre": "El Retorno"
+  },
+  {
+   "id_muni_depto": 95200,
+   "id_depto": 95,
+   "id_municipio": 200,
+   "nombre": "Miraflores"
+  },
+  {
+   "id_muni_depto": 97001,
+   "id_depto": 97,
+   "id_municipio": 1,
+   "nombre": "Mitu"
+  },
+  {
+   "id_muni_depto": 97161,
+   "id_depto": 97,
+   "id_municipio": 161,
+   "nombre": "Caruru"
+  },
+  {
+   "id_muni_depto": 97511,
+   "id_depto": 97,
+   "id_municipio": 511,
+   "nombre": "Pacoa"
+  },
+  {
+   "id_muni_depto": 97666,
+   "id_depto": 97,
+   "id_municipio": 666,
+   "nombre": "Taraira"
+  },
+  {
+   "id_muni_depto": 97777,
+   "id_depto": 97,
+   "id_municipio": 777,
+   "nombre": "Papunaua"
+  },
+  {
+   "id_muni_depto": 97889,
+   "id_depto": 97,
+   "id_municipio": 889,
+   "nombre": "Yavarate"
+  },
+  {
+   "id_muni_depto": 99001,
+   "id_depto": 99,
+   "id_municipio": 1,
+   "nombre": "Puerto Carreño"
+  },
+  {
+   "id_muni_depto": 99524,
+   "id_depto": 99,
+   "id_municipio": 524,
+   "nombre": "La Primavera"
+  },
+  {
+   "id_muni_depto": 99572,
+   "id_depto": 99,
+   "id_municipio": 572,
+   "nombre": "Santa Rita"
+  },
+  {
+   "id_muni_depto": 99624,
+   "id_depto": 99,
+   "id_municipio": 624,
+   "nombre": "Santa Rosalia"
+  },
+  {
+   "id_muni_depto": 99760,
+   "id_depto": 99,
+   "id_municipio": 760,
+   "nombre": "San Jose de Ocune"
+  },
+  {
+   "id_muni_depto": 99773,
+   "id_depto": 99,
+   "id_municipio": 773,
+   "nombre": "Cumaribo"
+  }
+ ]
+}

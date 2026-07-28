@@ -26,6 +26,9 @@ Cero PII expuesta a logs: los binds con PII van marcados en procedimientos.py y 
 redactan en auditoría; este módulo solo arma los valores.
 """
 from . import catalogos
+# Alias para las funciones sueltas del módulo, donde el nombre `catalogos` lo ocupa
+# el parámetro ResolverCatalogos y taparía al módulo.
+from . import catalogos as catalogos_mod
 from . import procedimientos as P
 
 
@@ -398,6 +401,25 @@ class ResolverCatalogos:
                 f"Oracle: {meta.get('cobertura')}. Hasta que llegue el export completo, "
                 f"de esta pregunta no se puede afirmar ni que existe ni que no.",
                 f"{codigo}/fuera_del_volcado")
+
+        # ── salto 2-bis: geografía — no hay opción que cruzar ────────────────
+        # Las preguntas de departamento/municipio (PRE_TIPOCAMPO='DP') y la de
+        # Dirección Territorial ('DT') no listan un RES_IDRESPUESTA por municipio:
+        # Oracle les da UNA respuesta contenedora, con RES_RESPUESTA vacío, y el
+        # lugar viaja aparte en RXP_TEXTORESPUESTA (ver _texto_respuesta).
+        # Verificado sobre el catálogo completo de prod: las 19 preguntas DP/DT
+        # tienen exactamente 1 respuesta, escribible. Sin este atajo, el cruce por
+        # texto no tendría nada que comparar y la respuesta se perdería.
+        geo = catalogos_mod.cargar_geografia()
+        if int(id_preg) in (geo["preguntas_dp"] | geo["preguntas_dt"]):
+            contenedoras = fila["respuestas"]
+            if len(contenedoras) == 1:
+                return contenedoras[0]["res_idrespuesta"]
+            return self._respuesta_falta(
+                f"la pregunta geográfica {codigo!r} (id_preg={id_preg}) tiene "
+                f"{len(contenedoras)} respuestas en Oracle, no la única contenedora que "
+                f"se espera de un campo DP/DT. No se elige a ciegas.",
+                f"{codigo}/geo_contenedora_ambigua")
 
         # ── salto 2: la opción, por texto, dentro de esa pregunta ───────────
         etiqueta = self._etiqueta_opcion(respuesta)
@@ -780,6 +802,35 @@ def per_idpersona_de_respuesta(respuesta, mapa_personas, catalogos: ResolverCata
     return mapa_personas.get(respuesta.miembro_id)
 
 
+def _texto_respuesta(respuesta, catalogos: ResolverCatalogos):
+    """
+    RXP_TEXTORESPUESTA. Para las preguntas geográficas (PRE_TIPOCAMPO='DP') traduce
+    el código DANE de SICAV al ID_MUNI_DEPTO de Oracle; el resto va tal cual.
+
+    Medido en producción (2026-07-28): esas preguntas guardan el DANE SIN cero a la
+    izquierda y cruzan 28.151/28.151 (100%) contra GIC_MUNICIPIO. SICAV lo guarda
+    CON cero, así que sin esta traducción se escribiría un texto que ningún reporte
+    territorial resuelve — y el procedure se traga el problema sin avisar.
+    """
+    valor = respuesta.valor
+    pregunta = getattr(respuesta, "pregunta", None)
+    id_preg = _campo_origen(pregunta, "id_preg")
+    if id_preg is None or int(id_preg) not in catalogos_mod.cargar_geografia()["preguntas_dp"]:
+        return valor
+
+    normalizado = catalogos_mod.normalizar_codigo_municipio(valor)
+    if normalizado is not None:
+        return normalizado
+    if catalogos.estricto:
+        raise MapeoDesconocido(
+            f"Geografía: la pregunta {id_preg} es de departamento/municipio y el valor "
+            f"{valor!r} de SICAV no cruza contra GIC_MUNICIPIO.ID_MUNI_DEPTO "
+            f"({len(catalogos_mod.cargar_geografia()['municipios'])} municipios en "
+            f"Oracle). No se escribe un código que los reportes no van a resolver."
+        )
+    return f"‹PEND:GEOGRAFIA({valor})›"
+
+
 def binds_respuesta(respuesta, *, user, catalogos: ResolverCatalogos, hog_codigo,
                     per_idpersona, instrumento) -> dict:
     """
@@ -795,7 +846,7 @@ def binds_respuesta(respuesta, *, user, catalogos: ResolverCatalogos, hog_codigo
         "pcod_hogar": hog_codigo,
         "pper_idpersona": per_idpersona,
         "pres_idrespuesta": catalogos.resolver_res_idrespuesta(respuesta),
-        "prxp_textorespuesta": respuesta.valor,
+        "prxp_textorespuesta": _texto_respuesta(respuesta, catalogos),
         "prxp_tipopreguntarespuesta": catalogos.resolver_tipo_pregunta(respuesta.pregunta),
         "pins_idinstrumento": catalogos.resolver_ins_idinstrumento(instrumento),
         "pusu_usuariocreacion": _cod_usuario(user),

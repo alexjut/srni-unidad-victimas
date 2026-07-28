@@ -87,6 +87,11 @@ docs/oracle-legacy/*
 # (se usa /* arriba, no el dir, para poder re-incluir estos archivos)
 !docs/oracle-legacy/oracle-local-setup.md
 !docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+# Los planes/resultados de cada escalón del rollout: son el ÚNICO registro de qué se
+# escribió, cómo se verificó y con qué decisiones. Sin ellos, un escalón logrado solo
+# existe en el disco de quien lo corrió. No llevan datos de prod ni credenciales.
+!docs/oracle-legacy/plan_escalon_1.md
+!docs/oracle-legacy/plan_escalon_2.md
 # Export del catálogo de preguntas/respuestas de Oracle (Query A v2): es el ORIGEN de
 # `respuestas_oracle.json`, y sin él ese JSON no se puede regenerar ni auditar. Sin PII:
 # son textos de preguntas y opciones del instrumento, no respuestas de nadie.

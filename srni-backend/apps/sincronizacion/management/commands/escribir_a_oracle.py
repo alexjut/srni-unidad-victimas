@@ -19,7 +19,7 @@ Ejemplos:
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.hogares.models import Hogar
-from apps.sincronizacion.oracle import mapeo
+from apps.sincronizacion.oracle import conexion, mapeo
 from apps.sincronizacion.oracle.escritor import EscritorOracle
 
 
@@ -44,8 +44,12 @@ class Command(BaseCommand):
         if confirmar:
             if not destino:
                 raise CommandError("--confirmar exige --destino local|produccion.")
+            # El DSN se imprime resuelto: la etiqueta 'local'/'produccion' es una
+            # opción del comando, el DSN es contra qué base se escribe de verdad.
+            dsn = conexion.describir_destino(destino)
             self.stdout.write(self.style.WARNING(
                 f"\n⚠️  MODO ESCRITURA REAL sobre Oracle '{destino}'.\n"
+                f"    Destino resuelto: {dsn}\n"
                 "    Esto NO es DRY-RUN. Aprobado por Javier (Escalón 1, 2026-07-24).\n"
             ))
             hogares = self._seleccionar_hogares(opts)

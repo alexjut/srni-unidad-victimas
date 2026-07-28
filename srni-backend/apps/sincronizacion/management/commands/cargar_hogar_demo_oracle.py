@@ -86,6 +86,25 @@ PREGUNTAS_DEMO = [
                    "id_resp_vivanto": 4572},
         "res_idrespuesta_esperado": 8,
     },
+    {
+        # Oracle: pregunta 3 'Lugar de Residencia', PRE_TIPOCAMPO='DP'. No tiene una
+        # opción por municipio: una sola respuesta contenedora (6) y el lugar viaja en
+        # RXP_TEXTORESPUESTA. Es el tercer camino del paso RESPUESTA —el geográfico—
+        # y hasta el Escalón 2 nunca se había ejercitado.
+        #
+        # El valor sembrado es el DANE con cero a la izquierda ('05001', Medellín),
+        # que es exactamente como lo guarda el selector de municipio del móvil.
+        # Oracle espera '5001': si la traducción se rompe, esto lo delata. Se eligió
+        # un municipio de departamento 0X a propósito — con '73026' (Alvarado) el
+        # bug sería invisible porque ese código no lleva cero delante.
+        "capitulo": ("DEMO_H", "Demo — nivel hogar", "HOGAR", 91),
+        "codigo_externo": "DEMO_LUGAR", "texto": "Lugar de Residencia", "nivel": "HOGAR",
+        "id_preg": 3,
+        "tipo": "COMBO_DINAMICO",
+        "valor_directo": "05001",
+        "texto_oracle_esperado": "5001",
+        "res_idrespuesta_esperado": 6,
+    },
 ]
 
 
@@ -129,7 +148,8 @@ class Command(BaseCommand):
                 sesion=sesion, pregunta=pregunta,
                 # nivel HOGAR ⇒ miembro NULL (así lo modela SICAV)
                 miembro=miembro if spec["nivel"] == "PERSONA" else None,
-                valor=spec["opcion"]["valor"],
+                # Las geográficas no tienen opción: el valor ES el código DANE.
+                valor=spec.get("valor_directo") or spec["opcion"]["valor"],
             )
 
         self._verificar_cruce(sesion)
@@ -270,10 +290,14 @@ class Command(BaseCommand):
         pregunta, _ = Pregunta.objects.update_or_create(
             capitulo=capitulo, codigo_externo=spec["codigo_externo"],
             defaults={"variable_bd": spec["codigo_externo"], "texto": spec["texto"],
-                      "tipo": "RADIO", "nivel": spec["nivel"], "orden": 1,
+                      "tipo": spec.get("tipo", "RADIO"), "nivel": spec["nivel"], "orden": 1,
                       # El puente hacia GIC_N_PREGUNTAS.PRE_IDPREGUNTA.
                       "id_preg": spec["id_preg"]},
         )
+        # Las geográficas (COMBO_DINAMICO) no tienen OpcionRespuesta: el municipio sale
+        # de la paramétrica DIVIPOLA, no del instrumento.
+        if "opcion" not in spec:
+            return pregunta
         opcion = spec["opcion"]
         OpcionRespuesta.objects.update_or_create(
             pregunta=pregunta, valor=opcion["valor"],
@@ -310,17 +334,32 @@ class Command(BaseCommand):
         verificada (faltan las 153 huérfanas de la Query C2), así que lo que se afirma
         es el CRUCE, no que ya se pueda escribir.
         """
-        from apps.sincronizacion.oracle.mapeo import ResolverCatalogos
-        resolver = ResolverCatalogos(estricto=False)
-        esperados = {s["codigo_externo"]: s["res_idrespuesta_esperado"] for s in PREGUNTAS_DEMO}
+        from apps.sincronizacion.oracle import mapeo as M
+        resolver = M.ResolverCatalogos(estricto=False)
+        specs = {s["codigo_externo"]: s for s in PREGUNTAS_DEMO}
         for respuesta in sesion.respuestas.select_related("pregunta"):
             codigo = respuesta.pregunta.codigo_externo
+            spec = specs[codigo]
             resuelto = resolver.resolver_res_idrespuesta(respuesta)
-            esperado = esperados[codigo]
+            esperado = spec["res_idrespuesta_esperado"]
             if str(esperado) not in str(resuelto):
                 raise CommandError(
                     f"La respuesta de {codigo} no cruza al RES_IDRESPUESTA esperado "
                     f"({esperado}): resolvió {resuelto!r}. ¿Cambió respuestas_oracle.json "
                     f"o la etiqueta de la opción?"
                 )
-            self.stdout.write(f"  respuesta {codigo:<10} → RES_IDRESPUESTA={esperado} ({resuelto})")
+            extra = ""
+            # Para las geográficas, además del id, se verifica la TRADUCCIÓN del texto:
+            # es lo único que distingue '05001' (lo que manda SICAV) de '5001' (lo que
+            # Oracle sabe resolver), y el procedure no avisaría de la diferencia.
+            if "texto_oracle_esperado" in spec:
+                texto = M._texto_respuesta(respuesta, resolver)
+                if texto != spec["texto_oracle_esperado"]:
+                    raise CommandError(
+                        f"La respuesta geográfica de {codigo} no se tradujo al valor que "
+                        f"Oracle entiende: SICAV manda {respuesta.valor!r} y se esperaba "
+                        f"{spec['texto_oracle_esperado']!r}, pero salió {texto!r}."
+                    )
+                extra = f" · texto {respuesta.valor!r} → {texto!r}"
+            self.stdout.write(
+                f"  respuesta {codigo:<11} → RES_IDRESPUESTA={esperado} ({resuelto}){extra}")
