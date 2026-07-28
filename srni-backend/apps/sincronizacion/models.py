@@ -96,10 +96,22 @@ class RegistroEscrituraOracle(models.Model):
         verbose_name = "Registro de escritura a Oracle"
         verbose_name_plural = "Registros de escritura a Oracle"
         constraints = [
-            # Idempotencia: un solo registro vigente por (hogar, paso, entidad origen).
+            # Idempotencia: un registro vigente por (hogar, paso, entidad origen)
+            # Y POR DESTINO.
+            #
+            # `destino_entorno` entra en la clave a propósito (2026-07-28, antes del
+            # primer piloto en producción). Sin él, escribir el mismo hogar en la
+            # réplica local y luego en producción era imposible de representar: el
+            # `update_or_create` del escritor pisaba el registro de local con el de
+            # prod. Consecuencias: se perdía la traza de lo escrito en local y, al
+            # re-correr contra local, el ledger ya no lo reconocía y volvía a
+            # escribir — duplicando.
+            #
+            # Cada base lleva su propia contabilidad. Es lo que permite ensayar en
+            # local y después migrar de verdad sin que una corrida contamine a la otra.
             models.UniqueConstraint(
-                fields=["hogar", "paso", "origen_id"],
-                name="uniq_registro_escritura_oracle_paso_origen",
+                fields=["hogar", "paso", "origen_id", "destino_entorno"],
+                name="uniq_registro_escritura_oracle_paso_origen_destino",
             ),
         ]
         indexes = [

@@ -196,3 +196,61 @@ ningún error. Era el bug histórico del proyecto esperando a ocurrir.
 
 Tests: 6 nuevos en `apps/parametricas`. Suite completa: **292 pasan** (+6), mismos 7
 fallos preexistentes.
+
+---
+
+## 8. 🎉 PILOTO EN PRODUCCIÓN — 2026-07-28
+
+**Primera caracterización de SICAV escrita en el sistema oficial de la UARIV.**
+`escribir_a_oracle --hogar LISTO-96001 --confirmar --destino produccion` contra
+`RNIENTREVISTA@30.0.1.9:1521/ENTREVISTARN` → **11/11 pasos VERIFICADO**, confirmado por
+`SELECT` independiente:
+
+```
+HOGAR       999999-2W832 · ACTIVA · usu_idusuario=999999 · creado por 228206 · tpocrn=2
+PERSONAS    9184502 (tipodoc 1) · 9184503 (1) · 9184504 (2)
+MIEMBROS    3
+TERRITORIO  iddt=7 · iddeptoaten=30 · idpuntoaten=13 · idmunaten=32   ← las 4, completo
+RESPUESTAS  res 6 → '5001' (GE) · res 8 → '1' (GE) · res 69 → '2' (IN)
+
+'5001' -> Medellin / Antioquia    ← Oracle resuelve la geografía escrita
+```
+
+**Control:** 1 hogar con el usuario de servicio, 1 fila territorial. Nada más tocado.
+
+### El bug que casi arruina el piloto (encontrado 20 minutos antes)
+
+Revisando el escritor antes de disparar apareció que `_ya_verificado()` y
+`_registro_verificado()` consultaban el ledger por `(hogar, paso, origen_id)` **sin mirar
+`destino_entorno`**. Como el hogar demo ya estaba VERIFICADO contra la réplica **local**,
+al correr contra **producción** el paso HOGAR habría devuelto `idempotente=True`
+**sin escribir una sola fila**, y los pasos siguientes se habrían anclado a
+`999999-K34C6`, un hogar que en producción no existe.
+
+**El comando habría reportado "11/11 VERIFICADO" después de no migrar absolutamente
+nada.** El peor fallo posible en esta capa: uno que se lee como éxito.
+
+Al arreglarlo apareció la segunda mitad del problema: la `UniqueConstraint` del modelo era
+`(hogar, paso, origen_id)`, sin destino, así que el `update_or_create` del escritor
+**pisaba** el registro de local con el de producción — perdiendo la traza y rompiendo la
+idempotencia local. Se añadió `destino_entorno` a la constraint (migración `0002`) y a la
+clave de `update_or_create`.
+
+Que el hogar de producción saliera con un código **distinto** del local
+(`999999-2W832` vs `999999-K34C6`) es la prueba de que el arreglo funcionó.
+
+Tests: `test_idempotencia_por_destino.py`, 4 casos. Suite: **311 pasan**.
+
+### Prerrequisitos verificados antes de disparar
+
+| Comprobación | Resultado |
+|---|---|
+| Territorio del demo existe en prod (iddt=7/punto=13/muni=32) | ✅ 1 fila |
+| Hogares ya escritos por SICAV | ✅ 0 — el piloto es el primero |
+| ¿Hay FK de `GIC_HOGAR` → `GIC_USUARIO`? | **No.** 1.099.521 hogares (99,7%) ya tienen un usuario inexistente ⇒ **no hizo falta crear el 999999** en el catálogo de producción |
+| territorial_v8 sin `id_preg` ajenos | ✅ los 41 corregidos |
+
+### Reversión
+
+Todo lo escrito se identifica por `HOG_CODIGO='999999-2W832'` o por
+`USU_IDUSUARIO=999999`. Un `DELETE` acotado por esas claves revierte el piloto completo.
