@@ -64,6 +64,53 @@ capítulo, así que el error no salta a la vista.**
   bloque de Ayuda Humanitaria apuntaba a rehabilitación). Aquel se corrigió; **este es el
   mismo defecto a mayor escala**.
 
+---
+
+## ✅ territorial_v8 — CERRADO (2026-07-28)
+
+Las 41 pasaron a `id_preg = null`. Ninguna tenía equivalente 1:1 en Oracle: son
+sub-campos propios de SICAV. El detector automático lo confirmó por reducción al
+absurdo — proponía mandar las 10 preguntas de *"¿Valor recibido el mes pasado? $"* al
+id **138**, que es *"Incluyo este valor en los ingresos del mes pasado"*: otra pregunta.
+
+Con `null`, el resolver las declara *"SICAV pregunta algo que Oracle no tiene dónde
+guardar"* y **no escribe nada**; el dato sigue completo en PostgreSQL. Se añadió el test
+`test_id_preg_no_apunta_a_pregunta_ajena.py`, verificado que detecta de verdad.
+
+---
+
+## Lo aprendido en telefonico_v8 y rural_etnico_v1 (siguen ABIERTOS)
+
+Al buscarles el id correcto aparecieron **tres situaciones distintas**, y por eso no se
+puede aplicar una regla única:
+
+**a) Campos que Oracle no modela como pregunta.** `A2_tel` = *"Segundo nombre"*, con
+`id_preg=15`. Oracle **no tiene** "Segundo nombre": tiene *"Nombres y apellidos"* (457) y
+*"Nombre(s) y Apellidos (s)"* (1542), en un solo campo. SICAV parte el nombre porque
+`GIC_INSERT_PERSONAS` lo recibe partido, pero eso viaja en el paso **PERSONA**, no como
+respuesta de encuesta. ⇒ estos van a `null`.
+
+**b) Desplazamiento sistemático, con offset constante.** En el bloque C (vivienda) de
+rural_etnico el corrimiento es **+6**, verificado:
+
+| SICAV | tiene | debería tener | Oracle |
+|---|---:|---:|---|
+| `C1_re` "¿Cuál es el tipo de vivienda?" | 42 | **36** | "¿En qué tipo de vivienda habita el hogar?" |
+| `C2_re` "¿Las paredes exteriores…?" | 43 | **37** | "¿Cuál es el material predominante de las paredes…?" |
+
+⚠️ **Pero hay ids duplicados**: esa misma pregunta existe también como **1493** y **1496**.
+Es el caso Cédula otra vez (93 vs 3854). Elegir exige **medir el uso real en producción**,
+no adivinar.
+
+**c) Falsos positivos del detector.** `G4_tel` = *"¿Por qué no asiste actualmente a un
+establecimiento educativo?"* con `id_preg=73`, que en Oracle es *"¿Cuál es la razón
+principal para que… no estudie?"*. **Es la misma pregunta con otra redacción** — el
+detector la marcó porque comparte pocas palabras. Aquí no hay nada que arreglar.
+
+> **Conclusión operativa:** estos dos perfiles necesitan **curaduría caso por caso contra
+> el manual oficial**, más una medición de uso en prod para desempatar los ids duplicados.
+> No admiten arreglo masivo. Es media jornada de trabajo, no diez minutos.
+
 ## Qué hacer
 
 **Nada de arreglos masivos automáticos.** Un `id_preg` mal puesto se arregla con criterio,
