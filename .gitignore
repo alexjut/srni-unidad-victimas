@@ -96,6 +96,7 @@ docs/oracle-legacy/*
 # insumo del trabajo POST-migración. Solo conclusiones y cifras agregadas, sin PII.
 !docs/oracle-legacy/defectos_bd_legacy.md
 !docs/oracle-legacy/veredicto_calidad_bd.md
+!docs/oracle-legacy/bloqueante_id_preg_subcampos.md
 # Export del catálogo de preguntas/respuestas de Oracle (Query A v2): es el ORIGEN de
 # `respuestas_oracle.json`, y sin él ese JSON no se puede regenerar ni auditar. Sin PII:
 # son textos de preguntas y opciones del instrumento, no respuestas de nadie.

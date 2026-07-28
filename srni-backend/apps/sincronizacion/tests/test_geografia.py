@@ -90,3 +90,30 @@ def test_pregunta_sin_id_preg_no_estalla():
     resp = _Resp("05001", PREG_GEO)
     resp.pregunta.id_preg = None
     assert mapeo._texto_respuesta(resp, _resolver(True)) == "05001"
+
+
+# ── 3a.3 — tipos de documento sin equivalente en el catálogo de Oracle ───────
+@pytest.mark.parametrize("codigo, oracle_id, por_que", [
+    ("CC", 1, "Cédula de Ciudadanía"),
+    ("TI", 2, "Tarjeta de Identidad"),
+    ("CE", 3, "Cédula de Extranjería"),
+    ("PE", 13, "PEP → 'Otro': es un permiso migratorio, NO una cédula de extranjería"),
+    ("NES", 14, "'Sin documento' → 'Indocumentado (No ha tramitado su documento)'"),
+])
+def test_tipo_documento_mapea_al_catalogo_de_oracle(codigo, oracle_id, por_que):
+    assert catalogos.TIPO_DOCUMENTO[codigo] == oracle_id, por_que
+
+
+def test_los_ocho_tipos_de_sicav_tienen_equivalente():
+    """
+    Un tipo sin mapear aborta la escritura de esa persona (el resolver no inventa).
+    Los 8 del seed de SICAV deben resolver: si alguien añade uno nuevo, este test
+    lo obliga a decidir su equivalente en vez de descubrirlo en producción.
+    """
+    del_seed = {"CC", "TI", "CE", "RC", "PA", "NIT", "PE", "NES"}
+    assert del_seed <= set(catalogos.TIPO_DOCUMENTO)
+
+
+def test_pep_no_se_hace_pasar_por_cedula_de_extranjeria():
+    """Regresión de la decisión: mapear PE→3 afirmaría un documento que no existe."""
+    assert catalogos.TIPO_DOCUMENTO["PE"] != catalogos.TIPO_DOCUMENTO["CE"]

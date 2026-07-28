@@ -31,10 +31,30 @@ TIPO_DOCUMENTO = {
     "RC": 4,    # Registro Civil de Nacimiento
     "PA": 7,    # Pasaporte
     "NIT": 9,   # Número de Identificación Tributaria
-    # ⚠️ SIN equivalente claro en GIC_TIPODOC (14 filas) — decisión de negocio:
-    #   "PE"  (Permiso Especial de Permanencia / PEP) → ¿Otro=13? ¿alta en catálogo?
-    #   "NES" (Número de Entrada al Sistema, sin doc)  → ¿Indocumentado=14? ¿Ninguno=12?
-    # Se dejan SIN mapear a propósito: el resolver lanzará MapeoDesconocido.
+    # ── 3a.3 RESUELTO (2026-07-28, decisión de Javier por delegación de Oscar) ──
+    # Ninguno de estos dos tiene fila propia en GIC_TIPODOC (14 opciones, creadas en
+    # 2014 y nunca actualizadas: el PEP es de 2017, posterior al catálogo). Se mapean
+    # a la opción existente que NO miente sobre lo que son:
+    "PE": 13,   # Permiso Especial de Permanencia (PEP) → 'Otro'
+    "NES": 14,  # Número de Entrada al Sistema → 'Indocumentado (No ha tramitado su documento)'
+    # Por qué así, y no de otra forma:
+    # - PE → 13 'Otro', NO 3 'Cédula de Extranjería'. El PEP es un permiso migratorio,
+    #   no una cédula: mapearlo a CE afirmaría un documento que la persona no tiene, y
+    #   contaminaría las estadísticas de extranjeros con cédula. 'Otro' dice la verdad:
+    #   es un documento válido que este catálogo no categoriza.
+    # - NES → 14 'Indocumentado', NO 12 'Ninguno'. El propio nombre del tipo en SICAV
+    #   es "Número de Entrada al Sistema (Sin documento)": describe a alguien que no ha
+    #   tramitado documento, que es literalmente la definición de la opción 14. 'Ninguno'
+    #   es más ambiguo (puede leerse como "no se preguntó").
+    # La alternativa —dar de alta 2 filas nuevas en GIC_TIPODOC— se descartó: implica
+    # escribir en un catálogo del legacy que consumen otros sistemas de la UARIV, y esa
+    # decisión no es nuestra. Si algún día se dan de alta, aquí se cambian los dos ids.
+    #
+    # ⚠️ Ojo con lo que este mapa NO arregla: GIC_PERSONA.PER_TIPODOC es un VARCHAR
+    # LIBRE, no una FK a GIC_TIPODOC. En producción conviven 'CC', '93', '2',
+    # 'CÉDULA DE CIUDADANÍA', 'Cedula de Ciudadanía / Contraseña' y 1.126.613 NULL.
+    # Nosotros escribimos el id numérico como texto ('1', '2'…), que es lo que hace la
+    # parte sana del histórico. Ver defectos_bd_legacy.md.
 }
 
 # ── Catálogo 4a — parentesco (MiembroHogar.parentesco → GIC_PARENTESCOGENEALOGICO.PRST_ID) ──
