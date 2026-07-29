@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from apps.autenticacion.models import Perfil, Usuario
 from apps.parametricas.models import TipoDocumento, Departamento, Municipio
 from apps.victimas.models import Victima
-from apps.victimas.fields import sha256_hash
+from apps.victimas.repository.base import doc_hash
 from apps.victimas.serializers import VictimaListSerializer, VictimaDetalleSerializer
 
 
@@ -112,8 +112,10 @@ class TestSeguridadPII:
     def test_list_serializer_tiene_hash(self, victima):
         data = VictimaListSerializer(victima).data
         assert 'numero_documento_hash' in data
-        # El hash debe ser el SHA-256 del documento normalizado
-        esperado = sha256_hash('1030547250')
+        # El hash es el de `repository.base.doc_hash`: UNA sola definición para
+        # el modelo, la búsqueda, el upsert y el padrón descargable. Antes había
+        # varias fórmulas distintas y la búsqueda por documento no encontraba nada.
+        esperado = doc_hash('CC', '1030547250')
         assert data['numero_documento_hash'] == esperado
 
     def test_detalle_serializer_expone_pii(self, victima):
@@ -166,7 +168,7 @@ class TestBusquedaVictima:
         # No debe haber PII en la respuesta
         assert 'primer_nombre' not in data
         assert 'numero_documento' not in data
-        assert data['numero_documento_hash'] == sha256_hash('1030547250')
+        assert data['numero_documento_hash'] == doc_hash('CC', '1030547250')
 
     def test_busqueda_no_encontrada(self, tipo_doc, usuario_busqueda):
         client = APIClient()

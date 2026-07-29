@@ -173,10 +173,21 @@ class Victima(models.Model):
         # Calcular hash del número de documento antes de cifrar.
         # El campo EncryptedField cifra en get_prep_value (al escribir en DB),
         # así que aquí tenemos el plaintext en self.numero_documento.
+        #
+        # ⚠️ El hash lo calcula `repository.base.doc_hash`, NO una fórmula propia.
+        # Hasta el 2026-07-29 aquí se hacía `sha256_hash(numero.strip().upper())`
+        # —solo el número, en mayúsculas— mientras el repositorio y el padrón
+        # descargable buscaban por `doc_hash("<tipo>|<numero>")` en minúsculas y sin
+        # puntos ni guiones. **Dos hashes distintos para la misma cosa: la búsqueda
+        # por documento no podía encontrar nada.** No se notó porque el repositorio
+        # activo era el mock, que busca por diccionario y nunca usa el hash.
+        #
+        # Regla: una sola definición del hash, y vive en `repository.base`, que es
+        # donde la usan el buscador y el generador del padrón.
         if self.numero_documento:
-            raw = self.numero_documento
-            # Si ya está cifrado (viene de DB), from_db_value ya lo descifró.
-            self.numero_documento_hash = sha256_hash(str(raw).strip().upper())
+            from .repository.base import doc_hash
+            tipo = self.tipo_documento.codigo if self.tipo_documento_id else ''
+            self.numero_documento_hash = doc_hash(tipo, str(self.numero_documento))
         super().save(*args, **kwargs)
 
     def __str__(self):

@@ -29,7 +29,7 @@ from .serializers import (
     ConsultarFuenteInputSerializer, ResultadoBusquedaSerializer,
     RegistrarDesdeFuenteSerializer, VictimaResumenSerializer, PadronItemSerializer,
 )
-from .fields import sha256_hash
+from .repository.base import doc_hash
 from .repository import get_repository
 
 
@@ -134,7 +134,10 @@ class BuscarVictimaView(APIView):
 
         tipo_codigo = serializer.validated_data['tipo_documento_codigo']
         numero = serializer.validated_data['numero_documento']
-        hash_doc = sha256_hash(numero)
+        # Una sola definición del hash, la de repository.base (ver Victima.save).
+        # Además de unificar, `doc_hash` normaliza puntos, guiones y espacios: con la
+        # fórmula anterior, "1.030.547.250" y "1030547250" eran personas distintas.
+        hash_doc = doc_hash(tipo_codigo, numero)
 
         ip = _ip_de_request(request)
         ua = request.META.get('HTTP_USER_AGENT', '')
@@ -332,8 +335,9 @@ class RegistrarDesdeFuenteView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 2. Calcular hash del número de documento
-        hash_doc = sha256_hash(data['numero_documento'])
+        # 2. Calcular hash del número de documento (misma definición que la búsqueda:
+        #    si el upsert hashea distinto que el buscador, se crean duplicados)
+        hash_doc = doc_hash(data['tipo_documento'], data['numero_documento'])
 
         # 3. Buscar registro existente o preparar uno nuevo
         try:

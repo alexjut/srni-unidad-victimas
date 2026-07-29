@@ -57,7 +57,20 @@ class MiembroDuplicadoError(Exception):
 
 
 def _hash_numero(numero: str) -> str:
-    """Hash canónico del número de documento — idéntico a Victima.save."""
+    """
+    Hash SOLO del número, sin el tipo de documento. Es a propósito y no es el hash
+    de identidad de `Victima`.
+
+    Por qué difiere (aclarado el 2026-07-29, cuando se unificó el hash de identidad
+    en `repository.base.doc_hash`, que sí incluye el tipo): este guard responde
+    *"¿esta cédula ya está en un hogar abierto?"*, y la respuesta debe ser sí aunque
+    alguien la haya registrado antes con otro tipo de documento. Meter el tipo en la
+    comparación dejaría pasar el duplicado, que es justo lo que el guard existe para
+    evitar.
+
+    Por eso este hash es local al guard y NO se compara nunca contra
+    `Victima.numero_documento_hash`.
+    """
     return sha256_hash(str(numero).strip().upper())
 
 
@@ -80,7 +93,14 @@ def documento_ya_en_hogar_activo_reciente(numero_documento: str, *, ahora=None) 
     ).select_related("victima")
 
     for m in candidatos:
-        if m.victima_id and m.victima.numero_documento_hash == objetivo:
+        # Para el miembro RNI se descifra su documento y se hashea con la MISMA
+        # fórmula que el resto del guard, en vez de leer `victima.numero_documento_hash`.
+        # Ese campo es el hash de IDENTIDAD (incluye el tipo de documento) y
+        # compararlo aquí dejaría escapar el duplicado registrado con otro tipo.
+        # El conjunto es pequeño —hogares abiertos de las últimas 24 h— así que
+        # descifrar sale barato.
+        if m.victima_id and m.victima.numero_documento and \
+                _hash_numero(m.victima.numero_documento) == objetivo:
             return True
         if m.numero_documento and _hash_numero(m.numero_documento) == objetivo:
             return True
