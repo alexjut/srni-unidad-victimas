@@ -141,6 +141,43 @@ la persona indexados por id interno; el número de documento no viaja en ellos.
 `cons_persona` que ya está en nuestro contrato (`VictimaResumen.cons_persona`) y en
 `GIC_PERSONA`. Es la pista más concreta que queda.
 
+---
+
+## ✅ LA FUENTE EXISTE, y no hay que pedírsela a nadie (29-jul)
+
+El puente que faltaba **cruza**: `M_CARACT_TABLA_RA_PER.CONS_PERONA` ↔
+`GIC_PERSONA.PER_IDPERSONA`, **1.996 de 2.000 (99,8 %)** en una muestra. Rangos
+compatibles (0–9.185.577 vs 1–10.529.669).
+
+Es decir, el padrón se arma juntando dos tablas que **ya alcanzamos**:
+
+| Aporta | Tabla | Dónde está |
+|---|---|---|
+| documento, tipo, nombres, fecha nac. | **`GIC_PERSONA`** (7.758.615) | **nuestro propio esquema `RNIENTREVISTA`** |
+| `ESTADO_RUV`, `PERT_ETNICA`, `DISCAP`, `GENERO_HOM`, ciclo vital | `M_CARACT_TABLA_RA_PER` (9.961.503) | `RNIPAQUETES` vía `DBL_VIVANTO` |
+
+**No hace falta el web service, ni el Parametrizador, ni credenciales nuevas** para
+poblar el padrón. La solicitud de acceso pasa a ser opcional: serviría para verificar
+un caso puntual en línea, no para la carga.
+
+### Tres problemas de datos que la carga tiene que resolver
+
+Medidos sobre el total de `GIC_PERSONA`, no sobre muestra:
+
+| Problema | Magnitud | Qué implica |
+|---|---:|---|
+| **Sin tipo de documento** | **1.126.615 (14,5 %)** | nuestro hash de identidad incluye el tipo; esas personas quedarían con llave `\|numero` y **el encuestador que busque "CC + número" no las encontraría** |
+| **Números de documento repetidos** | **1.552.622** | coherente con el 26 % de duplicados del veredicto. Hay que decidir cuál gana al cargar |
+| **`PER_TIPODOC` es texto libre** | — | `"CC"`, `"Cedula de Ciudadanía / Contraseña"`, `"CÉDULA DE CIUDADANÍA"` y `"3854"` son la misma cosa escrita de cuatro formas; hashean distinto |
+| Sin número de documento | 11.952 (0,2 %) | esas filas no se pueden indexar; se descartan o se marcan |
+
+**Esto no invalida la decisión de hoy sobre el hash.** En *nuestra* tabla el tipo es una
+FK limpia a `TipoDocumento`: siempre está y está normalizado. El desorden es de la
+fuente, y le toca resolverlo al **proceso de carga**, que es donde corresponde:
+homologar el texto libre a un código, y decidir qué hacer con el 14,5 % sin tipo antes
+de calcular la llave. Cargar sin resolver eso deja un padrón donde 1,1 millón de
+personas son inencontrables.
+
 ## Camino propuesto
 
 1. **Descubrir la tabla operativa de personas** en `DBL_VIVANTO` (empezar por
