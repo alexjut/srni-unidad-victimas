@@ -120,6 +120,27 @@ convendría que se llamara `RuvServiceVictimaRepository` o similar.
 las credenciales no hay nada que implementar, y ninguna cantidad de exploración de la
 base lo va a resolver.
 
+---
+
+## Medición del 29-jul: los cortes NO sirven como fuente del padrón
+
+Se evaluaron los candidatos con volumen. Ninguno alcanza:
+
+| Corte | Filas | Veredicto |
+|---|---:|---|
+| `RNIPAQUETES.M_CARACT_TABLA_RA_PER` | 9.961.503 | ❌ **no tiene documento ni nombres**. Sus llaves son `CONS_PERONA` *(sic)* e `ID_PERSONA_CARACT`, ids internos. Trae `ESTADO_RUV`, `PERT_ETNICA`, `DISCAP`, `F_NACIMIENTO`, `GENERO_HOM` — buenos atributos, pero **no se puede buscar por cédula** |
+| `RNIPAQUETES.CARACT_EVENTOS_VICTIMIZANTES` | — | ❌ **bloque corrupto** (ORA-01578, ver adenda del veredicto). Las hermanas `_1`, `1`, `2` sí se leen (~10 M) |
+| `RNIPAQUETES.PRY_PERSONAS` | **2** | ❌ estructura ideal —documento, tipo, nombres, fecha nac., género, etnia, discapacidad, DANE— pero **está vacía**: es una tabla de proyecto |
+| `ADMINUSUARIOS.TM_PERSONA` | 64.500 | ❌ son **usuarios** del sistema, no víctimas |
+
+**El dato que falta es siempre el mismo: el documento.** Los cortes traen atributos de
+la persona indexados por id interno; el número de documento no viaja en ellos.
+
+`M_CARACT_TABLA_RA_PER` sí es aprovechable **si aparece una tabla que ligue
+`CONS_PERONA` ↔ documento**. Ese `CONS_PERONA` es, con toda probabilidad, el mismo
+`cons_persona` que ya está en nuestro contrato (`VictimaResumen.cons_persona`) y en
+`GIC_PERSONA`. Es la pista más concreta que queda.
+
 ## Camino propuesto
 
 1. **Descubrir la tabla operativa de personas** en `DBL_VIVANTO` (empezar por

@@ -838,3 +838,50 @@ el 43 % del volumen del esquema. Documentarlo vale más que rediseñarlo.
 | `GIC_N_PREGUNTAS` (catálogo) | 1.108 |
 | `GIC_USUARIO` | 8.172 |
 | **Tamaño total del esquema** | **500,3 GB** |
+
+---
+
+## 🔴 ADENDA 2026-07-29 — CORRUPCIÓN FÍSICA EN PRODUCCIÓN
+
+Buscando una fuente para el padrón apareció, sin buscarlo, un problema de otra
+naturaleza que los demás de este informe: **no es dato sucio, es corrupción de disco.**
+
+```
+SELECT COUNT(*) FROM RNIPAQUETES.CARACT_EVENTOS_VICTIMIZANTES@DBL_VIVANTO
+  → ORA-01578: ORACLE data block corrupted (file # 14, block # 427091)
+```
+
+**Qué se sabe, medido:**
+
+| Comprobación | Resultado |
+|---|---|
+| `COUNT(*)` sobre la tabla | ❌ **ORA-01578**, bloque 427091 del fichero 14 |
+| `SELECT … WHERE rownum <= 2` | ✅ funciona — la corrupción está **en un bloque concreto**, no en toda la tabla |
+| `CARACT_EVENTOS_VICTIMIZANTES_1` | ✅ 10.321.430 filas |
+| `CARACT_EVENTOS_VICTIMIZANTES1` | ✅ 10.315.714 filas |
+| `CARACT_EVENTOS_VICTIMIZANTES2` | ✅ 9.640.910 filas |
+
+O sea: la tabla se lee mientras no se toque ese bloque, y por eso **puede llevar tiempo
+así sin que nadie lo note** — solo falla quien haga un recorrido completo.
+
+**Por qué hay que avisar, y pronto:**
+
+1. Las filas de ese bloque están **perdidas o ilegibles**; son eventos victimizantes.
+2. Si el respaldo se hace con un método que no valida bloques, **la corrupción viaja al
+   respaldo** y se pierde la copia buena. Cuanto más tarde se detecte, más respaldos
+   contaminados.
+3. Un bloque corrupto suele ser síntoma de un problema de almacenamiento, no una
+   rareza aislada: conviene revisar el resto del datafile 14.
+
+**Qué NO hicimos, a propósito:** no ejecutamos `DBMS_REPAIR`, ni `ANALYZE … VALIDATE
+STRUCTURE`, ni ninguna herramienta de diagnóstico. Toda esta auditoría es de solo
+lectura y **reparar no nos corresponde** — es del DBA de Vivanto, con su respaldo y su
+ventana. Aquí solo queda el reporte.
+
+**Recomendación:** pasarlo al administrador de Vivanto con el número de fichero y
+bloque, y pedir que corran `RMAN VALIDATE` sobre ese datafile para saber si hay más
+bloques afectados.
+
+> Nota de alcance: esta tabla es de **RNIPAQUETES (Vivanto)**, no del esquema
+> `RNIENTREVISTA` donde escribe SICAV. **No afecta a nuestra migración** ni al piloto:
+> se reporta porque lo encontramos, no porque nos toque.
