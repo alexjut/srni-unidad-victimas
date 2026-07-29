@@ -61,6 +61,65 @@ nombre y un documento. `VictimaResumen` exige:
 Improvisar el mapeo de `estado_ruv` o de `habilitado_para_caracterizacion` sería peor que
 no tenerlo: el encuestador decide **a quién caracteriza** con ese dato.
 
+---
+
+## 🔑 Hallazgo del 29-jul: el RUV NO se consulta por tabla, se consulta por servicio
+
+Se recorrió `DBL_VIVANTO` entero buscando el padrón. **No está.** Lo que hay:
+
+**1. El Modelo Integrado está diseñado pero VACÍO.** `MODELOINTEGRADO.MI_PERSONAS`
+tiene exactamente la estructura que pide nuestro contrato —`PER_TIPODOC`,
+`PER_DOCUMENTO`, nombres, `PER_FECHANACIMIENTO`, `PER_SEXO`, **`PER_ETNIA`,
+`PER_PUEBLO`, `PER_RESGUARDO`, `PER_CONSEJO_COMUNITARIO`, `PER_DISCAPACIDAD`,
+`PER_DISC_DESCRI`**— y está **a 0 filas**. Igual `MI_HECHOSVICTIM` y
+`MI_CARACTERIZACION`. Verificado con `COUNT(*)` real, no con la estadística del
+optimizador (que además está congelada desde 2024-05-16).
+
+De todas las `MI_*` solo tienen datos los **catálogos** (`MI_DIVIPOLA` 1.123,
+`MI_TIPODOCUMENTO` 18, `MI_DEPARTAMENTO` 33…) y **`MI_UBICACION_ULTIMA`, con
+7.767.010 filas** — que es del mismo orden que las 7.757.438 personas de
+`GIC_PERSONA`. O sea: el modelo existe, alguien pobló la ubicación, y el resto
+nunca se llenó.
+
+**2. Las tablas grandes de VIVANTO son auditoría y cortes, no padrón:**
+
+| Tabla | Filas | Qué es |
+|---|---:|---|
+| `AUDITORIAVIVANTOPROD.WS_AUDITORIA` | 378.870.362 | auditoría de web services |
+| `AUDITORIAVIVANTOPROD.AU_CONSULTA_INDIVIDUAL_RUV` | 375.533.381 | **auditoría de consultas al RUV** |
+| `AUDITORIAVIVANTOPROD.AU_CONSULTA_WEB_SERVICES` | 103.258.515 | idem, con `ID_APLICACION` |
+| `RNIPAQUETES.M_CARACT_TABLA_RA_PER*` | ~10 M | cortes de caracterización |
+| `RNIPAQUETES.CARACT_EVENTOS_VICTIMIZANTES*` | ~10 M | **hechos victimizantes** (útil aparte) |
+
+`AU_CONSULTA_INDIVIDUAL_RUV` solo tiene `USUARIO`, `TIPO`, `CRITERIO1/2`, `IP`: es el
+registro de **quién consultó qué**. 375 millones de consultas individuales al RUV, y
+ninguna tabla de RUV que consultar.
+
+**Y no existe ninguna tabla con "PADRON" o "RUV" en el nombre con datos**, en ningún
+esquema alcanzable.
+
+### Qué significa
+
+**El padrón del RUV se sirve por un servicio (web service), no por una tabla.** Nuestro
+`DBL_VIVANTO` llega a la auditoría, a los reportes y a los catálogos — no al registro.
+
+⇒ **`OracleVictimaRepository` probablemente no debe ser un repositorio Oracle.** El
+contrato `VictimaRepository` está bien y no cambia (por eso se diseñó como interfaz),
+pero su implementación sería un **cliente HTTP del servicio de consulta del RUV**, y
+convendría que se llamara `RuvServiceVictimaRepository` o similar.
+
+### Lo que hace falta pedir (no se puede deducir)
+
+1. **Endpoint del servicio de consulta individual del RUV** y su contrato (WSDL/OpenAPI).
+2. **Credenciales / `ID_APLICACION`** para SICAV — la auditoría muestra que cada
+   aplicación consumidora tiene el suyo.
+3. Confirmar si ese servicio devuelve etnia, discapacidad y hechos victimizantes, o si
+   los hechos hay que sacarlos aparte de `CARACT_EVENTOS_VICTIMIZANTES`.
+
+**Esto ya no es trabajo de descubrimiento técnico: es una gestión.** Sin el endpoint y
+las credenciales no hay nada que implementar, y ninguna cantidad de exploración de la
+base lo va a resolver.
+
 ## Camino propuesto
 
 1. **Descubrir la tabla operativa de personas** en `DBL_VIVANTO` (empezar por
