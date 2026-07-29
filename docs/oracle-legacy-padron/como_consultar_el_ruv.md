@@ -92,6 +92,77 @@ ella no llegamos por `DBL_VIVANTO`.
 **Hay que confirmarlo antes de construir nada.** Si los métodos productivos apuntan a
 `Pru`, es un problema del propio Vivanto, no nuestro — y conviene reportarlo.
 
+---
+
+## Cómo funciona el sistema, y dónde se parametriza cada cosa
+
+Vivanto no tiene los servicios "programados": los tiene **declarados en tablas**. Una
+aplicación pide un método por nombre, el middleware busca su definición, ejecuta el
+procedure sobre la conexión que diga la ficha, y devuelve el resultado. Cambiar un
+servicio es cambiar una fila, no desplegar código.
+
+### Las tres capas
+
+```
+┌─ QUIÉN llama ────────────────────────────────────────────────┐
+│  ADMINUSUARIOS.APLICACION            52 aplicaciones          │
+│      309 = IGED (nosotros) · 3 = Consulta Individual del RUV  │
+│  ADMINUSUARIOS.NIVELACCESO           menús, URLs y permisos   │
+│      (árbol: IDPADRE; cada hoja cuelga de una IDAPLICACION)   │
+│  + ROLAPLICACION (58) · POLITICAAPLICACION (195.703)          │
+│    APLICACIONDELEGADA (679) · PARAMETROSAPLICACION (3.555)    │
+└───────────────────────────────────────────────────────────────┘
+                              │
+┌─ QUÉ se puede llamar ────────▼───────────────────────────────┐
+│  RNIPAQUETES.WS_METODOS              136 métodos              │
+│      METODO_NOMBRE        nombre público del método           │
+│      METODO_NOMBREPROC    el procedure PL/SQL o el SQL        │
+│      METODO_CONEXION      contra qué base se ejecuta          │
+│      METODO_TIPOCONSULTA / TIPO_SP / METODO_TIPOBD            │
+│      ID_NIVEL_ACCESO      con qué permiso se puede invocar    │
+│      METODO_ACTIVO        interruptor                         │
+│      METODO_XML / CABEZERAXML   formato de la respuesta       │
+│  + WS_PARAMETROS · WS_PARAMETROSUSUARIOS · WS_ERRORES         │
+└───────────────────────────────────────────────────────────────┘
+                              │
+┌─ QUÉ QUEDA REGISTRADO ───────▼───────────────────────────────┐
+│  AUDITORIAVIVANTOPROD.AU_CONSULTA_WEB_SERVICES   103.258.515  │
+│      con ID_APLICACION: se sabe qué app consultó qué          │
+│  AU_CONSULTA_INDIVIDUAL_RUV                      375.533.381  │
+│  WS_AUDITORIA                                    378.870.362  │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Dónde se toca cada cosa
+
+| Si hay que… | Se hace en |
+|---|---|
+| dar de alta o editar un método | Parametrizador → **Metodos** (`…/Parametrizador/Metodos/Metodos`) |
+| definir variables del servicio | Parametrizador → **Variables** |
+| definir parámetros | Parametrizador → **Parametros** |
+| ajustar parámetros por usuario | Parametrizador → **ParametrosUsuarios** |
+| registrar una aplicación nueva | `ADMINUSUARIOS.APLICACION` (la nuestra ya existe) |
+| dar permiso a una aplicación sobre un método | `NIVELACCESO` + `ID_NIVEL_ACCESO` del método |
+
+### Lo que esto implica para nosotros
+
+1. **No hay que construir un servicio**: hay que **usar** los que existen, y confirmar que
+   la aplicación 309 los tenga habilitados.
+2. **La respuesta puede venir en XML** (`METODO_XML`, `METODO_CABEZERAXML`), así que el
+   cliente debe contemplarlo, no asumir JSON.
+3. **Cada llamada queda auditada con nuestro `ID_APLICACION`.** Eso es bueno —trazabilidad
+   de quién consultó a qué víctima— y es la razón principal para ir por el middleware y no
+   por debajo, aunque técnicamente pudiéramos invocar el procedure directo.
+4. **`METODO_ACTIVO` es un interruptor de terceros:** si alguien desactiva un método que
+   usamos, nuestra consulta deja de funcionar sin que nada cambie de nuestro lado. Conviene
+   que el repositorio degrade con un mensaje claro en vez de romperse.
+
+> **Nota de honestidad sobre esta sección.** La estructura de las tablas y sus conteos
+> están medidos. La descripción del *flujo* (que el middleware resuelve el método y ejecuta
+> el procedure) es la lectura más razonable de esa estructura, pero **no la vimos ejecutar**:
+> falta confirmarla con el equipo de Vivanto o viendo una llamada real. Está redactada como
+> descripción y no como certeza a propósito.
+
 ## Camino ahora
 
 1. **Entrar al parametrizador** (`vivantov2…/Parametrizador/`) con las credenciales de la
