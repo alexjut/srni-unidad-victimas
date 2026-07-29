@@ -75,10 +75,19 @@ def test_no_encontrada_no_es_un_error(catalogo):
     assert r.mensaje
 
 
-def test_el_tipo_de_documento_forma_parte_de_la_llave(catalogo):
-    """El mismo número con otro tipo es otra persona."""
+def test_el_tipo_forma_parte_de_la_llave_pero_el_respaldo_avisa(catalogo):
+    """
+    El mismo número con otro tipo NO es un match de identidad. Pero tampoco se
+    responde "no existe": el índice de respaldo la encuentra y se advierte que
+    verifique, porque puede ser la misma persona con el tipo mal registrado —o otra
+    distinta—. Esa distinción la hace el encuestador, no una regla.
+    """
     _crear_victima(catalogo, documento="1030547250")
-    assert DjangoVictimaRepository().buscar_por_documento("TI", "1030547250").encontrado is False
+    r = DjangoVictimaRepository().buscar_por_documento("TI", "1030547250")
+    assert r.encontrado is True
+    assert "VERIFIQUE" in r.mensaje
+    # y el registro que devuelve es de tipo CC, no TI: el aviso no es decorativo
+    assert r.victima.tipo_documento == "CC"
 
 
 # ── 2. no elegible ≠ inexistente ─────────────────────────────────────────────
@@ -208,3 +217,67 @@ def test_el_grupo_familiar_no_se_inventa_con_los_miembros_del_hogar(catalogo):
     """
     _crear_victima(catalogo)
     assert DjangoVictimaRepository().obtener_grupo_familiar(1) == []
+
+
+# ── 7. los duplicados NO se fusionan y el sin-tipo se encuentra ──────────────
+def test_dos_registros_con_el_mismo_documento_no_se_fusionan(catalogo):
+    """
+    La decisión de fondo: dos registros con el mismo número pueden ser DOS PERSONAS
+    (una CC y una TI), y con el 14,5 % de la fuente sin tipo no siempre se distingue.
+    Fusionar por regla mezclaría dos víctimas en una — una desaparecería del padrón.
+    Se devuelven ambas y decide el encuestador, que tiene a la persona enfrente.
+    """
+    completa = _crear_victima(catalogo, documento="1030547250")
+    pobre = _crear_victima(catalogo, documento="1030547250")
+    pobre.segundo_nombre = ""
+    pobre.segundo_apellido = ""
+    pobre.pertenencia_etnica = ""
+    pobre.municipio_residencia = None
+    pobre.save()
+
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
+    assert r.encontrado is True
+    assert len(r.candidatos) == 1, "el segundo registro debe ofrecerse, no descartarse"
+    assert "CONFIRME" in r.mensaje
+
+
+def test_el_registro_mas_completo_se_ofrece_primero(catalogo):
+    """El criterio de completitud ORDENA; no descarta a nadie."""
+    pobre = _crear_victima(catalogo, documento="1030547250")
+    pobre.segundo_nombre = ""
+    pobre.municipio_residencia = None
+    pobre.pertenencia_etnica = ""
+    pobre.save()
+    _crear_victima(catalogo, documento="1030547250")   # la completa, creada después
+
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
+    assert r.victima.segundo_nombre == "LUISA"      # ganó la completa, no la primera
+    assert r.victima.municipio_residencia_codigo == "05001"
+
+
+def test_encuentra_a_quien_no_tiene_tipo_de_documento(catalogo):
+    """
+    El caso de 1.126.615 personas de la fuente. Antes eran inencontrables: el
+    encuestador escribe 'CC + número' y el hash de identidad nunca coincidía.
+    """
+    from apps.victimas.models import Victima
+    sin_tipo = Victima.objects.create(
+        tipo_documento=None,
+        numero_documento="1030547250",
+        primer_nombre="MARIA", primer_apellido="GOMEZ",
+        fecha_nacimiento="1985-06-15", genero="F",
+        estado_ruv="INCLUIDO", habilitado_para_caracterizacion=True,
+    )
+    assert sin_tipo.numero_documento_hash_sin_tipo
+
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
+    assert r.encontrado is True
+    assert "VERIFIQUE" in r.mensaje, "debe advertir que el tipo no coincide"
+
+
+def test_el_respaldo_no_se_usa_si_la_identidad_ya_coincidio(catalogo):
+    """Si el match exacto existe, no se cae al índice ambiguo ni se avisa de más."""
+    _crear_victima(catalogo, documento="1030547250")
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
+    assert "VERIFIQUE" not in r.mensaje
+    assert r.candidatos == []

@@ -59,9 +59,32 @@ def normalizar_doc(tipo_documento: str, numero_documento: str) -> str:
 
 
 def doc_hash(tipo_documento: str, numero_documento: str) -> str:
-    """SHA-256 (hex, minúsculas) de la cadena canónica del documento."""
+    """
+    SHA-256 (hex, minúsculas) de la cadena canónica del documento.
+
+    Es el hash de IDENTIDAD y la única definición válida: la usan el modelo
+    (`Victima.save`), la búsqueda, el upsert y el generador del padrón. Si alguien
+    necesita hashear un documento, es esta función — no una fórmula propia.
+    """
     canon = normalizar_doc(tipo_documento, numero_documento)
     return hashlib.sha256(canon.encode('utf-8')).hexdigest()
+
+
+def num_hash(numero_documento: str) -> str:
+    """
+    SHA-256 solo del NÚMERO, sin el tipo. Índice de RESPALDO, no de identidad.
+
+    Para qué: en la fuente hay 1.126.615 personas (14,5 %) sin tipo de documento
+    registrado. Su hash de identidad se calcula con tipo vacío, así que un encuestador
+    que busque "CC + número" no las encontraría nunca. Este índice permite hallarlas
+    y advertirle que verifique, en vez de inventarles el tipo o perderlas.
+
+    ⚠️ No sirve para identificar: dos personas distintas pueden compartir número con
+    tipos diferentes (una CC y una TI). Un acierto por este índice es un CANDIDATO a
+    confirmar por el encuestador, nunca una identificación.
+    """
+    _, numero = normalizar_doc('', numero_documento).split('|', 1)
+    return hashlib.sha256(numero.encode('utf-8')).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -131,8 +154,21 @@ class ResultadoBusqueda:
     """
     encontrado: bool
     victima: Optional[VictimaResumen]
-    fuente: str                         # MOCK, RUV, ORACLE, REGISTRADURIA
+    fuente: str                         # MOCK, RUV, ORACLE, REGISTRADURIA, SICAV
     mensaje: str = ''
+
+    # Otros registros que comparten el documento buscado. Normalmente vacío.
+    #
+    # Existe porque en la fuente hay 1.552.622 números de documento repetidos, y esos
+    # duplicados NO se fusionan al cargar: dos registros con el mismo número pueden
+    # ser dos personas distintas (una CC y una TI), y con el 14,5 % sin tipo no
+    # siempre se puede distinguir. Fusionar por regla mezclaría dos víctimas en una
+    # —una persona desaparecería del padrón—, así que se cargan ambas y **decide el
+    # encuestador**, que tiene a la persona enfrente y puede preguntarle el nombre.
+    #
+    # `victima` trae el candidato más completo; `candidatos` los demás. Si esta lista
+    # no está vacía, la UI DEBE pedir confirmación en vez de asumir el primero.
+    candidatos: list = field(default_factory=list)
 
 
 @dataclass

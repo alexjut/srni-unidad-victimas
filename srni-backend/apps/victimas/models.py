@@ -93,13 +93,40 @@ class Victima(models.Model):
     )
 
     # --- Documento: cifrado para almacenamiento, hash para búsqueda ---
+    # Opcional a propósito (2026-07-29): en la fuente hay **1.126.615 personas
+    # (14,5 %) sin tipo de documento registrado**. Con el campo obligatorio, cargarlas
+    # exigía inventarles un tipo —asumir CC, que serían el ~90 %— o dejarlas fuera del
+    # padrón. Ninguna de las dos es aceptable: la primera afirma un documento que
+    # nadie verificó, la segunda vuelve invisible a un millón de víctimas.
+    #
+    # NULL aquí significa exactamente "la fuente no lo trae", que es la verdad. Esas
+    # personas se encuentran por `numero_documento_hash_sin_tipo`, con aviso al
+    # encuestador para que verifique.
     tipo_documento = models.ForeignKey(
         'parametricas.TipoDocumento',
         on_delete=models.PROTECT,
         related_name='victimas',
+        null=True, blank=True,
     )
     numero_documento = EncryptedField()
+    # Hash de IDENTIDAD: '<tipo>|<numero>'. Es la llave de búsqueda normal.
     numero_documento_hash = models.CharField(max_length=64, db_index=True)
+    # Hash de RESPALDO: solo el número, sin el tipo.
+    #
+    # Existe por un problema medido en la fuente (2026-07-29): **1.126.615 personas
+    # del padrón (14,5 %) no tienen tipo de documento registrado**. Con solo el hash
+    # de identidad, esas personas serían INENCONTRABLES — el encuestador escribe
+    # "CC + número" y la llave nunca coincide.
+    #
+    # La alternativa era inventarles el tipo (asumir CC, que serían el ~90 %). No se
+    # hace: sería afirmar un documento que nadie verificó. En cambio se indexa también
+    # por número solo, y la búsqueda cae a este índice cuando la identidad no da
+    # resultado, avisando al encuestador de que verifique.
+    numero_documento_hash_sin_tipo = models.CharField(
+        max_length=64, db_index=True, blank=True, default='',
+        help_text='SHA-256 solo del número, para encontrar personas cuyo tipo de '
+                  'documento no está registrado en la fuente.',
+    )
 
     # --- Nombres y apellidos cifrados ---
     primer_nombre = EncryptedField()
@@ -185,9 +212,11 @@ class Victima(models.Model):
         # Regla: una sola definición del hash, y vive en `repository.base`, que es
         # donde la usan el buscador y el generador del padrón.
         if self.numero_documento:
-            from .repository.base import doc_hash
+            from .repository.base import doc_hash, num_hash
             tipo = self.tipo_documento.codigo if self.tipo_documento_id else ''
             self.numero_documento_hash = doc_hash(tipo, str(self.numero_documento))
+            # Índice de respaldo para quien no tiene tipo registrado (ver el campo).
+            self.numero_documento_hash_sin_tipo = num_hash(str(self.numero_documento))
         super().save(*args, **kwargs)
 
     def __str__(self):

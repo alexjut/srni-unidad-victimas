@@ -34,6 +34,7 @@ from .base import (
     VictimaRepository,
     VictimaResumen,
     doc_hash,
+    num_hash,
 )
 
 logger = logging.getLogger(__name__)
@@ -113,20 +114,56 @@ class DjangoVictimaRepository(VictimaRepository):
         from apps.victimas.models import Victima
         return Victima.objects.select_related("tipo_documento", "municipio_residencia")
 
+    @staticmethod
+    def _completitud(victima) -> int:
+        """
+        Cuántos campos útiles trae el registro. Ordena los candidatos para ofrecer
+        primero el más completo.
+
+        NO decide identidad ni descarta a nadie: solo el orden en que se muestran.
+        """
+        campos = (victima.primer_nombre, victima.segundo_nombre, victima.primer_apellido,
+                  victima.segundo_apellido, victima.fecha_nacimiento, victima.genero,
+                  victima.pertenencia_etnica, victima.tipo_discapacidad,
+                  victima.municipio_residencia_id, victima.cons_persona,
+                  victima.estado_ruv)
+        return sum(1 for c in campos if c not in (None, "", 0))
+
     # ── contrato ──────────────────────────────────────────────────────────────
     def buscar_por_documento(self, tipo_documento, numero_documento) -> ResultadoBusqueda:
         # Por hash, nunca por el campo cifrado: Fernet no es determinista y un
         # `filter(numero_documento=...)` no encontraría jamás nada.
-        victima = self._base_qs().filter(
+        encontradas = list(self._base_qs().filter(
             numero_documento_hash=doc_hash(tipo_documento, numero_documento)
-        ).first()
+        ))
+        aviso = ""
 
-        if victima is None:
+        if not encontradas:
+            # Respaldo: la persona puede estar cargada SIN tipo de documento —14,5 % de
+            # la fuente—. Se busca por número solo y se AVISA, en vez de responder "no
+            # existe" (que sería falso) o inventarle el tipo.
+            encontradas = list(self._base_qs().filter(
+                numero_documento_hash_sin_tipo=num_hash(numero_documento)
+            ))
+            if encontradas:
+                aviso = (f"Coincide por número, pero el tipo de documento registrado no "
+                         f"es '{tipo_documento}'. VERIFIQUE la identidad. ")
+
+        if not encontradas:
             return ResultadoBusqueda(
                 encontrado=False, victima=None, fuente=self.FUENTE,
                 mensaje="No se encontró la persona en el padrón cargado en SICAV.",
             )
 
+        # Varios registros con el mismo documento. No se fusionan ni se elige por
+        # regla: pueden ser dos personas distintas, y con el 14,5 % sin tipo no
+        # siempre se distingue. Se ofrece el más completo primero y los demás van en
+        # `candidatos` para que el encuestador confirme.
+        encontradas.sort(key=self._completitud, reverse=True)
+        victima, otras = encontradas[0], encontradas[1:]
+        if otras:
+            aviso += (f"Hay {len(otras) + 1} registros con este documento. "
+                      f"CONFIRME cuál corresponde antes de caracterizar. ")
         resumen = self._a_resumen(victima)
 
         # Se devuelve `encontrado=True` aunque no sea elegible: el encuestador
@@ -143,8 +180,13 @@ class DjangoVictimaRepository(VictimaRepository):
         else:
             mensaje = ""
 
-        return ResultadoBusqueda(encontrado=True, victima=resumen,
-                                 fuente=self.FUENTE, mensaje=mensaje)
+        # El aviso va PRIMERO: que haya que verificar la identidad importa más que el
+        # estado en el RUV — si es otra persona, lo del RUV ni aplica.
+        return ResultadoBusqueda(
+            encontrado=True, victima=resumen, fuente=self.FUENTE,
+            mensaje=(aviso + mensaje).strip(),
+            candidatos=[self._a_resumen(v, con_hechos=False) for v in otras],
+        )
 
     def obtener_grupo_familiar(self, cons_persona) -> list[VictimaResumen]:
         """
