@@ -108,7 +108,7 @@ export default function Dropdown({
       {open && (
         <div
           role="listbox"
-          className="absolute z-50 mt-1.5 min-w-full w-max bg-white border border-gov-borde/60 rounded-xl shadow-soft-md overflow-hidden animate-slide-down"
+          className="absolute z-50 mt-1.5 min-w-full w-max bg-white border border-gov-borde rounded-xl shadow-lg overflow-hidden animate-slide-down"
         >
           <ul className="py-1 max-h-60 overflow-y-auto">
             {options.map((opt) => {

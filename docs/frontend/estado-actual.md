@@ -2,8 +2,8 @@
 
 **Tecnologia:** React 18.3 + TypeScript 5.4 + Vite 5 + TailwindCSS 3.4
 **Carpeta:** `srni-frontend/`
-**Estado:** 18 paginas funcionales — Fases 1-8 + Usuarios completadas — Build produccion validado — Code splitting aplicado
-**Ultima actualizacion:** 2026-07-05
+**Estado:** 18 paginas funcionales — Fases 1-8 + Usuarios completadas — QA en curso — Build produccion validado — Code splitting aplicado
+**Ultima actualizacion:** 2026-07-15
 
 ---
 
@@ -767,3 +767,56 @@ Usado en: Victimas.
 | Fuente | Peso | Uso |
 |--------|------|-----|
 | **Nunito Sans** | 400, 500, 600, 700, 800 | Toda la interfaz (body + headings + display) |
+
+---
+
+## QA — Informe de Hallazgos y Correcciones (2026-07-15)
+
+### Resumen
+
+Se recibio informe de QA con 23 hallazgos (3 criticos, 13 medios, 4 bajos). A la fecha se han corregido 11 hallazgos desde frontend. 1 hallazgo critico (H-008) depende de backend.
+
+### Hallazgos corregidos — frontend
+
+| Hallazgo | Severidad | Descripcion | Fix |
+|----------|-----------|-------------|-----|
+| H-001 | CRITICO | Login no informa credenciales invalidas | Toast error con mensaje claro (`Login.tsx`) |
+| H-007 | MEDIO | Buscar victima sin documento no da feedback | Toast warning (`Victimas.tsx`) |
+| H-009 | MEDIO | Toasts no se limpian al navegar | `toast.dismiss()` en `MainLayout.tsx` al cambiar ruta |
+| H-010 | MEDIO | Texto "undefined" visible en Encuestas | Fallbacks `?? '—'` en campos nullable (`SesionDetalle.tsx`) |
+| H-011 | MEDIO | Texto "NaN" visible en Encuestas | Fallback `?? 0` en `porcentaje_completado` y `total_respuestas` |
+| H-012 | MEDIO | Dropdown sin fondo opaco | Fondo solido + shadow-lg en `Dropdown.tsx` |
+| H-013 | MEDIO | Campo documento acepta letras | `inputMode="numeric"` + regex `/\D/g` (`Victimas.tsx`) |
+| H-017 | CRITICO | Buscador hogares por codigo no filtra | Parametro corregido a `search` (`Hogares.tsx`) |
+| H-019 | MEDIO | Respuestas sin agrupar por miembro | Componente `RespuestasAgrupadas` (`SesionDetalle.tsx`) |
+| H-020 | MEDIO | Desactivar usuario sin confirmacion | Modal de confirmacion (`Usuarios.tsx`) |
+| H-023 | BAJO | Casing inconsistente en nombres parametricas | Funcion `toTitleCase()` aplicada en 8 tabs (`Parametricas.tsx`) |
+
+### Hallazgos pendientes — backend (Javier)
+
+| Hallazgo | Severidad | Descripcion | Estado |
+|----------|-----------|-------------|--------|
+| H-008 | CRITICO | POST `/api/victimas/buscar/` devuelve 500 | Bloqueante — busqueda victimas inoperante |
+| H-022 | BAJO | Django admin `/admin/login/` mezcla ingles y espanol | Pendiente traduccion |
+
+### Hallazgos sin accion requerida
+
+| Hallazgo | Severidad | Razon |
+|----------|-----------|-------|
+| H-021 | BAJO | Admin no puede eliminar usuarios — diseno intencional (desactivar es suficiente para auditoria) |
+
+### Hallazgos pendientes de detalle (QA no incluyo descripcion)
+
+H-003, H-005, H-006, H-015, H-016, H-018 — solicitada ampliacion a QA.
+
+### Semaforización actualizada
+
+| Severidad | Total | Corregidos frontend | Pendiente backend | Sin accion |
+|-----------|-------|---------------------|-------------------|------------|
+| Critico | 3 | 2 | 1 | 0 |
+| Medio | 13 | 8 | 0 | 0 |
+| Bajo | 4 | 1 | 1 | 1 |
+
+### Nota: usuario de prueba QATEST01
+
+El usuario `QATEST01` ("Usuario de Prueba QA - ELIMINAR") permanece inactivo en BD. Requiere eliminacion desde `/admin` o directamente en la base de datos.

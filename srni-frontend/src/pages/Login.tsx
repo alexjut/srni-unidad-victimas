@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 import LogoHorizontal from '@/assets/LogoColor.svg';
 
 const BG_IMAGES = [
@@ -23,7 +24,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,11 +35,11 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!usuario.trim() || !password.trim()) {
-      setError('Ingrese usuario y contraseña.');
+      toast.error('Ingrese usuario y contraseña.');
       return;
     }
     setCargando(true);
-    setError('');
+    const inicio = Date.now();
     try {
       const { data: tokens } = await authApi.login({
         codigo_usuario: usuario.trim().toUpperCase(),
@@ -48,10 +48,13 @@ export default function LoginPage() {
       setTokens(tokens.access, tokens.refresh);
       const { data: perfil } = await authApi.perfil();
       setUsuario(perfil);
+      const espera = Math.max(0, 700 - (Date.now() - inicio));
+      await new Promise((r) => setTimeout(r, espera));
       navigate('/dashboard');
     } catch (err: any) {
-      const detalle = err?.response?.data?.detail;
-      setError(detalle ?? 'Credenciales incorrectas. Verifique e intente de nuevo.');
+      const espera = Math.max(0, 700 - (Date.now() - inicio));
+      await new Promise((r) => setTimeout(r, espera));
+      toast.error('La combinación de usuario y contraseña no es correcta.');
     } finally {
       setCargando(false);
     }
@@ -116,11 +119,10 @@ export default function LoginPage() {
                 }}
                 onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
                 onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
-                placeholder="Ej. ALEXJUT"
+                placeholder="Ingrese su usuario"
                 value={usuario}
-                onChange={(e) => setUsuarioField(e.target.value.toUpperCase())}
+                onChange={(e) => setUsuarioField(e.target.value)}
                 autoComplete="username"
-                autoCapitalize="characters"
                 disabled={cargando}
               />
             </div>
@@ -141,7 +143,7 @@ export default function LoginPage() {
                   }}
                   onFocus={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'; }}
                   onBlur={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
-                  placeholder="••••••••"
+                  placeholder="Ingrese su contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
@@ -158,32 +160,20 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error */}
-            {error && (
-              <div
-                className="rounded-xl px-4 py-3 text-sm text-red-200 animate-fade-in"
-                style={{
-                  background: 'rgba(220, 38, 38, 0.15)',
-                  border: '1px solid rgba(220, 38, 38, 0.25)',
-                }}
-              >
-                {error}
-              </div>
-            )}
-
             {/* Botón */}
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-2"
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 mt-2"
               style={{
-                background: 'linear-gradient(135deg, #1565C0, #1976D2)',
-                boxShadow: '0 4px 20px rgba(21, 101, 192, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                background: 'linear-gradient(135deg, #FFCC03, #F5BF04)',
+                color: '#003A80',
+                boxShadow: '0 4px 20px rgba(245, 191, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
               }}
               disabled={cargando}
             >
               {cargando ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-gov-azulOscuro/30 border-t-gov-azulOscuro rounded-full animate-spin" />
                   Verificando…
                 </>
               ) : (

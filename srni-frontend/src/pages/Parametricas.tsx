@@ -162,6 +162,20 @@ function normalizarNombre(nombre: string) {
     .trim();
 }
 
+/** Normaliza nombres con casing inconsistente (ej. "PUERTO NARIÑO" → "Puerto Nariño") */
+const PREPOSICIONES = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'en', 'y', 'e']);
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word, i) =>
+      i > 0 && PREPOSICIONES.has(word)
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1),
+    )
+    .join(' ');
+}
+
 function TabDepartamentos() {
   const [datos, setDatos] = useState<Departamento[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -335,7 +349,7 @@ function TabDepartamentos() {
                         }
                       >
                         <td className="px-4 py-3 font-mono text-gov-azul">{d.codigo_dane}</td>
-                        <td className="px-4 py-3 text-gray-700">{d.nombre}</td>
+                        <td className="px-4 py-3 text-gray-700">{toTitleCase(d.nombre)}</td>
                       </tr>
                     ))}
                     {datos.length === 0 && (
@@ -445,8 +459,8 @@ function TabMunicipios() {
         {filtrados.map((m) => (
           <tr key={m.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{m.codigo_dane}</td>
-            <td className="px-4 py-3 text-gray-700">{m.nombre}</td>
-            <td className="px-4 py-3 text-gray-500">{m.departamento_nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(m.nombre)}</td>
+            <td className="px-4 py-3 text-gray-500">{toTitleCase(m.departamento_nombre)}</td>
           </tr>
         ))}
         {!cargando && filtrados.length === 0 && (
@@ -537,7 +551,7 @@ function TabDireccionesTerritoriales() {
         {filtrados.map((d) => (
           <tr key={d.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{d.codigo}</td>
-            <td className="px-4 py-3 text-gray-700">{d.nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(d.nombre)}</td>
           </tr>
         ))}
         {!cargando && filtrados.length === 0 && (
@@ -638,8 +652,8 @@ function TabPuntosAtencion() {
         {filtrados.map((p) => (
           <tr key={p.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{p.codigo}</td>
-            <td className="px-4 py-3 text-gray-700">{p.nombre}</td>
-            <td className="px-4 py-3 text-gray-500">{p.direccion_territorial_nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(p.nombre)}</td>
+            <td className="px-4 py-3 text-gray-500">{toTitleCase(p.direccion_territorial_nombre)}</td>
           </tr>
         ))}
         {!cargando && filtrados.length === 0 && (
@@ -678,7 +692,7 @@ function TabTiposDocumento() {
       {datos.map((t) => (
         <tr key={t.codigo} className="hover:bg-gov-azulTenue/30 transition-all">
           <td className="px-4 py-3 font-mono text-gov-azul">{t.codigo}</td>
-          <td className="px-4 py-3 text-gray-700">{t.nombre}</td>
+          <td className="px-4 py-3 text-gray-700">{toTitleCase(t.nombre)}</td>
           <td className="px-4 py-3">
             <Badge variant={t.activo ? 'verde' : 'gris'}>
               {t.activo ? 'Activo' : 'Inactivo'}
@@ -776,8 +790,8 @@ function TabVeredas() {
         {filtrados.map((v) => (
           <tr key={v.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{v.codigo_dane}</td>
-            <td className="px-4 py-3 text-gray-700">{v.nombre}</td>
-            <td className="px-4 py-3 text-gray-500">{v.municipio_nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(v.nombre)}</td>
+            <td className="px-4 py-3 text-gray-500">{toTitleCase(v.municipio_nombre)}</td>
             <td className="px-4 py-3">
               <Badge variant={v.activo ? 'verde' : 'gris'}>
                 {v.activo ? 'Activo' : 'Inactivo'}
@@ -876,8 +890,8 @@ function TabComunidadesNegras() {
         {filtrados.map((c) => (
           <tr key={c.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{c.codigo}</td>
-            <td className="px-4 py-3 text-gray-700">{c.nombre}</td>
-            <td className="px-4 py-3 text-gray-500">{c.municipio_nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(c.nombre)}</td>
+            <td className="px-4 py-3 text-gray-500">{toTitleCase(c.municipio_nombre)}</td>
             <td className="px-4 py-3">
               <Badge variant={c.activo ? 'verde' : 'gris'}>
                 {c.activo ? 'Activo' : 'Inactivo'}
@@ -976,9 +990,9 @@ function TabResguardosIndigenas() {
         {filtrados.map((r) => (
           <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
             <td className="px-4 py-3 font-mono text-gov-azul">{r.codigo}</td>
-            <td className="px-4 py-3 text-gray-700">{r.nombre}</td>
-            <td className="px-4 py-3 text-gray-600">{r.pueblo}</td>
-            <td className="px-4 py-3 text-gray-500">{r.municipio_nombre}</td>
+            <td className="px-4 py-3 text-gray-700">{toTitleCase(r.nombre)}</td>
+            <td className="px-4 py-3 text-gray-600">{toTitleCase(r.pueblo)}</td>
+            <td className="px-4 py-3 text-gray-500">{toTitleCase(r.municipio_nombre)}</td>
             <td className="px-4 py-3">
               <Badge variant={r.activo ? 'verde' : 'gris'}>
                 {r.activo ? 'Activo' : 'Inactivo'}

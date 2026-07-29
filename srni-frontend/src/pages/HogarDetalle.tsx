@@ -84,7 +84,7 @@ export default function HogarDetallePage() {
             {hogar.estado_display ?? hogar.estado}
           </Badge>
         </InfoCard>
-        <InfoCard icon={Users} label="Miembros" valor={String(hogar.total_miembros)} />
+        <InfoCard icon={Users} label="Miembros registrados" valor={String(hogar.total_miembros)} />
         <InfoCard icon={MapPin} label="Municipio" valor={hogar.municipio_nombre ?? '—'} />
         <InfoCard icon={Calendar} label="Creado" valor={new Date(hogar.created_at).toLocaleDateString('es-CO')} />
       </div>
@@ -96,7 +96,7 @@ export default function HogarDetallePage() {
           <DatoItem label="Tipo vivienda" valor={hogar.tipo_vivienda_display} />
           <DatoItem label="Ocupación" valor={hogar.condicion_ocupacion_display} />
           <DatoItem label="Estrato" valor={String(hogar.estrato)} />
-          <DatoItem label="Personas" valor={String(hogar.numero_personas)} />
+          <DatoItem label="Personas declaradas" valor={String(hogar.numero_personas)} />
           <DatoItem label="Cuartos" valor={String(hogar.numero_cuartos)} />
           <DatoItem label="Encuestador" valor={hogar.encuestador_nombre ?? '—'} />
         </dl>
@@ -140,9 +140,9 @@ export default function HogarDetallePage() {
                       <Badge variant="azul" className="ml-2">Autorizado</Badge>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{m.parentesco_display}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.rol_display}</td>
-                  <td className="px-4 py-3 text-gray-600">{m.genero}</td>
+                  <td className="px-4 py-3 text-gray-600">{m.parentesco_display || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{m.rol_display || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600">{m.genero || '—'}</td>
                   <td className="px-4 py-3">
                     <Badge variant={m.incluido_ruv ? 'verde' : 'gris'}>
                       {m.incluido_ruv ? 'Incluido' : 'No'}

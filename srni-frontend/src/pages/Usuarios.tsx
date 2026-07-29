@@ -2,8 +2,8 @@
  * Administración de usuarios — solo administradores.
  * Tabla + crear/editar + activar/desactivar + resetear contraseña.
  */
-import { useEffect, useState } from 'react';
-import { UserCog, Plus, KeyRound, PowerOff, Power, Pencil, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { UserCog, Plus, KeyRound, PowerOff, Power, Pencil, Search, ChevronDown, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -72,6 +72,14 @@ export default function UsuariosPage() {
   // Modal resetear contraseña
   const [resetUser, setResetUser] = useState<Usuario | null>(null);
   const [nuevaPass, setNuevaPass] = useState('');
+
+  // Modal confirmación activar/desactivar
+  const [toggleUser, setToggleUser] = useState<Usuario | null>(null);
+  const [toggling, setToggling] = useState(false);
+
+  // Modal confirmación eliminar
+  const [deleteUser, setDeleteUser] = useState<Usuario | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function cargar(
     pag: number,
@@ -167,14 +175,34 @@ export default function UsuariosPage() {
       .finally(() => setGuardando(false));
   }
 
-  function toggleActivo(u: Usuario) {
-    const fn = u.activo ? usuariosApi.desactivar : usuariosApi.activar;
-    fn(u.id)
+  function confirmarToggleActivo() {
+    if (!toggleUser) return;
+    setToggling(true);
+    const fn = toggleUser.activo ? usuariosApi.desactivar : usuariosApi.activar;
+    fn(toggleUser.id)
       .then(() => {
-        toast.success(u.activo ? 'Usuario desactivado' : 'Usuario activado');
+        toast.success(toggleUser.activo ? 'Usuario desactivado' : 'Usuario activado');
+        setToggleUser(null);
         cargar(pagina);
       })
-      .catch(() => toast.error('No se pudo cambiar el estado.'));
+      .catch(() => toast.error('No se pudo cambiar el estado.'))
+      .finally(() => setToggling(false));
+  }
+
+  function confirmarEliminar() {
+    if (!deleteUser) return;
+    setDeleting(true);
+    usuariosApi.eliminar(deleteUser.id)
+      .then(() => {
+        toast.success('Usuario eliminado');
+        setDeleteUser(null);
+        cargar(pagina);
+      })
+      .catch((e) => {
+        const d = e?.response?.data;
+        toast.error(d?.detail || d?.message || 'No se pudo eliminar el usuario.');
+      })
+      .finally(() => setDeleting(false));
   }
 
   function guardarReset() {
@@ -246,33 +274,8 @@ export default function UsuariosPage() {
     {
       key: 'acciones',
       header: 'Acciones',
-      className: 'w-36',
-      render: (u) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={Pencil}
-            onClick={() => abrirEditar(u)}
-            title="Editar usuario"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={KeyRound}
-            onClick={() => { setResetUser(u); setNuevaPass(''); }}
-            title="Resetear contraseña"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={u.activo ? PowerOff : Power}
-            onClick={() => toggleActivo(u)}
-            title={u.activo ? 'Desactivar usuario' : 'Activar usuario'}
-            className={u.activo ? 'text-gov-rojo hover:text-gov-rojo hover:bg-gov-rojoTenue' : 'text-gov-verde hover:text-gov-verde hover:bg-gov-verdeTenue'}
-          />
-        </div>
-      ),
+      className: 'w-32',
+      render: (u) => <MenuAcciones usuario={u} onEditar={abrirEditar} onReset={(usr) => { setResetUser(usr); setNuevaPass(''); }} onToggle={setToggleUser} onEliminar={setDeleteUser} />,
     },
   ];
 
@@ -421,6 +424,87 @@ export default function UsuariosPage() {
         </div>
       </Modal>
 
+      {/* Modal confirmación activar/desactivar */}
+      <Modal
+        abierto={!!toggleUser}
+        onCerrar={() => setToggleUser(null)}
+        titulo={toggleUser?.activo ? 'Desactivar usuario' : 'Activar usuario'}
+        acciones={
+          <>
+            <Button variant="secondary" onClick={() => setToggleUser(null)}>Cancelar</Button>
+            <Button
+              variant={toggleUser?.activo ? 'danger' : 'primary'}
+              onClick={confirmarToggleActivo}
+              loading={toggling}
+            >
+              {toggleUser?.activo ? 'Desactivar' : 'Activar'}
+            </Button>
+          </>
+        }
+      >
+        {toggleUser && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gov-borde">
+              <div className="w-9 h-9 rounded-full bg-gov-azul flex items-center justify-center text-white text-sm font-bold shrink-0">
+                {toggleUser.nombre_completo.charAt(0)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{toggleUser.nombre_completo}</p>
+                <p className="text-xs font-mono text-gov-azul">{toggleUser.codigo_usuario}</p>
+                <Badge variant={PERFIL_BADGE[toggleUser.perfil_codigo] ?? 'gris'} className="mt-1">
+                  {toggleUser.perfil_nombre || '—'}
+                </Badge>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              {toggleUser.activo
+                ? 'El usuario no podrá iniciar sesión ni acceder al sistema. Esta acción se puede revertir.'
+                : 'El usuario podrá iniciar sesión y acceder al sistema nuevamente.'
+              }
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal confirmación eliminar */}
+      <Modal
+        abierto={!!deleteUser}
+        onCerrar={() => setDeleteUser(null)}
+        titulo="Eliminar usuario"
+        acciones={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteUser(null)}>Cancelar</Button>
+            <Button
+              variant="danger"
+              onClick={confirmarEliminar}
+              loading={deleting}
+            >
+              Eliminar
+            </Button>
+          </>
+        }
+      >
+        {deleteUser && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gov-rojoTenue border border-red-200">
+              <div className="w-9 h-9 rounded-full bg-gov-rojo flex items-center justify-center text-white text-sm font-bold shrink-0">
+                {deleteUser.nombre_completo.charAt(0)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{deleteUser.nombre_completo}</p>
+                <p className="text-xs font-mono text-gov-azul">{deleteUser.codigo_usuario}</p>
+                <Badge variant={PERFIL_BADGE[deleteUser.perfil_codigo] ?? 'gris'} className="mt-1">
+                  {deleteUser.perfil_nombre || '—'}
+                </Badge>
+              </div>
+            </div>
+            <Alert variant="error">
+              Esta acción es irreversible. El usuario y todos sus datos asociados serán eliminados permanentemente del sistema.
+            </Alert>
+          </div>
+        )}
+      </Modal>
+
       {/* Modal resetear contraseña */}
       <Modal
         abierto={!!resetUser}
@@ -454,6 +538,77 @@ export default function UsuariosPage() {
           />
         </div>
       </Modal>
+    </div>
+  );
+}
+
+// --- Menú contextual de acciones por usuario ---
+
+function MenuAcciones({
+  usuario,
+  onEditar,
+  onReset,
+  onToggle,
+  onEliminar,
+}: {
+  usuario: Usuario;
+  onEditar: (u: Usuario) => void;
+  onReset: (u: Usuario) => void;
+  onToggle: (u: Usuario) => void;
+  onEliminar: (u: Usuario) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const items = [
+    { label: 'Editar usuario', icon: Pencil, onClick: () => onEditar(usuario) },
+    { label: 'Cambiar contraseña', icon: KeyRound, onClick: () => onReset(usuario) },
+    {
+      label: usuario.activo ? 'Desactivar usuario' : 'Activar usuario',
+      icon: usuario.activo ? PowerOff : Power,
+      onClick: () => onToggle(usuario),
+      className: usuario.activo ? 'text-gov-rojo' : 'text-gov-verde',
+    },
+    {
+      label: 'Eliminar usuario',
+      icon: Trash2,
+      onClick: () => onEliminar(usuario),
+      className: 'text-gov-rojo',
+    },
+  ];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gov-borde rounded-lg transition-colors"
+      >
+        Gestionar
+        <ChevronDown size={13} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-50 mt-1 w-52 bg-white border border-gov-borde rounded-xl shadow-lg overflow-hidden animate-slide-down">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={(e) => { e.stopPropagation(); setOpen(false); item.onClick(); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors ${item.className ?? 'text-gray-700'}`}
+            >
+              <item.icon size={15} className="shrink-0" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

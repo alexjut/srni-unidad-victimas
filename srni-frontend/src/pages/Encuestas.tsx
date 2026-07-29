@@ -56,7 +56,7 @@ export default function EncuestasPage() {
   const [filtroEstado, setFiltroEstado] = useState('');
 
   const porPagina = 20;
-  const totalPags = Math.ceil(total / porPagina);
+  const totalPags = Math.max(1, Math.ceil(total / porPagina));
 
   async function cargar(pag: number) {
     setCargando(true);
@@ -101,7 +101,7 @@ export default function EncuestasPage() {
         </Badge>
       ),
     },
-    { key: 'encuestador', header: 'Encuestador', render: (s) => <span className="text-gray-600 text-xs">{s.encuestador_nombre}</span> },
+    { key: 'encuestador', header: 'Encuestador', render: (s) => <span className="text-gray-600 text-xs">{s.encuestador_nombre ?? '—'}</span> },
     { key: 'fecha', header: 'Fecha', render: (s) => <span className="text-gray-500 text-xs">{new Date(s.created_at).toLocaleDateString('es-CO')}</span> },
     {
       key: 'acciones',
@@ -119,7 +119,7 @@ export default function EncuestasPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
 
-      <PageHeader titulo="Encuestas" subtitulo={`${total} sesión(es) registradas`} />
+      <PageHeader titulo="Encuestas" subtitulo={cargando ? 'Cargando…' : `${total} sesión(es) registradas`} />
 
       {/* Barra de filtros */}
       <div className="card shadow-soft flex flex-col sm:flex-row gap-3 mb-4">

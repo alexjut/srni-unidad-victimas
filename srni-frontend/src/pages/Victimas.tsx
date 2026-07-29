@@ -7,6 +7,7 @@ import {
   Search, User, MapPin, Shield, Eye, Clock, Lock, FileText, Home,
   Calendar, X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   victimasApi,
   tiposDocumentoApi,
@@ -112,8 +113,12 @@ export default function VictimasPage() {
 
   async function handleBuscar(e: React.FormEvent) {
     e.preventDefault();
-    if (!tipoDoc || !numDoc.trim()) {
-      setError('Seleccione un tipo de documento e ingrese el número.');
+    if (!numDoc.trim()) {
+      toast.warning('Ingrese un número de documento para buscar.');
+      return;
+    }
+    if (!tipoDoc) {
+      toast.warning('Seleccione un tipo de documento.');
       return;
     }
 
@@ -204,8 +209,9 @@ export default function VictimasPage() {
             </label>
             <input
               type="text"
+              inputMode="numeric"
               value={numDoc}
-              onChange={(e) => setNumDoc(e.target.value)}
+              onChange={(e) => setNumDoc(e.target.value.replace(/\D/g, ''))}
               placeholder="Ingrese el número de documento"
               className="input font-mono"
               disabled={buscando}

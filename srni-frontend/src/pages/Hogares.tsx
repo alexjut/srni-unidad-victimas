@@ -39,7 +39,7 @@ export default function HogaresPage() {
   const [busquedaActiva, setBusquedaActiva] = useState('');
 
   const porPagina = 20;
-  const totalPags = Math.ceil(total / porPagina);
+  const totalPags = Math.max(1, Math.ceil(total / porPagina));
 
   async function cargar(pag: number) {
     setCargando(true);
@@ -47,7 +47,7 @@ export default function HogaresPage() {
     try {
       const params: Record<string, string | number> = { page: pag };
       if (filtroEstado) params.estado = filtroEstado;
-      if (busquedaActiva) params.busqueda = busquedaActiva;
+      if (busquedaActiva) params.search = busquedaActiva;
       const { data } = await hogaresApi.listar(params);
       setHogares(data.results);
       setTotal(data.count);
@@ -134,7 +134,7 @@ export default function HogaresPage() {
               className="input pl-9"
             />
           </div>
-          
+          <Button type="submit" size="sm">Buscar</Button>
         </form>
         <div className="w-full sm:w-48">
           <Dropdown
@@ -143,7 +143,6 @@ export default function HogaresPage() {
             options={ESTADOS_HOGAR}
           />
         </div>
-        <Button type="submit" size="sm">Buscar</Button>
         {hayFiltros && (
           <Button variant="secondary" size="sm" icon={X} onClick={limpiarFiltros}>
             Limpiar

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ClipboardList, Calendar, MapPin, FileText,
-  BarChart3,
+  BarChart3, Users, Home,
 } from 'lucide-react';
-import { encuestasApi, type SesionDetalle } from '@/api/encuestas';
+import { encuestasApi, type SesionDetalle, type RespuestaEncuesta } from '@/api/encuestas';
+import { hogaresApi, type MiembroResumen } from '@/api/hogares';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import EmptyState from '@/components/ui/EmptyState';
@@ -38,6 +39,7 @@ export default function SesionDetallePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [sesion, setSesion] = useState<SesionDetalle | null>(null);
+  const [miembrosMap, setMiembrosMap] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
@@ -45,7 +47,17 @@ export default function SesionDetallePage() {
     if (!id) return;
     setCargando(true);
     encuestasApi.detalle(id)
-      .then(({ data }) => setSesion(data))
+      .then(({ data }) => {
+        setSesion(data);
+        // Cargar miembros del hogar para mapear UUID → nombre
+        return hogaresApi.detalle(data.hogar)
+          .then(({ data: hogar }) => {
+            const map: Record<string, string> = {};
+            hogar.miembros.forEach((m) => { map[m.id] = m.nombre_completo || 'Sin nombre'; });
+            setMiembrosMap(map);
+          })
+          .catch(() => {}); // Si falla, las respuestas se muestran sin nombre
+      })
       .catch(() => setError('No se pudo cargar el detalle de la sesión.'))
       .finally(() => setCargando(false));
   }, [id]);
@@ -94,7 +106,7 @@ export default function SesionDetallePage() {
           </Badge>
         </InfoCard>
         <InfoCard icon={BarChart3} label="Progreso">
-          <p className="text-sm font-semibold text-gray-800">{sesion.porcentaje_completado}%</p>
+          <p className="text-sm font-semibold text-gray-800">{sesion.porcentaje_completado ?? 0}%</p>
         </InfoCard>
         <InfoCard icon={Calendar} label="Inicio" valor={new Date(sesion.fecha_inicio).toLocaleDateString('es-CO')} />
         <InfoCard
@@ -114,12 +126,12 @@ export default function SesionDetallePage() {
       <div className="card mb-6 animate-fade-in-up" style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
         <h3 className="font-display font-semibold text-gray-700 mb-4">Información de la sesión</h3>
         <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
-          <DatoItem label="Ruta de entrevista" valor={sesion.ruta_entrevista} />
+          <DatoItem label="Ruta de entrevista" valor={sesion.ruta_entrevista ?? '—'} />
           <DatoItem label="Dirección Territorial" valor={sesion.direccion_territorial_nombre ?? '—'} />
           <DatoItem label="Departamento" valor={sesion.departamento_atencion_nombre ?? '—'} />
           <DatoItem label="Municipio" valor={sesion.municipio_atencion_nombre ?? '—'} />
           <DatoItem label="Punto de atención" valor={sesion.punto_atencion_nombre ?? '—'} />
-          <DatoItem label="Total respuestas" valor={String(sesion.total_respuestas)} />
+          <DatoItem label="Total respuestas" valor={String(sesion.total_respuestas ?? 0)} />
         </dl>
         {sesion.observaciones && (
           <p className="text-sm text-gray-500 mt-4 border-t border-gov-borde pt-3">
@@ -135,13 +147,55 @@ export default function SesionDetallePage() {
         </Button>
       </div>
 
-      {/* Tabla de respuestas */}
-      <div className="card overflow-hidden p-0 animate-fade-in-up" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
-        <div className="px-4 py-3 border-b border-gov-borde">
-          <p className="font-semibold text-gray-700 text-sm">
-            Respuestas ({sesion.total_respuestas})
-          </p>
-        </div>
+      {/* Respuestas agrupadas por miembro */}
+      <RespuestasAgrupadas
+        respuestas={sesion.respuestas}
+        total={sesion.total_respuestas}
+        miembrosMap={miembrosMap}
+      />
+    </div>
+  );
+}
+
+function RespuestasAgrupadas({
+  respuestas,
+  total,
+  miembrosMap,
+}: {
+  respuestas: RespuestaEncuesta[];
+  total: number;
+  miembrosMap: Record<string, string>;
+}) {
+  // Agrupar: null → "hogar", UUID → miembro
+  const grupos = new Map<string, RespuestaEncuesta[]>();
+  for (const r of respuestas) {
+    const key = r.miembro ?? '__hogar__';
+    if (!grupos.has(key)) grupos.set(key, []);
+    grupos.get(key)!.push(r);
+  }
+
+  // Ordenar: hogar primero, luego miembros por nombre
+  const keys = Array.from(grupos.keys()).sort((a, b) => {
+    if (a === '__hogar__') return -1;
+    if (b === '__hogar__') return 1;
+    return (miembrosMap[a] ?? a).localeCompare(miembrosMap[b] ?? b);
+  });
+
+  return (
+    <div className="card overflow-hidden p-0 animate-fade-in-up" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
+      <div className="px-4 py-3 border-b border-gov-borde">
+        <p className="font-semibold text-gray-700 text-sm">
+          Respuestas ({total})
+        </p>
+      </div>
+
+      {respuestas.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          titulo="Sin respuestas aún"
+          descripcion="Las respuestas aparecerán aquí a medida que se diligencia la encuesta."
+        />
+      ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gov-borde">
@@ -154,31 +208,44 @@ export default function SesionDetallePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gov-borde">
-              {sesion.respuestas.length === 0 ? (
-                <tr>
-                  <td colSpan={3}>
-                    <EmptyState
-                      icon={FileText}
-                      titulo="Sin respuestas aún"
-                      descripcion="Las respuestas aparecerán aquí a medida que se diligencia la encuesta."
-                    />
-                  </td>
-                </tr>
-              ) : sesion.respuestas.map((r) => (
-                <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
-                  <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo}</td>
-                  <td className="px-4 py-3 text-gray-700 max-w-[300px]">
-                    <p className="line-clamp-2">{r.pregunta_texto}</p>
-                  </td>
-                  <td className="px-4 py-3 text-gray-800 font-medium max-w-[200px] truncate">
-                    {r.valor}
-                  </td>
-                </tr>
-              ))}
+              {keys.map((key) => {
+                const items = grupos.get(key)!;
+                const isHogar = key === '__hogar__';
+                const nombre = isHogar ? 'Hogar (general)' : (miembrosMap[key] ?? `Miembro ${key.slice(0, 8)}`);
+                const IconGrupo = isHogar ? Home : Users;
+                return (
+                  <Fragment key={key}>
+                    <tr className="bg-gray-50/80">
+                      <td colSpan={3} className="px-4 py-2">
+                        <span className="flex items-center gap-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                          <IconGrupo size={14} className="text-gray-400" />
+                          {nombre}
+                          <span className="text-gray-400 font-normal normal-case">({items.length} respuestas)</span>
+                        </span>
+                      </td>
+                    </tr>
+                    {items.map((r) => (
+                      <tr key={r.id} className="hover:bg-gov-azulTenue/30 transition-all">
+                        <td className="px-4 py-3 font-mono text-gov-azul text-xs">{r.pregunta_codigo ?? '—'}</td>
+                        <td className="px-4 py-3 text-gray-700 max-w-[300px]">
+                          <p className="line-clamp-2">
+                            {r.miembro && miembrosMap[r.miembro]
+                              ? (r.pregunta_texto ?? '—').replace(/\.{3}|…/, miembrosMap[r.miembro])
+                              : (r.pregunta_texto ?? '—')}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-800 font-medium max-w-[200px] truncate">
+                          {r.valor ?? '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
     </div>
   );
 }

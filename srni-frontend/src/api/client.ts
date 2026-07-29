@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !original._retry &&
-      !original.url?.includes('/api/auth/token/refresh/')
+      !original.url?.includes('/api/auth/token/')
     ) {
       original._retry = true;
 

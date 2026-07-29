@@ -64,5 +64,7 @@ export const usuariosApi = {
   resetPassword: (id: string, password: string) =>
     api.post(`/api/usuarios/${id}/reset_password/`, { password }),
 
+  eliminar: (id: string) => api.delete(`/api/usuarios/${id}/`),
+
   perfiles: () => api.get<Perfil[]>('/api/usuarios/perfiles/'),
 };
