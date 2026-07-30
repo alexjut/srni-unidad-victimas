@@ -273,3 +273,53 @@ class HechoVictima(models.Model):
 
     def __str__(self):
         return f'{self.victima} — {self.hecho}'
+
+
+class CargaPadron(models.Model):
+    """
+    Bitácora de cada carga del padrón desde el Oracle legacy.
+
+    Por qué existe: sin esto, "el padrón" es un estado sin historia — nadie sabe de
+    qué corte salió, cuándo, ni qué se descartó por el camino. Con la bitácora se
+    puede reprocesar sin volver a preguntar a `.9`, comparar dos cargas y responder
+    "¿por qué esta persona no aparece?" mirando los descartes en vez de adivinando.
+
+    No guarda PII: solo contadores y el motivo agregado de los descartes.
+    """
+    ESTADO = [
+        ('EN_CURSO',   'En curso'),
+        ('COMPLETADA', 'Completada'),
+        ('FALLIDA',    'Fallida'),
+        ('SIMULADA',   'Simulada (dry-run, no escribió)'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    iniciada_en = models.DateTimeField(auto_now_add=True)
+    terminada_en = models.DateTimeField(null=True, blank=True)
+    estado = models.CharField(max_length=12, choices=ESTADO, default='EN_CURSO')
+
+    origen = models.CharField(
+        max_length=200, blank=True,
+        help_text='DSN y tablas de las que se leyó (sin credenciales).')
+
+    leidas = models.PositiveIntegerField(default=0)
+    creadas = models.PositiveIntegerField(default=0)
+    actualizadas = models.PositiveIntegerField(default=0)
+    descartadas = models.PositiveIntegerField(default=0)
+    sin_tipo_documento = models.PositiveIntegerField(
+        default=0,
+        help_text='Personas cargadas sin tipo de documento (la fuente no lo trae). '
+                  'Se encuentran por el índice de respaldo.')
+
+    motivos_descarte = models.JSONField(
+        default=dict, blank=True,
+        help_text='{motivo: cuántas}. Agregado, sin datos de personas.')
+    detalle = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Carga de padrón'
+        verbose_name_plural = 'Cargas de padrón'
+        ordering = ['-iniciada_en']
+
+    def __str__(self):
+        return f'Carga {self.iniciada_en:%Y-%m-%d %H:%M} — {self.estado} ({self.leidas:,} leídas)'
