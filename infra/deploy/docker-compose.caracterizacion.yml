@@ -27,6 +27,17 @@ x-backend-env: &backend_env
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
   GEMINI_API_KEY: ${GEMINI_API_KEY}
+  # Oracle legacy de la UARIV (30.0.1.9/ENTREVISTARN). Lo necesitan dos cosas:
+  # la carga del padrón (`cargar_padron_oracle`) y el disparador automático que
+  # sincroniza cada hogar caracterizado hacia los procedures GIC_*.
+  # Los valores viven solo en el `.env` del servidor (chmod 600); aquí van los
+  # nombres. Sin esta declaración, ponerlos en el `.env` no sirve de nada: el
+  # contenedor no los ve — pasó el 31-jul y costó una vuelta entera.
+  ORACLE_PROD_HOST: ${ORACLE_PROD_HOST:-}
+  ORACLE_PROD_PORT: ${ORACLE_PROD_PORT:-1521}
+  ORACLE_PROD_SERVICE: ${ORACLE_PROD_SERVICE:-}
+  ORACLE_PROD_USER: ${ORACLE_PROD_USER:-}
+  ORACLE_PROD_PASSWORD: ${ORACLE_PROD_PASSWORD:-}
 
 services:
   cz_postgres:
