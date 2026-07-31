@@ -157,3 +157,24 @@ def test_el_catalogo_de_tipos_de_oracle_se_lee_de_verdad():
     assert homologar_tipo_documento("95", catalogo) == "TI"
     assert homologar_tipo_documento("94", catalogo) == "CE"
     assert homologar_tipo_documento("96", catalogo) == "RC"
+
+
+# ── estado en el RUV: hipótesis, no certeza ──────────────────────────────────
+@pytest.mark.parametrize("valor,esperado", [
+    (1, "INCLUIDO"), (2, "NO_INCLUIDO"), (3, "EN_PROCESO"), (4, "EXCLUIDO"),
+    ("1", "INCLUIDO"), ("3", "EN_PROCESO"),
+])
+def test_estado_ruv_segun_la_hipotesis_validada_con_dato(valor, esperado):
+    """
+    Mapeo propuesto por Edwin (31-jul) y respaldado por medición: entre las personas
+    ya caracterizadas el estado 3 cae de 4,3 % a 0,5 % — ocho veces menos—, que es lo
+    que se espera de 'en valoración'. Sigue pendiente la confirmación del RUV.
+    """
+    from apps.victimas.homologacion import homologar_estado_ruv
+    assert homologar_estado_ruv(valor) == esperado
+
+
+@pytest.mark.parametrize("valor", [None, "", "x", 9, 0])
+def test_un_estado_desconocido_no_se_inventa(valor):
+    from apps.victimas.homologacion import homologar_estado_ruv
+    assert homologar_estado_ruv(valor) == ""

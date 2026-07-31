@@ -21,18 +21,19 @@ pytestmark = pytest.mark.django_db
 
 
 # Filas como las devuelve el cursor de Oracle: (per_idpersona, per_tipodoc,
-# per_numerodoc, n1, n2, a1, a2, fecha_nac, pert_etnica, genero_hom, discap)
+# per_numerodoc, n1, n2, a1, a2, fecha_nac, pert_etnica, genero_hom, discap,
+# estado_ruv)
 FILAS = [
     (1001, "Cedula de Ciudadanía / Contraseña", "1030547250",
      "MARIA", "LUISA", "GOMEZ", "RENDON",
-     datetime.datetime(1985, 6, 15), "Ninguna", "Mujer", None),
+     datetime.datetime(1985, 6, 15), "Ninguna", "Mujer", None, 1),
     (1002, "TI", "1122334455", "JUAN", "", "PEREZ", "LOPEZ",
-     datetime.datetime(2012, 3, 8), "Indigena", "Hombre", "1"),
+     datetime.datetime(2012, 3, 8), "Indigena", "Hombre", "1", 3),
     # sin tipo de documento: el 14,5 % de la fuente
     (1003, "SIN INFORMACION", "9988776655", "ANA", "", "TORRES", "",
-     datetime.datetime(1990, 1, 1), None, None, None),
+     datetime.datetime(1990, 1, 1), None, None, None, None),
     # sin número: se descarta
-    (1004, "CC", "   ", "PEDRO", "", "SILVA", "", None, "Ninguna", "Hombre", None),
+    (1004, "CC", "   ", "PEDRO", "", "SILVA", "", None, "Ninguna", "Hombre", None, 2),
 ]
 
 
@@ -188,14 +189,29 @@ def test_la_bitacora_guarda_el_motivo_de_los_descartes(fuente):
     assert "password" not in carga.origen.lower()   # sin credenciales en la bitácora
 
 
-def test_no_carga_el_estado_ruv(fuente):
+def test_el_estado_ruv_se_carga_pero_NO_bloquea_a_nadie(fuente):
     """
-    Decisión explícita: los 4 códigos de ESTADO_RUV no tienen catálogo conocido, y ese
-    campo decide si una persona puede caracterizarse. Se deja el default del modelo en
-    vez de adivinar.
+    El mapeo de ESTADO_RUV es una hipótesis respaldada por medición, pero **sin
+    confirmar por el RUV**. Así que el valor se carga —sirve de contexto— y la
+    habilitación NO se deriva de él.
+
+    Si esto cambiara y alguien atara la habilitación al estado, 1,7 millones de
+    personas quedarían bloqueadas por una suposición. Un dato informativo equivocado
+    se corrige; una caracterización negada en campo, no.
     """
     from apps.victimas.models import Victima
     call_command("cargar_padron_oracle", "--confirmar", verbosity=0)
-    victima = Victima.objects.get(cons_persona=1001)
-    assert victima.estado_ruv == "EN_PROCESO"        # el default, no algo inventado
-    assert victima.habilitado_para_caracterizacion is True
+
+    incluida = Victima.objects.get(cons_persona=1001)
+    assert incluida.estado_ruv == "INCLUIDO"
+    en_valoracion = Victima.objects.get(cons_persona=1002)
+    assert en_valoracion.estado_ruv == "EN_PROCESO"
+
+    # lo que de verdad importa: NADIE queda bloqueado por el estado
+    assert all(v.habilitado_para_caracterizacion for v in Victima.objects.all())
+
+
+def test_sin_estado_en_la_fuente_queda_el_default(fuente):
+    from apps.victimas.models import Victima
+    call_command("cargar_padron_oracle", "--confirmar", verbosity=0)
+    assert Victima.objects.get(cons_persona=1003).estado_ruv == "EN_PROCESO"

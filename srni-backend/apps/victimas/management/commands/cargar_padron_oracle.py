@@ -14,20 +14,21 @@ De dónde sale cada dato
 
 Se unen por `GIC_PERSONA.PER_IDPERSONA = corte.CONS_PERONA` — cruce medido al 99,8 %.
 
-Qué NO carga, y por qué
------------------------
-**`ESTADO_RUV` se ignora deliberadamente.** El corte lo trae como número con cuatro
-valores (1: 7.827.597 · 2: 1.703.048 · 3: 430.518 · 4: 340) y **no existe catálogo
-que diga qué significan**: `MI_ESTADOPERSONAS` es acreditación de identidad y
-`MI_ESTADOVICTIMA` solo tiene dos valores. Adivinar aquí no es una imprecisión
-menor: `estado_ruv` y `habilitado_para_caracterizacion` deciden **si una persona
-puede ser caracterizada**. Mapear mal el 2 bloquearía a 1,7 millones de personas, o
-habilitaría a quien no debía.
+`ESTADO_RUV`: se carga como dato INFORMATIVO, no como filtro
+-------------------------------------------------------------
+El corte trae `ESTADO_RUV` como número con cuatro valores. Según Edwin (31-jul) son
+*incluidos, no incluidos, en valoración y excluidos* — **pero él mismo aclaró que le
+falta validarlo con el área de RUV**, y no hay catálogo en la base que lo confirme.
 
-Así que las personas se cargan con el `estado_ruv` por defecto del modelo y
-habilitadas, y la elegibilidad la resuelve el encuestador con el manual —que es
-quien la resuelve hoy—. Cuando se sepa qué significan esos códigos, se completa con
-una segunda pasada; el resto de la carga no cambia.
+La medición lo respalda: mirando solo a las personas **ya caracterizadas**, el estado
+**3 cae de 4,3 % a 0,5 %** (ocho veces menos), que es justo lo que se espera de "en
+valoración" — a quien tiene el caso en trámite todavía no se le caracteriza.
+
+Así que el valor **se carga** (sirve para estadísticas y para dar contexto al
+encuestador) pero **`habilitado_para_caracterizacion` NO se deriva de él** hasta que
+el RUV confirme. Si el 2 no fuera "no incluido", derivar la habilitación de una
+hipótesis bloquearía a 1,7 millones de personas. Un dato informativo equivocado se
+corrige; una caracterización negada en campo, no.
 
 Rendimiento — medido contra producción el 2026-07-31
 ----------------------------------------------------
@@ -79,7 +80,7 @@ _FILTRO = """
 # Con el corte de Vivanto: trae además etnia, género y discapacidad.
 CONSULTA_COMPLETA = f"""
     SELECT {_COLUMNAS_IDENTIDAD},
-           c.pert_etnica, c.genero_hom, c.discap
+           c.pert_etnica, c.genero_hom, c.discap, c.estado_ruv
       FROM gic_persona p
       LEFT JOIN RNIPAQUETES.M_CARACT_TABLA_RA_PER@DBL_VIVANTO c
              ON c.cons_perona = p.per_idpersona
@@ -89,7 +90,8 @@ CONSULTA_COMPLETA = f"""
 # Solo identidad: documento, nombres y fecha de nacimiento. Sin tocar el dblink.
 CONSULTA_IDENTIDAD = f"""
     SELECT {_COLUMNAS_IDENTIDAD},
-           NULL AS pert_etnica, NULL AS genero_hom, NULL AS discap
+           NULL AS pert_etnica, NULL AS genero_hom, NULL AS discap,
+           NULL AS estado_ruv
       FROM gic_persona p
     {_FILTRO}
 """
@@ -122,6 +124,11 @@ class Command(BaseCommand):
                             help="Procesa solo N personas (para probar).")
         parser.add_argument("--lote", type=int, default=1000,
                             help="Filas por fetch (default 1000).")
+        parser.add_argument("--carga-inicial", action="store_true",
+                            help="Inserta por lotes (bulk) en vez de upsert fila a "
+                                 "fila: 51 filas/s -> minutos. Solo para la PRIMERA "
+                                 "carga; exige que la tabla este vacia porque no "
+                                 "deduplica.")
         parser.add_argument("--solo-identidad", action="store_true",
                             help="Omite el JOIN por dblink: carga documento, nombres "
                                  "y fecha de nacimiento, sin etnia/género/discapacidad. "
@@ -138,7 +145,23 @@ class Command(BaseCommand):
         confirmar, limite, lote = opts["confirmar"], opts["limite"], opts["lote"]
         desde = opts["desde"]
         solo_identidad = opts["solo_identidad"]
+        carga_inicial = opts["carga_inicial"]
         consulta = CONSULTA_IDENTIDAD if solo_identidad else CONSULTA_COMPLETA
+        if carga_inicial and confirmar:
+            # El criterio NO es "la tabla está vacía" —siempre hay algún registro de
+            # prueba o de alta manual— sino "¿ya hubo una carga masiva?". Insertar por
+            # lotes no deduplica, así que repetirla duplicaría el padrón entero.
+            previa = CargaPadron.objects.filter(estado="COMPLETADA",
+                                                creadas__gt=1000).first()
+            if previa:
+                raise CommandError(
+                    f"Ya hay una carga inicial del {previa.iniciada_en:%Y-%m-%d %H:%M} "
+                    f"con {previa.creadas:,} personas. `--carga-inicial` inserta sin "
+                    f"deduplicar, así que duplicaría el padrón.\n"
+                    f"Para recargar o actualizar, corre SIN `--carga-inicial`: el "
+                    f"upsert es más lento pero es idempotente.")
+        acumulador = [] if (carga_inicial and confirmar) else None
+
         conexion = self._abrir()
         catalogo_tipos = H.cargar_catalogo_tipodoc_oracle()
         tipos_sicav = self._tipos_sicav()
@@ -171,10 +194,12 @@ class Command(BaseCommand):
                     break
                 for fila in filas:
                     self._procesar(fila, contadores, motivos, catalogo_tipos,
-                                   tipos_sicav, confirmar)
+                                   tipos_sicav, confirmar, acumulador)
                     ultimo_id = fila[0] or ultimo_id
                     if limite and contadores["leidas"] >= limite:
                         break
+                if acumulador is not None and len(acumulador) >= 2000:
+                    self._volcar(acumulador)
                 self.stdout.write(
                     f"  {contadores['leidas']:>9,} leídas · "
                     f"{contadores['creadas']:>8,} nuevas · "
@@ -193,6 +218,8 @@ class Command(BaseCommand):
                 f"actualiza lo ya cargado sin duplicar.\n"
                 f"Último per_idpersona visto: {ultimo_id} (el orden no está "
                 f"garantizado, así que NO sirve como punto de corte exacto).")
+            if acumulador:
+                self._volcar(acumulador)
         finally:
             conexion["con"].close()
 
@@ -213,8 +240,8 @@ class Command(BaseCommand):
         for motivo, n in sorted(motivos.items(), key=lambda kv: -kv[1]):
             self.stdout.write(f"    descarte · {motivo}: {n:,}")
         self.stdout.write(self.style.NOTICE(
-            "  estado_ruv NO se cargó: falta saber qué significan sus 4 códigos "
-            "(ver el docstring del comando)"))
+            "  estado_ruv cargado como INFORMATIVO (mapeo aún por validar con RUV); "
+            "la habilitación para caracterizar NO se deriva de él"))
         self.stdout.write(f"  último per_idpersona visto: {ultimo_id:,}")
 
     # ── piezas ───────────────────────────────────────────────────────────────
@@ -234,11 +261,12 @@ class Command(BaseCommand):
         from apps.parametricas.models import TipoDocumento
         return {t.codigo: t for t in TipoDocumento.objects.all()}
 
-    def _procesar(self, fila, contadores, motivos, catalogo_tipos, tipos_sicav, confirmar):
+    def _procesar(self, fila, contadores, motivos, catalogo_tipos, tipos_sicav,
+                  confirmar, acumulador=None):
         from apps.victimas.models import Victima
 
         (cons, tipodoc_raw, numero, n1, n2, a1, a2, f_nac,
-         etnia, genero, discap) = fila
+         etnia, genero, discap, estado) = fila
         contadores["leidas"] += 1
 
         numero = (numero or "").strip()
@@ -253,6 +281,38 @@ class Command(BaseCommand):
             contadores["sin_tipo_documento"] += 1
 
         if not confirmar:
+            return
+
+        # ── carga inicial: se acumula para insertar por lotes ────────────────
+        # `update_or_create` hace un SELECT y un INSERT por persona: medido, 51
+        # filas/s → **42 horas** para el padrón completo. Con `bulk_create` el mismo
+        # trabajo se hace en lotes y baja a minutos.
+        #
+        # El precio es que `bulk_create` NO llama a `save()`, así que los dos hashes
+        # —que normalmente calcula el modelo— hay que calcularlos aquí. Se usan las
+        # MISMAS funciones (`doc_hash` / `num_hash`), nunca una fórmula reescrita:
+        # duplicar esa lógica es exactamente el defecto que costó una tarde arreglar.
+        if acumulador is not None:
+            from apps.victimas.repository.base import doc_hash, num_hash
+            acumulador.append(Victima(
+                cons_persona=cons,
+                tipo_documento=tipo,
+                numero_documento=numero,
+                numero_documento_hash=doc_hash(codigo_tipo or "", numero),
+                numero_documento_hash_sin_tipo=num_hash(numero),
+                primer_nombre=(n1 or "").strip(),
+                segundo_nombre=(n2 or "").strip(),
+                primer_apellido=(a1 or "").strip(),
+                segundo_apellido=(a2 or "").strip(),
+                fecha_nacimiento=f_nac.date().isoformat() if f_nac else "",
+                genero=H.homologar_genero(genero),
+                pertenencia_etnica=H.homologar_etnia(etnia),
+                discapacidad=H.homologar_discapacidad(discap),
+                # Informativo: NO se deriva de aquí la habilitación (ver homologacion).
+                estado_ruv=H.homologar_estado_ruv(estado) or "EN_PROCESO",
+                fuente_origen="RUV",
+            ))
+            contadores["creadas"] += 1
             return
 
         # Idempotencia por `cons_persona`: es el id de la persona en el legacy, así que
@@ -272,12 +332,22 @@ class Command(BaseCommand):
                 "genero": H.homologar_genero(genero),
                 "pertenencia_etnica": H.homologar_etnia(etnia),
                 "discapacidad": H.homologar_discapacidad(discap),
+                "estado_ruv": H.homologar_estado_ruv(estado) or "EN_PROCESO",
                 "fuente_origen": "RUV",
                 # estado_ruv y habilitado_para_caracterizacion se dejan en el default
                 # del modelo: ver el docstring del comando.
             },
         )
         contadores["creadas" if creada else "actualizadas"] += 1
+
+    @staticmethod
+    def _volcar(acumulador):
+        """Inserta el lote acumulado y lo vacía. `ignore_conflicts` es una red por si
+        la fuente trajera un `cons_persona` repetido: mejor perder ese duplicado que
+        abortar una carga de millones."""
+        from apps.victimas.models import Victima
+        Victima.objects.bulk_create(acumulador, batch_size=500, ignore_conflicts=True)
+        acumulador.clear()
 
     @staticmethod
     def _cerrar(carga, contadores, motivos):

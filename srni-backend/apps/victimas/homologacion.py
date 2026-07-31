@@ -182,3 +182,53 @@ def homologar_discapacidad(valor):
     discapacidad — solo para saber quién sí la tiene registrada.
     """
     return str(valor or "").strip() == "1"
+
+
+# ── estado en el RUV ─────────────────────────────────────────────────────────
+# ⚠️ HIPÓTESIS, no certeza. Origen: Edwin (31-jul) — "esos cuatro estados pueden ser
+# incluidos, no incluidos, en valoración y excluidos, **pero me toca validar con los
+# de RUV**". No hay catálogo en la base: `MI_ESTADOPERSONAS` es acreditación de
+# identidad y `MI_ESTADOVICTIMA` solo tiene dos valores.
+#
+# Lo que sí se midió, y respalda el orden propuesto:
+#
+#   estado   global    entre personas ya CARACTERIZADAS
+#     1      78,6 %    81,3 %   (+2,7 pp)
+#     2      17,1 %    18,3 %   (+1,2 pp)
+#     3       4,3 %     0,5 %   (-3,9 pp)  ← cae 8 veces
+#     4       0,0 %     0,0 %
+#
+# **El 3 casi desaparece entre los caracterizados.** Eso es justo lo que se espera de
+# "en valoración": a quien tiene el caso en trámite todavía no se le caracteriza. Es
+# el respaldo más fuerte que se puede obtener sin la confirmación del RUV.
+#
+# Qué NO prueba: el 2 mantiene su peso entre caracterizados (570.447 personas), lo que
+# es compatible con "no incluido" —se caracteriza a miembros del hogar que no son
+# víctimas directas— pero también admite otras lecturas. Y el 4 son 340 personas: con
+# esa muestra no se puede afirmar nada.
+_ESTADO_RUV = {
+    1: "INCLUIDO",
+    2: "NO_INCLUIDO",
+    3: "EN_PROCESO",     # "en valoración" en el vocabulario del RUV
+    4: "EXCLUIDO",
+}
+
+
+def homologar_estado_ruv(valor):
+    """
+    ESTADO_RUV del corte → nuestro `estado_ruv`. Devuelve '' si no se reconoce.
+
+    ⚠️ **Este valor NO debe usarse todavía para decidir si alguien puede ser
+    caracterizado.** Se carga como dato informativo —sirve para estadísticas y para
+    que el encuestador vea el contexto— pero `habilitado_para_caracterizacion` sigue
+    sin derivarse de él hasta que el RUV confirme el mapeo.
+
+    La razón: si el 2 no fuera "no incluido", derivar la habilitación de aquí
+    bloquearía a 1,7 millones de personas por una hipótesis. Un dato informativo
+    equivocado se corrige; una persona a la que se le negó la caracterización en
+    campo, no.
+    """
+    try:
+        return _ESTADO_RUV.get(int(valor), "")
+    except (TypeError, ValueError):
+        return ""
