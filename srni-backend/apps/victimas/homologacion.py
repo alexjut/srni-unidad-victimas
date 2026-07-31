@@ -185,50 +185,101 @@ def homologar_discapacidad(valor):
 
 
 # ── estado en el RUV ─────────────────────────────────────────────────────────
-# ⚠️ HIPÓTESIS, no certeza. Origen: Edwin (31-jul) — "esos cuatro estados pueden ser
-# incluidos, no incluidos, en valoración y excluidos, **pero me toca validar con los
-# de RUV**". No hay catálogo en la base: `MI_ESTADOPERSONAS` es acreditación de
-# identidad y `MI_ESTADOVICTIMA` solo tiene dos valores.
+# ✅ CONFIRMADO el 2026-07-31 con el catálogo oficial: **`RUV.TBESTADO_VAL`**
+# (esquema RUV, vía la conexión `Ruv_tns`). Son SIETE estados, no cuatro:
 #
-# Lo que sí se midió, y respalda el orden propuesto:
+#   1 Incluido                    5 No Valorado - Devuelto
+#   2 No Incluido                 6 Afectado - No Valorado
+#   3 En Valoración               7 No Afectado - No Valorado
+#   4 Excluido
 #
-#   estado   global    entre personas ya CARACTERIZADAS
-#     1      78,6 %    81,3 %   (+2,7 pp)
-#     2      17,1 %    18,3 %   (+1,2 pp)
-#     3       4,3 %     0,5 %   (-3,9 pp)  ← cae 8 veces
-#     4       0,0 %     0,0 %
+# Historia de cómo se llegó, que vale la pena conservar: circularon DOS versiones
+# verbales contradictorias —una decía 3=en valoración/4=excluido y otra 3=excluido/
+# 4=cesado—. La medición ya apuntaba a la primera: entre las personas **ya
+# caracterizadas** el estado 3 cae de 4,3 % a 0,5 %, ocho veces menos, que es lo
+# propio de un caso en trámite. El catálogo confirmó esa lectura.
 #
-# **El 3 casi desaparece entre los caracterizados.** Eso es justo lo que se espera de
-# "en valoración": a quien tiene el caso en trámite todavía no se le caracteriza. Es
-# el respaldo más fuerte que se puede obtener sin la confirmación del RUV.
-#
-# Qué NO prueba: el 2 mantiene su peso entre caracterizados (570.447 personas), lo que
-# es compatible con "no incluido" —se caracteriza a miembros del hogar que no son
-# víctimas directas— pero también admite otras lecturas. Y el 4 son 340 personas: con
-# esa muestra no se puede afirmar nada.
+# Moraleja para la próxima: el dato medido resolvió bien antes de que llegara el
+# catálogo, y el segundo testimonio verbal —más reciente— era el equivocado.
 _ESTADO_RUV = {
     1: "INCLUIDO",
     2: "NO_INCLUIDO",
-    3: "EN_PROCESO",     # "en valoración" en el vocabulario del RUV
+    3: "EN_PROCESO",      # "En Valoración"
     4: "EXCLUIDO",
+    # Los tres siguientes NO aparecen en el corte `M_CARACT_TABLA_RA_PER` —que solo
+    # trae 1-4— pero existen en el catálogo y pueden llegar por otra vía. Se mapean
+    # a lo más cercano de nuestros cuatro valores, sin inventar categorías nuevas:
+    5: "EN_PROCESO",      # "No Valorado - Devuelto": sigue sin decisión
+    6: "EN_PROCESO",      # "Afectado - No Valorado": afectado, pendiente de valorar
+    7: "NO_INCLUIDO",     # "No Afectado - No Valorado": no hay afectación que valorar
 }
+
+# Los estados que, para el RUV, significan que la persona ES víctima reconocida.
+# Es el filtro del padrón: la Unidad caracteriza a víctimas incluidas.
+ESTADOS_VICTIMA = frozenset({1})
 
 
 def homologar_estado_ruv(valor):
     """
-    ESTADO_RUV del corte → nuestro `estado_ruv`. Devuelve '' si no se reconoce.
+    Código de `RUV.TBESTADO_VAL` → nuestro `estado_ruv`. '' si no se reconoce.
 
-    ⚠️ **Este valor NO debe usarse todavía para decidir si alguien puede ser
-    caracterizado.** Se carga como dato informativo —sirve para estadísticas y para
-    que el encuestador vea el contexto— pero `habilitado_para_caracterizacion` sigue
-    sin derivarse de él hasta que el RUV confirme el mapeo.
-
-    La razón: si el 2 no fuera "no incluido", derivar la habilitación de aquí
-    bloquearía a 1,7 millones de personas por una hipótesis. Un dato informativo
-    equivocado se corrige; una persona a la que se le negó la caracterización en
-    campo, no.
+    Con el catálogo confirmado, este valor **ya puede usarse como criterio**. Aun así
+    la habilitación para caracterizar no se deriva sola de aquí: ver
+    `debe_recaracterizarse`, porque una persona incluida también deja de estar al día
+    si su caracterización venció.
     """
     try:
         return _ESTADO_RUV.get(int(valor), "")
     except (TypeError, ValueError):
         return ""
+
+
+def es_victima(valor) -> bool:
+    """
+    ¿Esta persona va al padrón que descarga la APK?
+
+    Solo las **incluidas en el RUV**. Importa porque `MI_PERSONAS` tiene 49.529.433
+    personas —el registro completo del modelo integrado, no solo víctimas— y el padrón
+    descargable no puede llevarlas todas: el diseño calculaba ~150 MB para 10 M.
+    """
+    try:
+        return int(valor) in ESTADOS_VICTIMA
+    except (TypeError, ValueError):
+        return False
+
+
+# ── vigencia de la caracterización ───────────────────────────────────────────
+# La norma: se recaracteriza **cada 2 años** para actualizar datos.
+#
+# Medido el 2026-07-31 sobre las 3.331.733 personas con caracterización:
+#
+#     este año     685.381   (20,6 %)
+#     hace 1 año   707.853   (41,8 % acumulado)
+#     hace 2 años  711.347   (63,2 %)
+#     hace 3 años  246.122   (70,6 %)
+#     hace 4 años  912.630   (97,9 %)   ← campaña masiva de 2022
+#     5+ años       ~70.000
+#
+# ⇒ con la regla de 2 años, **1.936.352 personas (58,2 %) están vencidas** y deberían
+# recaracterizarse. Ese es el trabajo pendiente que el sistema tiene que poder señalar.
+ANIOS_VIGENCIA_CARACTERIZACION = 2
+
+
+def debe_recaracterizarse(fecha_ult_caracterizacion, hoy=None) -> bool:
+    """
+    ¿Toca actualizar los datos de esta persona?
+
+    Sin fecha → **True**: nunca caracterizada (o no consta) es justamente a quien hay
+    que caracterizar. Devolver False dejaría fuera a quien más lo necesita.
+    """
+    import datetime
+
+    if not fecha_ult_caracterizacion:
+        return True
+    hoy = hoy or datetime.date.today()
+    fecha = fecha_ult_caracterizacion
+    if isinstance(fecha, datetime.datetime):
+        fecha = fecha.date()
+    # Comparación por años cumplidos, no por días: "hace más de 2 años".
+    cumplidos = (hoy.year - fecha.year) - ((hoy.month, hoy.day) < (fecha.month, fecha.day))
+    return cumplidos >= ANIOS_VIGENCIA_CARACTERIZACION

@@ -159,22 +159,81 @@ def test_el_catalogo_de_tipos_de_oracle_se_lee_de_verdad():
     assert homologar_tipo_documento("96", catalogo) == "RC"
 
 
-# ── estado en el RUV: hipótesis, no certeza ──────────────────────────────────
-@pytest.mark.parametrize("valor,esperado", [
-    (1, "INCLUIDO"), (2, "NO_INCLUIDO"), (3, "EN_PROCESO"), (4, "EXCLUIDO"),
-    ("1", "INCLUIDO"), ("3", "EN_PROCESO"),
+# ── estado en el RUV — catálogo RUV.TBESTADO_VAL, confirmado 31-jul ──────────
+@pytest.mark.parametrize("codigo,esperado", [
+    (1, "INCLUIDO"),
+    (2, "NO_INCLUIDO"),
+    (3, "EN_PROCESO"),      # "En Valoración"
+    (4, "EXCLUIDO"),
+    (5, "EN_PROCESO"),      # "No Valorado - Devuelto"
+    (6, "EN_PROCESO"),      # "Afectado - No Valorado"
+    (7, "NO_INCLUIDO"),     # "No Afectado - No Valorado"
+    ("1", "INCLUIDO"),
 ])
-def test_estado_ruv_segun_la_hipotesis_validada_con_dato(valor, esperado):
+def test_estado_ruv_segun_el_catalogo_oficial(codigo, esperado):
+    from apps.victimas.homologacion import homologar_estado_ruv
+    assert homologar_estado_ruv(codigo) == esperado
+
+
+def test_el_3_es_en_valoracion_y_no_excluido():
     """
-    Mapeo propuesto por Edwin (31-jul) y respaldado por medición: entre las personas
-    ya caracterizadas el estado 3 cae de 4,3 % a 0,5 % — ocho veces menos—, que es lo
-    que se espera de 'en valoración'. Sigue pendiente la confirmación del RUV.
+    Regresión de una confusión real: circularon dos versiones verbales opuestas
+    —3=en valoración vs 3=excluido—. El catálogo `RUV.TBESTADO_VAL` zanjó que el 3 es
+    'En Valoración' y el 4 'Excluido'. Invertirlos marcaría como EXCLUIDAS a 430.518
+    personas que solo están esperando su valoración.
     """
     from apps.victimas.homologacion import homologar_estado_ruv
-    assert homologar_estado_ruv(valor) == esperado
+    assert homologar_estado_ruv(3) == "EN_PROCESO"
+    assert homologar_estado_ruv(4) == "EXCLUIDO"
 
 
-@pytest.mark.parametrize("valor", [None, "", "x", 9, 0])
+@pytest.mark.parametrize("valor", [None, "", "x", 99, 0])
 def test_un_estado_desconocido_no_se_inventa(valor):
     from apps.victimas.homologacion import homologar_estado_ruv
     assert homologar_estado_ruv(valor) == ""
+
+
+# ── quién va al padrón ───────────────────────────────────────────────────────
+def test_solo_las_incluidas_van_al_padron():
+    """
+    MI_PERSONAS tiene 49.529.433 personas: el registro completo del modelo integrado,
+    no solo víctimas. El padrón descargable no puede llevarlas todas.
+    """
+    from apps.victimas.homologacion import es_victima
+    assert es_victima(1) is True
+    for otro in (2, 3, 4, 5, 6, 7, None, ""):
+        assert es_victima(otro) is False
+
+
+# ── vigencia: la norma de recaracterizar cada 2 años ─────────────────────────
+def test_una_caracterizacion_de_hace_mas_de_dos_anios_esta_vencida():
+    import datetime
+    from apps.victimas.homologacion import debe_recaracterizarse
+    hoy = datetime.date(2026, 7, 31)
+    assert debe_recaracterizarse(datetime.date(2024, 7, 30), hoy) is True    # 2 años y 1 día
+    assert debe_recaracterizarse(datetime.date(2022, 5, 1), hoy) is True     # 4 años
+
+
+def test_una_caracterizacion_reciente_sigue_vigente():
+    import datetime
+    from apps.victimas.homologacion import debe_recaracterizarse
+    hoy = datetime.date(2026, 7, 31)
+    assert debe_recaracterizarse(datetime.date(2026, 1, 15), hoy) is False
+    assert debe_recaracterizarse(datetime.date(2024, 8, 1), hoy) is False    # falta 1 día
+
+
+def test_sin_fecha_hay_que_caracterizar():
+    """
+    Nunca caracterizada —o sin registro— es justamente a quien hay que caracterizar.
+    Devolver False dejaría fuera a quien más lo necesita.
+    """
+    from apps.victimas.homologacion import debe_recaracterizarse
+    assert debe_recaracterizarse(None) is True
+    assert debe_recaracterizarse("") is True
+
+
+def test_acepta_datetime_ademas_de_date():
+    import datetime
+    from apps.victimas.homologacion import debe_recaracterizarse
+    hoy = datetime.date(2026, 7, 31)
+    assert debe_recaracterizarse(datetime.datetime(2020, 1, 1, 10, 30), hoy) is True
