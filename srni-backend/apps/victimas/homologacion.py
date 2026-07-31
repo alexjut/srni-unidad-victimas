@@ -108,9 +108,10 @@ def cargar_catalogo_tipodoc_oracle():
     que ya existe. Es lo que permite traducir los `PER_TIPODOC` numéricos.
     """
     from apps.sincronizacion.oracle import catalogos
+    # `cargar_respuestas()["preguntas"]` es un DICT indexado por pre_idpregunta, no
+    # una lista. Iterarlo devuelve las claves (ints), no las filas.
     cat = catalogos.cargar_respuestas()
-    fila = next((p for p in cat["preguntas"]
-                 if int(p["pre_idpregunta"]) == _PREGUNTA_TIPODOC_ORACLE), None)
+    fila = cat["preguntas"].get(_PREGUNTA_TIPODOC_ORACLE)
     if not fila:
         return {}
     return {int(r["res_idrespuesta"]): (r.get("res_respuesta") or "")

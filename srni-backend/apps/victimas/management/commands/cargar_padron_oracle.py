@@ -29,11 +29,29 @@ habilitadas, y la elegibilidad la resuelve el encuestador con el manual —que e
 quien la resuelve hoy—. Cuando se sepa qué significan esos códigos, se completa con
 una segunda pasada; el resto de la carga no cambia.
 
+Rendimiento — medido contra producción el 2026-07-31
+----------------------------------------------------
+| Modo | Ritmo real | Las ~7,75 M |
+|---|---:|---:|
+| `--solo-identidad` (sin dblink) | **6.667 filas/s** | **~20 min** |
+| completo (con el JOIN por dblink) | 220 filas/s | ~10 h |
+
+El JOIN por dblink cuesta **30 veces más**. Por eso la carga se hace en dos tiempos:
+
+1. **`--solo-identidad` primero.** En 20 minutos el padrón queda utilizable: documento,
+   tipo, nombres y fecha de nacimiento es todo lo que necesita el encuestador para
+   identificar a la persona en campo.
+2. **La pasada completa después**, sin prisa —de noche, por ejemplo—, para enriquecer
+   con etnia, género y discapacidad. Es idempotente: actualiza lo ya cargado.
+
+Al revés no tiene sentido: esperar diez horas para tener un padrón que en veinte
+minutos ya servía.
+
 Uso
 ---
-    python manage.py cargar_padron_oracle --limite 500        # prueba, no escribe
-    python manage.py cargar_padron_oracle --limite 500 --confirmar
-    python manage.py cargar_padron_oracle --confirmar         # las ~7,7 M
+    python manage.py cargar_padron_oracle --limite 500                    # prueba
+    python manage.py cargar_padron_oracle --solo-identidad --confirmar    # ~20 min
+    python manage.py cargar_padron_oracle --confirmar                     # ~10 h
 
 DRY-RUN por defecto. Idempotente: reprocesa por `cons_persona` sin duplicar.
 """
@@ -47,27 +65,50 @@ from apps.victimas import homologacion as H
 # Una sola consulta con el JOIN por dblink. El corte está del otro lado, así que se
 # trae solo lo que se usa: pedir `SELECT *` sobre 10 M filas por dblink es la
 # diferencia entre minutos y horas.
-CONSULTA = """
-    SELECT p.per_idpersona, p.per_tipodoc, p.per_numerodoc,
+_COLUMNAS_IDENTIDAD = """
+           p.per_idpersona, p.per_tipodoc, p.per_numerodoc,
            p.per_primernombre, p.per_segundonombre,
            p.per_primerapellido, p.per_segundoapellido,
-           p.per_fechanacimiento,
+           p.per_fechanacimiento"""
+
+_FILTRO = """
+     WHERE p.per_numerodoc IS NOT NULL
+       AND TRIM(p.per_numerodoc) IS NOT NULL
+       AND p.per_idpersona > :desde"""
+
+# Con el corte de Vivanto: trae además etnia, género y discapacidad.
+CONSULTA_COMPLETA = f"""
+    SELECT {_COLUMNAS_IDENTIDAD},
            c.pert_etnica, c.genero_hom, c.discap
       FROM gic_persona p
       LEFT JOIN RNIPAQUETES.M_CARACT_TABLA_RA_PER@DBL_VIVANTO c
              ON c.cons_perona = p.per_idpersona
-     WHERE p.per_numerodoc IS NOT NULL
-       AND TRIM(p.per_numerodoc) IS NOT NULL
-       AND p.per_idpersona > :desde
-     ORDER BY p.per_idpersona
+    {_FILTRO}
 """
-# El `ORDER BY` y el `> :desde` son los que hacen la carga REANUDABLE, y no son un
-# lujo: la conexión a `.9` se cortó dos veces en dos días durante este trabajo. Sobre
-# 7,7 millones de filas, una carga que no se puede reanudar es una carga que en la
-# práctica no termina — cada corte obliga a releer todo desde el principio.
+
+# Solo identidad: documento, nombres y fecha de nacimiento. Sin tocar el dblink.
+CONSULTA_IDENTIDAD = f"""
+    SELECT {_COLUMNAS_IDENTIDAD},
+           NULL AS pert_etnica, NULL AS genero_hom, NULL AS discap
+      FROM gic_persona p
+    {_FILTRO}
+"""
+# ⚠️ SIN `ORDER BY`, y es deliberado — medido el 2026-07-31:
 #
-# Con orden por `per_idpersona`, el comando informa el último id procesado y la
-# siguiente corrida arranca ahí con `--desde`.
+#     sin ORDER BY   5.424 filas/s  →  7,75 M en  0,4 h  (24 minutos)
+#     con ORDER BY     170 filas/s  →  7,75 M en 12,7 h
+#
+# **32 veces más lento.** La causa: `GIC_PERSONA` tiene 15 índices —sobre documento,
+# nombres y apellidos— pero **ninguno sobre `PER_IDPERSONA`**, así que ordenar por él
+# obliga a un full scan más un sort de 7,7 millones de filas.
+#
+# La primera versión llevaba `ORDER BY` para poder reanudar con `--desde` tras un
+# corte de red. No compensa: reanudar ahorraba minutos y el orden costaba doce horas.
+# Como la carga es **idempotente por `cons_persona`**, si se corta basta con volver a
+# correrla entera — 24 minutos— y las ya cargadas se actualizan sin duplicar.
+#
+# `--desde` se mantiene como filtro opcional (útil para acotar un rango a mano), pero
+# ya no es el mecanismo de recuperación: el mecanismo es la idempotencia.
 
 
 class Command(BaseCommand):
@@ -81,21 +122,30 @@ class Command(BaseCommand):
                             help="Procesa solo N personas (para probar).")
         parser.add_argument("--lote", type=int, default=1000,
                             help="Filas por fetch (default 1000).")
+        parser.add_argument("--solo-identidad", action="store_true",
+                            help="Omite el JOIN por dblink: carga documento, nombres "
+                                 "y fecha de nacimiento, sin etnia/género/discapacidad. "
+                                 "Es ~25x mas rapido (ver la nota de rendimiento).")
         parser.add_argument("--desde", type=int, default=0,
-                            help="Reanuda desde este per_idpersona (el que informa "
-                                 "la corrida anterior al cortarse).")
+                            help="Procesa solo per_idpersona mayores a este (para "
+                                 "acotar un rango a mano; NO es el mecanismo de "
+                                 "recuperación: para eso basta con volver a correr, "
+                                 "que es idempotente).")
 
     def handle(self, *args, **opts):
         from apps.victimas.models import CargaPadron
 
         confirmar, limite, lote = opts["confirmar"], opts["limite"], opts["lote"]
         desde = opts["desde"]
+        solo_identidad = opts["solo_identidad"]
+        consulta = CONSULTA_IDENTIDAD if solo_identidad else CONSULTA_COMPLETA
         conexion = self._abrir()
         catalogo_tipos = H.cargar_catalogo_tipodoc_oracle()
         tipos_sicav = self._tipos_sicav()
 
         carga = CargaPadron.objects.create(
-            origen=f"{conexion['dsn']} · GIC_PERSONA + M_CARACT_TABLA_RA_PER",
+            origen=(f"{conexion['dsn']} · GIC_PERSONA" +
+                    ("" if solo_identidad else " + M_CARACT_TABLA_RA_PER")),
             estado="EN_CURSO" if confirmar else "SIMULADA",
         )
         self.stdout.write(self.style.WARNING(
@@ -114,7 +164,7 @@ class Command(BaseCommand):
         try:
             cursor = conexion["con"].cursor()
             cursor.arraysize = lote
-            cursor.execute(CONSULTA, {"desde": desde})
+            cursor.execute(consulta, {"desde": desde})
             while True:
                 filas = cursor.fetchmany(lote)
                 if not filas:
@@ -139,8 +189,10 @@ class Command(BaseCommand):
             self._cerrar(carga, contadores, motivos)
             raise CommandError(
                 f"La carga falló tras {contadores['leidas']:,} filas: {exc}\n"
-                f"REANUDAR CON:  --desde {ultimo_id}"
-                f"{' --confirmar' if confirmar else ''}")
+                f"La carga es idempotente: volver a correrla entera (~25 min) "
+                f"actualiza lo ya cargado sin duplicar.\n"
+                f"Último per_idpersona visto: {ultimo_id} (el orden no está "
+                f"garantizado, así que NO sirve como punto de corte exacto).")
         finally:
             conexion["con"].close()
 
@@ -163,8 +215,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE(
             "  estado_ruv NO se cargó: falta saber qué significan sus 4 códigos "
             "(ver el docstring del comando)"))
-        self.stdout.write(f"  último per_idpersona procesado: {ultimo_id:,}"
-                          f"  → para continuar: --desde {ultimo_id}")
+        self.stdout.write(f"  último per_idpersona visto: {ultimo_id:,}")
 
     # ── piezas ───────────────────────────────────────────────────────────────
     def _abrir(self):

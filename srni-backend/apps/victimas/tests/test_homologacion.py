@@ -134,3 +134,26 @@ def test_discapacidad():
     assert homologar_discapacidad(1) is True
     assert homologar_discapacidad(None) is False
     assert homologar_discapacidad("") is False
+
+
+# ── el catálogo REAL, sin mock ───────────────────────────────────────────────
+@pytest.mark.django_db
+def test_el_catalogo_de_tipos_de_oracle_se_lee_de_verdad():
+    """
+    Este test existe por un fallo real: la función iteraba `cat["preguntas"]` como si
+    fuera una lista cuando es un DICT indexado, así que reventaba con
+    `'int' object is not subscriptable`. **Los tests no lo detectaron porque la
+    mockeaban**, y solo apareció al correr la carga contra Oracle.
+
+    Moraleja incorporada: si una función lee un archivo del repo, hay que ejercerla
+    de verdad al menos una vez — mockearla siempre es no probarla nunca.
+    """
+    from apps.victimas.homologacion import cargar_catalogo_tipodoc_oracle
+
+    catalogo = cargar_catalogo_tipodoc_oracle()
+    assert catalogo, "la pregunta 30 debe existir en el catálogo volcado de Oracle"
+    # 93 es la cédula canónica (29.338 usos medidos; ver el caso 3a.13)
+    assert homologar_tipo_documento("93", catalogo) == "CC"
+    assert homologar_tipo_documento("95", catalogo) == "TI"
+    assert homologar_tipo_documento("94", catalogo) == "CE"
+    assert homologar_tipo_documento("96", catalogo) == "RC"

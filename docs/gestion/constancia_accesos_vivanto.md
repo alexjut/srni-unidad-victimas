@@ -107,20 +107,44 @@ valida bloques, la corrupción puede propagarse a las copias.
 
 ---
 
-## Verificación adicional pendiente
+## Verificación de privilegios — hecha el 31-jul, y el resultado obliga a matizar
 
-Cuando el Oracle de `30.0.1.9` vuelva a responder —se cortó dos veces entre el 29 y
-el 30 de julio— conviene dejar registrada una comprobación objetiva más:
+Se comprobó qué puede hacer realmente el usuario con el que trabajamos:
 
-```sql
--- ¿Tiene siquiera privilegios de escritura nuestro usuario sobre esos esquemas?
-SELECT * FROM user_tab_privs
- WHERE privilege IN ('INSERT','UPDATE','DELETE')
-   AND owner IN ('RNIPAQUETES','MODELOINTEGRADO','ADMINUSUARIOS');
-```
+| Comprobación | Resultado |
+|---|---|
+| Privilegios **directos** de escritura sobre esquemas ajenos | **NINGUNO** |
+| Roles | `CONNECT`, `RESOURCE`, `JAVAUSERPRIV` y **`DBA`** |
+| Privilegios de sistema | `SELECT ANY TABLE`, **`UPDATE ANY TABLE`**, **`ALTER ANY TABLE`**, `GRANT ANY PRIVILEGE`, `EXECUTE ANY PROCEDURE` |
 
-Si devuelve vacío, queda demostrado que **ni siquiera habríamos podido** escribir
-allí aunque se hubiera intentado.
+> ⚠️ **Corrección honesta.** La versión anterior de este documento anticipaba que
+> quedaría demostrado que "ni siquiera habríamos podido escribir". **Eso es falso y se
+> retira.** `RNIENTREVISTA` tiene rol **DBA**: técnicamente podría escribir en
+> cualquier esquema de esa base, Vivanto incluido.
+>
+> Lo que sostiene esta constancia **no es la falta de permisos** —los hay de sobra—
+> sino la evidencia de que no se usaron: el bloqueo por regex del harness y los ~45
+> scripts auditables, que están arriba. Se deja escrito así porque una constancia que
+> se apoya en un dato falso no sirve para nada el día que alguien la revise.
+
+### Y esto es, en sí mismo, un hallazgo de seguridad
+
+El usuario con el que SICAV escribe en producción **es DBA de la base**. Combinado con
+el pendiente **3a.5** —la contraseña de `RNIENTREVISTA` está repartida entre varias
+personas de la Unidad, razón por la que se aplazó rotarla— el resultado es que **esa
+contraseña conocida da control total sobre la base de datos de víctimas**: leer, alterar
+o borrar cualquier tabla de cualquier esquema, incluidos los de Vivanto.
+
+No es un riesgo que introdujera este proyecto —la cuenta ya era así— pero sí uno que
+conviene dejar registrado, porque cambia la gravedad de 3a.5: no es "rotar una clave de
+aplicación", es "una credencial de administrador está circulando".
+
+**Mitigación mínima sugerida**, en orden de esfuerzo:
+1. Rotar la contraseña (3a.5).
+2. Crear un usuario específico para SICAV **sin rol DBA**, con permiso solo de ejecutar
+   los procedures `GIC_*` y leer lo que necesita. La escritura del piloto no necesitó
+   DBA: se hace por procedures.
+3. Revisar por qué el dueño del esquema tiene `GRANT ANY PRIVILEGE`.
 
 ---
 
