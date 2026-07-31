@@ -52,6 +52,12 @@ coverage==7.6.10
 # --- IA — Gemini ---
 google-generativeai==0.8.3          # Proxy backend → Gemini API (clave NUNCA en móvil)
 
+# --- Oracle legacy (RNIENTREVISTA) ---
+# Cliente "thin": NO requiere Oracle Instant Client ni librerías del sistema, así que
+# la imagen no cambia de base. Lo usan la carga del padrón (victimas) y la escritura
+# de caracterizaciones vía procedures GIC_* (sincronizacion).
+oracledb==4.0.1
+
 # --- Producción ---
 gunicorn==23.0.0
 whitenoise==6.8.2
