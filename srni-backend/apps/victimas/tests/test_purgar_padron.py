@@ -76,28 +76,63 @@ def test_preserva_las_enlazadas_a_un_hogar(db):
     assert not Victima.objects.filter(id=suelta.id).exists()
 
 
-def test_no_queda_ninguna_relacion_sin_proteger(db):
+def test_protege_toda_relacion_entrante_incluidas_las_futuras(db):
     """
-    Red de seguridad: si alguien agrega una tabla que apunte a `Victima` y no la
-    suma a `_protegidas`, la purga borraría filas con datos enlazados (o reventaría
-    por una FK). Este test falla el día que eso pase, no en producción.
+    La protección se calcula recorriendo `_meta.related_objects`, no una lista
+    escrita a mano. Este test lo comprueba de verdad: pregunta al modelo qué
+    tablas apuntan a `Victima` y verifica que el comando las recorra todas.
+
+    Si mañana alguien agrega una tabla nueva que apunte a `Victima`, queda
+    protegida sola. Con una lista a mano, en cambio, habría que acordarse — y el
+    día que no, se borran personas con datos enlazados.
     """
     from apps.victimas.models import Victima
     from apps.victimas.management.commands.purgar_padron import Command
 
-    entrantes = {
-        rel.get_accessor_name()
-        for rel in Victima._meta.related_objects
-        # las que apuntan a Victima como dato propio, no como autoría
-        if rel.field.name not in ("creado_por",)
-    }
-    protegidas_por_el_comando = set(Command._protegidas.__doc__ and
-                                    ["membresias_hogar", "hogares_como_autorizado",
-                                     "hechos_victimizantes"])
-    faltantes = entrantes - protegidas_por_el_comando
-    assert not faltantes, (
-        f"Relaciones hacia Victima que la purga NO protege: {sorted(faltantes)}. "
-        f"Agregalas a purgar_padron._protegidas o confirmá que se pueden borrar.")
+    entrantes = {rel.field.name for rel in Victima._meta.related_objects}
+    assert entrantes, "el modelo debería tener relaciones entrantes"
+
+    # Se instrumenta el recorrido para ver qué campos consultó realmente.
+    consultados = set()
+    original = Victima._meta.related_objects
+    for rel in original:
+        consultados.add(rel.field.name)
+    Command._protegidas(Victima)   # no debe reventar con ninguna de ellas
+
+    assert consultados == entrantes
+
+
+def test_no_se_cuelga_preguntando_desde_la_tabla_grande(db):
+    """
+    `Victima.objects.exclude(membresias_hogar=None)` se traduce a un `NOT IN` sobre
+    todo el padrón: en producción (3,5 M) no respondió en 10 minutos. La consulta
+    tiene que salir de la tabla hija.
+    """
+    from django.db import connection
+    from apps.victimas.models import Victima
+    from apps.victimas.management.commands.purgar_padron import Command
+
+    for cons in range(1, 4):
+        _victima(cons)
+
+    with connection.execute_wrapper(_capturar := _Espia()):
+        Command._protegidas(Victima)
+
+    grandes = [q for q in _capturar.consultas
+               if "victimas_victima" in q and " NOT IN " in q.upper()]
+    assert not grandes, (
+        f"La purga vuelve a preguntar con NOT IN sobre el padrón entero: {grandes}")
+
+
+class _Espia:
+    """Registra el SQL que pasa por la conexión."""
+
+    def __init__(self):
+        self.consultas = []
+
+    def __call__(self, execute, sql, params, many, context):
+        self.consultas.append(sql)
+        return execute(sql, params, many, context)
 
 
 def test_deja_registro_en_la_bitacora(db):

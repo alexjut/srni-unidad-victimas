@@ -106,17 +106,28 @@ class Command(BaseCommand):
     # ── piezas ───────────────────────────────────────────────────────────────
     @staticmethod
     def _protegidas(Victima):
-        """Ids que NO se borran. Se calcula por consulta, no por lista a mano.
+        """
+        Ids que NO se borran: los de alta manual y los que tengan **cualquier**
+        relación entrante desde otra tabla.
 
-        Los tres últimos son **toda relación entrante** desde otra tabla hacia
-        `Victima`. Si algún día se agrega una relación nueva, hay que agregarla aquí:
-        el test `test_no_queda_ninguna_relacion_sin_proteger` lo detecta."""
+        Las relaciones se recorren con `_meta.related_objects` en vez de listarlas a
+        mano, así que una tabla nueva que apunte a `Victima` queda protegida sola. Es
+        lo contrario de una lista que hay que acordarse de actualizar.
+
+        Se pregunta **desde la tabla hija**, no desde `Victima`: un
+        `Victima.objects.exclude(membresias_hogar=None)` se traduce a un `NOT IN`
+        sobre los 3,5 M del padrón y no termina nunca —medido: >10 min sin responder—
+        mientras que preguntarle a la tabla hija, que tiene unas pocas filas, es
+        instantáneo.
+        """
         protegidas = set(
             Victima.objects.exclude(creado_por=None).values_list("id", flat=True))
-        for relacion in ("membresias_hogar", "hogares_como_autorizado",
-                         "hechos_victimizantes"):
+        for rel in Victima._meta.related_objects:
+            campo = rel.field.name
             protegidas |= set(
-                Victima.objects.exclude(**{relacion: None}).values_list("id", flat=True))
+                rel.related_model.objects.exclude(**{campo: None})
+                .values_list(campo, flat=True))
+        protegidas.discard(None)
         return protegidas
 
     @staticmethod
