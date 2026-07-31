@@ -6,9 +6,15 @@
 > nuestro código y que **conviene arreglar en la base cuando la migración esté
 > cerrada**, para no quedarnos con los parches para siempre.
 >
-> **Complemento:** la calidad de los DATOS (huérfanos, duplicados, nulos) va en
-> [`veredicto_calidad_bd.md`](veredicto_calidad_bd.md). Este documento es el de la
-> **mecánica**: procedures, contratos, convenciones.
+> **Complementos:**
+> * la calidad de los DATOS (huérfanos, duplicados, nulos) va en
+>   [`veredicto_calidad_bd.md`](veredicto_calidad_bd.md);
+> * cómo está partida la **identidad de las personas** entre las tres bases
+>   (`.9`, MODELO, VIVANTO) —los puentes rotos, los ids ambiguos y por qué
+>   `MI_PERSONAS` no se puede usar todavía— va en
+>   [`../oracle-legacy-padron/hallazgos_identidad_padron.md`](../oracle-legacy-padron/hallazgos_identidad_padron.md).
+>
+> Este documento es el de la **mecánica**: procedures, contratos, convenciones.
 >
 > **Regla de este registro:** cada defecto va con su evidencia. Lo que es sospecha se
 > marca como sospecha. Nada de aquí se midió modificando producción: solo `SELECT` y

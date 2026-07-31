@@ -216,7 +216,8 @@ _ESTADO_RUV = {
 
 # Los estados que, para el RUV, significan que la persona ES víctima reconocida.
 # Es el filtro del padrón: la Unidad caracteriza a víctimas incluidas.
-ESTADOS_VICTIMA = frozenset({1})
+ESTADO_INCLUIDO = 1
+ESTADOS_VICTIMA = frozenset({ESTADO_INCLUIDO})
 
 
 def homologar_estado_ruv(valor):

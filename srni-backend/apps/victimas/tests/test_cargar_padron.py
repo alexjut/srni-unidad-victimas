@@ -189,29 +189,53 @@ def test_la_bitacora_guarda_el_motivo_de_los_descartes(fuente):
     assert "password" not in carga.origen.lower()   # sin credenciales en la bitácora
 
 
-def test_el_estado_ruv_se_carga_pero_NO_bloquea_a_nadie(fuente):
-    """
-    El mapeo de ESTADO_RUV es una hipótesis respaldada por medición, pero **sin
-    confirmar por el RUV**. Así que el valor se carga —sirve de contexto— y la
-    habilitación NO se deriva de él.
-
-    Si esto cambiara y alguien atara la habilitación al estado, 1,7 millones de
-    personas quedarían bloqueadas por una suposición. Un dato informativo equivocado
-    se corrige; una caracterización negada en campo, no.
-    """
+def test_el_estado_ruv_se_carga(fuente):
     from apps.victimas.models import Victima
     call_command("cargar_padron_oracle", "--confirmar", verbosity=0)
 
-    incluida = Victima.objects.get(cons_persona=1001)
-    assert incluida.estado_ruv == "INCLUIDO"
-    en_valoracion = Victima.objects.get(cons_persona=1002)
-    assert en_valoracion.estado_ruv == "EN_PROCESO"
-
-    # lo que de verdad importa: NADIE queda bloqueado por el estado
-    assert all(v.habilitado_para_caracterizacion for v in Victima.objects.all())
+    assert Victima.objects.get(cons_persona=1001).estado_ruv == "INCLUIDO"
+    assert Victima.objects.get(cons_persona=1002).estado_ruv == "EN_PROCESO"
 
 
 def test_sin_estado_en_la_fuente_queda_el_default(fuente):
     from apps.victimas.models import Victima
     call_command("cargar_padron_oracle", "--confirmar", verbosity=0)
     assert Victima.objects.get(cons_persona=1003).estado_ruv == "EN_PROCESO"
+
+
+# ── el filtro de víctimas: quién entra al padrón ─────────────────────────────
+# El filtro vive en el SQL (`WHERE c.estado_ruv IN (...)`), así que lo que se prueba
+# es que el SQL que sale del comando lleve el estado correcto. Un cursor simulado
+# devuelve lo que se le ponga; Oracle no.
+def test_por_defecto_solo_pide_victimas_incluidas(fuente):
+    """
+    Sin esto el padrón llevaría 1,83 millones de personas que **no son víctimas
+    incluidas** — no incluidas, en valoración y excluidas. Medido en producción:
+    de 7,76 M en GIC_PERSONA solo 5.936.769 tienen estado 1.
+    """
+    cursores = []
+    original = fuente.cursor
+    fuente.cursor = lambda: cursores.append(original()) or cursores[-1]
+    call_command("cargar_padron_oracle", verbosity=0)
+
+    sql = cursores[0].sql
+    assert "estado_ruv IN (1)" in sql
+    # INNER JOIN, no LEFT: con LEFT entrarían las que no están en el corte, y además
+    # Oracle cambia a lookups fila a fila (220 filas/s contra 3.943).
+    assert "LEFT JOIN" not in sql.upper()
+
+
+def test_se_pueden_pedir_otros_estados_explicitamente(fuente):
+    cursores = []
+    original = fuente.cursor
+    fuente.cursor = lambda: cursores.append(original()) or cursores[-1]
+    call_command("cargar_padron_oracle", "--estados", "1,2", verbosity=0)
+    assert "estado_ruv IN (1, 2)" in cursores[0].sql
+
+
+def test_estados_no_numericos_se_rechazan(fuente):
+    """`--estados` se interpola en el SQL (Oracle no acepta listas en un bind), así
+    que si no se valida es una inyección."""
+    from django.core.management.base import CommandError
+    with pytest.raises(CommandError, match="números separados por coma"):
+        call_command("cargar_padron_oracle", "--estados", "1) OR (1=1", verbosity=0)

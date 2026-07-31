@@ -5,54 +5,68 @@ Puebla el padrón de SICAV desde el Oracle legacy. Es la última pieza del circu
 
     .9 (Oracle UARIV) ──▶ ESTA CARGA ──▶ Victima (PostgreSQL) ──▶ padrón SQLite ──▶ APK
 
+Qué carga: SOLO VÍCTIMAS INCLUIDAS
+-----------------------------------
+El padrón no es "todas las personas de la base": es **quién puede ser caracterizado**.
+Por norma, se caracteriza a las **víctimas incluidas en el RUV**, y se las
+**recaracteriza cada 2 años** para actualizar sus datos.
+
+Así que la carga filtra por `ESTADO_RUV = 1` (Incluido) desde el corte de Vivanto,
+que es la única autoridad sobre quién es víctima. → `homologacion.es_victima()`
+
 De dónde sale cada dato
 -----------------------
 | Aporta | Tabla | Cómo se alcanza |
 |---|---|---|
+| **quién entra** (estado RUV) | `M_CARACT_TABLA_RA_PER` | `RNIPAQUETES` vía `DBL_VIVANTO` |
 | documento, tipo, nombres, fecha nac. | `GIC_PERSONA` | esquema propio en `.9` |
-| etnia, discapacidad, género | `M_CARACT_TABLA_RA_PER` | `RNIPAQUETES` vía `DBL_VIVANTO` |
+| etnia, discapacidad, género | `M_CARACT_TABLA_RA_PER` | el mismo corte |
+| cuándo se caracterizó | `GIC_HOGAR` | → `cargar_fechas_caracterizacion` |
 
-Se unen por `GIC_PERSONA.PER_IDPERSONA = corte.CONS_PERONA` — cruce medido al 99,8 %.
+Se unen por `GIC_PERSONA.PER_IDPERSONA = corte.CONS_PERONA`.
 
-`ESTADO_RUV`: se carga como dato INFORMATIVO, no como filtro
--------------------------------------------------------------
-El corte trae `ESTADO_RUV` como número con cuatro valores. Según Edwin (31-jul) son
-*incluidos, no incluidos, en valoración y excluidos* — **pero él mismo aclaró que le
-falta validarlo con el área de RUV**, y no hay catálogo en la base que lo confirme.
+Por qué NO se usa `MI_PERSONAS`
+--------------------------------
+`RNI_MI_PRU.MI_PERSONAS` (49,5 M) es la fuente más completa y era el origen que
+queríamos. **Hoy no se puede usar sin riesgo de asignar datos de otra persona:**
 
-La medición lo respalda: mirando solo a las personas **ya caracterizadas**, el estado
-**3 cae de 4,3 % a 0,5 %** (ocho veces menos), que es justo lo que se espera de "en
-valoración" — a quien tiene el caso en trámite todavía no se le caracteriza.
+* su `PER_ID` no se alcanza desde `GIC_PERSONA.PER_IDMODELOINT` (0 de 20.000);
+* el puente `DEP_RUV_PERSONAS_MI` mezcla RUPD/RUV/SIV y el `CONS_PERONA` del corte
+  cruza con dos fuentes a la vez → ~2 filas por persona, sin forma de elegir;
+* el cruce por documento revienta: 20.000 documentos → 1.159 millones de filas,
+  porque hay 1,2 M de documentos de **un solo carácter**.
 
-Así que el valor **se carga** (sirve para estadísticas y para dar contexto al
-encuestador) pero **`habilitado_para_caracterizacion` NO se deriva de él** hasta que
-el RUV confirme. Si el 2 no fuera "no incluido", derivar la habilitación de una
-hipótesis bloquearía a 1,7 millones de personas. Un dato informativo equivocado se
-corrige; una caracterización negada en campo, no.
+El detalle y las preguntas para OTI:
+`docs/oracle-legacy-padron/hallazgos_identidad_padron.md`
+
+Cobertura — lo que hay que saber
+---------------------------------
+| | Personas |
+|---|---:|
+| Víctimas incluidas según el corte | 7.821.641 |
+| …que además están en `GIC_PERSONA` | **5.936.769** ← lo que carga esto |
+| **Sin identidad en la .9** | **~1,88 M (24 %)** |
+
+Esa cuarta parte **no queda en el padrón** porque la .9 no tiene sus datos. Es
+justamente lo que `MI_PERSONAS` resolvería cuando el puente esté aclarado. Mientras
+tanto, la APK debe permitir **alta manual** de quien no aparezca.
 
 Rendimiento — medido contra producción el 2026-07-31
 ----------------------------------------------------
-| Modo | Ritmo real | Las ~7,75 M |
+| Consulta | Ritmo | Total |
 |---|---:|---:|
-| `--solo-identidad` (sin dblink) | **6.667 filas/s** | **~20 min** |
-| completo (con el JOIN por dblink) | 220 filas/s | ~10 h |
+| padrón filtrado (JOIN + `estado_ruv=1`) | 3.943 filas/s | **~25 min** |
+| fechas de caracterización (local) | 37.078 filas/s | ~1 min |
 
-El JOIN por dblink cuesta **30 veces más**. Por eso la carga se hace en dos tiempos:
-
-1. **`--solo-identidad` primero.** En 20 minutos el padrón queda utilizable: documento,
-   tipo, nombres y fecha de nacimiento es todo lo que necesita el encuestador para
-   identificar a la persona en campo.
-2. **La pasada completa después**, sin prisa —de noche, por ejemplo—, para enriquecer
-   con etnia, género y discapacidad. Es idempotente: actualiza lo ya cargado.
-
-Al revés no tiene sentido: esperar diez horas para tener un padrón que en veinte
-minutos ya servía.
+Nota: una versión anterior medía 220 filas/s con `LEFT JOIN` sin filtro (~10 h). El
+`INNER JOIN` con `WHERE estado_ruv = 1` deja a Oracle usar *hash join* en vez de
+lookups fila a fila: **18 veces más rápido**, y encima trae menos filas.
 
 Uso
 ---
-    python manage.py cargar_padron_oracle --limite 500                    # prueba
-    python manage.py cargar_padron_oracle --solo-identidad --confirmar    # ~20 min
-    python manage.py cargar_padron_oracle --confirmar                     # ~10 h
+    python manage.py cargar_padron_oracle --limite 500                 # prueba
+    python manage.py cargar_padron_oracle --carga-inicial --confirmar  # ~25 min
+    python manage.py cargar_fechas_caracterizacion --confirmar         # ~1 min
 
 DRY-RUN por defecto. Idempotente: reprocesa por `cons_persona` sin duplicar.
 """
@@ -63,42 +77,30 @@ from django.utils import timezone
 
 from apps.victimas import homologacion as H
 
-# Una sola consulta con el JOIN por dblink. El corte está del otro lado, así que se
-# trae solo lo que se usa: pedir `SELECT *` sobre 10 M filas por dblink es la
-# diferencia entre minutos y horas.
-_COLUMNAS_IDENTIDAD = """
-           p.per_idpersona, p.per_tipodoc, p.per_numerodoc,
+# El corte está al otro lado del dblink, así que se trae solo lo que se usa: pedir
+# `SELECT *` sobre 10 M filas por dblink es la diferencia entre minutos y horas.
+#
+# `INNER JOIN` (no LEFT) + `WHERE c.estado_ruv IN (...)` es lo que hace viable esta
+# consulta: con LEFT y sin filtro, Oracle resolvía el corte con lookups fila a fila
+# (220 filas/s → 10 h). Filtrando, usa hash join: 3.943 filas/s → 25 min.
+CONSULTA_PADRON = """
+    SELECT p.per_idpersona, p.per_tipodoc, p.per_numerodoc,
            p.per_primernombre, p.per_segundonombre,
            p.per_primerapellido, p.per_segundoapellido,
-           p.per_fechanacimiento"""
-
-_FILTRO = """
-     WHERE p.per_numerodoc IS NOT NULL
-       AND TRIM(p.per_numerodoc) IS NOT NULL
-       AND p.per_idpersona > :desde"""
-
-# Con el corte de Vivanto: trae además etnia, género y discapacidad.
-CONSULTA_COMPLETA = f"""
-    SELECT {_COLUMNAS_IDENTIDAD},
+           p.per_fechanacimiento,
            c.pert_etnica, c.genero_hom, c.discap, c.estado_ruv
       FROM gic_persona p
-      LEFT JOIN RNIPAQUETES.M_CARACT_TABLA_RA_PER@DBL_VIVANTO c
-             ON c.cons_perona = p.per_idpersona
-    {_FILTRO}
-"""
-
-# Solo identidad: documento, nombres y fecha de nacimiento. Sin tocar el dblink.
-CONSULTA_IDENTIDAD = f"""
-    SELECT {_COLUMNAS_IDENTIDAD},
-           NULL AS pert_etnica, NULL AS genero_hom, NULL AS discap,
-           NULL AS estado_ruv
-      FROM gic_persona p
-    {_FILTRO}
+      JOIN RNIPAQUETES.M_CARACT_TABLA_RA_PER@DBL_VIVANTO c
+        ON c.cons_perona = p.per_idpersona
+     WHERE c.estado_ruv IN ({estados})
+       AND p.per_numerodoc IS NOT NULL
+       AND TRIM(p.per_numerodoc) IS NOT NULL
+       AND p.per_idpersona > :desde
 """
 # ⚠️ SIN `ORDER BY`, y es deliberado — medido el 2026-07-31:
 #
-#     sin ORDER BY   5.424 filas/s  →  7,75 M en  0,4 h  (24 minutos)
-#     con ORDER BY     170 filas/s  →  7,75 M en 12,7 h
+#     sin ORDER BY   5.424 filas/s  →  0,4 h  (24 minutos)
+#     con ORDER BY     170 filas/s  →  12,7 h
 #
 # **32 veces más lento.** La causa: `GIC_PERSONA` tiene 15 índices —sobre documento,
 # nombres y apellidos— pero **ninguno sobre `PER_IDPERSONA`**, así que ordenar por él
@@ -107,7 +109,7 @@ CONSULTA_IDENTIDAD = f"""
 # La primera versión llevaba `ORDER BY` para poder reanudar con `--desde` tras un
 # corte de red. No compensa: reanudar ahorraba minutos y el orden costaba doce horas.
 # Como la carga es **idempotente por `cons_persona`**, si se corta basta con volver a
-# correrla entera — 24 minutos— y las ya cargadas se actualizan sin duplicar.
+# correrla entera — 25 minutos— y las ya cargadas se actualizan sin duplicar.
 #
 # `--desde` se mantiene como filtro opcional (útil para acotar un rango a mano), pero
 # ya no es el mecanismo de recuperación: el mecanismo es la idempotencia.
@@ -129,10 +131,12 @@ class Command(BaseCommand):
                                  "fila: 51 filas/s -> minutos. Solo para la PRIMERA "
                                  "carga; exige que la tabla este vacia porque no "
                                  "deduplica.")
-        parser.add_argument("--solo-identidad", action="store_true",
-                            help="Omite el JOIN por dblink: carga documento, nombres "
-                                 "y fecha de nacimiento, sin etnia/género/discapacidad. "
-                                 "Es ~25x mas rapido (ver la nota de rendimiento).")
+        parser.add_argument("--estados", default="1",
+                            help="Estados del RUV a cargar, separados por coma. Por "
+                                 "defecto '1' (Incluido), que es la definición de "
+                                 "quién puede ser caracterizado. Usar otros valores "
+                                 "solo para análisis: mete al padrón a gente que NO "
+                                 "es víctima incluida.")
         parser.add_argument("--desde", type=int, default=0,
                             help="Procesa solo per_idpersona mayores a este (para "
                                  "acotar un rango a mano; NO es el mecanismo de "
@@ -144,9 +148,24 @@ class Command(BaseCommand):
 
         confirmar, limite, lote = opts["confirmar"], opts["limite"], opts["lote"]
         desde = opts["desde"]
-        solo_identidad = opts["solo_identidad"]
         carga_inicial = opts["carga_inicial"]
-        consulta = CONSULTA_IDENTIDAD if solo_identidad else CONSULTA_COMPLETA
+
+        # Los estados se interpolan en el SQL, no van como bind: Oracle no acepta una
+        # lista en un solo bind de `IN`. Por eso se validan como enteros primero —
+        # interpolar texto sin validar en un SQL es cómo se inyecta.
+        try:
+            estados = [int(e) for e in opts["estados"].split(",") if e.strip()]
+        except ValueError:
+            raise CommandError(f"--estados debe ser números separados por coma, "
+                               f"no {opts['estados']!r}")
+        if not estados:
+            raise CommandError("--estados no puede quedar vacío.")
+        consulta = CONSULTA_PADRON.format(estados=", ".join(str(e) for e in estados))
+        if estados != [H.ESTADO_INCLUIDO]:
+            self.stdout.write(self.style.WARNING(
+                f"  ⚠ cargando estados {estados} — el padrón normal es solo "
+                f"[{H.ESTADO_INCLUIDO}] (Incluido). Con otros estados entra al padrón "
+                f"gente que NO es víctima incluida."))
         if carga_inicial and confirmar:
             # El criterio NO es "la tabla está vacía" —siempre hay algún registro de
             # prueba o de alta manual— sino "¿ya hubo una carga masiva?". Insertar por
@@ -167,8 +186,8 @@ class Command(BaseCommand):
         tipos_sicav = self._tipos_sicav()
 
         carga = CargaPadron.objects.create(
-            origen=(f"{conexion['dsn']} · GIC_PERSONA" +
-                    ("" if solo_identidad else " + M_CARACT_TABLA_RA_PER")),
+            origen=(f"{conexion['dsn']} · GIC_PERSONA + M_CARACT_TABLA_RA_PER "
+                    f"(estado_ruv={','.join(str(e) for e in estados)})"),
             estado="EN_CURSO" if confirmar else "SIMULADA",
         )
         self.stdout.write(self.style.WARNING(
@@ -240,8 +259,11 @@ class Command(BaseCommand):
         for motivo, n in sorted(motivos.items(), key=lambda kv: -kv[1]):
             self.stdout.write(f"    descarte · {motivo}: {n:,}")
         self.stdout.write(self.style.NOTICE(
-            "  estado_ruv cargado como INFORMATIVO (mapeo aún por validar con RUV); "
-            "la habilitación para caracterizar NO se deriva de él"))
+            f"  filtrado por estado_ruv IN ({', '.join(str(e) for e in estados)}) "
+            f"— el padrón lleva solo víctimas incluidas"))
+        self.stdout.write(self.style.NOTICE(
+            "  SIGUIENTE PASO: `cargar_fechas_caracterizacion --confirmar` (~1 min) "
+            "para la regla de recaracterización a 2 años"))
         self.stdout.write(f"  último per_idpersona visto: {ultimo_id:,}")
 
     # ── piezas ───────────────────────────────────────────────────────────────
