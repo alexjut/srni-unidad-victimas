@@ -202,10 +202,17 @@ class DjangoVictimaRepository(VictimaRepository):
         """
         return []
 
-    def listar_todas(self) -> list[VictimaResumen]:
+    def listar_todas(self, limite: int | None = None) -> list[VictimaResumen]:
         # Sin hechos: `listar_todas` alimenta listados y precargas acotadas, y traer
         # los hechos de cada víctima dispara una query por persona.
-        return [self._a_resumen(v, con_hechos=False) for v in self._base_qs()]
+        #
+        # El `limite` recorta en SQL (`LIMIT`), no en Python: sin él, el queryset
+        # materializa el padrón entero —5,9 M— antes de que nadie pueda descartar
+        # nada.
+        qs = self._base_qs()
+        if limite is not None:
+            qs = qs[:limite]
+        return [self._a_resumen(v, con_hechos=False) for v in qs]
 
     def iterar_padron(self, batch_size: int = 1000):
         """

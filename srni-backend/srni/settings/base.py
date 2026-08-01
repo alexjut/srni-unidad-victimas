@@ -198,6 +198,12 @@ UNFOLD['DASHBOARD_CALLBACK'] = 'srni.dashboard.dashboard_callback'
 # mock. El compose de despliegue ahora lo pone en DJANGO explícitamente.
 VICTIMA_REPOSITORY = config('VICTIMA_REPOSITORY', default='MOCK')
 
+# Techo de personas que devuelve /api/victimas/precarga/ al iniciar sesión.
+# El padrón real tiene 5,9 M: servirlas en JSON revienta la memoria y agota el
+# timeout de 30 s de la APK. El padrón completo va como archivo SQLite por
+# `padron/download/`; esto es solo el arranque de la jornada.
+PRECARGA_LIMITE_PERSONAS = config('PRECARGA_LIMITE_PERSONAS', default=5000, cast=int)
+
 # ─── Distribución móvil (APK) ────────────────────────────────────────────────
 MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
 MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)

@@ -434,13 +434,30 @@ class PrecargaOfflineView(APIView):
     GET /api/victimas/precarga/
 
     Habilitador del modo offline. Requiere permiso puede_caracterizar.
-    En Fase 0 la fuente es el MockVictimaRepository (padrón pequeño).
+
+    ⚠️ El tope NO es negociable
+    ---------------------------
+    Esta vista nació contra el mock, donde `listar_todas()` devolvía 11 personas.
+    Al activar el padrón real (1-ago-2026) esa misma llamada pasó a pedir
+    **5.926.004** — serializarlas revienta la memoria del proceso y agota el
+    timeout de 30 s de la APK sin devolver nada. El login quedaría colgado.
+
+    Por eso siempre se pasa `LIMITE`. No es una optimización: es lo que hace que
+    el endpoint responda.
+
+    El padrón completo **no viaja por aquí**: se descarga como archivo SQLite
+    prearmado desde `padron/download/` (ver `generar_padron`), que es el diseño
+    offline-first de verdad. Este endpoint es el arranque rápido de la jornada.
     """
     permission_classes = [IsAuthenticated, PuedeCaracterizar]
 
+    #: Techo de personas en la precarga. Sale de `settings` para poder subirlo o
+    #: bajarlo sin desplegar, pero nunca debe quedar en `None`.
+    LIMITE = getattr(settings, "PRECARGA_LIMITE_PERSONAS", 5000)
+
     def get(self, request):
         repo = get_repository()
-        victimas = repo.listar_todas()
+        victimas = repo.listar_todas(limite=self.LIMITE)
 
         # --- padron: resumen mínimo, sin detalle de hechos ---
         padron = [

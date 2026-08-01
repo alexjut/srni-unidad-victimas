@@ -399,11 +399,12 @@ class MockVictimaRepository(VictimaRepository):
             fuente=self.FUENTE,
         )
 
-    def listar_todas(self) -> list[VictimaResumen]:
+    def listar_todas(self, limite: int | None = None) -> list[VictimaResumen]:
         # Padrón completo del mock: las víctimas indexadas por documento.
         # No incluye a los miembros de grupo familiar que no tienen entrada
         # propia en _VICTIMAS (esos se obtienen vía obtener_grupo_familiar).
-        return list(_VICTIMAS.values())
+        todas = list(_VICTIMAS.values())
+        return todas[:limite] if limite is not None else todas
 
     def iterar_padron(self, batch_size: int = 1000):
         """

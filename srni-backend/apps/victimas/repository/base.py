@@ -232,16 +232,22 @@ class VictimaRepository(ABC):
         """
 
     @abstractmethod
-    def listar_todas(self) -> list[VictimaResumen]:
+    def listar_todas(self, limite: int | None = None) -> list[VictimaResumen]:
         """
-        Devuelve TODAS las víctimas conocidas por la fuente (padrón completo).
+        Devuelve víctimas de la fuente, **hasta ``limite``**.
 
-        Pensado para la precarga offline: la APK descarga de una sola vez el
-        padrón con el que el encuestador trabajará sin conexión.
+        Pensado para la precarga offline: lo que la APK baja al login para poder
+        trabajar sin conexión en esa jornada.
 
-        En el mock retorna los ~11 casos ficticios. En Oracle/producción esta
-        operación debe acotarse (por jornada, punto de atención o territorial)
-        antes de exponerse — un padrón nacional completo no debe materializarse.
+        ⚠️  ``limite`` no es opcional en la práctica. Con el mock eran 11 casos y
+        traer "todas" no costaba nada; con el padrón real son **5,9 millones**, y
+        pedirlas sin tope revienta la memoria del proceso y agota el timeout de la
+        APK (30 s) sin devolver nada. Pasó: quedó así al activar el padrón real el
+        1-ago-2026, y por eso ``PrecargaOfflineView`` ahora siempre pasa un tope.
+
+        El padrón completo **no se sirve por aquí**: va como archivo SQLite
+        prearmado por ``padron/download/`` (ver ``generar_padron``), que es
+        justamente lo que evita materializar millones de filas en JSON.
 
         ⚠️  NO usar para construir el padrón descargable a gran escala: materializa
         toda la lista en RAM. Para eso existe ``iterar_padron`` (streaming por lotes).

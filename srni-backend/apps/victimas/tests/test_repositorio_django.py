@@ -318,3 +318,68 @@ def test_un_valor_desconocido_no_revienta_pero_tampoco_inventa_una_fuente():
 
     with override_settings(VICTIMA_REPOSITORY="DJANHO"):
         assert isinstance(get_repository(), MockVictimaRepository)
+
+
+# ── la precarga no puede pedir el padrón entero ──────────────────────────────
+def test_listar_todas_respeta_el_limite(catalogo):
+    """
+    Con el mock `listar_todas()` devolvía 11 personas y pedir "todas" no costaba
+    nada. Con el padrón real son 5,9 millones: sin tope, el queryset las
+    materializa en RAM antes de que nadie pueda descartar ninguna.
+    """
+    from apps.victimas.models import Victima
+    from apps.victimas.repository.django_orm import DjangoVictimaRepository
+
+    for i in range(7):
+        Victima.objects.create(
+            cons_persona=9000 + i, numero_documento=f"90{i:06d}",
+            primer_nombre="X", primer_apellido="Y", genero="M")
+
+    repo = DjangoVictimaRepository()
+    assert len(repo.listar_todas(limite=3)) == 3
+    assert len(repo.listar_todas(limite=100)) >= 7
+
+
+def test_el_limite_recorta_en_sql_no_en_python(catalogo):
+    """Recortar después de traer las filas no sirve de nada: el daño —traer 5,9 M
+    a memoria— ya está hecho. El LIMIT tiene que ir en la consulta."""
+    from django.db import connection
+    from apps.victimas.models import Victima
+    from apps.victimas.repository.django_orm import DjangoVictimaRepository
+
+    for i in range(5):
+        Victima.objects.create(
+            cons_persona=9100 + i, numero_documento=f"91{i:06d}",
+            primer_nombre="X", primer_apellido="Y", genero="M")
+
+    class _Espia:
+        def __init__(self):
+            self.sql = []
+
+        def __call__(self, execute, sql, params, many, context):
+            self.sql.append(sql)
+            return execute(sql, params, many, context)
+
+    espia = _Espia()
+    with connection.execute_wrapper(espia):
+        DjangoVictimaRepository().listar_todas(limite=2)
+
+    consultas = [s for s in espia.sql if "victimas_victima" in s]
+    assert any("LIMIT" in s.upper() for s in consultas), (
+        f"El límite no llegó al SQL: {consultas}")
+
+
+def test_la_vista_de_precarga_siempre_pasa_un_tope():
+    """
+    Si alguien quita el `limite=` de la vista, el endpoint vuelve a pedir el padrón
+    entero y el login de la APK queda colgado. Es el fallo que costó descubrir el
+    1-ago-2026, y no da error: simplemente nunca responde.
+    """
+    import inspect
+    from apps.victimas.views import PrecargaOfflineView
+
+    assert PrecargaOfflineView.LIMITE, "PrecargaOfflineView.LIMITE no puede ser falsy"
+    fuente = inspect.getsource(PrecargaOfflineView.get)
+    assert "listar_todas(limite=" in fuente, (
+        "PrecargaOfflineView.get debe llamar listar_todas(limite=...): sin tope "
+        "serializa los 5,9 M del padrón.")
