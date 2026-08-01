@@ -137,7 +137,7 @@ reportes (`apps/reportes/models.py` está vacío a propósito: se calcula al vue
 | 3 | **Poner `VICTIMA_REPOSITORY=DJANGO`** | **producción responde con el MOCK** | **corregido, falta desplegar** |
 | 4 | Generar el padrón SQLite descargable | la APK baja el archivo, no consulta en línea | pendiente |
 | 5 | Disparador automático (Celery) | hoy la escritura a Oracle se dispara a mano | credenciales ya en el contenedor |
-| 6 | Etiqueta del alta manual | ver abajo | a decidir |
+| 6 | Etiqueta del alta manual | ver abajo | **decidido y aplicado (1-ago)** |
 
 ### El punto 3, que es el más grave y el más invisible
 
@@ -167,8 +167,38 @@ falta es su identidad en la .9, no su condición.
 Registrarlas como "No Incluida" les pone un estado que no les corresponde, y ese
 estado viaja al hogar y a los reportes.
 
-**Propuesta:** un tercer resultado, *"no está en el padrón descargado"*, distinto de
-*"no está en el RUV"*. Es decisión funcional, no técnica.
+**Decidido el 1-ago (Javier):** se crea un tercer estado, **`NO_VERIFICADO`** — *"no
+está en el padrón descargado"*, distinto de *"no está en el RUV"*. Registra lo que sí
+se comprobó y deja la condición abierta en vez de negarla.
+
+Dónde quedó:
+
+| | |
+|---|---|
+| `Victima.ESTADO_RUV` | + `NO_VERIFICADO` (migración `victimas/0008`) |
+| `MiembroHogar.ESTADO_INCLUSION` | + `NO_VERIFICADO` — el estado viaja al hogar, si no está ahí se degrada al conformarlo (`hogares/0007`) |
+| Alta manual en la APK | `estado_ruv='NO_VERIFICADO'`, `fuente_origen='MANUAL'` |
+| Texto en pantalla | *"No está en el padrón"* / *"Su condición en el RUV queda por verificar"* |
+| Filas ya grabadas | migración de datos `victimas/0009` las reetiqueta |
+
+**Tres defectos que salieron al hacerlo:**
+
+1. **`fuente_origen='NO_INCLUIDA'` no existe en el modelo.** Los choices son
+   `RUV, SNARIV, LEGADO, MANUAL, REGISTRADURIA`; entraba porque el serializer era un
+   `CharField` suelto. Ahora se valida contra el dominio — y las APKs ya desplegadas
+   no se rompen: `NO_INCLUIDA`→`MANUAL`, `OFFLINE`→`RUV` (era el canal, no el origen),
+   `ENCUESTADOR`→`MANUAL`.
+2. **El default de `estado_ruv` en el serializer era `NO_INCLUIDO`**: quien no mandaba
+   el campo quedaba declarado fuera del RUV sin que nadie lo comprobara.
+3. **El padrón offline degradaba a todos**: `en_ruv ? 'INCLUIDO' : 'NO_INCLUIDO'`. El
+   padrón solo sabe si la persona venía marcada `INCLUIDO`; el resto es `NO_VERIFICADO`.
+
+Tests: `apps/victimas/tests/test_alta_manual.py` (10). Suite: **549 pass, 1 xfail**.
+
+⏳ **Pendiente para Brando:** el badge del frontend web. `ESTADO_RUV_BADGE` (en
+`Victimas.tsx` y `VictimaDetalle.tsx`) no tiene la clave `NO_VERIFICADO`. No rompe
+—las tres lecturas están guardadas con `ruvInfo && …`—, pero el badge no se pinta.
+Sugerido: `{ variant: 'azul', label: 'Sin verificar' }`.
 
 ---
 

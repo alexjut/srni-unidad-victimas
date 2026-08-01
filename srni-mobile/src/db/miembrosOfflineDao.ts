@@ -112,7 +112,9 @@ function resumen(parcial: Partial<MiembroHogarResumen> & { id: string }): Miembr
     rol: (parcial.rol ?? 'MIEMBRO') as MiembroHogarResumen['rol'],
     rol_display: parcial.rol_display ?? '',
     es_autorizado: parcial.es_autorizado ?? false,
-    estado_inclusion: (parcial.estado_inclusion ?? 'NO_INCLUIDO') as MiembroHogarResumen['estado_inclusion'],
+    // Sin dato ⇒ 'NO_VERIFICADO': un miembro guardado offline no se cruzó contra
+    // el padrón, y 'NO_INCLUIDO' afirmaría una verificación que no ocurrió.
+    estado_inclusion: (parcial.estado_inclusion ?? 'NO_VERIFICADO') as MiembroHogarResumen['estado_inclusion'],
     estado_inclusion_display: parcial.estado_inclusion_display ?? '',
     tipo_persona: parcial.tipo_persona ?? '',
     incluido_ruv: parcial.incluido_ruv ?? false,

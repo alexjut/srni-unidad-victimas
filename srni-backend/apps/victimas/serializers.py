@@ -173,7 +173,9 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     segundo_apellido = serializers.CharField(max_length=100, allow_blank=True, default='')
     fecha_nacimiento = serializers.DateField()
     genero = serializers.ChoiceField(choices=['M', 'F', 'NB', 'ND'], default='ND')
-    estado_ruv = serializers.CharField(max_length=15, default='NO_INCLUIDO')
+    # Default 'NO_VERIFICADO', no 'NO_INCLUIDO': si el cliente no manda el estado
+    # es porque no lo resolvió contra el padrón — y "no lo sé" no es "no está".
+    estado_ruv = serializers.CharField(max_length=15, default='NO_VERIFICADO')
     habilitado_para_caracterizacion = serializers.BooleanField(default=True)
     pertenencia_etnica = serializers.CharField(max_length=20, default='NINGUNA')
     pueblo_indigena = serializers.CharField(max_length=150, allow_blank=True, default='')
@@ -185,11 +187,41 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     )
     fuente_origen = serializers.CharField(max_length=20, default='RUV')
 
+    # Valores que mandan APKs ya desplegadas y que NO existen en el dominio del
+    # modelo. Se aceptan y se traducen en vez de rechazarse con 400: en campo hay
+    # dispositivos con la versión anterior y un 400 aquí les rompe el alta manual.
+    _FUENTE_ORIGEN_LEGACY = {
+        'NO_INCLUIDA': 'MANUAL',   # alta manual desde búsqueda; nunca fue un choice
+        'OFFLINE': 'RUV',          # salió del padrón descargado: la fuente es el RUV,
+                                   # 'OFFLINE' era el canal, no el origen del dato
+        'ENCUESTADOR': 'MANUAL',   # nombre del dominio de MiembroHogar, no del de Victima
+    }
+
     def validate_tipo_documento(self, value):
         return value.strip().upper()
 
     def validate_numero_documento(self, value):
         return value.strip().upper()
+
+    def validate_estado_ruv(self, value):
+        # Antes era un CharField suelto: cualquier cadena entraba a la BD.
+        valor = (value or '').strip().upper()
+        validos = {c for c, _ in Victima.ESTADO_RUV}
+        if valor not in validos:
+            raise serializers.ValidationError(
+                f'Estado RUV no reconocido: {value!r}. Válidos: {sorted(validos)}.'
+            )
+        return valor
+
+    def validate_fuente_origen(self, value):
+        valor = (value or '').strip().upper()
+        valor = self._FUENTE_ORIGEN_LEGACY.get(valor, valor)
+        validos = {c for c, _ in Victima.FUENTE_ORIGEN}
+        if valor not in validos:
+            raise serializers.ValidationError(
+                f'Fuente de origen no reconocida: {value!r}. Válidas: {sorted(validos)}.'
+            )
+        return valor
 
 
 # ---------------------------------------------------------------------------

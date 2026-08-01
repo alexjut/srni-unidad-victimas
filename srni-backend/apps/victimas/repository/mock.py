@@ -384,6 +384,8 @@ class MockVictimaRepository(VictimaRepository):
                 msg = f'Ya fue caracterizada el {ts}. Requiere autorización para nueva sesión.'
             elif victima.estado_ruv == 'NO_INCLUIDO':
                 msg = 'Persona no incluida en el RUV — no habilitada para caracterización UARIV.'
+            elif victima.estado_ruv == 'NO_VERIFICADO':
+                msg = 'Persona sin verificar contra el RUV — no habilitada para nueva caracterización.'
             else:
                 msg = 'Persona no habilitada para nueva caracterización.'
             return ResultadoBusqueda(

@@ -189,8 +189,12 @@ class MiembroHogar(models.Model):
 
     # Estado de inclusión según verificación contra el RUV
     ESTADO_INCLUSION = [
-        ('INCLUIDO',    'Incluido — víctima registrada en el RUV'),
-        ('NO_INCLUIDO', 'No incluido — no registrado en el RUV'),
+        ('INCLUIDO',      'Incluido — víctima registrada en el RUV'),
+        ('NO_INCLUIDO',   'No incluido — no registrado en el RUV'),
+        # Espejo de Victima.ESTADO_RUV: quien se da de alta a mano no fue
+        # verificado contra el RUV, solo contra el padrón descargado. Afirmar
+        # 'NO_INCLUIDO' aquí es lo que hacía que el estado falso viajara al hogar.
+        ('NO_VERIFICADO', 'No verificado — no está en el padrón descargado'),
     ]
 
     FUENTE_ORIGEN = [

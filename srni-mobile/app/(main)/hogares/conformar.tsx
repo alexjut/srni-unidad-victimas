@@ -354,7 +354,9 @@ export default function ConformarHogarScreen() {
       // §2: parentesco y género ya NO se envían desde la conformación — se
       // capturan en el Capítulo B (Datos básicos). El backend los acepta vacíos.
       rol: rolMiembro as 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE',
-      estado_inclusion: 'NO_INCLUIDO' as const,
+      // El integrante se captura a mano, sin cruzarlo contra el padrón: su
+      // condición en el RUV queda por verificar, no negada.
+      estado_inclusion: 'NO_VERIFICADO' as const,
       fecha_nacimiento: fechaNac || undefined,
       // §2: referencia de la constancia (Tutor/Cuidador). El backend la ignora
       // por ahora (no está en AgregarMiembroSerializer); viaja en el payload

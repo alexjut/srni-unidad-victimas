@@ -121,7 +121,7 @@ class VictimaResumen:
     genero: str                        # M, F, NB, ND
 
     # Estado en el RUV
-    estado_ruv: str                    # INCLUIDO, NO_INCLUIDO, EN_PROCESO, EXCLUIDO
+    estado_ruv: str                    # INCLUIDO, NO_INCLUIDO, EN_PROCESO, EXCLUIDO, NO_VERIFICADO
     habilitado_para_caracterizacion: bool
     fecha_ult_caracterizacion: Optional[datetime]
 

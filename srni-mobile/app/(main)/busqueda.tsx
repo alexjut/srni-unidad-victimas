@@ -5,7 +5,7 @@
  * 1. Encuestador ingresa tipo documento + número + ruta de entrevista → Consultar RNI
  * 2a. Encontrado y habilitado → Seleccionar instrumento → Conformar hogar
  * 2b. Encontrado pero no habilitado → Mostrar estado RUV
- * 2c. No encontrado → Ofrecer registrar como Víctima No Incluida
+ * 2c. No está en el padrón → Ofrecer alta manual (condición en el RUV por verificar)
  *
  * La consulta va SIEMPRE al servidor. No se cachea PII localmente.
  */
@@ -241,6 +241,7 @@ function colorEstadoRuv(estado: EstadoRuv): string {
     case 'INCLUIDO':    return GOV.verde;
     case 'EXCLUIDO':    return GOV.rojo;
     case 'NO_INCLUIDO': return GOV.naranja;
+    case 'NO_VERIFICADO': return GOV.azul;
     case 'EN_PROCESO':  return GOV.azul;
     default:            return GOV.textoS;
   }
@@ -251,6 +252,7 @@ function fondoEstadoRuv(estado: EstadoRuv): string {
     case 'INCLUIDO':    return GOV.verdeTenue;
     case 'EXCLUIDO':    return GOV.rojoTenue;
     case 'NO_INCLUIDO': return GOV.naranjaTenue;
+    case 'NO_VERIFICADO': return GOV.azulTenue;
     case 'EN_PROCESO':  return GOV.azulTenue;
     default:            return GOV.fondoApp;
   }
@@ -341,17 +343,17 @@ function TarjetaHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }
   );
 }
 
-// ── Tarjeta: no encontrado + formulario no incluida ───────────────────────────
+// ── Tarjeta: no está en el padrón + formulario de alta manual ───────────────────
 
 interface TarjetaNoEncontradoProps {
   resultado: ResultadoBusquedaFuente;
   tipoDoc: string;
   documento: string;
   cargandoRegistro: boolean;
-  onRegistrarNoIncluida: (datos: DatosNoIncluida) => void;
+  onRegistrarAltaManual: (datos: DatosAltaManual) => void;
 }
 
-interface DatosNoIncluida {
+interface DatosAltaManual {
   primerNombre: string;
   segundoNombre: string;
   primerApellido: string;
@@ -361,7 +363,7 @@ interface DatosNoIncluida {
 }
 
 function TarjetaNoEncontrado({
-  resultado, tipoDoc, documento, cargandoRegistro, onRegistrarNoIncluida,
+  resultado, tipoDoc, documento, cargandoRegistro, onRegistrarAltaManual,
 }: TarjetaNoEncontradoProps) {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [primerNombre, setPrimerNombre] = useState('');
@@ -379,7 +381,7 @@ function TarjetaNoEncontrado({
     <Surface style={[styles.tarjeta, styles.tarjetaGris]}>
       <View style={styles.tarjetaEncabezado}>
         <MaterialCommunityIcons name="account-search-outline" size={32} color={GOV.textoS} style={styles.icono} />
-        <Text style={styles.tarjetaTitulo}>No encontrado en el RUV</Text>
+        <Text style={styles.tarjetaTitulo}>No está en el padrón</Text>
       </View>
       <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
       <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
@@ -394,11 +396,11 @@ function TarjetaNoEncontrado({
           style={styles.botonAccion}
           textColor={GOV.naranja}
         >
-          Agregar como víctima no incluida
+          Registrar y caracterizar
         </Button>
       ) : (
         <View>
-          <Text style={styles.formTitulo}>Víctima No Incluida</Text>
+          <Text style={styles.formTitulo}>Alta manual</Text>
           <Text style={styles.formSubtitulo}>
             {tipoDoc}  ·  {documento}
           </Text>
@@ -462,7 +464,7 @@ function TarjetaNoEncontrado({
             <Button
               mode="contained"
               icon="account-plus"
-              onPress={() => onRegistrarNoIncluida({ primerNombre, segundoNombre, primerApellido, segundoApellido, fechaNacimiento, genero })}
+              onPress={() => onRegistrarAltaManual({ primerNombre, segundoNombre, primerApellido, segundoApellido, fechaNacimiento, genero })}
               disabled={!puedeAgregar() || cargandoRegistro}
               loading={cargandoRegistro}
               buttonColor={GOV.naranja}
@@ -509,7 +511,7 @@ function resultadoDesdePadron(
     segundo_apellido: '',
     fecha_nacimiento: '',
     genero: 'ND',
-    estado_ruv: p.en_ruv ? 'INCLUIDO' : 'NO_INCLUIDO',
+    estado_ruv: p.en_ruv ? 'INCLUIDO' : 'NO_VERIFICADO',
     habilitado_para_caracterizacion: p.habilitada && !p.ya_caracterizada,
     fecha_ult_caracterizacion: null,
     pertenencia_etnica: 'NINGUNA',
@@ -557,7 +559,7 @@ export default function BusquedaScreen() {
   const estaOnline = useSyncStore((s) => s.estaOnline);
   const refrescarContadores = useSyncStore((s) => s.refrescarContadores);
 
-  const [noIncluidaRegistrada, setNoIncluidaRegistrada] = useState(false);
+  const [altaManualRegistrada, setAltaManualRegistrada] = useState(false);
 
   // ── Sprint 16: limpiar el estado al volver a la pantalla si ya hubo un
   // flujo completado previamente. Detecta el "regreso desde el hub" leyendo
@@ -572,7 +574,7 @@ export default function BusquedaScreen() {
         setResultado(null);
         setErrorBusqueda(null);
         setInstrumentoSeleccionado(null);
-        setNoIncluidaRegistrada(false);
+        setAltaManualRegistrada(false);
         limpiar();
       }
     }, []),
@@ -614,7 +616,7 @@ export default function BusquedaScreen() {
     setResultado(null);
     setErrorBusqueda(null);
     setInstrumentoSeleccionado(null);
-    setNoIncluidaRegistrada(false);
+    setAltaManualRegistrada(false);
 
     // Si no hay red, ni intentamos el server: vamos directo al padrón offline.
     if (!estaOnline) {
@@ -699,12 +701,12 @@ export default function BusquedaScreen() {
     await refrescarContadores();
   }
 
-  // Víctima ya registrada (no incluida) — directo a conformar hogar
-  function conformarHogarNoIncluida() {
+  // Víctima ya registrada por alta manual — directo a conformar hogar
+  function conformarHogarAltaManual() {
     router.push('/(main)/hogares/conformar');
   }
 
-  async function registrarNoIncluida(datos: DatosNoIncluida) {
+  async function registrarAltaManual(datos: DatosAltaManual) {
     setCargandoRegistro(true);
     try {
       const payload: VictimaResumenFuente = {
@@ -717,7 +719,8 @@ export default function BusquedaScreen() {
         segundo_apellido: datos.segundoApellido,
         fecha_nacimiento: datos.fechaNacimiento,
         genero: datos.genero,
-        estado_ruv: 'NO_INCLUIDO',
+        // No es 'NO_INCLUIDO': lo único verificado es que no está en el padrón.
+        estado_ruv: 'NO_VERIFICADO',
         habilitado_para_caracterizacion: true,
         fecha_ult_caracterizacion: null,
         pertenencia_etnica: 'NINGUNA',
@@ -727,7 +730,7 @@ export default function BusquedaScreen() {
         hechos_victimizantes: [],
         municipio_residencia_codigo: null,
         municipio_residencia_nombre: null,
-        fuente_origen: 'NO_INCLUIDA',
+        fuente_origen: 'MANUAL',
       };
       if (estaOnline) {
         try {
@@ -739,15 +742,15 @@ export default function BusquedaScreen() {
           await registrarVictimaOffline(payload);
         }
       } else {
-        // Sin red: registrar la víctima no incluida OFFLINE (id_local + cola).
+        // Sin red: registrar el alta manual OFFLINE (id_local + cola).
         await registrarVictimaOffline(payload);
       }
-      setNoIncluidaRegistrada(true);
+      setAltaManualRegistrada(true);
     } catch (err: any) {
       // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
       reportarError({
         nivel: 'warn',
-        mensaje: 'registrarNoIncluida — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        mensaje: 'registrarAltaManual — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
         stack: err?.stack,
         pantalla: 'busqueda',
       });
@@ -761,8 +764,8 @@ export default function BusquedaScreen() {
     if (!resultado) return null;
 
     if (!resultado.encontrado) {
-      // Si ya se registró como No Incluida → mostrar resumen + selección de instrumento
-      if (noIncluidaRegistrada) {
+      // Si ya se dio de alta a mano → mostrar resumen + selección de instrumento
+      if (altaManualRegistrada) {
         const nombre = [
           victimaFuente?.primer_nombre,
           victimaFuente?.segundo_nombre,
@@ -776,18 +779,18 @@ export default function BusquedaScreen() {
               <View style={styles.tarjetaEncabezado}>
                 <MaterialCommunityIcons name="account-plus-outline" size={32} color={GOV.naranja} style={styles.icono} />
                 <Text style={[styles.tarjetaTitulo, { color: GOV.naranja }]}>
-                  Registrada como Víctima No Incluida
+                  Registrada para caracterización
                 </Text>
               </View>
               {nombre ? <Text style={styles.nombreCompleto}>{nombre}</Text> : null}
               <Text style={styles.tarjetaMensaje}>{tipoDoc}  ·  {documento}</Text>
-              <Text style={styles.tarjetaFuente}>Pendiente de inclusión en el RUV</Text>
+              <Text style={styles.tarjetaFuente}>Su condición en el RUV queda por verificar</Text>
             </Surface>
 
             <Button
               mode="contained"
               icon="home-plus"
-              onPress={conformarHogarNoIncluida}
+              onPress={conformarHogarAltaManual}
               buttonColor={GOV.naranja}
               textColor="#FFFFFF"
               style={[styles.botonAccion, styles.botonConformar]}
@@ -805,7 +808,7 @@ export default function BusquedaScreen() {
           tipoDoc={tipoDoc}
           documento={documento}
           cargandoRegistro={cargandoRegistro}
-          onRegistrarNoIncluida={registrarNoIncluida}
+          onRegistrarAltaManual={registrarAltaManual}
         />
       );
     }
@@ -1222,7 +1225,7 @@ const styles = StyleSheet.create({
   },
   modalOpcionNombreActivo: { color: GOV.azulOscuro, fontWeight: '600' },
 
-  // Formulario no incluida
+  // Formulario de alta manual
   formTitulo: { ...FONT.h3, color: GOV.naranja, marginBottom: 2 },
   formSubtitulo: { ...FONT.caption, color: GOV.textoS, marginBottom: SPACING.sm, fontFamily: 'monospace' },
   formInput: { marginBottom: SPACING.sm, backgroundColor: GOV.superficie },

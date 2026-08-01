@@ -37,10 +37,17 @@ class Victima(models.Model):
     sin descifrar el registro completo.
     """
     ESTADO_RUV = [
-        ('INCLUIDO',    'Incluido en RUV'),
-        ('NO_INCLUIDO', 'No incluido en RUV'),
-        ('EN_PROCESO',  'En proceso de valoración'),
-        ('EXCLUIDO',    'Excluido del RUV'),
+        ('INCLUIDO',      'Incluido en RUV'),
+        ('NO_INCLUIDO',   'No incluido en RUV'),
+        ('EN_PROCESO',    'En proceso de valoración'),
+        ('EXCLUIDO',      'Excluido del RUV'),
+        # Alta manual en campo: la persona NO está en el padrón descargado, y eso
+        # NO significa que no esté en el RUV. 1,88 M de víctimas incluidas quedaron
+        # fuera del padrón por falta de identidad en la .9 (ver
+        # docs/oracle-legacy-padron/hallazgos_identidad_padron.md). Marcarlas
+        # 'NO_INCLUIDO' les grabaría un estado falso que viaja al hogar y a los
+        # reportes; este valor dice lo que sí se sabe y deja la condición abierta.
+        ('NO_VERIFICADO', 'No verificado — no está en el padrón descargado'),
     ]
 
     ESTADO_CIVIL = [

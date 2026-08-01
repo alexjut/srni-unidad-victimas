@@ -282,11 +282,16 @@ export default function HogarDetalleScreen() {
     if (!hogarId) return;
     try {
       const { data: reg } = await victimasApi.registrarDesdeFuente(miembro);
-      const incluido = miembro.estado_ruv === 'INCLUIDO';
+      // Se propaga el estado del padrón tal cual. Antes todo lo que no fuera
+      // INCLUIDO caía en NO_INCLUIDO, que afirma una verificación que no hubo.
+      const estadoInclusion =
+        miembro.estado_ruv === 'INCLUIDO' ? 'INCLUIDO'
+        : miembro.estado_ruv === 'NO_INCLUIDO' ? 'NO_INCLUIDO'
+        : 'NO_VERIFICADO';
       await hogaresApi.agregarMiembro(hogarId, {
         victima: reg.victima_id,
         rol,
-        estado_inclusion: incluido ? 'INCLUIDO' : 'NO_INCLUIDO',
+        estado_inclusion: estadoInclusion,
         genero: miembro.genero,
       });
       const clave = `${miembro.tipo_documento}-${miembro.numero_documento}`;

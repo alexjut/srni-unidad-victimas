@@ -42,7 +42,7 @@ export interface VictimaResumen {
   pertenencia_etnica: string;
   discapacidad: boolean;
   tipo_discapacidad: string;
-  estado_ruv: 'INCLUIDO' | 'NO_INCLUIDO' | 'EN_PROCESO' | 'EXCLUIDO';
+  estado_ruv: 'INCLUIDO' | 'NO_INCLUIDO' | 'EN_PROCESO' | 'EXCLUIDO' | 'NO_VERIFICADO';
   municipio_residencia: number | null;
   municipio_residencia_nombre: string | null;
   departamento_nombre: string | null;
@@ -132,7 +132,7 @@ export type Parentesco =
 export type RolMiembro = 'MIEMBRO' | 'TUTOR' | 'CUIDADOR_PERMANENTE';
 
 /** Estado de inclusión según verificación en el RUV */
-export type EstadoInclusion = 'INCLUIDO' | 'NO_INCLUIDO';
+export type EstadoInclusion = 'INCLUIDO' | 'NO_INCLUIDO' | 'NO_VERIFICADO';
 
 export interface MiembroHogarResumen {
   id: string;
@@ -259,7 +259,7 @@ export interface VictimaResumenFuente {
   segundo_apellido: string;
   fecha_nacimiento: string;       // ISO date 'YYYY-MM-DD'
   genero: 'M' | 'F' | 'NB' | 'ND';
-  estado_ruv: 'INCLUIDO' | 'NO_INCLUIDO' | 'EN_PROCESO' | 'EXCLUIDO';
+  estado_ruv: 'INCLUIDO' | 'NO_INCLUIDO' | 'EN_PROCESO' | 'EXCLUIDO' | 'NO_VERIFICADO';
   habilitado_para_caracterizacion: boolean;
   fecha_ult_caracterizacion: string | null;  // ISO datetime
   pertenencia_etnica: string;

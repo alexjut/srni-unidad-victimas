@@ -81,9 +81,24 @@ esos, **nunca `cz_postgres`**.
 ### Qué falta
 
 1. Terminar `generar_padron` (el SQLite descargable) — en curso al cierre de esta nota.
-2. Probar login + búsqueda con un documento real.
-3. Decidir la **etiqueta del alta manual**: hoy dice *"Víctima No Incluida"* a gente que
-   **sí es incluida** pero no está en el padrón. Es decisión funcional.
+   ⚠️ **Bloqueado el 1-ago por la VPN:** no hay ruta al `.109` (ping perdido, sin
+   adaptador levantado), así que no se pudo leer `~/logs/rematar.log` ni verificar si
+   el UPDATE de fechas terminó. **Es lo primero al reconectar.**
+2. Probar login + búsqueda con un documento real. — *también espera VPN.*
+3. ~~Decidir la **etiqueta del alta manual**~~ ✅ **DECIDIDO Y APLICADO (1-ago).**
+   Estado nuevo **`NO_VERIFICADO`** = *"no está en el padrón descargado"*, que no es
+   *"no está en el RUV"*. Toca `Victima.ESTADO_RUV`, `MiembroHogar.ESTADO_INCLUSION`,
+   la APK (payload, colores y textos) y tres migraciones —`victimas/0008`,
+   `victimas/0009` (datos), `hogares/0007`—. De paso salieron tres defectos: la APK
+   mandaba `fuente_origen='NO_INCLUIDA'`, que **no existe** en el modelo y entraba
+   porque el serializer era un `CharField` suelto; el default del serializer era
+   `NO_INCLUIDO`; y el padrón offline degradaba a `NO_INCLUIDO` todo lo que no viniera
+   marcado `INCLUIDO`. 10 tests nuevos; suite 549 pass / 1 xfail.
+   **Detalle en [`../ciclo_completo_tablas.md`](../ciclo_completo_tablas.md) §6.**
+   ⏳ Queda **para Brando**: la clave `NO_VERIFICADO` en `ESTADO_RUV_BADGE` del
+   frontend web (no rompe, solo no pinta el badge).
+   🚀 **Al desplegar:** correr las migraciones — hay una de datos que reetiqueta las
+   altas manuales ya grabadas.
 4. Encender las tareas programadas cuando se quiera.
 5. Las 5 preguntas para OTI.
 6. `xfail` abierto: los capítulos D/E/F/G de ASISTENCIA ya no están cerrados a los
