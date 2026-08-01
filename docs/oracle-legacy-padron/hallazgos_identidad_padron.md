@@ -329,6 +329,11 @@ incluidas**, y el encuestador no tendría cómo saberlo.
 5. **(corte)** ¿Con qué periodicidad se refresca `M_CARACT_TABLA_RA_PER`? De eso
    depende cada cuánto recargamos el padrón.
 
+> 📧 **Borrador listo para enviar (1-ago):**
+> [`../gestion/correo_oti_identidad_padron.md`](../gestion/correo_oti_identidad_padron.md)
+> — las cinco, redactadas para que OTI las responda sin conocer nuestro contexto, con
+> la evidencia de cada una incluida. Pendiente: que Javier lo revise y lo mande.
+
 ---
 
 ## Cómo usar este registro

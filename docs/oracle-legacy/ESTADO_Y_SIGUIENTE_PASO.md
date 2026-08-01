@@ -100,7 +100,10 @@ esos, **nunca `cz_postgres`**.
    🚀 **Al desplegar:** correr las migraciones — hay una de datos que reetiqueta las
    altas manuales ya grabadas.
 4. Encender las tareas programadas cuando se quiera.
-5. Las 5 preguntas para OTI.
+5. Las 5 preguntas para OTI — **borrador listo (1-ago)**:
+   [`../gestion/correo_oti_identidad_padron.md`](../gestion/correo_oti_identidad_padron.md).
+   Falta que Javier lo revise y lo mande. Ninguna de las cinco bloquea el despliegue;
+   la 1 y la 3 son las que recuperarían al 24 % que quedó fuera del padrón.
 6. `xfail` abierto: los capítulos D/E/F/G de ASISTENCIA ya no están cerrados a los
    incluidos en RUV (defecto funcional vivo; reponerlo exige regenerar bundle y
    validar en dispositivo).
