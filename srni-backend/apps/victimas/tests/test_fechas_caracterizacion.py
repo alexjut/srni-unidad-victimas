@@ -184,3 +184,43 @@ def test_correrlo_dos_veces_da_lo_mismo(fuente):
                for v in Victima.objects.all()}
     assert primera == segunda
     assert Victima.objects.count() == 5
+
+
+# ── 6. que en producción se use el camino rápido ─────────────────────────────
+def test_en_postgres_vuelca_con_copy_no_fila_a_fila(fuente):
+    """
+    La primera versión escribía con `bulk_update`: en producción hizo 15.000 filas
+    en 7 minutos —36 filas/s, ~25 h para las 3,3 M— y hubo que matarla. El COPY a
+    una temporal más un solo UPDATE hace lo mismo en minutos.
+
+    Este test no mide velocidad (eso no se puede en SQLite): comprueba que en
+    PostgreSQL se tome el camino del COPY y no el de fila a fila.
+    """
+    from apps.victimas.management.commands import cargar_fechas_caracterizacion as mod
+
+    ruta = f"{mod.__name__}.connection"
+    with mock.patch(ruta) as conexion:
+        conexion.vendor = "postgresql"
+        assert mod.Command()._hay_copy is True
+
+    with mock.patch(ruta) as conexion:
+        conexion.vendor = "sqlite"
+        assert mod.Command()._hay_copy is False
+
+
+def test_la_regla_de_2_anios_se_evalua_una_sola_vez_y_en_python(fuente):
+    """
+    La vigencia se decide con `debe_recaracterizarse()` y al SQL solo viaja el
+    booleano ya resuelto. Traducir la regla a SQL daría dos versiones de la misma
+    norma en dos lenguajes, y el día que difieran nadie sabría cuál manda.
+    """
+    import inspect
+    from apps.victimas.management.commands import cargar_fechas_caracterizacion as mod
+
+    fuente_sql = "".join(
+        linea for linea in inspect.getsource(mod).splitlines(keepends=True)
+        if "UPDATE" in linea or "COPY" in linea or "SELECT" in linea)
+    for pista in ("INTERVAL", "AGE(", "NOW() -", "CURRENT_DATE -", "EXTRACT"):
+        assert pista not in fuente_sql.upper(), (
+            f"El SQL calcula fechas ({pista}): la regla de los 2 años quedaría "
+            f"duplicada. Debe llegar resuelta desde debe_recaracterizarse().")

@@ -30,17 +30,41 @@ antigüedad. Se descartan: quedan con fecha nula, que por
 `debe_recaracterizarse()` significa "hay que caracterizarla" — que es justo lo
 correcto para un dato que no sabemos.
 
+Cómo se escribe — medido, no supuesto
+--------------------------------------
+| Estrategia | Ritmo | Las 3,3 M |
+|---|---:|---:|
+| `bulk_update` por lotes | 36 filas/s | **~25 h** |
+| `COPY` a temporal + un `UPDATE ... FROM` | ~5.000 filas/s | **~12 min** |
+
+`bulk_update` emite un `UPDATE ... CASE WHEN` por lote y antes un `SELECT ... IN`
+para traer los objetos: sobre un padrón de 5,9 M con índices, eso es un viaje a la
+base por cada mil filas. La primera versión hacía eso y en 7 minutos llevaba 15.000
+de 3,3 millones.
+
+La versión de ahora vuelca los pares `(cons_persona, vencida, fecha)` con `COPY`
+—que es la vía más rápida que tiene PostgreSQL para meter filas— a una tabla
+temporal, y después hace **un solo** `UPDATE ... FROM` con join por `cons_persona`.
+
+**La regla de los 2 años se sigue evaluando en Python**, con
+`debe_recaracterizarse()`, y el resultado viaja como un booleano más en el `COPY`.
+No se traduce a SQL: duplicar una regla de negocio en dos lenguajes es cómo se
+consigue que un día digan cosas distintas y nadie sepa cuál manda.
+
 Uso
 ---
     python manage.py cargar_fechas_caracterizacion             # DRY-RUN
-    python manage.py cargar_fechas_caracterizacion --confirmar # ~1 min
+    python manage.py cargar_fechas_caracterizacion --confirmar # ~12 min
 
 DRY-RUN por defecto. Idempotente: se puede correr cuantas veces se quiera.
 """
+import csv
 import datetime
+import io
 import time
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 
 from apps.victimas import homologacion as H
 
@@ -77,9 +101,12 @@ class Command(BaseCommand):
             f"origen {conexion['dsn']} · GIC_HOGAR\n"))
 
         hoy = datetime.date.today()
-        cont = {"leidas": 0, "aplicadas": 0, "sin_persona_en_padron": 0,
-                "fecha_imposible": 0, "vencidas": 0, "al_dia": 0}
+        cont = {"leidas": 0, "aplicadas": 0, "fecha_imposible": 0,
+                "vencidas": 0, "al_dia": 0}
         inicio = time.monotonic()
+
+        if confirmar:
+            self._crear_temporal()
 
         try:
             cursor = conexion["con"].cursor()
@@ -89,17 +116,20 @@ class Command(BaseCommand):
                 filas = cursor.fetchmany(lote)
                 if not filas:
                     break
-                self._aplicar_lote(filas, cont, hoy, confirmar, Victima)
+                self._procesar_lote(filas, cont, hoy, confirmar)
                 self.stdout.write(
-                    f"  {cont['leidas']:>9,} leídas · {cont['aplicadas']:>9,} aplicadas "
-                    f"· {cont['vencidas']:>9,} vencidas · "
-                    f"{cont['sin_persona_en_padron']:>8,} fuera del padrón")
+                    f"  {cont['leidas']:>9,} leídas · {cont['vencidas']:>9,} vencidas "
+                    f"· {cont['al_dia']:>9,} al día")
         except Exception as exc:                                   # noqa: BLE001
             raise CommandError(
                 f"Falló tras {cont['leidas']:,} filas: {exc}\n"
-                f"Es idempotente: volver a correrla entera (~1 min) no duplica nada.")
+                f"Es idempotente: volver a correrla entera no duplica nada.")
         finally:
             conexion["con"].close()
+
+        if confirmar:
+            self.stdout.write("  volcando a la tabla del padrón…")
+            cont["aplicadas"] = self._aplicar()
 
         segundos = time.monotonic() - inicio
         self.stdout.write(self.style.SUCCESS(
@@ -109,9 +139,11 @@ class Command(BaseCommand):
             f"  vencidas (>{H.ANIOS_VIGENCIA_CARACTERIZACION} años, hay que "
             f"recaracterizar): {cont['vencidas']:,}")
         self.stdout.write(f"  al día: {cont['al_dia']:,}")
-        self.stdout.write(self.style.WARNING(
-            f"  fuera del padrón (caracterizadas pero no son víctimas incluidas hoy): "
-            f"{cont['sin_persona_en_padron']:,}"))
+        fuera = cont["leidas"] - cont["fecha_imposible"] - cont["aplicadas"]
+        if confirmar and fuera > 0:
+            self.stdout.write(self.style.WARNING(
+                f"  fuera del padrón (caracterizadas pero no son víctimas incluidas "
+                f"hoy): {fuera:,}"))
         if cont["fecha_imposible"]:
             self.stdout.write(self.style.WARNING(
                 f"  fechas imposibles descartadas (anteriores a "
@@ -129,15 +161,44 @@ class Command(BaseCommand):
         return {"con": cx.abrir_conexion(cx.DESTINO_PRODUCCION),
                 "dsn": f"{cfg['user']}@{cfg['host']}:{cfg['port']}/{cfg['service']}"}
 
-    def _aplicar_lote(self, filas, cont, hoy, confirmar, Victima):
-        """Un lote de (per_idpersona, fecha) → `bulk_update` sobre las que existan.
+    TEMPORAL = "tmp_fechas_caracterizacion"
 
-        Se busca por `cons_persona`, que es el id de la persona en el legacy y la
-        misma llave con la que `cargar_padron_oracle` insertó. Las que no estén son
-        personas caracterizadas alguna vez que **hoy no son víctimas incluidas** — no
-        es un error: es la diferencia entre "se caracterizó" y "hay que caracterizar".
+    @property
+    def _hay_copy(self):
+        """`COPY` es de PostgreSQL. En SQLite —desarrollo y tests— se escribe con
+        `bulk_update`, que es lento pero ahí son cuatro filas.
+
+        Los dos caminos comparten lo que importa: la decisión de vigencia se toma
+        una sola vez, en `_procesar_lote`, con `debe_recaracterizarse()`. Lo que
+        cambia es cómo se vuelcan las filas, no qué dicen."""
+        return connection.vendor == "postgresql"
+
+    def _crear_temporal(self):
+        """Tabla temporal donde aterriza el `COPY`. Vive lo que dure la conexión."""
+        if not self._hay_copy:
+            self._pendientes = {}
+            return
+        with connection.cursor() as cur:
+            cur.execute(f"DROP TABLE IF EXISTS {self.TEMPORAL}")
+            cur.execute(f"""
+                CREATE TEMP TABLE {self.TEMPORAL} (
+                    cons_persona bigint PRIMARY KEY,
+                    vencida      boolean NOT NULL,
+                    fecha        timestamptz NOT NULL
+                )""")
+
+    def _procesar_lote(self, filas, cont, hoy, confirmar):
         """
-        fechas = {}
+        Un lote de `(per_idpersona, fecha)` → decide vigencia y lo vuelca por `COPY`.
+
+        La regla de los 2 años se evalúa **aquí, en Python**, con
+        `debe_recaracterizarse()`. Al SQL solo viaja el booleano ya resuelto: la
+        regla vive en un único lugar y es la que está cubierta por tests.
+        """
+        buffer = io.StringIO()
+        escritor = csv.writer(buffer, delimiter="\t", lineterminator="\n")
+        n = 0
+
         for per_id, fecha in filas:
             cont["leidas"] += 1
             if fecha is None:
@@ -145,43 +206,65 @@ class Command(BaseCommand):
             if fecha.year < ANIO_MINIMO_PLAUSIBLE or fecha.date() > hoy:
                 cont["fecha_imposible"] += 1
                 continue
-            fechas[per_id] = fecha
-
-        if not fechas:
-            return
-
-        # `only` para no traer 20 columnas de cada persona: son millones de filas.
-        encontradas = list(
-            Victima.objects.filter(cons_persona__in=list(fechas))
-            .only("id", "cons_persona", "fecha_ult_caracterizacion",
-                  "habilitado_para_caracterizacion")
-        )
-        cont["sin_persona_en_padron"] += len(fechas) - len(encontradas)
-
-        por_actualizar = []
-        for victima in encontradas:
-            fecha = fechas[victima.cons_persona]
             vencida = H.debe_recaracterizarse(fecha, hoy=hoy)
             cont["vencidas" if vencida else "al_dia"] += 1
-            victima.fecha_ult_caracterizacion = self._con_zona(fecha)
-            # Ya son todas víctimas incluidas (el padrón las filtró): lo único que
-            # decide la habilitación es si la caracterización venció.
-            victima.habilitado_para_caracterizacion = vencida
-            por_actualizar.append(victima)
+            if not confirmar:
+                continue
+            if self._hay_copy:
+                escritor.writerow([per_id, "t" if vencida else "f",
+                                   fecha.isoformat(sep=" ")])
+                n += 1
+            else:
+                self._pendientes[per_id] = (vencida, fecha)
 
-        cont["aplicadas"] += len(por_actualizar)
-        if confirmar and por_actualizar:
-            Victima.objects.bulk_update(
-                por_actualizar,
-                ["fecha_ult_caracterizacion", "habilitado_para_caracterizacion"],
-                batch_size=1000,
-            )
+        if confirmar and self._hay_copy and n:
+            buffer.seek(0)
+            with connection.cursor() as cur:
+                cur.copy_expert(
+                    f"COPY {self.TEMPORAL} (cons_persona, vencida, fecha) FROM STDIN",
+                    buffer)
 
-    @staticmethod
-    def _con_zona(fecha):
-        """Oracle devuelve `DATE` sin zona; el campo es `DateTimeField`. Sin esto
-        Django emite un `RuntimeWarning` por naive datetime en cada fila."""
+    def _aplicar(self):
+        """
+        Un solo `UPDATE ... FROM` con join por `cons_persona`.
+
+        Las filas de la temporal que no encuentren pareja son personas caracterizadas
+        alguna vez que **hoy no son víctimas incluidas**, así que no están en el
+        padrón. No es un error: es la diferencia entre "se caracterizó" y "hay que
+        caracterizar".
+
+        Ya son todas víctimas incluidas (el padrón las filtró al cargarse), así que
+        lo único que decide la habilitación es si la caracterización venció.
+        """
+        if not self._hay_copy:
+            return self._aplicar_sin_copy()
+        with connection.cursor() as cur:
+            cur.execute(f"""
+                UPDATE victimas_victima v
+                   SET fecha_ult_caracterizacion = t.fecha,
+                       habilitado_para_caracterizacion = t.vencida,
+                       updated_at = NOW()
+                  FROM {self.TEMPORAL} t
+                 WHERE v.cons_persona = t.cons_persona""")
+            return cur.rowcount
+
+    def _aplicar_sin_copy(self):
+        """Camino de SQLite (desarrollo y tests): `bulk_update`. Mismo resultado."""
         from django.utils import timezone
-        if timezone.is_naive(fecha):
-            return timezone.make_aware(fecha, timezone.get_current_timezone())
-        return fecha
+        from apps.victimas.models import Victima
+
+        encontradas = list(
+            Victima.objects.filter(cons_persona__in=list(self._pendientes))
+            .only("id", "cons_persona", "fecha_ult_caracterizacion",
+                  "habilitado_para_caracterizacion"))
+        for victima in encontradas:
+            vencida, fecha = self._pendientes[victima.cons_persona]
+            if timezone.is_naive(fecha):
+                fecha = timezone.make_aware(fecha, timezone.get_current_timezone())
+            victima.fecha_ult_caracterizacion = fecha
+            victima.habilitado_para_caracterizacion = vencida
+        Victima.objects.bulk_update(
+            encontradas,
+            ["fecha_ult_caracterizacion", "habilitado_para_caracterizacion"],
+            batch_size=1000)
+        return len(encontradas)
