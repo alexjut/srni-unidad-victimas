@@ -9,7 +9,90 @@
 
 ---
 
-## 0-bis. Actualización 2026-07-28 — **ESCALÓN 2 LOGRADO** (leer esto primero)
+## 0-ter. Actualización 2026-08-01 — **EL PADRÓN REAL ESTÁ CARGADO** (leer esto primero)
+
+Ya no estamos leyendo el padrón: **está en nuestra base**.
+
+| | |
+|---|---|
+| Personas en el padrón | **5.927.713** víctimas **incluidas** (`ESTADO_RUV = 1`) |
+| Fuente | `GIC_PERSONA` ⨝ `M_CARACT_TABLA_RA_PER@DBL_VIVANTO` |
+| Duración de la carga | 19 h (sobrevivió a dos caídas de VPN) |
+| Regla de 2 años | **1.940.213 vencidas** · 1.392.101 al día |
+| Descartadas | 0 |
+
+**Antes de tocar nada, leer:**
+[`../oracle-legacy-padron/hallazgos_identidad_padron.md`](../oracle-legacy-padron/hallazgos_identidad_padron.md)
+— 11 hallazgos sobre cómo está partida la identidad entre las tres bases, y las
+**5 preguntas para OTI**. Y [`../ciclo_completo_tablas.md`](../ciclo_completo_tablas.md)
+— el recorrido entero de un dato y qué se rompe en cada etapa.
+
+### Lo que se decidió, y lo que costó
+
+**No se usó `MI_PERSONAS`**, que era el origen pedido. Tres mediciones lo impidieron:
+su `PER_ID` no se alcanza desde `GIC_PERSONA.PER_IDMODELOINT` (**0 de 20.000**); el
+puente `DEP_RUV_PERSONAS_MI` mezcla RUPD/RUV/SIV y el `CONS_PERONA` del corte cruza
+con **dos fuentes a la vez**; y el cruce por documento devuelve **1.159 millones de
+filas a partir de 20.000 documentos** porque hay 1,2 M de documentos de un solo
+carácter. Cualquiera de esos caminos asigna datos de **otra persona**, en silencio.
+
+**El precio:** **1.884.872 víctimas incluidas (24 %)** no tienen identidad en la .9 y
+**quedan fuera del padrón**. La APK debe permitir alta manual — no es un caso raro,
+es una de cada cuatro.
+
+### Cuatro defectos que estaban escondidos y ya no
+
+1. **Producción respondía con el MOCK.** `settings.VICTIMA_REPOSITORY` no existía en
+   ningún settings → `getattr(..., "MOCK")`. Las búsquedas devolvían ENC001 y
+   documentos 999… El sistema *funcionaba*, solo que contra otra base.
+2. **La precarga pedía el padrón entero.** `/api/victimas/precarga/` llamaba a
+   `listar_todas()` sin tope: con el mock eran 11 personas, con el padrón real
+   5.926.004 → el login de la APK quedaba colgado sin dar error.
+3. **`MEDIA_ROOT` solo estaba en development** → `generar_padron` abortaba en el
+   servidor.
+4. **`CELERY_TASK_TIME_LIMIT = 600`** habría matado la recarga mensual a los 10 min, y
+   el `visibility_timeout` de Redis (1 h) habría lanzado **dos cargas simultáneas**
+   contra Oracle.
+
+Los cuatro con test de regresión.
+
+### Para que se mantenga solo
+
+`cz_beat` + `cz_celery_padron` desplegados, con tres tareas — **apagadas por defecto**,
+porque encenderlas escribe en producción:
+
+| Tarea | Cuándo | Interruptor |
+|---|---|---|
+| `recargar_padron` (padrón → fechas → SQLite) | 1.º sábado del mes, 20:00 | `PADRON_RECARGA_HABILITADA` |
+| `refrescar_fechas_padron` (fechas → SQLite) | diaria, 03:30 (~15 min) | idem |
+| `reintentar_sincronizaciones_pendientes` | cada 15 min | `SYNC_REINTENTO_HABILITADO` |
+
+Para encenderlas: editar el `.env` del servidor y `docker compose up -d cz_beat`.
+
+### Lección operativa (costó cuatro intentos)
+
+**La VPN a 30.0.1.109 se cae seguido.** Los comandos largos por SSH mueren con cada
+corte. Lo que funciona: subir un script y lanzarlo con `setsid nohup` **del lado del
+servidor**, y consultar el log aparte. Así sobrevivió la carga de 19 h. Los cortes a
+mitad de un `docker compose up` dejan contenedores huérfanos con nombre hasheado
+(`41812ae7da25_cz_backend`) que bloquean el siguiente `up`: hay que `docker rm -f`
+esos, **nunca `cz_postgres`**.
+
+### Qué falta
+
+1. Terminar `generar_padron` (el SQLite descargable) — en curso al cierre de esta nota.
+2. Probar login + búsqueda con un documento real.
+3. Decidir la **etiqueta del alta manual**: hoy dice *"Víctima No Incluida"* a gente que
+   **sí es incluida** pero no está en el padrón. Es decisión funcional.
+4. Encender las tareas programadas cuando se quiera.
+5. Las 5 preguntas para OTI.
+6. `xfail` abierto: los capítulos D/E/F/G de ASISTENCIA ya no están cerrados a los
+   incluidos en RUV (defecto funcional vivo; reponerlo exige regenerar bundle y
+   validar en dispositivo).
+
+---
+
+## 0-bis. Actualización 2026-07-28 — **ESCALÓN 2 LOGRADO**
 
 El corte de este documento (16-jul) quedó viejo. Estado real al 28-jul:
 
