@@ -218,11 +218,32 @@ class Command(BaseCommand):
                 self._pendientes[per_id] = (vencida, fecha)
 
         if confirmar and self._hay_copy and n:
-            buffer.seek(0)
-            with connection.cursor() as cur:
-                cur.copy_expert(
-                    f"COPY {self.TEMPORAL} (cons_persona, vencida, fecha) FROM STDIN",
-                    buffer)
+            self._volcar_por_copy(buffer.getvalue())
+
+    def _volcar_por_copy(self, datos: str):
+        """
+        Mete el lote con `COPY`, sirva psycopg3 o psycopg2.
+
+        No es adorno: el proyecto usa **psycopg 3** (psycopg2-binary no tiene wheels
+        para Python 3.14, ver `requirements.txt`), y ahí `copy_expert` **no existe** —
+        se reemplazó por `cursor.copy()` como context manager. Escribirlo a la
+        psycopg2 falla con `'Cursor' object has no attribute 'copy_expert'` recién al
+        correr contra PostgreSQL: en SQLite este camino ni se toca, así que los tests
+        pasaban igual. Pasó en producción el 1-ago-2026.
+
+        Se soportan las dos porque el driver es una decisión de infraestructura que ya
+        cambió una vez y puede volver a cambiar.
+        """
+        sql = f"COPY {self.TEMPORAL} (cons_persona, vencida, fecha) FROM STDIN"
+        with connection.cursor() as cur:
+            # Django envuelve el cursor en `CursorWrapper`; el `COPY` lo entiende el
+            # cursor del driver, que está debajo.
+            crudo = getattr(cur, "cursor", cur)
+            if hasattr(crudo, "copy"):                      # psycopg 3
+                with crudo.copy(sql) as copia:
+                    copia.write(datos)
+            else:                                           # psycopg 2
+                crudo.copy_expert(sql, io.StringIO(datos))
 
     def _aplicar(self):
         """
