@@ -53,6 +53,19 @@ DATABASES = {
     }
 }
 
+# ─── Archivos generados (padrón offline descargable) ─────────────────────────
+# `MEDIA_ROOT` estaba SOLO en development, así que en el servidor caía al default
+# de Django (cadena vacía) y `generar_padron` abortaba con "MEDIA_ROOT no está
+# configurado". Mientras el padrón se generaba a mano no se notó; al programarlo,
+# el tercer paso de la cadena fallaría todos los meses.
+#
+# ⚠️ Tiene que ser un VOLUMEN COMPARTIDO entre el contenedor que genera el archivo
+# (cz_celery_padron) y el que lo sirve por /api/victimas/padron/download/
+# (cz_backend). Sin volumen, cada uno ve su propio directorio: la tarea diría "OK"
+# y la APK seguiría descargando el padrón viejo — o un 404.
+MEDIA_ROOT = config('MEDIA_ROOT', default='/app/media')
+MEDIA_URL = '/media/'
+
 # ─── HTTPS y headers de seguridad ────────────────────────────────────────────
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31536000       # 1 año

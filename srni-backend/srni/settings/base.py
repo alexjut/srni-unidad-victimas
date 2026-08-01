@@ -7,6 +7,7 @@ NUNCA poner credenciales aquí.
 import os
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab   # para CELERY_BEAT_SCHEDULE (al final del archivo)
 from decouple import config
 from django.templatetags.static import static
 from django.urls import reverse_lazy
@@ -376,13 +377,133 @@ CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=config('REDIS_URL', defa
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=CELERY_BROKER_URL)
 CELERY_TASK_DEFAULT_QUEUE = 'sync'
 # Las colas que el worker de producción escucha (`celery -A srni worker -Q sync,reports`).
+#
+# `padron` va SEPARADA y la consume su propio worker (cz_celery_padron). No es un
+# capricho de organización: la recarga del padrón ocupa un slot del worker durante
+# horas, y con `--concurrency 2` en el worker de `sync` eso significa quedarse con la
+# mitad de la capacidad de escritura a Oracle mientras dure. Con una cola aparte, la
+# sincronización de hogares sigue fluyendo aunque el padrón lleve dos días cargando.
 CELERY_TASK_ROUTES = {
     'apps.sincronizacion.tasks.*': {'queue': 'sync'},
+    'apps.victimas.tasks.*': {'queue': 'padron'},
 }
 CELERY_TASK_ACKS_LATE = True            # si el worker muere, la tarea se re-entrega
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1   # una escritura a Oracle por vez, sin acaparar
 CELERY_TASK_TIME_LIMIT = 600
 CELERY_TASK_SOFT_TIME_LIMIT = 540
+# Ojo: estos dos límites son el DEFAULT, pensado para escribir un hogar en Oracle.
+# Las tareas del padrón declaran los suyos (`soft_time_limit`/`time_limit` en el
+# decorador) porque 600 s mataría la recarga a los diez minutos.
+
+# Zona horaria de las tareas programadas.
+#
+# Sin esto Celery interpreta los `crontab()` en UTC: un "a las 20:00" definido para
+# la madrugada colombiana se dispararía a las 15:00 hora local, en plena jornada de
+# campo y con la aplicación legacy usando el mismo Oracle. Se ata a TIME_ZONE para
+# que el horario del schedule se lea como lo lee un operador aquí.
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Con Redis como broker, un mensaje que el worker no confirma en
+# `visibility_timeout` segundos se RE-ENTREGA a otro worker. El default es 1 hora:
+# con la recarga del padrón —del orden de un día— Redis la volvería a repartir una
+# y otra vez, y habría varias cargas simultáneas contra Oracle. Se sube por encima
+# del peor caso previsto. El bloqueo distribuido (srni/bloqueos.py) es la segunda
+# red por si aun así se cuela una re-entrega.
+CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 50 * 3600}
+
+# --- Recarga periódica del padrón ------------------------------------------
+# Apagada por defecto, mismo criterio que ORACLE_SYNC: leer millones de filas del
+# Oracle de producción es una decisión operativa, no un efecto de desplegar.
+#
+# Los horarios se leen del entorno (no del código) para poder moverlos editando el
+# `.env` del servidor y recreando el contenedor de beat, sin reconstruir la imagen:
+# "esta semana no corras, que OTI tiene mantenimiento" no debería exigir un release.
+PADRON_RECARGA = {
+    'HABILITADA': config('PADRON_RECARGA_HABILITADA', default=False, cast=bool),
+    # Cadena completa (padrón + fechas + SQLite). Mensual: el primer sábado, 20:00.
+    'HORA': config('PADRON_RECARGA_HORA', default=20, cast=int),
+    'DIA_SEMANA': config('PADRON_RECARGA_DIA_SEMANA', default='saturday'),
+    'DIAS_MES': config('PADRON_RECARGA_DIAS_MES', default='1-7'),
+    # Refresco liviano (fechas + SQLite). Diario, de madrugada.
+    'HORA_REFRESCO': config('PADRON_REFRESCO_HORA', default=3, cast=int),
+}
+
+# --- Barrida de reintento de la sincronización a Oracle ---------------------
+# Recoge los hogares que quedaron sin escribirse (broker caído al cerrar la
+# encuesta, interruptor apagado en ese momento, reintentos agotados, máquina de
+# estados a medias). Ver apps/sincronizacion/tasks.py.
+SYNC_REINTENTO = {
+    'HABILITADO': config('SYNC_REINTENTO_HABILITADO', default=False, cast=bool),
+    'CADA_MINUTOS': config('SYNC_REINTENTO_CADA_MINUTOS', default=15, cast=int),
+    # Cuántos hogares como máximo por corrida. Con `--concurrency 2` y una escritura
+    # que puede tardar minutos, encolar de a miles solo alarga la cola: el resto
+    # entra en la corrida siguiente, que es dentro de un cuarto de hora.
+    'LIMITE': config('SYNC_REINTENTO_LIMITE', default=50, cast=int),
+    # No reintentar algo que falló recién: volvería a fallar igual y ensuciaría el
+    # log cada cuarto de hora. También evita pisar la tarea original todavía en vuelo.
+    'ENFRIAMIENTO_MINUTOS': config('SYNC_REINTENTO_ENFRIAMIENTO', default=30, cast=int),
+    # A partir de aquí el hogar necesita que alguien lo mire: insistir no lo arregla.
+    'MAX_INTENTOS': config('SYNC_REINTENTO_MAX_INTENTOS', default=5, cast=int),
+}
+
+# --- Programación (celery beat) --------------------------------------------
+# Schedule ESTÁTICO aquí, NO django-celery-beat (que guarda el calendario en la BD
+# y lo deja editable desde el admin). Se evaluaron los dos; el razonamiento:
+#
+# 1. Lo que estas tareas disparan no es inocuo. Una lee millones de filas del Oracle
+#    de la UARIV durante horas; la otra escribe en él de forma irreversible. Un
+#    horario así debe pasar por revisión de código y quedar en el historial de git,
+#    no a dos clics de cualquiera con permisos de admin — hoy son tres personas, y
+#    "cada 5 minutos" en vez de "mensual" es un incidente contra producción.
+# 2. Ninguna dependencia ni migración nuevas. El proyecto ya arrastra tres
+#    incompatibilidades documentadas con Python 3.14 (ver requirements.txt), y una
+#    migración sobre la BD de producción para poder programar tareas es un costo
+#    que no hace falta pagar.
+# 3. Beat no depende de PostgreSQL: si la base va lenta o está en mantenimiento, el
+#    reloj sigue funcionando. Con django-celery-beat, la BD es parte del reloj.
+# 4. La flexibilidad que SÍ se necesita —apagar una tarea, mover la hora sin un
+#    release— ya está resuelta con las variables de entorno de arriba: se edita el
+#    `.env` del servidor y se recrea cz_beat, sin reconstruir la imagen.
+#
+# Si algún día los horarios pasan a cambiar seguido o los define alguien de negocio,
+# django-celery-beat es el paso natural: las tareas no cambian, solo el scheduler.
+#
+# Beat solo DISPARA; que no se solapen lo garantiza el bloqueo dentro de cada tarea.
+CELERY_BEAT_SCHEDULE = {
+    'padron-recarga-mensual': {
+        'task': 'apps.victimas.tasks.recargar_padron',
+        'schedule': crontab(minute=0, hour=PADRON_RECARGA['HORA'],
+                            day_of_month=PADRON_RECARGA['DIAS_MES'],
+                            day_of_week=PADRON_RECARGA['DIA_SEMANA']),
+        # ⚠️ En el crontab de Celery `day_of_month` y `day_of_week` se combinan con
+        # Y lógico (en el cron de Unix es O). Por eso '1-7' + 'saturday' significa
+        # exactamente "el primer sábado del mes", que es lo que se busca: la ventana
+        # de la carga cae íntegra en fin de semana, cuando ni los encuestadores en
+        # campo ni la aplicación legacy están golpeando el mismo Oracle.
+        #
+        # `expires` de 12 h: si el worker estuvo caído todo el sábado, la corrida se
+        # descarta en vez de arrancar el lunes a las nueve de la mañana y tener el
+        # Oracle de producción ocupado durante la jornada. Se pierde un mes de
+        # actualización del padrón —recuperable a mano— y no una semana de trabajo.
+        'options': {'queue': 'padron', 'expires': 12 * 3600},
+    },
+    'padron-refresco-diario': {
+        'task': 'apps.victimas.tasks.refrescar_fechas_padron',
+        'schedule': crontab(minute=30, hour=PADRON_RECARGA['HORA_REFRESCO']),
+        'options': {'queue': 'padron', 'expires': 6 * 3600},
+    },
+    'sincronizacion-reintento': {
+        'task': 'apps.sincronizacion.tasks.reintentar_sincronizaciones_pendientes',
+        'schedule': timedelta(minutes=SYNC_REINTENTO['CADA_MINUTOS']),
+        # `expires` es lo que impide el efecto "tormenta al volver": si el worker
+        # estuvo caído seis horas, sin esto arrancaría con dos docenas de barridas
+        # acumuladas ejecutándose una tras otra. Con expiración, las vencidas se
+        # descartan y solo corre la vigente — que de todos modos ve los mismos
+        # pendientes, porque el criterio es el estado de la base, no la hora.
+        'options': {'queue': 'sync', 'expires': 60 * SYNC_REINTENTO['CADA_MINUTOS']},
+    },
+}
 
 # --- Sincronización SICAV → Oracle legacy ---------------------------------
 # Interruptor de la escritura AUTOMÁTICA al cerrar una encuesta.
