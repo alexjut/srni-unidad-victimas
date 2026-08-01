@@ -5,7 +5,8 @@
  },
  "instrumento_version": {
   "numero": "V8",
-  "vigente_desde": "2023-07-14"
+  "vigente_desde": "2023-07-14",
+  "fuente_documental": "Diccionario de datos Entrevista de Caracterización V8 - Perfil Telefónico SAAH + Manual de Usuario Módulo VIVANTO Entrevista de Caracterización - Perfil Asistencia (UARIV, Código 520.06.06-1, versión 01, 07/10/2021) + Flujograma V9.1 (capítulo RF)"
  },
  "capitulos": [
   {
@@ -14,7 +15,8 @@
    "orden": 1,
    "nivel": "HOGAR",
    "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "objetivo": "Registrar el lugar donde se realiza la entrevista, el lugar de residencia del hogar (que puede no ser el mismo de la entrevista) y los datos de contacto. Adicionalmente, indagar por la pertenencia étnica de las personas que conforman el hogar.",
+   "aplicabilidad": {}
   },
   {
    "codigo": "B",
@@ -22,47 +24,69 @@
    "orden": 2,
    "nivel": "PERSONA",
    "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "objetivo": "Identificar la composición actual de los hogares con al menos una víctima incluida en el RUV y caracterizar a la población víctima según variables sociodemográficas (discapacidad, pertenencia étnica, orientación sexual e identidad de género, entre otras).",
+   "aplicabilidad": {}
   },
   {
    "codigo": "C",
    "nombre": "C. Vivienda",
    "orden": 3,
    "nivel": "HOGAR",
-   "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "poblacion_objetivo": "AUTORIZADO_TUTOR_CUIDADOR",
+   "objetivo": "Conocer las características de la vivienda (material de paredes exteriores, pisos y servicios con los que cuenta) que permitan identificar su calidad y determinar si el hogar está ubicado en zona de alto riesgo.",
+   "aplicabilidad": {
+    "tipo_persona_in": [
+     "AUTORIZADO",
+     "TUTOR",
+     "CUIDADOR"
+    ]
+   }
   },
   {
    "codigo": "D",
    "nombre": "D. Educación",
    "orden": 4,
    "nivel": "PERSONA",
-   "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "poblacion_objetivo": "VICTIMAS_RUV_3_ANOS_MAS",
+   "objetivo": "Conocer el nivel de asistencia escolar, la deserción escolar y el nivel de estudios más alto alcanzado para víctimas incluidas en el RUV de 3 años en adelante.",
+   "aplicabilidad": {
+    "ruv_incluido": true,
+    "edad_min": 3
+   }
   },
   {
    "codigo": "E",
    "nombre": "E. Salud",
    "orden": 5,
    "nivel": "PERSONA",
-   "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "poblacion_objetivo": "VICTIMAS_RUV_3_ANOS_MAS",
+   "objetivo": "Obtener información sobre la calidad y el acceso a los servicios de salud con los que cuenta el hogar, así como el tipo de afiliación que tienen.",
+   "aplicabilidad": {
+    "ruv_incluido": true,
+    "edad_min": 3
+   }
   },
   {
    "codigo": "F",
    "nombre": "F. Rehabilitación",
    "orden": 6,
    "nivel": "PERSONA",
-   "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "poblacion_objetivo": "VICTIMAS_RUV",
+   "objetivo": "Identificar cuántas personas presentan alguna discapacidad y, en esa medida, necesitan una atención que garantice mejores condiciones de vida. Asimismo, identificar el acceso a la medida de atención psicosocial.",
+   "aplicabilidad": {
+    "ruv_incluido": true
+   }
   },
   {
    "codigo": "G",
    "nombre": "G. Alimentación",
    "orden": 7,
    "nivel": "HOGAR",
-   "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "poblacion_objetivo": "VICTIMAS_RUV",
+   "objetivo": "Medir la frecuencia y la seguridad alimentaria de los hogares víctimas del conflicto, así como el modo de aprovisionamiento de alimentos para el hogar.",
+   "aplicabilidad": {
+    "ruv_incluido": true
+   }
   },
   {
    "codigo": "RF",
@@ -70,7 +94,8 @@
    "orden": 8,
    "nivel": "HOGAR",
    "poblacion_objetivo": "TODOS_MIEMBROS",
-   "objetivo": ""
+   "objetivo": "Registrar la separación y la reunificación del hogar. Bloque tomado del Flujograma V9.1 (SAAH): no figura en el Cuadro 1 del manual 14-MU ni en el Diccionario V8.",
+   "aplicabilidad": {}
   }
  ],
  "preguntas": [
