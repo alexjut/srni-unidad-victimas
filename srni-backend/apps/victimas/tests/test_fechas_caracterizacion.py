@@ -23,16 +23,17 @@ pytestmark = pytest.mark.django_db
 HOY = datetime.date.today()
 
 
-def _hace_anios(n, meses=0):
-    """Una fecha de hace n años (y opcionalmente n meses más), sin sorpresas de
-    bisiestos: se resta sobre el año, no sobre los días."""
-    anio = HOY.year - n
-    mes = HOY.month - meses
-    while mes < 1:
-        mes += 12
-        anio -= 1
-    # día 28: existe en todos los meses, así que nunca desborda
-    return datetime.datetime(anio, mes, 28)
+def _hace_anios(n):
+    """
+    Una fecha que hace **n años cumplidos**, con 15 días de margen.
+
+    El margen no es adorno. La primera versión fijaba el día 28 del mes y los tests
+    pasaron el 31-jul y fallaron el 1-ago: `_hace_anios(2)` daba el 28 de agosto de
+    hace dos años, que el día 1 todavía no ha cumplido los dos años. El código
+    estaba bien; el test se caía solo por correr un día distinto.
+    """
+    base = datetime.datetime(HOY.year - n, HOY.month, min(HOY.day, 28))
+    return base - datetime.timedelta(days=15)
 
 
 # (per_idpersona, fecha) tal como los devuelve el GROUP BY de Oracle

@@ -184,6 +184,20 @@ UNFOLD = {
 # Enriquece el context del index del admin. Ver srni/dashboard.py.
 UNFOLD['DASHBOARD_CALLBACK'] = 'srni.dashboard.dashboard_callback'
 
+# ─── De dónde salen las personas al buscar por documento ─────────────────────
+# 'DJANGO' → el padrón cargado en nuestra base (`cargar_padron_oracle`): lo real.
+# 'MOCK'   → datos de prueba (ENC001, documentos 999…), para desarrollo y tests.
+#
+# El default es MOCK a propósito, y no DJANGO: si alguien despliega sin configurar
+# esto, es preferible que el sistema responda con datos de prueba evidentes a que
+# responda "no se encontró la persona" con un padrón vacío. Lo segundo se confunde
+# con un dato real y llevaría a un encuestador a concluir que alguien no está en
+# el RUV. → `apps/victimas/repository/__init__.py::get_repository`
+#
+# ⚠ Producción lo tuvo sin definir hasta el 31-jul-2026 y por eso respondía con el
+# mock. El compose de despliegue ahora lo pone en DJANGO explícitamente.
+VICTIMA_REPOSITORY = config('VICTIMA_REPOSITORY', default='MOCK')
+
 # ─── Distribución móvil (APK) ────────────────────────────────────────────────
 MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
 MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)

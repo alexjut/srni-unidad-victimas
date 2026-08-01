@@ -281,3 +281,40 @@ def test_el_respaldo_no_se_usa_si_la_identidad_ya_coincidio(catalogo):
     r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
     assert "VERIFIQUE" not in r.mensaje
     assert r.candidatos == []
+
+
+# ── de qué fuente responde el sistema ────────────────────────────────────────
+def test_el_selector_de_repositorio_es_una_variable_de_settings():
+    """
+    `get_repository()` lee `settings.VICTIMA_REPOSITORY`. Si el settings no define
+    esa variable, `getattr(..., "MOCK")` cae al mock **sin avisar** y la APK muestra
+    personas inventadas aunque el padrón real esté cargado.
+
+    Producción estuvo así hasta el 31-jul-2026: el padrón tenía millones de filas y
+    las búsquedas respondían ENC001. El síntoma es engañoso porque el sistema
+    "funciona" — solo que contesta con otra base.
+    """
+    from django.conf import settings
+    assert hasattr(settings, "VICTIMA_REPOSITORY"), (
+        "settings.VICTIMA_REPOSITORY no está definido: get_repository() caería al "
+        "MOCK en silencio. Definilo en srni/settings/base.py.")
+
+
+def test_django_como_valor_devuelve_el_padron_real():
+    from django.test import override_settings
+    from apps.victimas.repository import get_repository
+    from apps.victimas.repository.django_orm import DjangoVictimaRepository
+
+    with override_settings(VICTIMA_REPOSITORY="DJANGO"):
+        assert isinstance(get_repository(), DjangoVictimaRepository)
+
+
+def test_un_valor_desconocido_no_revienta_pero_tampoco_inventa_una_fuente():
+    """Un typo en el .env no debe tumbar el sistema, pero tampoco debe pasar por
+    el padrón real: cae al mock, que es evidente a simple vista."""
+    from django.test import override_settings
+    from apps.victimas.repository import get_repository
+    from apps.victimas.repository.mock import MockVictimaRepository
+
+    with override_settings(VICTIMA_REPOSITORY="DJANHO"):
+        assert isinstance(get_repository(), MockVictimaRepository)

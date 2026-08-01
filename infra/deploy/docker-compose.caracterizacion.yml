@@ -27,6 +27,13 @@ x-backend-env: &backend_env
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
   GEMINI_API_KEY: ${GEMINI_API_KEY}
+  # De dónde salen las personas al buscar por documento:
+  #   DJANGO → el padrón cargado en nuestra base (lo real)
+  #   MOCK   → datos de prueba (ENC001, documentos 999…)
+  # Sin declararlo, Django cae a MOCK y la APK muestra gente inventada aunque el
+  # padrón esté cargado. Pasó: el 31-jul producción llevaba semanas en MOCK.
+  # El default de acá es DJANGO justamente para que no vuelva a pasar en silencio.
+  VICTIMA_REPOSITORY: ${VICTIMA_REPOSITORY:-DJANGO}
   # Oracle legacy de la UARIV (30.0.1.9/ENTREVISTARN). Lo necesitan dos cosas:
   # la carga del padrón (`cargar_padron_oracle`) y el disparador automático que
   # sincroniza cada hogar caracterizado hacia los procedures GIC_*.
