@@ -122,6 +122,52 @@ SP_SET_RESPUESTAS_DE_ENCUESTA = Procedimiento(
 #   GIC_SP_OBTPUNTOATECION     | id de DEPTO ⚠ | IDDEPTOATEN
 #   GIC_SP_OBMUNICIPIOATECION  | id de PUNTO   | IDPUNTOATEN
 #   GIC_SP_GUARDAMUNATEN       | id de MUNIC.  | IDMUNATEN
+# Marca un capítulo como terminado. DELETE + INSERT sobre GIC_N_CAPITULOS_TER, o
+# sea idempotente por (hogar, tema): repetirlo no duplica.
+#
+# Existe por una razón que no es cosmética: el cierre EXIGE más de 3 capítulos
+# terminados. Sin este paso, `SP_ACTUALIZAR_ESTADO_ENCUESTA` cae en un `ELSE NULL`
+# y devuelve éxito **sin cerrar nada** — y sin cierre no hay fila en
+# GIC_N_RESPUESTASENCUESTA_C, que es de donde salen los reportes.
+SP_FINALIZARCAPITULO = Procedimiento(
+    "GIC_N_CARACTERIZACION", "SP_FINALIZARCAPITULO",
+    [
+        Param("PCODHOGAR", Dir.IN),
+        Param("PIDTEMA", Dir.IN),
+        Param("PUSUARIO", Dir.IN),
+    ],
+)
+
+# El cierre REAL de la encuesta. `TIPO_APLAZAMIENTO` es un código, no un texto:
+#   '1' ANULADA · '2' HOGAR_NO_RESPONDE · '3' APLAZADA
+#   '4' CERRADA  · '5' ACTIVA (reabre)  · '6' ERROR
+#
+# Con '4' el procedure copia las respuestas de la tabla de trabajo a
+# GIC_N_RESPUESTASENCUESTA_C (la definitiva, la que leen los reportes), borra la de
+# trabajo y las preguntas derivadas. **Solo si hay más de 3 capítulos terminados**;
+# si no, no hace nada y termina sin error, así que el resultado hay que verificarlo
+# por SELECT.
+SP_ACTUALIZAR_ESTADO_ENCUESTA = Procedimiento(
+    "GIC_N_CARACTERIZACION", "SP_ACTUALIZAR_ESTADO_ENCUESTA",
+    [
+        Param("HOGCODIGO", Dir.IN),
+        Param("USUARIO", Dir.IN),
+        Param("TIPO_APLAZAMIENTO", Dir.IN),
+    ],
+)
+
+#: Los códigos de `TIPO_APLAZAMIENTO`, para no escribir literales sueltos.
+CIERRE_ANULADA = "1"
+CIERRE_NO_RESPONDE = "2"
+CIERRE_APLAZADA = "3"
+CIERRE_CERRADA = "4"
+CIERRE_REABRIR = "5"
+
+#: Mínimo de capítulos terminados que el procedure exige para cerrar de verdad
+#: (`IF totalCT > 3`, cuerpo de SP_ACTUALIZAR_ESTADO_ENCUESTA).
+CAPITULOS_MINIMOS_PARA_CERRAR = 4
+
+
 GIC_SP_OBDEPTOPORDT = Procedimiento(
     "GIC_N_CARACTERIZACION", "GIC_SP_OBDEPTOPORDT",
     [Param("PHOGAR_CODIGO", Dir.IN), Param("ID_DT", Dir.IN), Param("CUR_OUT", Dir.OUT)],

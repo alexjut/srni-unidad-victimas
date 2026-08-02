@@ -187,3 +187,74 @@ def verificar_respuesta(cursor, *, hog_codigo, per_idpersona, res_idrespuesta):
         "hog_codigo": hog_codigo, "per_idpersona": per_idpersona,
         "res_idrespuesta": res_idrespuesta, "encontrado": bool(existe),
     }
+
+
+def verificar_capitulo(cursor, *, hog_codigo, tem_idtema):
+    """Confirma la fila (HOG_CODIGO, TEM_IDTEMA) en GIC_N_CAPITULOS_TER."""
+    existe = _scalar(
+        cursor,
+        """SELECT COUNT(*) FROM gic_n_capitulos_ter
+            WHERE hog_codigo = :h AND tem_idtema = :t""",
+        {"h": hog_codigo, "t": tem_idtema},
+    )
+    return bool(existe), {"hog_codigo": hog_codigo, "tem_idtema": tem_idtema,
+                          "encontrado": bool(existe)}
+
+
+def contar_capitulos(cursor, *, hog_codigo) -> int:
+    """Cuántos capítulos terminados tiene el hogar. El cierre exige más de 3."""
+    return _scalar(
+        cursor, "SELECT COUNT(*) FROM gic_n_capitulos_ter WHERE hog_codigo = :h",
+        {"h": hog_codigo},
+    ) or 0
+
+
+def verificar_cierre(cursor, *, hog_codigo):
+    """
+    Confirma que la encuesta quedó CERRADA **y que las respuestas se movieron**.
+
+    Las dos cosas, no una. `SP_ACTUALIZAR_ESTADO_ENCUESTA` con '4' solo hace su
+    trabajo si el hogar tiene más de 3 capítulos terminados; si no, cae en un
+    `ELSE NULL` literal y **termina sin error**. Mirar solo el retorno del
+    procedure daría por cerrada una encuesta que sigue abierta y cuyas respuestas
+    nunca llegaron a la tabla que leen los reportes.
+
+    Por eso se comprueba lo que de verdad importa: que `GIC_N_RESPUESTASENCUESTA_C`
+    —la definitiva— tenga las filas, y que la de trabajo haya quedado vacía, que es
+    exactamente lo que el procedure hace cuando funciona.
+    """
+    estado = _scalar(
+        cursor, "SELECT estado FROM gic_hogar WHERE hog_codigo = :h", {"h": hog_codigo})
+    definitivas = _scalar(
+        cursor,
+        "SELECT COUNT(*) FROM gic_n_respuestasencuesta_c WHERE hog_codigo = :h",
+        {"h": hog_codigo}) or 0
+    en_trabajo = _scalar(
+        cursor,
+        "SELECT COUNT(*) FROM gic_n_respuestasencuesta WHERE hog_codigo = :h",
+        {"h": hog_codigo}) or 0
+    capitulos = contar_capitulos(cursor, hog_codigo=hog_codigo)
+
+    detalle = {
+        "hog_codigo": hog_codigo, "estado": estado,
+        "respuestas_definitivas": definitivas,
+        "respuestas_en_trabajo": en_trabajo,
+        "capitulos_terminados": capitulos,
+    }
+
+    if estado != "CERRADA":
+        detalle["error"] = "no_cerro"
+        detalle["motivo"] = (
+            f"El hogar sigue en {estado!r}. Si tiene {capitulos} capítulos y el "
+            f"procedure exige más de 3, cayó en el ELSE NULL y terminó sin error.")
+        return False, detalle
+
+    if definitivas == 0:
+        # Cerrado pero sin respuestas en la definitiva: para los reportes, ese
+        # hogar no existe. Es el escenario que deja `CERRAR_ENCUESTA`.
+        detalle["error"] = "cerrado_sin_respuestas"
+        detalle["motivo"] = ("Quedó CERRADA pero GIC_N_RESPUESTASENCUESTA_C está "
+                             "vacía: los reportes no verán nada de este hogar.")
+        return False, detalle
+
+    return True, detalle

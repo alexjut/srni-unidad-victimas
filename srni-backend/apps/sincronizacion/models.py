@@ -25,7 +25,11 @@ class PasoEscritura(models.TextChoices):
     MIEMBRO = "MIEMBRO", "Vínculo miembro↔hogar (GIC_INSERT_MIEMBRO_HOGAR)"
     TERRITORIO = "TERRITORIO", "Cascada territorial (GIC_SP_*)"
     RESPUESTA = "RESPUESTA", "Respuesta de encuesta (SP_SET_RESPUESTAS_DE_ENCUESTA)"
-    CIERRE = "CIERRE", "Cierre de encuesta (CERRAR_ENCUESTA)"
+    CAPITULO = "CAPITULO", "Capítulo finalizado (SP_FINALIZARCAPITULO)"
+    # ⚠️ `SP_ACTUALIZAR_ESTADO_ENCUESTA`, NUNCA `CERRAR_ENCUESTA`: ese solo hace
+    # `UPDATE ESTADO='CERRADA'` y deja el hogar marcado como cerrado con CERO
+    # respuestas en la tabla definitiva. El que de verdad cierra es el otro.
+    CIERRE = "CIERRE", "Cierre de encuesta (SP_ACTUALIZAR_ESTADO_ENCUESTA '4')"
 
 
 class EstadoPaso(models.TextChoices):

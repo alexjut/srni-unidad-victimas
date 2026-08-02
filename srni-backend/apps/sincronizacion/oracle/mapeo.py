@@ -950,6 +950,59 @@ def estado_persona_oracle(miembro) -> str:
     return PERSONA_NO_INCLUIDA
 
 
+def temas_de_respuestas(respuestas, catalogos: ResolverCatalogos) -> set:
+    """
+    Los capítulos (TEM_IDTEMA de Oracle) que tocan estas respuestas.
+
+    No hay que preguntarle el tema a nadie ni mantener otro crosswalk: el catálogo
+    de Oracle ya trae `tem_idtema` en cada pregunta, y el puente `id_preg` ya lo
+    usamos para escribir la respuesta. El capítulo se deriva de lo que se escribió,
+    que es justo lo que el legacy espera: se marca terminado lo que de verdad se
+    respondió.
+
+    Las preguntas sin `id_preg` no aportan tema —su destino es otra tabla— y las
+    que no estén en el catálogo se ignoran en silencio a propósito: si no se pudo
+    escribir la respuesta, tampoco corresponde declarar su capítulo terminado.
+    """
+    cat = catalogos_mod.cargar_respuestas()
+    temas = set()
+    for respuesta in respuestas:
+        pregunta = getattr(respuesta, "pregunta", None)
+        id_preg = getattr(pregunta, "id_preg", None)
+        if id_preg is None:
+            continue
+        fila = cat["preguntas"].get(int(id_preg))
+        if fila and fila.get("tem_idtema") is not None:
+            temas.add(int(fila["tem_idtema"]))
+    return temas
+
+
+def binds_capitulo(hog_codigo, tem_idtema, *, user) -> dict:
+    """Argumentos de SP_FINALIZARCAPITULO."""
+    return {
+        "pcodhogar": hog_codigo,
+        "pidtema": int(tem_idtema),
+        "pusuario": _cod_usuario(user),
+    }
+
+
+def binds_cierre(hog_codigo, *, user, tipo=None) -> dict:
+    """
+    Argumentos de SP_ACTUALIZAR_ESTADO_ENCUESTA. Por defecto, CERRADA ('4').
+
+    `tipo` se deja explícito para los otros estados del dominio (anular, aplazar,
+    reabrir), pero el camino normal de una caracterización terminada es '4': es el
+    único que copia las respuestas a la tabla que leen los reportes.
+    """
+    from . import procedimientos as P
+
+    return {
+        "hogcodigo": hog_codigo,
+        "usuario": _cod_usuario(user),
+        "tipo_aplazamiento": tipo or P.CIERRE_CERRADA,
+    }
+
+
 def binds_miembro(hog_codigo, per_idpersona, *, user, catalogos: ResolverCatalogos,
                   miembro=None) -> dict:
     """

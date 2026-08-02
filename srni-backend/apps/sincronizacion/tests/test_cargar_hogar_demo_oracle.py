@@ -141,12 +141,18 @@ class CargarHogarDemoOracleTests(TestCase):
 
     def test_dry_run_completo_sobre_el_hogar_demo(self):
         # La corrida que el Escalón 1 revisa: todos los pasos, ninguno reventado.
+        #
+        # Son SIETE, no cinco. CAPITULO y CIERRE se agregaron el 2-ago y no son
+        # opcionales: sin cierre, las respuestas nunca pasan a
+        # GIC_N_RESPUESTASENCUESTA_C y para los reportes el hogar no existe. Y el
+        # cierre exige capítulos, así que van juntos.
         from apps.sincronizacion.oracle.escritor import EscritorOracle
         call_command("cargar_hogar_demo_oracle", verbosity=0)
         self.hogar.refresh_from_db()
         resultado = EscritorOracle(confirmar=False).procesar_hogar(self.hogar)
         pasos = {p.paso for p in resultado.pasos}
-        self.assertEqual(pasos, {"HOGAR", "PERSONA", "MIEMBRO", "TERRITORIO", "RESPUESTA"})
+        self.assertEqual(pasos, {"HOGAR", "PERSONA", "MIEMBRO", "TERRITORIO",
+                                 "RESPUESTA", "CAPITULO", "CIERRE"})
         self.assertTrue(resultado.dry_run)
 
     def test_el_territorio_del_dry_run_lleva_ids_reales_no_marcadores(self):

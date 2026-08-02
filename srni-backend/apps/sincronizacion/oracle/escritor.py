@@ -423,4 +423,86 @@ class EscritorOracle:
                 self.paso_respuesta(hogar, respuesta, user=user, hog_codigo=hog_codigo,
                                     per_idpersona=per_id, instrumento=sesion.instrumento)
             )
+
+        # 5. CAPÍTULOS. No es burocracia del legacy: el cierre EXIGE más de tres
+        #    capítulos terminados, y sin cierre las respuestas nunca llegan a la
+        #    tabla que leen los reportes. Los temas se derivan de las respuestas que
+        #    acabamos de escribir — el dato ya está en el catálogo de Oracle.
+        temas = mapeo.temas_de_respuestas(respuestas, self.catalogos)
+        for tema in sorted(temas):
+            rh.pasos.append(
+                self.paso_capitulo(hogar, tema, user=user, hog_codigo=hog_codigo))
+
+        # 6. CIERRE. Es el paso que hace que este hogar EXISTA para los reportes:
+        #    copia las respuestas a GIC_N_RESPUESTASENCUESTA_C. Va al final y solo
+        #    si el hogar quedó completo.
+        rh.pasos.append(
+            self.paso_cierre(hogar, user=user, hog_codigo=hog_codigo,
+                             capitulos_escritos=len(temas)))
         return rh
+
+    # ── capítulos y cierre ───────────────────────────────────────────────────
+    def paso_capitulo(self, hogar, tem_idtema, *, user, hog_codigo) -> ResultadoPaso:
+        """Marca un capítulo como terminado. Idempotente por (hogar, tema)."""
+        origen = f"{hogar.pk}:{tem_idtema}"
+        if self._ya_verificado(hogar, PasoEscritura.CAPITULO, origen):
+            return ResultadoPaso(PasoEscritura.CAPITULO, origen, EstadoPaso.VERIFICADO,
+                                 "", {"idempotente": True, "tem_idtema": tem_idtema})
+
+        binds = mapeo.binds_capitulo(hog_codigo, tem_idtema, user=user)
+        res = self._ejecutar_paso(P.SP_FINALIZARCAPITULO, binds)
+
+        estado, detalle = EstadoPaso.DRY_RUN, {"tem_idtema": tem_idtema}
+        if self.confirmar:
+            ok, detalle = V.verificar_capitulo(
+                self._cursor, hog_codigo=hog_codigo, tem_idtema=tem_idtema)
+            estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+        self._registrar(hogar, PasoEscritura.CAPITULO, origen, res=res, estado=estado,
+                        hog_codigo=hog_codigo, detalle=detalle)
+        return ResultadoPaso(PasoEscritura.CAPITULO, origen, estado, res.bloque, detalle)
+
+    def paso_cierre(self, hogar, *, user, hog_codigo, capitulos_escritos=0) -> ResultadoPaso:
+        """
+        Cierra la encuesta con `SP_ACTUALIZAR_ESTADO_ENCUESTA(..., '4')`.
+
+        ⚠️ NUNCA con `CERRAR_ENCUESTA`: ese solo hace `UPDATE ESTADO='CERRADA'` y
+        deja el hogar marcado como cerrado con CERO respuestas en la tabla
+        definitiva — para los reportes, un hogar que no existe.
+
+        Se comprueba ANTES el número de capítulos, porque el procedure exige más de
+        tres y, si no los hay, cae en un `ELSE NULL` y **termina sin error**. Sin
+        esta guarda el paso saldría "ejecutado" sobre una encuesta que sigue abierta.
+        """
+        origen = hogar.pk
+        if self._ya_verificado(hogar, PasoEscritura.CIERRE, origen):
+            return ResultadoPaso(PasoEscritura.CIERRE, str(origen), EstadoPaso.VERIFICADO,
+                                 "", {"idempotente": True})
+
+        if self.confirmar:
+            capitulos = V.contar_capitulos(self._cursor, hog_codigo=hog_codigo)
+            if capitulos < P.CAPITULOS_MINIMOS_PARA_CERRAR:
+                detalle = {
+                    "error": "capitulos_insuficientes",
+                    "motivo": (f"El hogar tiene {capitulos} capítulos terminados y "
+                               f"SP_ACTUALIZAR_ESTADO_ENCUESTA exige más de "
+                               f"{P.CAPITULOS_MINIMOS_PARA_CERRAR - 1}. Llamarlo así "
+                               f"no cerraría nada y devolvería éxito: las respuestas "
+                               f"no llegarían a la tabla que leen los reportes."),
+                    "capitulos_terminados": capitulos,
+                }
+                self._registrar(hogar, PasoEscritura.CIERRE, origen, res=None,
+                                estado=EstadoPaso.FALLIDO, hog_codigo=hog_codigo,
+                                detalle=detalle)
+                return ResultadoPaso(PasoEscritura.CIERRE, str(origen),
+                                     EstadoPaso.FALLIDO, "", detalle)
+
+        binds = mapeo.binds_cierre(hog_codigo, user=user)
+        res = self._ejecutar_paso(P.SP_ACTUALIZAR_ESTADO_ENCUESTA, binds)
+
+        estado, detalle = EstadoPaso.DRY_RUN, {"capitulos_escritos": capitulos_escritos}
+        if self.confirmar:
+            ok, detalle = V.verificar_cierre(self._cursor, hog_codigo=hog_codigo)
+            estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+        self._registrar(hogar, PasoEscritura.CIERRE, origen, res=res, estado=estado,
+                        hog_codigo=hog_codigo, detalle=detalle)
+        return ResultadoPaso(PasoEscritura.CIERRE, str(origen), estado, res.bloque, detalle)
