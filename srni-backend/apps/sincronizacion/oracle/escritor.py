@@ -416,26 +416,68 @@ class EscritorOracle:
         jefe = hogar.miembros.filter(es_autorizado=True).first()
         jefe_per_id = mapa_personas.get(jefe.pk) if jefe else None
         respuestas = sesion.respuestas.select_related("pregunta").all()
+        escritas, no_escritas = [], []
         for respuesta in respuestas:
             per_id = mapeo.per_idpersona_de_respuesta(
                 respuesta, mapa_personas, self.catalogos, jefe_per_idpersona=jefe_per_id)
-            rh.pasos.append(
-                self.paso_respuesta(hogar, respuesta, user=user, hog_codigo=hog_codigo,
-                                    per_idpersona=per_id, instrumento=sesion.instrumento)
-            )
+            r_resp = self.paso_respuesta(
+                hogar, respuesta, user=user, hog_codigo=hog_codigo,
+                per_idpersona=per_id, instrumento=sesion.instrumento)
+            rh.pasos.append(r_resp)
+            # Qué quedó DE VERDAD en Oracle. El mapeo no lo puede saber —solo el
+            # SELECT de `verificar_respuesta` lo sabe—, y esa información únicamente
+            # existe acá. En DRY-RUN nada llega a VERIFICADO, así que se cuentan
+            # todas: el plan de capítulos tiene que poder verse antes de escribir.
+            if not self.confirmar or r_resp.estado is EstadoPaso.VERIFICADO:
+                escritas.append(respuesta)
+            else:
+                no_escritas.append(r_resp)
 
-        # 5. CAPÍTULOS. No es burocracia del legacy: el cierre EXIGE más de tres
-        #    capítulos terminados, y sin cierre las respuestas nunca llegan a la
-        #    tabla que leen los reportes. Los temas se derivan de las respuestas que
-        #    acabamos de escribir — el dato ya está en el catálogo de Oracle.
-        temas = mapeo.temas_de_respuestas(respuestas, self.catalogos)
+        # 5. CAPÍTULOS, derivados SOLO de lo que quedó escrito.
+        #
+        # Marcar un capítulo es afirmar "este tema está respondido". Si la respuesta
+        # no entró —`SP_SET_RESPUESTAS_DE_ENCUESTA` se traga el NO_DATA_FOUND y
+        # retorna sin escribir— declararlo terminado es mentir sobre el trabajo. Y no
+        # queda en una mentira: el cierre cuenta esos capítulos para decidir si
+        # archiva, así que un capítulo inventado habilita un cierre que no debía
+        # ocurrir.
+        temas = mapeo.temas_de_respuestas(escritas, self.catalogos)
         for tema in sorted(temas):
             rh.pasos.append(
                 self.paso_capitulo(hogar, tema, user=user, hog_codigo=hog_codigo))
 
         # 6. CIERRE. Es el paso que hace que este hogar EXISTA para los reportes:
-        #    copia las respuestas a GIC_N_RESPUESTASENCUESTA_C. Va al final y solo
-        #    si el hogar quedó completo.
+        #    copia las respuestas a GIC_N_RESPUESTASENCUESTA_C.
+        #
+        # ⚠️ Y es el ÚNICO paso sin vuelta atrás. El procedure copia a la definitiva
+        # y **borra la tabla de trabajo**, con COMMIT interno. Cerrar un hogar al que
+        # le faltan respuestas lo congela incompleto en producción: las respuestas
+        # que fallaron se reintentarían contra la tabla de trabajo, que ya nadie va a
+        # copiar porque el cierre no se repite (queda VERIFICADO en el ledger).
+        #
+        # Por eso, si quedó una sola respuesta sin verificar, NO se cierra. Un hogar
+        # abierto se puede terminar mañana; uno cerrado a medias, no.
+        if self.confirmar and no_escritas:
+            detalle = {
+                "error": "respuestas_incompletas",
+                "no_escritas": len(no_escritas),
+                "escritas": len(escritas),
+                "motivo": ("El cierre archiva y BORRA la tabla de trabajo con COMMIT "
+                           "interno. Cerrar con respuestas sin verificar deja el hogar "
+                           "incompleto en producción y sin forma de repararlo."),
+                "origenes": [p.origen_id for p in no_escritas[:20]],
+            }
+            self._registrar(hogar, PasoEscritura.CIERRE, hogar.pk, res=None,
+                            estado=EstadoPaso.FALLIDO, hog_codigo=hog_codigo,
+                            detalle=detalle)
+            rh.pasos.append(ResultadoPaso(PasoEscritura.CIERRE, str(hogar.pk),
+                                          EstadoPaso.FALLIDO, "", detalle))
+            rh.abortado = True
+            rh.motivo_aborte = (
+                f"{len(no_escritas)} de {len(respuestas)} respuestas no quedaron "
+                f"verificadas: el hogar se deja ABIERTO en vez de cerrarlo incompleto.")
+            return rh
+
         rh.pasos.append(
             self.paso_cierre(hogar, user=user, hog_codigo=hog_codigo,
                              capitulos_escritos=len(temas)))
@@ -461,7 +503,8 @@ class EscritorOracle:
                         hog_codigo=hog_codigo, detalle=detalle)
         return ResultadoPaso(PasoEscritura.CAPITULO, origen, estado, res.bloque, detalle)
 
-    def paso_cierre(self, hogar, *, user, hog_codigo, capitulos_escritos=0) -> ResultadoPaso:
+    def paso_cierre(self, hogar, *, user, hog_codigo, capitulos_escritos=0,
+                    tipo=None) -> ResultadoPaso:
         """
         Cierra la encuesta con `SP_ACTUALIZAR_ESTADO_ENCUESTA(..., '4')`.
 
@@ -478,7 +521,14 @@ class EscritorOracle:
             return ResultadoPaso(PasoEscritura.CIERRE, str(origen), EstadoPaso.VERIFICADO,
                                  "", {"idempotente": True})
 
-        if self.confirmar:
+        tipo = tipo or P.CIERRE_CERRADA
+
+        # La exigencia de capítulos es SOLO del camino CERRADA. Anular o marcar
+        # "no responde" van por la otra rama del procedure, que hace el UPDATE
+        # directo sin mirar capítulos — comprobado al anular el piloto, que tenía
+        # cero. Aplicarles la guarda impediría anular un hogar, que es justo lo que
+        # se necesita para deshacer una prueba.
+        if self.confirmar and tipo == P.CIERRE_CERRADA:
             capitulos = V.contar_capitulos(self._cursor, hog_codigo=hog_codigo)
             if capitulos < P.CAPITULOS_MINIMOS_PARA_CERRAR:
                 detalle = {
@@ -496,12 +546,13 @@ class EscritorOracle:
                 return ResultadoPaso(PasoEscritura.CIERRE, str(origen),
                                      EstadoPaso.FALLIDO, "", detalle)
 
-        binds = mapeo.binds_cierre(hog_codigo, user=user)
+        binds = mapeo.binds_cierre(hog_codigo, user=user, tipo=tipo)
         res = self._ejecutar_paso(P.SP_ACTUALIZAR_ESTADO_ENCUESTA, binds)
 
         estado, detalle = EstadoPaso.DRY_RUN, {"capitulos_escritos": capitulos_escritos}
         if self.confirmar:
-            ok, detalle = V.verificar_cierre(self._cursor, hog_codigo=hog_codigo)
+            ok, detalle = V.verificar_cierre(self._cursor, hog_codigo=hog_codigo,
+                                             tipo=tipo)
             estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
         self._registrar(hogar, PasoEscritura.CIERRE, origen, res=res, estado=estado,
                         hog_codigo=hog_codigo, detalle=detalle)

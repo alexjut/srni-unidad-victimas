@@ -179,3 +179,151 @@ def test_el_escritor_no_llama_al_cierre_sin_capitulos_suficientes():
     assert r.detalle['capitulos_terminados'] == 2
     # Y no se llegó a invocar el procedure: el bloque PL/SQL viene vacío.
     assert r.bloque == ''
+
+
+# ── lo que evita congelar un hogar incompleto en producción ──────────────────
+#
+# El cierre es el ÚNICO paso sin vuelta atrás: copia a la definitiva y BORRA la
+# tabla de trabajo, con COMMIT interno. Si se cierra un hogar al que le faltan
+# respuestas, las que fallaron se reintentarían contra una tabla que ya nadie va a
+# copiar —el cierre no se repite, queda VERIFICADO en el ledger— y el hogar se
+# queda incompleto en producción para siempre.
+
+def _escritor_confirmado():
+    from apps.sincronizacion.oracle.escritor import EscritorOracle
+
+    e = EscritorOracle(
+        confirmar=True, destino='produccion',
+        catalogos=mapeo.ResolverCatalogos(estricto=True, usuario_servicio_id=999999))
+    e._cursor = CursorFalso()
+    e._ya_verificado = lambda *a, **k: False
+    e._registro_verificado = lambda *a, **k: None
+    e._registrar = lambda *a, **k: None
+    return e
+
+
+class HogarFalso:
+    pk = 1
+    codigo_hogar = 'SICAV-1'
+    creado_por = None
+
+
+def test_una_respuesta_fallida_no_declara_su_capitulo():
+    """
+    `SP_SET_RESPUESTAS_DE_ENCUESTA` se traga el NO_DATA_FOUND y retorna sin
+    escribir. Si su tema se marcara igual, estaríamos afirmando un trabajo que no
+    está en la base — y peor: sumando capítulos que habilitan el cierre.
+    """
+    from apps.sincronizacion.models import EstadoPaso, PasoEscritura
+    from apps.sincronizacion.oracle.escritor import ResultadoPaso
+
+    e = _escritor_confirmado()
+    e.paso_hogar = lambda hogar, **kw: ResultadoPaso(
+        PasoEscritura.HOGAR, '1', EstadoPaso.VERIFICADO, '', {'hog_codigo': '999999-A'})
+    e.paso_persona = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.PERSONA, '1', EstadoPaso.VERIFICADO, '', {'per_idpersona': 5})
+    e.paso_miembro = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.MIEMBRO, '1', EstadoPaso.VERIFICADO, '', {})
+    e.paso_territorio = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.TERRITORIO, '1', EstadoPaso.VERIFICADO, '', {})
+    # Todas las respuestas fallan, como cuando el procedure se traga el error.
+    e.paso_respuesta = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.RESPUESTA, '9', EstadoPaso.FALLIDO, '', {})
+    capitulos_pedidos = []
+    e.paso_capitulo = lambda hogar, tema, **kw: (
+        capitulos_pedidos.append(tema)
+        or ResultadoPaso(PasoEscritura.CAPITULO, str(tema), EstadoPaso.VERIFICADO, '', {}))
+    cerrado = []
+    e.paso_cierre = lambda *a, **k: (
+        cerrado.append(True)
+        or ResultadoPaso(PasoEscritura.CIERRE, '1', EstadoPaso.VERIFICADO, '', {}))
+
+    resultado = _procesar_con_respuestas(e, cantidad=3)
+
+    assert capitulos_pedidos == [], 'se marcaron capítulos de respuestas que no entraron'
+    assert cerrado == [], 'se cerró un hogar sin ninguna respuesta escrita'
+    assert resultado.abortado is True
+    assert 'no quedaron' in resultado.motivo_aborte
+
+
+def _procesar_con_respuestas(escritor, *, cantidad):
+    """Arma un hogar mínimo con `cantidad` respuestas y lo procesa."""
+    class _Preg:
+        id_preg = 5
+        codigo_externo = 'Z6'
+        nivel = 'HOGAR'
+
+    class _Resp:
+        def __init__(self, pk):
+            self.pk = pk
+            self.pregunta = _Preg()
+            self.valor = '1'
+            self.miembro_id = None      # respuesta de nivel HOGAR
+
+    class _QS(list):
+        def select_related(self, *a, **k):
+            return self
+        def all(self):
+            return self
+        def filter(self, **k):
+            return self
+        def first(self):
+            return self[0] if self else None
+
+    class _Sesion:
+        instrumento = type('I', (), {'codigo': 'TERRITORIAL'})()
+        respuestas = _QS(_Resp(i) for i in range(cantidad))
+        direccion_territorial = departamento_atencion = None
+        municipio_atencion = punto_atencion = None
+
+    class _Sesiones:
+        @staticmethod
+        def select_related(*a, **k):
+            return type('Q', (), {'first': staticmethod(lambda: _Sesion())})
+
+    class _Miembro:
+        pk = 1
+        es_autorizado = True        # ancla de las respuestas de nivel HOGAR
+
+    hogar = HogarFalso()
+    hogar.sesiones = _Sesiones
+    hogar.miembros = _QS([_Miembro()])
+    return escritor.procesar_hogar(hogar, user=UsuarioFalso())
+
+
+def test_no_se_cierra_un_hogar_con_respuestas_sin_verificar():
+    """
+    Aunque haya capítulos de sobra: basta UNA respuesta sin verificar para que
+    cerrar sea peor que dejar el hogar abierto. Uno abierto se termina mañana;
+    uno cerrado a medias, no.
+    """
+    from apps.sincronizacion.models import EstadoPaso, PasoEscritura
+    from apps.sincronizacion.oracle.escritor import ResultadoPaso
+
+    e = _escritor_confirmado()
+    e.paso_hogar = lambda hogar, **kw: ResultadoPaso(
+        PasoEscritura.HOGAR, '1', EstadoPaso.VERIFICADO, '', {'hog_codigo': '999999-A'})
+    e.paso_persona = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.PERSONA, '1', EstadoPaso.VERIFICADO, '', {'per_idpersona': 5})
+    e.paso_miembro = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.MIEMBRO, '1', EstadoPaso.VERIFICADO, '', {})
+    e.paso_territorio = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.TERRITORIO, '1', EstadoPaso.VERIFICADO, '', {})
+    estados = iter([EstadoPaso.VERIFICADO, EstadoPaso.VERIFICADO, EstadoPaso.FALLIDO])
+    e.paso_respuesta = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.RESPUESTA, '9', next(estados), '', {})
+    e.paso_capitulo = lambda hogar, tema, **kw: ResultadoPaso(
+        PasoEscritura.CAPITULO, str(tema), EstadoPaso.VERIFICADO, '', {})
+    cerrado = []
+    e.paso_cierre = lambda *a, **k: (
+        cerrado.append(True)
+        or ResultadoPaso(PasoEscritura.CIERRE, '1', EstadoPaso.VERIFICADO, '', {}))
+
+    resultado = _procesar_con_respuestas(e, cantidad=3)
+
+    assert cerrado == [], 'se cerró con una respuesta sin verificar'
+    assert resultado.abortado is True
+    cierre = [p for p in resultado.pasos if p.paso == PasoEscritura.CIERRE]
+    assert cierre and cierre[0].detalle['error'] == 'respuestas_incompletas'
+    assert cierre[0].detalle['no_escritas'] == 1
+    assert cierre[0].detalle['escritas'] == 2

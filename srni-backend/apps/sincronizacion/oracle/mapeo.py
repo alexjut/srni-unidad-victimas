@@ -960,9 +960,13 @@ def temas_de_respuestas(respuestas, catalogos: ResolverCatalogos) -> set:
     que es justo lo que el legacy espera: se marca terminado lo que de verdad se
     respondió.
 
-    Las preguntas sin `id_preg` no aportan tema —su destino es otra tabla— y las
-    que no estén en el catálogo se ignoran en silencio a propósito: si no se pudo
-    escribir la respuesta, tampoco corresponde declarar su capítulo terminado.
+    ⚠️ Lo que ESTA función filtra es solo lo que se puede saber sin Oracle: las
+    preguntas sin `id_preg` (su destino es otra tabla) y las que no estén en el
+    catálogo. **No sabe si la respuesta llegó a escribirse** — eso únicamente lo
+    sabe el SELECT de `verificar_respuesta`, y esa información vive en el escritor.
+    Por eso `procesar_hogar` le pasa solo las respuestas VERIFICADAS: marcar un
+    capítulo cuya respuesta no entró es afirmar un trabajo que no está en la base,
+    y encima habilita un cierre que no debía ocurrir.
     """
     cat = catalogos_mod.cargar_respuestas()
     temas = set()

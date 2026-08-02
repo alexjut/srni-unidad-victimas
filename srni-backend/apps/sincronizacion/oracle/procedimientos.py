@@ -142,11 +142,18 @@ SP_FINALIZARCAPITULO = Procedimiento(
 #   '1' ANULADA · '2' HOGAR_NO_RESPONDE · '3' APLAZADA
 #   '4' CERRADA  · '5' ACTIVA (reabre)  · '6' ERROR
 #
-# Con '4' el procedure copia las respuestas de la tabla de trabajo a
-# GIC_N_RESPUESTASENCUESTA_C (la definitiva, la que leen los reportes), borra la de
-# trabajo y las preguntas derivadas. **Solo si hay más de 3 capítulos terminados**;
-# si no, no hace nada y termina sin error, así que el resultado hay que verificarlo
-# por SELECT.
+# El archivado de respuestas —copiar de la tabla de trabajo a
+# GIC_N_RESPUESTASENCUESTA_C, la definitiva que leen los reportes, y borrar la de
+# trabajo— ocurre con TODOS los códigos MENOS '5' (reabrir) y '3' (aplazar). O sea
+# que anular también archiva. Verificado en producción el 2-ago al anular el hogar
+# piloto: sus 3 respuestas pasaron de la de trabajo a la definitiva.
+#
+# La diferencia entre '4' y el resto está en OTRA cosa: solo el camino de CERRADA
+# exige **más de 3 capítulos terminados** (`IF totalCT > 3`). Si no los hay, esa
+# rama cae en un `ELSE NULL` y termina sin error — ni cambia el estado ni archiva.
+# Los demás códigos no piden capítulos: su rama hace el UPDATE directo.
+#
+# Por eso el resultado SIEMPRE se verifica por SELECT, en los dos caminos.
 SP_ACTUALIZAR_ESTADO_ENCUESTA = Procedimiento(
     "GIC_N_CARACTERIZACION", "SP_ACTUALIZAR_ESTADO_ENCUESTA",
     [
