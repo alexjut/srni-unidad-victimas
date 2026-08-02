@@ -83,18 +83,31 @@ LIMITE_DURO_REFRESCO = 3 * 3600 + 600
 #   2. las fechas cuelgan de esas filas (`UPDATE ... FROM` por `cons_persona`): si
 #      corrieran antes, actualizarían un padrón viejo y las personas nuevas
 #      quedarían sin fecha hasta el mes siguiente;
-#   3. el SQLite es una FOTO de lo que haya en PostgreSQL: al final, o publica un
+#   3. la clasificación de documentos repetidos mira las filas que quedaron: qué
+#      documentos comparten varias personas y cuál fila representa a cada una
+#      (ver `docs/oracle-legacy-padron/decision_documentos_duplicados.md`). Va
+#      antes del SQLite porque el SQLite la USA para decidir qué escribir: sin
+#      ella, el archivo vuelve a llevar una fila por documento y ~53 mil personas
+#      distintas se pierden en silencio;
+#   4. el SQLite es una FOTO de lo que haya en PostgreSQL: al final, o publica un
 #      estado intermedio.
 PASOS_RECARGA_COMPLETA = (
     ("cargar_padron_oracle", {"confirmar": True}),
     ("cargar_fechas_caracterizacion", {"confirmar": True}),
+    ("clasificar_colisiones", {}),
     ("generar_padron", {}),
 )
 
 # La diaria salta el paso 1: el padrón poblacional no cambia de un día para otro, y
 # ese paso es el que cuesta un día entero.
+#
+# La clasificación SÍ se repite: `cargar_fechas_caracterizacion` cambia
+# `habilitado_para_caracterizacion` y `fecha_ult_caracterizacion`, que son dos de
+# los campos con los que se elige la fila más completa. Cuesta ~30 min sobre 768 mil
+# documentos, dentro del presupuesto de la tarea diaria.
 PASOS_REFRESCO_FECHAS = (
     ("cargar_fechas_caracterizacion", {"confirmar": True}),
+    ("clasificar_colisiones", {}),
     ("generar_padron", {}),
 )
 

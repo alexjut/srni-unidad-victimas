@@ -68,13 +68,26 @@ def test_la_recarga_ejecutada_no_pasa_carga_inicial(comandos):
 
 # ── 2. orden del encadenamiento ──────────────────────────────────────────────
 def test_el_orden_de_la_cadena_completa_es_el_correcto():
-    """padrón → fechas → snapshot. Las fechas actualizan las filas que crea el
-    padrón, y el SQLite fotografía el resultado de ambos."""
+    """
+    padrón → fechas → clasificación → snapshot.
+
+    La clasificación va ANTES del snapshot y no después: el SQLite la usa para
+    saber qué documentos comparten varias personas. Si se invirtiera, el archivo
+    volvería a llevar una fila por documento y ~53 mil personas distintas se
+    perderían en silencio.
+    """
     assert [c for c, _ in tasks.PASOS_RECARGA_COMPLETA] == [
         "cargar_padron_oracle",
         "cargar_fechas_caracterizacion",
+        "clasificar_colisiones",
         "generar_padron",
     ]
+
+
+def test_la_clasificacion_corre_antes_del_snapshot_en_las_dos_cadenas():
+    for pasos in (tasks.PASOS_RECARGA_COMPLETA, tasks.PASOS_REFRESCO_FECHAS):
+        comandos = [c for c, _ in pasos]
+        assert comandos.index("clasificar_colisiones") < comandos.index("generar_padron")
 
 
 def test_los_dos_pasos_que_escriben_van_confirmados():
@@ -89,7 +102,8 @@ def test_los_dos_pasos_que_escriben_van_confirmados():
 def test_la_recarga_llama_a_los_tres_comandos_en_orden(comandos):
     res = tasks.recargar_padron()
     assert [c for c, _ in _llamados(comandos)] == [
-        "cargar_padron_oracle", "cargar_fechas_caracterizacion", "generar_padron"]
+        "cargar_padron_oracle", "cargar_fechas_caracterizacion",
+        "clasificar_colisiones", "generar_padron"]
     assert res["estado"] == "OK"
 
 
@@ -99,7 +113,7 @@ def test_el_refresco_diario_salta_la_carga_pesada(comandos):
     cuesta un día entero."""
     tasks.refrescar_fechas_padron()
     assert [c for c, _ in _llamados(comandos)] == [
-        "cargar_fechas_caracterizacion", "generar_padron"]
+        "cargar_fechas_caracterizacion", "clasificar_colisiones", "generar_padron"]
 
 
 # ── 3. fail-fast ─────────────────────────────────────────────────────────────
