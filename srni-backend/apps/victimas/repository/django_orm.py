@@ -132,6 +132,42 @@ class DjangoVictimaRepository(VictimaRepository):
         return sum(1 for c in campos if c not in (None, "", 0))
 
     @staticmethod
+    def _solo_una_fila_por_persona(qs):
+        """
+        Quita las filas que el veredicto declara duplicados de la misma persona,
+        dejando la preferida. Las ambiguas y las sin veredicto pasan enteras.
+
+        Va en SQL y no en Python porque sobre 5,9 M de filas filtrar después
+        significaría descifrar y armar el DTO de un millón de filas para tirarlas.
+        `IS DISTINCT FROM` y no `<>`: con NULL, `<>` no es cierto y la fila se
+        colaría igual.
+        """
+        return qs.extra(  # noqa: S610 — SQL fijo, sin interpolación de usuario
+            where=["""
+                NOT EXISTS (
+                    SELECT 1 FROM victimas_colisiondocumento c
+                    WHERE c.doc_hash = victimas_victima.numero_documento_hash
+                      AND c.clase IN ('DUPLICADO_FUENTE', 'VARIANTE_NOMBRE')
+                      AND c.victima_preferida_id IS DISTINCT FROM victimas_victima.id
+                )
+            """]
+        )
+
+    @staticmethod
+    def _clases_de_colision(filas: list) -> dict:
+        """Clase de colisión de las filas dadas, solo para las que exigen aviso."""
+        from apps.victimas.models import ColisionDocumento
+
+        if not filas:
+            return {}
+        return dict(
+            ColisionDocumento.objects
+            .filter(doc_hash__in={v.numero_documento_hash for v in filas},
+                    clase__in=('AMBIGUO', 'NO_IDENTIFICANTE'))
+            .values_list('doc_hash', 'clase')
+        )
+
+    @staticmethod
     def _resolver_colision(encontradas: list) -> list:
         """
         Reduce a una sola fila cuando el veredicto dice que son la misma persona.
@@ -242,10 +278,20 @@ class DjangoVictimaRepository(VictimaRepository):
         # El `limite` recorta en SQL (`LIMIT`), no en Python: sin él, el queryset
         # materializa el padrón entero —5,9 M— antes de que nadie pueda descartar
         # nada.
-        qs = self._base_qs()
+        # Mismo criterio que `iterar_padron`: las filas que el veredicto declara
+        # duplicados de la fuente no viajan, y las que exigen confirmar van
+        # marcadas. Si no, la precarga con la que arranca la jornada llenaría el
+        # dispositivo con la misma persona repetida y sin avisar de las ambiguas.
+        qs = self._solo_una_fila_por_persona(self._base_qs())
         if limite is not None:
             qs = qs[:limite]
-        return [self._a_resumen(v, con_hechos=False) for v in qs]
+        filas = list(qs)
+        clases = self._clases_de_colision(filas)
+        return [
+            self._a_resumen(v, con_hechos=False,
+                            clase_colision=clases.get(v.numero_documento_hash))
+            for v in filas
+        ]
 
     def iterar_padron(self, batch_size: int = 1000):
         """
@@ -270,16 +316,7 @@ class DjangoVictimaRepository(VictimaRepository):
         """
         from apps.victimas.models import ColisionDocumento
 
-        qs = self._base_qs().extra(  # noqa: S610 — SQL fijo, sin interpolación de usuario
-            where=["""
-                NOT EXISTS (
-                    SELECT 1 FROM victimas_colisiondocumento c
-                    WHERE c.doc_hash = victimas_victima.numero_documento_hash
-                      AND c.clase IN ('DUPLICADO_FUENTE', 'VARIANTE_NOMBRE')
-                      AND c.victima_preferida_id IS DISTINCT FROM victimas_victima.id
-                )
-            """]
-        )
+        qs = self._solo_una_fila_por_persona(self._base_qs())
 
         # Solo los documentos donde hay algo que advertir. Son ~7 % de los
         # repetidos, así que el diccionario es chico y cabe de sobra en memoria.

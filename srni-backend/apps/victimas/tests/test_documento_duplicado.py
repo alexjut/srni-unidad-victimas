@@ -295,6 +295,51 @@ def test_consultar_fuente_serializa_los_candidatos(catalogo, client_auth):
     assert nombres == {"MARIA", "ROSA"}
 
 
+# ── 2-bis. la precarga con la que arranca la jornada ─────────────────────────
+
+def test_la_precarga_marca_los_documentos_ambiguos(catalogo, client_auth, settings):
+    """
+    La precarga es lo primero que baja al dispositivo al abrir sesión. Si viaja
+    sin la marca, en campo y sin señal la app muestra a una de las dos personas
+    como si fuera la única.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+    _crear_victima(catalogo, documento="1030547250", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="1030547250", nombre="ROSA", apellido="PEREZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="AMBIGUO",
+        filas=2, personas=2, victima_preferida=None,
+    )
+
+    resp = client_auth.get("/api/victimas/precarga/")
+    assert resp.status_code == 200
+    padron = resp.json()["padron"]
+
+    # Las dos viajan, y las dos marcadas.
+    assert len(padron) == 2
+    assert {p["clase_colision"] for p in padron} == {"AMBIGUO"}
+
+
+def test_la_precarga_no_repite_a_la_misma_persona(catalogo, client_auth, settings):
+    from apps.victimas.models import ColisionDocumento
+
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+    completa = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                              apellido="TAPIA", cons_persona=77)
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="DUPLICADO_FUENTE",
+        filas=2, personas=1, victima_preferida=completa,
+    )
+
+    padron = client_auth.get("/api/victimas/precarga/").json()["padron"]
+    assert len(padron) == 1
+    assert padron[0]["cons_persona"] == 77
+    assert padron[0]["clase_colision"] is None
+
+
 # ── 3. el manifiesto declara lo que el archivo tiene ─────────────────────────
 
 def test_dos_personas_distintas_con_el_mismo_documento_van_LAS_DOS_al_padron(

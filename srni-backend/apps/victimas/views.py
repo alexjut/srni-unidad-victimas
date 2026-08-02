@@ -562,6 +562,10 @@ class PrecargaOfflineView(APIView):
                 # poblará desde fecha_ult_caracterizacion.
                 'ya_caracterizada': bool(v.fecha_ult_caracterizacion),
                 'cons_persona': v.cons_persona,
+                # Sin esto, en campo y sin señal la app no puede saber que el
+                # documento lo comparten dos personas — y mostraría una como si
+                # fuera la única.
+                'clase_colision': v.clase_colision,
             }
             for v in victimas
         ]
