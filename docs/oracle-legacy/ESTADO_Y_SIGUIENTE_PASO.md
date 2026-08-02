@@ -93,8 +93,29 @@ se verificaron **ejecutando** el módulo. Los graves, todos arreglados:
 | Dominio público | ✅ 200 (`caracterizacion.unidadvictimas.gov.co`) |
 | APK nueva | ✅ compilada y publicada — descargable por el dominio, **no solo por ngrok** (la red institucional lo bloquea) |
 | Clasificación | ✅ 768.096 documentos |
-| Padrón regenerado | ⏳ corriendo al cierre de esta nota |
+| Padrón regenerado | ✅ `padron-20260802151221-10b01f88` |
 | Tests | backend 602 · APK 88 · `tsc` limpio |
+
+### El padrón nuevo, verificado contra la base
+
+`srni-backend/scripts/verificar_padron.py` comprueba lo que el diseño promete,
+contra el archivo y contra PostgreSQL. Las once verificaciones pasaron:
+
+| | Antes (2-ago 04:45) | Ahora |
+|---|---:|---:|
+| Filas | 4.928.725 | **5.001.402** |
+| Personas que el colapso borraba | 53.724 | **0** |
+| Filas marcadas para confirmar | — | 124.673 |
+| Documentos de relleno (sin datos de nadie) | — | 89 |
+| Tamaño | 878 MB | 896 MB |
+
+Las **72.677 filas de más** son exactamente las personas que antes desaparecían.
+El caso ALBA TAPIA: 484 filas en la fuente → **1** en el padrón. El documento
+`99`: 128 filas → **1 marca vacía**, sin el nombre de ninguno de los 3.780.
+
+Endpoints probados: `/padron/version/` (manifiesto nuevo), `/padron/download/`
+(200 + ETag, 940 MB) y `/precarga/` — que ya entrega `clase_colision`: de 5.000
+filas del arranque de jornada, 157 vienen marcadas `AMBIGUO`.
 
 ⚠️ **La APK vieja no sirve para probar esto**: el almacén local cambió (schema
 v11) y sin él la app se comporta como antes.
