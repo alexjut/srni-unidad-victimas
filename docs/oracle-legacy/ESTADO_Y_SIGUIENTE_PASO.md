@@ -80,11 +80,51 @@ esos, **nunca `cz_postgres`**.
 
 ### Qué falta
 
-1. Terminar `generar_padron` (el SQLite descargable) — en curso al cierre de esta nota.
-   ⚠️ **Bloqueado el 1-ago por la VPN:** no hay ruta al `.109` (ping perdido, sin
-   adaptador levantado), así que no se pudo leer `~/logs/rematar.log` ni verificar si
-   el UPDATE de fechas terminó. **Es lo primero al reconectar.**
-2. Probar login + búsqueda con un documento real. — *también espera VPN.*
+1. ~~Terminar `generar_padron`~~ ✅ **TERMINÓ el 2-ago 04:45 UTC** (11 h en total).
+   `padron-20260802044544-9bf121f2.sqlite3`. Paso 3: 2.535.941 fechas aplicadas
+   sobre 3.332.338 leídas en 36.619 s; 796.373 fuera del padrón; 24 fechas
+   imposibles. Padrón: 5.926.004 · con fecha 2.535.941 · al día 1.058.971.
+   **El archivo existe, pero NO está listo para campo — tres hallazgos abiertos:**
+
+   🔴 **1a. El manifiesto declara 997.279 filas que no están.**
+   `padron-latest.json` dice 5.926.004 registros; el SQLite tiene **4.928.725**. La
+   causa es `INSERT OR REPLACE INTO padron` con `doc_hash TEXT PRIMARY KEY`: cuando
+   dos víctimas comparten documento, la segunda pisa a la primera **sin avisar**. El
+   número cuadra exacto con la BD (5.926.004 − 4.928.725 pares distintos = 997.279).
+
+   | Repeticiones del documento | Documentos | Personas |
+   |---|---:|---:|
+   | 2 (probable duplicado real) | 617.770 | 1.235.540 |
+   | 3–10 | 149.633 | 509.521 |
+   | 11–100 | 678 | 10.756 |
+   | **>100 (comodín, uno con 4.297)** | **15** | **9.558** |
+
+   Los pares son probablemente la misma persona (H9) y quedarse con una se defiende.
+   Los 693 con >10 repeticiones son el documento basura de H5: ahí son personas
+   **distintas** y la búsqueda devuelve una al azar — el riesgo de "datos de otra
+   persona, en silencio". *Arreglo inmediato y sin decisión: que el conteo del
+   manifiesto salga del `count(*)` del archivo, no del contador del bucle, y que se
+   informe cuántas colisiones hubo. Lo que sí es **decisión funcional**: qué hacer
+   con los duplicados (la caracterizada más recientemente / excluirlas / marcarlas
+   para alta manual).*
+
+   🟠 **1b. Pesa 878 MB, no los ~150 MB de la arquitectura offline** (5,9×). Es el
+   punto que decide si "descargar el padrón entero al dispositivo" se sostiene con el
+   padrón real. Dónde está el peso: `doc_hash` **301 MB** (SHA-256 en hex de 64
+   caracteres; en binario truncado a 16 bytes serían ~75 MB), `nombre` 123 MB,
+   `cons_persona` 32 MB, el resto índice y overhead.
+
+   🟠 **1c. Los nombres van en claro.** `nombre TEXT NOT NULL`: 5,9 M nombres reales
+   de víctimas sin cifrar en un archivo que se descarga a móviles. El cifrado estaba
+   anotado como Fase 1, pero hasta el 1-ago el contenido era el mock de 11 personas.
+
+2. Probar login + búsqueda con un documento real. **Sigue pendiente** — conviene
+   hacerlo después del despliegue, no antes.
+
+2-bis. 🚀 **DESPLEGAR.** Todo lo del 1/2-ago está en `main` y **no** en el servidor:
+   el contenedor sigue con el código anterior. Arrastra las migraciones del alta
+   manual (`victimas/0008`, `victimas/0009` de datos, `hogares/0007`) y el fix del
+   UPDATE. Hasta entonces la corrida diaria seguiría tardando 10 h.
 3. ~~Decidir la **etiqueta del alta manual**~~ ✅ **DECIDIDO Y APLICADO (1-ago).**
    Estado nuevo **`NO_VERIFICADO`** = *"no está en el padrón descargado"*, que no es
    *"no está en el RUV"*. Toca `Victima.ESTADO_RUV`, `MiembroHogar.ESTADO_INCLUSION`,
