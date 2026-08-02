@@ -9,7 +9,111 @@
 
 ---
 
-## 0-quater. Actualización 2026-08-02 — **DESPLEGADO Y LISTO PARA LAS PRUEBAS** (leer esto primero)
+## 0-quinquies. Cierre del 2026-08-02 (noche) — **LA CADENA DE ESCRITURA ESTÁ COMPLETA**
+
+23 commits en el día. Lo de arriba (identidad, duplicados, padrón) se cerró por la
+tarde; esto es lo de la noche, que fue entrar al legacy en serio.
+
+### El hallazgo que cambió el plan
+
+**Llenar `GIC_PERSONA` y `GIC_HOGAR` no hace aparecer nada en los reportes.** Los
+reportes leen `GIC_N_RESPUESTASENCUESTA_C`, y las respuestas solo pasan ahí cuando
+la encuesta se **cierra** con `SP_ACTUALIZAR_ESTADO_ENCUESTA(..., '4')`. Un hogar
+en el legacy no son dos tablas: son **ocho** y **diez pasos**.
+
+El análisis completo, con el PL/SQL citado línea por línea, está en
+[`escritura_legacy_analisis.md`](escritura_legacy_analisis.md). El volcado crudo
+(1.000.516 caracteres de PL/SQL, 72 triggers, 57 jobs) queda **local**, en
+`volcado/`, que el `.gitignore` protege a propósito.
+
+### Los diez pasos, y dónde estamos
+
+| # | Paso | Estado |
+|---|---|---|
+| 1-3 | Hogar · personas · miembros | ✅ y con los defectos de hoy corregidos |
+| 4-5 | **Validadores · hechos** | ❌ **lo que falta** |
+| 6 | Marca de encuestado | ❌ |
+| 7-8 | Territorio · respuestas | ✅ |
+| 9-10 | **Capítulos · cierre** | ✅ hechos hoy |
+
+Sin los **validadores** el hogar llega al legacy pero `ESTADO_RUV` y
+`HECHO_VICTIMIZANTE_1..14` salen **vacíos** en los reportes. Es el siguiente
+trabajo grande, y sus tres procedures ya están identificados con su firma.
+
+### Lo que se arregló, en orden de gravedad
+
+1. **`GIC_PERSONA` recibía personas SIN nombre ni documento.** El mapeo leía los
+   campos del `MiembroHogar`, que —lo dice su propio `help_text`— solo se llenan
+   para quien **no** está en el RNI. El miembro que viene del padrón los tiene
+   vacíos: su identidad está en `Victima`. El piloto no lo detectó porque usó
+   datos sintéticos. *Es el defecto que habría vaciado los reportes.*
+2. **Fusión de hogares.** `GIC_INSERT_HOGAR1` devuelve `MARCADOR='1'` cuando crea
+   y **el código del hogar viejo** cuando no; se estaba tomando ese código como
+   propio. Cuatro cerrojos ahora, y si el hogar no queda verificado **se aborta
+   todo**: una sola respuesta en un hogar ajeno dispara `SP_INS_ETNIA_ARES`, que
+   borra sus validadores filtrando solo por código.
+3. **No cerrar un hogar incompleto.** Los capítulos se derivaban de todas las
+   respuestas de la sesión, no de las escritas: con 39 de 40 fallando se marcaban
+   los capítulos igual, el cierre se disparaba, copiaba **una** fila y borraba la
+   tabla de trabajo. Irreversible y sin reparación posible.
+4. **Cinco valores fuera de dominio** que hacían invisible el dato: `PER_ESTADO`
+   mandaba `'ACTIVA'` (que es el estado del *hogar*), `PER_ENCUESTADA` mandaba
+   `'S'` donde el legacy compara `'SI'`, `PER_IDMODELOINT` iba en `NULL` —y el job
+   que resuelve el cruce con el RUV busca `= 0`, así que esa fila no la vería
+   nunca—, el usuario podía ir vacío contra una columna `NOT NULL`, y la fecha iba
+   en UTC (+5 h) sobre un `DATE` que los reportes leen como hora local.
+5. **256 preguntas abiertas** no se podían escribir: abortaban el hogar. En
+   territorial v8 son 56 —documento, dirección, teléfonos, correo—, así que ningún
+   hogar completo pasaba.
+
+### Un 500 en producción, que no era de duplicados
+
+El WAF reenvía `X-Forwarded-For` **con puerto** (`186.29.187.18:62432`) y
+`LogAcceso.ip_origen` es un `GenericIPAddressField`: el INSERT del log reventaba y
+**toda la búsqueda respondía 500**. Por `localhost` la IP llega limpia, así que
+las pruebas locales pasaban y fallaba solo entrando por el dominio — o sea, solo
+para los usuarios. Cinco módulos leían esa cabecera por su cuenta; ahora hay una
+sola implementación en `apps/auditoria/red.py`.
+
+### Sincronización de novedades: segundos, no horas
+
+El legacy mueve **~592 personas y ~270 hogares por día**. Traerlos por marca de
+agua sobre `PER_IDPERSONA` (que tiene índice único) tarda **4,2 s**; por fecha
+tardaba 16 s solo en la consulta, porque `USU_FECHACREACION` no está indexada en
+`GIC_PERSONA` —en `GIC_HOGAR` sí, y por eso cada tabla va por su camino—.
+Programada cada 15 min, **apagada** por defecto, con freno anti-eco desde el día
+uno (los hogares del usuario 999999 se excluyen de la lectura).
+
+### El piloto quedó ANULADO
+
+`999999-2W832` pasó a `ANULADA` el 2-ago 17:48. **No se perdió nada**: sus 3
+respuestas se movieron de la tabla de trabajo a la definitiva —comportamiento
+correcto del procedure, que corrigió dos cosas que yo había leído mal—. El usuario
+999999 quedó **libre**: ya se puede escribir un hogar nuevo.
+
+### Estado al cierre
+
+| | |
+|---|---|
+| Backend | ✅ desplegado · 657 tests · migraciones al día |
+| Panel web | ✅ desplegado |
+| APK | compilando al cierre de esta nota |
+| **Los 4 interruptores** | **`False`** — nada escribe solo |
+| Padrón offline | 5.001.402 filas, publicado |
+
+### Lo que sigue
+
+1. **Validadores y hechos** (pasos 4-6). Sin ellos los reportes salen con las
+   columnas de RUV y hechos vacías.
+2. **Un hogar real escrito a mano**, mirándolo, antes de encender nada.
+3. Las **117 preguntas sin `id_preg`**: la mayoría no van a la tabla de respuestas
+   (subcampos "Otro", identidad, hechos), pero **`Z2` sí** — y sin ella el hogar
+   no aparece en los reportes por departamento.
+4. Los **878→896 MB** del padrón y los **nombres en claro**: sin tocar.
+
+---
+
+## 0-quater. Actualización 2026-08-02 — **DESPLEGADO Y LISTO PARA LAS PRUEBAS**
 
 Todo lo del 1-ago está en producción, y encima se resolvió el problema de fondo:
 **qué hacer cuando un documento pertenece a más de una persona**.
