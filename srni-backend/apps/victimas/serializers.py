@@ -138,6 +138,12 @@ class ResultadoBusquedaSerializer(serializers.Serializer):
     fuente = serializers.CharField()
     mensaje = serializers.CharField(allow_blank=True)
 
+    # Sin este campo el DTO traía los otros registros con el mismo documento y el
+    # serializer los tiraba: la respuesta decía "Hay 2 registros con este documento,
+    # CONFIRME cuál corresponde" y no mandaba con qué confirmar. Verificado contra
+    # prod el 2-ago con un documento duplicado real (mensaje correcto, candidatos 0).
+    candidatos = VictimaResumenSerializer(many=True, required=False)
+
 
 class ConsultarFuenteInputSerializer(serializers.Serializer):
     """

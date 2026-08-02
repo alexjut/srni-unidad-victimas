@@ -118,6 +118,11 @@ class VictimaViewSet(
     responses={
         200: VictimaListSerializer,
         404: {'description': 'Víctima no encontrada en el sistema'},
+        409: {'description': (
+            'Documento ambiguo: varios registros lo comparten. El body trae '
+            '`candidatos` (todos los registros) y `ambiguo: true`. La UI DEBE pedir '
+            'confirmación en vez de asumir el primero.'
+        )},
     },
 )
 class BuscarVictimaView(APIView):
@@ -142,15 +147,51 @@ class BuscarVictimaView(APIView):
         ip = _ip_de_request(request)
         ua = request.META.get('HTTP_USER_AGENT', '')
 
-        try:
-            victima = Victima.objects.select_related(
-                'tipo_documento',
-                'municipio_residencia__departamento',
-            ).get(
-                numero_documento_hash=hash_doc,
-                tipo_documento__codigo=tipo_codigo,
+        coincidencias = list(Victima.objects.select_related(
+            'tipo_documento',
+            'municipio_residencia__departamento',
+        ).filter(
+            numero_documento_hash=hash_doc,
+            tipo_documento__codigo=tipo_codigo,
+        ))
+
+        # Antes esto era un `.get()` y reventaba con 500 cuando el documento estaba
+        # repetido: 768.096 documentos del padrón lo están (~15,6 % de las búsquedas
+        # posibles), verificado contra prod el 2-ago. No se elige uno por regla —
+        # pueden ser dos personas distintas, y mostrar a una como si fuera la única
+        # es el riesgo de "datos de otra persona, en silencio". Se devuelven todos y
+        # confirma el encuestador, que tiene a la persona enfrente.
+        if len(coincidencias) > 1:
+            LogAcceso.registrar(
+                usuario=request.user,
+                accion='BUSQUEDA_RNI',
+                recurso='Victima',
+                recurso_id=None,
+                ip=ip,
+                user_agent=ua,
+                resultado='EXITO',
+                detalle={
+                    'encontrado': True,
+                    'ambiguo': True,
+                    'coincidencias': len(coincidencias),
+                    'tipo_documento': tipo_codigo,
+                },
             )
-        except Victima.DoesNotExist:
+            return Response(
+                {
+                    'detail': (
+                        f'Hay {len(coincidencias)} registros con este documento. '
+                        f'CONFIRME cuál corresponde antes de caracterizar.'
+                    ),
+                    'ambiguo': True,
+                    'candidatos': VictimaListSerializer(coincidencias, many=True).data,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if coincidencias:
+            victima = coincidencias[0]
+        else:
             LogAcceso.registrar(
                 usuario=request.user,
                 accion='BUSQUEDA_RNI',

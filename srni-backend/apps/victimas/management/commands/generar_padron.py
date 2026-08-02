@@ -120,7 +120,7 @@ class Command(BaseCommand):
 
         total = 0
         try:
-            total = self._construir_sqlite(repo, tmp_path, batch_size)
+            leidos, total = self._construir_sqlite(repo, tmp_path, batch_size)
 
             # 2. Checksum y versión a partir del archivo ya cerrado.
             checksum = _sha256_archivo(tmp_path)
@@ -139,10 +139,21 @@ class Command(BaseCommand):
             raise
 
         # 4. Manifiesto (padron-latest.json).
+        #
+        # `total_registros` sale del `count(*)` del archivo, NO del contador del
+        # bucle: son cosas distintas. La PK es `doc_hash`, así que dos víctimas que
+        # comparten documento colapsan en una sola fila (`INSERT OR REPLACE`). El
+        # 2-ago el manifiesto declaraba 5.926.004 registros sobre un archivo de
+        # 4.928.725 filas — casi un millón que nadie iba a encontrar. Declarar lo
+        # que el archivo tiene, y decir aparte cuántos se leyeron y cuántos se
+        # perdieron por colisión.
+        colisiones = leidos - total
         manifiesto = {
             'version': version,
             'checksum': checksum,
             'total_registros': total,
+            'registros_leidos': leidos,
+            'colisiones_documento': colisiones,
             'generado_en': generado_en.isoformat(),
             'formato': FORMATO,
             'archivo': archivo_nombre,
@@ -160,20 +171,33 @@ class Command(BaseCommand):
             f'  Archivo:    {destino_final}\n'
             f'  Manifiesto: {manifiesto_path}\n'
             f'  Version:    {version}\n'
-            f'  Registros:  {total}\n'
+            f'  Registros:  {total} (filas reales en el archivo)\n'
+            f'  Leidos:     {leidos} desde la fuente\n'
             f'  Checksum:   {checksum}\n'
             f'  Fuente:     {fuente}\n'
             f'  Limpiados:  {eliminados} archivo(s) viejo(s)\n'
         ))
+        if colisiones:
+            pct = colisiones * 100.0 / leidos if leidos else 0
+            self.stdout.write(self.style.WARNING(
+                f'[AVISO] {colisiones} registros ({pct:.1f} %) NO estan en el archivo: '
+                f'comparten (tipo, documento) con otro y la PK doc_hash los colapso. '
+                f'Una busqueda offline por esos documentos devuelve UNA de las '
+                f'personas, no todas.\n'
+            ))
 
     # ──────────────────────────────────────────────────────────────────────
-    def _construir_sqlite(self, repo, path: str, batch_size: int) -> int:
+    def _construir_sqlite(self, repo, path: str, batch_size: int) -> tuple[int, int]:
         """
         Construye el SQLite del padrón en streaming.
 
         Inserta por lotes consumiendo `repo.iterar_padron(batch_size)`. NO
         materializa el padrón completo en memoria: como mucho mantiene un lote
         de `batch_size` filas en el buffer de la transacción antes de hacer commit.
+
+        Devuelve `(leidos, filas)`: cuántos registros entregó la fuente y cuántas
+        filas quedaron en el archivo. No coinciden cuando hay documentos repetidos
+        —ver el comentario del manifiesto en `handle`—.
         """
         conn = sqlite3.connect(path)
         try:
@@ -202,7 +226,7 @@ class Command(BaseCommand):
                 'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
             )
 
-            total = 0
+            leidos = 0
             lote: list[tuple] = []
             for v in repo.iterar_padron(batch_size=batch_size):
                 lote.append((
@@ -218,18 +242,22 @@ class Command(BaseCommand):
                 if len(lote) >= batch_size:
                     conn.executemany(insert_sql, lote)
                     conn.commit()
-                    total += len(lote)
+                    leidos += len(lote)
                     lote.clear()
 
             if lote:
                 conn.executemany(insert_sql, lote)
                 conn.commit()
-                total += len(lote)
+                leidos += len(lote)
+
+            # Filas REALES del archivo, antes del VACUUM (que no cambia el conteo
+            # pero sí tarda): es lo que la APK va a poder encontrar.
+            filas = conn.execute('SELECT count(*) FROM padron;').fetchone()[0]
 
             # PRIMARY KEY ya indexa doc_hash; VACUUM compacta el archivo final.
             conn.execute('VACUUM;')
             conn.commit()
-            return total
+            return leidos, filas
         finally:
             conn.close()
 
