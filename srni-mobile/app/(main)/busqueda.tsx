@@ -380,10 +380,30 @@ function TarjetaNoEncontrado({
   return (
     <Surface style={[styles.tarjeta, styles.tarjetaGris]}>
       <View style={styles.tarjetaEncabezado}>
-        <MaterialCommunityIcons name="account-search-outline" size={32} color={GOV.textoS} style={styles.icono} />
-        <Text style={styles.tarjetaTitulo}>No está en el padrón</Text>
+        <MaterialCommunityIcons
+          name={resultado.no_identificante ? 'alert-circle-outline' : 'account-search-outline'}
+          size={32}
+          color={resultado.no_identificante ? GOV.naranja : GOV.textoS}
+          style={styles.icono}
+        />
+        {/*
+          Dos situaciones distintas, y el título tiene que distinguirlas. "No está
+          en el padrón" invita a dar de alta a la persona; pero si el número es un
+          valor de relleno, quizá SÍ está y solo hace falta el documento correcto.
+          Decir lo mismo en los dos casos manda a crear un duplicado.
+        */}
+        <Text style={styles.tarjetaTitulo}>
+          {resultado.no_identificante
+            ? 'Este número no identifica a una persona'
+            : 'No está en el padrón'}
+        </Text>
       </View>
       <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
+      {resultado.no_identificante && (
+        <Text style={[styles.tarjetaMensaje, { fontWeight: '700' }]}>
+          Verifique el documento con la persona antes de darla de alta.
+        </Text>
+      )}
       <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
 
       <Divider style={styles.divider} />

@@ -287,4 +287,10 @@ export interface ResultadoBusquedaFuente {
    * se preguntaba sin red pero se ocultaba con red.
    */
   candidatos?: VictimaResumenFuente[];
+  /**
+   * El documento buscado es un valor de RELLENO del padrón ('99', '0', '999999'):
+   * no identifica a nadie. Distinto de "no está en el padrón" — la persona puede
+   * existir, pero ese número no sirve para encontrarla.
+   */
+  no_identificante?: boolean;
 }

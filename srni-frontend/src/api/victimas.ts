@@ -58,6 +58,32 @@ export function busquedaAmbigua(err: any): BusquedaAmbigua | null {
   return null;
 }
 
+/**
+ * Cuerpo del OTRO 409: el documento no identifica a nadie.
+ *
+ * Son los valores de relleno del padrón — `99`, `0`, `999999` — que decenas o
+ * miles de registros comparten. No hay candidatos que mostrar: mostrar a
+ * cualquiera de ellos sería entregar los datos de un desconocido.
+ *
+ * Comparte el código 409 con la búsqueda ambigua pero es un caso distinto, y hay
+ * que distinguirlo: si cae en el handler genérico, el encuestador ve "Error al
+ * buscar. Verifique la conexión" —que es falso y no le dice qué hacer— en vez de
+ * enterarse de que ese número no sirve para identificar.
+ */
+export interface DocumentoNoIdentificante {
+  detail: string;
+  no_identificante: true;
+  coincidencias: number;
+}
+
+export function documentoNoIdentificante(err: any): DocumentoNoIdentificante | null {
+  const data = err?.response?.data;
+  if (err?.response?.status === 409 && data?.no_identificante) {
+    return data as DocumentoNoIdentificante;
+  }
+  return null;
+}
+
 export interface HechoVictimizante {
   id: string;
   hecho: {

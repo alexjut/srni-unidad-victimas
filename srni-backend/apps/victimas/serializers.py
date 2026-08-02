@@ -144,6 +144,10 @@ class ResultadoBusquedaSerializer(serializers.Serializer):
     # prod el 2-ago con un documento duplicado real (mensaje correcto, candidatos 0).
     candidatos = VictimaResumenSerializer(many=True, required=False)
 
+    # true = el número es un valor de relleno y no identifica a nadie. La app tiene
+    # que decir eso, no "no está en el padrón": son cosas distintas.
+    no_identificante = serializers.BooleanField(required=False, default=False)
+
 
 class ConsultarFuenteInputSerializer(serializers.Serializer):
     """

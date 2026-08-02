@@ -274,6 +274,7 @@ class DjangoVictimaRepository(VictimaRepository):
         if any(v.clase == 'NO_IDENTIFICANTE' for v in veredictos.values()):
             return ResultadoBusqueda(
                 encontrado=False, victima=None, fuente=self.FUENTE,
+                no_identificante=True,
                 mensaje=("Este número no identifica a una persona: en el padrón figura "
                          "como valor de relleno, compartido por muchos registros. "
                          "Verifique el documento o regístrela por alta manual."),

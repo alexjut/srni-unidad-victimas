@@ -12,6 +12,7 @@ import {
   victimasApi,
   tiposDocumentoApi,
   busquedaAmbigua,
+  documentoNoIdentificante,
   type VictimaResumen,
   type TipoDocumento,
   type BusquedaAmbigua,
@@ -101,6 +102,10 @@ export default function VictimasPage() {
   const [resultado, setResultado] = useState<VictimaResumen | null>(null);
   const [noEncontrada, setNoEncontrada] = useState(false);
   const [ambigua, setAmbigua] = useState<BusquedaAmbigua | null>(null);
+  // El documento es un valor de relleno del padrón ('99', '0', '999999'): no
+  // identifica a nadie. Es un 409 como el ambiguo, pero un caso distinto — acá no
+  // hay candidatos que elegir.
+  const [noIdentificante, setNoIdentificante] = useState<string>('');
   const [error, setError] = useState('');
   const [buscado, setBuscado] = useState(false);
 
@@ -133,6 +138,7 @@ export default function VictimasPage() {
     setResultado(null);
     setNoEncontrada(false);
     setAmbigua(null);
+    setNoIdentificante('');
     setBuscado(true);
 
     try {
@@ -150,8 +156,13 @@ export default function VictimasPage() {
       });
       setRecientes(getRecientes());
     } catch (err: any) {
+      const relleno = documentoNoIdentificante(err);
       const ambiguo = busquedaAmbigua(err);
-      if (ambiguo) {
+      if (relleno) {
+        // No es un error de red ni de permisos: es un dato del padrón. Decirle
+        // "verifique la conexión" lo mandaría a buscar un problema que no existe.
+        setNoIdentificante(relleno.detail);
+      } else if (ambiguo) {
         // Varias víctimas comparten el documento. NO se guarda en recientes: no hay
         // un resultado, hay una pregunta sin responder.
         setAmbigua(ambiguo);
@@ -182,6 +193,7 @@ export default function VictimasPage() {
     setResultado(null);
     setNoEncontrada(false);
     setAmbigua(null);
+    setNoIdentificante('');
     setError('');
     setBuscado(false);
   }
@@ -251,6 +263,14 @@ export default function VictimasPage() {
       {noEncontrada && (
         <Alert variant="warning" className="mb-4">
           No se encontró ninguna víctima con ese documento. Verifique los datos e intente de nuevo.
+        </Alert>
+      )}
+
+      {/* Documento de relleno: no identifica a nadie */}
+      {noIdentificante && (
+        <Alert variant="warning" className="mb-4">
+          <strong>Este número no identifica a una persona.</strong>
+          <p className="mt-1 text-sm">{noIdentificante}</p>
         </Alert>
       )}
 

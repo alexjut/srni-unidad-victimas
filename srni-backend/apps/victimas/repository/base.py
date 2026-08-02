@@ -178,6 +178,14 @@ class ResultadoBusqueda:
     # no está vacía, la UI DEBE pedir confirmación en vez de asumir el primero.
     candidatos: list = field(default_factory=list)
 
+    # El documento buscado es un valor de RELLENO del padrón ('99', '0', '999999'):
+    # no identifica a nadie. Va aparte de `encontrado=False` porque no significan lo
+    # mismo y la app no debe decir lo mismo: "no está en el padrón" manda al
+    # encuestador a dar de alta a alguien que quizá SÍ está —solo que ese número no
+    # sirve para hallarlo—. `mensaje` explica; esta bandera permite que la interfaz
+    # cambie el título en vez de tener que adivinar leyendo el texto.
+    no_identificante: bool = False
+
 
 @dataclass
 class EstadoHabilitacion:
