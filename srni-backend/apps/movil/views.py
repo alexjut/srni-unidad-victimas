@@ -13,31 +13,18 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.auditoria.models import LogAcceso
-
-
-def _strip_port(addr: str) -> str:
-    """Quita el puerto si viene pegado a la IP.
-
-    El WAF (FortiWeb) reenvía al cliente como ``IP:puerto`` (p.ej.
-    ``190.25.98.28:59530``), lo que rompía el campo IP de auditoría. Soporta
-    IPv4 (``a.b.c.d:puerto``) e IPv6 (``[::1]:puerto``); deja intacta una IPv6
-    sin puerto (que tiene varios ``:``).
-    """
-    addr = (addr or "").strip()
-    if not addr:
-        return "0.0.0.0"
-    if addr.startswith("["):            # [IPv6]:puerto
-        return addr[1:].split("]", 1)[0]
-    if addr.count(":") == 1:            # IPv4:puerto
-        return addr.split(":", 1)[0]
-    return addr                          # IPv4 pura o IPv6 sin puerto
+from apps.auditoria.red import ip_de_request
 
 
 def _client_ip(request) -> str:
-    """IP real del cliente (detrás de nginx/ngrok/WAF respeta X-Forwarded-For)."""
-    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    raw = xff.split(",")[0] if xff else request.META.get("REMOTE_ADDR", "")
-    return _strip_port(raw) or "0.0.0.0"
+    """
+    IP real del cliente detrás de nginx/ngrok/WAF.
+
+    Este módulo fue el primero en toparse con el `IP:puerto` del WAF y tenía su
+    propia solución; ahora vive en `apps/auditoria/red.py`, que es de donde la
+    toman los otros cinco módulos que arrastraban el mismo defecto.
+    """
+    return ip_de_request(request)
 
 
 @api_view(["GET"])

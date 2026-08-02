@@ -20,6 +20,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.autenticacion.permissions import PuedeCaracterizar
 from apps.auditoria.models import LogAcceso
+from apps.auditoria.red import ip_de_request
 from apps.encuestas.models import SesionEncuesta
 from apps.formulario.models import Pregunta
 
@@ -37,8 +38,9 @@ from .services import mapear_texto_a_campo, hash_texto, procesar_entrevista_batc
 
 
 def _ip(request) -> str:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR')
-    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '')
+    # Ver apps/auditoria/red.py: el WAF manda `IP:puerto` y sin limpiarlo el
+    # INSERT de auditoría falla y la petición responde 500.
+    return ip_de_request(request)
 
 
 class ConsentimientoIAView(APIView):

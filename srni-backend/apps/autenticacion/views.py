@@ -22,12 +22,15 @@ LOGIN_MAX_INTENTOS = 5
 LOGIN_VENTANA_SEG = 15 * 60      # ventana de conteo de fallos
 LOGIN_BLOQUEO_SEG = 15 * 60      # duración del bloqueo
 _KEY_INTENTOS = 'login_fallidos:%s'
+from apps.auditoria.red import ip_de_request
+
 _KEY_BLOQUEO = 'login_bloqueo:%s'
 
 
 def _client_ip(request):
-    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '0.0.0.0')
+    # Ver apps/auditoria/red.py: sin quitar el puerto que agrega el WAF, el
+    # registro de auditoría del login falla con 500.
+    return ip_de_request(request)
 
 
 def _registrar_intento_fallido(codigo, ip):

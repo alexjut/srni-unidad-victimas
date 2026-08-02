@@ -83,18 +83,32 @@ def test_generar_padron_crea_archivo_y_manifiesto(media_padron):
     archivo_path = os.path.join(padron_dir, m['archivo'])
     assert os.path.exists(archivo_path)
 
-    # El SQLite tiene la tabla padron indexada por doc_hash y los registros.
+    # El SQLite se consulta por doc_hash, que va en BINARIO truncado a 16 bytes
+    # (esquema 2): en hexadecimal costaba 64 bytes por fila y otros tantos en el
+    # índice — el 74 % del archivo de 896 MB.
+    assert m['esquema'] == 2
+    assert m['hash_bytes'] == 16
+
     conn = sqlite3.connect(archivo_path)
     try:
         total = conn.execute('SELECT COUNT(*) FROM padron').fetchone()[0]
         assert total == m['total_registros']
-        # doc_hash es PRIMARY KEY → consulta por índice posible.
-        h = doc_hash('CC', '9990100001')
+
+        clave = bytes.fromhex(doc_hash('CC', '9990100001'))[:16]
         row = conn.execute(
-            'SELECT nombre, en_ruv, habilitada FROM padron WHERE doc_hash = ?', (h,)
+            'SELECT nombre, flags FROM padron WHERE doc_hash = ?', (clave,)
         ).fetchone()
         assert row is not None
         assert 'María' in row[0] or 'Maria' in row[0]
+        # Los tres booleanos viven en bits de `flags`.
+        assert row[1] & 0b001        # en_ruv
+
+        # `WITHOUT ROWID` con PK (doc_hash, seq): la tabla ES el índice, así que
+        # NO debe quedar ningún índice aparte duplicando los hashes.
+        indices = conn.execute(
+            "SELECT count(*) FROM sqlite_master WHERE type='index' "
+            "AND tbl_name='padron' AND sql IS NOT NULL").fetchone()[0]
+        assert indices == 0
     finally:
         conn.close()
 

@@ -488,10 +488,10 @@ def test_dos_personas_distintas_con_el_mismo_documento_van_LAS_DOS_al_padron(
 
     conn = sqlite3.connect(os.path.join(padron_dir, m["archivo"]))
     try:
-        h = doc_hash("CC", "1030547250")
+        clave = bytes.fromhex(doc_hash("CC", "1030547250"))[:16]
         nombres = {
             r[0] for r in conn.execute(
-                "SELECT nombre FROM padron WHERE doc_hash = ?", (h,)
+                "SELECT nombre FROM padron WHERE doc_hash = ?", (clave,)
             )
         }
     finally:
@@ -565,7 +565,7 @@ def test_un_documento_de_relleno_no_lleva_datos_de_nadie(catalogo, settings, tmp
     try:
         filas = conn.execute(
             "SELECT nombre, cons_persona, clase_colision FROM padron WHERE doc_hash = ?",
-            (doc_hash("CC", "99"),),
+            (bytes.fromhex(doc_hash("CC", "99"))[:16],),
         ).fetchall()
     finally:
         conn.close()

@@ -23,6 +23,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.autenticacion.permissions import PuedeBuscarRNI, PuedeCaracterizar
 from apps.autenticacion.throttles import BusquedaRNIThrottle
 from apps.auditoria.models import LogAcceso
+from apps.auditoria.red import ip_de_request
 from .models import ColisionDocumento, Victima
 from .serializers import (
     VictimaListSerializer, VictimaDetalleSerializer, BusquedaDocumentoSerializer,
@@ -34,10 +35,9 @@ from .repository import DjangoVictimaRepository, get_repository
 
 
 def _ip_de_request(request) -> str:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', '')
+    # Una sola implementación para todo el proyecto: el WAF manda `IP:puerto` y
+    # eso rompía el INSERT de auditoría → 500 en producción (ver apps/auditoria/red.py).
+    return ip_de_request(request)
 
 
 # ---------------------------------------------------------------------------

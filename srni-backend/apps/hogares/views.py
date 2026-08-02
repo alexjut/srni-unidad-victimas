@@ -15,6 +15,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.autenticacion.permissions import PuedeConsultarOperacion
 from apps.auditoria.models import LogAcceso
+from apps.auditoria.red import ip_de_request
 from .models import Hogar, MiembroHogar
 from .filters import HogarFilterSet
 from .serializers import (
@@ -25,8 +26,9 @@ from .serializers import (
 
 
 def _ip(request) -> str:
-    xff = request.META.get('HTTP_X_FORWARDED_FOR')
-    return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR', '')
+    # Ver apps/auditoria/red.py: el WAF manda `IP:puerto` y sin limpiarlo el
+    # INSERT de auditoría falla y la petición responde 500.
+    return ip_de_request(request)
 
 
 @extend_schema_view(

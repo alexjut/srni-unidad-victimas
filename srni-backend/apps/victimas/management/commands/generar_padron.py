@@ -6,17 +6,24 @@ archivo COMPACTO, versionado e indexado, listo para que la APK lo descargue una
 sola vez y lo consulte localmente sin conexión.
 
 ──────────────────────────────────────────────────────────────────────────────
-FORMATO ELEGIDO: SQLite prearmado, indexado por `doc_hash`.
+FORMATO ELEGIDO: SQLite prearmado, organizado por `doc_hash`.
 ──────────────────────────────────────────────────────────────────────────────
 ¿Por qué SQLite y no NDJSON+gzip?
 
   * La APK ya trabaja con SQLite local. Un padrón en SQLite se abre/ATTACH y se
-    consulta por `doc_hash` en O(log n) usando el índice, SIN cargar 10M filas
-    en memoria. Con NDJSON la app tendría que parsear e indexar todo en RAM (o
-    re-importarlo a su propio SQLite), justo lo que queremos evitar.
+    consulta por `doc_hash` en O(log n), SIN cargar millones de filas en memoria.
+    Con NDJSON la app tendría que parsear e indexar todo en RAM (o re-importarlo
+    a su propio SQLite), justo lo que queremos evitar.
   * Se genera en STREAMING: insertamos por lotes desde `repo.iterar_padron()`,
     así el proceso Django nunca materializa el padrón completo en RAM.
-  * Tamaño compacto: VACUUM al final + solo los campos del resumen (sin hechos).
+  * Tamaño compacto: ver `ESQUEMA_VERSION` — el hash va en binario truncado y la
+    tabla es `WITHOUT ROWID`, que fue lo que llevó el archivo de 896 MB a la
+    fracción que ocupa hoy. El VACUUM final compacta lo que quede suelto.
+
+⚠️ El archivo lo LEEN otros: la APK abre este SQLite y consulta `doc_hash`. Si
+cambia el esquema hay que subir `ESQUEMA_VERSION` — viaja en el manifiesto para
+que un cliente viejo sepa que no entiende lo que descargó, en vez de fallar al
+consultarlo.
 
 Si en el futuro se prefiere NDJSON gzip (p.ej. para padrones diminutos servidos
 por CDN), el mecanismo de manifiesto/versión/endpoints es idéntico — solo cambia
@@ -66,6 +73,27 @@ FORMATO = 'sqlite'
 EXT = 'sqlite3'
 PADRON_DIRNAME = 'padron'
 MANIFIESTO_NOMBRE = 'padron-latest.json'
+
+#: Versión del ESQUEMA del archivo. Va en el manifiesto para que un cliente sepa
+#: si entiende lo que descargó, en vez de fallar al consultarlo.
+#:   1 → doc_hash en hexadecimal, tres columnas booleanas, índice aparte
+#:   2 → doc_hash BLOB de 16 bytes, WITHOUT ROWID, booleanos en `flags`
+ESQUEMA_VERSION = 2
+
+#: Cuántos bytes del SHA-256 se guardan. 16 bytes = 128 bits: con 5 millones de
+#: claves la probabilidad de colisión ronda 10⁻²⁶, y el campo solo se usa para
+#: comparar por igualdad. En hexadecimal costaba 64 bytes por fila.
+HASH_BYTES = 16
+
+# Los tres booleanos, en bits de la columna `flags`.
+FLAG_EN_RUV = 1 << 0
+FLAG_HABILITADA = 1 << 1
+FLAG_YA_CARACTERIZADA = 1 << 2
+
+
+def _clave(doc_hash_hex: str) -> bytes:
+    """El hash del documento como lo guarda el archivo: BLOB de 16 bytes."""
+    return bytes.fromhex(doc_hash_hex)[:HASH_BYTES]
 
 
 def _nombre_completo(v) -> str:
@@ -165,6 +193,8 @@ class Command(BaseCommand):
         no_identificantes = _contar_clase(destino_final, 'NO_IDENTIFICANTE')
         manifiesto = {
             'version': version,
+            'esquema': ESQUEMA_VERSION,
+            'hash_bytes': HASH_BYTES,
             'checksum': checksum,
             'total_registros': total,
             'registros_leidos': leidos,
@@ -231,31 +261,57 @@ class Command(BaseCommand):
             # qué son. Los duplicados de la fuente —el 92 %— ya vienen resueltos
             # desde el repositorio, así que en la práctica solo se repiten los
             # documentos genuinamente ambiguos.
+            # ── Formato compacto (esquema 2) ─────────────────────────────────
+            #
+            # Medido sobre el archivo real de 896 MB: el hash se llevaba el 74 %.
+            # 305 MB en la columna (SHA-256 escrito en hexadecimal: 64 bytes por
+            # fila para 32 bytes de información) y otros 356 MB en el índice, que
+            # guarda una segunda copia del mismo hash.
+            #
+            # Dos cambios atacan las dos causas:
+            #
+            # 1. `doc_hash BLOB` con los primeros 16 bytes del SHA-256. El hex se
+            #    va (64 → 16 bytes/fila) y siguen sobrando: con 128 bits y 5
+            #    millones de claves, la probabilidad de que dos documentos
+            #    distintos choquen es del orden de 10⁻²⁶. La comparación por
+            #    igualdad es lo único que se hace con este campo, así que truncar
+            #    no cambia nada más.
+            #
+            # 2. `WITHOUT ROWID` con PK compuesta: la tabla ES el índice. Antes
+            #    había una copia del hash en la tabla y otra en `idx_padron_doc`.
+            #    `seq` está solo para que la llave sea única cuando un documento
+            #    tiene varias personas —que es justo lo que este archivo tiene que
+            #    poder representar—, y ordena las filas del mismo documento juntas,
+            #    así que leerlas cuesta una sola página.
+            #
+            # 3. Los tres booleanos van en un mapa de bits: SQLite gasta un byte
+            #    por columna aunque el valor sea 0/1.
             conn.execute(
                 """
                 CREATE TABLE padron (
-                    doc_hash         TEXT NOT NULL,      -- SHA-256 canónico del documento
+                    doc_hash         BLOB NOT NULL,      -- 16 bytes: SHA-256 truncado
+                    seq              INTEGER NOT NULL,   -- desempata dentro del documento
                     nombre           TEXT NOT NULL,
                     ubicacion        TEXT,
                     cantidad_hechos  INTEGER NOT NULL DEFAULT 0,
-                    en_ruv           INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
-                    habilitada       INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
-                    ya_caracterizada INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
+                    -- bit 0 = en_ruv · bit 1 = habilitada · bit 2 = ya_caracterizada
+                    flags            INTEGER NOT NULL DEFAULT 0,
                     cons_persona     INTEGER,                      -- consecutivo Oracle (nullable)
                     -- NULL = documento limpio. 'AMBIGUO' = varias personas lo
                     -- comparten y la app DEBE pedir confirmación.
                     -- 'NO_IDENTIFICANTE' = valor de relleno ('99', '0'): no
                     -- identifica a nadie y no debe devolver datos de nadie.
-                    clase_colision   TEXT
-                );
+                    clase_colision   TEXT,
+                    PRIMARY KEY (doc_hash, seq)
+                ) WITHOUT ROWID;
                 """
             )
 
             insert_sql = (
                 'INSERT INTO padron '
-                '(doc_hash, nombre, ubicacion, cantidad_hechos, en_ruv, '
-                ' habilitada, ya_caracterizada, cons_persona, clase_colision) '
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                '(doc_hash, seq, nombre, ubicacion, cantidad_hechos, flags, '
+                ' cons_persona, clase_colision) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
             )
 
             leidos = 0
@@ -280,14 +336,22 @@ class Command(BaseCommand):
                         continue
                     no_identificantes_vistos.add(h)
 
+                flags = 0
+                if not no_identificante:
+                    if v.estado_ruv == 'INCLUIDO':
+                        flags |= FLAG_EN_RUV
+                    if v.habilitado_para_caracterizacion:
+                        flags |= FLAG_HABILITADA
+                    if v.fecha_ult_caracterizacion:
+                        flags |= FLAG_YA_CARACTERIZADA
+
                 lote.append((
-                    h,
+                    _clave(h),
+                    leidos,          # `seq`: único dentro del documento y creciente
                     '' if no_identificante else _nombre_completo(v),
                     None if no_identificante else v.municipio_residencia_nombre,
                     0 if no_identificante else len(v.hechos_victimizantes or []),
-                    0 if no_identificante else (1 if v.estado_ruv == 'INCLUIDO' else 0),
-                    0 if no_identificante else (1 if v.habilitado_para_caracterizacion else 0),
-                    0 if no_identificante else (1 if v.fecha_ult_caracterizacion else 0),
+                    flags,
                     None if no_identificante else v.cons_persona,
                     clase,
                 ))
@@ -306,14 +370,10 @@ class Command(BaseCommand):
             # pero sí tarda): es lo que la APK va a poder encontrar.
             filas = conn.execute('SELECT count(*) FROM padron;').fetchone()[0]
 
-            # El índice se crea AL FINAL, no con la tabla: mantenerlo durante
-            # millones de inserciones cuesta mucho más que construirlo de una vez
-            # sobre los datos ya escritos.
-            #
-            # No es UNIQUE, y ahí está el punto: un documento puede tener varias
-            # filas cuando lo comparten personas distintas.
-            conn.execute('CREATE INDEX idx_padron_doc ON padron(doc_hash);')
-            conn.commit()
+            # Ya no se crea ningún índice: con `WITHOUT ROWID` la tabla está
+            # organizada por (doc_hash, seq), o sea que la búsqueda por documento
+            # ya usa la propia estructura. El `idx_padron_doc` de la versión
+            # anterior pesaba 356 MB — una segunda copia de todos los hashes.
 
             # VACUUM compacta el archivo final.
             conn.execute('VACUUM;')
