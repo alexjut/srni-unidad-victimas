@@ -7,6 +7,8 @@ Flujo de uso:
   3. GET  /api/encuestas/{id}/             → detalle con todas las respuestas
   4. POST /api/encuestas/{id}/finalizar/   → cierra la sesión (COMPLETADA)
 """
+import logging
+
 from django.utils import timezone
 from django.db import transaction
 from rest_framework import viewsets, status
@@ -26,6 +28,8 @@ from apps.sincronizacion.tasks import encolar_hogar
 from srni.pagination import CursorTimePagination
 from .models import SesionEncuesta, RespuestaEncuesta
 from .filters import SesionEncuestaFilterSet
+
+logger = logging.getLogger(__name__)
 
 
 def _resolver_miembro(sesion, pregunta, miembro_id):
@@ -280,6 +284,19 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             'estado', 'fecha_fin', 'porcentaje_completado', 'observaciones'
         ])
 
+        # La caracterización que acabamos de hacer cuenta como caracterización.
+        #
+        # Parece obvio y no lo estaba: `fecha_ult_caracterizacion` solo la escribía
+        # `cargar_fechas_caracterizacion` leyendo el Oracle legacy, así que una
+        # persona caracterizada en SICAV seguía figurando como "nunca caracterizada"
+        # y volvía a aparecer habilitada en la búsqueda siguiente — el encuestador
+        # podía caracterizarla otra vez el mismo día sin que nada lo avisara.
+        #
+        # Se marca a TODOS los miembros del hogar, no solo al autorizado: la
+        # caracterización cuelga del hogar, que es el mismo criterio con el que el
+        # legacy calcula la fecha (MAX de GIC_HOGAR por miembro).
+        marcados = self._marcar_caracterizadas(sesion)
+
         LogAcceso.registrar(
             usuario=request.user,
             accion='FINALIZAR_ENCUESTA',
@@ -288,7 +305,8 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             ip=_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             resultado='EXITO',
-            detalle={'porcentaje_completado': pct_final, 'hogar_id': str(sesion.hogar_id)},
+            detalle={'porcentaje_completado': pct_final, 'hogar_id': str(sesion.hogar_id),
+                     'victimas_marcadas': marcados},
         )
 
         # Cerrar la encuesta es lo que dispara la escritura hacia el Oracle legacy.
@@ -304,6 +322,40 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         transaction.on_commit(lambda: encolar_hogar(sesion.hogar_id))
 
         return Response(SesionEncuestaDetalleSerializer(sesion).data)
+
+    @staticmethod
+    def _marcar_caracterizadas(sesion) -> int:
+        """
+        Deja constancia en el padrón de que estas personas ya fueron caracterizadas.
+
+        Devuelve cuántas víctimas se marcaron. No falla la finalización si algo sale
+        mal: la encuesta ya está guardada y cerrar es lo que el encuestador necesita;
+        una fecha que no se pudo escribir se recupera con la sincronización.
+        """
+        from apps.hogares.models import MiembroHogar
+        from apps.victimas.models import Victima
+
+        try:
+            ids = set(
+                MiembroHogar.objects
+                .filter(hogar_id=sesion.hogar_id, victima_id__isnull=False)
+                .values_list('victima_id', flat=True)
+            )
+            autorizado_id = getattr(sesion.hogar, 'autorizado_id', None)
+            if autorizado_id:
+                ids.add(autorizado_id)
+            if not ids:
+                return 0
+            return Victima.objects.filter(id__in=ids).update(
+                fecha_ult_caracterizacion=sesion.fecha_fin,
+                # La regla de 2 años: recién caracterizada, deja de estar disponible.
+                habilitado_para_caracterizacion=False,
+            )
+        except Exception:                                      # noqa: BLE001
+            logger.exception(
+                'No se pudo marcar la fecha de caracterización de la sesión %s',
+                sesion.id)
+            return 0
 
     @extend_schema(
         summary='Guardar múltiples respuestas en una sola transacción',

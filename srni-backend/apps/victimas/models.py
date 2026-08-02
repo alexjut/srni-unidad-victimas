@@ -282,6 +282,65 @@ class HechoVictima(models.Model):
         return f'{self.victima} — {self.hecho}'
 
 
+class MarcaAguaLegacy(models.Model):
+    """
+    Hasta dónde llegó la última sincronización con el Oracle legacy.
+
+    ─── Por qué existe ───────────────────────────────────────────────────────
+    El legacy sigue vivo y caracterizando: **~592 personas y ~270 hogares por
+    día** (medido sobre los últimos 30 días). Volver a leer el padrón entero para
+    encontrarlos cuesta 19 horas; leer solo lo nuevo cuesta **segundos**. Esta
+    tabla es lo único que hacía falta para poder pedir "lo que no había visto".
+
+    ─── Por qué por ID y no por fecha ────────────────────────────────────────
+    Medido contra producción el 2-ago-2026, sobre `GIC_PERSONA` (7,7 M filas):
+
+        WHERE per_idpersona > 9.185.948   →  1.500 filas en  0,08 s
+        WHERE usu_fechacreacion >= ayer   →    189 filas en 16,12 s
+
+    **1.612 veces más rápido.** El motivo es simple: `PER_IDPERSONA` tiene un
+    índice único (`KEY20`) y `USU_FECHACREACION` no, así que filtrar por fecha
+    obliga a recorrer los 7,7 millones de filas. Y `PER_IDPERSONA` crece con el
+    tiempo (2023: ~6,9 M → 2026: ~9,19 M), así que sirve de marca de agua.
+
+    Para `GIC_HOGAR` es al revés —ahí sí hay índice sobre `USU_FECHACREACION` y la
+    consulta tarda 0,0 s—, así que cada recurso se sincroniza por el camino que ya
+    está indexado. De ahí que la marca tenga las dos formas.
+
+    ⚠️ **Esto detecta ALTAS, no MODIFICACIONES.** Si el legacy corrige el nombre
+    de una persona que ya teníamos, su `PER_IDPERSONA` no cambia y esta marca no
+    la vuelve a traer. Cubrir eso exige otra estrategia (comparar, o una recarga
+    completa periódica); mientras tanto, la recarga mensual sigue siendo la red.
+    """
+    RECURSO = [
+        ('personas', 'Personas nuevas (GIC_PERSONA, por PER_IDPERSONA)'),
+        ('hogares',  'Hogares caracterizados (GIC_HOGAR, por USU_FECHACREACION)'),
+    ]
+
+    recurso = models.CharField(max_length=20, primary_key=True, choices=RECURSO)
+
+    ultimo_id = models.BigIntegerField(
+        null=True, blank=True,
+        help_text='Mayor identificador ya procesado. La próxima corrida pide > este.')
+    ultima_fecha = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Instante hasta el que se leyó. La próxima corrida pide >= este '
+                  'menos el solape (ver SOLAPE_MINUTOS en el comando).')
+
+    corridas = models.PositiveIntegerField(default=0)
+    filas_ultima_corrida = models.PositiveIntegerField(default=0)
+    segundos_ultima_corrida = models.FloatField(default=0)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Marca de agua del legacy'
+        verbose_name_plural = 'Marcas de agua del legacy'
+
+    def __str__(self):
+        donde = self.ultimo_id if self.ultimo_id is not None else self.ultima_fecha
+        return f'{self.recurso} hasta {donde} ({self.corridas} corridas)'
+
+
 class ColisionDocumento(models.Model):
     """
     Un número de documento que aparece en más de una fila del padrón, con el
