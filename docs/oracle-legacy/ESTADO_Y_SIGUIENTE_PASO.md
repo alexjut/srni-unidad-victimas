@@ -9,7 +9,113 @@
 
 ---
 
-## 0-ter. Actualización 2026-08-01 — **EL PADRÓN REAL ESTÁ CARGADO** (leer esto primero)
+## 0-quater. Actualización 2026-08-02 — **DESPLEGADO Y LISTO PARA LAS PRUEBAS** (leer esto primero)
+
+Todo lo del 1-ago está en producción, y encima se resolvió el problema de fondo:
+**qué hacer cuando un documento pertenece a más de una persona**.
+
+### Lo que cambió el diagnóstico
+
+Lo que parecía un millón de colisiones de identidad no lo era. Medido sobre la
+base real (768.096 documentos repetidos de 4.928.725):
+
+| Qué es | Documentos | % |
+|---|---:|---:|
+| Una sola persona duplicada por el Oracle de origen | 706.301 | 92,0 % |
+| La misma persona con el nombre mal escrito | 9.710 | 1,3 % |
+| **Personas distintas compartiendo documento** | **51.996** | **6,8 %** |
+| Valores de relleno (`99`, `0`…) | 89 | 0,0 % |
+
+El documento `1089290511` aparece **505 veces**, siempre ALBA TAPIA RODRIGUEZ, con
+504 `cons_persona` distintos. Y `99` sale 4.297 veces con **3.780 nombres
+distintos**: no es un documento, es un campo que alguien rellenó.
+
+**El colapso ciego no borraba 997 mil personas: borraba 53.724.** Sigue siendo
+inaceptable, pero la decisión correcta era otra —distinguir, no elegir—.
+
+### Qué hace ahora el sistema
+
+| Clase | Búsqueda (web y APK) | Padrón offline |
+|---|---|---|
+| `DUPLICADO_FUENTE` / `VARIANTE_NOMBRE` | 200, la fila más completa | una fila |
+| `AMBIGUO` | **409** con todos los candidatos | **todas**, marcadas |
+| `NO_IDENTIFICANTE` | **409 sin mostrar a nadie** → alta manual | una marca vacía |
+
+Sin veredicto se pregunta igual: el default es la pregunta de más, nunca el
+silencio. El 409 pasa de dispararse en 768.096 documentos a ~52.000 — el 92 % de
+las interrupciones al encuestador desaparecen, que es lo que hace que el aviso
+restante se lea en vez de ignorarse.
+
+**El porqué completo, con la investigación de cómo lo resuelven los índices
+maestros de pacientes, el registro civil y ACNUR, y lo que descartamos:**
+[`../oracle-legacy-padron/decision_documentos_duplicados.md`](../oracle-legacy-padron/decision_documentos_duplicados.md).
+
+### Verificado contra producción (no en local)
+
+Los cuatro casos, con documentos reales sacados de la base:
+
+```
+  /buscar/  LIMPIO             HTTP 200   una ficha
+  /buscar/  DUPLICADO_FUENTE   HTTP 200   una ficha (2 filas → 1 persona)
+  /buscar/  AMBIGUO            HTTP 409   ambiguo=True candidatos=2
+  /buscar/  NO_IDENTIFICANTE   HTTP 409   no_identificante=True candidatos=0
+```
+
+Y `/consultar-fuente/` (el camino de la APK) coherente con los cuatro. El caso
+ambiguo ejercitó además el **respaldo por número sin tipo**, con su aviso.
+
+### Una revisión adversarial encontró 17 defectos ANTES de correr nada
+
+Se revisó el código nuevo antes de soltarlo sobre 5,9 M de filas, y los hallazgos
+se verificaron **ejecutando** el módulo. Los graves, todos arreglados:
+
+* **Con apellidos vacíos —Oracle NULL llega como `''`— el clasificador
+  sobrescribía una persona entera** y marcaba el grupo como "una sola": el mismo
+  borrado silencioso, por la puerta de atrás.
+* **Sin fecha de nacimiento, `'' == ''`** daba por cumplida la salvaguarda y unía
+  hermanos.
+* **El veredicto dependía del orden en que PostgreSQL devolviera las filas**: dos
+  corridas podían dar padrones distintos.
+* El borrado de la tabla estaba **fuera de la transacción** (una corrida muerta a
+  mitad quedaba indistinguible de una completa) y `--limite` sin `--dry-run`
+  destruía los 768 mil veredictos.
+* `victima_preferida_id` NULL borraba **todas** las filas del documento.
+* **La búsqueda web respondía 404 al 14,5 % del padrón** (las cargadas sin tipo).
+* **En la APK la ambigüedad se preguntaba sin red y se silenciaba con red**, y la
+  migración del schema local **borraba el padrón** dando por hecho que la precarga
+  lo repuebla — y solo corre al iniciar sesión.
+
+### Estado al cierre
+
+| | |
+|---|---|
+| Backend en prod | ✅ desplegado, `/api/` 200, migraciones al día |
+| Dominio público | ✅ 200 (`caracterizacion.unidadvictimas.gov.co`) |
+| APK nueva | ✅ compilada y publicada — descargable por el dominio, **no solo por ngrok** (la red institucional lo bloquea) |
+| Clasificación | ✅ 768.096 documentos |
+| Padrón regenerado | ⏳ corriendo al cierre de esta nota |
+| Tests | backend 602 · APK 88 · `tsc` limpio |
+
+⚠️ **La APK vieja no sirve para probar esto**: el almacén local cambió (schema
+v11) y sin él la app se comporta como antes.
+
+**Guion de pruebas:**
+[`../pruebas/guion_pruebas_funcionales_identidad.md`](../pruebas/guion_pruebas_funcionales_identidad.md)
+— los cuatro caminos, con qué debe pasar y **qué sería un fallo**.
+
+### Lo que sigue abierto
+
+1. **Los `AMBIGUO` no dejan rastro.** El encuestador confirma en campo y esa
+   decisión no se guarda: la próxima búsqueda vuelve a preguntar. La industria lo
+   manda a una cola de curaduría; registrar la confirmación es el paso siguiente.
+2. **El padrón pesa 878 MB** (1b) y **los nombres van en claro** (1c). Ninguna de
+   las dos se tocó hoy.
+3. Las tareas programadas siguen apagadas — ahora la cadena incluye
+   `clasificar_colisiones`, pero conviene encenderlas después de resolver 1b/1c.
+
+---
+
+## 0-ter. Actualización 2026-08-01 — **EL PADRÓN REAL ESTÁ CARGADO**
 
 Ya no estamos leyendo el padrón: **está en nuestra base**.
 
