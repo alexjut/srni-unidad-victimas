@@ -139,8 +139,18 @@ class DjangoVictimaRepository(VictimaRepository):
 
         Va en SQL y no en Python porque sobre 5,9 M de filas filtrar después
         significaría descifrar y armar el DTO de un millón de filas para tirarlas.
-        `IS DISTINCT FROM` y no `<>`: con NULL, `<>` no es cierto y la fila se
-        colaría igual.
+
+        Las dos condiciones que parecen de más son las que impiden borrar gente:
+
+        * `victima_preferida_id IS NOT NULL` — la FK es `on_delete=SET_NULL`, así
+          que si la fila preferida se borra, el veredicto queda apuntando a nada.
+          Sin esta guarda, `NULL <> id` es verdadero para TODAS las filas del
+          documento y el grupo entero desaparecía del padrón.
+        * `created_at <= actualizado_en` — el veredicto es una foto del momento en
+          que se clasificó. Una víctima creada DESPUÉS (un alta manual, un
+          `registrar-desde-fuente`) no estuvo en esa foto, y sin esta condición
+          nacía descartada: no aparecería en el padrón hasta la próxima
+          clasificación, sin que nada lo avisara.
         """
         return qs.extra(  # noqa: S610 — SQL fijo, sin interpolación de usuario
             where=["""
@@ -148,7 +158,9 @@ class DjangoVictimaRepository(VictimaRepository):
                     SELECT 1 FROM victimas_colisiondocumento c
                     WHERE c.doc_hash = victimas_victima.numero_documento_hash
                       AND c.clase IN ('DUPLICADO_FUENTE', 'VARIANTE_NOMBRE')
-                      AND c.victima_preferida_id IS DISTINCT FROM victimas_victima.id
+                      AND c.victima_preferida_id IS NOT NULL
+                      AND c.victima_preferida_id <> victimas_victima.id
+                      AND victimas_victima.created_at <= c.actualizado_en
                 )
             """]
         )

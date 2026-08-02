@@ -205,6 +205,109 @@ def test_dos_hermanos_con_el_mismo_documento_no_se_unen():
     assert v.preferida is None
 
 
+# ── Datos incompletos: donde el criterio se rompía ───────────────────────────
+#
+# `cargar_padron_oracle` escribe '' cuando Oracle trae NULL, así que apellidos y
+# fechas vacíos son el caso corriente, no el raro.
+
+def test_dos_personas_sin_apellidos_no_se_pisan():
+    """
+    El defecto más grave que tuvo este módulo: con apellidos vacíos las dos
+    entraban al paso 3 bajo la misma llave ('', fecha) y la segunda
+    **sobrescribía** a la primera. El grupo salía como "una sola persona" y el
+    padrón offline borraba las filas de la otra.
+    """
+    filas = [
+        FilaFalsa(nombre='MARIA', ape1='', ape2='', nacimiento=None),
+        FilaFalsa(nombre='PEDRO', ape1='', ape2='', nacimiento=None),
+    ]
+    v = clasificar_grupo(filas, numero_documento='1030547250')
+    assert v.clase == 'AMBIGUO'
+    assert v.n_personas == 2
+    assert v.preferida is None
+    # y ninguna fila se perdió por el camino
+    assert sum(len(p.filas) for p in v.personas) == 2
+
+
+def test_apellidos_que_normalizan_a_vacio_tampoco_se_pisan():
+    """'...' y '---' quedan en '' tras normalizar: mismo caso que el anterior."""
+    filas = [
+        FilaFalsa(nombre='MARIA', ape1='...', nacimiento=NAC),
+        FilaFalsa(nombre='PEDRO', ape1='---', nacimiento=NAC),
+    ]
+    v = clasificar_grupo(filas, numero_documento='1030547250')
+    assert v.clase == 'AMBIGUO'
+    assert v.n_personas == 2
+
+
+def test_tres_personas_sin_apellidos_sobreviven_las_tres():
+    filas = [FilaFalsa(nombre=n, ape1='', nacimiento=None)
+             for n in ('MARIA', 'PEDRO', 'JUAN')]
+    v = clasificar_grupo(filas, numero_documento='1030547250')
+    assert v.n_personas == 3
+
+
+def test_sin_fecha_de_nacimiento_los_hermanos_no_se_unen():
+    """
+    La salvaguarda del paso 3 es "los apellidos Y la fecha coinciden". Con la
+    fecha vacía en las dos filas, '' == '' la daba por cumplida y unía a dos
+    hermanos: el padrón se quedaba con uno y la búsqueda no avisaba.
+    """
+    filas = [
+        FilaFalsa(nombre='JUAN', ape1='TAICUS', ape2='TAPIA', nacimiento=''),
+        FilaFalsa(nombre='KEYI', ape1='TAICUS', ape2='TAPIA', nacimiento=''),
+    ]
+    v = clasificar_grupo(filas, numero_documento='1134529672')
+    assert v.clase == 'AMBIGUO'
+    assert v.n_personas == 2
+
+
+def test_dos_filas_sin_nombre_no_se_declaran_la_misma_persona():
+    """Sin nombre no hay con qué afirmar identidad; se separan y se pregunta."""
+    filas = [
+        FilaFalsa(nombre='', ape1='', nacimiento=None, cons=1),
+        FilaFalsa(nombre='', ape1='', nacimiento=None, cons=2),
+    ]
+    v = clasificar_grupo(filas, numero_documento='1030547250')
+    assert v.clase == 'AMBIGUO'
+    assert v.n_personas == 2
+
+
+# ── Determinismo ─────────────────────────────────────────────────────────────
+
+def test_el_veredicto_no_depende_del_orden_en_que_lleguen_las_filas():
+    """
+    El orden lo decide el plan de ejecución de PostgreSQL y puede cambiar entre
+    corridas. Si el veredicto dependiera de él, dos generaciones del padrón
+    darían resultados distintos sin que nadie tocara nada.
+    """
+    a = FilaFalsa(nombre='ERIKA', ape1='JIMENEZ', ape2='CANO', nacimiento=NAC, cons=1)
+    b = FilaFalsa(nombre='ERICA', ape1='JIMENEZ', ape2='CANO', nacimiento=NAC, cons=2)
+    c = FilaFalsa(nombre='ROSA', ape1='PEREZ', nacimiento=OTRA, cons=3)
+
+    veredictos = [
+        clasificar_grupo(list(orden), numero_documento='1030547250')
+        for orden in ([a, b, c], [c, b, a], [b, c, a], [c, a, b])
+    ]
+    assert len({v.clase for v in veredictos}) == 1
+    assert len({v.n_personas for v in veredictos}) == 1
+
+
+def test_el_desempate_de_survivorship_es_estable_y_prefiere_lo_reciente():
+    """
+    A igual completitud gana la caracterizada más recientemente — que es lo que
+    el docstring promete—, y a igualdad total decide el id, no la posición en la
+    lista.
+    """
+    vieja = FilaFalsa(nombre='ALBA', ape1='TAPIA', nacimiento=NAC, cons=1,
+                      ult_caracterizacion=datetime.date(2020, 1, 1))
+    nueva = FilaFalsa(nombre='ALBA', ape1='TAPIA', nacimiento=NAC, cons=2,
+                      ult_caracterizacion=datetime.date(2026, 4, 1))
+    for orden in ([vieja, nueva], [nueva, vieja]):
+        v = clasificar_grupo(orden, numero_documento='1089290511')
+        assert v.preferida is nueva
+
+
 def test_una_sola_fila_no_es_colision():
     v = clasificar_grupo([FilaFalsa(nombre='ANA', ape1='DIAZ', nacimiento=NAC)],
                          numero_documento='9990100001')

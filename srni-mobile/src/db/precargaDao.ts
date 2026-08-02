@@ -152,13 +152,19 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
       await stmtPadron.finalizeAsync();
     }
 
+    // `INSERT` y no `INSERT OR REPLACE`, y con `cons_persona`: la jornada trae
+    // EXACTAMENTE la misma lista de víctimas que el padrón, así que de dos
+    // personas que comparten documento se guardaba solo la última — y como el
+    // resultado de la jornada tiene prioridad sobre el del padrón, esa fila
+    // pisaba a la persona que el encuestador acababa de elegir entre los
+    // candidatos.
     const stmtJornada = await db.prepareAsync(
-      `INSERT OR REPLACE INTO jornada (documento_hash, json) VALUES (?, ?)`,
+      `INSERT INTO jornada (documento_hash, cons_persona, json) VALUES (?, ?, ?)`,
     );
     try {
       for (const v of payload.jornada ?? []) {
         const hash = hashDocumento(v.numero_documento);
-        await stmtJornada.executeAsync([hash, JSON.stringify(v)]);
+        await stmtJornada.executeAsync([hash, v.cons_persona ?? null, JSON.stringify(v)]);
       }
     } finally {
       await stmtJornada.finalizeAsync();
@@ -251,12 +257,23 @@ export async function buscarCandidatosEnPadron(documento: string): Promise<Resul
  * Devuelve el VictimaResumenFuente COMPLETO si la persona viene en la jornada
  * del día (para continuar el flujo de caracterización offline).
  */
-export async function buscarEnJornada(documento: string): Promise<VictimaResumenFuente | null> {
+export async function buscarEnJornada(
+  documento: string,
+  consPersona?: number | null,
+): Promise<VictimaResumenFuente | null> {
   const db = await openDb();
-  const row = await db.getFirstAsync<{ json: string }>(
-    'SELECT json FROM jornada WHERE documento_hash = ?',
-    [hashDocumento(documento)],
-  );
+  // Con `consPersona` se pide la fila de UNA persona concreta. Hace falta cuando
+  // varias comparten documento: sin él, la jornada devolvería cualquiera de ellas
+  // y se perdería la elección que el encuestador acaba de hacer.
+  const row = consPersona != null
+    ? await db.getFirstAsync<{ json: string }>(
+        'SELECT json FROM jornada WHERE documento_hash = ? AND cons_persona = ?',
+        [hashDocumento(documento), consPersona],
+      )
+    : await db.getFirstAsync<{ json: string }>(
+        'SELECT json FROM jornada WHERE documento_hash = ?',
+        [hashDocumento(documento)],
+      );
   if (!row) return null;
   try {
     return JSON.parse(row.json) as VictimaResumenFuente;

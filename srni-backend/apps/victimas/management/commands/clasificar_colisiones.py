@@ -10,16 +10,17 @@ Es un derivado: no toca `Victima`, y volver a correrlo reconstruye la tabla desd
 cero. Si el criterio cambia, se corrige `apps/victimas/identidad.py` y se re-corre.
 
 Uso:
-    python manage.py clasificar_colisiones               # todo el padrón
-    python manage.py clasificar_colisiones --dry-run     # mide sin escribir
-    python manage.py clasificar_colisiones --limite 5000 # una cata rápida
+    python manage.py clasificar_colisiones                          # todo el padrón
+    python manage.py clasificar_colisiones --dry-run                # mide sin escribir
+    python manage.py clasificar_colisiones --limite 5000 --dry-run  # cata rápida
 """
 from __future__ import annotations
 
 import collections
+import contextlib
 import time
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 
 from apps.victimas.identidad import clasificar_grupo
@@ -40,12 +41,24 @@ class Command(BaseCommand):
         parser.add_argument('--dry-run', action='store_true',
                             help='Mide y reporta sin escribir ColisionDocumento.')
         parser.add_argument('--limite', type=int, default=None,
-                            help='Procesar solo los primeros N documentos repetidos.')
+                            help='Procesar solo los primeros N documentos repetidos. '
+                                 'Solo con --dry-run: es una cata, no una corrida.')
 
     def handle(self, *args, **options):
         dry = options['dry_run']
         limite = options['limite']
         t0 = time.time()
+
+        # `--limite` sin `--dry-run` sería destructivo y nada lo avisaría: la
+        # corrida borra la tabla entera y la reescribe, así que limitar a N
+        # dejaría al padrón sin los veredictos de los otros 763 mil documentos —y
+        # sin veredicto, el padrón offline vuelve a colapsar por documento—.
+        if limite and not dry:
+            raise CommandError(
+                '--limite es una cata y solo tiene sentido con --dry-run. Sin él, '
+                'la corrida borraría los veredictos de TODOS los documentos '
+                'repetidos y dejaría solo los primeros N.'
+            )
 
         self.stdout.write('Buscando documentos repetidos…')
         sql = """
@@ -62,17 +75,57 @@ class Command(BaseCommand):
 
         self.stdout.write(f'  {len(hashes):,} documentos repetidos.')
 
-        if not dry:
-            # Se reconstruye entera: es un derivado, y un borrado parcial dejaría
-            # veredictos viejos conviviendo con nuevos sin forma de distinguirlos.
-            borradas, _ = ColisionDocumento.objects.all().delete()
-            self.stdout.write(f'  tabla anterior limpiada ({borradas:,} filas).')
-
         conteo = collections.Counter()
-        personas_extra = 0     # personas que un colapso ciego por documento perdería
-        filas_totales = 0
-        procesados = 0
+        # Contadores compartidos con `_clasificar` (que corre dentro de la
+        # transacción): `personas_extra` son las personas que un colapso ciego por
+        # documento perdería.
+        acumulador = {'filas': 0, 'personas_extra': 0}
 
+        # TODO el trabajo va en UNA transacción, borrado incluido. El motivo es
+        # operativo: la corrida tarda ~25 min sobre 768 mil documentos y esta red
+        # se cae seguido. Con el borrado fuera de la transacción, un proceso muerto
+        # a la mitad dejaba la tabla con la mitad de los veredictos, y esa mitad es
+        # indistinguible de una corrida completa —el padrón siguiente saldría sin
+        # los AMBIGUO que faltaron, borrando personas—. Ahora, o queda la
+        # clasificación nueva entera, o queda intacta la anterior.
+        #
+        # Gracias al MVCC de PostgreSQL, mientras tanto la búsqueda sigue leyendo
+        # los veredictos viejos sin bloquearse.
+        contexto = contextlib.nullcontext() if dry else transaction.atomic()
+        with contexto:
+            if not dry:
+                # Se reconstruye entera: es un derivado, y un borrado parcial
+                # dejaría veredictos viejos conviviendo con nuevos.
+                borradas, _ = ColisionDocumento.objects.all().delete()
+                self.stdout.write(f'  tabla anterior limpiada ({borradas:,} filas).')
+            self._clasificar(hashes, dry=dry, conteo=conteo, t0=t0,
+                             acumulador=acumulador)
+
+        filas_totales = acumulador['filas']
+        personas_extra = acumulador['personas_extra']
+
+        # ── Informe ───────────────────────────────────────────────────────────
+        total = sum(conteo.values()) or 1
+        self.stdout.write(self.style.SUCCESS('\n[OK] Clasificacion terminada.'))
+        self.stdout.write(f'  Documentos repetidos: {total:,}')
+        self.stdout.write(f'  Filas involucradas:   {filas_totales:,}')
+        for clase, n in conteo.most_common():
+            self.stdout.write(f'    {n:>9,}  ({100.0*n/total:5.1f} %)  {clase}')
+
+        self.stdout.write(
+            f'\n  Personas distintas que un colapso por documento borraria: '
+            f'{personas_extra:,}')
+        ambiguos = conteo.get('AMBIGUO', 0) + conteo.get('NO_IDENTIFICANTE', 0)
+        self.stdout.write(
+            f'  Documentos que exigen confirmar identidad: {ambiguos:,} '
+            f'({100.0*ambiguos/total:.1f} % de los repetidos)')
+
+        if dry:
+            self.stdout.write(self.style.WARNING('\n  --dry-run: no se escribio nada.'))
+
+
+    def _clasificar(self, hashes, *, dry, conteo, t0, acumulador):
+        procesados = 0
         for i in range(0, len(hashes), LOTE):
             lote = hashes[i:i + LOTE]
             filas_por_doc: dict[str, list] = collections.defaultdict(list)
@@ -95,9 +148,9 @@ class Command(BaseCommand):
                 v = clasificar_grupo(filas, numero_documento=numero)
 
                 conteo[v.clase] += 1
-                filas_totales += len(filas)
+                acumulador['filas'] += len(filas)
                 if v.n_personas > 1:
-                    personas_extra += v.n_personas - 1
+                    acumulador['personas_extra'] += v.n_personas - 1
 
                 nuevas.append(ColisionDocumento(
                     doc_hash=doc_hash_,
@@ -108,8 +161,8 @@ class Command(BaseCommand):
                 ))
 
             if not dry and nuevas:
-                with transaction.atomic():
-                    ColisionDocumento.objects.bulk_create(nuevas, batch_size=1000)
+                # Sin `atomic` propio: ya corre dentro de la transacción única.
+                ColisionDocumento.objects.bulk_create(nuevas, batch_size=1000)
 
             procesados += len(lote)
             if procesados % (LOTE * 10) == 0 or procesados >= len(hashes):
@@ -118,22 +171,3 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f'  {procesados:,}/{len(hashes):,} documentos '
                     f'({ritmo:,.0f}/s, {seg/60:.1f} min)')
-
-        # ── Informe ───────────────────────────────────────────────────────────
-        total = sum(conteo.values()) or 1
-        self.stdout.write(self.style.SUCCESS('\n[OK] Clasificacion terminada.'))
-        self.stdout.write(f'  Documentos repetidos: {total:,}')
-        self.stdout.write(f'  Filas involucradas:   {filas_totales:,}')
-        for clase, n in conteo.most_common():
-            self.stdout.write(f'    {n:>9,}  ({100.0*n/total:5.1f} %)  {clase}')
-
-        self.stdout.write(
-            f'\n  Personas distintas que un colapso por documento borraria: '
-            f'{personas_extra:,}')
-        ambiguos = conteo.get('AMBIGUO', 0) + conteo.get('NO_IDENTIFICANTE', 0)
-        self.stdout.write(
-            f'  Documentos que exigen confirmar identidad: {ambiguos:,} '
-            f'({100.0*ambiguos/total:.1f} % de los repetidos)')
-
-        if dry:
-            self.stdout.write(self.style.WARNING('\n  --dry-run: no se escribio nada.'))

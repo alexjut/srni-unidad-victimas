@@ -18,11 +18,13 @@
  * 10 → padron sin PRIMARY KEY en documento_hash + clase_colision: un mismo
  *      documento puede pertenecer a dos personas distintas y las dos tienen que
  *      caber (antes la segunda se perdía en silencio)
+ * 11 → jornada con el mismo arreglo + cons_persona: traía el defecto gemelo y
+ *      pisaba la persona que el encuestador acababa de elegir
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -355,11 +357,16 @@ const MIGRATION_V9 = `
 //   'NO_IDENTIFICANTE' → valor de relleno ('99', '0'): no identifica a nadie y la
 //                        fila viene vacía a propósito.
 //
-// Se recrea la tabla en vez de ALTERarla porque SQLite no sabe quitar una PRIMARY
-// KEY. No se pierde nada: el padrón local es un espejo que la precarga repuebla
-// entero.
+// La tabla se MIGRA, no se borra. La versión anterior hacía `DROP TABLE padron`
+// dando por hecho que la precarga la repuebla — y no es así: `ejecutarPrecarga`
+// solo se dispara en `login` y `loginBiometrico`, no al restaurar una sesión ya
+// abierta. Un encuestador que actualiza la app y sale a campo con la sesión
+// puesta se quedaba SIN padrón y sin forma de recuperarlo hasta volver a
+// entrar con red. Las columnas viejas son un subconjunto exacto de las nuevas y
+// `clase_colision` NULL significa justo lo que la v9 asumía de todas: documento
+// limpio, una persona.
 const MIGRATION_V10 = `
-  DROP TABLE IF EXISTS padron;
+  ALTER TABLE padron RENAME TO padron_v9;
 
   CREATE TABLE padron (
     documento_hash    TEXT    NOT NULL,
@@ -375,7 +382,41 @@ const MIGRATION_V10 = `
     clase_colision    TEXT
   );
 
+  INSERT INTO padron
+    (documento_hash, tipo_documento, documento_display, nombre, ubicacion,
+     cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona,
+     clase_colision)
+  SELECT documento_hash, tipo_documento, documento_display, nombre, ubicacion,
+         cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona,
+         NULL
+    FROM padron_v9;
+
+  DROP TABLE padron_v9;
+
   CREATE INDEX IF NOT EXISTS idx_padron_hash ON padron(documento_hash);
+`;
+
+// ─── Migración v11 — la jornada tampoco es "una fila por documento" ──────────
+//
+// `jornada` arrastraba el mismo defecto que el padrón: `documento_hash TEXT
+// PRIMARY KEY` + `INSERT OR REPLACE`, sobre EXACTAMENTE la misma lista de
+// víctimas que llega en la precarga. De dos personas que comparten documento
+// sobrevivía la última, y como `resultadoDesdePadron` le da prioridad a la
+// jornada, esa fila pisaba la elección que el encuestador acababa de hacer entre
+// los candidatos: elegía a MARIA y veía los datos de ROSA.
+//
+// `cons_persona` permite quedarse con la fila de la persona elegida y no con
+// cualquiera de las que comparten el número.
+const MIGRATION_V11 = `
+  DROP TABLE IF EXISTS jornada;
+
+  CREATE TABLE jornada (
+    documento_hash TEXT    NOT NULL,
+    cons_persona   INTEGER,
+    json           TEXT    NOT NULL DEFAULT '{}'
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_jornada_hash ON jornada(documento_hash);
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -481,9 +522,16 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
 
   if (currentVersion < 10) {
     // El padrón deja de tener UNA fila por documento (ver MIGRATION_V10).
-    // Se recrea la tabla; no se pierde nada porque el padrón se repuebla entero
-    // en cada precarga — es un espejo del servidor, no datos capturados.
+    // Migra los datos existentes: la precarga NO se dispara al restaurar sesión,
+    // así que borrarlos dejaría al encuestador sin padrón en pleno campo.
     await db.execAsync(MIGRATION_V10);
+  }
+
+  if (currentVersion < 11) {
+    // La jornada, con el mismo arreglo (ver MIGRATION_V11). Aquí sí se recrea
+    // vacía: la jornada es del día y se repuebla en la precarga siguiente; su
+    // json no sirve para nada sin el padrón que lo acompaña.
+    await db.execAsync(MIGRATION_V11);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

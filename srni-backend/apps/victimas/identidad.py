@@ -149,6 +149,38 @@ def _completitud(v) -> int:
     return sum(1 for c in campos if c not in (None, '', 0))
 
 
+def _id_estable(v) -> str:
+    """
+    Identificador de la fila como texto, para ordenar de forma reproducible.
+
+    Los dobles de los tests no tienen `id`; devolver '' los deja en su orden de
+    entrada, que en `sorted` (estable) es exactamente lo que se quiere.
+    """
+    return str(getattr(v, 'id', '') or '')
+
+
+def _orden_survivorship(v) -> tuple:
+    """
+    Orden TOTAL para elegir la fila que representa a la persona: completitud,
+    luego recencia de la caracterización, luego id.
+
+    Los tres componentes hacen falta. Con solo la completitud, `max()` rompe los
+    empates por posición en la lista —y esa posición la decide el plan de
+    ejecución de PostgreSQL, que puede cambiar entre corridas—: dos generaciones
+    del padrón publicarían filas distintas para la misma persona sin que nadie
+    haya cambiado nada. El `id` al final garantiza que el desempate sea siempre
+    el mismo.
+    """
+    f = v.fecha_ult_caracterizacion
+    if hasattr(f, 'timestamp'):
+        recencia = f.timestamp()
+    elif hasattr(f, 'toordinal'):
+        recencia = float(f.toordinal())
+    else:
+        recencia = 0.0
+    return (_completitud(v), recencia, _id_estable(v))
+
+
 def _clave_apellidos(v) -> str:
     return normalizar_nombre(v.primer_apellido, v.segundo_apellido)
 
@@ -189,12 +221,23 @@ def clasificar_grupo(filas: list, numero_documento: str | None = None) -> Veredi
         return Veredicto(clase='NO_IDENTIFICANTE', personas=[], preferida=None)
 
     # Paso 2 — coincidencia exacta.
+    #
+    # Se recorre en orden de `id` y no en el que devuelva PostgreSQL: sin eso, el
+    # plan de ejecución decide qué fila se guarda primero y dos corridas del mismo
+    # comando pueden dar veredictos distintos sobre los mismos datos.
     bloques: dict[tuple, Persona] = {}
-    for v in filas:
+    for i, v in enumerate(sorted(filas, key=_id_estable)):
         clave = _clave_completa(v)
+        # Sin nombre no se puede afirmar que dos filas son la misma persona: se
+        # dejan separadas y el grupo termina en AMBIGUO. Hay 153 víctimas sin
+        # primer_nombre en el padrón; unirlas por "las dos están vacías" sería
+        # fabricar una identidad a partir de la ausencia de datos.
+        if not clave[0]:
+            clave = ('#sin-nombre', i)
         p = bloques.get(clave)
         if p is None:
-            p = Persona(nombre=clave[0], fecha_nacimiento=clave[1],
+            p = Persona(nombre=clave[0] if isinstance(clave[0], str) else '',
+                        fecha_nacimiento=_clave_completa(v)[1],
                         apellidos=_clave_apellidos(v))
             bloques[clave] = p
         p.filas.append(v)
@@ -211,20 +254,33 @@ def clasificar_grupo(filas: list, numero_documento: str | None = None) -> Veredi
         # comparten apellidos y podrían compartir un documento mal digitado, y
         # unirlos sería fabricar una persona que no existe. Con la fecha igual, la
         # explicación más simple es el typo en el nombre.
+        #
+        # ⚠️ Un bloque SIN apellidos o SIN fecha no puede unirse ni servir de
+        # llave, y va con una clave propia. La versión anterior lo metía igual en
+        # el diccionario bajo la llave ('', ''): el segundo bloque sin apellidos
+        # **sobrescribía** al primero y esa persona desaparecía del veredicto —el
+        # grupo quedaba marcado como "una sola persona" y el padrón offline
+        # borraba sus filas—. Es el borrado silencioso que este módulo existe para
+        # impedir, entrando por la puerta de atrás. La fuente escribe '' cuando
+        # Oracle trae NULL, así que el caso es corriente, no teórico.
         unidos: dict[tuple, Persona] = {}
         for clave, p in bloques.items():
-            k = (p.apellidos, p.fecha_nacimiento)
-            if k in unidos and p.apellidos:
-                unidos[k].filas.extend(p.filas)
+            if not p.apellidos or not p.fecha_nacimiento:
+                unidos[('#solo', clave)] = p
+                continue
+            k = ('#apellidos', p.apellidos, p.fecha_nacimiento)
+            existente = unidos.get(k)
+            if existente is not None:
+                existente.filas.extend(p.filas)
                 hubo_variante = True
             else:
                 unidos[k] = p
-        bloques = {k: p for k, p in unidos.items()}
+        bloques = unidos
 
     personas = list(bloques.values())
 
     if len(personas) == 1:
-        preferida = max(personas[0].filas, key=_completitud)
+        preferida = max(personas[0].filas, key=_orden_survivorship)
         clase = 'VARIANTE_NOMBRE' if hubo_variante else 'DUPLICADO_FUENTE'
         return Veredicto(clase=clase, personas=personas, preferida=preferida)
 

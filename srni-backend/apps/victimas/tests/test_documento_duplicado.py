@@ -359,6 +359,33 @@ def test_documento_de_relleno_con_una_sola_fila_tampoco_la_devuelve(
     assert resp.json()["no_identificante"] is True
 
 
+def test_la_busqueda_web_encuentra_a_quien_esta_cargado_sin_tipo(catalogo, client_auth):
+    """
+    1.126.615 víctimas (14,5 % del padrón) están cargadas SIN tipo de documento.
+    La vista web filtraba además por `tipo_documento__codigo`, así que respondía
+    404 "no se encontró ninguna víctima con ese documento" — literalmente falso, y
+    es la frase que empuja a dar de alta a mano a alguien que ya está.
+    """
+    from apps.victimas.models import Victima
+    from apps.victimas.repository.base import num_hash
+
+    v = _crear_victima(catalogo, documento="52147896", nombre="LUZ", apellido="DIAZ")
+    # Como la fuente: sin tipo, y el hash de identidad calculado con tipo vacío.
+    Victima.objects.filter(pk=v.pk).update(
+        tipo_documento=None,
+        numero_documento_hash=doc_hash("", "52147896"),
+        numero_documento_hash_sin_tipo=num_hash("52147896"),
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "52147896"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert resp.json()["id"] == str(v.id)
+
+
 # ── 2. /consultar-fuente/ manda los candidatos ───────────────────────────────
 
 @override_settings(VICTIMA_REPOSITORY="DJANGO")

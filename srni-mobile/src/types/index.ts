@@ -277,4 +277,14 @@ export interface ResultadoBusquedaFuente {
   victima: VictimaResumenFuente | null;
   fuente: string;
   mensaje: string;
+  /**
+   * Las OTRAS personas que comparten el documento buscado. Normalmente vacío.
+   *
+   * El backend lo manda desde que se distingue un duplicado de la fuente de una
+   * ambigüedad real; si esta lista trae algo, la pantalla DEBE pedir
+   * confirmación en vez de mostrar `victima` como si fuera la única. Sin este
+   * campo declarado, el cliente descartaba el dato en silencio y la ambigüedad
+   * se preguntaba sin red pero se ocultaba con red.
+   */
+  candidatos?: VictimaResumenFuente[];
 }

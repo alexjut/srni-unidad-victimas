@@ -29,8 +29,8 @@ from .serializers import (
     ConsultarFuenteInputSerializer, ResultadoBusquedaSerializer,
     RegistrarDesdeFuenteSerializer, VictimaResumenSerializer, PadronItemSerializer,
 )
-from .repository.base import doc_hash
-from .repository import get_repository
+from .repository.base import doc_hash, num_hash
+from .repository import DjangoVictimaRepository, get_repository
 
 
 def _ip_de_request(request) -> str:
@@ -147,13 +147,28 @@ class BuscarVictimaView(APIView):
         ip = _ip_de_request(request)
         ua = request.META.get('HTTP_USER_AGENT', '')
 
-        coincidencias = list(Victima.objects.select_related(
-            'tipo_documento',
-            'municipio_residencia__departamento',
-        ).filter(
-            numero_documento_hash=hash_doc,
-            tipo_documento__codigo=tipo_codigo,
-        ))
+        def _qs():
+            return Victima.objects.select_related(
+                'tipo_documento', 'municipio_residencia__departamento')
+
+        # Sin `tipo_documento__codigo`: el tipo YA está dentro de `hash_doc`, y
+        # ese filtro extra dejaba fuera a las filas con el tipo en NULL.
+        coincidencias = list(_qs().filter(numero_documento_hash=hash_doc))
+
+        # Respaldo por número, igual que el repositorio: 1.126.615 víctimas
+        # (14,5 % del padrón) están cargadas SIN tipo de documento, y su hash de
+        # identidad se calculó con el tipo vacío. Sin este respaldo, buscarlas por
+        # 'CC + número' respondía "no se encontró ninguna víctima con ese
+        # documento" —literalmente falso— y empujaba a un alta manual duplicada de
+        # alguien que sí está en el padrón.
+        aviso_tipo = ''
+        if not coincidencias:
+            coincidencias = list(_qs().filter(
+                numero_documento_hash_sin_tipo=num_hash(numero)))
+            if coincidencias:
+                aviso_tipo = (
+                    f'Coincide por número, pero el tipo de documento registrado no '
+                    f'es «{tipo_codigo}». VERIFIQUE la identidad. ')
 
         # Antes esto era un `.get()` y reventaba con 500 cuando el documento estaba
         # repetido: 768.096 documentos del padrón lo están (~15,6 % de las búsquedas
@@ -170,24 +185,27 @@ class BuscarVictimaView(APIView):
         # con la fila más completa; solo se pregunta cuando de verdad hay que
         # elegir. Si el veredicto no está —clasificación no corrida todavía—, se
         # cae del lado seguro: preguntar.
+        # El veredicto se busca por los documentos REALMENTE presentes en el
+        # resultado, no por `hash_doc`: cuando entra el respaldo por número, las
+        # filas pueden ser de documentos distintos y aplicarles el veredicto de uno
+        # solo descartaría a las personas de los demás.
+        #
         # Se consulta SIEMPRE que haya alguna coincidencia, no solo cuando hay
         # varias: un documento de relleno puede haber quedado con una sola fila
         # —porque el resto tenía otro tipo de documento— y devolver esa persona
         # sería afirmar que el número la identifica cuando no lo hace.
-        veredicto = None
+        #
+        # La reducción la hace el repositorio, que es donde vive el criterio: si
+        # esta vista tuviera el suyo, el web y la APK podrían responder distinto
+        # sobre la misma persona.
+        veredictos = {}
         if coincidencias:
-            veredicto = ColisionDocumento.objects.filter(doc_hash=hash_doc).first()
+            veredictos = DjangoVictimaRepository._veredictos_de(coincidencias)
+            coincidencias = DjangoVictimaRepository._resolver_colision(coincidencias)
 
-        if veredicto is not None and not veredicto.requiere_confirmacion:
-            preferida = veredicto.victima_preferida
-            # La preferida es una FK con on_delete=SET_NULL: si la fila se borró
-            # entre la clasificación y ahora, se cae del lado seguro.
-            if preferida is not None:
-                coincidencias = [
-                    next((c for c in coincidencias if c.id == preferida.id), preferida)
-                ]
-
-        if veredicto is not None and veredicto.clase == 'NO_IDENTIFICANTE':
+        no_identificante = any(
+            v.clase == 'NO_IDENTIFICANTE' for v in veredictos.values())
+        if no_identificante:
             # No es que haya que elegir: es que el número no identifica a nadie
             # (`99` aparece 4.297 veces con 3.780 nombres distintos). Devolver a
             # cualquiera de ellos sería entregar los datos de un desconocido.
@@ -230,6 +248,7 @@ class BuscarVictimaView(APIView):
             return Response(
                 {
                     'detail': (
+                        aviso_tipo +
                         f'Hay {len(coincidencias)} registros con este documento. '
                         f'CONFIRME cuál corresponde antes de caracterizar.'
                     ),

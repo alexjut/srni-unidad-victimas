@@ -140,8 +140,19 @@ class Command(BaseCommand):
 
         Tampoco se arma el SQL a mano: la llave es un UUID y cada motor lo bindea
         distinto (SQLite lo rechaza, Postgres pide cast). Django lo resuelve."""
-        from apps.victimas.models import Victima
+        from apps.victimas.models import ColisionDocumento, Victima
 
         with transaction.atomic():
+            # `ColisionDocumento` apunta a `Victima` con `related_name='+'`, que la
+            # vuelve invisible para `_protegidas` (Django excluye las relaciones
+            # ocultas de `related_objects`), y `_raw_delete` no ejecuta el
+            # `on_delete=SET_NULL`. Sin esto, la purga aborta por violación de
+            # llave foránea.
+            #
+            # Se vacía en vez de protegerse a propósito: proteger las ~700 mil
+            # filas preferidas dejaría media base en pie y anularía la purga. Es un
+            # derivado recalculable —se reconstruye con `clasificar_colisiones`—,
+            # así que no se pierde nada que no se pueda volver a producir.
+            ColisionDocumento.objects.all().delete()
             objetivo = Victima.objects.exclude(id__in=protegidas)
             return objetivo._raw_delete(objetivo.db)

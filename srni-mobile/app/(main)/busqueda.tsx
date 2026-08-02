@@ -552,6 +552,10 @@ export default function BusquedaScreen() {
   // Personas distintas que comparten el documento buscado. Mientras esta lista
   // tenga algo, NO hay resultado: falta que el encuestador confirme cuál es.
   const [candidatos, setCandidatos] = useState<PadronRow[]>([]);
+  // Lo mismo, pero cuando la ambigüedad la reporta el servidor: `consultarFuente`
+  // devuelve 200 con `candidatos`, y antes ese dato se descartaba — la pregunta
+  // aparecía sin red y desaparecía con red, que es la peor combinación posible.
+  const [candidatosOnline, setCandidatosOnline] = useState<VictimaResumenFuente[]>([]);
 
   const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
   const [cargandoInstrumentos, setCargandoInstrumentos] = useState(false);
@@ -577,6 +581,7 @@ export default function BusquedaScreen() {
         setResultado(null);
         setErrorBusqueda(null);
         setCandidatos([]);
+        setCandidatosOnline([]);
         setInstrumentoSeleccionado(null);
         setAltaManualRegistrada(false);
         limpiar();
@@ -611,6 +616,7 @@ export default function BusquedaScreen() {
       // miles que comparten ese número como si fuera quien está enfrente.
       if (r.noIdentificante) {
         setCandidatos([]);
+        setCandidatosOnline([]);
         setErrorBusqueda(
           'Este número no identifica a una persona: en el padrón figura como valor ' +
             'de relleno, compartido por muchos registros. Verifique el documento o ' +
@@ -640,8 +646,22 @@ export default function BusquedaScreen() {
   /** El encuestador eligió cuál de los candidatos es la persona que atiende. */
   async function elegirCandidato(p: PadronRow) {
     setCandidatos([]);
-    const jornada = await precargaDao.buscarEnJornada(documento.trim());
+    // Con `cons_persona`: la jornada tiene una fila por persona, y sin este dato
+    // devolvería cualquiera de las que comparten el documento — pisando justo la
+    // elección que el encuestador acaba de hacer.
+    const jornada = await precargaDao.buscarEnJornada(documento.trim(), p.cons_persona);
     setResultado(resultadoDesdePadron(p, jornada));
+  }
+
+  /** El encuestador eligió entre los candidatos que devolvió el servidor. */
+  function elegirCandidatoOnline(v: VictimaResumenFuente) {
+    setCandidatosOnline([]);
+    setResultado({
+      encontrado: true,
+      victima: v,
+      fuente: 'RNI',
+      mensaje: '',
+    });
   }
 
   async function buscar() {
@@ -650,6 +670,7 @@ export default function BusquedaScreen() {
     setResultado(null);
     setErrorBusqueda(null);
     setCandidatos([]);
+    setCandidatosOnline([]);
     setInstrumentoSeleccionado(null);
     setAltaManualRegistrada(false);
 
@@ -667,7 +688,13 @@ export default function BusquedaScreen() {
 
     try {
       const { data } = await victimasApi.consultarFuente(tipoDoc, documento.trim());
-      setResultado(data);
+      // Si el servidor devolvió más de una persona para el documento, no hay un
+      // resultado que mostrar: hay una pregunta que hacer.
+      if (data?.encontrado && (data.candidatos?.length ?? 0) > 0 && data.victima) {
+        setCandidatosOnline([data.victima, ...(data.candidatos ?? [])]);
+      } else {
+        setResultado(data);
+      }
       // Sprint 17: ya NO se cargan instrumentos aquí. El selector vive en el hub
       // de caracterizaciones tras conformar el hogar (flujo cosido Sprint 14).
     } catch {
@@ -848,8 +875,64 @@ export default function BusquedaScreen() {
     );
   }
 
+  /**
+   * Misma pregunta que `renderCandidatos`, pero con los datos del servidor, que
+   * SÍ traen nombre completo y fecha de nacimiento — o sea que acá el
+   * encuestador puede confirmar sin abrir nada más.
+   */
+  function renderCandidatosOnline() {
+    return (
+      <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
+        <View style={styles.tarjetaEncabezado}>
+          <MaterialCommunityIcons
+            name="account-question-outline"
+            size={32}
+            color={GOV.naranja}
+            style={styles.icono}
+          />
+          <Text style={[styles.tarjetaTitulo, { color: GOV.naranja }]}>
+            {candidatosOnline.length} personas con este documento
+          </Text>
+        </View>
+        <Text style={styles.tarjetaMensaje}>
+          El número {tipoDoc} {documento} está registrado a nombre de más de una
+          persona. Confirme el nombre y la fecha de nacimiento con quien tiene
+          enfrente antes de continuar.
+        </Text>
+
+        <Divider style={{ marginVertical: SPACING.sm }} />
+
+        {candidatosOnline.map((v, i) => {
+          const nombre = [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
+            .filter(Boolean).join(' ');
+          return (
+            <Pressable
+              key={`${v.cons_persona ?? i}`}
+              onPress={() => elegirCandidatoOnline(v)}
+              style={({ pressed }) => [styles.candidato, pressed && { opacity: 0.85 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Seleccionar a ${nombre}`}
+            >
+              <View style={styles.candidatoTextos}>
+                <Text style={styles.candidatoNombre} numberOfLines={2}>
+                  {nombre || 'Sin nombre registrado'}
+                </Text>
+                <Text style={styles.candidatoMeta}>
+                  {v.fecha_nacimiento ? `Nac. ${v.fecha_nacimiento}` : 'Sin fecha de nacimiento'}
+                  {v.municipio_residencia_nombre ? `  ·  ${v.municipio_residencia_nombre}` : ''}
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={24} color={GOV.azul} />
+            </Pressable>
+          );
+        })}
+      </Surface>
+    );
+  }
+
   function renderTarjeta() {
     if (candidatos.length > 0) return renderCandidatos();
+    if (candidatosOnline.length > 0) return renderCandidatosOnline();
     if (!resultado) return null;
 
     if (!resultado.encontrado) {
