@@ -92,6 +92,11 @@ docs/oracle-legacy/*
 # existe en el disco de quien lo corrió. No llevan datos de prod ni credenciales.
 !docs/oracle-legacy/plan_escalon_1.md
 !docs/oracle-legacy/plan_escalon_2.md
+# Mismo criterio: el analisis de QUE exige el legacy para que salgan los reportes y
+# el plan que sale de ahi. Cita nombres de procedures y numeros de linea del volcado,
+# pero NO lleva codigo fuente de prod ni datos de personas — el volcado crudo
+# (docs/oracle-legacy/volcado/) sigue ignorado, que es lo que esta regla protege.
+!docs/oracle-legacy/escritura_legacy_analisis.md
 # Registro de defectos de la BD legacy y veredicto de calidad de datos: son el
 # insumo del trabajo POST-migración. Solo conclusiones y cifras agregadas, sin PII.
 !docs/oracle-legacy/defectos_bd_legacy.md
