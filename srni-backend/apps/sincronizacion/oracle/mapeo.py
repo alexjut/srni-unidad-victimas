@@ -443,12 +443,46 @@ class ResolverCatalogos:
                 f"se espera de un campo DP/DT. No se elige a ciegas.",
                 f"{codigo}/geo_contenedora_ambigua")
 
+        # ── salto 2-ter: preguntas ABIERTAS (texto, número, fecha) ──────────
+        #
+        # Una pregunta abierta no tiene opciones que cruzar: lo que el encuestador
+        # escribió no es una etiqueta de catálogo, es el dato. Oracle las modela
+        # igual que las geográficas —UNA respuesta contenedora, con RES_RESPUESTA
+        # vacío— y el valor viaja aparte, en `RXP_TEXTORESPUESTA` (ver
+        # `_texto_respuesta`, que ya lo manda).
+        #
+        # Sin este salto, TODA pregunta abierta abortaba el hogar: el cruce por
+        # texto no tenía con qué comparar. En el instrumento territorial v8 hay 55
+        # preguntas abiertas —el documento del autorizado, la dirección, los
+        # teléfonos, el correo—, así que ningún hogar territorial completo se podía
+        # escribir. El piloto no lo vio porque llevaba tres respuestas.
+        #
+        # La condición es la FORMA de Oracle, no el tipo declarado en SICAV: una
+        # sola respuesta y sin texto es Oracle diciendo "acá va un valor libre".
+        # Si hubiera varias, o la única tuviera etiqueta, no aplica y sigue el
+        # camino normal — no se elige a ciegas.
+        respuestas_oracle = fila["respuestas"]
+        if len(respuestas_oracle) == 1 and not (
+                respuestas_oracle[0].get("res_respuesta") or "").strip():
+            unica = respuestas_oracle[0]
+            if unica["res_idrespuesta"] in cat["huerfanas"]:
+                return self._respuesta_falta(
+                    f"la pregunta abierta {codigo!r} (id_preg={id_preg}) tiene una sola "
+                    f"respuesta contenedora ({unica['res_idrespuesta']}) pero es "
+                    f"HUÉRFANA: sin fila en GIC_N_INSTRUMENTOXRESP el procedure haría "
+                    f"NO_DATA_FOUND y no escribiría nada, en silencio.",
+                    f"{codigo}/abierta_huerfana")
+            return unica["res_idrespuesta"]
+
         # ── salto 2: la opción, por texto, dentro de esa pregunta ───────────
         etiqueta = self._etiqueta_opcion(respuesta)
         if etiqueta is None:
             return self._respuesta_falta(
                 f"la respuesta a {codigo!r} vale {respuesta.valor!r} y esa opción no "
-                f"existe en SICAV (formulario.OpcionRespuesta): no hay texto que cruzar.",
+                f"existe en SICAV (formulario.OpcionRespuesta): no hay texto que cruzar. "
+                f"Si la pregunta es abierta, el problema es otro: Oracle tiene "
+                f"{len(fila['respuestas'])} respuestas para ella y una abierta debería "
+                f"tener exactamente una, contenedora.",
                 f"{codigo}/opcion_inexistente")
         objetivo = catalogos.normalizar_nombre(etiqueta)
         candidatas = [r for r in fila["respuestas"] if r["_texto"] == objetivo]
