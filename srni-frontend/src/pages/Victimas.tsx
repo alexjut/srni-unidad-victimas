@@ -11,8 +11,10 @@ import { toast } from 'sonner';
 import {
   victimasApi,
   tiposDocumentoApi,
+  busquedaAmbigua,
   type VictimaResumen,
   type TipoDocumento,
+  type BusquedaAmbigua,
 } from '@/api/victimas';
 import PageHeader from '@/components/ui/PageHeader';
 import Button from '@/components/ui/Button';
@@ -32,6 +34,9 @@ const ESTADO_RUV_BADGE: Record<string, { variant: 'verde' | 'azul' | 'amarillo' 
   NO_INCLUIDO: { variant: 'gris',     label: 'No incluido' },
   EN_PROCESO:  { variant: 'amarillo', label: 'En proceso' },
   EXCLUIDO:    { variant: 'rojo',     label: 'Excluido' },
+  // "No está en el padrón que se descargó", que NO es "no está en el RUV": 1,88 M
+  // de víctimas incluidas quedaron fuera del padrón. Alta manual en campo.
+  NO_VERIFICADO: { variant: 'azul',   label: 'Sin verificar en RUV' },
 };
 
 const ETNIA_LABEL: Record<string, string> = {
@@ -95,6 +100,7 @@ export default function VictimasPage() {
   const [buscando, setBuscando] = useState(false);
   const [resultado, setResultado] = useState<VictimaResumen | null>(null);
   const [noEncontrada, setNoEncontrada] = useState(false);
+  const [ambigua, setAmbigua] = useState<BusquedaAmbigua | null>(null);
   const [error, setError] = useState('');
   const [buscado, setBuscado] = useState(false);
 
@@ -126,6 +132,7 @@ export default function VictimasPage() {
     setError('');
     setResultado(null);
     setNoEncontrada(false);
+    setAmbigua(null);
     setBuscado(true);
 
     try {
@@ -143,7 +150,12 @@ export default function VictimasPage() {
       });
       setRecientes(getRecientes());
     } catch (err: any) {
-      if (err?.response?.status === 404) {
+      const ambiguo = busquedaAmbigua(err);
+      if (ambiguo) {
+        // Varias víctimas comparten el documento. NO se guarda en recientes: no hay
+        // un resultado, hay una pregunta sin responder.
+        setAmbigua(ambiguo);
+      } else if (err?.response?.status === 404) {
         setNoEncontrada(true);
       } else if (err?.response?.status === 403) {
         setError('No tiene permisos para buscar en el RNI.');
@@ -169,6 +181,7 @@ export default function VictimasPage() {
     setNumDoc('');
     setResultado(null);
     setNoEncontrada(false);
+    setAmbigua(null);
     setError('');
     setBuscado(false);
   }
@@ -241,6 +254,9 @@ export default function VictimasPage() {
         </Alert>
       )}
 
+      {/* Documento compartido por varias víctimas */}
+      {ambigua && <CandidatosAmbiguos ambigua={ambigua} navigate={navigate} />}
+
       {/* Resultado */}
       {resultado && <ResultadoCard resultado={resultado} navigate={navigate} />}
 
@@ -309,6 +325,101 @@ export default function VictimasPage() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// --- Documento compartido por varias víctimas ---
+
+/**
+ * El backend responde 409 en vez de elegir uno. Esta pantalla NO decide tampoco:
+ * lista los candidatos y obliga a abrir el detalle para confirmar quién es.
+ *
+ * Los candidatos llegan SIN nombre a propósito (el listado no expone PII); lo que
+ * se muestra alcanza para descartar —municipio, estado RUV, género, etnia— y el
+ * nombre aparece al abrir el detalle, que exige permiso.
+ */
+function CandidatosAmbiguos({
+  ambigua,
+  navigate,
+}: {
+  ambigua: BusquedaAmbigua;
+  navigate: ReturnType<typeof import('react-router-dom').useNavigate>;
+}) {
+  return (
+    <div className="mb-6 animate-fade-in-up">
+      <Alert variant="warning" className="mb-4">
+        <strong>{ambigua.detail}</strong>
+        <p className="mt-1 text-sm">
+          Este número de documento está registrado a nombre de más de una persona.
+          Abra el detalle de cada una y confirme con la persona que tiene enfrente
+          antes de caracterizar.
+        </p>
+      </Alert>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {ambigua.candidatos.map((c, i) => {
+          const ruv = ESTADO_RUV_BADGE[c.estado_ruv];
+          return (
+            <div key={c.id} className="card">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-gov-azul flex items-center justify-center shrink-0">
+                    <User size={18} className="text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Candidato {i + 1} de {ambigua.candidatos.length}
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono truncate">
+                      {c.tipo_documento_codigo} · {c.numero_documento_hash.slice(0, 8)}…
+                    </p>
+                  </div>
+                </div>
+                {ruv && <Badge variant={ruv.variant}>{ruv.label}</Badge>}
+              </div>
+
+              <dl className="text-sm space-y-1 mb-4">
+                <Fila label="Género" valor={GENERO_LABEL[c.genero] ?? (c.genero || '—')} />
+                <Fila
+                  label="Municipio"
+                  valor={c.municipio_residencia_nombre ?? '—'}
+                />
+                <Fila
+                  label="Departamento"
+                  valor={c.departamento_nombre ?? '—'}
+                />
+                <Fila
+                  label="Pertenencia étnica"
+                  valor={ETNIA_LABEL[c.pertenencia_etnica] ?? c.pertenencia_etnica?.replace('_', ' ') ?? '—'}
+                />
+                <Fila
+                  label="Registrado"
+                  valor={new Date(c.created_at).toLocaleDateString('es-CO')}
+                />
+              </dl>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Eye}
+                onClick={() => navigate(`/victimas/${c.id}`)}
+              >
+                Ver detalle y confirmar
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Fila({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div className="flex justify-between gap-3">
+      <dt className="text-gray-500 shrink-0">{label}</dt>
+      <dd className="text-gray-800 text-right truncate">{valor}</dd>
     </div>
   );
 }

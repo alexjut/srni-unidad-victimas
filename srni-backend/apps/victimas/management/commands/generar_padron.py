@@ -83,6 +83,17 @@ def _padron_dir() -> str:
     return ruta
 
 
+def _contar_clase(path: str, clase: str) -> int:
+    """Cuántas filas del padrón quedaron marcadas con esa clase de colisión."""
+    conn = sqlite3.connect(path)
+    try:
+        return conn.execute(
+            'SELECT count(*) FROM padron WHERE clase_colision = ?', (clase,)
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+
 def _sha256_archivo(path: str, _bufsize: int = 1024 * 1024) -> str:
     """SHA-256 del archivo leyendo por bloques (no carga el archivo entero)."""
     h = hashlib.sha256()
@@ -141,19 +152,27 @@ class Command(BaseCommand):
         # 4. Manifiesto (padron-latest.json).
         #
         # `total_registros` sale del `count(*)` del archivo, NO del contador del
-        # bucle: son cosas distintas. La PK es `doc_hash`, así que dos víctimas que
-        # comparten documento colapsan en una sola fila (`INSERT OR REPLACE`). El
-        # 2-ago el manifiesto declaraba 5.926.004 registros sobre un archivo de
-        # 4.928.725 filas — casi un millón que nadie iba a encontrar. Declarar lo
-        # que el archivo tiene, y decir aparte cuántos se leyeron y cuántos se
-        # perdieron por colisión.
-        colisiones = leidos - total
+        # bucle: son cosas distintas y el 2-ago el manifiesto declaraba 5.926.004
+        # registros sobre un archivo de 4.928.725 filas — casi un millón que nadie
+        # iba a encontrar. Se declara lo que el archivo tiene.
+        #
+        # La diferencia con `registros_leidos` ya NO son personas perdidas: los
+        # duplicados de la fuente se resuelven antes (una fila por persona) y lo
+        # único que se omite acá son las marcas repetidas de los documentos de
+        # relleno.
+        omitidos = leidos - total
+        ambiguos = _contar_clase(destino_final, 'AMBIGUO')
+        no_identificantes = _contar_clase(destino_final, 'NO_IDENTIFICANTE')
         manifiesto = {
             'version': version,
             'checksum': checksum,
             'total_registros': total,
             'registros_leidos': leidos,
-            'colisiones_documento': colisiones,
+            'marcas_relleno_omitidas': omitidos,
+            # Cuánta ambigüedad lleva este padrón: la APK puede avisar, y sirve
+            # para vigilar si la calidad de la fuente mejora o empeora entre cortes.
+            'filas_ambiguas': ambiguos,
+            'documentos_no_identificantes': no_identificantes,
             'generado_en': generado_en.isoformat(),
             'formato': FORMATO,
             'archivo': archivo_nombre,
@@ -177,13 +196,12 @@ class Command(BaseCommand):
             f'  Fuente:     {fuente}\n'
             f'  Limpiados:  {eliminados} archivo(s) viejo(s)\n'
         ))
-        if colisiones:
-            pct = colisiones * 100.0 / leidos if leidos else 0
+        if ambiguos or no_identificantes:
             self.stdout.write(self.style.WARNING(
-                f'[AVISO] {colisiones} registros ({pct:.1f} %) NO estan en el archivo: '
-                f'comparten (tipo, documento) con otro y la PK doc_hash los colapso. '
-                f'Una busqueda offline por esos documentos devuelve UNA de las '
-                f'personas, no todas.\n'
+                f'[AVISO] Identidad que la app DEBE confirmar en campo:\n'
+                f'  {ambiguos} filas de documentos compartidos por personas distintas\n'
+                f'  {no_identificantes} documentos de relleno (no identifican a nadie)\n'
+                f'  {omitidos} marcas de relleno repetidas, omitidas\n'
             ))
 
     # ──────────────────────────────────────────────────────────────────────
@@ -204,57 +222,100 @@ class Command(BaseCommand):
             # PRAGMAs orientados a escritura masiva rápida y archivo compacto.
             conn.execute('PRAGMA journal_mode=OFF;')
             conn.execute('PRAGMA synchronous=OFF;')
+            # `doc_hash` YA NO es PRIMARY KEY, y es el arreglo central de este
+            # archivo. Con la PK, dos personas distintas que comparten documento
+            # colapsaban en una: `INSERT OR REPLACE` pisaba a la primera **sin
+            # avisar** y esa víctima desaparecía del padrón que se lleva a campo.
+            #
+            # Ahora un documento puede tener varias filas, y `clase_colision` dice
+            # qué son. Los duplicados de la fuente —el 92 %— ya vienen resueltos
+            # desde el repositorio, así que en la práctica solo se repiten los
+            # documentos genuinamente ambiguos.
             conn.execute(
                 """
                 CREATE TABLE padron (
-                    doc_hash         TEXT PRIMARY KEY,   -- SHA-256 canónico del documento
+                    doc_hash         TEXT NOT NULL,      -- SHA-256 canónico del documento
                     nombre           TEXT NOT NULL,
                     ubicacion        TEXT,
                     cantidad_hechos  INTEGER NOT NULL DEFAULT 0,
                     en_ruv           INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
                     habilitada       INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
                     ya_caracterizada INTEGER NOT NULL DEFAULT 0,   -- bool 0/1
-                    cons_persona     INTEGER                       -- consecutivo Oracle (nullable)
+                    cons_persona     INTEGER,                      -- consecutivo Oracle (nullable)
+                    -- NULL = documento limpio. 'AMBIGUO' = varias personas lo
+                    -- comparten y la app DEBE pedir confirmación.
+                    -- 'NO_IDENTIFICANTE' = valor de relleno ('99', '0'): no
+                    -- identifica a nadie y no debe devolver datos de nadie.
+                    clase_colision   TEXT
                 );
                 """
             )
 
             insert_sql = (
-                'INSERT OR REPLACE INTO padron '
+                'INSERT INTO padron '
                 '(doc_hash, nombre, ubicacion, cantidad_hechos, en_ruv, '
-                ' habilitada, ya_caracterizada, cons_persona) '
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ' habilitada, ya_caracterizada, cons_persona, clase_colision) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
             )
 
             leidos = 0
+            escritas = 0
             lote: list[tuple] = []
+            # Un documento de relleno como `99` tiene 4.297 filas detrás. La marca
+            # de "esto no identifica a nadie" se escribe UNA vez: repetirla 4.297
+            # veces solo abulta el archivo con filas idénticas y vacías. Son unos
+            # pocos cientos de documentos, así que el set no pesa.
+            no_identificantes_vistos: set[str] = set()
             for v in repo.iterar_padron(batch_size=batch_size):
+                leidos += 1
+                clase = getattr(v, 'clase_colision', None)
+                h = doc_hash(v.tipo_documento, v.numero_documento)
+
+                # Un documento de relleno no identifica a nadie: viaja la marca,
+                # NUNCA los datos. Si viajaran, buscar "99" en campo devolvería a
+                # una de 3.780 personas distintas como si fuera la correcta.
+                no_identificante = clase == 'NO_IDENTIFICANTE'
+                if no_identificante:
+                    if h in no_identificantes_vistos:
+                        continue
+                    no_identificantes_vistos.add(h)
+
                 lote.append((
-                    doc_hash(v.tipo_documento, v.numero_documento),
-                    _nombre_completo(v),
-                    v.municipio_residencia_nombre,
-                    len(v.hechos_victimizantes or []),
-                    1 if v.estado_ruv == 'INCLUIDO' else 0,
-                    1 if v.habilitado_para_caracterizacion else 0,
-                    1 if v.fecha_ult_caracterizacion else 0,
-                    v.cons_persona,
+                    h,
+                    '' if no_identificante else _nombre_completo(v),
+                    None if no_identificante else v.municipio_residencia_nombre,
+                    0 if no_identificante else len(v.hechos_victimizantes or []),
+                    0 if no_identificante else (1 if v.estado_ruv == 'INCLUIDO' else 0),
+                    0 if no_identificante else (1 if v.habilitado_para_caracterizacion else 0),
+                    0 if no_identificante else (1 if v.fecha_ult_caracterizacion else 0),
+                    None if no_identificante else v.cons_persona,
+                    clase,
                 ))
                 if len(lote) >= batch_size:
                     conn.executemany(insert_sql, lote)
                     conn.commit()
-                    leidos += len(lote)
+                    escritas += len(lote)
                     lote.clear()
 
             if lote:
                 conn.executemany(insert_sql, lote)
                 conn.commit()
-                leidos += len(lote)
+                escritas += len(lote)
 
             # Filas REALES del archivo, antes del VACUUM (que no cambia el conteo
             # pero sí tarda): es lo que la APK va a poder encontrar.
             filas = conn.execute('SELECT count(*) FROM padron;').fetchone()[0]
 
-            # PRIMARY KEY ya indexa doc_hash; VACUUM compacta el archivo final.
+            # El índice se crea AL FINAL, no con la tabla: mantenerlo durante
+            # millones de inserciones cuesta mucho más que construirlo de una vez
+            # sobre los datos ya escritos.
+            #
+            # No es UNIQUE, y ahí está el punto: un documento puede tener varias
+            # filas cuando lo comparten personas distintas.
+            conn.execute('CREATE INDEX idx_padron_doc ON padron(doc_hash);')
+            conn.commit()
+
+            # VACUUM compacta el archivo final.
             conn.execute('VACUUM;')
             conn.commit()
             return leidos, filas

@@ -141,6 +141,14 @@ class VictimaResumen:
     # Origen del dato
     fuente_origen: str = 'RUV'         # RUV, REGISTRADURIA, SNARIV, MANUAL
 
+    # Cuando varias personas comparten el documento. `None` = documento limpio o
+    # sin clasificar; los valores son los de `ColisionDocumento.CLASE`.
+    #
+    # Existe para que el padrón descargable pueda decir "acá hay que confirmar" sin
+    # recalcular nada en el dispositivo: la clasificación es cara (descifra nombres
+    # y fechas de millones de filas) y se hace una sola vez, en el servidor.
+    clase_colision: Optional[str] = None
+
 
 @dataclass
 class ResultadoBusqueda:

@@ -282,6 +282,99 @@ class HechoVictima(models.Model):
         return f'{self.victima} — {self.hecho}'
 
 
+class ColisionDocumento(models.Model):
+    """
+    Un número de documento que aparece en más de una fila del padrón, con el
+    veredicto de **qué** es esa repetición. Una fila por documento en conflicto
+    (~768 mil), no por víctima.
+
+    ─── Por qué existe ───────────────────────────────────────────────────────
+    En el padrón real, 768.096 documentos de 4.928.725 están repetidos. Antes de
+    medirlo se asumía que eran colisiones de identidad —dos personas con el mismo
+    número—. Medido el 2-ago sobre la base de producción, no lo son:
+
+      * **92 %** de los grupos son **una sola persona** repetida en el Oracle de
+        origen, con nombre y fecha de nacimiento idénticos. El caso extremo:
+        el documento `1089290511` aparece **505 veces**, siempre ALBA TAPIA
+        RODRIGUEZ, con 504 `cons_persona` distintos.
+      * **5 %** son la misma persona con el nombre mal escrito o la fecha
+        distinta (ERIKA/ERICA, LUS/LUZ, SUESCUN ECHEVERRY/ECHEVERY).
+      * **3 %** sí son **personas distintas** compartiendo documento.
+      * Aparte, hay documentos que no identifican a nadie: `99` sale 4.297 veces
+        con 3.780 nombres distintos, `0` sale 1.194 veces. Son valores de relleno.
+
+    Tratarlos a todos igual es lo que hacía daño en las dos puntas: colapsarlos a
+    ciegas (lo que hacía `INSERT OR REPLACE` en el padrón offline) borra a las
+    personas distintas del 3 %; y pedir confirmación en todos —el 409 de la
+    búsqueda— le pone una pregunta al encuestador en el 92 % de los casos en que
+    no hay nada que decidir.
+
+    ─── Cómo se clasifica ────────────────────────────────────────────────────
+    Emparejamiento **determinístico y explicable**, no un modelo: se normaliza el
+    nombre (mayúsculas, sin tildes, sin puntuación) y se agrupa por
+    (nombre, fecha de nacimiento); las variantes ortográficas se unen cuando los
+    apellidos coinciden y la fecha también. Es auditable —se puede decir por qué
+    dos filas quedaron juntas— y a esta escala no hace falta más. Si algún día
+    hiciera falta, el paso siguiente del oficio es Fellegi-Sunter con umbral y
+    revisión humana de la franja gris; el resultado seguiría cayendo en esta tabla.
+
+    ─── Qué NO hace ──────────────────────────────────────────────────────────
+    **No fusiona ni borra filas de `Victima`.** Es la regla de oro del oficio
+    (*link, don't merge*): el registro original se conserva y esta tabla es un
+    dato **derivado y recalculable**. Si la clasificación resulta equivocada, se
+    corrige el criterio y se vuelve a correr; ninguna víctima se perdió por el
+    camino.
+    """
+    CLASE = [
+        ('DUPLICADO_FUENTE', 'Una sola persona, repetida en la fuente'),
+        ('VARIANTE_NOMBRE',  'Una sola persona, con el nombre o la fecha mal escritos'),
+        ('AMBIGUO',          'Personas distintas que comparten el documento'),
+        ('NO_IDENTIFICANTE', 'Valor de relleno: no identifica a nadie'),
+    ]
+
+    doc_hash = models.CharField(
+        max_length=64, primary_key=True,
+        help_text='SHA-256 canónico de (tipo, número) — la misma llave que usa la búsqueda.')
+
+    clase = models.CharField(max_length=20, choices=CLASE, db_index=True)
+
+    filas = models.PositiveIntegerField(
+        help_text='Cuántas filas de Victima comparten este documento.')
+    personas = models.PositiveIntegerField(
+        help_text='Cuántas personas distintas se reconocieron entre esas filas. '
+                  '1 = duplicado; >1 = ambiguo; 0 = no identificante.')
+
+    victima_preferida = models.ForeignKey(
+        'Victima', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='+',
+        help_text='Cuando es una sola persona: la fila más completa, la que se '
+                  'muestra y la que va al padrón offline (survivorship). Null si '
+                  'es ambiguo — ahí no elegimos nosotros.')
+
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Colisión de documento'
+        verbose_name_plural = 'Colisiones de documento'
+        indexes = [
+            models.Index(fields=['clase', 'personas']),
+        ]
+
+    def __str__(self):
+        return f'{self.doc_hash[:8]}… {self.clase} ({self.filas} filas → {self.personas} personas)'
+
+    @property
+    def requiere_confirmacion(self) -> bool:
+        """
+        Si el encuestador tiene que decidir. Lo único que la UI necesita saber.
+
+        `NO_IDENTIFICANTE` también lo requiere, pero por el motivo contrario: no hay
+        a quién elegir: el documento no sirve para identificar y la persona hay que
+        verificarla por otra vía.
+        """
+        return self.clase in ('AMBIGUO', 'NO_IDENTIFICANTE')
+
+
 class CargaPadron(models.Model):
     """
     Bitácora de cada carga del padrón desde el Oracle legacy.

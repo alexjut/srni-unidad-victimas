@@ -36,6 +36,28 @@ export interface VictimaResumen {
   es_victima_pruebas: boolean;
 }
 
+/**
+ * Cuerpo del 409 de POST /api/victimas/buscar/.
+ *
+ * En el padrón real hay 768.096 documentos compartidos por más de una víctima
+ * (~15,6 % de las búsquedas posibles). El backend NO elige uno: devuelve todos y
+ * confirma quien tiene a la persona enfrente. Los candidatos vienen sin PII
+ * —el nombre exige abrir el detalle, que pide permiso—, así que se distinguen
+ * por municipio, estado RUV y demás metadatos.
+ */
+export interface BusquedaAmbigua {
+  detail: string;
+  ambiguo: true;
+  candidatos: VictimaResumen[];
+}
+
+/** Extrae el cuerpo del 409, o null si el error es otra cosa. */
+export function busquedaAmbigua(err: any): BusquedaAmbigua | null {
+  const data = err?.response?.data;
+  if (err?.response?.status === 409 && data?.ambiguo) return data as BusquedaAmbigua;
+  return null;
+}
+
 export interface HechoVictimizante {
   id: string;
   hecho: {

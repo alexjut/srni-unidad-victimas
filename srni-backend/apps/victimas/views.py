@@ -23,7 +23,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from apps.autenticacion.permissions import PuedeBuscarRNI, PuedeCaracterizar
 from apps.autenticacion.throttles import BusquedaRNIThrottle
 from apps.auditoria.models import LogAcceso
-from .models import Victima
+from .models import ColisionDocumento, Victima
 from .serializers import (
     VictimaListSerializer, VictimaDetalleSerializer, BusquedaDocumentoSerializer,
     ConsultarFuenteInputSerializer, ResultadoBusquedaSerializer,
@@ -157,10 +157,56 @@ class BuscarVictimaView(APIView):
 
         # Antes esto era un `.get()` y reventaba con 500 cuando el documento estaba
         # repetido: 768.096 documentos del padrón lo están (~15,6 % de las búsquedas
-        # posibles), verificado contra prod el 2-ago. No se elige uno por regla —
-        # pueden ser dos personas distintas, y mostrar a una como si fuera la única
-        # es el riesgo de "datos de otra persona, en silencio". Se devuelven todos y
-        # confirma el encuestador, que tiene a la persona enfrente.
+        # posibles), verificado contra prod el 2-ago.
+        #
+        # Pero repetido no quiere decir ambiguo. Medido sobre el padrón real, el
+        # 92 % de esos documentos son UNA sola persona duplicada por el Oracle de
+        # origen —el caso extremo tiene 505 filas de la misma señora— y solo el
+        # ~7 % son personas distintas. Preguntar en los dos casos convertiría el
+        # trabajo del encuestador en un interrogatorio inútil el 92 % de las veces.
+        #
+        # `ColisionDocumento` tiene el veredicto ya calculado (ver
+        # `apps/victimas/identidad.py`): si es una sola persona se sigue de largo
+        # con la fila más completa; solo se pregunta cuando de verdad hay que
+        # elegir. Si el veredicto no está —clasificación no corrida todavía—, se
+        # cae del lado seguro: preguntar.
+        veredicto = None
+        if len(coincidencias) > 1:
+            veredicto = ColisionDocumento.objects.filter(doc_hash=hash_doc).first()
+
+        if veredicto is not None and not veredicto.requiere_confirmacion:
+            preferida = veredicto.victima_preferida
+            # La preferida es una FK con on_delete=SET_NULL: si la fila se borró
+            # entre la clasificación y ahora, se cae del lado seguro.
+            if preferida is not None:
+                coincidencias = [
+                    next((c for c in coincidencias if c.id == preferida.id), preferida)
+                ]
+
+        if veredicto is not None and veredicto.clase == 'NO_IDENTIFICANTE':
+            # No es que haya que elegir: es que el número no identifica a nadie
+            # (`99` aparece 4.297 veces con 3.780 nombres distintos). Devolver a
+            # cualquiera de ellos sería entregar los datos de un desconocido.
+            LogAcceso.registrar(
+                usuario=request.user, accion='BUSQUEDA_RNI', recurso='Victima',
+                recurso_id=None, ip=ip, user_agent=ua, resultado='EXITO',
+                detalle={'encontrado': False, 'no_identificante': True,
+                         'coincidencias': len(coincidencias),
+                         'tipo_documento': tipo_codigo},
+            )
+            return Response(
+                {
+                    'detail': (
+                        'Este número no identifica a una persona: figura como valor '
+                        'de relleno en el padrón, compartido por muchos registros. '
+                        'Verifique el documento o registre a la persona por alta manual.'
+                    ),
+                    'no_identificante': True,
+                    'coincidencias': len(coincidencias),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         if len(coincidencias) > 1:
             LogAcceso.registrar(
                 usuario=request.user,

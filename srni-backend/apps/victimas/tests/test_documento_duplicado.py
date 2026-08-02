@@ -153,6 +153,121 @@ def test_el_409_queda_auditado_como_ambiguo(catalogo, client_auth):
     assert "1030547250" not in json.dumps(log.detalle)
 
 
+# ── 1-bis. Repetido no es lo mismo que ambiguo ───────────────────────────────
+
+def test_no_pregunta_cuando_el_veredicto_dice_que_es_la_misma_persona(
+    catalogo, client_auth
+):
+    """
+    El 92 % del padrón real: el mismo documento repetido porque el Oracle de
+    origen duplicó a la persona. Preguntar ahí es ruido — y el ruido enseña al
+    encuestador a ignorar el aviso justo antes del 7 % en que importa.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+    completa = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                              apellido="TAPIA", cons_persona=77)
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="DUPLICADO_FUENTE",
+        filas=2, personas=1, victima_preferida=completa,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "1030547250"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert resp.json()["id"] == str(completa.id)      # la más completa
+
+
+def test_sigue_preguntando_cuando_el_veredicto_dice_AMBIGUO(catalogo, client_auth):
+    from apps.victimas.models import ColisionDocumento
+
+    _crear_victima(catalogo, documento="1030547250", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="1030547250", nombre="ROSA", apellido="PEREZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="AMBIGUO",
+        filas=2, personas=2, victima_preferida=None,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "1030547250"},
+        format="json",
+    )
+    assert resp.status_code == 409
+    assert len(resp.json()["candidatos"]) == 2
+
+
+def test_un_documento_de_relleno_no_devuelve_a_nadie(catalogo, client_auth):
+    """
+    Buscar `99` no puede devolver a una de las 3.780 personas que lo comparten.
+    Tampoco es un 404 —la persona puede existir—: es un documento que no sirve
+    para identificar, y eso hay que decirlo.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    _crear_victima(catalogo, documento="99", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="99", nombre="PEDRO", apellido="PEREZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "99"), clase="NO_IDENTIFICANTE",
+        filas=2, personas=0, victima_preferida=None,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "99"},
+        format="json",
+    )
+    assert resp.status_code == 409
+    data = resp.json()
+    assert data["no_identificante"] is True
+    assert "candidatos" not in data          # no se muestra a nadie
+    assert "alta manual" in data["detail"]
+
+
+def test_sin_veredicto_se_pregunta_igual(catalogo, client_auth):
+    """
+    Default seguro: si la clasificación no corrió todavía, el sistema no asume
+    que es la misma persona. Prefiere la pregunta de más.
+    """
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "1030547250"},
+        format="json",
+    )
+    assert resp.status_code == 409
+
+
+def test_consultar_fuente_tampoco_avisa_si_es_la_misma_persona(catalogo, client_auth, settings):
+    """El camino de la APK, con el mismo criterio que el web."""
+    from apps.victimas.models import ColisionDocumento
+
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+    completa = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                              apellido="TAPIA", cons_persona=77)
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="DUPLICADO_FUENTE",
+        filas=2, personas=1, victima_preferida=completa,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/consultar-fuente/",
+        {"tipo_documento": "CC", "numero_documento": "1030547250"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["candidatos"] == []
+    assert "CONFIRME" not in data["mensaje"]
+
+
 # ── 2. /consultar-fuente/ manda los candidatos ───────────────────────────────
 
 @override_settings(VICTIMA_REPOSITORY="DJANGO")
@@ -182,13 +297,19 @@ def test_consultar_fuente_serializa_los_candidatos(catalogo, client_auth):
 
 # ── 3. el manifiesto declara lo que el archivo tiene ─────────────────────────
 
-def test_el_manifiesto_cuenta_las_filas_del_archivo_no_las_leidas(
+def test_dos_personas_distintas_con_el_mismo_documento_van_LAS_DOS_al_padron(
     catalogo, settings, tmp_path
 ):
+    """
+    El defecto que borraba víctimas del padrón que se lleva a campo.
+
+    Con `doc_hash` como PRIMARY KEY e `INSERT OR REPLACE`, la segunda persona
+    pisaba a la primera sin avisar y desaparecía del archivo. Extrapolado sobre
+    el padrón real, ~53 mil personas distintas.
+    """
     settings.MEDIA_ROOT = str(tmp_path)
     settings.VICTIMA_REPOSITORY = "DJANGO"
 
-    # Dos comparten documento (colapsan en una fila), una es única.
     _crear_victima(catalogo, documento="1030547250", nombre="MARIA", apellido="GOMEZ")
     _crear_victima(catalogo, documento="1030547250", nombre="ROSA", apellido="PEREZ")
     _crear_victima(catalogo, documento="9990100001", nombre="ANA", apellido="DIAZ")
@@ -200,12 +321,91 @@ def test_el_manifiesto_cuenta_las_filas_del_archivo_no_las_leidas(
         m = json.load(fh)
 
     assert m["registros_leidos"] == 3
-    assert m["total_registros"] == 2        # ← lo que la APK va a encontrar
-    assert m["colisiones_documento"] == 1
+    assert m["total_registros"] == 3        # ← las tres, ninguna se pierde
 
     conn = sqlite3.connect(os.path.join(padron_dir, m["archivo"]))
     try:
-        filas = conn.execute("SELECT count(*) FROM padron").fetchone()[0]
+        h = doc_hash("CC", "1030547250")
+        nombres = {
+            r[0] for r in conn.execute(
+                "SELECT nombre FROM padron WHERE doc_hash = ?", (h,)
+            )
+        }
     finally:
         conn.close()
-    assert filas == m["total_registros"]
+    assert nombres == {"MARIA GOMEZ", "ROSA PEREZ"}
+
+
+def test_los_duplicados_de_la_fuente_viajan_una_sola_vez(catalogo, settings, tmp_path):
+    """
+    La otra cara: si el veredicto dice que las filas son la MISMA persona, al
+    dispositivo va una sola. En el padrón real hay un documento con 505 filas de
+    la misma señora; mandarlas todas es peso sin información.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+
+    pobre = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                           apellido="TAPIA")
+    completa = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                              apellido="TAPIA", cons_persona=77)
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="DUPLICADO_FUENTE",
+        filas=2, personas=1, victima_preferida=completa,
+    )
+
+    call_command("generar_padron")
+
+    padron_dir = os.path.join(str(tmp_path), "padron")
+    with open(os.path.join(padron_dir, "padron-latest.json"), encoding="utf-8") as fh:
+        m = json.load(fh)
+
+    assert m["total_registros"] == 1
+    conn = sqlite3.connect(os.path.join(padron_dir, m["archivo"]))
+    try:
+        fila = conn.execute(
+            "SELECT nombre, cons_persona, clase_colision FROM padron"
+        ).fetchone()
+    finally:
+        conn.close()
+    # Viaja la más completa (survivorship), y sin marca: no hay nada que confirmar.
+    assert fila == ("ALBA TAPIA", 77, None)
+    assert pobre.id != completa.id
+
+
+def test_un_documento_de_relleno_no_lleva_datos_de_nadie(catalogo, settings, tmp_path):
+    """
+    `99` tiene 4.297 filas y 3.780 nombres distintos. Al padrón va la marca de que
+    ese número no identifica —una vez—, nunca el nombre de una de esas personas.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+
+    _crear_victima(catalogo, documento="99", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="99", nombre="PEDRO", apellido="PEREZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "99"), clase="NO_IDENTIFICANTE",
+        filas=2, personas=0, victima_preferida=None,
+    )
+
+    call_command("generar_padron")
+
+    padron_dir = os.path.join(str(tmp_path), "padron")
+    with open(os.path.join(padron_dir, "padron-latest.json"), encoding="utf-8") as fh:
+        m = json.load(fh)
+
+    conn = sqlite3.connect(os.path.join(padron_dir, m["archivo"]))
+    try:
+        filas = conn.execute(
+            "SELECT nombre, cons_persona, clase_colision FROM padron WHERE doc_hash = ?",
+            (doc_hash("CC", "99"),),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    assert filas == [("", None, "NO_IDENTIFICANTE")]   # una marca, sin datos
+    assert m["documentos_no_identificantes"] == 1

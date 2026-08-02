@@ -68,8 +68,10 @@ class DjangoVictimaRepository(VictimaRepository):
     FUENTE = "SICAV"
 
     # ── construcción del DTO ──────────────────────────────────────────────────
-    def _a_resumen(self, victima, *, con_hechos: bool = True) -> VictimaResumen:
+    def _a_resumen(self, victima, *, con_hechos: bool = True,
+                   clase_colision: str | None = None) -> VictimaResumen:
         return VictimaResumen(
+            clase_colision=clase_colision,
             cons_persona=victima.cons_persona,
             tipo_documento=victima.tipo_documento.codigo if victima.tipo_documento_id else "",
             numero_documento=victima.numero_documento or "",
@@ -129,6 +131,30 @@ class DjangoVictimaRepository(VictimaRepository):
                   victima.estado_ruv)
         return sum(1 for c in campos if c not in (None, "", 0))
 
+    @staticmethod
+    def _resolver_colision(encontradas: list) -> list:
+        """
+        Reduce a una sola fila cuando el veredicto dice que son la misma persona.
+
+        Devuelve la lista tal cual —o sea, sigue habiendo que confirmar— si el
+        documento es ambiguo, si no identifica a nadie, o si no hay veredicto
+        todavía. Nunca descarta a nadie por su cuenta.
+        """
+        from apps.victimas.models import ColisionDocumento
+
+        veredicto = ColisionDocumento.objects.filter(
+            doc_hash=encontradas[0].numero_documento_hash
+        ).first()
+        if veredicto is None or veredicto.requiere_confirmacion:
+            return encontradas
+
+        preferida_id = veredicto.victima_preferida_id
+        elegida = next((v for v in encontradas if v.id == preferida_id), None)
+        # Si la preferida ya no está entre las encontradas (se borró, o el filtro
+        # de respaldo por número trajo otro conjunto), se conserva el orden por
+        # completitud y no se descarta nada.
+        return [elegida] if elegida is not None else encontradas
+
     # ── contrato ──────────────────────────────────────────────────────────────
     def buscar_por_documento(self, tipo_documento, numero_documento) -> ResultadoBusqueda:
         # Por hash, nunca por el campo cifrado: Fernet no es determinista y un
@@ -155,11 +181,18 @@ class DjangoVictimaRepository(VictimaRepository):
                 mensaje="No se encontró la persona en el padrón cargado en SICAV.",
             )
 
-        # Varios registros con el mismo documento. No se fusionan ni se elige por
-        # regla: pueden ser dos personas distintas, y con el 14,5 % sin tipo no
-        # siempre se distingue. Se ofrece el más completo primero y los demás van en
-        # `candidatos` para que el encuestador confirme.
+        # Varios registros con el mismo documento. Antes se avisaba en TODOS los
+        # casos; medido sobre el padrón real, el 92 % de esos grupos son una sola
+        # persona duplicada por el Oracle de origen —hasta 505 filas de la misma
+        # señora— y pedir confirmación ahí es ruido que enseña a ignorar el aviso.
+        #
+        # `ColisionDocumento` trae el veredicto ya calculado (ver
+        # `apps/victimas/identidad.py`). Sin veredicto se avisa igual: el default
+        # seguro es preguntar.
         encontradas.sort(key=self._completitud, reverse=True)
+        if len(encontradas) > 1:
+            encontradas = self._resolver_colision(encontradas)
+
         victima, otras = encontradas[0], encontradas[1:]
         if otras:
             aviso += (f"Hay {len(otras) + 1} registros con este documento. "
@@ -223,9 +256,44 @@ class DjangoVictimaRepository(VictimaRepository):
         que la memoria no crece con el tamaño del padrón. Sin hechos, por lo mismo que
         `listar_todas`: el padrón descargable es el resumen para identificar a la
         persona, no su historia completa.
+
+        **Los duplicados de la fuente se dejan pasar una sola vez.** Cuando el
+        veredicto dice que las 505 filas de un documento son la misma señora, viaja
+        la más completa y las otras 504 no: no aportan nada al dispositivo y
+        engordan un archivo que ya pesa de más. Las que sí son personas distintas
+        viajan TODAS, marcadas, porque perder una es perder a una víctima —es lo
+        que hacía el colapso ciego por documento—.
+
+        La exclusión se hace en SQL (`NOT EXISTS` contra el veredicto) y no en
+        Python: sobre 5,9 M de filas, filtrar acá significaría descifrar y armar el
+        DTO de un millón de filas para tirarlas.
         """
-        for victima in self._base_qs().iterator(chunk_size=batch_size):
-            yield self._a_resumen(victima, con_hechos=False)
+        from apps.victimas.models import ColisionDocumento
+
+        qs = self._base_qs().extra(  # noqa: S610 — SQL fijo, sin interpolación de usuario
+            where=["""
+                NOT EXISTS (
+                    SELECT 1 FROM victimas_colisiondocumento c
+                    WHERE c.doc_hash = victimas_victima.numero_documento_hash
+                      AND c.clase IN ('DUPLICADO_FUENTE', 'VARIANTE_NOMBRE')
+                      AND c.victima_preferida_id IS DISTINCT FROM victimas_victima.id
+                )
+            """]
+        )
+
+        # Solo los documentos donde hay algo que advertir. Son ~7 % de los
+        # repetidos, así que el diccionario es chico y cabe de sobra en memoria.
+        clases = dict(
+            ColisionDocumento.objects
+            .filter(clase__in=('AMBIGUO', 'NO_IDENTIFICANTE'))
+            .values_list('doc_hash', 'clase')
+        )
+
+        for victima in qs.iterator(chunk_size=batch_size):
+            yield self._a_resumen(
+                victima, con_hechos=False,
+                clase_colision=clases.get(victima.numero_documento_hash),
+            )
 
     def verificar_habilitacion(self, tipo_documento, numero_documento) -> EstadoHabilitacion:
         """Consulta ligera: solo los tres campos que deciden, sin descifrar el resto."""
