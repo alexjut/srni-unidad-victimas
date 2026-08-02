@@ -429,6 +429,19 @@ PADRON_RECARGA = {
     'HORA_REFRESCO': config('PADRON_REFRESCO_HORA', default=3, cast=int),
 }
 
+# --- Sincronización de NOVEDADES con el legacy -----------------------------
+# Otra cosa que la recarga: no relee el padrón, pide solo lo que entró desde la
+# última corrida. El legacy mueve ~592 personas y ~270 hogares por día, así que
+# cada corrida son segundos (4,2 s medidos) y puede correr cada pocos minutos.
+#
+# Interruptor propio, separado de PADRON_RECARGA: esto es barato y se quiere
+# encendido casi siempre; aquello es caro y se enciende con cuidado. Compartir el
+# interruptor obligaría a elegir entre las dos cosas.
+PADRON_NOVEDADES = {
+    'HABILITADA': config('PADRON_NOVEDADES_HABILITADA', default=False, cast=bool),
+    'CADA_MINUTOS': config('PADRON_NOVEDADES_CADA_MINUTOS', default=15, cast=int),
+}
+
 # --- Barrida de reintento de la sincronización a Oracle ---------------------
 # Recoge los hogares que quedaron sin escribirse (broker caído al cerrar la
 # encuesta, interruptor apagado en ese momento, reintentos agotados, máquina de
@@ -492,6 +505,15 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.victimas.tasks.refrescar_fechas_padron',
         'schedule': crontab(minute=30, hour=PADRON_RECARGA['HORA_REFRESCO']),
         'options': {'queue': 'padron', 'expires': 6 * 3600},
+    },
+    'padron-novedades': {
+        'task': 'apps.victimas.tasks.sincronizar_novedades',
+        'schedule': timedelta(minutes=PADRON_NOVEDADES['CADA_MINUTOS']),
+        # `expires` de un intervalo: si el worker estuvo caído, no tiene sentido
+        # ejecutar las corridas acumuladas — la siguiente ve lo mismo y más, porque
+        # el criterio es la marca de agua, no la hora.
+        'options': {'queue': 'padron',
+                    'expires': 60 * PADRON_NOVEDADES['CADA_MINUTOS']},
     },
     'sincronizacion-reintento': {
         'task': 'apps.sincronizacion.tasks.reintentar_sincronizaciones_pendientes',

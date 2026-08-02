@@ -111,6 +111,18 @@ PASOS_REFRESCO_FECHAS = (
     ("generar_padron", {}),
 )
 
+# La sincronización de novedades es OTRA cosa y por eso va sola: no relee el padrón,
+# le pide al legacy solo lo que entró desde la última vez. El legacy mueve ~592
+# personas y ~270 hogares por día, así que una corrida son **segundos** (4,2 s
+# medidos; 47 s la primera tras arrancar, mientras el enlace a Vivanto se calienta).
+#
+# NO incluye `generar_padron`: el archivo descargable pesa cientos de MB y
+# regenerarlo cada pocos minutos obligaría a cada dispositivo en campo a volver a
+# bajarlo. El padrón offline se publica en la cadena diaria, no en esta.
+PASOS_NOVEDADES = (
+    ("sincronizar_legacy", {"confirmar": True}),
+)
+
 
 def _config() -> dict:
     return getattr(settings, "PADRON_RECARGA", {}) or {}
@@ -153,9 +165,16 @@ def _ejecutar_pasos(pasos, *, etiqueta) -> dict:
     return resultado
 
 
-def _correr_cadena(pasos, *, etiqueta) -> dict:
-    """Interruptor + bloqueo + pasos. Lo común a las dos tareas del padrón."""
-    if not _config().get("HABILITADA", False):
+def _correr_cadena(pasos, *, etiqueta, config=None) -> dict:
+    """
+    Interruptor + bloqueo + pasos. Lo común a las tareas del padrón.
+
+    `config` permite que la sincronización de novedades tenga su PROPIO
+    interruptor: es barata y se quiere encendida casi siempre, mientras que la
+    recarga completa es cara y se enciende con cuidado. Compartir el interruptor
+    obligaría a elegir entre las dos cosas.
+    """
+    if not (config if config is not None else _config()).get("HABILITADA", False):
         # Mismo criterio que `ORACLE_SYNC.AUTOMATICA`: leer millones de filas del
         # Oracle de producción es una decisión operativa explícita, no algo que
         # deba empezar a pasar porque alguien desplegó. Se comprueba AQUÍ y no solo
@@ -193,6 +212,27 @@ def recargar_padron():
     `--carga-inicial`): más lenta, pero repetible sin duplicar.
     """
     return _correr_cadena(PASOS_RECARGA_COMPLETA, etiqueta="recargar_padron")
+
+
+@shared_task(
+    queue="padron",
+    max_retries=0,
+    # Minutos, no horas: si una corrida "de segundos" se cuelga, tiene que avisar
+    # rápido. Con el límite de la recarga completa se colgaría un día entero sin
+    # que nadie se entere.
+    soft_time_limit=15 * 60,
+    time_limit=20 * 60,
+)
+def sincronizar_novedades():
+    """
+    Trae del legacy lo que pasó desde la última corrida. Pensada para minutos.
+
+    Comparte el mismo bloqueo que las cargas grandes: si está corriendo la recarga
+    mensual, esta se salta en vez de pelear por la misma tabla.
+    """
+    return _correr_cadena(
+        PASOS_NOVEDADES, etiqueta="sincronizar_novedades",
+        config=getattr(settings, "PADRON_NOVEDADES", {}) or {})
 
 
 @shared_task(

@@ -21,6 +21,11 @@ Medido contra producción el 2-ago-2026:
 O sea: una corrida completa de esto son **segundos**, y el grueso se va en el
 dblink a Vivanto, no en nuestra base.
 
+**La PRIMERA corrida tras arrancar el contenedor tarda ~47 s y las siguientes
+~4 s** (medido: 47,2 s y luego 4,2 s con los mismos datos). Es el enlace remoto a
+Vivanto calentándose, no trabajo nuestro. Otra razón para correr esto seguido en
+vez de una vez al día: encima de traer menos, encuentra el camino caliente.
+
 ──────────────────────────────────────────────────────────────────────────────
 CADA RECURSO POR EL CAMINO QUE YA ESTÁ INDEXADO
 ──────────────────────────────────────────────────────────────────────────────
@@ -90,7 +95,7 @@ CONSULTA_PERSONAS_NUEVAS = """
 CONSULTA_HOGARES_NUEVOS = """
     SELECT m.per_idpersona, MAX(h.usu_fechacreacion)
       FROM gic_hogar h
-      JOIN gic_miembros_hogar m ON m.hog_idhogar = h.hog_idhogar
+      JOIN gic_miembros_hogar m ON m.hog_codigo = h.hog_codigo
      WHERE h.usu_fechacreacion >= :desde
        AND m.per_idpersona IS NOT NULL
        AND (h.usu_idusuario IS NULL OR h.usu_idusuario <> :usuario_sicav)
@@ -148,7 +153,20 @@ class Command(BaseCommand):
         from apps.victimas.models import Victima
         from apps.victimas.repository.base import doc_hash, num_hash
 
-        marca, _ = MarcaAguaLegacy.objects.get_or_create(recurso='personas')
+        marca, creada = MarcaAguaLegacy.objects.get_or_create(recurso='personas')
+        if creada and marca.ultimo_id is None:
+            # Primera vez: la marca NO arranca en cero. El padrón ya está cargado
+            # hasta cierto punto, así que arrancar de cero convertiría una corrida
+            # "de rutina" en una relectura de 5,9 millones de filas. Se toma el
+            # mayor `cons_persona` que ya tenemos: es exactamente "hasta acá ya sé".
+            mayor = (Victima.objects.filter(cons_persona__isnull=False)
+                     .order_by('-cons_persona')
+                     .values_list('cons_persona', flat=True).first())
+            marca.ultimo_id = mayor or 0
+            marca.save(update_fields=['ultimo_id'])
+            self.stdout.write(
+                f'  marca inicializada con lo ya cargado: {marca.ultimo_id:,}')
+
         desde = 0 if desde_cero else (marca.ultimo_id or 0)
         t0 = time.time()
 

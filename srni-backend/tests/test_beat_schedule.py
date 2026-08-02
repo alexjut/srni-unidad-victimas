@@ -27,6 +27,9 @@ def tareas_importadas():
 ESPERADAS = {
     "padron-recarga-mensual": ("apps.victimas.tasks.recargar_padron", "padron"),
     "padron-refresco-diario": ("apps.victimas.tasks.refrescar_fechas_padron", "padron"),
+    # Novedades del legacy por marca de agua: barata (segundos) y frecuente, al
+    # contrario que las dos de arriba. Por eso tiene interruptor propio.
+    "padron-novedades": ("apps.victimas.tasks.sincronizar_novedades", "padron"),
     "sincronizacion-reintento": (
         "apps.sincronizacion.tasks.reintentar_sincronizaciones_pendientes", "sync"),
 }
@@ -181,3 +184,39 @@ def test_la_recarga_del_padron_no_se_reintenta_sola():
     por qué, encadena días de lecturas inútiles contra el Oracle de producción.
     """
     assert app.tasks["apps.victimas.tasks.recargar_padron"].max_retries == 0
+
+
+# ── novedades ────────────────────────────────────────────────────────────────
+def test_las_novedades_corren_seguido_y_no_publican_el_padron():
+    """
+    Dos cosas que definen esta tarea:
+
+    1. Es un intervalo de MINUTOS, no un crontab diario: el legacy caracteriza
+       todo el día y traer 600 personas cuesta segundos.
+    2. NO incluye `generar_padron`. El archivo descargable pesa cientos de MB;
+       republicarlo cada cuarto de hora obligaría a cada dispositivo en campo a
+       volver a bajarlo.
+    """
+    from datetime import timedelta
+
+    from apps.victimas import tasks
+
+    programado = settings.CELERY_BEAT_SCHEDULE["padron-novedades"]["schedule"]
+    assert isinstance(programado, timedelta)
+    assert programado.total_seconds() <= 60 * 60
+
+    comandos = [c for c, _ in tasks.PASOS_NOVEDADES]
+    assert "generar_padron" not in comandos
+    assert comandos == ["sincronizar_legacy"]
+
+
+def test_las_novedades_tienen_su_propio_interruptor():
+    """
+    Separado del de la recarga: esta es barata y se quiere encendida casi siempre;
+    aquella es cara y se enciende con cuidado. Con un solo interruptor habría que
+    elegir entre las dos.
+    """
+    assert hasattr(settings, "PADRON_NOVEDADES")
+    assert "HABILITADA" in settings.PADRON_NOVEDADES
+    # Apagada por defecto, como todo lo que toca el Oracle de la UARIV.
+    assert settings.PADRON_NOVEDADES["HABILITADA"] is False
