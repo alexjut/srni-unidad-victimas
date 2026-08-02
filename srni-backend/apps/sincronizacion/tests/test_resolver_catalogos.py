@@ -105,11 +105,24 @@ def test_relac_de_miembro_normal_cruza_por_parentesco():
 
 # ── extras decididos CON DATO: escriben NULL / 1, nunca marcador ni inventado ─
 def test_extras_persona_escriben_null():
-    # ID_DECLAR/ID_PERS_FUENTE/ID_SINIESTRO/IDPERMI → NULL: SICAV no origina esos
-    # enlaces internos de Oracle y la estructura los confirma nullable.
-    for extra in ("id_declar", "id_pers_fuente", "id_siniestro", "idpermi"):
+    # ID_DECLAR/ID_PERS_FUENTE/ID_SINIESTRO → NULL: SICAV no origina esos enlaces
+    # internos de Oracle y la estructura los confirma nullable.
+    for extra in ("id_declar", "id_pers_fuente", "id_siniestro"):
         assert _r().resolver_extra_persona(extra) is None
         assert _r(estricto=False).resolver_extra_persona(extra) is None
+
+
+def test_idpermi_ya_no_va_en_null():
+    """
+    IDPERMI (PER_IDMODELOINT) SÍ se escribe, y es un cambio deliberado del 2-ago:
+    es el puente de la persona con el Modelo Integrado. En NULL quedaba fuera del
+    cruce con el RUV para siempre, porque el job que lo resuelve busca `= 0` y el
+    DEFAULT 0 de la columna no aplica (el INSERT del procedure es posicional).
+
+    Ver `test_dominios_oracle.py` para el detalle y el caso del padrón.
+    """
+    assert _r().resolver_extra_persona("idpermi") == 0
+    assert _r(estricto=False).resolver_extra_persona("idpermi") == 0
 
 
 def test_pregunta_padre_null_y_pbandera_uno():

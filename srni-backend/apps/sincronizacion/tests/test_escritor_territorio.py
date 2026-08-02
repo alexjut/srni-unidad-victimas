@@ -88,6 +88,17 @@ class _Pregunta:
     opciones = _Opciones(_Opcion("1", "Cabecera municipal (donde está la alcaldía)"))
 
 
+class _UsuarioMinimo:
+    """
+    Un encuestador con código, que es lo que hay en producción.
+
+    Antes estos tests pasaban `user=None`: daba igual porque el código vacío se
+    escribía tal cual. Ya no — `USU_USUARIOCREACION` es NOT NULL en Oracle y
+    mandar vacío hacía fallar el INSERT dentro del procedure, en silencio.
+    """
+    codigo_usuario = "ENC001"
+    pk = 1
+
 class _Respuesta:
     pk = 1
     miembro_id = None
@@ -120,7 +131,7 @@ def test_respuesta_nivel_persona_usa_el_mapa_del_paso_persona():
 
 def test_binds_respuesta_mezcla_ids_reales_y_pendientes_en_dry_run():
     binds = mapeo.binds_respuesta(
-        _Respuesta(), user=None, catalogos=ResolverCatalogos(estricto=False),
+        _Respuesta(), user=_UsuarioMinimo(), catalogos=ResolverCatalogos(estricto=False),
         hog_codigo="HOG-1", per_idpersona=555, instrumento=type("I", (), {"codigo": "TERRITORIAL"})(),
     )
     # Ya resueltos con dato real de Oracle:
@@ -147,7 +158,7 @@ def test_pbandera_es_1_upsert_idempotente_decidido():
     # es no-op y 1 hace la escritura idempotente (re-correr no duplica). Es una decisión
     # deliberada y documentada — no un 1 por descuido, que era el riesgo original.
     binds = mapeo.binds_respuesta(
-        _Respuesta(), user=None, catalogos=ResolverCatalogos(estricto=False),
+        _Respuesta(), user=_UsuarioMinimo(), catalogos=ResolverCatalogos(estricto=False),
         hog_codigo="HOG-1", per_idpersona=555, instrumento=type("I", (), {"codigo": "X"})(),
     )
     assert binds["pbandera"] == 1
@@ -155,7 +166,7 @@ def test_pbandera_es_1_upsert_idempotente_decidido():
 
 def test_texto_respuesta_se_redacta_por_ser_pii_potencial():
     binds = mapeo.binds_respuesta(
-        _Respuesta(), user=None, catalogos=ResolverCatalogos(estricto=False),
+        _Respuesta(), user=_UsuarioMinimo(), catalogos=ResolverCatalogos(estricto=False),
         hog_codigo="HOG-1", per_idpersona=555, instrumento=type("I", (), {"codigo": "X"})(),
     )
     res = P.invocar(P.SP_SET_RESPUESTAS_DE_ENCUESTA, binds, confirmar=False)

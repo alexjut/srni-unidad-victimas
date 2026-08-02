@@ -184,16 +184,38 @@ class ResolverCatalogos:
     # ── extras de escritura decididos CON DATO (2026-07-24) ────────────────────
     # No inventan un mapeo de catálogo (eso lo sigue prohibiendo el modo estricto):
     # son decisiones de negocio ya tomadas y respaldadas por la estructura real.
-    def resolver_extra_persona(self, nombre):
-        """ID_DECLAR / ID_PERS_FUENTE / ID_SINIESTRO / IDPERMI → **NULL**.
-
-        Son ids de enlace internos de Oracle (declaración FUD, persona fuente,
-        siniestro, permiso) que una caracterización SICAV nueva NO origina. La
-        estructura de la réplica los confirma **nullable** (PER_IDDECLARACION /
-        PER_IDPERSONAFUENTE / PER_IDSINIESTRO), así que NULL es fiel: se escribe lo
-        que SICAV tiene = nada. `nombre` se acepta por si algún extra futuro difiere.
+    def resolver_extra_persona(self, nombre, miembro=None):
         """
-        return None
+        ID_DECLAR / ID_PERS_FUENTE / ID_SINIESTRO → **NULL**. IDPERMI → ver abajo.
+
+        Los tres primeros son ids de enlace internos de Oracle (declaración FUD,
+        persona fuente, siniestro) que una caracterización SICAV nueva NO origina.
+        La estructura los confirma nullable, así que NULL es fiel: se escribe lo que
+        SICAV tiene = nada.
+
+        `IDPERMI` es OTRA COSA y mandarlo en NULL era un defecto. Va a
+        `PER_IDMODELOINT`, que es el puente de la persona con el Modelo Integrado, y
+        de él dependen el cruce con el RUV y los hechos victimizantes de los
+        reportes. Dos motivos para no dejarlo en NULL:
+
+        1. El `DEFAULT 0` de la columna **no aplica**: el procedure inserta con una
+           lista posicional de valores, así que NULL entra tal cual.
+        2. El job `GIC_ACT_TIPO_RECONOCIMIENTO` que resuelve el enlace busca
+           `WHERE PER_IDMODELOINT = 0`. Una fila en NULL no la ve **nunca**: queda
+           fuera del cruce para siempre, sin que nadie lo note.
+
+        Y cuando la persona viene del padrón podemos hacer algo mejor que 0: su
+        `cons_persona` **es** ese identificador —el job lo cruza contra
+        `M_CARACT_TABLA_RA_PER.CONS_PERONA`, que es de donde lo sacamos—, así que se
+        escribe resuelto de entrada y no hace falta esperar a ningún job.
+        """
+        if nombre != 'idpermi':
+            return None
+
+        victima = getattr(miembro, 'victima', None) if miembro is not None else None
+        cons = getattr(victima, 'cons_persona', None) if victima is not None else None
+        # 0 = "pendiente de resolver", que es lo que el job busca. Nunca NULL.
+        return int(cons) if cons else 0
 
     def resolver_pregunta_padre(self):
         """PPER_IDPREGUNTAPADRE → **NULL**.
@@ -693,8 +715,31 @@ def _partes_nombre(nombre_completo: str):
     return pnombre, snombre, papellido, sapellido
 
 
+class UsuarioSinResolver(ValueError):
+    """No hay con qué llenar `USU_USUARIOCREACION`, que es NOT NULL en Oracle."""
+
+
 def _cod_usuario(user):
-    return getattr(user, "codigo_usuario", None) or str(getattr(user, "pk", ""))
+    """
+    Código del encuestador para las columnas de auditoría del legacy.
+
+    Falla en vez de devolver cadena vacía, y el motivo importa: en Oracle la cadena
+    vacía **es** NULL, y `USU_USUARIOCREACION` es NOT NULL. Con el valor vacío el
+    INSERT moría con ORA-01400 dentro del procedure, cuyo `WHEN OTHERS` se lo
+    tragaba: la persona no se escribía y el paso podía darse por bueno. Un fallo
+    silencioso a mitad de un hogar es peor que un error.
+
+    `Hogar.creado_por` es nullable, así que este caso es alcanzable.
+    """
+    codigo = getattr(user, "codigo_usuario", None) or str(getattr(user, "pk", "") or "")
+    codigo = codigo.strip()
+    if not codigo:
+        raise UsuarioSinResolver(
+            "El hogar no tiene usuario creador y `USU_USUARIOCREACION` es NOT NULL "
+            "en Oracle: sin él, el procedure falla en silencio y la persona no se "
+            "escribe. Asigná `Hogar.creado_por` antes de sincronizar."
+        )
+    return codigo
 
 
 def binds_hogar(hogar, *, user, catalogos: ResolverCatalogos, instrumento_codigo=None) -> dict:
@@ -793,28 +838,71 @@ def binds_persona(miembro, *, user, estado_oracle, catalogos: ResolverCatalogos)
         "fnacimiento": ident['fecha_nacimiento'],
         "tdoc": catalogos.resolver_tdoc(ident['tipo_documento']),
         "usuario": _cod_usuario(user),
-        "usu_fcreacion": timezone.now(),
+        # Hora LOCAL y sin zona: `GIC_PERSONA.USU_FCREACION` es un DATE de Oracle, que
+        # no guarda zona horaria. Mandar el datetime aware de Django escribía la hora
+        # UTC —cinco horas en el futuro— en una columna que todos los reportes leen
+        # como hora de Colombia.
+        "usu_fcreacion": timezone.localtime(timezone.now()).replace(tzinfo=None),
         "ndocu": numero,
         "relac": catalogos.resolver_relac_de_miembro(miembro),
         # Se pasa el miembro entero, no un getattr con default: el resolver debe poder
         # distinguir "el campo no existe" de "existe y vale None". Ver resolver_t_victima.
         "t_victima": catalogos.resolver_t_victima(miembro),
         "fuentee": "SICAV",
-        "estado": estado_oracle,          # 'ACTIVA' (abierto)
+        # OJO: este `estado` es el de la PERSONA (`PER_ESTADO`), no el del hogar. Su
+        # dominio es INCLUIDO / NO INCLUIDO —el legacy los compara así en
+        # GIC_OBTENER_PERSONAS—, no 'ACTIVA', que es el estado del HOGAR. Con
+        # 'ACTIVA' la persona existía en la tabla pero el legacy no la devolvía nunca.
+        "estado": estado_persona_oracle(miembro),
     }
     for extra in _EXTRAS_PERSONA:
-        binds[extra] = catalogos.resolver_extra_persona(extra)
+        binds[extra] = catalogos.resolver_extra_persona(extra, miembro)
     return binds
 
 
-def binds_miembro(hog_codigo, per_idpersona, *, user, catalogos: ResolverCatalogos) -> dict:
-    """Argumentos de GIC_INSERT_MIEMBRO_HOGAR."""
+#: Los dos únicos valores que el legacy reconoce en `PER_ESTADO`.
+PERSONA_INCLUIDA = "INCLUIDO"
+PERSONA_NO_INCLUIDA = "NO INCLUIDO"
+
+
+def estado_persona_oracle(miembro) -> str:
+    """
+    `PER_ESTADO` a partir de lo que SICAV ya sabe del miembro.
+
+    El dato existe: `MiembroHogar.estado_inclusion` guarda si la persona está
+    incluida en el RUV. `NO_VERIFICADO` —el alta manual, que no se pudo verificar
+    contra el RUV— se escribe como NO INCLUIDO, que es lo único que el legacy sabe
+    representar; la matización queda en SICAV, que es donde se puede explicar.
+    """
+    if getattr(miembro, "estado_inclusion", None) == "INCLUIDO":
+        return PERSONA_INCLUIDA
+    victima = getattr(miembro, "victima", None)
+    if victima is not None and getattr(victima, "estado_ruv", None) == "INCLUIDO":
+        return PERSONA_INCLUIDA
+    return PERSONA_NO_INCLUIDA
+
+
+def binds_miembro(hog_codigo, per_idpersona, *, user, catalogos: ResolverCatalogos,
+                  miembro=None) -> dict:
+    """
+    Argumentos de GIC_INSERT_MIEMBRO_HOGAR.
+
+    `encuestada` iba en `'S'` para todos, y el legacy compara contra `'SI'`
+    (`GIC_ACTUALIZA_ENCUESTADO` escribe ese literal). Con `'S'`, el campo
+    JEFE_HOGAR de los reportes salía 'NO' para todo el hogar: nadie figuraba como
+    la persona entrevistada.
+
+    Y no va para todos: es **la persona a la que se le hizo la entrevista**, o sea
+    el autorizado del hogar. Marcar a los cinco miembros como encuestados es una
+    afirmación falsa sobre cómo se levantó el dato.
+    """
+    entrevistada = bool(getattr(miembro, "es_autorizado", False)) if miembro else False
     return {
         "idhogar": hog_codigo,
         "id_persona": per_idpersona,
         "usuario": _cod_usuario(user),
         "id_usuario": catalogos.id_usuario_servicio(),
-        "encuestada": "S",  # marca de persona encuestada; confirmar dominio del catálogo
+        "encuestada": "SI" if entrevistada else "NO",
     }
 
 

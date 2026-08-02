@@ -232,7 +232,8 @@ class EscritorOracle:
         if self._ya_verificado(hogar, PasoEscritura.MIEMBRO, origen):
             return ResultadoPaso(PasoEscritura.MIEMBRO, str(origen), EstadoPaso.VERIFICADO,
                                  "", {"idempotente": True})
-        binds = mapeo.binds_miembro(hog_codigo, per_idpersona, user=user, catalogos=self.catalogos)
+        binds = mapeo.binds_miembro(hog_codigo, per_idpersona, user=user,
+                                    catalogos=self.catalogos, miembro=miembro)
         res = self._ejecutar_paso(P.GIC_INSERT_MIEMBRO_HOGAR, binds)
 
         estado, detalle = EstadoPaso.DRY_RUN, {}
