@@ -84,10 +84,20 @@ esos, **nunca `cz_postgres`**.
    `padron-20260802044544-9bf121f2.sqlite3`. Paso 3: 2.535.941 fechas aplicadas
    sobre 3.332.338 leídas en 36.619 s; 796.373 fuera del padrón; 24 fechas
    imposibles. Padrón: 5.926.004 · con fecha 2.535.941 · al día 1.058.971.
-   **El archivo existe, pero NO está listo para campo — tres hallazgos abiertos:**
+   **El archivo existe, pero NO está listo para campo — tres hallazgos; al 2-ago
+   queda 1a cerrado y 1b/1c abiertos, ambos esperando decisión:**
 
-   🔴 **1a. El manifiesto declara 997.279 filas que no están.**
-   `padron-latest.json` dice 5.926.004 registros; el SQLite tiene **4.928.725**. La
+   🔴 **1a. El manifiesto declara 997.279 filas que no están.** ✅ **ARREGLADO Y
+   DESPLEGADO (2-ago, `4b88856`).** `generar_padron` ahora declara el `count(*)`
+   del archivo y agrega `registros_leidos` y `colisiones_documento`, con aviso en
+   stdout. El manifiesto **ya servido** se corrigió en caliente sin regenerar las
+   11 h (mismo `checksum` y `version` → la APK no re-descarga): el endpoint
+   `/padron/version/` responde `total_registros 4.928.725`, `registros_leidos
+   5.926.004`, `colisiones_documento 997.279`. *Sigue abierta la **decisión
+   funcional**: qué hacer con los duplicados dentro del archivo offline (ver más
+   abajo, y ojo que el camino ONLINE ya quedó resuelto con el 409).* El texto
+   original del hallazgo, para contexto:
+   `padron-latest.json` decía 5.926.004 registros; el SQLite tiene **4.928.725**. La
    causa es `INSERT OR REPLACE INTO padron` con `doc_hash TEXT PRIMARY KEY`: cuando
    dos víctimas comparten documento, la segunda pisa a la primera **sin avisar**. El
    número cuadra exacto con la BD (5.926.004 − 4.928.725 pares distintos = 997.279).
@@ -118,13 +128,46 @@ esos, **nunca `cz_postgres`**.
    de víctimas sin cifrar en un archivo que se descarga a móviles. El cifrado estaba
    anotado como Fase 1, pero hasta el 1-ago el contenido era el mock de 11 personas.
 
-2. Probar login + búsqueda con un documento real. **Sigue pendiente** — conviene
-   hacerlo después del despliegue, no antes.
+   🟠 **1d. Los duplicados DENTRO del archivo offline siguen sin decidirse.** El
+   online ya está resuelto (409 con candidatos, punto 2). Pero el SQLite tiene una
+   sola fila por `doc_hash`, así que **offline** una búsqueda sobre esos 768.096
+   documentos devuelve **una** de las personas y no dice que había otra — que es
+   justo el silencio que el 409 elimina online. Las salidas posibles: (a) permitir
+   varias filas por documento (PK compuesta o `rowid`) y que la APK muestre
+   candidatos, como online — es lo coherente, y **aumenta** el tamaño ya
+   problemático de 1b; (b) marcar el documento como ambiguo con una bandera y sin
+   los datos de nadie, forzando la consulta online o el alta manual; (c) excluirlos
+   del archivo. **Decide Javier** (ver [`../gestion/decisiones_negocio_pendientes.md`](../gestion/decisiones_negocio_pendientes.md)).
 
-2-bis. 🚀 **DESPLEGAR.** Todo lo del 1/2-ago está en `main` y **no** en el servidor:
-   el contenedor sigue con el código anterior. Arrastra las migraciones del alta
-   manual (`victimas/0008`, `victimas/0009` de datos, `hogares/0007`) y el fix del
-   UPDATE. Hasta entonces la corrida diaria seguiría tardando 10 h.
+2. ~~Probar login + búsqueda con un documento real~~ ✅ **HECHO (2-ago), y encontró
+   un 500 en producción.** Login `200`; búsqueda con un documento real del padrón:
+   **500**. `BuscarVictimaView` hacía `.get()` sobre `numero_documento_hash` y el
+   documento estaba repetido — le pasa a **768.096 documentos** de 4.928.725
+   (~15,6 % de las búsquedas posibles). Salió en el **primer** intento, sin
+   buscarlo. Tres arreglos en `4b88856`, ya desplegados y verificados contra prod:
+
+   | Camino | Antes | Ahora |
+   |---|---|---|
+   | `/api/victimas/buscar/` (frontend web) | **500** | **409** + `candidatos` + `ambiguo:true` + "CONFIRME cuál corresponde"; auditado con `coincidencias` |
+   | `/api/victimas/consultar-fuente/` (APK) | avisaba "Hay 2 registros… CONFIRME" con `candidatos: 0` | manda los candidatos: el aviso ya se puede cumplir |
+   | manifiesto del padrón | `total_registros` del contador del bucle | `count(*)` real + `registros_leidos` + `colisiones_documento` |
+
+   La **APK nunca estuvo afectada** por el 500: usa `/consultar-fuente/`, que va por
+   el repositorio (que sí manejaba los duplicados). El 500 lo veía el frontend web.
+   ⏳ Queda **para Brando**: manejar el `409` en `srni-frontend` — hoy caería en el
+   handler de error genérico. El body trae `detail`, `ambiguo` y `candidatos[]`.
+   6 tests nuevos en `apps/victimas/tests/test_documento_duplicado.py`;
+   suite **558 pass / 1 xfail**.
+
+2-bis. ~~🚀 **DESPLEGAR**~~ ✅ **DESPLEGADO (2-ago).** Migraciones aplicadas:
+   `hogares/0007`, `victimas/0008`, `victimas/0009`. La de datos **no tocó nada**:
+   en prod hay 0 filas con `fuente_origen='NO_INCLUIDA'`/`'OFFLINE'` (las 5.926.004
+   víctimas son padrón puro, todavía no hay altas manuales en producción).
+   ⚠️ **Trampa del deploy, para la próxima:** al recrear `cz_backend` cambia su IP y
+   `cz_nginx` se queda con la vieja cacheada → **502 en todo `/api/`** aunque
+   gunicorn esté sano. Se arregla con `docker restart cz_nginx`. Verificar siempre
+   con `curl -s -o /dev/null -w "%{http_code}" http://localhost:8090/api/` **después**
+   de recrear.
 3. ~~Decidir la **etiqueta del alta manual**~~ ✅ **DECIDIDO Y APLICADO (1-ago).**
    Estado nuevo **`NO_VERIFICADO`** = *"no está en el padrón descargado"*, que no es
    *"no está en el RUV"*. Toca `Victima.ESTADO_RUV`, `MiembroHogar.ESTADO_INCLUSION`,
@@ -140,6 +183,12 @@ esos, **nunca `cz_postgres`**.
    🚀 **Al desplegar:** correr las migraciones — hay una de datos que reetiqueta las
    altas manuales ya grabadas.
 4. Encender las tareas programadas cuando se quiera.
+   Estado verificado el **2-ago**: siguen **apagadas** — no hay ninguna variable
+   `PADRON_*` ni `SYNC_*` en el `.env` de prod, y los defaults son `False`.
+   💡 **Recomendación: no encenderlas todavía.** `refrescar_fechas_padron` corre a
+   diario y **regenera el SQLite**; hoy eso produciría cada noche un archivo de
+   878 MB con los nombres en claro (1b y 1c abajo). Encenderlas después de decidir
+   tamaño y cifrado, no antes.
    ⚠️ **Antes de encenderlas hacía falta un arreglo, ya hecho (1-ago).** El
    `UPDATE` de `cargar_fechas_caracterizacion` era **incondicional**: cruzaba por
    `cons_persona` y reescribía la fila aunque el valor ya fuera ese. Como
