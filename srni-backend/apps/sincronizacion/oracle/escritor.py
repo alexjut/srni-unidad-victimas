@@ -148,8 +148,12 @@ class EscritorOracle:
         """
         return valor if isinstance(valor, int) else None
 
-    def _registrar(self, hogar, paso, origen_id, *, res: P.ResultadoInvocacion,
-                   estado, hog_codigo="", per_idpersona=None, detalle=None):
+    def _registrar(self, hogar, paso, origen_id, *, res, estado,
+                   hog_codigo="", per_idpersona=None, detalle=None):
+        # `res` es None cuando el paso se OMITE: no hubo invocación que registrar,
+        # pero el motivo sí tiene que quedar.
+        bloque = res.bloque if res is not None else ""
+        payload = res.binds_redactados if res is not None else {}
         # `destino_entorno` forma parte de la CLAVE, no de los defaults: si fuera un
         # default, escribir en producción sobrescribiría el registro de la corrida
         # local en vez de convivir con él (ver la constraint del modelo).
@@ -158,8 +162,8 @@ class EscritorOracle:
             destino_entorno="" if not self.confirmar else self.destino,
             defaults=dict(
                 estado=estado,
-                bloque_plsql=res.bloque,
-                payload=res.binds_redactados,
+                bloque_plsql=bloque,
+                payload=payload,
                 resultado=detalle or {},
                 destino_hog_codigo=hog_codigo or "",
                 destino_per_idpersona=self._id_oracle(per_idpersona),
@@ -316,10 +320,21 @@ class EscritorOracle:
         if self._ya_verificado(hogar, PasoEscritura.RESPUESTA, origen):
             return ResultadoPaso(PasoEscritura.RESPUESTA, str(origen), EstadoPaso.VERIFICADO,
                                  "", {"idempotente": True})
-        binds = mapeo.binds_respuesta(
-            respuesta, user=user, catalogos=self.catalogos, hog_codigo=hog_codigo,
-            per_idpersona=per_idpersona, instrumento=instrumento,
-        )
+        try:
+            binds = mapeo.binds_respuesta(
+                respuesta, user=user, catalogos=self.catalogos, hog_codigo=hog_codigo,
+                per_idpersona=per_idpersona, instrumento=instrumento,
+            )
+        except mapeo.SinDestinoEnRespuestas as exc:
+            # El dato no se pierde: su destino es otro paso (GIC_PERSONA, los
+            # validadores) o el texto de la respuesta padre. Lo que NO puede pasar
+            # es que el hogar entero se caiga por esto — antes se caía.
+            detalle = {"omitida": True, "motivo": str(exc)[:400]}
+            self._registrar(hogar, PasoEscritura.RESPUESTA, origen, res=None,
+                            estado=EstadoPaso.OMITIDO, hog_codigo=hog_codigo,
+                            per_idpersona=per_idpersona, detalle=detalle)
+            return ResultadoPaso(PasoEscritura.RESPUESTA, str(origen),
+                                 EstadoPaso.OMITIDO, "", detalle)
         res = self._ejecutar_paso(P.SP_SET_RESPUESTAS_DE_ENCUESTA, binds)
 
         estado, detalle = EstadoPaso.DRY_RUN, {}

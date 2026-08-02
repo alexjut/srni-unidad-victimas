@@ -40,6 +40,33 @@ class MapeoPendienteNegocio(ValueError):
     """Un valor depende de una decisión de negocio aún no confirmada."""
 
 
+class SinDestinoEnRespuestas(MapeoDesconocido):
+    """
+    Esta respuesta NO va a la tabla de respuestas del legacy: su destino es otro.
+
+    No es un mapeo que falte: es que en el legacy ese dato vive en otra parte.
+    Medido sobre territorial v8, de las 117 preguntas sin `id_preg`:
+
+      41  subcampos "Otro, ¿cuál?" → el texto va en el RXP_TEXTORESPUESTA de la
+          respuesta PADRE, que sí tiene su pregunta en Oracle
+       7  subcampos de cantidad → igual
+       7  identidad (segundo nombre, apellidos, los *_RUV) → GIC_PERSONA
+       3  validadores (estado en el RUV, tipo de persona)
+       2  hechos victimizantes → GIC_INSERT_VALIDADOR_HECHO_AUX
+
+    Tratarlas como "pendiente de negocio" hacía abortar el hogar entero, así que
+    ningún hogar territorial se podía escribir. Se distingue para que el escritor
+    pueda OMITIRLAS dejando constancia, en vez de perder todo el hogar por un
+    campo cuyo destino ya conocemos —y que en varios casos ya escribimos por otro
+    camino—.
+
+    ⚠️ Lo omitido se cuenta y se informa. Entre estas 117 hay al menos una que sí
+    debería ir a la tabla de respuestas (`Z2`, Lugar de la Encuesta, que en Oracle
+    es PRE_IDPREGUNTA=1): omitir no es resolver, es no perder el resto mientras se
+    resuelve.
+    """
+
+
 class CampoOrigenFaltante(MapeoDesconocido):
     """
     El modelo SICAV no define el campo del que un bind debería salir.
@@ -398,10 +425,17 @@ class ResolverCatalogos:
         id_preg = _campo_origen(pregunta, "id_preg")
         codigo = getattr(pregunta, "codigo_externo", "?")
         if id_preg is None:
-            return self._respuesta_falta(
+            # No es "falta un mapeo": la mayoría de estas preguntas tienen su
+            # destino en otra tabla del legacy (ver `SinDestinoEnRespuestas`).
+            # Se distingue para que el hogar no se pierda entero por ellas.
+            raise SinDestinoEnRespuestas(
                 f"la pregunta SICAV {codigo!r} no tiene `id_preg` (el puente hacia "
-                f"GIC_N_PREGUNTAS.PRE_IDPREGUNTA). Sin él no se sabe qué pregunta de "
-                f"Oracle es.", f"{codigo}/sin_id_preg")
+                f"GIC_N_PREGUNTAS.PRE_IDPREGUNTA). En territorial v8 son 117, y la "
+                f"mayoría no van a la tabla de respuestas: los subcampos "
+                f"'Otro, ¿cuál?' viajan en el texto de su respuesta padre, la "
+                f"identidad va a GIC_PERSONA y los hechos a los validadores. Esta "
+                f"respuesta se OMITE y queda registrada."
+            )
         fila = cat["preguntas"].get(int(id_preg))
         if fila is None:
             meta = cat["_meta"]

@@ -463,11 +463,27 @@ def test_si_todas_las_candidatas_son_huerfanas_falla_claro(monkeypatch):
     assert "huérfanas" in str(exc.value).lower()
 
 
-def test_pregunta_sin_id_preg_falla_claro():
+def test_pregunta_sin_id_preg_se_omite_en_vez_de_tumbar_el_hogar():
+    """
+    Sin `id_preg` la respuesta NO va a la tabla de respuestas del legacy — y en la
+    mayoría de los casos es porque su destino es otro: los subcampos
+    "Otro, ¿cuál?" viajan en el texto de su respuesta padre, la identidad va a
+    GIC_PERSONA y los hechos a los validadores.
+
+    Antes esto lanzaba `MapeoPendienteNegocio`, que aborta el hogar entero: en
+    territorial v8 son 117 preguntas, así que ningún hogar completo se podía
+    escribir. Ahora se distingue con una excepción propia que el escritor atrapa
+    para OMITIR esa respuesta dejando constancia.
+    """
+    from apps.sincronizacion.oracle.mapeo import SinDestinoEnRespuestas
+
     p = _Pregunta(None, "SIN_PUENTE", _Opcion("1", "Sí"))
-    with pytest.raises(MapeoPendienteNegocio) as exc:
+    with pytest.raises(SinDestinoEnRespuestas) as exc:
         _r().resolver_res_idrespuesta(_Respuesta(p, "1"))
     assert "id_preg" in str(exc.value)
+    # Sigue siendo un MapeoDesconocido: quien ya lo atrapaba, lo sigue atrapando.
+    from apps.sincronizacion.oracle.mapeo import MapeoDesconocido
+    assert isinstance(exc.value, MapeoDesconocido)
 
 
 def test_pregunta_sin_campo_id_preg_es_campo_faltante():

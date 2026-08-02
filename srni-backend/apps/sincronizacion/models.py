@@ -35,6 +35,12 @@ class EstadoPaso(models.TextChoices):
     escrito". Solo VERIFICADO (confirmado por SELECT posterior) permite avanzar.
     """
     PENDIENTE = "PENDIENTE", "Pendiente (aún no ejecutado)"
+    # No es un fallo: es un dato cuyo destino en el legacy NO es esta tabla (un
+    # subcampo "Otro, ¿cuál?" que viaja en el texto de su respuesta padre, la
+    # identidad que va a GIC_PERSONA, un hecho que va a los validadores). Se
+    # registra para que quede constancia de qué NO se escribió y por qué, en vez
+    # de perder el hogar entero por ello.
+    OMITIDO = "OMITIDO", "Omitido — su destino en el legacy es otro"
     DRY_RUN = "DRY_RUN", "Simulado (DRY-RUN, bloque PL/SQL registrado, sin ejecutar)"
     EJECUTADO_SIN_VERIFICAR = "EJECUTADO_SIN_VERIFICAR", "Procedure llamado, falta confirmar por consulta"
     VERIFICADO = "VERIFICADO", "Confirmado por SELECT en Oracle"
