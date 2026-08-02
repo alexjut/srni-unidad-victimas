@@ -168,28 +168,55 @@ class DjangoVictimaRepository(VictimaRepository):
         )
 
     @staticmethod
-    def _resolver_colision(encontradas: list) -> list:
-        """
-        Reduce a una sola fila cuando el veredicto dice que son la misma persona.
-
-        Devuelve la lista tal cual —o sea, sigue habiendo que confirmar— si el
-        documento es ambiguo, si no identifica a nadie, o si no hay veredicto
-        todavía. Nunca descarta a nadie por su cuenta.
-        """
+    def _veredictos_de(encontradas: list) -> dict:
+        """Los veredictos de todos los documentos presentes en el resultado."""
         from apps.victimas.models import ColisionDocumento
 
-        veredicto = ColisionDocumento.objects.filter(
-            doc_hash=encontradas[0].numero_documento_hash
-        ).first()
-        if veredicto is None or veredicto.requiere_confirmacion:
-            return encontradas
+        hashes = {v.numero_documento_hash for v in encontradas}
+        return {c.doc_hash: c for c in
+                ColisionDocumento.objects.filter(doc_hash__in=hashes)}
 
-        preferida_id = veredicto.victima_preferida_id
-        elegida = next((v for v in encontradas if v.id == preferida_id), None)
-        # Si la preferida ya no está entre las encontradas (se borró, o el filtro
-        # de respaldo por número trajo otro conjunto), se conserva el orden por
-        # completitud y no se descarta nada.
-        return [elegida] if elegida is not None else encontradas
+    @classmethod
+    def _resolver_colision(cls, encontradas: list) -> list:
+        """
+        Reduce a una sola fila **por documento** cuando el veredicto dice que esas
+        filas son la misma persona. Conserva el orden recibido.
+
+        ⚠️ Agrupa por `doc_hash` y no trata la lista como un solo documento, y eso
+        no es una sutileza: cuando la búsqueda cae al respaldo por número —el
+        14,5 % del padrón está cargado sin tipo de documento— el resultado mezcla
+        filas de documentos DISTINTOS (la misma cédula registrada como CC, como TI
+        y sin tipo). Resolver el conjunto entero con el veredicto de la primera
+        fila descartaría a las personas de los otros documentos: exactamente el
+        borrado silencioso que este código existe para impedir.
+
+        Devuelve el grupo entero —o sea, sigue habiendo que confirmar— cuando el
+        documento es ambiguo, no identifica a nadie, o no tiene veredicto todavía.
+        """
+        veredictos = cls._veredictos_de(encontradas)
+
+        # Qué fila sobrevive en cada documento; None = sobreviven todas.
+        preferidas: dict[str, object] = {}
+        for h, veredicto in veredictos.items():
+            if veredicto.requiere_confirmacion or veredicto.victima_preferida_id is None:
+                continue
+            preferidas[h] = veredicto.victima_preferida_id
+
+        def sobrevive(v) -> bool:
+            preferida_id = preferidas.get(v.numero_documento_hash)
+            return preferida_id is None or v.id == preferida_id
+
+        resultado = [v for v in encontradas if sobrevive(v)]
+
+        # Red de seguridad: si la preferida de algún documento no está en el
+        # resultado —se borró la fila, o el respaldo trajo otro conjunto—, todas
+        # las filas de ESE documento habrían desaparecido. Se devuelven.
+        presentes = {v.numero_documento_hash for v in resultado}
+        faltantes = [v for v in encontradas if v.numero_documento_hash not in presentes]
+        if faltantes:
+            resultado = [v for v in encontradas
+                         if sobrevive(v) or v.numero_documento_hash not in presentes]
+        return resultado
 
     # ── contrato ──────────────────────────────────────────────────────────────
     def buscar_por_documento(self, tipo_documento, numero_documento) -> ResultadoBusqueda:
@@ -226,6 +253,20 @@ class DjangoVictimaRepository(VictimaRepository):
         # `apps/victimas/identidad.py`). Sin veredicto se avisa igual: el default
         # seguro es preguntar.
         encontradas.sort(key=self._completitud, reverse=True)
+
+        # Documento de relleno: no identifica a nadie y no puede devolver a nadie.
+        # `99` lo comparten 3.780 personas distintas; entregar una es entregar los
+        # datos de un desconocido. Se responde NO ENCONTRADA a propósito: es lo que
+        # lleva a la APK al alta manual, que es justo lo que corresponde hacer.
+        veredictos = self._veredictos_de(encontradas)
+        if any(v.clase == 'NO_IDENTIFICANTE' for v in veredictos.values()):
+            return ResultadoBusqueda(
+                encontrado=False, victima=None, fuente=self.FUENTE,
+                mensaje=("Este número no identifica a una persona: en el padrón figura "
+                         "como valor de relleno, compartido por muchos registros. "
+                         "Verifique el documento o regístrela por alta manual."),
+            )
+
         if len(encontradas) > 1:
             encontradas = self._resolver_colision(encontradas)
 

@@ -268,6 +268,97 @@ def test_consultar_fuente_tampoco_avisa_si_es_la_misma_persona(catalogo, client_
     assert "CONFIRME" not in data["mensaje"]
 
 
+# ── 1-ter. el respaldo por número mezcla documentos distintos ────────────────
+
+def test_el_respaldo_por_numero_no_descarta_a_las_personas_de_otro_documento(
+    catalogo, client_auth, settings
+):
+    """
+    El 14,5 % del padrón está cargado SIN tipo de documento, así que la búsqueda
+    cae a un respaldo que empareja solo por número. Ese resultado mezcla filas de
+    documentos distintos —la misma cédula como CC, como TI y sin tipo—.
+
+    Resolver ese conjunto con el veredicto de la primera fila borraba a las
+    personas de los otros documentos: el mismo borrado silencioso que este código
+    existe para impedir, entrando por la puerta de atrás.
+    """
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import ColisionDocumento
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+    ti = TipoDocumento.objects.create(codigo="TI", nombre="Tarjeta de Identidad")
+
+    # Dos filas de ALBA con tipo CC → el veredicto dice que son la misma persona.
+    _crear_victima(catalogo, documento="1030547250", nombre="ALBA", apellido="TAPIA")
+    alba = _crear_victima(catalogo, documento="1030547250", nombre="ALBA",
+                          apellido="TAPIA", cons_persona=77)
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "1030547250"), clase="DUPLICADO_FUENTE",
+        filas=2, personas=1, victima_preferida=alba,
+    )
+    # Y una persona DISTINTA con el mismo número, registrada como TI.
+    otra = _crear_victima(catalogo, documento="1030547250", nombre="ROSA",
+                          apellido="PEREZ", tipo_documento=ti)
+    otra.numero_documento_hash = doc_hash("TI", "1030547250")
+    otra.save(update_fields=["numero_documento_hash"])
+
+    # Se busca con un tipo que no tiene filas propias (CE) → cae al respaldo.
+    r = DjangoVictimaRepository().buscar_por_documento("CE", "1030547250")
+
+    assert r.encontrado is True
+    # Las dos personas siguen ahí: ALBA (una sola vez) y ROSA.
+    nombres = {r.victima.primer_nombre} | {c.primer_nombre for c in r.candidatos}
+    assert nombres == {"ALBA", "ROSA"}
+    assert "VERIFIQUE" in r.mensaje
+
+
+def test_un_documento_de_relleno_no_devuelve_a_nadie_por_el_repositorio(
+    catalogo, settings
+):
+    """El camino de la APK: mismo criterio que el web, o en campo se cuela."""
+    from apps.victimas.models import ColisionDocumento
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    settings.VICTIMA_REPOSITORY = "DJANGO"
+    _crear_victima(catalogo, documento="99", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="99", nombre="PEDRO", apellido="PEREZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "99"), clase="NO_IDENTIFICANTE",
+        filas=2, personas=0, victima_preferida=None,
+    )
+
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "99")
+    assert r.encontrado is False          # → la APK ofrece alta manual
+    assert r.victima is None
+    assert "no identifica" in r.mensaje
+
+
+def test_documento_de_relleno_con_una_sola_fila_tampoco_la_devuelve(
+    catalogo, client_auth
+):
+    """
+    El veredicto se consultaba solo con MÁS de una coincidencia. Un documento de
+    relleno puede quedar con una sola fila para un tipo dado, y entonces se
+    devolvía a esa persona como si el número la identificara.
+    """
+    from apps.victimas.models import ColisionDocumento
+
+    _crear_victima(catalogo, documento="0", nombre="MARIA", apellido="GOMEZ")
+    ColisionDocumento.objects.create(
+        doc_hash=doc_hash("CC", "0"), clase="NO_IDENTIFICANTE",
+        filas=1, personas=0, victima_preferida=None,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/buscar/",
+        {"tipo_documento_codigo": "CC", "numero_documento": "0"},
+        format="json",
+    )
+    assert resp.status_code == 409
+    assert resp.json()["no_identificante"] is True
+
+
 # ── 2. /consultar-fuente/ manda los candidatos ───────────────────────────────
 
 @override_settings(VICTIMA_REPOSITORY="DJANGO")

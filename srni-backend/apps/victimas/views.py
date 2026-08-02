@@ -170,8 +170,12 @@ class BuscarVictimaView(APIView):
         # con la fila más completa; solo se pregunta cuando de verdad hay que
         # elegir. Si el veredicto no está —clasificación no corrida todavía—, se
         # cae del lado seguro: preguntar.
+        # Se consulta SIEMPRE que haya alguna coincidencia, no solo cuando hay
+        # varias: un documento de relleno puede haber quedado con una sola fila
+        # —porque el resto tenía otro tipo de documento— y devolver esa persona
+        # sería afirmar que el número la identifica cuando no lo hace.
         veredicto = None
-        if len(coincidencias) > 1:
+        if coincidencias:
             veredicto = ColisionDocumento.objects.filter(doc_hash=hash_doc).first()
 
         if veredicto is not None and not veredicto.requiere_confirmacion:
