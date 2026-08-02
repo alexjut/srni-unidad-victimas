@@ -52,11 +52,20 @@ class ResultadoHogar:
     hog_codigo_sicav: str
     dry_run: bool
     pasos: list = field(default_factory=list)  # list[ResultadoPaso]
+    #: True si la escritura se detuvo a mitad a propósito. Un hogar abortado NO es
+    #: un hogar fallido más: es uno que decidimos no seguir escribiendo porque
+    #: continuar habría dañado datos ajenos. El motivo va en `motivo_aborte`.
+    abortado: bool = False
+    motivo_aborte: str = ""
 
     def resumen(self) -> dict:
         from collections import Counter
         c = Counter(p.estado for p in self.pasos)
-        return {"total": len(self.pasos), **c}
+        base = {"total": len(self.pasos), **c}
+        if self.abortado:
+            base["abortado"] = True
+            base["motivo_aborte"] = self.motivo_aborte
+        return base
 
 
 class EscritorOracle:
@@ -192,6 +201,13 @@ class EscritorOracle:
                                  "", {"idempotente": True, "hog_codigo": reg.destino_hog_codigo})
         binds = mapeo.binds_hogar(hogar, user=user, catalogos=self.catalogos,
                                   instrumento_codigo=instrumento_codigo)
+
+        # El instante ANTES de invocar, con el reloj de Oracle. Es lo que después
+        # permite afirmar que el hogar encontrado lo creó esta llamada y no otra
+        # corrida ni otro encuestador que comparta el ID_USUARIO. Ver la guarda
+        # completa en `verificacion.verificar_hogar`.
+        antes = V.reloj_oracle(self._cursor) if self.confirmar else None
+
         res = self._ejecutar_paso(P.GIC_INSERT_HOGAR1, binds)
 
         estado, hog_codigo, detalle = EstadoPaso.DRY_RUN, "", {}
@@ -199,9 +215,30 @@ class EscritorOracle:
             marcador = res.salidas.get("marcador")
             ok, detalle = V.verificar_hogar(
                 self._cursor, id_usuario=binds["id_usuario"], marcador=marcador,
+                creado_desde=antes,
             )
             hog_codigo = detalle.get("hog_codigo") or ""
             estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+
+            # Segundo cerrojo, en PostgreSQL: que ese HOG_CODIGO no esté ya
+            # asignado a OTRO hogar nuestro. Si lo está, es la misma fusión vista
+            # desde nuestro lado, y el ledger sí puede afirmarlo.
+            if ok and hog_codigo:
+                ajeno = (RegistroEscrituraOracle.objects
+                         .filter(destino_hog_codigo=hog_codigo,
+                                 destino_entorno=self.destino)
+                         .exclude(hogar_id=hogar.pk)
+                         .first())
+                if ajeno is not None:
+                    estado = EstadoPaso.FALLIDO
+                    detalle = {
+                        "error": "hog_codigo_ya_asignado",
+                        "motivo": ("Ese HOG_CODIGO ya está registrado para otro hogar "
+                                   "de SICAV: escribir encima fundiría los dos."),
+                        "hog_codigo": hog_codigo,
+                        "hogar_previo": str(ajeno.hogar_id),
+                    }
+                    hog_codigo = ""
         self._registrar(hogar, PasoEscritura.HOGAR, origen, res=res, estado=estado,
                         hog_codigo=hog_codigo, detalle=detalle)
         return ResultadoPaso(PasoEscritura.HOGAR, str(origen), estado, res.bloque, detalle)
@@ -320,6 +357,21 @@ class EscritorOracle:
         # 1. HOGAR
         r_hogar = self.paso_hogar(hogar, user=user, instrumento_codigo=instrumento_codigo)
         rh.pasos.append(r_hogar)
+
+        # Si el hogar no quedó verificado, ACÁ SE PARA. No es una precaución
+        # genérica: sin un HOG_CODIGO propio y confirmado, todo lo que siga se
+        # escribe colgado de un código que no es nuestro —o del código SICAV, que en
+        # Oracle no existe—. Y una sola respuesta escrita en un hogar ajeno dispara
+        # `SP_INS_ETNIA_ARES`, que borra los validadores de ESE hogar filtrando solo
+        # por HOG_CODIGO. Es daño irreversible sobre datos reales de la UARIV.
+        if self.confirmar and r_hogar.estado is not EstadoPaso.VERIFICADO:
+            rh.abortado = True
+            rh.motivo_aborte = (
+                f"El paso HOGAR no quedó verificado ({r_hogar.detalle.get('error') or 'sin motivo'}): "
+                f"no se escribe nada más para no colgar el hogar de un código ajeno."
+            )
+            return rh
+
         # En confirmado, el HOG_CODIGO real sale de la verificación; en DRY-RUN se
         # usa el codigo SICAV como marcador de referencia en los siguientes bloques.
         hog_codigo = r_hogar.detalle.get("hog_codigo") or hogar.codigo_hogar
