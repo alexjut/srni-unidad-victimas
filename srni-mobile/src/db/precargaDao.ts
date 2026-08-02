@@ -29,6 +29,13 @@ export interface PadronEntradaApi {
   habilitada: boolean;
   ya_caracterizada: boolean;
   cons_persona: number | null;
+  /**
+   * Qué hay detrás de este documento cuando lo comparte más de un registro.
+   * null = documento limpio; 'AMBIGUO' = personas distintas, hay que preguntar;
+   * 'NO_IDENTIFICANTE' = valor de relleno que no identifica a nadie.
+   * Opcional: un servidor viejo no lo manda y la app sigue funcionando.
+   */
+  clase_colision?: string | null;
 }
 
 export interface MunicipioParam {
@@ -62,6 +69,8 @@ export interface PadronRow {
   habilitada: boolean;
   ya_caracterizada: boolean;
   cons_persona: number | null;
+  /** null = documento limpio. 'AMBIGUO' | 'NO_IDENTIFICANTE' — ver schema v10. */
+  clase_colision: string | null;
 }
 
 interface PadronRowDb {
@@ -75,6 +84,7 @@ interface PadronRowDb {
   habilitada: number;
   ya_caracterizada: number;
   cons_persona: number | null;
+  clase_colision: string | null;
 }
 
 function mapPadron(r: PadronRowDb): PadronRow {
@@ -89,6 +99,7 @@ function mapPadron(r: PadronRowDb): PadronRow {
     habilitada: r.habilitada === 1,
     ya_caracterizada: r.ya_caracterizada === 1,
     cons_persona: r.cons_persona,
+    clase_colision: r.clase_colision ?? null,
   };
 }
 
@@ -108,11 +119,17 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
     // INSERT reutilizada por fila (executeAsync). Evita N round-trips de parseo
     // a SQLite, crítico al login con miles de filas. Sigue siendo transaccional
     // y el resultado es idéntico (mismo orden de columnas, mismos hash/display).
+    // INSERT a secas, ya no `OR REPLACE`: dos personas distintas pueden compartir
+    // documento y las dos tienen que entrar. Con `OR REPLACE` la segunda pisaba a
+    // la primera y esa víctima desaparecía del dispositivo sin dejar rastro.
+    // La tabla se vacía al principio de la precarga, así que no hay que temer
+    // duplicados de una corrida anterior.
     const stmtPadron = await db.prepareAsync(
-      `INSERT OR REPLACE INTO padron
+      `INSERT INTO padron
          (documento_hash, tipo_documento, documento_display, nombre, ubicacion,
-          cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona,
+          clase_colision)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     try {
       for (const p of payload.padron ?? []) {
@@ -128,6 +145,7 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
           p.habilitada ? 1 : 0,
           p.ya_caracterizada ? 1 : 0,
           p.cons_persona ?? null,
+          p.clase_colision ?? null,
         ]);
       }
     } finally {
@@ -173,7 +191,14 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
 
 // ── Lectura ──────────────────────────────────────────────────────────────────
 
-/** Busca una persona en el padrón local por el documento tecleado. */
+/**
+ * Busca una persona en el padrón local por el documento tecleado.
+ *
+ * ⚠️ Devuelve la PRIMERA coincidencia. Un documento puede pertenecer a más de
+ * una persona (ver `buscarCandidatosEnPadron`), así que esto solo es correcto
+ * cuando ya se sabe que el documento es limpio. Para el flujo de búsqueda usar
+ * `buscarCandidatosEnPadron`, que no esconde a nadie.
+ */
 export async function buscarEnPadron(documento: string): Promise<PadronRow | null> {
   const db = await openDb();
   const row = await db.getFirstAsync<PadronRowDb>(
@@ -181,6 +206,45 @@ export async function buscarEnPadron(documento: string): Promise<PadronRow | nul
     [hashDocumento(documento)],
   );
   return row ? mapPadron(row) : null;
+}
+
+/** Qué encontró el padrón local para un documento. */
+export interface ResultadoPadron {
+  /** Todas las personas registradas con ese documento. Vacío si no hay ninguna. */
+  candidatos: PadronRow[];
+  /**
+   * true cuando el documento es un valor de relleno ('99', '0'): NO identifica a
+   * nadie y `candidatos` viene vacío a propósito. No es lo mismo que "no está":
+   * la persona puede existir, pero ese número no sirve para encontrarla.
+   */
+  noIdentificante: boolean;
+  /** true cuando hay más de una persona y el encuestador tiene que elegir. */
+  requiereConfirmacion: boolean;
+}
+
+/**
+ * Busca en el padrón local devolviendo TODAS las personas con ese documento.
+ *
+ * Por qué no alcanza con la primera: en el padrón real hay 768.096 documentos
+ * repetidos y ~7 % de ellos son personas distintas. Quedarse con una y no decir
+ * nada es entregarle al encuestador los datos de otra persona sin que se entere
+ * — y sin señal no tiene cómo verificarlo.
+ */
+export async function buscarCandidatosEnPadron(documento: string): Promise<ResultadoPadron> {
+  const db = await openDb();
+  const rows = await db.getAllAsync<PadronRowDb>(
+    'SELECT * FROM padron WHERE documento_hash = ?',
+    [hashDocumento(documento)],
+  );
+
+  const noIdentificante = rows.some((r) => r.clase_colision === 'NO_IDENTIFICANTE');
+  const candidatos = noIdentificante ? [] : rows.map(mapPadron);
+
+  return {
+    candidatos,
+    noIdentificante,
+    requiereConfirmacion: candidatos.length > 1,
+  };
 }
 
 /**

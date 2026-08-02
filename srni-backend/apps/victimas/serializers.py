@@ -249,3 +249,8 @@ class PadronItemSerializer(serializers.Serializer):
     habilitada = serializers.BooleanField()
     ya_caracterizada = serializers.BooleanField()
     cons_persona = serializers.IntegerField(allow_null=True)
+    # null = documento limpio; 'AMBIGUO' = varias personas lo comparten y hay que
+    # preguntar; 'NO_IDENTIFICANTE' = valor de relleno que no identifica a nadie.
+    # Sin esto, en campo y sin señal no hay forma de saber que la persona que se
+    # está mostrando podría no ser la que está enfrente.
+    clase_colision = serializers.CharField(allow_null=True, required=False)

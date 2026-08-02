@@ -15,11 +15,14 @@
  *  8 → hogares_offline.ultimo_error TEXT (motivo del fallo de sincronización)
  *  9 → hogares_cache: espejo de la lista de miembros del servidor para que un
  *      hogar creado ONLINE siga capturable si cae la red (fix #4/#38)
+ * 10 → padron sin PRIMARY KEY en documento_hash + clase_colision: un mismo
+ *      documento puede pertenecer a dos personas distintas y las dos tienen que
+ *      caber (antes la segunda se perdía en silencio)
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -336,6 +339,45 @@ const MIGRATION_V9 = `
   );
 `;
 
+// ─── Migración v10 — un documento puede ser de más de una persona ────────────
+//
+// `documento_hash` era PRIMARY KEY, o sea: una fila por documento. Sonaba obvio y
+// era falso. En el padrón real hay 768.096 documentos compartidos por más de un
+// registro, y de esos, ~7 % son PERSONAS DISTINTAS: dos víctimas con el mismo
+// número. Con la PK, la segunda no entraba —el `INSERT OR REPLACE` de la
+// precarga pisaba a la primera— y en campo, sin señal, esa persona simplemente
+// no existía. Extrapolado al padrón completo, ~53 mil personas.
+//
+// Ahora el documento puede repetirse y `clase_colision` dice qué hay detrás:
+//   NULL               → documento limpio, una persona. El 92 % restante ya viene
+//                        resuelto desde el servidor (una fila por persona).
+//   'AMBIGUO'          → varias personas lo comparten: hay que PREGUNTAR.
+//   'NO_IDENTIFICANTE' → valor de relleno ('99', '0'): no identifica a nadie y la
+//                        fila viene vacía a propósito.
+//
+// Se recrea la tabla en vez de ALTERarla porque SQLite no sabe quitar una PRIMARY
+// KEY. No se pierde nada: el padrón local es un espejo que la precarga repuebla
+// entero.
+const MIGRATION_V10 = `
+  DROP TABLE IF EXISTS padron;
+
+  CREATE TABLE padron (
+    documento_hash    TEXT    NOT NULL,
+    tipo_documento    TEXT    NOT NULL DEFAULT '',
+    documento_display TEXT    NOT NULL DEFAULT '',
+    nombre            TEXT    NOT NULL DEFAULT '',
+    ubicacion         TEXT    NOT NULL DEFAULT '',
+    cantidad_hechos   INTEGER NOT NULL DEFAULT 0,
+    en_ruv            INTEGER NOT NULL DEFAULT 0,
+    habilitada        INTEGER NOT NULL DEFAULT 0,
+    ya_caracterizada  INTEGER NOT NULL DEFAULT 0,
+    cons_persona      INTEGER,
+    clase_colision    TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_padron_hash ON padron(documento_hash);
+`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // SINGLETON DE CONEXIÓN — evita race conditions al abrir la BD múltiples
 // veces desde DAOs concurrentes (Sprint 17 fix).
@@ -435,6 +477,13 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (currentVersion < 9) {
     // Fix #4/#38: caché de miembros de hogares creados online. Idempotente.
     await db.execAsync(MIGRATION_V9);
+  }
+
+  if (currentVersion < 10) {
+    // El padrón deja de tener UNA fila por documento (ver MIGRATION_V10).
+    // Se recrea la tabla; no se pierde nada porque el padrón se repuebla entero
+    // en cada precarga — es un espejo del servidor, no datos capturados.
+    await db.execAsync(MIGRATION_V10);
   }
 
   if (currentVersion < SCHEMA_VERSION) {

@@ -549,6 +549,9 @@ export default function BusquedaScreen() {
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
   const [resultado, setResultado] = useState<ResultadoBusquedaFuente | null>(null);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
+  // Personas distintas que comparten el documento buscado. Mientras esta lista
+  // tenga algo, NO hay resultado: falta que el encuestador confirme cuál es.
+  const [candidatos, setCandidatos] = useState<PadronRow[]>([]);
 
   const [instrumentos, setInstrumentos] = useState<InstrumentoResumen[]>([]);
   const [cargandoInstrumentos, setCargandoInstrumentos] = useState(false);
@@ -573,6 +576,7 @@ export default function BusquedaScreen() {
         setDocumento('');
         setResultado(null);
         setErrorBusqueda(null);
+        setCandidatos([]);
         setInstrumentoSeleccionado(null);
         setAltaManualRegistrada(false);
         limpiar();
@@ -600,14 +604,44 @@ export default function BusquedaScreen() {
   async function buscarOffline(): Promise<boolean> {
     try {
       const doc = documento.trim();
-      const p = await precargaDao.buscarEnPadron(doc);
-      if (!p) return false;
+      const r = await precargaDao.buscarCandidatosEnPadron(doc);
+
+      // Documento de relleno ('99', '0'): no identifica a nadie. No es "no está"
+      // —la persona puede existir— y sobre todo no se puede mostrar a uno de los
+      // miles que comparten ese número como si fuera quien está enfrente.
+      if (r.noIdentificante) {
+        setCandidatos([]);
+        setErrorBusqueda(
+          'Este número no identifica a una persona: en el padrón figura como valor ' +
+            'de relleno, compartido por muchos registros. Verifique el documento o ' +
+            'regístrela por alta manual.',
+        );
+        return true;
+      }
+
+      if (r.candidatos.length === 0) return false;
+
+      // Varias personas con el mismo documento: decide quien la tiene enfrente.
+      // Elegir por ella sería entregarle los datos de otra sin que se entere, y
+      // sin señal no tiene con qué verificarlo.
+      if (r.requiereConfirmacion) {
+        setCandidatos(r.candidatos);
+        return true;
+      }
+
       const jornada = await precargaDao.buscarEnJornada(doc);
-      setResultado(resultadoDesdePadron(p, jornada));
+      setResultado(resultadoDesdePadron(r.candidatos[0], jornada));
       return true;
     } catch {
       return false;
     }
+  }
+
+  /** El encuestador eligió cuál de los candidatos es la persona que atiende. */
+  async function elegirCandidato(p: PadronRow) {
+    setCandidatos([]);
+    const jornada = await precargaDao.buscarEnJornada(documento.trim());
+    setResultado(resultadoDesdePadron(p, jornada));
   }
 
   async function buscar() {
@@ -615,6 +649,7 @@ export default function BusquedaScreen() {
     setCargando(true);
     setResultado(null);
     setErrorBusqueda(null);
+    setCandidatos([]);
     setInstrumentoSeleccionado(null);
     setAltaManualRegistrada(false);
 
@@ -760,7 +795,61 @@ export default function BusquedaScreen() {
     }
   }
 
+  /**
+   * Varias personas comparten el documento buscado. La pantalla NO elige: pone
+   * las opciones y espera. Sin señal no hay a quién preguntarle, así que la
+   * confirmación la hace el encuestador contra la persona que tiene enfrente.
+   */
+  function renderCandidatos() {
+    if (candidatos.length === 0) return null;
+
+    return (
+      <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
+        <View style={styles.tarjetaEncabezado}>
+          <MaterialCommunityIcons
+            name="account-question-outline"
+            size={32}
+            color={GOV.naranja}
+            style={styles.icono}
+          />
+          <Text style={[styles.tarjetaTitulo, { color: GOV.naranja }]}>
+            {candidatos.length} personas con este documento
+          </Text>
+        </View>
+        <Text style={styles.tarjetaMensaje}>
+          El número {tipoDoc} {documento} está registrado a nombre de más de una
+          persona. Confirme el nombre con quien tiene enfrente antes de continuar.
+        </Text>
+
+        <Divider style={{ marginVertical: SPACING.sm }} />
+
+        {candidatos.map((c, i) => (
+          <Pressable
+            key={`${c.documento_hash}-${c.cons_persona ?? i}`}
+            onPress={() => elegirCandidato(c)}
+            style={({ pressed }) => [styles.candidato, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Seleccionar a ${c.nombre}`}
+          >
+            <View style={styles.candidatoTextos}>
+              <Text style={styles.candidatoNombre} numberOfLines={2}>
+                {c.nombre || 'Sin nombre registrado'}
+              </Text>
+              <Text style={styles.candidatoMeta}>
+                {c.ubicacion || 'Sin ubicación'}
+                {c.ya_caracterizada ? '  ·  Ya caracterizada' : ''}
+                {c.en_ruv ? '  ·  Incluida en RUV' : ''}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={24} color={GOV.azul} />
+          </Pressable>
+        ))}
+      </Surface>
+    );
+  }
+
   function renderTarjeta() {
+    if (candidatos.length > 0) return renderCandidatos();
     if (!resultado) return null;
 
     if (!resultado.encontrado) {
@@ -1055,6 +1144,23 @@ const styles = StyleSheet.create({
   tarjetaTitulo: { ...FONT.h3, flex: 1, flexWrap: 'wrap' },
   tarjetaMensaje:{ ...FONT.small, marginBottom: SPACING.xs },
   tarjetaFuente: { ...FONT.caption, marginTop: SPACING.xs },
+
+  // Selección entre personas que comparten documento. Área de toque holgada:
+  // se usa en campo, de pie y a veces con guantes.
+  candidato: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: GOV.borde,
+    marginBottom: SPACING.xs,
+    minHeight: 56,
+  },
+  candidatoTextos: { flex: 1, paddingRight: SPACING.xs },
+  candidatoNombre: { ...FONT.body, fontWeight: '700' },
+  candidatoMeta: { ...FONT.caption, marginTop: 2 },
 
   nombreCompleto: { ...FONT.h3, marginBottom: SPACING.sm },
   chipsFila: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs, marginBottom: SPACING.sm },
