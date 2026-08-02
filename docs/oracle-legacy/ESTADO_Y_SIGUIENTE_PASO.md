@@ -100,6 +100,23 @@ esos, **nunca `cz_postgres`**.
    🚀 **Al desplegar:** correr las migraciones — hay una de datos que reetiqueta las
    altas manuales ya grabadas.
 4. Encender las tareas programadas cuando se quiera.
+   ⚠️ **Antes de encenderlas hacía falta un arreglo, ya hecho (1-ago).** El
+   `UPDATE` de `cargar_fechas_caracterizacion` era **incondicional**: cruzaba por
+   `cons_persona` y reescribía la fila aunque el valor ya fuera ese. Como
+   `refrescar_fechas_padron` corre **a diario a las 03:30**, cada noche habría
+   reescrito 3,3 M filas para dejarlas idénticas.
+   No es una ineficiencia de manual: `victimas_victima` tiene **24 índices** y el
+   UPDATE toca `habilitado_para_caracterizacion`, que está indexada — eso descarta
+   el *HOT update*, así que cada fila cuesta **25 escrituras**. Medido en la corrida
+   real: **8 h y seguía**, con 61 GB de WAL cada tres horas. La estimación del
+   docstring (~12 min) estaba mal por un factor de 40, y ya está corregida con el
+   número real.
+   Ahora el cruce se materializa en una temporal (que no genera WAL), se marca ahí
+   qué cambia de verdad, y el UPDATE va **por PK** solo sobre esas filas. El
+   informe pasa a dar dos cifras: las que cruzan y las que se escribieron.
+   SQL validado contra el PostgreSQL del servidor con tablas temporales y
+   `ROLLBACK` (los tests corren en SQLite y **no** cubren ese camino — es la misma
+   trampa de `9a35c18`, el `COPY` de psycopg2).
 5. Las 5 preguntas para OTI — **borrador listo (1-ago)**:
    [`../gestion/correo_oti_identidad_padron.md`](../gestion/correo_oti_identidad_padron.md).
    Falta que Javier lo revise y lo mande. Ninguna de las cinco bloquea el despliegue;

@@ -32,19 +32,33 @@ correcto para un dato que no sabemos.
 
 Cómo se escribe — medido, no supuesto
 --------------------------------------
-| Estrategia | Ritmo | Las 3,3 M |
-|---|---:|---:|
-| `bulk_update` por lotes | 36 filas/s | **~25 h** |
-| `COPY` a temporal + un `UPDATE ... FROM` | ~5.000 filas/s | **~12 min** |
+| Estrategia | Las 3,3 M |
+|---|---:|
+| `bulk_update` por lotes | ~25 h (36 filas/s) |
+| `COPY` + un `UPDATE ... FROM` incondicional | **8 h y seguía** ⚠️ |
+| `COPY` + cruce materializado, escribiendo solo lo que cambia | ver abajo |
 
 `bulk_update` emite un `UPDATE ... CASE WHEN` por lote y antes un `SELECT ... IN`
 para traer los objetos: sobre un padrón de 5,9 M con índices, eso es un viaje a la
 base por cada mil filas. La primera versión hacía eso y en 7 minutos llevaba 15.000
 de 3,3 millones.
 
-La versión de ahora vuelca los pares `(cons_persona, vencida, fecha)` con `COPY`
-—que es la vía más rápida que tiene PostgreSQL para meter filas— a una tabla
-temporal, y después hace **un solo** `UPDATE ... FROM` con join por `cons_persona`.
+La segunda volcaba los pares `(cons_persona, vencida, fecha)` con `COPY` a una
+temporal y hacía **un solo** `UPDATE ... FROM`. Se estimó en ~12 min. **La
+estimación estaba mal por un factor de 40**: en producción (1-ago-2026) llevaba
+8 h y seguía, generando 61 GB de WAL cada tres horas.
+
+Lo que no se había contado: `victimas_victima` tiene **24 índices**, y el UPDATE
+toca `habilitado_para_caracterizacion`, que está indexada. Eso descarta el *HOT
+update* — PostgreSQL escribe la tupla nueva en otro `ctid` y **los 24 índices**
+reciben una entrada apuntando a ella. Escribir una fila cuesta veinticinco
+escrituras, no una. Ese es el número que faltaba, y el ritmo de `COPY` (que es
+rapidísimo llenando la temporal) lo tapaba.
+
+La versión de ahora materializa el cruce en una temporal —que **no genera WAL**—,
+marca ahí cuáles cambian de verdad, y hace el UPDATE **por clave primaria** solo
+sobre esas. En la carga inicial cambian todas y no hay atajo posible; en la corrida
+diaria, que es la que importa, casi ninguna cambia y no se escribe nada.
 
 **La regla de los 2 años se sigue evaluando en Python**, con
 `debe_recaracterizarse()`, y el resultado viaja como un booleano más en el `COPY`.
@@ -101,7 +115,7 @@ class Command(BaseCommand):
             f"origen {conexion['dsn']} · GIC_HOGAR\n"))
 
         hoy = datetime.date.today()
-        cont = {"leidas": 0, "aplicadas": 0, "fecha_imposible": 0,
+        cont = {"leidas": 0, "aplicadas": 0, "escritas": 0, "fecha_imposible": 0,
                 "vencidas": 0, "al_dia": 0}
         inicio = time.monotonic()
 
@@ -129,12 +143,22 @@ class Command(BaseCommand):
 
         if confirmar:
             self.stdout.write("  volcando a la tabla del padrón…")
-            cont["aplicadas"] = self._aplicar()
+            resultado = self._aplicar()
+            cont["aplicadas"] = resultado["cruzadas"]
+            cont["escritas"] = resultado["escritas"]
 
         segundos = time.monotonic() - inicio
         self.stdout.write(self.style.SUCCESS(
             f"\n{'Aplicadas' if confirmar else 'Simuladas'} {cont['aplicadas']:,} "
             f"fechas sobre {cont['leidas']:,} leídas en {segundos:.0f}s"))
+        if confirmar:
+            # Se informan las dos: "cruzaron" es cuántas personas del origen están en
+            # el padrón, "se escribieron" es cuántas filas hubo que tocar de verdad.
+            # En una corrida diaria lo normal es que la segunda sea casi cero.
+            sin_cambio = cont["aplicadas"] - cont["escritas"]
+            self.stdout.write(
+                f"  escritas de verdad: {cont['escritas']:,} "
+                f"({sin_cambio:,} ya tenían ese mismo valor y no se tocaron)")
         self.stdout.write(
             f"  vencidas (>{H.ANIOS_VIGENCIA_CARACTERIZACION} años, hay que "
             f"recaracterizar): {cont['vencidas']:,}")
@@ -162,6 +186,7 @@ class Command(BaseCommand):
                 "dsn": f"{cfg['user']}@{cfg['host']}:{cfg['port']}/{cfg['service']}"}
 
     TEMPORAL = "tmp_fechas_caracterizacion"
+    CRUCE = "tmp_cruce_fechas"
 
     @property
     def _hay_copy(self):
@@ -247,7 +272,7 @@ class Command(BaseCommand):
 
     def _aplicar(self):
         """
-        Un solo `UPDATE ... FROM` con join por `cons_persona`.
+        Cruza una vez, escribe **solo lo que cambia**.
 
         Las filas de la temporal que no encuentren pareja son personas caracterizadas
         alguna vez que **hoy no son víctimas incluidas**, así que no están en el
@@ -256,21 +281,67 @@ class Command(BaseCommand):
 
         Ya son todas víctimas incluidas (el padrón las filtró al cargarse), así que
         lo único que decide la habilitación es si la caracterización venció.
+
+        Por qué no es un solo `UPDATE ... FROM` (que es lo que era)
+        -----------------------------------------------------------
+        Escribir una fila de `victimas_victima` no cuesta una escritura: cuesta
+        **veinticinco**. La tabla tiene 24 índices, y el UPDATE toca
+        `habilitado_para_caracterizacion`, que está indexada — eso descarta el *HOT
+        update*, así que PostgreSQL escribe una tupla nueva con otro `ctid` y **los
+        24 índices** necesitan una entrada que apunte a ella. Medido en producción
+        el 1-ago-2026: las 3,3 M filas llevaban **8 h y seguían**, con 61 GB de WAL
+        en tres horas.
+
+        En la carga inicial eso es inevitable —todas las filas cambian de verdad—,
+        pero `refrescar_fechas_padron` corre **a diario**, y casi ninguna noche
+        cambia nada: la fecha de caracterización de alguien solo se mueve si lo
+        volvieron a caracterizar. Sin el guard, cada corrida reescribía las 3,3 M
+        filas para dejarlas igual que estaban, inflando la tabla y quemando la
+        ventana de mantenimiento entera.
+
+        El cruce se materializa en una temporal —que en PostgreSQL **no genera
+        WAL**— y de ahí sale, en una sola pasada, tanto el conteo de las que cruzan
+        (que es lo que necesita el informe) como el de las que de verdad cambian.
+        El UPDATE va después por **clave primaria**, no por `cons_persona`.
+
+        Devuelve `{"cruzadas": …, "escritas": …}`. Que sean distintos no es un
+        problema a explicar: es la medida de cuánto trabajo se ahorró.
         """
         if not self._hay_copy:
             return self._aplicar_sin_copy()
         with connection.cursor() as cur:
+            cur.execute(f"DROP TABLE IF EXISTS {self.CRUCE}")
+            cur.execute(f"""
+                CREATE TEMP TABLE {self.CRUCE} AS
+                SELECT v.id,
+                       t.fecha,
+                       t.vencida,
+                       (v.fecha_ult_caracterizacion IS DISTINCT FROM t.fecha
+                        OR v.habilitado_para_caracterizacion IS DISTINCT FROM t.vencida)
+                           AS cambia
+                  FROM victimas_victima v
+                  JOIN {self.TEMPORAL} t ON t.cons_persona = v.cons_persona""")
+            # IS DISTINCT FROM y no `<>`: con un NULL de un lado —que es el estado
+            # inicial de toda víctima recién cargada— `<>` da NULL, o sea "no
+            # cambia", y la primera carga no escribiría nada.
+            cur.execute(
+                f"SELECT count(*), count(*) FILTER (WHERE cambia) FROM {self.CRUCE}")
+            cruzadas, _ = cur.fetchone()
             cur.execute(f"""
                 UPDATE victimas_victima v
-                   SET fecha_ult_caracterizacion = t.fecha,
-                       habilitado_para_caracterizacion = t.vencida,
+                   SET fecha_ult_caracterizacion = c.fecha,
+                       habilitado_para_caracterizacion = c.vencida,
                        updated_at = NOW()
-                  FROM {self.TEMPORAL} t
-                 WHERE v.cons_persona = t.cons_persona""")
-            return cur.rowcount
+                  FROM {self.CRUCE} c
+                 WHERE v.id = c.id AND c.cambia""")
+            escritas = cur.rowcount
+            cur.execute(f"DROP TABLE IF EXISTS {self.CRUCE}")
+            return {"cruzadas": cruzadas, "escritas": escritas}
 
     def _aplicar_sin_copy(self):
-        """Camino de SQLite (desarrollo y tests): `bulk_update`. Mismo resultado."""
+        """Camino de SQLite (desarrollo y tests): `bulk_update`. Mismo resultado,
+        incluido el guard — si acá se escribieran todas y en PostgreSQL solo las que
+        cambian, los tests dejarían de decir algo sobre producción."""
         from django.utils import timezone
         from apps.victimas.models import Victima
 
@@ -278,14 +349,19 @@ class Command(BaseCommand):
             Victima.objects.filter(cons_persona__in=list(self._pendientes))
             .only("id", "cons_persona", "fecha_ult_caracterizacion",
                   "habilitado_para_caracterizacion"))
+        cambiadas = []
         for victima in encontradas:
             vencida, fecha = self._pendientes[victima.cons_persona]
             if timezone.is_naive(fecha):
                 fecha = timezone.make_aware(fecha, timezone.get_current_timezone())
+            if (victima.fecha_ult_caracterizacion == fecha
+                    and victima.habilitado_para_caracterizacion == vencida):
+                continue
             victima.fecha_ult_caracterizacion = fecha
             victima.habilitado_para_caracterizacion = vencida
+            cambiadas.append(victima)
         Victima.objects.bulk_update(
-            encontradas,
+            cambiadas,
             ["fecha_ult_caracterizacion", "habilitado_para_caracterizacion"],
             batch_size=1000)
-        return len(encontradas)
+        return {"cruzadas": len(encontradas), "escritas": len(cambiadas)}

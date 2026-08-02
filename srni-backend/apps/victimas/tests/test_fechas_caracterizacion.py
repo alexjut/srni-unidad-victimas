@@ -224,3 +224,68 @@ def test_la_regla_de_2_anios_se_evalua_una_sola_vez_y_en_python(fuente):
         assert pista not in fuente_sql.upper(), (
             f"El SQL calcula fechas ({pista}): la regla de los 2 años quedaría "
             f"duplicada. Debe llegar resuelta desde debe_recaracterizarse().")
+
+
+# ── 7. no reescribir lo que no cambió ────────────────────────────────────────
+def _correr(filas=FILAS):
+    """Corre el comando con una conexión nueva y devuelve lo que imprimió."""
+    import io as _io
+    salida = _io.StringIO()
+    with mock.patch("apps.sincronizacion.oracle.conexion.abrir_conexion",
+                    return_value=_ConexionFalsa(filas)), \
+         mock.patch("apps.sincronizacion.oracle.conexion.resolver_config",
+                    return_value={"user": "U", "host": "h", "port": 1521,
+                                  "service": "S", "password": "x"}):
+        call_command("cargar_fechas_caracterizacion", "--confirmar", stdout=salida)
+    return salida.getvalue()
+
+
+def test_la_segunda_corrida_no_reescribe_lo_que_no_cambio(fuente):
+    """
+    El corazón del arreglo del 1-ago-2026.
+
+    El UPDATE era incondicional: cruzaba por `cons_persona` y reescribía la fila
+    aunque el valor ya fuera ese. En la carga inicial da igual —todas cambian—,
+    pero `refrescar_fechas_padron` corre **a diario** y casi ninguna noche cambia
+    nada: reescribía 3,3 M filas para dejarlas idénticas.
+
+    No es una ineficiencia de manual: `victimas_victima` tiene 24 índices y el
+    UPDATE toca una columna indexada, así que cada fila cuesta 25 escrituras. En
+    producción llevaba 8 h y 61 GB de WAL cada tres horas.
+    """
+    primera = _correr()
+    assert "escritas de verdad: 4" in primera, primera
+
+    segunda = _correr()
+    assert "escritas de verdad: 0" in segunda, segunda
+    # Las 4 siguen cruzando: lo que se evitó fue escribirlas, no encontrarlas.
+    assert "Aplicadas 4 fechas" in segunda, segunda
+
+
+def test_si_la_fecha_cambia_de_verdad_si_se_escribe(fuente):
+    """El guard tiene que ahorrar escrituras, no perderlas."""
+    from apps.victimas.models import Victima
+
+    _correr()
+    assert Victima.objects.get(cons_persona=2001).habilitado_para_caracterizacion is False
+
+    # A 2001 la vuelven a caracterizar… hace 3 años: ahora está vencida.
+    nuevas = [(2001, _hace_anios(3))] + [f for f in FILAS if f[0] != 2001]
+    salida = _correr(nuevas)
+
+    assert "escritas de verdad: 1" in salida, salida
+    assert Victima.objects.get(cons_persona=2001).habilitado_para_caracterizacion is True
+
+
+def test_la_primera_carga_escribe_aunque_el_valor_previo_sea_nulo(fuente):
+    """
+    Con `<>` en vez de `IS DISTINCT FROM`, comparar contra el NULL de una víctima
+    recién cargada da NULL —o sea "no cambia"— y la primera carga no escribiría
+    **nada**. El guard se habría comido la carga entera en silencio.
+    """
+    from apps.victimas.models import Victima
+
+    assert Victima.objects.filter(fecha_ult_caracterizacion=None).count() == 5
+    salida = _correr()
+    assert "escritas de verdad: 4" in salida, salida
+    assert Victima.objects.filter(fecha_ult_caracterizacion=None).count() == 1
