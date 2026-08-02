@@ -707,17 +707,91 @@ def binds_hogar(hogar, *, user, catalogos: ResolverCatalogos, instrumento_codigo
     }
 
 
+def identidad_de_miembro(miembro) -> dict:
+    """
+    Nombre, documento y fecha de nacimiento del miembro, venga de donde venga.
+
+    ⚠️ Esto NO es un detalle de implementación: es lo que decide si en
+    `GIC_PERSONA` queda una persona o una fila fantasma.
+
+    `MiembroHogar.nombre_completo` y `.numero_documento` existen —el modelo lo dice
+    en su propio help_text— **solo para miembros que NO están en el RNI**. Cuando
+    el miembro viene del padrón, esos campos están VACÍOS y la identidad vive en
+    `Victima`, que es a donde apunta la FK. Leer únicamente los campos del miembro
+    escribía en el legacy personas sin nombre y sin documento, y los reportes
+    —que salen de ahí— quedaban vacíos.
+
+    No se vio en el piloto del 28-jul porque aquel hogar se armó con datos
+    sintéticos dados de alta a mano, que sí llenan los campos del miembro.
+
+    Orden: primero la víctima del padrón (la fuente de verdad de identidad),
+    después lo capturado en el miembro (alta manual). Nunca al revés.
+    """
+    victima = getattr(miembro, 'victima', None)
+    if victima is not None:
+        nombre = ' '.join(p for p in (
+            victima.primer_nombre, victima.segundo_nombre,
+            victima.primer_apellido, victima.segundo_apellido) if p)
+        return {
+            'pnombre': (victima.primer_nombre or '').strip().upper(),
+            'snombre': (victima.segundo_nombre or '').strip().upper(),
+            'papellido': (victima.primer_apellido or '').strip().upper(),
+            'sapellido': (victima.segundo_apellido or '').strip().upper(),
+            'numero': str(victima.numero_documento or '').strip().upper(),
+            'fecha_nacimiento': _a_fecha(victima.fecha_nacimiento),
+            'tipo_documento': victima.tipo_documento or miembro.tipo_documento,
+            'nombre_completo': nombre,
+        }
+
+    pnombre, snombre, papellido, sapellido = _partes_nombre(miembro.nombre_completo)
+    return {
+        'pnombre': pnombre, 'snombre': snombre,
+        'papellido': papellido, 'sapellido': sapellido,
+        'numero': (str(miembro.numero_documento).strip().upper()
+                   if miembro.numero_documento else ''),
+        'fecha_nacimiento': _a_fecha(miembro.fecha_nacimiento),
+        'tipo_documento': miembro.tipo_documento,
+        'nombre_completo': miembro.nombre_completo or '',
+    }
+
+
+def _a_fecha(valor):
+    """
+    Fecha lista para el bind de Oracle.
+
+    `Victima.fecha_nacimiento` es un `EncryptedField`: al descifrarlo vuelve como
+    TEXTO ('1985-06-15'), no como `date`. Pasarle esa cadena al procedure sería un
+    error de tipo, o peor, una fecha mal interpretada.
+    """
+    import datetime
+
+    if valor in (None, ''):
+        return None
+    if isinstance(valor, datetime.datetime):
+        return valor.date()
+    if isinstance(valor, datetime.date):
+        return valor
+    try:
+        return datetime.date.fromisoformat(str(valor)[:10])
+    except (ValueError, TypeError):
+        return None
+
+
 def binds_persona(miembro, *, user, estado_oracle, catalogos: ResolverCatalogos) -> dict:
     """Argumentos de GIC_INSERT_PERSONAS para un MiembroHogar SICAV."""
     from django.utils import timezone
 
-    numero = (miembro.numero_documento or "").strip().upper() if miembro.numero_documento else ""
-    pnombre, snombre, papellido, sapellido = _partes_nombre(miembro.nombre_completo)
+    ident = identidad_de_miembro(miembro)
+    numero = ident['numero']
+    pnombre = ident['pnombre']
+    snombre = ident['snombre']
+    papellido = ident['papellido']
+    sapellido = ident['sapellido']
     binds = {
         "pnombre": pnombre, "snombre": snombre,
         "papellido": papellido, "sapellido": sapellido,
-        "fnacimiento": miembro.fecha_nacimiento,
-        "tdoc": catalogos.resolver_tdoc(miembro.tipo_documento),
+        "fnacimiento": ident['fecha_nacimiento'],
+        "tdoc": catalogos.resolver_tdoc(ident['tipo_documento']),
         "usuario": _cod_usuario(user),
         "usu_fcreacion": timezone.now(),
         "ndocu": numero,
