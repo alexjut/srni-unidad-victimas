@@ -118,7 +118,7 @@ export default function HogarDetallePage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gov-borde">
               <tr>
-                {['Nombre', 'Parentesco', 'Rol', 'Género', 'RUV', ''].map((h) => (
+                {['Nombre', 'Parentesco', 'Rol', 'Género', 'RUV', 'Inclusión'].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {h}
                   </th>
@@ -148,7 +148,11 @@ export default function HogarDetallePage() {
                       {m.incluido_ruv ? 'Incluido' : 'No'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3"></td>
+                  <td className="px-4 py-3">
+                    <Badge variant={m.estado_inclusion === 'INCLUIDO' ? 'verde' : m.estado_inclusion === 'EN_PROCESO' ? 'amarillo' : 'gris'}>
+                      {m.estado_inclusion_display || m.estado_inclusion || '—'}
+                    </Badge>
+                  </td>
                 </tr>
               ))}
             </tbody>
