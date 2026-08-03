@@ -368,6 +368,24 @@ def contar_capitulos(cursor, *, hog_codigo) -> int:
     ) or 0
 
 
+#: Un hogar cerrado NO se queda en 'CERRADA': una tarea nocturna lo pasa a
+#: `MIGRADOAHISTORICO`, y ese es su estado normal el resto de su vida.
+#:
+#: Medido en producción el 3-ago-2026 sobre `GIC_HOGAR` (1,1 M de filas):
+#:
+#:     MIGRADOAHISTORICO  1.039.334      ERROR                8.979
+#:     APLAZADA              38.085      ACTIVA               1.451
+#:     ANULADA               16.493      CERRADA_APP_MOVIL      106
+#:     MANUAL                    50      CERRADA                 62  ←
+#:     PRUEBA                     4      MIGRADOHISTORICO         1
+#:
+#: **62.** Sesenta y dos hogares en 'CERRADA' en toda la base. Exigir ese literal
+#: para dar un cierre por bueno funciona en los minutos siguientes a cerrarlo y
+#: falla para siempre después. Por eso se acepta también el estado archivado:
+#: `GIC_VALIDAR_PERSONA_ENCUESTAD1` hace lo mismo — muestra MIGRADOAHISTORICO
+#: como 'CERRADA' de cara al usuario.
+ESTADOS_CERRADO = ("CERRADA", "MIGRADOAHISTORICO")
+
 #: El `ESTADO` que deja cada `TIPO_APLAZAMIENTO` (el CASE del cuerpo,
 #: `src_GIC_N_CARACTERIZACION.sql:1575-1581`). Sin esto, verificar un hogar anulado
 #: contra el literal 'CERRADA' lo daba por fallido siempre.
@@ -428,7 +446,10 @@ def verificar_cierre(cursor, *, hog_codigo, tipo=None):
         "capitulos_terminados": capitulos,
     }
 
-    if estado != esperado:
+    # Cerrar admite dos estados válidos: el que deja el procedure y el que deja
+    # la migración nocturna. Los demás códigos (anular, aplazar…) exigen el suyo.
+    aceptados = (ESTADOS_CERRADO if esperado == "CERRADA" else (esperado,))
+    if estado not in aceptados:
         detalle["error"] = "no_cerro"
         detalle["motivo"] = (
             f"El hogar quedó en {estado!r} y se esperaba {esperado!r}. Si tiene "

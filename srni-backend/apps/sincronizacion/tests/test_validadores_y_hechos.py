@@ -336,6 +336,31 @@ def test_un_hogar_anulado_se_verifica_contra_ANULADA_no_contra_CERRADA():
     assert detalle['estado_esperado'] == 'ANULADA'
 
 
+def test_un_hogar_ya_migrado_al_historico_sigue_contando_como_cerrado():
+    """
+    Medido en producción el 3-ago: solo **62** hogares de 1,1 M están en
+    'CERRADA'; 1.039.334 están en 'MIGRADOAHISTORICO', porque una tarea nocturna
+    los mueve. Exigir el literal 'CERRADA' funciona en los minutos siguientes al
+    cierre y falla para siempre después — un re-run al día siguiente daría
+    FALLIDO sobre un hogar perfectamente cerrado.
+    """
+    from apps.sincronizacion.tests.test_capitulos_y_cierre import CursorFalso
+
+    ok, detalle = V.verificar_cierre(CursorFalso(estado='MIGRADOAHISTORICO'),
+                                     hog_codigo='999999-A', tipo=P.CIERRE_CERRADA)
+    assert ok, detalle
+
+
+def test_anular_sigue_exigiendo_su_propio_estado():
+    """La tolerancia es solo del cierre: anular tiene que dejar ANULADA."""
+    from apps.sincronizacion.tests.test_capitulos_y_cierre import CursorFalso
+
+    ok, detalle = V.verificar_cierre(CursorFalso(estado='MIGRADOAHISTORICO'),
+                                     hog_codigo='999999-A', tipo=P.CIERRE_ANULADA)
+    assert not ok
+    assert detalle['error'] == 'no_cerro'
+
+
 def test_aplazar_no_exige_respuestas_en_la_tabla_definitiva():
     """`IF TIPO_APLAZAMIENTO NOT IN ('5','3')`: aplazar y reabrir NO archivan."""
     from apps.sincronizacion.tests.test_capitulos_y_cierre import CursorFalso

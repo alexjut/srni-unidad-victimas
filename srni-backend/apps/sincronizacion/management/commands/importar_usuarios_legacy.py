@@ -74,19 +74,31 @@ CONSULTA_USUARIOS = """
      ORDER BY usu_idusuario
 """
 
-#: Cuánto de la autoría del histórico se puede resolver con este catálogo.
-#: Las dos consultas van por separado porque miden cosas distintas: la cadena
-#: (`USU_USUARIOCREACION`, que es lo que usa el INNER JOIN de "mis encuestas") y
-#: el id (`USU_IDUSUARIO`, que es lo que usan los reportes de productividad).
+#: Cuánto de la autoría del histórico se puede resolver con este catálogo. Se
+#: miden dos cosas distintas: la cadena (`USU_USUARIOCREACION`, que es lo que usa
+#: el INNER JOIN de "mis encuestas") y el id (`USU_IDUSUARIO`, que es lo que usan
+#: los reportes de productividad).
+#:
+#: ⚠️ Con `EXISTS` correlacionados esto NO termina: son dos búsquedas por cada
+#: una de las 1,1 M de filas de `gic_hogar` (medido: >5 min y seguía). Con dos
+#: LEFT JOIN, `GIC_USUARIO` cabe en memoria —8.172 filas— y Oracle resuelve todo
+#: con hash joins en una sola pasada. Es la misma lección que ya había costado
+#: caro en `cargar_fechas_caracterizacion`: sobre esta base, correlacionar por
+#: fila es la diferencia entre segundos y horas.
+#:
+#: El LEFT JOIN no multiplica filas porque los dos lados son únicos, y está
+#: medido: `GIC_USUARIO` tiene 8.172 filas y 8.172 `usu_usuario` distintos, y
+#: `usu_idusuario` es su PK. Si algún día dejara de serlo, los porcentajes
+#: pasarían de 100 % y se vería.
 MEDIR_AUTORIA = """
     SELECT COUNT(*),
-           SUM(CASE WHEN EXISTS (SELECT 1 FROM gic_usuario u
-                                  WHERE UPPER(u.usu_usuario) = UPPER(h.usu_usuariocreacion))
-                    THEN 1 ELSE 0 END),
-           SUM(CASE WHEN EXISTS (SELECT 1 FROM gic_usuario u
-                                  WHERE u.usu_idusuario = h.usu_idusuario)
-                    THEN 1 ELSE 0 END)
+           COUNT(uc.usu_usuario),
+           COUNT(ui.usu_idusuario)
       FROM gic_hogar h
+      LEFT JOIN gic_usuario uc
+             ON UPPER(uc.usu_usuario) = UPPER(h.usu_usuariocreacion)
+      LEFT JOIN gic_usuario ui
+             ON ui.usu_idusuario = h.usu_idusuario
 """
 
 

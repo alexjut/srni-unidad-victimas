@@ -142,6 +142,36 @@ validadores **ya escritos**, y no hace nada si el hogar todavía no tiene un
 
 `ESTADO` acepta solo 6 literales: `ACTIVA`, `APLAZADA`, `ANULADA`, `CERRADA`, `HOGAR_NO_RESPONDE`, `MANUAL` (`src_PKG_REPORTE_CARACTERIZACION.sql:1137`). **No hay CHECK**: un valor inventado no falla, simplemente desaparece de todos los conteos.
 
+> **⚠️ CORREGIDO CON DATO (3-ago-2026).** Ese párrafo salió de leer el código y
+> **la base dice otra cosa**. Distribución real de `GIC_HOGAR.ESTADO`:
+>
+> | | | | |
+> |---|---:|---|---:|
+> | `MIGRADOAHISTORICO` | 1.039.334 | `ERROR` | 8.979 |
+> | `APLAZADA` | 38.085 | `ACTIVA` | 1.451 |
+> | `ANULADA` | 16.493 | `CERRADA_APP_MOVIL` | 106 |
+> | `MANUAL` | 50 | **`CERRADA`** | **62** |
+> | `PRUEBA` | 4 | `MIGRADOHISTORICO` | 1 |
+>
+> Tres cosas que cambian el plan:
+>
+> 1. **`CERRADA` son 62 hogares en toda la base.** El estado normal de un hogar
+>    terminado es `MIGRADOAHISTORICO`: una tarea nocturna lo mueve y ahí se
+>    queda. Verificar un cierre exigiendo el literal `'CERRADA'` funciona en los
+>    minutos siguientes y falla para siempre después. Ya corregido en
+>    `verificacion.ESTADOS_CERRADO`.
+> 2. **Hay tres estados que el código no declara** —`ERROR` (8.979, que es el
+>    `TIPO_APLAZAMIENTO='6'`), `CERRADA_APP_MOVIL` (106) y `PRUEBA` (4)— más
+>    `MIGRADOHISTORICO` (1), que es `MIGRADOAHISTORICO` con una letra menos. Sin
+>    CHECK que lo impida, el typo entró y ese hogar quedó fuera de todo conteo
+>    para siempre. Es la ilustración exacta del riesgo que el párrafo describía.
+> 3. **`HOGAR_NO_RESPONDE` no existe en la práctica**: cero filas.
+>
+> Y lo de fondo: `PKG_REPORTE_CARACTERIZACION` filtra `ESTADO='CERRADA'` en 45
+> sitios. Si esa fuera la única puerta, los reportes verían 62 hogares de 1,1
+> millones. El camino real pasa por `MIGRADOAHISTORICO`, que
+> `GIC_VALIDAR_PERSONA_ENCUESTAD1` muestra como 'CERRADA' de cara al usuario.
+
 **GIC_PERSONA** — solo 3 de 25 columnas son NOT NULL y **ninguna es de identidad**. Todo lo demás es responsabilidad nuestra:
 - `PNOMBRE`, `PAPELLIDO`, `NDOCU` — **obligatorios por decisión nuestra, no de Oracle.** En MAYÚSCULAS (el procedure aplica `UPPER`). Se copian automáticamente a las columnas espejo `R_*`. Son la llave de identidad de las 9 columnas de identidad de `GIC_REPORTE_PERSONA` y del cruce con Vivanto.
 - `USUARIO` + `USU_FCREACION` — NOT NULL. La fecha debe ir en **hora local naive** (Oracle DATE no guarda zona; hoy mandamos UTC aware = +5h).
