@@ -172,6 +172,36 @@ def test_el_typo_del_estado_tambien_cae_en_esa_categoria():
     assert d["veredicto"] == "ARCHIVADO_FUERA_DE_REPORTES"
 
 
+def test_un_hogar_anulado_no_se_presenta_como_trabajo_recuperable():
+    """
+    Un hogar anulado con respuestas archivadas caía en
+    `ARCHIVADO_FUERA_DE_REPORTES`, cuyo texto dice "está completo, NO hay que
+    repetirlo, solo le sobra un literal". Sobre un hogar que el propio
+    encuestador anuló, eso es falso — y creíble, que es lo peor.
+
+    Medido al importar los 1.148 encuestadores: **3.284 hogares** estaban
+    recibiendo esa afirmación.
+    """
+    d = _medido(estado="ANULADA", en_trabajo=0, definitivas=180)
+    assert d["veredicto"] == "ANULADA"
+    assert "no es trabajo perdido" in d["explicacion"]
+
+
+def test_anulada_gana_sobre_cualquier_otra_lectura():
+    """Anulada con respuestas a medias sigue siendo anulada, no 'sin cerrar'."""
+    for kw in (dict(en_trabajo=40, definitivas=0, capitulos=2),
+               dict(en_trabajo=0, definitivas=0, capitulos=0),
+               dict(en_trabajo=40, definitivas=0, capitulos=9)):
+        assert _medido(estado="ANULADA", **kw)["veredicto"] == "ANULADA"
+
+
+def test_el_estado_ERROR_dice_que_no_hay_nada_que_rescatar():
+    """8.979 hogares y CERO con respuestas archivadas: medido, no supuesto."""
+    d = _medido(estado="ERROR", en_trabajo=0, definitivas=0, capitulos=0)
+    assert d["veredicto"] == "MARCADA_ERROR"
+    assert "no hay dato que rescatar" in d["explicacion"]
+
+
 def test_un_dict_parcial_no_revienta():
     """
     La herramienta se usa cuando algo ya salió mal. Que ella misma lance un

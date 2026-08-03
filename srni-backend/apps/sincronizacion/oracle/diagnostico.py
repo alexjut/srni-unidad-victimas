@@ -255,6 +255,27 @@ def dictaminar(d: dict) -> dict:
 
     # ── veredicto principal ──────────────────────────────────────────────────
     estado = (d.get("estado") or "").strip().upper()
+
+    # ── estados TERMINALES: una decisión, no un problema ─────────────────────
+    # Van primero. Sin esta rama, un hogar anulado con respuestas archivadas caía
+    # en ARCHIVADO_FUERA_DE_REPORTES y el listado le decía a su encuestador que
+    # "está completo y solo le sobra un literal, no hay que repetirlo" — sobre un
+    # hogar que él mismo anuló. Medido al importar los 1.148 encuestadores: eran
+    # **3.284 hogares** recibiendo esa afirmación, falsa y creíble a la vez.
+    if estado == "ANULADA":
+        d["veredicto"] = "ANULADA"
+        d["explicacion"] = (
+            "Anulada a propósito. Los microdatos la excluyen por diseño y eso está "
+            "bien: no es trabajo perdido ni hay nada que reparar.")
+        return d
+    if estado == "ERROR":
+        d["veredicto"] = "MARCADA_ERROR"
+        d["explicacion"] = (
+            "El legacy la marcó como ERROR (el TIPO_APLAZAMIENTO '6'). Son 8.979 "
+            "en total y **ninguna** tiene respuestas archivadas, así que acá no "
+            "hay dato que rescatar — conviene saberlo antes de prometerlo.")
+        return d
+
     if d.get("donde") == "GIC_HOGAR_HISTORICO":
         d["veredicto"] = "EN_HISTORICO"
         d["explicacion"] = ("El hogar se migró a GIC_HOGAR_HISTORICO. Una consulta "
