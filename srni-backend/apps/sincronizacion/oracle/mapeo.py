@@ -933,6 +933,29 @@ def _a_fecha(valor):
         return None
 
 
+def fecha_oracle_a_django(valor):
+    """
+    Un `DATE` de Oracle → un datetime con zona, para guardarlo en PostgreSQL.
+
+    Es el mismo problema de `USU_FCREACION` pero al revés. Oracle `DATE` **no
+    guarda zona**: lo que hay ahí es hora local de Colombia. Django corre con
+    `USE_TZ=True`, así que un datetime naive se interpreta como **UTC** — y una
+    caracterización hecha a las 20:00 del 2 de julio se guarda y se muestra como
+    la 01:00 del 3 de julio.
+
+    Cinco horas no parecen mucho hasta que cambian el día: en un listado de "lo
+    que hice", el trabajo de una tarde aparece fechado al día siguiente, y el
+    encuestador que busca su jornada no la encuentra donde la dejó.
+    """
+    from django.utils import timezone
+
+    if valor is None:
+        return None
+    if timezone.is_aware(valor):
+        return valor
+    return timezone.make_aware(valor, timezone.get_default_timezone())
+
+
 def binds_persona(miembro, *, user, estado_oracle, catalogos: ResolverCatalogos) -> dict:
     """Argumentos de GIC_INSERT_PERSONAS para un MiembroHogar SICAV."""
     from django.utils import timezone

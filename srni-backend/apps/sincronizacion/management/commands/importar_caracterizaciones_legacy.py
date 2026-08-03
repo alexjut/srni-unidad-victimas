@@ -47,6 +47,7 @@ from django.db import transaction
 from apps.sincronizacion.models import CaracterizacionLegacy, UsuarioLegacy
 from apps.sincronizacion.oracle.conexion import abrir_conexion, describir_destino
 from apps.sincronizacion.oracle.diagnostico import ESTADOS_VISIBLES, dictaminar
+from apps.sincronizacion.oracle.mapeo import fecha_oracle_a_django
 
 #: Todo lo que hace falta para el recibo de un hogar, en UNA consulta por
 #: encuestador. Los conteos van como subconsultas escalares: son cuatro lookups
@@ -176,8 +177,8 @@ class Command(BaseCommand):
             "usuario_creador": (creador or login or "").strip(),
             "usu_idusuario": int(idu) if idu is not None else None,
             "estado": estado_txt,
-            "creado_en_legacy": fcre,
-            "fecha_estado": fest,
+            "creado_en_legacy": fecha_oracle_a_django(fcre),
+            "fecha_estado": fecha_oracle_a_django(fest),
             "miembros": int(miembros or 0),
             "respuestas_definitivas": int(definitivas or 0),
             "respuestas_trabajo": int(trabajo or 0),
