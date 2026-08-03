@@ -94,10 +94,16 @@ class MisCaracterizacionesLegacyViewSet(mixins.ListModelMixin,
             "visibles_en_reportes": visibles,
             "invisibles": total - visibles,
             "personas_caracterizadas": sum(qs.values_list("miembros", flat=True)),
-            "por_veredicto": dict(
-                qs.values_list("veredicto")
-                  .annotate(n=Count("hog_codigo"))
-                  .values_list("veredicto", "n")),
+            # `.order_by()` VACÍO no es decorativo: `CaracterizacionLegacy` tiene
+            # `ordering = ["-creado_en_legacy"]` en su Meta, y Django mete el
+            # campo de ordenamiento en el GROUP BY. Sin limpiarlo, agrupa por
+            # (veredicto, fecha) y devuelve una fila por caracterización con n=1:
+            # el resumen decía "total 18" y el desglose sumaba 3.
+            "por_veredicto": {
+                r["veredicto"]: r["n"]
+                for r in qs.values("veredicto").order_by()
+                           .annotate(n=Count("hog_codigo"))
+            },
         })
 
 

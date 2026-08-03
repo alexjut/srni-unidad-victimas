@@ -107,6 +107,29 @@ def test_el_listado_dice_cuales_no_estan_contando():
     assert d["por_veredicto"]["NO_CERRO_POR_CAPITULOS"] == 1
 
 
+def test_el_desglose_por_veredicto_suma_el_total():
+    """
+    `CaracterizacionLegacy` ordena por fecha en su Meta, y Django mete el campo de
+    ordenamiento en el GROUP BY: sin limpiarlo, el desglose devuelve una fila por
+    caracterización con n=1. Se vio contra producción — el resumen decía "total
+    18" y el desglose sumaba 3.
+
+    Las fechas van DISTINTAS a propósito: con la misma fecha el defecto no se
+    reproduce, que es justo por lo que no se había visto antes.
+    """
+    import datetime
+    for i in range(5):
+        _caracterizacion(
+            "JGUARINH", f"H{i}", veredicto="COMPLETO",
+            creado_en_legacy=datetime.datetime(2026, 4, 1 + i, 10, 0,
+                                               tzinfo=datetime.timezone.utc))
+    d = _cliente("JGUARINH").get(
+        "/api/sincronizacion/mis-caracterizaciones/resumen/").json()
+    assert d["total"] == 5
+    assert d["por_veredicto"] == {"COMPLETO": 5}
+    assert sum(d["por_veredicto"].values()) == d["total"]
+
+
 def test_el_recibo_no_lleva_datos_personales():
     """
     El listado es el recibo del trabajo, no la encuesta: códigos, fechas,
