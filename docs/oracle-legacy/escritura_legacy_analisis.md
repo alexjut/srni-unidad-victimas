@@ -56,7 +56,29 @@ La lista de las ocho tablas que componen "un hogar" está probada por el propio 
 5. **Territorio de atención** — cascada de 4 procedures sobre `GIC_N_RELACION_DT_PUNTO` (una fila por hogar, PK `hogarcodigo+idpersona`). Solo el primero hace INSERT; los otros tres son `UPDATE ... WHERE hogarcodigo = X` sin condición (`src_GIC_N_CARACTERIZACION.sql:3373, 3418, 3473, 3522`).
 
 6. **Cada respuesta** — `SP_SET_RESPUESTAS_DE_ENCUESTA(...)` (`src_GIC_N_CARACTERIZACION.sql:282-371`) escribe en `GIC_N_RESPUESTASENCUESTA` (la **tabla de trabajo**), con el id puesto por el trigger `TS_GIC_RESP_N_ENCU_SECUENCIA`. Y arrastra efectos colaterales: inserta en `GIC_N_VALIDADORESXPERSONA` (`:339-350`), llama `SP_INS_ETNIA_ARES` (`:352`), `SP_CAMBIAR_ESTADOGUARDADO` (`:355-358`) y `SP_SET_PREGUNTAS_DERIVADAS` (`:360-364`).
-   **Detalle peligroso:** `SP_INS_ETNIA_ARES` arranca con dos `DELETE` sobre `GIC_N_VALIDADORESXPERSONA` filtrados **solo por HOG_CODIGO** (`:3676-3684`). Escribir una sola respuesta en un HOG_CODIGO ajeno **borra los validadores de ese hogar ajeno**.
+   **Detalle peligroso:** `SP_INS_ETNIA_ARES` arranca con dos `DELETE` sobre `GIC_N_VALIDADORESXPERSONA` filtrados **solo por HOG_CODIGO** (`:3676-3684`). Escribir una sola respuesta en un HOG_CODIGO ajeno dispara esos borrados sobre el hogar ajeno.
+
+   > **Corrección del 3-ago, leyendo el `DELETE` entero.** El alcance es menor de
+   > lo que decía este documento: los dos `DELETE` están acotados **también por
+   > `COMODIN`** — el primero borra `VAL_IDVALIDADOR IN (5007..5012, 506) AND
+   > COMODIN = 1`, el segundo `IN (267,266,173) AND COMODIN = 2`. Son exactamente
+   > los validadores **derivados**, los que el propio procedure vuelve a calcular
+   > tres líneas más abajo a partir de los del hogar. Los **base** —el 1 del
+   > estado en el RUV, los 5001-5005, el 20/21 y los 101-114 de los hechos— entran
+   > con `COMODIN = 0` y **no los toca**.
+   >
+   > O sea: escribir en un hogar ajeno sigue siendo grave (le mete una respuesta
+   > que no es suya y le recalcula las marcas), pero **no le borra el estado en el
+   > RUV ni los hechos victimizantes**. La guarda anti-fusión (B1) sigue siendo
+   > obligatoria; lo que cambia es qué se pierde si falla, y conviene que el
+   > tamaño del riesgo esté bien medido y no inflado.
+   >
+   > Y en la otra dirección, la buena: el `DELETE` por pregunta padre
+   > (`SP_BORRADOVALIDADORES`, que `pbandera=1` dispara) recorre
+   > `WHERE r.pre_idpregunta = pId_Pregunta`, y nosotros mandamos
+   > `PPER_IDPREGUNTAPADRE` en **NULL** ⇒ el cursor no devuelve filas y el bucle no
+   > borra nada. Los validadores escritos en los pasos 4-5 **sobreviven** a las
+   > respuestas.
 
 7. **Marcar al encuestado** — `GIC_ACTUALIZA_ENCUESTADO(pIdPersona, pCodigo)` (`src_GIC_CATEGORIZACION.sql:928-940`): `UPDATE GIC_MIEMBROS_HOGAR SET PER_ENCUESTADA='SI'` para **una** persona.
 
@@ -95,13 +117,20 @@ Y el job que resolvía `PER_IDMODELOINT` (la llave con el RUV/Vivanto) y llenaba
 | 1 | HOGAR | `GIC_CATEGORIZACION.GIC_INSERT_HOGAR1` | ✅ |
 | 2 | PERSONA (×N) | `GIC_CATEGORIZACION.GIC_INSERT_PERSONAS` | ✅ |
 | 3 | MIEMBRO (×N) | `GIC_CATEGORIZACION.GIC_INSERT_MIEMBRO_HOGAR` | ✅ |
-| 4 | VALIDADORES (×N) | `GIC_INSERT_VALIDADOR_HOGAR` + `GIC_INSERT_VALIDADOR_PARENT` | ❌ **falta** |
-| 5 | HECHOS (×N×hechos) | `GIC_INSERT_VALIDADOR_HECHO_AUX` | ❌ **falta** |
-| 6 | ENCUESTADO (×1) | `GIC_ACTUALIZA_ENCUESTADO` | ❌ **falta** |
+| 4 | VALIDADORES (×N) | `GIC_INSERT_VALIDADOR_HOGAR` + `GIC_INSERT_VALIDADOR_PARENT` | ✅ **3-ago** |
+| 5 | HECHOS (×N×hechos) | `GIC_INSERT_VALIDADOR_HECHO_AUX` | ✅ **3-ago** — pero sin dato de origen (§3c) |
+| 6 | ENCUESTADO (×1) | `GIC_ACTUALIZA_ENCUESTADO` | ✅ **3-ago** |
 | 7 | TERRITORIO | cascada de 4 `GIC_SP_*` | ✅ |
 | 8 | RESPUESTAS (×N) | `SP_SET_RESPUESTAS_DE_ENCUESTA` | ✅ (solo 1ª sesión) |
-| 9 | CAPÍTULOS (×temas) | `SP_FINALIZARCAPITULO` | ❌ **falta** |
-| 10 | CIERRE | `SP_ACTUALIZAR_ESTADO_ENCUESTA(..., '4')` | ❌ **falta** |
+| 9 | CAPÍTULOS (×temas) | `SP_FINALIZARCAPITULO` | ✅ 2-ago |
+| 10 | CIERRE | `SP_ACTUALIZAR_ESTADO_ENCUESTA(..., '4')` | ✅ 2-ago |
+
+**Los diez pasos están cableados.** El orden en el que los ejecuta el escritor no es
+el de la tabla por casualidad: los validadores y los hechos van **antes** que las
+respuestas porque cada respuesta dispara `SP_INS_ETNIA_ARES`, que deriva los
+marcadores del hogar (5007-5012 étnicos, 506 desplazamiento) leyendo los
+validadores **ya escritos**, y no hace nada si el hogar todavía no tiene un
+5001/5002/5003. Si llegaran después, nada vuelve a dispararlo.
 
 ### Campos: qué es obligatorio de verdad
 
@@ -138,14 +167,14 @@ Y el job que resolvía `PER_IDMODELOINT` (la llave con el RUV/Vivanto) y llenaba
 | B2 | **Cerrar el hogar del piloto `999999-2W832`** antes de escribir cualquier cosa. Está en ACTIVA en producción desde el 28-jul (`plan_escalon_2.md:210`). Mientras siga ACTIVA, el próximo hogar que escribamos cae DENTRO de él. | minutos | operación en prod |
 | B3 | **`_cod_usuario` devuelve cadena vacía** cuando no hay usuario (`mapeo.py:696-697` + `escritor.py:304` con `Hogar.creado_por` nullable). `USU_USUARIOCREACION` es NOT NULL → `ORA-01400` → tragado por el `WHEN OTHERS` → la persona no se escribe pero el paso puede darse por bueno. | minutos | `...\oracle\mapeo.py:696` |
 | B4 | **`PER_ESTADO='ACTIVA'`** fuera de dominio. Debe ser `INCLUIDO`/`NO INCLUIDO`. Hoy `GIC_OBTENER_PERSONAS` nunca devolverá una persona nuestra. | minutos | `...\oracle\escritor.py:38`, `mapeo.py:803` |
-| B5 | **`PER_ENCUESTADA='S'`** para todos, cuando el legacy compara `='SI'` y marca a uno solo. `JEFE_HOGAR` sale 'NO' para todos. | minutos | `...\oracle\mapeo.py:817` + declarar `GIC_ACTUALIZA_ENCUESTADO` |
+| ~~B5~~ | ✅ **CERRADO (3-ago).** `'SI'` y solo para el autorizado ya estaba; ahora además existe el paso ENCUESTADO. Hacía falta: `GIC_INSERT_MIEMBRO_HOGAR` solo inserta `IF COUNT(*)=0`, así que un vínculo que ya existía **nunca** se corregía. `GIC_ACTUALIZA_ENCUESTADO` es un UPDATE y sí lo arregla. | — | hecho |
 | B6 | **`IDPERMI=NULL`** en vez de `0` → la persona nunca cruza con el RUV. | minutos | `...\oracle\mapeo.py:187-196` |
 | B7 | **`Z2` (Lugar de la Encuesta) tiene `id_preg=null` en territorial v7 y v8.** En Oracle es `PRE_IDPREGUNTA=1` / `RES_IDRESPUESTA=1`, y ya está bien mapeada en buenaventura, san_andres, urbano_etnico, rural_etnico y telefonico. Sin esa fila, el hogar **no aparece en ningún reporte por departamento/municipio** ni en la búsqueda por documento (`src_PKG_REPORTE_CARACTERIZACION.sql:1051, 1064, 1131, 1143, 1212-1215`). Es el perfil del grueso de la captura. | minutos | `...\formulario\fixtures\perfil_territorial_v8.json` (+ v7, asistencia) y regenerar bundle |
 | B8 | **Ninguna pregunta ABIERTA se puede escribir.** `resolver_res_idrespuesta` solo sabe LISTA, BOOLEAN y las geográficas; para TEXTO/NUMERICO/FECHA lanza excepción (`mapeo.py:405-430`). Medido: 55 preguntas abiertas con `id_preg` válido en territorial v8, 48 con respuesta contenedora única. **Hoy ningún hogar territorial completo se puede escribir**: aborta en el primer campo abierto (A5 documento → RES 101, T6 supervisor → RES 15, Z8 dirección, Z9A/B teléfonos, Z10 correo). El piloto no lo vio porque llevaba 3 respuestas. | horas | `...\oracle\mapeo.py:405-422` |
 | B9 | **`try/except` por paso en `procesar_hogar`** (`escritor.py:298-358`). Hoy la excepción sube, el paso no deja fila, el hogar queda a medias en Oracle, `/estado/` dice COMPLETO y la barrida no lo recoge. Un fallo se lee como éxito. | horas | `...\oracle\escritor.py:298-358`, `...\views.py:99-110` |
 | B10 | **Solo se escriben las respuestas de la PRIMERA sesión** (`escritor.py:313-317, 350`). El límite de una fila es de `GIC_N_RELACION_DT_PUNTO` (territorio), **no** de las respuestas: `SP_SET_RESPUESTAS_DE_ENCUESTA` recibe `pins_IdInstrumento` como parámetro. Es pérdida silenciosa de datos. | horas | `...\oracle\escritor.py:298-358` |
-| B11 | **Paso VALIDADORES** (`GIC_INSERT_VALIDADOR_HOGAR` + `_PARENT`) — sin él no hay `ESTADO_RUV`, ni tipo de persona, ni jefe reconocible, ni marcas étnicas. El dato ya existe en `MiembroHogar.estado_inclusion` y `.tipo_persona` (`apps/hogares/models.py:327-339`, ya con los códigos 5001-5004). | días | `procedimientos.py`, `mapeo.py`, `escritor.py`, `models.py`, `verificacion.py` |
-| B12 | **Paso HECHOS** (`GIC_INSERT_VALIDADOR_HECHO_AUX`) — sin él, cero hechos victimizantes en reportes y constancia. | días | idem |
+| ~~B11~~ | ✅ **HECHO (3-ago).** Paso VALIDADORES cableado, con las cuatro filas verificadas por SELECT (estado 1, tipo 5001-5004, perfil 5005, parentesco 20/21) y chequeo previo de existencia, porque **ninguno de los dos procedures es idempotente** y la tabla no tiene PK ni UNIQUE: un reintento sin ese chequeo duplicaba el validador 1, y el reporte lo lee con una subconsulta escalar ⇒ ORA-01427 en vez del dato. | — | hecho |
+| ~~B12~~ | ✅ **HECHO (3-ago) el código; ❌ FALTA el dato.** Paso HECHOS cableado y probado. Pero `HechoVictima` está vacía y **nada la puebla**: hoy escribe cero validadores. Ver §3c. | — | §3c |
 | B13 | **Paso CAPÍTULOS** (`SP_FINALIZARCAPITULO`) — precondición dura del cierre. **El `TEM_IDTEMA` no hay que pedírselo a nadie**: ya está en `respuestas_oracle.json` y lo carga `catalogos.py:209-217`, solo que nadie lo lee. Se deriva de las respuestas ya escritas. | horas | `mapeo.py`, `procedimientos.py`, `escritor.py` |
 | B14 | **Paso CIERRE** con `SP_ACTUALIZAR_ESTADO_ENCUESTA(hog, usuario, '4')`. Es lo único que hace que el dato exista para los reportes. **Nunca `CERRAR_ENCUESTA`.** | días | `procedimientos.py`, `escritor.py`, `verificacion.py` |
 | B15 | **Un `USU_IDUSUARIO` por encuestador**, dado de alta en `GIC_USUARIO`, y `USUA_CREACION`/`ID_USUARIO` de la misma fila. Hoy son dos identidades distintas (`mapeo.py:703-704, 815-816`). Con uno compartido: fusión de hogares, cierre que borra `gic_variable_sesion` de todos, y todo el reporte de productividad atribuido a un solo usuario. | días | `catalogos.py`, `mapeo.py`, `settings/base.py:364-365` + comando de alta |
@@ -153,6 +182,73 @@ Y el job que resolvía `PER_IDMODELOINT` (la llave con el RUV/Vivanto) y llenaba
 | B17 | **Comando de reversión ejecutable.** Hoy solo existe la frase "un DELETE acotado". Las tres alternativas son trampas: `GIC_PROC_BORRAR_HOGARES` no borra `GIC_PERSONA` (deja huérfanas permanentes en una tabla sin PK) y en un hogar fusionado borra el hogar real. | días | nuevo `...\management\commands\revertir_hogar_oracle.py` |
 | B18 | **Ventana horaria: escribir, verificar y revertir el mismo día antes de las 23:00.** A las 23:30 y 01:30 corren `A_65` y `A_HISTORICO`, cuyo código no tenemos. Si el hogar pasó a histórico, borrarlo de `GIC_HOGAR` ya no lo elimina. | minutos | runbook + `settings/base.py:449-460` |
 | B19 | **Pedir/volcar 5 fuentes:** `SP_INSERT_ENCUESTAS_MOVIL`, `SP_ADD_ENCUESTAS_MOVIL`, `SP_MIGRAR_ENCUESTAS_A_65`, `SP_MIGRAR_ENCUESTAS_A_HISTORICO`, `PKG_ACTUALIZAR_TAB_REP`/`PKG_TABLAS_HOGPERXANIO`. Más los **cuerpos de los 5 triggers** (`TS_GIC_PERSONA_GIC_SEC_PERSONA`, `TSU_GIC_PERSONA_GIC_SEC_PERS_0`, `TS_GIC_HOGAR`, `TSU_GIC_HOGAR`, `TS_GIC_RESP_N_ENCU_SECUENCIA`) y `SP_GEN_LOG_ERROR` con su tabla destino. La base es nuestra: se extraen con `DBMS_METADATA` / `ALL_TRIGGERS.TRIGGER_BODY`. | horas | `docs\oracle-legacy\volcado\` |
+
+### 3c. Lo que salió al implementar los pasos 4-6 (3-ago)
+
+**1. 🔴 El cruce de hechos NO es el número del código, y el mapeo obvio escribe el
+hecho equivocado.** Los dos catálogos tienen 14 entradas y los dos numeran de 1 a
+14, así que quitarle el prefijo a `HV01` y usar el `1` *parece* correcto. No lo es:
+están en orden distinto y **siete de las catorce no coinciden**.
+
+| SICAV | | Oracle si se usa el número | Oracle correcto |
+|---|---|---|---|
+| HV01 | Desplazamiento forzado | 1 = Acto terrorista ✗ | **5** |
+| HV02 | Acto terrorista / Atentados… | 2 = Amenaza ✗ | **1** |
+| HV03 | Amenaza | 3 = Delitos … sexual ✗ | **2** |
+| HV04 | Delitos contra libertad e integridad sexual | 4 = Desaparición ✗ | **3** |
+| HV05 | Desaparición forzada | 5 = Desplazamiento ✗ | **4** |
+| HV06-HV12, HV14 | | coinciden | 6-12, 14 |
+| HV13 | **Confinamiento** | 13 = **Otros** | 13, aproximado |
+
+Y no habría dado error: `GIC_INSERT_VALIDADOR_HECHO_AUX` acepta cualquier entero de
+1 a 14 sin chistar, y el orden de Oracle está fijado en el propio cuerpo del
+procedure (`src_GIC_CATEGORIZACION.sql:750-812`, comentario de José Vásquez del
+05-nov-2015) porque el reporte lee `HECHO_VICTIMIZANTE_N` como el `PRE_VALOR` del
+validador `100+N`. El resultado habría sido un reporte que dice 'ACTO TERRORISTA'
+en la fila de una persona desplazada.
+
+Encima el desplazamiento es el único hecho con consecuencia en cadena: deja el
+validador 105 y con él `GIC_INSERT_VALIDADOR_ARES` crea el 506 del hogar. Perderlo
+no solo pierde el hecho de la persona, pierde también la marca del hogar.
+
+Cruce por significado en `catalogos.HECHO_VICTIMIZANTE`, con test de regresión que
+falla si alguien lo "simplifica".
+
+**2. 🔴 El paso HECHOS está listo pero no hay de dónde sacar el dato.**
+`HechoVictima` está vacía en producción y **nada la puebla**: `cargar_padron_oracle`
+trae identidad, etnia, género, discapacidad y estado en el RUV, y no los hechos (no
+están en su `SELECT`); ningún otro comando ni endpoint escribe ahí. El paso corre,
+está probado y verificado, y escribe **cero** validadores. Mientras eso no se
+resuelva, las columnas `HECHO_VICTIMIZANTE_1..14` van a seguir vacías aunque todo lo
+demás salga perfecto. Es el punto **5a** de `../gestion/decisiones_negocio_pendientes.md`.
+
+**3. 🟠 Dos defectos propios, encontrados releyendo el código nuevo antes de correrlo.**
+
+- El `origen_id` del paso HECHO se armaba como `miembro.pk:hecho.pk`. Las dos son
+  UUID: **73 caracteres contra los 64 de la columna**. En PostgreSQL es un
+  `DataError` en el primer hecho — o sea *después* de que los validadores ya
+  quedaron commiteados en Oracle, con el hogar a medias y sin rollback posible.
+- `EscritorOracle(confirmar=True)` aceptaba un `ResolverCatalogos` **no estricto**.
+  Uno no estricto devuelve marcadores `‹PEND:...›` en vez de lanzar, así que esos
+  marcadores habrían entrado como datos en columnas de producción, sin que nada
+  fallara (los procedures no validan y se tragan sus excepciones). Los dos
+  llamadores reales ya pasaban `estricto=True`, pero eso era suerte, no barrera.
+  Ahora aborta en el constructor.
+
+**4. 🟠 Un `TypeError` esperando en la ruta confirmada.** `escritor.paso_cierre`
+llamaba a `verificacion.verificar_cierre(..., tipo=tipo)` y esa función **no tenía
+el parámetro `tipo`**. Solo revienta con `--confirmar`, que es la única ruta donde
+se verifica; los tests, todos en DRY-RUN, no llegaban nunca hasta ahí. De paso, el
+parámetro ahora sirve para algo: anular deja `ESTADO='ANULADA'`, no `'CERRADA'`, y
+verificarlo contra el literal fijo lo daba por fallido siempre — que es lo que pasó
+al anular el piloto el 2-ago.
+
+**5. ⚠️ Restricción nueva sobre el dato, que SICAV ya cumple.** `GIC_INSERT_VALIDADOR_ARES`
+hace `SELECT PER_IDPERSONA INTO … WHERE VAL_IDVALIDADOR IN (5001)` **sin `MAX`**:
+con dos personas marcadas 5001 en el mismo hogar lanza `TOO_MANY_ROWS`, su
+`WHEN OTHERS` se lo traga y el validador 506 no se crea. En SICAV no puede pasar
+porque `MiembroHogar` tiene un `UNIQUE` de un solo `es_autorizado=True` por hogar —
+conviene saber que esa constraint está sosteniendo algo del lado de Oracle.
 
 ### DESEABLE — no corrompe, pero deja el dato cojo
 

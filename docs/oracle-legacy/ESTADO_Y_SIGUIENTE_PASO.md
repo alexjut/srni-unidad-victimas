@@ -9,6 +9,110 @@
 
 ---
 
+## 0-sexies. 2026-08-03 — **LOS DIEZ PASOS ESTÁN CABLEADOS** (y lo que falta ya no es código)
+
+Ayer faltaban los pasos 4, 5 y 6. Hoy están: **validadores**, **hechos
+victimizantes** y **marca de encuestado**. Con eso, la cadena de diez pasos del
+legacy está completa de punta a punta. Sigue todo en DRY-RUN y los cuatro
+interruptores en `False`.
+
+### Lo que ahora sí puede salir en un reporte
+
+| Columna del reporte | De dónde sale | Antes | Ahora |
+|---|---|---|---|
+| `ESTADO_RUV` | `PRE_VALOR` del validador **1** | vacío | ✅ INCLUIDO / NO INCLUIDO |
+| tipo de persona | validador **5001-5004** (23 lecturas en el legacy) | vacío | ✅ |
+| perfil | validador **5005** | vacío | ✅ |
+| `JEFE_HOGAR` | `MH.PER_ENCUESTADA='SI'` | 'NO' para todos | ✅ solo el autorizado |
+| `HECHO_VICTIMIZANTE_1..14` | validadores **101-114** | vacío | ⚠️ el código está; **falta el dato** (abajo) |
+
+### El hallazgo que habría corrompido el dato sin dar error
+
+**El cruce de hechos victimizantes NO es el número del código.** Los dos catálogos
+tienen 14 entradas y los dos numeran de 1 a 14, así que quitarle el prefijo a `HV01`
+y usar el `1` parece razonable. Están en **orden distinto** y siete de las catorce no
+coinciden:
+
+```
+HV01 Desplazamiento forzado   →  el "1" de Oracle es 'Acto terrorista'   (correcto: 5)
+HV02 Acto terrorista…         →  el "2" es 'Amenaza'                     (correcto: 1)
+HV03 Amenaza                  →  el "3" es 'Delitos … sexual'            (correcto: 2)
+HV04 Delitos … sexual         →  el "4" es 'Desaparición forzada'        (correcto: 3)
+HV05 Desaparición forzada     →  el "5" es 'Desplazamiento forzado'      (correcto: 4)
+```
+
+Y no habría fallado: el procedure acepta cualquier entero de 1 a 14. El reporte
+diría **'ACTO TERRORISTA' en la fila de una persona desplazada**. Encima el
+desplazamiento es el único hecho con efecto en cadena —deja el validador 105 y con
+él se crea el 506 del hogar—, así que perderlo también borra la marca del hogar.
+Cruce por significado, con test de regresión que falla si alguien lo "simplifica".
+
+### 🔴 Lo que falta ahora NO es código: es de dónde sacar los hechos
+
+`HechoVictima` está **vacía en producción y nada la puebla**. `cargar_padron_oracle`
+trae identidad, etnia, género, discapacidad y estado en el RUV; **los hechos no
+están en su `SELECT`**, y ningún otro comando ni endpoint escribe ahí. El paso corre,
+está probado y verificado, y escribe **cero** validadores.
+
+Traerlos parece factible por el mismo camino que el padrón (dblink a Vivanto, cruce
+por `cons_persona`), pero hay que saber qué tabla los tiene. Es el punto **5a** de
+[`../gestion/decisiones_negocio_pendientes.md`](../gestion/decisiones_negocio_pendientes.md).
+
+### Cuatro defectos más, todos encontrados antes de correr nada
+
+1. **`TypeError` esperando en la ruta confirmada.** `paso_cierre` llamaba a
+   `verificar_cierre(..., tipo=tipo)` y la función no tenía ese parámetro. Solo
+   revienta con `--confirmar`, que es la única ruta donde se verifica: los tests,
+   todos en DRY-RUN, no llegaban nunca hasta ahí. De paso el parámetro ahora sirve —
+   anular deja `ANULADA`, no `CERRADA`, y verificarlo contra el literal fijo lo daba
+   por fallido siempre.
+2. **`origen_id` de 73 caracteres en una columna de 64** (dos UUID pegados). Habría
+   sido un `DataError` en el primer hecho, *después* de commitear los validadores en
+   Oracle: hogar a medias y sin rollback. Mío, encontrado releyendo mi propio código.
+3. **`confirmar=True` aceptaba un resolver no estricto**, que devuelve marcadores
+   `‹PEND:...›` en vez de lanzar — o sea que esos marcadores podían entrar como
+   datos en columnas de producción sin que nada fallara. Los llamadores reales ya
+   pasaban `estricto=True`, pero era suerte, no barrera. Ahora aborta.
+4. **Los tres procedures nuevos no son idempotentes** y la tabla no tiene PK ni
+   UNIQUE: un reintento duplicaba el validador 1, y el reporte lo lee con una
+   subconsulta escalar ⇒ **ORA-01427** en vez del dato. Hay chequeo previo por
+   SELECT antes de cada invocación.
+
+### Una corrección a lo que dijimos ayer
+
+`SP_INS_ETNIA_ARES` **no borra los validadores del hogar ajeno**, como decía el
+análisis. Sus dos `DELETE` están acotados también por `COMODIN`: borran solo los
+**derivados** (5007-5012 y 506 con `COMODIN=1`; 267/266/173 con `COMODIN=2`), que el
+propio procedure recalcula tres líneas más abajo. Los **base** —estado en el RUV,
+5001-5005, 20/21, 101-114— entran con `COMODIN=0` y no los toca. Escribir en un
+hogar ajeno sigue siendo grave y la guarda anti-fusión sigue siendo obligatoria; lo
+que cambia es el tamaño del daño, y conviene tenerlo bien medido y no inflado.
+
+En la otra dirección, la buena: mandamos `PPER_IDPREGUNTAPADRE` en NULL, así que el
+`SP_BORRADOVALIDADORES` que dispara `pbandera=1` recorre un cursor vacío. **Los
+validadores sobreviven a las respuestas.**
+
+### Estado
+
+| | |
+|---|---|
+| Tests backend | **683 pass** / 1 xfail (+26 nuevos) |
+| Migración | `sincronizacion/0005` (tres pasos nuevos en el enum) |
+| Escrituras en producción | **0** |
+| Los 4 interruptores | **`False`** |
+
+### Lo que sigue
+
+1. **Resolver de dónde salen los hechos** (decisión 5a). Sin eso, 14 columnas del
+   reporte quedan vacías por diseño.
+2. **Un hogar real escrito a mano** con `--confirmar`, mirándolo paso por paso.
+   Sigue siendo el siguiente paso operativo, y ahora escribiría el hogar completo.
+3. Antes de ese hogar: el respaldo de las 8 tablas (B16) y el comando de reversión
+   (B17), que siguen sin existir.
+4. Las **117 preguntas sin `id_preg`**, y en particular **`Z2`**.
+
+---
+
 ## 0-quinquies. Cierre del 2026-08-02 (noche) — **LA CADENA DE ESCRITURA ESTÁ COMPLETA**
 
 23 commits en el día. Lo de arriba (identidad, duplicados, padrón) se cerró por la

@@ -79,5 +79,35 @@ a Oracle: pre 90/92/93 son de rehabilitación (tema 10) y **pre 91 ni existe** e
 
 ---
 
+## 5. Hechos victimizantes — dos cosas, una urgente (3-ago-2026)
+
+Al cablear el paso HECHO (`GIC_INSERT_VALIDADOR_HECHO_AUX`, el que llena las columnas
+`HECHO_VICTIMIZANTE_1..14` de los reportes) salieron dos asuntos distintos.
+
+### 5a. 🔴 **No hay de dónde sacar el dato.** — bloquea, y no es decisión mía
+
+El paso está implementado, probado y verificado. Pero la tabla `HechoVictima` de SICAV
+**está vacía y nada la puebla**: `cargar_padron_oracle` trae identidad, etnia, género,
+discapacidad y estado en el RUV, y **no** los hechos (no están en su `SELECT`); ningún
+otro comando ni endpoint escribe ahí. Resultado: hoy el paso corre y escribe **cero**
+validadores, y esas 14 columnas del reporte van a seguir vacías aunque todo lo demás
+salga perfecto.
+
+- **Opciones:** (A) **traerlos del mismo origen que el padrón** — `M_CARACT_TABLA_RA_PER@DBL_VIVANTO` o la tabla de hechos de Vivanto — en una pasada como la del padrón. (B) capturarlos en campo (hay preguntas de hechos en el instrumento, pero preguntan por hechos *declarados en los últimos 6 meses*, que **no** es lo mismo que los hechos por los que la persona está en el RUV). (C) dejarlas vacías y decirlo por escrito.
+- **Mi recomendación:** **(A).** Es el mismo dblink y el mismo cruce por `cons_persona` que ya funcionó para 5,9 M de personas; lo que falta es saber qué tabla de Vivanto tiene los hechos y pedir una muestra. (B) escribiría un dato que significa otra cosa.
+- **Tu decisión:** ☐ A traerlos de Vivanto ☐ B capturarlos ☐ C dejarlas vacías ☐ ______
+
+### 5b. 🟠 'Confinamiento' no existe en el catálogo del legacy
+
+Los dos catálogos tienen 14 hechos, pero el de Oracle está congelado en 2015 y su 13 es
+'Otros'; el 13 de SICAV es **Confinamiento**, que se reconoce como hecho autónomo
+(Auto 373/2016). Los otros 13 cruzan exacto.
+
+- **Opciones:** (A) escribirlo como **'Otros' (13)** — la persona queda contada y visible en el reporte, con el detalle recuperable desde SICAV, pero en el legacy se lee 'OTROS'. (B) no escribirlo (esa persona sale sin hechos). (C) pedirle a OTI un alta de catálogo.
+- **Mi recomendación:** **(A), ya aplicada** — es el mismo criterio que se usó con PE→'Otro' en tipo de documento: perder precisión antes que perder a la persona. Está declarada como cruce aproximado (`HECHO_VICTIMIZANTE_APROXIMADO`) y el escritor lo informa en cada corrida, así que no se olvida.
+- **Tu decisión:** ☑ A 'Otros' (13) — *aplicada, reversible con cambiar un número* ☐ B ☐ C
+
+---
+
 *Marca tus decisiones (o me las dices) y las aplico en una pasada: fixture → cargar_perfil →
 exportar_a_mobile + las entradas de crosswalk que correspondan. Todo sigue DRY-RUN.*
