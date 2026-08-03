@@ -291,6 +291,20 @@ def dictaminar(d: dict) -> dict:
         d["veredicto"] = "COMPLETO"
         d["explicacion"] = (f"Cerrado con {d['definitivas']} respuestas en la tabla "
                             f"definitiva: los reportes deberían verlo.")
+    elif d["definitivas"]:
+        # Terminado y archivado, pero con un estado que los reportes no filtran.
+        # No es "revisar": es una caracterización completa a la que solo le sobra
+        # una cadena. Medido el 3-ago: **111 hogares** están así —106 en
+        # `CERRADA_APP_MOVIL`, 4 en `PRUEBA`, 1 en `MIGRADOHISTORICO`— y los 111
+        # tienen sus respuestas en la tabla definitiva. Es el caso más barato de
+        # arreglar de toda la lista y el que más trabajo devuelve: no hay que
+        # volver a campo, hay que reconocer un literal.
+        d["veredicto"] = "ARCHIVADO_FUERA_DE_REPORTES"
+        d["explicacion"] = (
+            f"Está terminado y archivado —{d['definitivas']} respuestas en la tabla "
+            f"definitiva— pero su estado es {estado!r}, que los reportes no filtran: "
+            f"`PKG_REPORTE_CARACTERIZACION` busca 'CERRADA' en 45 sitios. El trabajo "
+            f"está completo y no lo cuenta nadie. NO hay que repetirlo.")
     else:
         d["veredicto"] = "REVISAR"
         d["explicacion"] = f"Estado {estado!r} sin patrón conocido."

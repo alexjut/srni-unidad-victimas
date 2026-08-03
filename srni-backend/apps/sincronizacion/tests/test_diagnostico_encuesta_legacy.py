@@ -150,6 +150,28 @@ def test_el_id_de_usuario_que_no_cruza_se_reporta_aparte():
     assert not any("INNER JOIN" in c for c in d["carencias"])
 
 
+def test_archivado_con_un_estado_que_los_reportes_no_filtran():
+    """
+    `CERRADA_APP_MOVIL`: terminado, con sus respuestas en la tabla definitiva, y
+    aun así fuera de todo reporte porque `PKG_REPORTE_CARACTERIZACION` busca el
+    literal 'CERRADA'. Medido el 3-ago: **111 hogares** están así y los 111
+    tienen respuestas archivadas.
+
+    No puede salir como 'REVISAR': la diferencia entre este veredicto y
+    `NO_CERRO_POR_CAPITULOS` es si hay que volver a la vereda o basta con
+    reconocer un literal.
+    """
+    d = _medido(estado="CERRADA_APP_MOVIL", en_trabajo=0, definitivas=295)
+    assert d["veredicto"] == "ARCHIVADO_FUERA_DE_REPORTES"
+    assert "NO hay que repetirlo" in d["explicacion"]
+
+
+def test_el_typo_del_estado_tambien_cae_en_esa_categoria():
+    """`MIGRADOHISTORICO` — una letra menos, un hogar fuera de todos los conteos."""
+    d = _medido(estado="MIGRADOHISTORICO", en_trabajo=0, definitivas=210)
+    assert d["veredicto"] == "ARCHIVADO_FUERA_DE_REPORTES"
+
+
 def test_un_dict_parcial_no_revienta():
     """
     La herramienta se usa cuando algo ya salió mal. Que ella misma lance un
