@@ -69,15 +69,28 @@ from apps.sincronizacion.oracle.conexion import abrir_conexion, describir_destin
 #: Encuestadores con captura en la ventana, cruzados con el directorio VIVO.
 #: El `DISTINCT` va primero, en una CTE: sin él el join se haría contra 8.017
 #: hogares en vez de contra 600 logins.
+#:
+#: La `Ñ` viene rota en algunos logins y hay que repararla ANTES de agrupar.
+#: Medido con `DUMP()` sobre producción: `ADMONTAÑOP` existe con la `Ñ` correcta
+#: (`0,d1`, 2.167 hogares) y también como `ADMONTAÃ?OP` (`0,c3,0,3f`), que es el
+#: UTF-8 de la `Ñ` escrito por un cliente con el juego de caracteres mal
+#: configurado, con el segundo byte ya perdido como `?`. Son **6 logins y 131
+#: hogares** cuyo autor, sin esto, no se resuelve: su encuestador nunca los vería
+#: en "lo que hice".
+#:
+#: La reparación **no adivina**: reemplaza y deja que el `LEFT JOIN` contra el
+#: directorio decida. Si el login reparado existe en Vivanto, era eso; si no,
+#: queda sin cruzar y se reporta. No se acepta ninguna identidad que el
+#: directorio no confirme.
 CONSULTA = """
   WITH activos AS (
-    SELECT UPPER(TRIM(usu_usuariocreacion)) login,
+    SELECT REPLACE(UPPER(TRIM(usu_usuariocreacion)), 'Ã?', 'Ñ') login,
            COUNT(*) hogares,
            MAX(usu_fechacreacion) ultima
       FROM gic_hogar
      WHERE usu_fechacreacion >= SYSDATE - :n
        AND usu_usuariocreacion IS NOT NULL
-     GROUP BY UPPER(TRIM(usu_usuariocreacion))
+     GROUP BY REPLACE(UPPER(TRIM(usu_usuariocreacion)), 'Ã?', 'Ñ')
   )
   SELECT a.login, a.hogares, a.ultima,
          u.idusuario, u.activo,
