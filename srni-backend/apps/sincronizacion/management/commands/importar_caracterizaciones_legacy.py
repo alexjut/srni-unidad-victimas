@@ -95,14 +95,39 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING(
             f"Oracle SOLO LECTURA · {describir_destino(o['destino'])}"))
         con = abrir_conexion(o["destino"])
+        ilegibles = []
         try:
             cur = con.cursor()
-            recibos = []
-            for login in logins:
-                recibos.extend(self._leer(cur, login))
+            for i, login in enumerate(logins, 1):
+                try:
+                    recibos = self._leer(cur, login)
+                except Exception as exc:
+                    # Un usuario cuya fila el driver no puede decodificar NO puede
+                    # tumbar la corrida entera. Pasó de verdad: en la primera
+                    # pasada sobre 1.150 encuestadores, el número 335 lanzó
+                    # `LookupError: unknown encoding` —la misma corrupción de
+                    # codificación que rompe la Ñ, ahora en un valor que el
+                    # decodificador no puede leer— y se perdieron los 334
+                    # anteriores porque el guardado iba al final.
+                    ilegibles.append((login, type(exc).__name__, str(exc)[:60]))
+                    continue
+                # Se guarda POR USUARIO, no al final: una corrida de 1.150 que
+                # falle a mitad tiene que dejar hecho lo que ya leyó.
+                self._guardar(recibos, confirmar=o["confirmar"], resumen=False)
+                if i % 100 == 0:
+                    self.stdout.write(f"  … {i}/{len(logins)}")
         finally:
             con.close()
-        self._guardar(recibos, confirmar=o["confirmar"])
+
+        if ilegibles:
+            self.stdout.write(self.style.ERROR(
+                f"\n⚠️ {len(ilegibles)} encuestador(es) con datos que el driver no "
+                f"puede leer — su trabajo NO se importó:"))
+            for login, tipo, msg in ilegibles[:10]:
+                self.stdout.write(f"    {login:<18} {tipo}: {msg}")
+            self.stdout.write(
+                "  Es corrupción de codificación en la base de origen, la misma "
+                "que rompe la Ñ. Hay que mirarlos uno a uno.")
 
     def _logins(self, o):
         if o.get("usuario"):
@@ -123,26 +148,24 @@ class Command(BaseCommand):
             f"{visibles} visible(s) para los reportes{aviso}")
         return [(login, f) for f in filas]
 
-    def _guardar(self, recibos, *, confirmar):
+    def _guardar(self, recibos, *, confirmar, resumen=True):
         preparados = [self._preparar(login, f) for login, f in recibos]
         invisibles = [p for p in preparados if not p["visible_en_reportes"]]
+        if not preparados:
+            return
+        if not resumen:
+            # Modo lote (muchos encuestadores): se guarda callado y el detalle se
+            # consulta después por la API. Imprimir 1.150 bloques no lo lee nadie.
+            if confirmar:
+                self._escribir(preparados)
+            return
 
         if not confirmar:
             self.stdout.write(self.style.WARNING(
                 f"\nDRY-RUN: {len(preparados)} caracterización(es) listas. "
                 f"Nada se escribió. Repetí con --confirmar."))
         else:
-            catalogo = {u.usu_usuario.upper(): u for u in UsuarioLegacy.objects.all()}
-            with transaction.atomic():
-                for p in preparados:
-                    # `defaults` sin la PK y sin mutar `p`: los mismos dicts se
-                    # vuelven a leer abajo para el aviso, y un `pop` los dejaría
-                    # sin `hog_codigo` justo cuando hay que imprimirlo.
-                    defaults = {k: v for k, v in p.items() if k != "hog_codigo"}
-                    defaults["usuario_legacy"] = catalogo.get(
-                        p["usuario_creador"].upper())
-                    CaracterizacionLegacy.objects.update_or_create(
-                        hog_codigo=p["hog_codigo"], defaults=defaults)
+            self._escribir(preparados)
             self.stdout.write(self.style.SUCCESS(
                 f"\nGuardadas {len(preparados)} caracterización(es)."))
 
@@ -155,6 +178,20 @@ class Command(BaseCommand):
                     f"    {p['hog_codigo']:<28} {p['estado']:<20} {p['veredicto']}")
             self.stdout.write(
                 "  Cada una es trabajo hecho que hoy no cuenta en ningún reporte.")
+
+    @staticmethod
+    def _escribir(preparados):
+        """Persiste el lote. `defaults` sin la PK y **sin mutar** los dicts: los
+        mismos se vuelven a leer para el aviso de invisibles."""
+        catalogo = {u.usu_usuario.upper(): u for u in UsuarioLegacy.objects.filter(
+            usu_usuario__in={p["usuario_creador"] for p in preparados})}
+        with transaction.atomic():
+            for p in preparados:
+                defaults = {k: v for k, v in p.items() if k != "hog_codigo"}
+                defaults["usuario_legacy"] = catalogo.get(
+                    p["usuario_creador"].upper())
+                CaracterizacionLegacy.objects.update_or_create(
+                    hog_codigo=p["hog_codigo"], defaults=defaults)
 
     @staticmethod
     def _preparar(login, fila):
