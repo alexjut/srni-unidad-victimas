@@ -9,6 +9,7 @@ resultado esperado con un SELECT; solo entonces marca el paso VERIFICADO y avanz
 Todo aquí es SOLO LECTURA. Devuelve (ok, detalle) donde `detalle` es auditable y
 sin PII (conteos, códigos e ids, nunca nombres ni documentos).
 """
+from . import procedimientos as P
 
 
 def _scalar(cursor, sql, binds):
@@ -189,6 +190,164 @@ def verificar_respuesta(cursor, *, hog_codigo, per_idpersona, res_idrespuesta):
     }
 
 
+# ── validadores de la persona (pasos 4-6) ─────────────────────────────────────
+#
+# Estas comprobaciones tienen un uso EXTRA respecto de las demás: además de
+# verificar después, se consultan ANTES de invocar. Los tres procedures de
+# validadores hacen `INSERT` sin comprobar si la fila ya está, y la tabla no tiene
+# PK ni UNIQUE que lo impida — así que un reintento sin este chequeo previo deja el
+# validador DUPLICADO, y un `ESTADO_RUV` duplicado hace que el subconsulta escalar
+# del reporte (`SELECT PRE_VALOR … WHERE VAL_IDVALIDADOR = 1`) falle con
+# ORA-01427 en vez de devolver el estado.
+
+def contar_validador(cursor, *, hog_codigo, per_idpersona, val_idvalidador) -> int:
+    """Cuántas filas de ese validador tiene ya la persona en ese hogar."""
+    return _scalar(
+        cursor,
+        """SELECT COUNT(*) FROM gic_n_validadoresxpersona
+            WHERE hog_codigo = :h AND per_idpersona = :p
+              AND val_idvalidador = :v""",
+        {"h": hog_codigo, "p": per_idpersona, "v": val_idvalidador},
+    ) or 0
+
+
+def contar_validadores_en(cursor, *, hog_codigo, per_idpersona, valores) -> int:
+    """Cuántas filas tiene la persona con cualquiera de esos `val_idvalidador`.
+
+    Hace falta para el validador de parentesco, que puede ser 20 o 21 según el
+    caso: preguntar solo por el que vamos a escribir dejaría pasar el reintento de
+    una persona cuyo rol cambió, duplicando la fila con el otro código.
+    """
+    if not valores:
+        return 0
+    binds = {"h": hog_codigo, "p": per_idpersona}
+    marcas = []
+    for i, v in enumerate(valores):
+        clave = f"v{i}"
+        binds[clave] = v
+        marcas.append(f":{clave}")
+    return _scalar(
+        cursor,
+        f"""SELECT COUNT(*) FROM gic_n_validadoresxpersona
+             WHERE hog_codigo = :h AND per_idpersona = :p
+               AND val_idvalidador IN ({', '.join(marcas)})""",
+        binds,
+    ) or 0
+
+
+def verificar_validadores(cursor, *, hog_codigo, per_idpersona, estado_esperado,
+                          tipo_persona_esperado, jefe_esperado):
+    """
+    Confirma los CUATRO validadores que deja el paso: estado en el RUV (1), tipo de
+    persona (5001-5004), perfil (5005) y parentesco (20 o 21).
+
+    Se comprueba el TEXTO del validador 1, no solo que exista, porque el
+    procedure asigna `VAL_IDVALIDADOR := 1` tanto para INCLUIDO como para NO
+    INCLUIDO —las dos ramas del `IF` ponen el mismo número—: lo único que
+    distingue un estado del otro es el `PRE_VALOR`, que es justo lo que el reporte
+    imprime. Mirar solo el id daría por buena una persona con el estado cambiado.
+
+    Y se comprueba que NO haya duplicados: dos filas del validador 1 rompen el
+    reporte con ORA-01427 (subconsulta escalar con más de una fila).
+    """
+    cursor.execute(
+        """SELECT val_idvalidador, pre_valor FROM gic_n_validadoresxpersona
+            WHERE hog_codigo = :h AND per_idpersona = :p""",
+        {"h": hog_codigo, "p": per_idpersona},
+    )
+    filas = cursor.fetchall()
+    encontrados = {}
+    for val, pre in filas:
+        clave = int(val) if val is not None else None
+        encontrados.setdefault(clave, []).append(
+            str(pre).strip() if pre is not None else "")
+
+    val_jefe = P.VALIDADORES_PARENTESCO[jefe_esperado]
+    detalle = {
+        "hog_codigo": hog_codigo, "per_idpersona": per_idpersona,
+        "validadores": {str(k): v for k, v in sorted(
+            encontrados.items(), key=lambda kv: (kv[0] is None, kv[0]))},
+    }
+
+    # Una fila con VAL_IDVALIDADOR NULL es la marca de un valor fuera de dominio:
+    # el procedure la insertó igual y no sirve para nada. Se reporta, porque es la
+    # única señal de que un bind salió mal.
+    if None in encontrados:
+        detalle["error"] = "validador_nulo"
+        detalle["motivo"] = ("Quedó una fila con VAL_IDVALIDADOR NULL: el procedure "
+                             "recibió un valor fuera de su dominio y la insertó igual.")
+        return False, detalle
+
+    esperados = [
+        (P.VALIDADOR_ESTADO_RUV, estado_esperado),
+        (int(tipo_persona_esperado), None),
+        (P.VALIDADOR_PERFIL, None),
+        (val_jefe, jefe_esperado),
+    ]
+    for val, texto in esperados:
+        valores = encontrados.get(val, [])
+        if not valores:
+            detalle["error"] = "validador_faltante"
+            detalle["val_idvalidador"] = val
+            return False, detalle
+        if len(valores) > 1:
+            detalle["error"] = "validador_duplicado"
+            detalle["val_idvalidador"] = val
+            detalle["motivo"] = (
+                f"El validador {val} quedó {len(valores)} veces. Los reportes lo "
+                f"leen con una subconsulta escalar: con más de una fila devuelven "
+                f"ORA-01427 en vez del dato.")
+            return False, detalle
+        if texto is not None and valores[0].upper() != texto.upper():
+            detalle["error"] = "validador_con_texto_distinto"
+            detalle["val_idvalidador"] = val
+            detalle["esperado"] = texto
+            detalle["encontrado"] = valores[0]
+            return False, detalle
+
+    return True, detalle
+
+
+def verificar_hecho(cursor, *, hog_codigo, per_idpersona, id_hecho):
+    """Confirma el validador 100+`id_hecho` de la persona, y que sea único."""
+    val = P.validador_de_hecho(id_hecho)
+    cuantos = contar_validador(cursor, hog_codigo=hog_codigo,
+                               per_idpersona=per_idpersona, val_idvalidador=val)
+    detalle = {"hog_codigo": hog_codigo, "per_idpersona": per_idpersona,
+               "id_hecho": id_hecho, "val_idvalidador": val, "filas": cuantos}
+    if cuantos == 0:
+        detalle["error"] = "hecho_no_escrito"
+        detalle["motivo"] = ("GIC_INSERT_VALIDADOR_HECHO_AUX no dejó el validador. "
+                             "Con un ID_HECHO fuera de 1..14 no inserta nada y "
+                             "tampoco falla.")
+        return False, detalle
+    if cuantos > 1:
+        detalle["error"] = "hecho_duplicado"
+        return False, detalle
+    return True, detalle
+
+
+def verificar_encuestado(cursor, *, hog_codigo, per_idpersona):
+    """Confirma `PER_ENCUESTADA='SI'` para esa persona en ese hogar."""
+    valor = _scalar(
+        cursor,
+        """SELECT per_encuestada FROM gic_miembros_hogar
+            WHERE hog_codigo = :h AND per_idpersona = :p""",
+        {"h": hog_codigo, "p": per_idpersona},
+    )
+    texto = str(valor).strip().upper() if valor is not None else ""
+    detalle = {"hog_codigo": hog_codigo, "per_idpersona": per_idpersona,
+               "per_encuestada": texto}
+    if texto != "SI":
+        detalle["error"] = "no_marcado_encuestado"
+        detalle["motivo"] = (
+            f"PER_ENCUESTADA quedó en {texto!r}. El reporte deriva JEFE_HOGAR de "
+            f"ese literal exacto ('SI'), así que con cualquier otra cosa nadie "
+            f"figura como la persona entrevistada.")
+        return False, detalle
+    return True, detalle
+
+
 def verificar_capitulo(cursor, *, hog_codigo, tem_idtema):
     """Confirma la fila (HOG_CODIGO, TEM_IDTEMA) en GIC_N_CAPITULOS_TER."""
     existe = _scalar(
@@ -209,9 +368,32 @@ def contar_capitulos(cursor, *, hog_codigo) -> int:
     ) or 0
 
 
-def verificar_cierre(cursor, *, hog_codigo):
+#: El `ESTADO` que deja cada `TIPO_APLAZAMIENTO` (el CASE del cuerpo,
+#: `src_GIC_N_CARACTERIZACION.sql:1575-1581`). Sin esto, verificar un hogar anulado
+#: contra el literal 'CERRADA' lo daba por fallido siempre.
+ESTADO_POR_TIPO_CIERRE = {
+    P.CIERRE_ANULADA: "ANULADA",
+    P.CIERRE_NO_RESPONDE: "HOGAR_NO_RESPONDE",
+    P.CIERRE_APLAZADA: "APLAZADA",
+    P.CIERRE_CERRADA: "CERRADA",
+    P.CIERRE_REABRIR: "ACTIVA",
+}
+
+#: Los dos códigos que NO mueven las respuestas a la tabla definitiva
+#: (`IF TIPO_APLAZAMIENTO NOT IN ('5','3')`, `:1593`). Aplazar y reabrir dejan la
+#: encuesta viva a propósito: exigirles filas en `_C` sería exigir lo contrario.
+TIPOS_CIERRE_QUE_NO_ARCHIVAN = {P.CIERRE_APLAZADA, P.CIERRE_REABRIR}
+
+
+def verificar_cierre(cursor, *, hog_codigo, tipo=None):
     """
     Confirma que la encuesta quedó CERRADA **y que las respuestas se movieron**.
+
+    `tipo` es el `TIPO_APLAZAMIENTO` con el que se invocó. Se acepta porque el
+    escritor lo pasa —y sin el parámetro esta llamada moría con `TypeError` en la
+    ruta confirmada, la única donde se verifica; los tests, todos en DRY-RUN, no
+    llegaban nunca hasta acá—. Hoy solo cambia el estado que se espera encontrar:
+    anular deja 'ANULADA', no 'CERRADA', y también archiva las respuestas.
 
     Las dos cosas, no una. `SP_ACTUALIZAR_ESTADO_ENCUESTA` con '4' solo hace su
     trabajo si el hogar tiene más de 3 capítulos terminados; si no, cae en un
@@ -235,25 +417,30 @@ def verificar_cierre(cursor, *, hog_codigo):
         {"h": hog_codigo}) or 0
     capitulos = contar_capitulos(cursor, hog_codigo=hog_codigo)
 
+    tipo = str(tipo or P.CIERRE_CERRADA)
+    esperado = ESTADO_POR_TIPO_CIERRE.get(tipo, "CERRADA")
+    archiva = tipo not in TIPOS_CIERRE_QUE_NO_ARCHIVAN
+
     detalle = {
-        "hog_codigo": hog_codigo, "estado": estado,
+        "hog_codigo": hog_codigo, "estado": estado, "estado_esperado": esperado,
         "respuestas_definitivas": definitivas,
         "respuestas_en_trabajo": en_trabajo,
         "capitulos_terminados": capitulos,
     }
 
-    if estado != "CERRADA":
+    if estado != esperado:
         detalle["error"] = "no_cerro"
         detalle["motivo"] = (
-            f"El hogar sigue en {estado!r}. Si tiene {capitulos} capítulos y el "
-            f"procedure exige más de 3, cayó en el ELSE NULL y terminó sin error.")
+            f"El hogar quedó en {estado!r} y se esperaba {esperado!r}. Si tiene "
+            f"{capitulos} capítulos y el procedure exige más de 3, cayó en el "
+            f"ELSE NULL y terminó sin error.")
         return False, detalle
 
-    if definitivas == 0:
+    if archiva and definitivas == 0:
         # Cerrado pero sin respuestas en la definitiva: para los reportes, ese
         # hogar no existe. Es el escenario que deja `CERRAR_ENCUESTA`.
         detalle["error"] = "cerrado_sin_respuestas"
-        detalle["motivo"] = ("Quedó CERRADA pero GIC_N_RESPUESTASENCUESTA_C está "
+        detalle["motivo"] = (f"Quedó {esperado} pero GIC_N_RESPUESTASENCUESTA_C está "
                              "vacía: los reportes no verán nada de este hogar.")
         return False, detalle
 

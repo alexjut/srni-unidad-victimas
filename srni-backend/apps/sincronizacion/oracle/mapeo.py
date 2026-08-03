@@ -115,7 +115,7 @@ class ResolverCatalogos:
 
     def __init__(self, *, usuario_servicio_id=None, perfil_servicio_id=None,
                  tipo_caracterizacion_id=None, tipo_documento=None, parentesco=None,
-                 tipo_victima=None, estricto=True):
+                 tipo_victima=None, hecho_victimizante=None, estricto=True):
         self.usuario_servicio_id = usuario_servicio_id
         self.perfil_servicio_id = perfil_servicio_id
         # Oracle solo distingue INDIVIDUO(1)/HOGAR(2); SICAV crea hogar ⇒ HOGAR(2).
@@ -126,6 +126,8 @@ class ResolverCatalogos:
         self._tipo_documento = tipo_documento if tipo_documento is not None else catalogos.TIPO_DOCUMENTO
         self._parentesco = parentesco if parentesco is not None else catalogos.PARENTESCO
         self._tipo_victima = tipo_victima if tipo_victima is not None else catalogos.TIPO_VICTIMA
+        self._hecho = (hecho_victimizante if hecho_victimizante is not None
+                       else catalogos.HECHO_VICTIMIZANTE)
         self.estricto = estricto
 
     @classmethod
@@ -207,6 +209,47 @@ class ResolverCatalogos:
         if getattr(miembro, "es_autorizado", False):
             return 1
         return self.resolver_relac(miembro.parentesco)
+
+    # ── catálogo 4c — validadores de la persona (pasos 4-6) ───────────────────
+    def resolver_id_hecho(self, hecho):
+        """
+        `ID_HECHO` de Oracle (1..14) para un `CatalogoHechoVictimizante` de SICAV.
+
+        El cruce NO es el número del código: los dos catálogos tienen 14 entradas
+        en ORDEN DISTINTO y siete coinciden por casualidad. Ver el porqué completo,
+        con la tabla de los que NO coinciden, en `catalogos.HECHO_VICTIMIZANTE`.
+        """
+        codigo = _campo_origen(hecho, "codigo")
+        return self._resolver(self._hecho, codigo, "hecho_victimizante")
+
+    def hecho_es_aproximado(self, hecho) -> str:
+        """Si el cruce de este hecho pierde precisión, la explicación; si no, ''."""
+        codigo = getattr(hecho, "codigo", None)
+        return catalogos.HECHO_VICTIMIZANTE_APROXIMADO.get(codigo, "")
+
+    def resolver_validador_tipo_persona(self, miembro) -> str:
+        """
+        `VALIDADOR_TIPOPERSONA` — 5001 autorizado / 5002 tutor / 5003 cuidador /
+        5004 miembro. El dato ya existe: `MiembroHogar.tipo_persona` lo deriva de
+        `es_autorizado` y `rol` en su propio `save()`.
+
+        Se comprueba el dominio ACÁ porque allá no se comprueba: si el valor no es
+        uno de los que el procedure sabe homologar, su variable local queda NULL y
+        **el INSERT se hace igual**, dejando una fila con `VAL_IDVALIDADOR` NULL
+        que ningún reporte encuentra. Un valor malo no da error, da silencio.
+        """
+        valor = str(_campo_origen(miembro, "tipo_persona") or "").strip()
+        if valor in P.VALIDADORES_TIPO_PERSONA:
+            return valor
+        if self.estricto:
+            raise MapeoDesconocido(
+                f"VALIDADOR_TIPOPERSONA: {valor!r} no está en el dominio que "
+                f"GIC_INSERT_VALIDADOR_HOGAR sabe homologar "
+                f"({', '.join(P.VALIDADORES_TIPO_PERSONA)}). El procedure no "
+                f"rechazaría el valor: insertaría la fila con VAL_IDVALIDADOR NULL "
+                f"y esa persona no tendría tipo en ningún reporte."
+            )
+        return self._pendiente("VALIDADOR_TIPOPERSONA", valor)
 
     # ── extras de escritura decididos CON DATO (2026-07-24) ────────────────────
     # No inventan un mapeo de catálogo (eso lo sigue prohibiendo el modo estricto):
@@ -948,6 +991,109 @@ def estado_persona_oracle(miembro) -> str:
     if victima is not None and getattr(victima, "estado_ruv", None) == "INCLUIDO":
         return PERSONA_INCLUIDA
     return PERSONA_NO_INCLUIDA
+
+
+# ── validadores de la persona (pasos 4-6) ─────────────────────────────────────
+#
+# El estado en el RUV usa EL MISMO dominio de dos literales que `PER_ESTADO`
+# ('INCLUIDO' / 'NO INCLUIDO'), así que `estado_persona_oracle` sirve para los dos
+# y no hay dos verdades sobre lo mismo. Lo que cambia es dónde acaba el valor: en
+# `GIC_PERSONA.PER_ESTADO` (que decide si el legacy devuelve la persona) y en el
+# `PRE_VALOR` del validador 1 (que es lo que el reporte imprime como ESTADO_RUV).
+
+def binds_validador_hogar(hog_codigo, per_idpersona, *, miembro,
+                          catalogos: ResolverCatalogos) -> dict:
+    """
+    Argumentos de GIC_INSERT_VALIDADOR_HOGAR — el paso que hace que la persona
+    tenga estado en el RUV y tipo de persona en los reportes.
+
+    El perfil (`VALIDADOR_TIPOPERFIL`) va como TEXTO porque la columna destino es
+    `PRE_VALOR` NVARCHAR2 y el procedure lo escribe crudo, sin homologar.
+    """
+    return {
+        "idpersona": per_idpersona,
+        "codhogar": hog_codigo,
+        "validador": estado_persona_oracle(miembro),
+        "validador_tipopersona": catalogos.resolver_validador_tipo_persona(miembro),
+        "validador_tipoperfil": str(catalogos.id_perfil_servicio()),
+        "idinstrumento": catalogos.resolver_ins_idinstrumento(),
+    }
+
+
+def binds_validador_parent(hog_codigo, per_idpersona, *, miembro,
+                           catalogos: ResolverCatalogos) -> dict:
+    """
+    Argumentos de GIC_INSERT_VALIDADOR_PARENT (validador 20=JEFE / 21=NO JEFE).
+
+    Jefe = el autorizado del hogar. Es la misma equivalencia que ya usa
+    `resolver_relac_de_miembro` para mandarle RELAC=1 ('Jefe de hogar' en
+    GIC_PARENTESCOGENEALOGICO), y `MiembroHogar` la garantiza única con su
+    constraint de un solo `es_autorizado=True` por hogar.
+    """
+    es_jefe = bool(getattr(miembro, "es_autorizado", False))
+    return {
+        "idpersona": per_idpersona,
+        "codhogar": hog_codigo,
+        "validador": P.VALIDADOR_JEFE if es_jefe else P.VALIDADOR_NO_JEFE,
+        "idinstrumento": catalogos.resolver_ins_idinstrumento(),
+    }
+
+
+#: Formato de `FECHA_HECHO`. La columna es NVARCHAR2(20) —texto, no DATE— y
+#: **ningún objeto del volcado la lee**: no la consulta ningún reporte, ninguna
+#: constancia y ningún job. O sea que no hay un formato "correcto" que respetar;
+#: hay que elegir uno y no cambiarlo. Se usa el de Colombia, que es el que muestra
+#: el resto del legacy, para que un DBA que abra la tabla lo lea sin traducir.
+#: ⚠️ Antes del primer lote grande conviene mirar qué formato tienen las filas
+#: históricas (`SELECT DISTINCT fecha_hecho FROM gic_n_validadoresxpersona WHERE
+#: fecha_hecho IS NOT NULL AND ROWNUM <= 50`) y, si difiere, alinearse con ellas.
+FORMATO_FECHA_HECHO = "%d/%m/%Y"
+
+
+def _fecha_hecho_texto(valor) -> str:
+    """La fecha del hecho como el texto que espera `FECHA_HECHO`, o '' si no hay."""
+    fecha = _a_fecha(valor)
+    return fecha.strftime(FORMATO_FECHA_HECHO) if fecha else ""
+
+
+def binds_validador_hecho(hog_codigo, per_idpersona, *, hecho,
+                          catalogos: ResolverCatalogos) -> dict:
+    """Argumentos de GIC_INSERT_VALIDADOR_HECHO_AUX para UN hecho de la persona."""
+    return {
+        "idpersona": per_idpersona,
+        "codhogar": hog_codigo,
+        "id_hecho": catalogos.resolver_id_hecho(hecho.hecho),
+        "idinstrumento": catalogos.resolver_ins_idinstrumento(),
+        "fecha_hecho": _fecha_hecho_texto(getattr(hecho, "fecha_hecho", None)),
+    }
+
+
+def hechos_de_miembro(miembro):
+    """
+    Los `HechoVictima` de este miembro, en orden estable.
+
+    Cuelgan de `Victima`, no de `MiembroHogar`: un miembro dado de alta a mano
+    —sin FK a `Victima`— no tiene ninguno, y eso es un dato ausente, no un error.
+
+    ⚠️ Hoy esta lista viene VACÍA para todo el mundo. `HechoVictima` no la puebla
+    ningún camino de producción: `cargar_padron_oracle` trae identidad, etnia,
+    género, discapacidad y estado en el RUV, pero **no los hechos** (su
+    `CONSULTA_PADRON` no los selecciona), y ningún otro comando ni endpoint crea
+    filas ahí. El paso HECHO está completo y probado, pero mientras no haya de
+    dónde sacar el dato va a escribir cero validadores — y las columnas
+    HECHO_VICTIMIZANTE_1..14 del reporte van a seguir vacías. Ver el traspaso.
+    """
+    victima = getattr(miembro, "victima", None)
+    if victima is None:
+        return []
+    return list(
+        victima.hechos_victimizantes.select_related("hecho").order_by("hecho__codigo")
+    )
+
+
+def binds_encuestado(hog_codigo, per_idpersona) -> dict:
+    """Argumentos de GIC_ACTUALIZA_ENCUESTADO (marca a UNA persona como encuestada)."""
+    return {"pidpersona": per_idpersona, "pcodigo": hog_codigo}
 
 
 def temas_de_respuestas(respuestas, catalogos: ResolverCatalogos) -> set:

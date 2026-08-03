@@ -72,6 +72,76 @@ PARENTESCO = {
     #  choice SICAV directo; el jefe se marca por es_autorizado, no por parentesco.)
 }
 
+# ── Catálogo 4c — hecho victimizante (CatalogoHechoVictimizante.codigo → ID_HECHO) ──
+#
+# ⚠️ LOS DOS CATÁLOGOS TIENEN 14 ENTRADAS Y **NO** ESTÁN EN EL MISMO ORDEN.
+#
+# Es la trampa más cara de todo este paso, porque el mapeo "obvio" —quitarle el
+# prefijo al código SICAV y usar el número— parece funcionar (los dos van de 1 a
+# 14, y siete de las catorce coinciden por casualidad) y escribe el hecho
+# EQUIVOCADO en las otras siete, sin error:
+#
+#     HV01 Desplazamiento forzado   →  1 = 'Acto terrorista…'      ✗
+#     HV02 Acto terrorista…         →  2 = 'Amenaza'               ✗
+#     HV03 Amenaza                  →  3 = 'Delitos … sexual'      ✗
+#     HV04 Delitos … sexual         →  4 = 'Desaparicion forzada'  ✗
+#     HV05 Desaparición forzada     →  5 = 'Desplazamiento forzado'✗
+#
+# Y no sería un error visible: `GIC_INSERT_VALIDADOR_HECHO_AUX` acepta cualquier
+# entero de 1 a 14 sin chistar. El reporte leería 'ACTO TERRORISTA' en la columna
+# de una persona desplazada. Encima el desplazamiento es el único hecho con
+# consecuencia en cadena —dispara el validador 506 del hogar vía
+# `GIC_INSERT_VALIDADOR_ARES`—, así que perderlo cambia también el dato del hogar.
+#
+# El orden de Oracle está fijado en el propio cuerpo del procedure
+# (`src_GIC_CATEGORIZACION.sql:750-812`, comentario de José Vásquez del 05-nov-2015)
+# y NO se puede reordenar: el reporte lee `HECHO_VICTIMIZANTE_N` como el `PRE_VALOR`
+# del validador `100+N` (`src_GIC_N_CARACTERIZACION.sql:3906` y 8 sitios más), o sea
+# que la posición ES el significado.
+#
+# El cruce es por SIGNIFICADO, verificado uno a uno contra el nombre de las dos
+# tablas. Las coincidencias numéricas (6..12, 14) son coincidencia, no regla.
+HECHO_VICTIMIZANTE = {
+    "HV01": 5,   # Desplazamiento forzado
+    "HV02": 1,   # Acto terrorista / Atentados / Combates / Enfrentamientos / Hostigamientos
+    "HV03": 2,   # Amenaza
+    "HV04": 3,   # Delitos contra la libertad y la integridad sexual …
+    "HV05": 4,   # Desaparicion forzada
+    "HV06": 6,   # Homicidio
+    "HV07": 7,   # Minas Antipersonal, Municion sin Explotar y Artefacto Explosivo improvisado
+    "HV08": 8,   # Secuestro
+    "HV09": 9,   # Tortura
+    "HV10": 10,  # Vinculacion de Niños Niñas y Adolescentes …
+    "HV11": 11,  # Abandono o Despojo Forzado de Tierras
+    "HV12": 12,  # Perdida de Bienes Muebles o Inmuebles
+    # ── El único que NO tiene equivalente ────────────────────────────────────
+    # HV13 es 'Confinamiento'. El catálogo de Oracle, congelado en 2015, no lo
+    # tiene: su 13 es 'Otros'. El confinamiento se reconoce como hecho autónomo
+    # (Auto 373/2016 de la Corte y la práctica posterior de la UARIV), o sea que
+    # es un hecho REAL que este legacy no sabe nombrar.
+    #
+    # Se mapea a 13 = 'Otros' en vez de descartarlo. El razonamiento: descartarlo
+    # haría desaparecer del reporte a una persona confinada, mientras que 'Otros'
+    # la deja contada y visible, con el detalle recuperable desde SICAV. Es la
+    # misma decisión —y el mismo criterio— que se tomó con PE→'Otro' en el
+    # catálogo de tipo de documento.
+    #
+    # ⚠️ Es una PÉRDIDA DE PRECISIÓN consciente, no un cruce limpio: en el reporte
+    # del legacy un confinamiento va a leerse 'OTROS'. Queda anotado en
+    # docs/gestion/decisiones_negocio_pendientes.md por si se decide pedirle a OTI
+    # un alta de catálogo; el día que exista, acá se cambia un número.
+    "HV13": 13,  # Confinamiento → 'Otros'  (pérdida de precisión, ver arriba)
+    "HV14": 14,  # Sin informacion
+}
+
+#: Códigos SICAV cuyo cruce no es exacto sino por aproximación. Se listan aparte
+#: para que el escritor pueda informarlo en cada corrida en vez de que la pérdida
+#: viva solo en un comentario que nadie vuelve a leer.
+HECHO_VICTIMIZANTE_APROXIMADO = {
+    "HV13": "Confinamiento se escribe como 'Otros' (13): el catálogo del legacy, "
+            "congelado en 2015, no tiene el hecho.",
+}
+
 # ── Catálogo 4b — tipo de víctima → GIC_PERSONA.PER_TIPOVICTIMA ──────────────
 # ⚠️ PENDIENTE: no se identificó tabla catálogo ni campo SICAV de origen. Vacío.
 TIPO_VICTIMA: dict = {}
@@ -369,6 +439,7 @@ NOMBRES = {
     "tipo_caracterizacion": "GIC_TIPOCARACTERIZACION.TPOCRN_ID",
     "tipo_documento": "GIC_TIPODOC.TIP_IDTIPO",
     "parentesco": "GIC_PARENTESCOGENEALOGICO.PRST_ID",
+    "hecho_victimizante": "GIC_INSERT_VALIDADOR_HECHO_AUX.ID_HECHO",
     "tipo_victima": "GIC_PERSONA.PER_TIPOVICTIMA",
     "territorio": "GIC_N_DT_PUNTOS_ATENCION",
     "instrumento": "GIC_N_INSTRUMENTOXPREG.INS_IDINSTRUMENTO",

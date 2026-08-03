@@ -91,6 +91,138 @@ GIC_INSERT_MIEMBRO_HOGAR = Procedimiento(
     ],
 )
 
+# ── Validadores de la persona (pasos 4-6) ────────────────────────────────────
+# `GIC_N_VALIDADORESXPERSONA` es de donde los reportes y la constancia sacan el
+# ESTADO_RUV y los HECHO_VICTIMIZANTE_1..14. Sin estos tres procedures el hogar
+# llega al legacy pero esas columnas salen VACÍAS.
+#
+# ⚠️ NINGUNO ES IDEMPOTENTE. Los tres hacen `INSERT` sin ningún `IF COUNT(*)=0`
+# previo (a diferencia de GIC_INSERT_MIEMBRO_HOGAR, que sí lo tiene), y la tabla
+# no tiene PK ni UNIQUE (`constraints.tsv:227-228`: solo dos FK, a instrumento y
+# a hogar). Llamarlos dos veces deja la fila DUPLICADA y la base no lo impide.
+# Por eso el escritor comprueba por SELECT si el validador ya está ANTES de
+# invocar — ver `verificacion.contar_validador` y `escritor.paso_validador`.
+#
+# ⚠️ Y NINGUNO VALIDA SU ENTRADA. Un `VALIDADOR` fuera de dominio no da error:
+# la variable local queda NULL y el INSERT se hace igual, dejando una fila con
+# `VAL_IDVALIDADOR` NULL que ningún reporte va a encontrar nunca. El dominio se
+# comprueba de este lado (ver las constantes de abajo y `mapeo`), no allá.
+
+# Escribe TRES filas de una vez (cuerpo `src_GIC_CATEGORIZACION.sql:469-571`):
+#   VAL_IDVALIDADOR=1     PRE_VALOR=VALIDADOR              → ESTADO_RUV del reporte
+#   VAL_IDVALIDADOR=5001..5004 (o 7001..7018 del perfil 1558) → tipo de persona
+#   VAL_IDVALIDADOR=5005  PRE_VALOR=VALIDADOR_TIPOPERFIL   → perfil del usuario
+#
+# ⚠️ Efecto colateral no evidente: al final hace
+#   `UPDATE GIC_N_RUTA_CARACTERIZACION SET PER_IDPERSONA=…, HOG_CODIGO=…
+#    WHERE DOCUMENTO = <el documento de esta persona> AND PER_IDPERSONA = 0`
+# o sea que reclama para este hogar cualquier fila de "ruta de caracterización"
+# pendiente que tenga ese mismo documento — filas que puede haber creado otro
+# proceso. No está acotado por usuario ni por fecha (`:562-566`).
+GIC_INSERT_VALIDADOR_HOGAR = Procedimiento(
+    "GIC_CATEGORIZACION", "GIC_INSERT_VALIDADOR_HOGAR",
+    [
+        Param("IDPERSONA", Dir.IN),
+        Param("CODHOGAR", Dir.IN),
+        Param("VALIDADOR", Dir.IN),              # 'INCLUIDO' | 'NO INCLUIDO'
+        Param("VALIDADOR_TIPOPERSONA", Dir.IN),  # '5001'..'5004'
+        Param("VALIDADOR_TIPOPERFIL", Dir.IN),   # el ID_PERFIL_USUARIO, como texto
+        Param("IDINSTRUMENTO", Dir.IN),
+    ],
+)
+
+# Validador 20=JEFE / 21=NO JEFE (`:575-591`).
+#
+# Se escribe por FIDELIDAD, no porque un reporte lo lea: en el volcado entero no
+# hay un solo objeto que consulte los validadores 20 ni 21. El `JEFE_HOGAR` de los
+# reportes sale de otro lado —`CASE WHEN MH.PER_ENCUESTADA='SI'`, o sea de
+# GIC_MIEMBROS_HOGAR (`src_PKG_REPORTE_CARACTERIZACION.sql:1060, 1081`)—. Se
+# replica igual porque el objetivo declarado es que la forma del dato en el legacy
+# sea la misma que dejaba la app vieja.
+GIC_INSERT_VALIDADOR_PARENT = Procedimiento(
+    "GIC_CATEGORIZACION", "GIC_INSERT_VALIDADOR_PARENT",
+    [
+        Param("IDPERSONA", Dir.IN),
+        Param("CODHOGAR", Dir.IN),
+        Param("VALIDADOR", Dir.IN),   # 'JEFE' | 'NO JEFE'
+        Param("IDINSTRUMENTO", Dir.IN),
+    ],
+)
+
+# Homologa el hecho 1..14 al validador 101..114 y guarda la fecha (`:741-824`).
+# Un `ID_HECHO` fuera de 1..14 NO inserta nada y tampoco falla (el `IF
+# VALIDADOR_P <> 0` lo filtra): silencio total, que es peor que un error.
+#
+# Al terminar llama a `GIC_INSERT_VALIDADOR_ARES`, que crea el validador 506
+# (DESPLAZAMIENTO FORZADO a nivel hogar) si el hogar tiene un 105 y un 5001. Ese
+# procedure hace `SELECT PER_IDPERSONA INTO …  WHERE VAL_IDVALIDADOR IN (5001)`
+# **sin MAX**: con dos personas marcadas 5001 en el mismo hogar lanza
+# TOO_MANY_ROWS, su `WHEN OTHERS` se lo traga y el 506 no se crea. En SICAV eso no
+# puede pasar —`MiembroHogar` tiene un UNIQUE de un solo `es_autorizado` por
+# hogar—, y es justamente lo que lo garantiza.
+GIC_INSERT_VALIDADOR_HECHO_AUX = Procedimiento(
+    "GIC_CATEGORIZACION", "GIC_INSERT_VALIDADOR_HECHO_AUX",
+    [
+        Param("IDPERSONA", Dir.IN),
+        Param("CODHOGAR", Dir.IN),
+        Param("ID_HECHO", Dir.IN),      # 1..14, el dominio de Oracle
+        Param("IDINSTRUMENTO", Dir.IN),
+        # Fecha del hecho, como TEXTO (la columna es NVARCHAR2(20)). Se redacta:
+        # la fecha en que una persona identificada sufrió un hecho victimizante es
+        # dato sensible, y en el ledger no aporta nada que el id del hecho no diga.
+        Param("FECHA_HECHO", Dir.IN, pii=True),
+    ],
+)
+
+# `UPDATE GIC_MIEMBROS_HOGAR SET PER_ENCUESTADA='SI'` para UNA persona (`:928-940`).
+#
+# No es redundante con el `ENCUESTADA` de GIC_INSERT_MIEMBRO_HOGAR aunque escriba
+# la misma columna: ese procedure solo inserta `IF CONTEO = 0`, así que en un
+# re-run —o si el vínculo ya existía— el valor no se corrige nunca. Este es el
+# único camino para arreglarlo, y es idempotente por naturaleza (es un UPDATE).
+GIC_ACTUALIZA_ENCUESTADO = Procedimiento(
+    "GIC_CATEGORIZACION", "GIC_ACTUALIZA_ENCUESTADO",
+    [
+        Param("PIDPERSONA", Dir.IN),
+        Param("PCODIGO", Dir.IN),
+    ],
+)
+
+#: `VAL_IDVALIDADOR` del estado en el RUV. Es el que leen los reportes como
+#: `ESTADO_RUV` (`src_GIC_N_CARACTERIZACION.sql:3905`, y 8 sitios más).
+#:
+#: ⚠️ Vale 1 tanto para INCLUIDO como para NO INCLUIDO: el cuerpo asigna
+#: `VALIDADOR_P := 1` en las DOS ramas (`:476-482`). Lo que distingue un caso del
+#: otro es el TEXTO de `PRE_VALOR`, que es justo lo que el reporte selecciona.
+VALIDADOR_ESTADO_RUV = 1
+
+#: Los dos únicos textos que el cuerpo reconoce en `VALIDADOR`. Cualquier otro deja
+#: `VAL_IDVALIDADOR` NULL y la fila se vuelve invisible para los reportes.
+VALIDADORES_ESTADO_RUV = ("INCLUIDO", "NO INCLUIDO")
+
+#: Tipos de persona que el procedure sabe homologar (`:484-495`). Los 7001-7018 son
+#: del perfil 1558 (autoridades étnicas) y SICAV no los usa hoy.
+VALIDADORES_TIPO_PERSONA = ("5001", "5002", "5003", "5004")
+
+#: `VAL_IDVALIDADOR` del perfil de usuario — texto libre, lo pone el llamador.
+VALIDADOR_PERFIL = 5005
+
+#: Textos del validador de parentesco y los ids que generan.
+VALIDADOR_JEFE = "JEFE"
+VALIDADOR_NO_JEFE = "NO JEFE"
+VALIDADORES_PARENTESCO = {VALIDADOR_JEFE: 20, VALIDADOR_NO_JEFE: 21}
+
+#: Los hechos que el legacy sabe homologar, y el validador de cada uno. El reporte
+#: lee `HECHO_VICTIMIZANTE_N` como el `PRE_VALOR` del validador `100+N`, así que la
+#: POSICIÓN es fija: el hecho 5 siempre es desplazamiento forzado, esté o no.
+HECHO_MINIMO, HECHO_MAXIMO = 1, 14
+
+
+def validador_de_hecho(id_hecho: int) -> int:
+    """El `VAL_IDVALIDADOR` que deja el hecho `id_hecho` (1..14 → 101..114)."""
+    return 100 + int(id_hecho)
+
+
 SP_SET_RESPUESTAS_DE_ENCUESTA = Procedimiento(
     "GIC_N_CARACTERIZACION", "SP_SET_RESPUESTAS_DE_ENCUESTA",
     [

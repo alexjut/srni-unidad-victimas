@@ -142,18 +142,55 @@ class CargarHogarDemoOracleTests(TestCase):
     def test_dry_run_completo_sobre_el_hogar_demo(self):
         # La corrida que el Escalón 1 revisa: todos los pasos, ninguno reventado.
         #
-        # Son SIETE, no cinco. CAPITULO y CIERRE se agregaron el 2-ago y no son
+        # Son NUEVE, no cinco. CAPITULO y CIERRE se agregaron el 2-ago y no son
         # opcionales: sin cierre, las respuestas nunca pasan a
         # GIC_N_RESPUESTASENCUESTA_C y para los reportes el hogar no existe. Y el
-        # cierre exige capítulos, así que van juntos.
+        # cierre exige capítulos, así que van juntos. VALIDADOR y ENCUESTADO se
+        # agregaron el 3-ago: sin ellos el ESTADO_RUV y el tipo de persona salen
+        # vacíos, y nadie figura como la persona entrevistada.
+        #
+        # HECHO no aparece porque el hogar demo no tiene hechos victimizantes que
+        # escribir — y hoy NINGÚN hogar los tiene, porque nada puebla
+        # `HechoVictima` en producción (ver mapeo.hechos_de_miembro).
         from apps.sincronizacion.oracle.escritor import EscritorOracle
         call_command("cargar_hogar_demo_oracle", verbosity=0)
         self.hogar.refresh_from_db()
         resultado = EscritorOracle(confirmar=False).procesar_hogar(self.hogar)
         pasos = {p.paso for p in resultado.pasos}
-        self.assertEqual(pasos, {"HOGAR", "PERSONA", "MIEMBRO", "TERRITORIO",
-                                 "RESPUESTA", "CAPITULO", "CIERRE"})
+        self.assertEqual(pasos, {"HOGAR", "PERSONA", "MIEMBRO", "VALIDADOR",
+                                 "ENCUESTADO", "TERRITORIO", "RESPUESTA",
+                                 "CAPITULO", "CIERRE"})
         self.assertTrue(resultado.dry_run)
+
+    def test_los_validadores_se_escriben_antes_que_las_respuestas(self):
+        """
+        No es preferencia de estilo. Cada respuesta dispara `SP_INS_ETNIA_ARES`,
+        que deriva los marcadores del hogar (5007-5012 étnicos, 506
+        desplazamiento) leyendo los validadores que YA estén escritos. Si
+        llegaran después, nada vuelve a dispararlo y esas marcas no las crea
+        nadie.
+        """
+        from apps.sincronizacion.oracle.escritor import EscritorOracle
+        call_command("cargar_hogar_demo_oracle", verbosity=0)
+        self.hogar.refresh_from_db()
+        resultado = EscritorOracle(confirmar=False).procesar_hogar(self.hogar)
+
+        orden = [p.paso for p in resultado.pasos]
+        self.assertLess(orden.index("PERSONA"), orden.index("VALIDADOR"))
+        self.assertLess(orden.index("VALIDADOR"), orden.index("RESPUESTA"))
+        self.assertLess(orden.index("CAPITULO"), orden.index("CIERRE"))
+
+    def test_solo_el_autorizado_se_marca_como_encuestado(self):
+        """Marcar a todos afirmaría que a cada miembro se le hizo la entrevista."""
+        from apps.sincronizacion.oracle.escritor import EscritorOracle
+        call_command("cargar_hogar_demo_oracle", verbosity=0)
+        self.hogar.refresh_from_db()
+        resultado = EscritorOracle(confirmar=False).procesar_hogar(self.hogar)
+
+        encuestados = [p for p in resultado.pasos if p.paso == "ENCUESTADO"]
+        autorizados = self.hogar.miembros.filter(es_autorizado=True).count()
+        self.assertEqual(len(encuestados), autorizados)
+        self.assertEqual(autorizados, 1)
 
     def test_el_territorio_del_dry_run_lleva_ids_reales_no_marcadores(self):
         from apps.sincronizacion.oracle.escritor import EscritorOracle

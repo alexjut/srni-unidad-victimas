@@ -23,6 +23,17 @@ class PasoEscritura(models.TextChoices):
     HOGAR = "HOGAR", "Alta de hogar (GIC_INSERT_HOGAR1)"
     PERSONA = "PERSONA", "Alta de persona (GIC_INSERT_PERSONAS)"
     MIEMBRO = "MIEMBRO", "Vínculo miembro↔hogar (GIC_INSERT_MIEMBRO_HOGAR)"
+    # De GIC_N_VALIDADORESXPERSONA salen el ESTADO_RUV y los
+    # HECHO_VICTIMIZANTE_1..14 de los reportes y de la constancia. Sin estos tres
+    # pasos el hogar llega al legacy con esas columnas VACÍAS.
+    #
+    # Van ANTES de RESPUESTA y no es un detalle de estilo: cada respuesta dispara
+    # `SP_INS_ETNIA_ARES`, que deriva los marcadores étnicos del hogar (5007-5012)
+    # y el de desplazamiento (506) leyendo los validadores que YA estén escritos —
+    # y no hace nada si el hogar todavía no tiene un 5001/5002/5003.
+    VALIDADOR = "VALIDADOR", "Validadores de la persona (GIC_INSERT_VALIDADOR_HOGAR + _PARENT)"
+    HECHO = "HECHO", "Hecho victimizante (GIC_INSERT_VALIDADOR_HECHO_AUX)"
+    ENCUESTADO = "ENCUESTADO", "Marca de encuestado (GIC_ACTUALIZA_ENCUESTADO)"
     TERRITORIO = "TERRITORIO", "Cascada territorial (GIC_SP_*)"
     RESPUESTA = "RESPUESTA", "Respuesta de encuesta (SP_SET_RESPUESTAS_DE_ENCUESTA)"
     CAPITULO = "CAPITULO", "Capítulo finalizado (SP_FINALIZARCAPITULO)"

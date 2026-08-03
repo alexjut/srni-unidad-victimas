@@ -190,7 +190,8 @@ def test_el_escritor_no_llama_al_cierre_sin_capitulos_suficientes():
 # queda incompleto en producción para siempre.
 
 def _escritor_confirmado():
-    from apps.sincronizacion.oracle.escritor import EscritorOracle
+    from apps.sincronizacion.models import EstadoPaso, PasoEscritura
+    from apps.sincronizacion.oracle.escritor import EscritorOracle, ResultadoPaso
 
     e = EscritorOracle(
         confirmar=True, destino='produccion',
@@ -199,6 +200,13 @@ def _escritor_confirmado():
     e._ya_verificado = lambda *a, **k: False
     e._registro_verificado = lambda *a, **k: None
     e._registrar = lambda *a, **k: None
+    # Los pasos por persona (validadores, hechos, marca de encuestado) tienen sus
+    # propios tests; acá se neutralizan para que estas pruebas midan solo lo suyo:
+    # qué capítulos se declaran y cuándo se cierra.
+    e.paso_validador = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.VALIDADOR, '1', EstadoPaso.VERIFICADO, '', {})
+    e.paso_encuestado = lambda *a, **k: ResultadoPaso(
+        PasoEscritura.ENCUESTADO, '1', EstadoPaso.VERIFICADO, '', {})
     return e
 
 
@@ -284,6 +292,8 @@ def _procesar_con_respuestas(escritor, *, cantidad):
     class _Miembro:
         pk = 1
         es_autorizado = True        # ancla de las respuestas de nivel HOGAR
+        tipo_persona = '5001'       # AUTORIZADO, como lo deja MiembroHogar.save()
+        victima = None              # alta manual ⇒ sin hechos que escribir
 
     hogar = HogarFalso()
     hogar.sesiones = _Sesiones

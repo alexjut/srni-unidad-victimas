@@ -4,14 +4,21 @@ Escritor hacia Oracle legacy — MÁQUINA DE ESTADOS REANUDABLE (Etapa A).
 Orquesta los procedures oficiales en orden de dependencia para materializar una
 caracterización SICAV en Oracle:
 
-    HOGAR → (por miembro: PERSONA → MIEMBRO) → TERRITORIO → (por respuesta: RESPUESTA)
+    HOGAR
+      → por miembro: PERSONA → MIEMBRO → VALIDADOR → HECHO(×N) → ENCUESTADO
+      → TERRITORIO
+      → por respuesta: RESPUESTA
+      → CAPITULO(×tema) → CIERRE
 
-Estado del cableado (2026-07-16): los cinco pasos están cableados. TERRITORIO
-resuelve ids REALES contra el crosswalk de GIC_N_DT_PUNTOS_ATENCION. RESPUESTA
-tiene la fontanería completa pero sus ids (INS_IDINSTRUMENTO, RES_IDRESPUESTA,
-RXP_TIPOPREGUNTA, PPER_IDPERSONA de nivel hogar, PBANDERA) están PENDIENTES de
-dato/negocio: en DRY-RUN salen como marcadores ‹PEND:...› y en modo estricto
-lanzan, para que nunca se escriba un id inventado.
+Los diez pasos del legacy están cableados (2026-08-03). El orden NO es negociable
+en dos puntos:
+
+- **VALIDADOR y HECHO antes que RESPUESTA.** Cada respuesta dispara
+  `SP_INS_ETNIA_ARES`, que deriva los marcadores del hogar (5007-5012 étnicos, 506
+  desplazamiento) leyendo los validadores ya escritos. Si llegaran después, nada
+  vuelve a dispararlo.
+- **CAPITULO antes que CIERRE.** El cierre solo archiva si hay más de 3 capítulos;
+  si no, cae en un `ELSE NULL` y devuelve éxito sin cerrar.
 
 Por qué máquina de estados y no transacción (ver ruta_escritura.md §4):
 - Cada procedure hace COMMIT interno ⇒ no hay rollback envolvente posible.
@@ -84,6 +91,18 @@ class EscritorOracle:
             if catalogos is None:
                 raise ValueError(
                     "confirmar=True requiere un ResolverCatalogos REAL (no placeholder)."
+                )
+            if not catalogos.estricto:
+                # Un resolver NO estricto devuelve marcadores '‹PEND:...›' en vez de
+                # lanzar. Escribiendo de verdad, esos marcadores acaban DENTRO de
+                # columnas de producción —un PER_ESTADO '‹PEND:…›', un validador con
+                # ese texto— y nada da error: los procedures no validan y se tragan
+                # lo que sea. Es la corrupción silenciosa que toda esta capa existe
+                # para evitar, así que se cierra en el constructor.
+                raise ValueError(
+                    "confirmar=True exige un ResolverCatalogos ESTRICTO: uno no "
+                    "estricto devuelve marcadores '‹PEND:...›' y los escribiría "
+                    "como si fueran datos."
                 )
             self.catalogos = catalogos
         else:
@@ -287,6 +306,171 @@ class EscritorOracle:
                         hog_codigo=hog_codigo, per_idpersona=per_idpersona, detalle=detalle)
         return ResultadoPaso(PasoEscritura.MIEMBRO, str(origen), estado, res.bloque, detalle)
 
+    # ── validadores, hechos y marca de encuestado (pasos 4-6) ────────────────
+    def paso_validador(self, hogar, miembro, *, hog_codigo, per_idpersona) -> ResultadoPaso:
+        """
+        Los validadores de UNA persona: estado en el RUV, tipo de persona, perfil
+        y parentesco. Dos procedures, un paso del ledger (como la cascada
+        territorial): las cuatro filas describen a la misma persona y se verifican
+        juntas.
+
+        ⚠️ Ninguno de los dos procedures es idempotente —insertan sin mirar si la
+        fila ya está, y la tabla no tiene PK ni UNIQUE—, así que antes de invocar
+        se consulta si el validador ya existe. No es una optimización: un validador
+        de estado duplicado rompe el reporte, que lo lee con una subconsulta
+        escalar (`SELECT PRE_VALOR … WHERE VAL_IDVALIDADOR = 1`) y con dos filas
+        devuelve ORA-01427 en vez del dato.
+
+        El chequeo previo es por EXISTENCIA, no por contenido: si el validador está
+        pero con otro texto (una persona que cambió de estado entre corridas), no se
+        reescribe —el procedure no sabe hacer UPDATE— y la verificación lo marca
+        FALLIDO diciendo qué esperaba y qué encontró. Preferimos el aviso ruidoso
+        antes que duplicar la fila o dejar pasar un dato viejo en silencio.
+        """
+        origen = miembro.pk
+        if self._ya_verificado(hogar, PasoEscritura.VALIDADOR, origen):
+            return ResultadoPaso(PasoEscritura.VALIDADOR, str(origen),
+                                 EstadoPaso.VERIFICADO, "", {"idempotente": True})
+
+        binds_estado = mapeo.binds_validador_hogar(
+            hog_codigo, per_idpersona, miembro=miembro, catalogos=self.catalogos)
+        binds_jefe = mapeo.binds_validador_parent(
+            hog_codigo, per_idpersona, miembro=miembro, catalogos=self.catalogos)
+
+        llamadas = [(P.GIC_INSERT_VALIDADOR_HOGAR, binds_estado),
+                    (P.GIC_INSERT_VALIDADOR_PARENT, binds_jefe)]
+        ya_estaban = {}
+        if self.confirmar:
+            if V.contar_validador(self._cursor, hog_codigo=hog_codigo,
+                                  per_idpersona=per_idpersona,
+                                  val_idvalidador=P.VALIDADOR_ESTADO_RUV):
+                ya_estaban["estado_ruv"] = True
+                llamadas = [c for c in llamadas if c[0] is not P.GIC_INSERT_VALIDADOR_HOGAR]
+            # Por los DOS códigos de parentesco, no solo por el que toca escribir:
+            # si la persona ya tiene el 21 y ahora es jefe, preguntar solo por el 20
+            # daría "no está" y dejaría las dos filas contradiciéndose.
+            if V.contar_validadores_en(self._cursor, hog_codigo=hog_codigo,
+                                       per_idpersona=per_idpersona,
+                                       valores=sorted(P.VALIDADORES_PARENTESCO.values())):
+                ya_estaban["parentesco"] = True
+                llamadas = [c for c in llamadas if c[0] is not P.GIC_INSERT_VALIDADOR_PARENT]
+
+        resultados = [self._ejecutar_paso(proc, binds) for proc, binds in llamadas]
+        res = (self._fusionar(resultados) if resultados
+               else P.ResultadoInvocacion(
+                   procedimiento="(ninguno: los validadores ya estaban)",
+                   bloque="", binds_redactados={}, ejecutado=False))
+
+        estado = EstadoPaso.DRY_RUN
+        detalle = {"tipo_persona": binds_estado["validador_tipopersona"],
+                   "estado_ruv": binds_estado["validador"],
+                   "parentesco": binds_jefe["validador"]}
+        if ya_estaban:
+            detalle["ya_estaban"] = ya_estaban
+        if self.confirmar:
+            ok, verif = V.verificar_validadores(
+                self._cursor, hog_codigo=hog_codigo, per_idpersona=per_idpersona,
+                estado_esperado=binds_estado["validador"],
+                tipo_persona_esperado=binds_estado["validador_tipopersona"],
+                jefe_esperado=binds_jefe["validador"],
+            )
+            detalle = {**detalle, **verif}
+            estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+        self._registrar(hogar, PasoEscritura.VALIDADOR, origen, res=res, estado=estado,
+                        hog_codigo=hog_codigo, per_idpersona=per_idpersona,
+                        detalle=detalle)
+        return ResultadoPaso(PasoEscritura.VALIDADOR, str(origen), estado,
+                             res.bloque, detalle)
+
+    def paso_hecho(self, hogar, miembro, hecho, *, hog_codigo, per_idpersona) -> ResultadoPaso:
+        """
+        UN hecho victimizante de la persona → validador 101..114.
+
+        Un paso del ledger por hecho, para que un hecho que no cruce no arrastre a
+        los demás de la misma persona. Como `GIC_INSERT_VALIDADOR_HECHO_AUX`
+        tampoco es idempotente, se comprueba antes si el validador ya está.
+        """
+        # Solo el id del hecho, no `miembro.pk:hecho.pk`: las dos PKs son UUID y la
+        # cadena compuesta mide 73 caracteres contra los 64 de `origen_id` — en
+        # PostgreSQL eso es un DataError en el primer hecho, DESPUÉS de que los
+        # validadores ya quedaron commiteados en Oracle. El id del hecho basta como
+        # clave: es único, y de qué persona era lo dice `destino_per_idpersona`.
+        origen = str(hecho.pk)
+        if self._ya_verificado(hogar, PasoEscritura.HECHO, origen):
+            return ResultadoPaso(PasoEscritura.HECHO, origen, EstadoPaso.VERIFICADO,
+                                 "", {"idempotente": True})
+        try:
+            binds = mapeo.binds_validador_hecho(
+                hog_codigo, per_idpersona, hecho=hecho, catalogos=self.catalogos)
+        except mapeo.MapeoDesconocido as exc:
+            # Un hecho sin cruce NO se escribe con un id aproximado: escribir el
+            # número equivocado deja en el reporte el hecho de otra persona, y no
+            # hay forma de distinguirlo después de un hecho real.
+            detalle = {"omitida": True, "motivo": str(exc)[:400],
+                       "hecho": getattr(hecho.hecho, "codigo", "")}
+            self._registrar(hogar, PasoEscritura.HECHO, origen, res=None,
+                            estado=EstadoPaso.OMITIDO, hog_codigo=hog_codigo,
+                            per_idpersona=per_idpersona, detalle=detalle)
+            return ResultadoPaso(PasoEscritura.HECHO, origen, EstadoPaso.OMITIDO,
+                                 "", detalle)
+
+        id_hecho = binds["id_hecho"]
+        detalle = {"hecho": getattr(hecho.hecho, "codigo", ""), "id_hecho": id_hecho}
+        aproximado = self.catalogos.hecho_es_aproximado(hecho.hecho)
+        if aproximado:
+            detalle["cruce_aproximado"] = aproximado
+
+        if self.confirmar and V.contar_validador(
+                self._cursor, hog_codigo=hog_codigo, per_idpersona=per_idpersona,
+                val_idvalidador=P.validador_de_hecho(id_hecho)):
+            detalle["ya_estaba"] = True
+            res = P.ResultadoInvocacion(
+                procedimiento="(ninguno: el hecho ya estaba)", bloque="",
+                binds_redactados={}, ejecutado=False)
+        else:
+            res = self._ejecutar_paso(P.GIC_INSERT_VALIDADOR_HECHO_AUX, binds)
+
+        estado = EstadoPaso.DRY_RUN
+        if self.confirmar:
+            ok, verif = V.verificar_hecho(self._cursor, hog_codigo=hog_codigo,
+                                          per_idpersona=per_idpersona,
+                                          id_hecho=id_hecho)
+            detalle = {**detalle, **verif}
+            estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+        self._registrar(hogar, PasoEscritura.HECHO, origen, res=res, estado=estado,
+                        hog_codigo=hog_codigo, per_idpersona=per_idpersona,
+                        detalle=detalle)
+        return ResultadoPaso(PasoEscritura.HECHO, origen, estado, res.bloque, detalle)
+
+    def paso_encuestado(self, hogar, miembro, *, hog_codigo, per_idpersona) -> ResultadoPaso:
+        """
+        Marca a la persona entrevistada con `PER_ENCUESTADA='SI'`.
+
+        No sobra aunque `GIC_INSERT_MIEMBRO_HOGAR` ya reciba ese literal: ese
+        procedure solo inserta `IF COUNT(*)=0`, así que si el vínculo ya existía
+        —de una corrida anterior, o del propio legacy— el valor nunca se corrige.
+        Este es el único camino que lo arregla, y siendo un UPDATE es idempotente
+        de verdad: repetirlo no duplica nada.
+        """
+        origen = miembro.pk
+        if self._ya_verificado(hogar, PasoEscritura.ENCUESTADO, origen):
+            return ResultadoPaso(PasoEscritura.ENCUESTADO, str(origen),
+                                 EstadoPaso.VERIFICADO, "", {"idempotente": True})
+
+        binds = mapeo.binds_encuestado(hog_codigo, per_idpersona)
+        res = self._ejecutar_paso(P.GIC_ACTUALIZA_ENCUESTADO, binds)
+
+        estado, detalle = EstadoPaso.DRY_RUN, {}
+        if self.confirmar:
+            ok, detalle = V.verificar_encuestado(
+                self._cursor, hog_codigo=hog_codigo, per_idpersona=per_idpersona)
+            estado = EstadoPaso.VERIFICADO if ok else EstadoPaso.FALLIDO
+        self._registrar(hogar, PasoEscritura.ENCUESTADO, origen, res=res, estado=estado,
+                        hog_codigo=hog_codigo, per_idpersona=per_idpersona,
+                        detalle=detalle)
+        return ResultadoPaso(PasoEscritura.ENCUESTADO, str(origen), estado,
+                             res.bloque, detalle)
+
     def paso_territorio(self, hogar, sesion, *, hog_codigo) -> ResultadoPaso:
         """
         Cascada territorial: 4 procedures, 1 paso de la máquina (origen = sesión).
@@ -391,18 +575,53 @@ class EscritorOracle:
         # usa el codigo SICAV como marcador de referencia en los siguientes bloques.
         hog_codigo = r_hogar.detalle.get("hog_codigo") or hogar.codigo_hogar
 
-        # 2. por miembro: PERSONA → MIEMBRO. El mapa miembro→PER_IDPERSONA que deja
-        #    este bucle es lo que después ancla cada respuesta de nivel PERSONA.
+        # 2. por miembro: PERSONA → MIEMBRO → VALIDADORES → HECHOS → ENCUESTADO.
+        #    El mapa miembro→PER_IDPERSONA que deja este bucle es lo que después
+        #    ancla cada respuesta de nivel PERSONA.
+        #
+        #    Los validadores y los hechos van ACÁ, antes del territorio y de las
+        #    respuestas, y el orden importa: cada respuesta dispara
+        #    `SP_INS_ETNIA_ARES`, que deriva los marcadores étnicos del hogar
+        #    (5007-5012) y el de desplazamiento (506) a partir de los validadores
+        #    que YA estén escritos. Si los validadores llegaran después, ese
+        #    procedure no vuelve a correr y esas marcas no las crea nadie.
         mapa_personas = {}
         for miembro in hogar.miembros.all():
             r_per = self.paso_persona(hogar, miembro, user=user, hog_codigo=hog_codigo)
             rh.pasos.append(r_per)
             per_id = r_per.detalle.get("per_idpersona")  # None en DRY-RUN
             mapa_personas[miembro.pk] = per_id
+
+            # Sin PER_IDPERSONA no se cuelga nada de esta persona. En Oracle no hay
+            # FK entre GIC_PERSONA y estas tablas, así que un NULL no da error:
+            # deja un miembro sin persona y validadores huérfanos que ningún
+            # reporte va a encontrar y ningún DELETE por persona va a limpiar. El
+            # paso PERSONA ya quedó FALLIDO en el ledger con su motivo; acá solo se
+            # evita empeorarlo. En DRY-RUN se sigue, que es de lo que se trata.
+            if self.confirmar and per_id is None:
+                continue
+
             rh.pasos.append(
                 self.paso_miembro(hogar, miembro, user=user,
                                   hog_codigo=hog_codigo, per_idpersona=per_id)
             )
+            rh.pasos.append(
+                self.paso_validador(hogar, miembro, hog_codigo=hog_codigo,
+                                    per_idpersona=per_id)
+            )
+            for hecho in mapeo.hechos_de_miembro(miembro):
+                rh.pasos.append(
+                    self.paso_hecho(hogar, miembro, hecho, hog_codigo=hog_codigo,
+                                    per_idpersona=per_id)
+                )
+            # La marca de encuestado es de UNA persona: la entrevistada, o sea el
+            # autorizado del hogar. Marcar a todos afirmaría que a cada miembro se
+            # le hizo la entrevista.
+            if getattr(miembro, "es_autorizado", False):
+                rh.pasos.append(
+                    self.paso_encuestado(hogar, miembro, hog_codigo=hog_codigo,
+                                         per_idpersona=per_id)
+                )
 
         if sesion is None:
             # Sin sesión no hay territorio de atención ni respuestas que escribir.
