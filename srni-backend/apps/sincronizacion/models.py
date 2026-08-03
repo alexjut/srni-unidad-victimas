@@ -152,7 +152,23 @@ class RegistroEscrituraOracle(models.Model):
 
 class UsuarioLegacy(models.Model):
     """
-    Un encuestador del legacy (`GIC_USUARIO`), traído a SICAV.
+    Un encuestador del catálogo `GIC_USUARIO`, traído a SICAV.
+
+    ⚠️ **ESTE CATÁLOGO ESTÁ CONGELADO DESDE 2017** (verificado el 3-ago-2026: sus
+    altas por año son 2017=1.994, 2016=3.046, 2015=2.646, 2014=482, 2013=3, y
+    nada después). Sirve para leer el histórico, **no para saber quién trabaja
+    hoy**: de los 1.153 encuestadores que capturaron en los últimos 90 días,
+    solo **26** tienen ficha acá.
+
+    El directorio VIVO está en Vivanto —`ADMINUSUARIOS.USUARIO` ⨝
+    `ADMINUSUARIOS.PERSONA`, por el dblink— y es el que usa
+    `crear_usuarios_activos`. Ahí están el 99,7 % de los activos, todos con
+    correo y sin duplicados; acá hay 608 correos repetidos.
+
+    Y un cabo suelto que se cerró de paso: **`GIC_HOGAR.USU_IDUSUARIO` es el
+    `IDUSUARIO` de Vivanto**, no el de esta tabla. `JGUARINH` es 197035 en
+    Vivanto y sus hogares se llaman `197035-31TUK`. Por eso ese campo "no
+    cruzaba" acá en el 99,7 % de los casos: nunca apuntó acá.
 
     ─── Para qué, más allá de "tener el nombre" ──────────────────────────────
     Tres cosas, y la tercera es la que obliga:
