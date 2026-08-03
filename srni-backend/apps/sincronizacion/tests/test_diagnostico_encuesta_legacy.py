@@ -14,9 +14,7 @@ escrita.
 `dictaminar` es pura a propósito: se prueba sin Oracle, que es justo lo que hace
 falta cuando la base no responde (que fue el caso el día que se escribió esto).
 """
-from apps.sincronizacion.management.commands.diagnosticar_encuesta_legacy import (
-    dictaminar,
-)
+from apps.sincronizacion.oracle.diagnostico import dictaminar
 
 
 def _medido(**kw):

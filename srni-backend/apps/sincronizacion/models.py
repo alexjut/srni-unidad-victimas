@@ -232,3 +232,74 @@ class UsuarioLegacy(models.Model):
 
     def __str__(self):
         return f"{self.usu_usuario} ({self.usu_idusuario})"
+
+
+class CaracterizacionLegacy(models.Model):
+    """
+    Una caracterización hecha en el legacy, traída para que su autor la vea.
+
+    ─── El objetivo, en una frase ────────────────────────────────────────────
+    Que un encuestador entre a SICAV y vea **lo que ya hizo**, aunque lo haya
+    hecho en la aplicación vieja. Hoy su trabajo vive en una base a la que no
+    tiene acceso y en un listado que —como se comprobó— puede no mostrárselo.
+
+    ─── La decisión de diseño que importa ────────────────────────────────────
+    El vínculo con el autor es la **cadena** `USU_USUARIOCREACION`, NO el
+    catálogo `GIC_USUARIO`.
+
+    Parece un detalle y es lo contrario. Medido en producción: **1.077.712
+    hogares (97,7 %)** tienen un `USU_USUARIOCREACION` que no existe en
+    `GIC_USUARIO`, y el `USU_IDUSUARIO` no cruza en el 99,7 %. `JGUARINH` —el
+    del caso de Pandi— es uno de ellos: 18 caracterizaciones y ninguna fila de
+    usuario. Cruzar por el catálogo, que es lo que hace el legacy con su INNER
+    JOIN, perdería el 97 % del trabajo hecho. Justo lo contrario de lo que se
+    busca acá.
+
+    Por eso `usuario_creador` es una cadena y no una FK, y `usuario_legacy` —que
+    sí apunta al catálogo— es opcional y solo enriquece (nombre, correo, id de
+    Vivanto) cuando por casualidad la fila existe.
+
+    ─── Qué NO es ────────────────────────────────────────────────────────────
+    No es una copia de la caracterización: no trae respuestas ni personas, y por
+    lo tanto **no trae PII**. Es el recibo — qué se capturó, cuándo, en qué
+    estado quedó y si los reportes lo ven. Para el detalle está el legacy.
+    """
+    hog_codigo = models.CharField(max_length=200, primary_key=True)
+
+    #: El autor, tal como quedó escrito en `GIC_HOGAR.USU_USUARIOCREACION`. Es la
+    #: llave real: se compara con `Usuario.codigo_usuario` de SICAV.
+    usuario_creador = models.CharField(max_length=100, db_index=True)
+    usu_idusuario = models.BigIntegerField(null=True, blank=True, db_index=True)
+    #: Enriquecimiento opcional. Nulo en el 97,7 % de los casos, y no pasa nada.
+    usuario_legacy = models.ForeignKey(
+        UsuarioLegacy, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="caracterizaciones",
+    )
+
+    estado = models.CharField(max_length=40, db_index=True)
+    creado_en_legacy = models.DateTimeField(null=True, blank=True, db_index=True)
+    fecha_estado = models.DateTimeField(null=True, blank=True)
+
+    miembros = models.PositiveIntegerField(default=0)
+    respuestas_definitivas = models.PositiveIntegerField(default=0)
+    respuestas_trabajo = models.PositiveIntegerField(default=0)
+    capitulos = models.PositiveIntegerField(default=0)
+
+    #: El veredicto de `oracle.diagnostico.dictaminar`. Se guarda calculado para
+    #: que la pantalla del encuestador no tenga que abrir Oracle para pintarse.
+    veredicto = models.CharField(max_length=32, blank=True, db_index=True)
+    #: Si los reportes de la UARIV ven esta caracterización. Es lo que convierte
+    #: el listado en algo accionable: no basta con decir "la hiciste", hay que
+    #: poder decir "y no está contando".
+    visible_en_reportes = models.BooleanField(default=False, db_index=True)
+
+    sincronizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Caracterización del legacy"
+        verbose_name_plural = "Caracterizaciones del legacy"
+        ordering = ["-creado_en_legacy"]
+        indexes = [models.Index(fields=["usuario_creador", "-creado_en_legacy"])]
+
+    def __str__(self):
+        return f"{self.hog_codigo} ({self.estado})"

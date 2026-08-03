@@ -1,7 +1,7 @@
 """Serializers del ledger de escritura a Oracle (solo lectura)."""
 from rest_framework import serializers
 
-from .models import RegistroEscrituraOracle
+from .models import CaracterizacionLegacy, RegistroEscrituraOracle
 
 
 class RegistroEscrituraSerializer(serializers.ModelSerializer):
@@ -19,6 +19,27 @@ class RegistroEscrituraSerializer(serializers.ModelSerializer):
         fields = ["id", "hogar_codigo", "paso", "estado", "intento",
                   "destino_entorno", "destino_hog_codigo", "destino_per_idpersona",
                   "resultado", "creado_en", "actualizado_en"]
+        read_only_fields = fields
+
+
+class CaracterizacionLegacySerializer(serializers.ModelSerializer):
+    """
+    Una caracterización que el encuestador hizo en la aplicación vieja.
+
+    Lleva `visible_en_reportes` porque sin esa columna esto sería una lista de
+    códigos. Con ella el encuestador puede ver que un trabajo suyo **no está
+    contando**, que es la información que hoy no tiene por ningún lado.
+
+    No expone PII: el modelo no la guarda. Es el recibo, no la encuesta.
+    """
+    encuestador = serializers.CharField(source="usuario_creador", read_only=True)
+
+    class Meta:
+        model = CaracterizacionLegacy
+        fields = ["hog_codigo", "encuestador", "estado", "creado_en_legacy",
+                  "fecha_estado", "miembros", "respuestas_definitivas",
+                  "respuestas_trabajo", "capitulos", "veredicto",
+                  "visible_en_reportes"]
         read_only_fields = fields
 
 
