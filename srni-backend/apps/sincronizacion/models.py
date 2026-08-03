@@ -148,3 +148,87 @@ class RegistroEscrituraOracle(models.Model):
     def completado(self) -> bool:
         """Solo VERIFICADO cuenta como completado para avanzar la máquina."""
         return self.estado == EstadoPaso.VERIFICADO
+
+
+class UsuarioLegacy(models.Model):
+    """
+    Un encuestador del legacy (`GIC_USUARIO`), traído a SICAV.
+
+    ─── Para qué, más allá de "tener el nombre" ──────────────────────────────
+    Tres cosas, y la tercera es la que obliga:
+
+    1. **Atribución.** `GIC_HOGAR.USU_USUARIOCREACION` es una cadena suelta. Sin
+       este catálogo, un hogar del legacy dice "lo capturó JGUARINH" y no hay
+       forma de saber quién es, ni a quién enrutarle una novedad del territorio.
+
+    2. **Diagnóstico.** "Mis encuestas" se arma con un `INNER JOIN GIC_USUARIO`
+       (`SP_REPORTE_MIEMBROSXCODIGO`, `src_GIC_N_CARACTERIZACION.sql:2451`). Un
+       hogar cuyo creador no tiene fila ahí **desaparece del listado** aunque esté
+       cerrado y archivado. Teniendo el catálogo de este lado, esa causa se
+       detecta sin abrir Oracle.
+
+    3. **Un `USU_IDUSUARIO` por encuestador, en vez del usuario de servicio
+       compartido.** Es la razón fuerte. `GIC_INSERT_HOGAR1` solo crea un hogar si
+       el usuario **no tiene ninguno en ACTIVA**; si lo tiene, no crea nada y
+       devuelve el código del viejo. Con un único usuario de servicio para todo
+       SICAV, basta que **un** hogar quede abierto para que el siguiente —de otro
+       encuestador, de otro municipio— se le meta adentro. No es un riesgo
+       teórico: es el mismo mecanismo que ya produce fusiones en el legacy.
+
+    ─── Lo que este catálogo NO puede arreglar ───────────────────────────────
+    La autoría del histórico ya está rota y traerla no la repara: medido en
+    producción, **1.077.712 hogares (97,7 %)** tienen un `USU_USUARIOCREACION`
+    que no existe en `GIC_USUARIO` —9.424 cadenas distintas contra ~8.100
+    usuarios— y el `USU_IDUSUARIO` no cruza en el 99,7 %. Este modelo permite
+    *medir* ese hueco y no ampliarlo; cerrarlo hacia atrás es otra discusión.
+
+    ─── Datos personales ─────────────────────────────────────────────────────
+    Son funcionarios, no víctimas, y aquí no se aplica el cifrado del padrón
+    —igual que `autenticacion.Usuario`, que guarda nombre y correo en claro—.
+    Aun así se trae **lo mínimo que sirve**: se dejan fuera `USU_CONTRASENA` y
+    `USU_TOKEN` (credenciales, que no tenemos por qué replicar) y los campos de
+    bloqueo. El documento sí se trae: cuando el login del legacy y el de SICAV no
+    coinciden, es lo único que permite reconocer a la misma persona.
+    """
+    #: `USU_IDUSUARIO`. Es la PK acá también: es el valor que viaja en
+    #: `GIC_HOGAR.USU_IDUSUARIO` y el que hay que poder resolver.
+    usu_idusuario = models.BigIntegerField(primary_key=True)
+    #: `USU_USUARIO` — el login ('JGUARINH'). Es lo que compara el INNER JOIN de
+    #: "mis encuestas", así que es la llave real para el diagnóstico.
+    usu_usuario = models.CharField(max_length=100, db_index=True)
+
+    nombre_completo = models.CharField(max_length=200, blank=True)
+    documento = models.CharField(max_length=30, blank=True, db_index=True)
+    correo = models.EmailField(blank=True)
+
+    ent_identidad = models.BigIntegerField(
+        null=True, blank=True, help_text="ENT_IDENTIDAD — entidad a la que pertenece.")
+    est_idestado = models.BigIntegerField(
+        null=True, blank=True, help_text="EST_IDESTADO — estado en el legacy.")
+    codigo = models.CharField(max_length=50, blank=True, help_text="USU_CODIGO.")
+    dado_de_baja = models.BooleanField(
+        default=False,
+        help_text="USU_DADODEBAJA — un usuario de baja sigue siendo el autor de "
+                  "sus hogares, así que se conserva.")
+    #: `ID_USUARIOVIVANTO` — el puente con las identidades de Vivanto. Es el
+    #: campo que permitiría cruzar sin depender de que el login coincida.
+    id_usuario_vivanto = models.BigIntegerField(null=True, blank=True, db_index=True)
+    creado_en_legacy = models.DateTimeField(null=True, blank=True)
+
+    #: Enlace con el usuario de SICAV, cuando se pudo reconocer a la misma
+    #: persona. Nullable a propósito: la mayoría de los 8.000 del legacy no tiene
+    #: cuenta en SICAV, y forzar el enlace inventaría correspondencias.
+    usuario_sicav = models.OneToOneField(
+        "autenticacion.Usuario", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="usuario_legacy",
+    )
+
+    importado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Usuario del legacy"
+        verbose_name_plural = "Usuarios del legacy"
+        ordering = ["usu_usuario"]
+
+    def __str__(self):
+        return f"{self.usu_usuario} ({self.usu_idusuario})"

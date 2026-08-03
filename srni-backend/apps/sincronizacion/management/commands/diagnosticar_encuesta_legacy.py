@@ -47,6 +47,16 @@ Las causas, con lo que las delata:
 6. **Se migró al histórico.** `GIC_HOGAR_HISTORICO` existe y hay un job a la
    01:30; una consulta que solo mire `GIC_HOGAR` no lo encuentra.
 
+7. **El encuestador no existe en `GIC_USUARIO`.** `SP_REPORTE_MIEMBROSXCODIGO`
+   arma "mis encuestas" con un **`INNER JOIN GIC_USUARIO US ON US.USU_USUARIO =
+   T.USU_USUARIOCREACION`** (`src_GIC_N_CARACTERIZACION.sql:2451`). Si el usuario
+   que capturó no tiene fila en esa tabla, el hogar **desaparece del listado**
+   aunque esté cerrado, archivado y perfecto.
+   Y no es un caso raro: medido sobre producción, **1.077.712 hogares (97,7 %)**
+   tienen un `USU_USUARIOCREACION` que no existe en `GIC_USUARIO`, y el
+   `USU_IDUSUARIO` no cruza en el 99,7 %.
+   ⇒ *El dato está, y el listado que lo debería mostrar lo excluye por un JOIN.*
+
 ──────────────────────────────────────────────────────────────────────────────
 SOLO LECTURA — SIN EXCEPCIONES
 ──────────────────────────────────────────────────────────────────────────────
@@ -204,6 +214,16 @@ def diagnosticar(cur, hog_codigo) -> dict:
         SELECT COUNT(DISTINCT per_idpersona) FROM gic_n_validadoresxpersona
          WHERE hog_codigo = :h AND val_idvalidador BETWEEN 101 AND 114
     """, {"h": hog_codigo}) or 0
+    # ── ¿el encuestador existe en el catálogo de usuarios? ───────────────────
+    # No es cosmético: "mis encuestas" se arma con un INNER JOIN contra
+    # GIC_USUARIO. Sin fila ahí, el hogar no sale del listado aunque esté perfecto.
+    d["usuario_en_catalogo"] = bool(_uno(cur, """
+        SELECT COUNT(*) FROM gic_usuario WHERE UPPER(usu_usuario) = UPPER(:u)
+    """, {"u": d.get("creado_por") or ""}) or 0)
+    d["id_usuario_en_catalogo"] = bool(_uno(cur, """
+        SELECT COUNT(*) FROM gic_usuario WHERE usu_idusuario = :i
+    """, {"i": d.get("id_usuario")}) or 0) if d.get("id_usuario") is not None else False
+
     terr = _filas(cur, """
         SELECT iddt, iddeptoaten, idpuntoaten, idmunaten
           FROM gic_n_relacion_dt_punto WHERE hogarcodigo = :h
@@ -236,7 +256,9 @@ def dictaminar(d: dict) -> dict:
              capitulos=d.get("capitulos", 0),
              con_estado_ruv=d.get("con_estado_ruv", 0),
              con_hechos=d.get("con_hechos", 0),
-             territorio=d.get("territorio", "sin fila"))
+             territorio=d.get("territorio", "sin fila"),
+             usuario_en_catalogo=d.get("usuario_en_catalogo", True),
+             id_usuario_en_catalogo=d.get("id_usuario_en_catalogo", True))
 
     # ── carencias (ortogonales al veredicto principal) ───────────────────────
     if miembros and not d["con_estado_ruv"]:
@@ -255,6 +277,15 @@ def dictaminar(d: dict) -> dict:
     if miembros and not d["encuestados"]:
         d["carencias"].append(
             "nadie con PER_ENCUESTADA='SI' → JEFE_HOGAR sale 'NO' para todo el hogar")
+    if not d["usuario_en_catalogo"]:
+        d["carencias"].append(
+            f"el usuario {d.get('creado_por')!r} NO existe en GIC_USUARIO → "
+            "'mis encuestas' lo arma con un INNER JOIN contra esa tabla, así que "
+            "este hogar no sale del listado aunque esté cerrado y archivado")
+    if not d["id_usuario_en_catalogo"]:
+        d["carencias"].append(
+            f"el USU_IDUSUARIO {d.get('id_usuario')} no cruza con GIC_USUARIO → "
+            "el encuestador sale NULL en los reportes de productividad")
 
     # ── veredicto principal ──────────────────────────────────────────────────
     estado = (d.get("estado") or "").strip().upper()

@@ -23,9 +23,11 @@ def _medido(**kw):
     """Un hogar medido, completo y sano; cada test cambia lo suyo."""
     base = dict(
         hog_codigo="999999-ABCDE", donde="GIC_HOGAR", estado="CERRADA",
+        creado_por="ENC001", id_usuario=999999,
         miembros=3, encuestados=1, sin_espejo=0,
         en_trabajo=0, definitivas=120, capitulos=8,
         con_estado_ruv=3, con_hechos=3, territorio="completo",
+        usuario_en_catalogo=True, id_usuario_en_catalogo=True,
     )
     base.update(kw)
     return dictaminar(base)
@@ -124,6 +126,30 @@ def test_sin_encuestado_el_reporte_no_muestra_jefe_de_hogar():
 def test_el_territorio_incompleto_se_distingue_del_ausente():
     assert any("incompleto" in c for c in _medido(territorio="incompleto")["carencias"])
     assert any("sin fila" in c for c in _medido(territorio="sin fila")["carencias"])
+
+
+def test_un_hogar_perfecto_es_invisible_si_su_encuestador_no_esta_en_el_catalogo():
+    """
+    La séptima causa, y la más traicionera: `SP_REPORTE_MIEMBROSXCODIGO` arma
+    "mis encuestas" con un **INNER JOIN** contra GIC_USUARIO. Sin fila del
+    usuario, el hogar no sale del listado por más que esté cerrado y archivado —
+    el veredicto sigue siendo COMPLETO, y por eso la carencia tiene que verse.
+
+    No es marginal: 1.077.712 hogares (97,7 %) están en esa situación.
+    """
+    d = _medido(usuario_en_catalogo=False, creado_por="JGUARINH")
+    assert d["veredicto"] == "COMPLETO"
+    assert any("JGUARINH" in c and "INNER JOIN" in c for c in d["carencias"])
+
+
+def test_el_id_de_usuario_que_no_cruza_se_reporta_aparte():
+    """
+    Son dos comprobaciones distintas: la cadena la usa 'mis encuestas', el id lo
+    usan los reportes de productividad. Un hogar puede fallar una y no la otra.
+    """
+    d = _medido(id_usuario_en_catalogo=False, id_usuario=999999)
+    assert any("999999" in c and "productividad" in c for c in d["carencias"])
+    assert not any("INNER JOIN" in c for c in d["carencias"])
 
 
 def test_un_dict_parcial_no_revienta():
