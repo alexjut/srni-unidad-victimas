@@ -346,11 +346,12 @@ class ConsultarFuenteView(APIView):
 
         tipo = serializer.validated_data['tipo_documento']
         numero = serializer.validated_data['numero_documento']
+        ruta = serializer.validated_data.get('ruta_entrevista') or None
         ip = _ip_de_request(request)
         ua = request.META.get('HTTP_USER_AGENT', '')
 
         repo = get_repository()
-        resultado = repo.buscar_por_documento(tipo, numero)
+        resultado = repo.buscar_por_documento(tipo, numero, ruta=ruta)
 
         LogAcceso.registrar(
             usuario=request.user,
@@ -368,6 +369,12 @@ class ConsultarFuenteView(APIView):
                     resultado.victima.habilitado_para_caracterizacion
                     if resultado.victima else None
                 ),
+                # Una ruta de excepción levanta la regla de vigencia, o sea que
+                # se saltea un control. Queda en el log además del registro
+                # `ExcepcionVigencia`: acá se ve el INTENTO aunque la sesión
+                # nunca llegue a crearse.
+                'ruta': ruta or 'GENERAL',
+                'motivo': resultado.motivo,
             },
         )
 

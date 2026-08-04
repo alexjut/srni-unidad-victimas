@@ -359,6 +359,8 @@ class MockVictimaRepository(VictimaRepository):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta=None,
     ) -> ResultadoBusqueda:
         clave = (tipo_documento.upper(), numero_documento.strip())
         victima = _VICTIMAS.get(clave)
@@ -369,7 +371,7 @@ class MockVictimaRepository(VictimaRepository):
         # en Registraduría" contra "No se encontró la persona en el padrón"—, así
         # que las pruebas contra mock validaban textos que producción nunca
         # emitía.
-        veredicto = describir_elegibilidad(victima)
+        veredicto = describir_elegibilidad(victima, ruta=ruta)
         return ResultadoBusqueda(
             encontrado=victima is not None,
             victima=victima,
@@ -414,9 +416,12 @@ class MockVictimaRepository(VictimaRepository):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta=None,
     ) -> EstadoHabilitacion:
         veredicto = describir_elegibilidad(
-            _VICTIMAS.get((tipo_documento.upper(), numero_documento.strip()))
+            _VICTIMAS.get((tipo_documento.upper(), numero_documento.strip())),
+            ruta=ruta,
         )
         return EstadoHabilitacion(
             habilitado=veredicto.elegible,

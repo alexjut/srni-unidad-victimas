@@ -147,3 +147,72 @@ def test_el_bloqueado_nombra_las_tres_rutas_que_lo_levantan():
     assert 'núcleo' in mensaje
     assert 'especial' in mensaje
     assert 'no es una falla' in mensaje
+
+
+# ── El cable: que la ruta llegue de verdad desde la API ──────────────────────
+#
+# La lógica de arriba estaba escrita y probada, pero NADIE le pasaba la ruta:
+# los tres llamados a `describir_elegibilidad` iban sin ella y el serializer no
+# la aceptaba. O sea que la excepción era inalcanzable desde la app — la parte
+# más fácil de olvidar y la única que el encuestador nota.
+
+@pytest.fixture
+def victima_con_ficha_vigente(db):
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import Victima
+
+    tipo = TipoDocumento.objects.create(codigo='CC', nombre='Cédula')
+    return Victima.objects.create(
+        tipo_documento=tipo,
+        numero_documento='1115724047',
+        primer_nombre='ANA', primer_apellido='GOMEZ',
+        fecha_nacimiento='1990-01-01', genero='F',
+        estado_ruv='INCLUIDO',
+        habilitado_para_caracterizacion=False,
+        fecha_ult_caracterizacion=datetime.datetime(
+            2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc),
+    )
+
+
+def test_el_repositorio_recibe_la_ruta_y_levanta_el_bloqueo(victima_con_ficha_vigente):
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    repo = DjangoVictimaRepository()
+
+    sin_ruta = repo.buscar_por_documento('CC', '1115724047')
+    assert sin_ruta.motivo == MotivoNoElegible.FICHA_VIGENTE
+
+    con_ruta = repo.buscar_por_documento('CC', '1115724047',
+                                         ruta='ACCIONES_CONSTITUCIONALES')
+    assert con_ruta.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+
+
+def test_verificar_habilitacion_tambien_recibe_la_ruta(victima_con_ficha_vigente):
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    repo = DjangoVictimaRepository()
+    assert repo.verificar_habilitacion('CC', '1115724047').habilitado is False
+    assert repo.verificar_habilitacion(
+        'CC', '1115724047', ruta='ESPECIAL').habilitado is True
+
+
+def test_el_serializer_de_entrada_acepta_la_ruta():
+    """Sin esto la app no tiene por dónde mandarla y el resto no sirve."""
+    from apps.victimas.serializers import ConsultarFuenteInputSerializer
+
+    s = ConsultarFuenteInputSerializer(data={
+        'tipo_documento': 'cc',
+        'numero_documento': '1115724047',
+        'ruta_entrevista': 'acciones_constitucionales',
+    })
+    assert s.is_valid(), s.errors
+    assert s.validated_data['ruta_entrevista'] == 'ACCIONES_CONSTITUCIONALES'
+
+
+def test_la_ruta_es_opcional_y_su_ausencia_no_rompe_nada():
+    from apps.victimas.serializers import ConsultarFuenteInputSerializer
+
+    s = ConsultarFuenteInputSerializer(data={
+        'tipo_documento': 'CC', 'numero_documento': '1115724047'})
+    assert s.is_valid(), s.errors
+    assert s.validated_data.get('ruta_entrevista', '') == ''

@@ -234,7 +234,8 @@ class DjangoVictimaRepository(VictimaRepository):
         return resultado
 
     # ── contrato ──────────────────────────────────────────────────────────────
-    def buscar_por_documento(self, tipo_documento, numero_documento) -> ResultadoBusqueda:
+    def buscar_por_documento(self, tipo_documento, numero_documento, *,
+                             ruta=None) -> ResultadoBusqueda:
         # Por hash, nunca por el campo cifrado: Fernet no es determinista y un
         # `filter(numero_documento=...)` no encontraría jamás nada.
         encontradas = list(self._base_qs().filter(
@@ -303,7 +304,7 @@ class DjangoVictimaRepository(VictimaRepository):
         #
         # El veredicto lo arma `describir_elegibilidad` — el MISMO que usa
         # `estado_habilitacion` más abajo, para que no puedan volver a divergir.
-        veredicto = describir_elegibilidad(victima)
+        veredicto = describir_elegibilidad(victima, ruta=ruta)
 
         # El aviso va PRIMERO: que haya que verificar la identidad importa más que el
         # estado en el RUV — si es otra persona, lo del RUV ni aplica.
@@ -390,7 +391,8 @@ class DjangoVictimaRepository(VictimaRepository):
                 clase_colision=clases.get(victima.numero_documento_hash),
             )
 
-    def verificar_habilitacion(self, tipo_documento, numero_documento) -> EstadoHabilitacion:
+    def verificar_habilitacion(self, tipo_documento, numero_documento, *,
+                               ruta=None) -> EstadoHabilitacion:
         """Consulta ligera: solo los tres campos que deciden, sin descifrar el resto."""
         from apps.victimas.models import Victima
 
@@ -405,7 +407,7 @@ class DjangoVictimaRepository(VictimaRepository):
         # contra "La persona no está habilitada para caracterización."). Dos
         # respuestas para la misma persona según por dónde entre la app es un
         # defecto esperando a ocurrir.
-        veredicto = describir_elegibilidad(victima)
+        veredicto = describir_elegibilidad(victima, ruta=ruta)
         return EstadoHabilitacion(
             habilitado=veredicto.elegible,
             razon=veredicto.mensaje,

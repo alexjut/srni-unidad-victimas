@@ -374,9 +374,17 @@ class VictimaRepository(ABC):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta: Optional[str] = None,
     ) -> ResultadoBusqueda:
         """
         Busca una víctima por tipo y número de documento.
+
+        `ruta` es la ruta de entrevista, y va acá porque el Manual §5.1.1 la
+        pide **en el mismo paso que el documento**: «Diligenciar el número de
+        documento con el cual iniciarán la conformación del hogar y establecer
+        la ruta respectiva». Tres de las cuatro omiten la regla de vigencia.
+        Sin ruta se responde el estado real, que es lo correcto por defecto.
 
         Retorna ResultadoBusqueda con encontrado=True si la persona existe
         en la fuente de datos, independientemente de su estado en el RUV.
@@ -471,6 +479,8 @@ class VictimaRepository(ABC):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta: Optional[str] = None,
     ) -> EstadoHabilitacion:
         """
         Verifica si la persona puede iniciar una nueva caracterización.
