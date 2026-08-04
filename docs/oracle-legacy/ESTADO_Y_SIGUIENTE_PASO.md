@@ -36,15 +36,52 @@ recursos — la base usa el **8 %** de sus procesos. Lleva 24 h estable.
    ninguna variable de correo**. Django caería a `smtp.EmailBackend` contra
    `localhost`, que en el contenedor no existe. No es un `settings`: requiere que
    OTI habilite un relay SMTP institucional y que el firewall lo deje salir.
-2. **Copiar el hash de Vivanto: peor de lo que parecía.** El catálogo de
-   `ADMINUSUARIOS.USUARIO` (solo metadatos, no se leyó ni una credencial) muestra
-   que Vivanto **ya tiene política de credenciales completa**:
+2. **Copiar el hash de Vivanto: sigue siendo mala idea, por otra razón.** El
+   catálogo de `ADMINUSUARIOS.USUARIO` (solo metadatos, no se leyó ni una
+   credencial) trae todo el aparato de una política de credenciales:
    `CAMBIARCONTRASENIA`, `CANTIDADDEINTENTOS`, `FECHACADUCIDAD`,
    `FECHAULTIMOINTENTO`, `DESBLOQUEOAUTOMATICO`, `FECHACAMBIOCONTRASENA`,
-   `IDESTADO`. Replicar el hash obligaría a replicar **toda esa política**, o
-   SICAV quedaría desincronizado: alguien bloqueado en Vivanto entraría igual, y
-   una clave caducada seguiría sirviendo. Se mantiene el criterio de
+   `IDESTADO`. Replicar el hash obligaría a replicar la parte que **sí** se
+   aplica —bloqueo y estado— o SICAV quedaría desincronizado: alguien bloqueado
+   en Vivanto entraría igual acá. Se mantiene el criterio de
    `crear_usuarios_activos`: **la contraseña no se copia**.
+
+   > **Corrección (4-ago, tarde).** Arriba se escribió que Vivanto "ya tiene
+   > política de credenciales completa". Medido, es **a medias**: ver el bloque
+   > siguiente. Tiene el aparato; aplica el bloqueo y las franjas horarias, pero
+   > **no caduca las claves** ni usa el cambio forzado.
+
+### La política de Vivanto, medida (no supuesta)
+
+Está declarada en `ADMINUSUARIOS.POLITICA` — **4 políticas activas**, todas
+creadas entre 2014 y 2016:
+
+| Política | Horario | Días | `MAXINTENTOS` | `TIEMPOBLOQUEO` | Longitud | `DURACIONCLAVE` |
+|---|---|---|---|---|---|---|
+| `GENERAL` | 06:00–19:00 | L-S (**sin domingo**) | 3 | 30 | 6–10 | **vacío** |
+| `7X24` | 04:00–23:59 | todos | 3 | 30 | 6–10 | **vacío** |
+| `JORNADA CONTINUA` | 00:01–23:59 | todos | 3 | 30 | 6–10 | **vacío** |
+| `POLITICA OPERADORES` | 06:00–21:59 | L-S | 3 | 30 | 6–10 | **vacío** |
+
+Tres lecturas que cambian el diseño:
+
+1. **`DURACIONCLAVE` vacío en las cuatro: Vivanto NO caduca las contraseñas.**
+   Lo confirman los datos: `CAMBIARCONTRASENIA` y `DESBLOQUEOAUTOMATICO` están en
+   **0 en las 81.370 cuentas**, y la diferencia entre `FECHACADUCIDAD` y
+   `FECHACAMBIOCONTRASENA` no tiene ningún período estable (225 días en 2.410
+   cuentas, pero **miles en negativo**: caducidad anterior al último cambio).
+   Si SICAV rota cada 45 días, **es una decisión nuestra, no paridad con ellos**,
+   y como tal hay que documentarla.
+2. **Longitud máxima de 10 caracteres.** Es una política de 2014 y no se copia:
+   un tope de longitud impide frases de paso y no aporta nada. SICAV usa Argon2 y
+   los validadores de Django, sin techo.
+3. **Franjas horarias y días.** `GENERAL` **no permite domingo** y corta a las
+   19:00. Copiar eso dejaría a un encuestador sin poder entrar un domingo en
+   territorio. **No se replica**; el trabajo de campo no tiene horario de oficina.
+
+Lo que **sí** vale la pena adoptar de ellos: `MAXINTENTOS = 3` con
+`TIEMPOBLOQUEO = 30` minutos (hoy SICAV usa 5 intentos / 15 min de bloqueo, en
+`apps/autenticacion/views.py`).
 
 ### La tercera vía: `UARIV.AUTH.API`, ya desplegada en el mismo servidor
 
