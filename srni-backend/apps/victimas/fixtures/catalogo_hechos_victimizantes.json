@@ -5,7 +5,7 @@
     "fields": {
       "codigo": "HV01",
       "nombre": "Desplazamiento forzado",
-      "descripcion": "TODO: confirmar texto oficial Ley 1448 Art. 60 — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 5 — «Desplazamiento Forzado». El hecho mayoritario: 2.091.801 registros (51,8 %) medidos el 4-ago-2026.",
       "activo": true,
       "orden": 1
     }
@@ -16,7 +16,7 @@
     "fields": {
       "codigo": "HV02",
       "nombre": "Acto terrorista / Atentado / Combate / Hostigamiento",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 1 — «Acto terrorista / Atentados / Combates / Enfrentamientos / Hostigamientos».",
       "activo": true,
       "orden": 2
     }
@@ -27,7 +27,7 @@
     "fields": {
       "codigo": "HV03",
       "nombre": "Amenaza",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 2 — «Amenaza».",
       "activo": true,
       "orden": 3
     }
@@ -38,7 +38,7 @@
     "fields": {
       "codigo": "HV04",
       "nombre": "Delitos contra la libertad e integridad sexual",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 3 — «Delitos contra la libertad y la integridad sexual en desarrollo del conflicto armado».",
       "activo": true,
       "orden": 4
     }
@@ -49,7 +49,7 @@
     "fields": {
       "codigo": "HV05",
       "nombre": "Desaparición forzada",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 4 — «Desaparicion Forzada».",
       "activo": true,
       "orden": 5
     }
@@ -60,7 +60,7 @@
     "fields": {
       "codigo": "HV06",
       "nombre": "Homicidio",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 6 — «Homicidio / Masacre». Ojo: el RUV agrupa masacre con homicidio en un solo hecho.",
       "activo": true,
       "orden": 6
     }
@@ -71,7 +71,7 @@
     "fields": {
       "codigo": "HV07",
       "nombre": "Minas antipersonal, munición sin explotar y artefacto explosivo improvisado",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 7 — «Minas Antipersonal, Municion sin explotar, y artefacto explosivo improvisado».",
       "activo": true,
       "orden": 7
     }
@@ -82,7 +82,7 @@
     "fields": {
       "codigo": "HV08",
       "nombre": "Secuestro",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 8 — «Secuestro».",
       "activo": true,
       "orden": 8
     }
@@ -93,7 +93,7 @@
     "fields": {
       "codigo": "HV09",
       "nombre": "Tortura",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 9 — «Tortura».",
       "activo": true,
       "orden": 9
     }
@@ -104,7 +104,7 @@
     "fields": {
       "codigo": "HV10",
       "nombre": "Vinculación de niños, niñas y adolescentes a actividades de grupos armados",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 10 — «Vinculacion de Niños, Niñas y Adolescentes a actividades relacionadas con Grupos Armados».",
       "activo": true,
       "orden": 10
     }
@@ -115,7 +115,7 @@
     "fields": {
       "codigo": "HV11",
       "nombre": "Abandono o despojo forzado de tierras",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "RUV 11 — «Abandono o despojo forzado de tierras».",
       "activo": true,
       "orden": 11
     }
@@ -126,7 +126,7 @@
     "fields": {
       "codigo": "HV12",
       "nombre": "Pérdida de bienes muebles o inmuebles",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "Sin equivalente en el RUV: su catálogo no tiene este hecho, así que nunca llega por esa vía. Sí existe en el catálogo del legacy (12), donde se escribe tal cual.",
       "activo": true,
       "orden": 12
     }
@@ -137,7 +137,7 @@
     "fields": {
       "codigo": "HV13",
       "nombre": "Confinamiento",
-      "descripcion": "TODO: confirmar texto oficial — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "Sin equivalente en el RUV ni en el legacy. Es hecho autónomo por el Auto 373/2016 de la Corte y la práctica posterior de la UARIV; el catálogo del legacy quedó congelado en 2015. Al escribir allá se traduce a 13 'Otros'.",
       "activo": true,
       "orden": 13
     }
@@ -148,9 +148,31 @@
     "fields": {
       "codigo": "HV14",
       "nombre": "Sin información",
-      "descripcion": "TODO: confirmar si aplica como hecho victimizante en el nuevo sistema — tabla Oracle GIC_TIPO_HECHO",
+      "descripcion": "Sin equivalente en el RUV. Es un marcador de ausencia de dato, no un hecho.",
       "activo": true,
       "orden": 14
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 15,
+    "fields": {
+      "codigo": "HV15",
+      "nombre": "Otro",
+      "descripcion": "RUV 12 — «Otro» (75.264 registros medidos el 4-ago-2026). Se agrega para poder recibir el hecho tal como lo declara el RUV: sin este código habría que forzarlo a otro hecho y afirmar algo falso. Al escribir al legacy se traduce a 13 'Otros'.",
+      "activo": true,
+      "orden": 15
+    }
+  },
+  {
+    "model": "victimas.catalogohechovictimizante",
+    "pk": 16,
+    "fields": {
+      "codigo": "HV16",
+      "nombre": "Censo Masivo",
+      "descripcion": "RUV 13 — «Censo Masivo» (434.178 registros medidos el 4-ago-2026). El catálogo del legacy, congelado en 2015, no lo tiene: al escribir allá se traduce a 13 'Otros' (decisión de Javier, 4-ago-2026). En SICAV se conserva con su nombre real.",
+      "activo": true,
+      "orden": 16
     }
   }
 ]
