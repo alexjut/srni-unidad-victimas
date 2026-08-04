@@ -20,12 +20,22 @@ Cada prueba tiene tres partes, y la tercera es la que importa:
 
 ## 0. Antes de que entre nadie (15 min antes)
 
-| Qué verificar | Cómo | Qué esperar |
-|---|---|---|
-| El backend responde | abrir `https://caracterizacion.unidadvictimas.gov.co/api/` | **200** |
-| El dominio va por HTTPS | abrir el dominio en el navegador | sin advertencia de certificado |
-| La APK del día | descargar de `/descargar/` **en el momento** | instala sin desinstalar la anterior |
-| El catálogo de hechos | ver el bloque 4 | **16 hechos** |
+| Qué verificar | Cómo | Qué esperar | Pre-verificado 4-ago |
+|---|---|---|---|
+| El backend responde | `…/api/` | **200** | ✅ 200 |
+| La página de descarga | `…/descargar/` | **200** | ✅ 200 |
+| La APK está publicada | `…/movil/app.apk` | descarga | ✅ **78,7 MB** |
+| El catálogo de hechos | ver el bloque 4 | **16 hechos** | ✅ 16 |
+| Los casos de prueba | script de abajo | los tres | ✅ los tres |
+| El dominio va por HTTPS | `https://caracterizacion.unidadvictimas.gov.co/api/` | **200**, sin advertencia | ✅ 200 (y `/descargar/` 200) |
+
+Todo lo marcado ✅ se comprobó contra producción **antes** de la sesión, el 4-ago
+por la tarde.
+
+⚠️ **Igual, volver a probar el dominio al abrir la sala.** El HTTPS pasa por el
+WAF y ya revirtió configuración antes; que funcione ahora no garantiza que
+funcione en dos horas. **Plan B si falla:** `http://30.0.1.109:8090` desde la red
+interna — la sesión sigue sin cambiar nada más.
 
 ⚠️ **Una APK vieja invalida la sesión entera.** El almacén local cambió: una
 versión anterior se comporta como antes y da por buenas cosas que ya no lo son.
@@ -33,19 +43,37 @@ Que cada quien descargue la del día **delante de todos**, no la que ya tenía.
 
 ### Los documentos de prueba se sacan así
 
-En el servidor, **solo lectura**, antes de empezar. No se anotan en ningún lado:
+En el servidor, **solo lectura**, antes de empezar. No se anotan en ningún lado.
+
+⚠️ **Ojo con tomar "el primero que aparezca":** el primer `AMBIGUO` de la tabla
+tiene 2 personas y el primer `NO_IDENTIFICANTE` tiene 0 filas útiles. Sirven,
+pero **no se ve el fenómeno**. Este script trae el caso **más contundente** de
+cada clase, que es lo que hay que mostrar:
 
 ```bash
 docker exec -w /app cz_backend python manage.py shell <<'PY'
 from apps.victimas.models import ColisionDocumento, Victima
-for clase in ('AMBIGUO', 'DUPLICADO_FUENTE', 'NO_IDENTIFICANTE'):
-    c = ColisionDocumento.objects.filter(clase=clase).first()
+for clase, orden in (('DUPLICADO_FUENTE', '-filas'),
+                     ('AMBIGUO',          '-personas'),
+                     ('NO_IDENTIFICANTE', '-filas')):
+    c = ColisionDocumento.objects.filter(clase=clase).order_by(orden).first()
     if not c: continue
     v = Victima.objects.filter(numero_documento_hash=c.doc_hash).first()
     print(clase, '→', v.tipo_documento.codigo if v.tipo_documento_id else '(sin tipo)',
           v.numero_documento, f'({c.filas} filas → {c.personas} personas)')
 PY
 ```
+
+**Lo que debe salir** (verificado en producción el 4-ago, antes de la sesión):
+
+| Clase | El caso que trae | Qué se verá en pantalla |
+|---|---|---|
+| `DUPLICADO_FUENTE` | **505 filas → 1 persona** | una ficha, sin avisos |
+| `AMBIGUO` | **18 filas → 18 personas distintas** | pide elegir entre 18 |
+| `NO_IDENTIFICANTE` | **4.297 filas → 0 personas** | no muestra a nadie |
+
+Si los números salen muy distintos a esos, **algo cambió**: avisar antes de
+empezar en vez de improvisar en la sala.
 
 Anotar en un papel **cuál es cuál** (caso 1, 2, 3) y tenerlo a mano. Ese papel no
 sale de la sala.
@@ -89,13 +117,15 @@ funcional, no técnica.
 ### Por qué existe esto (2 min de contexto, decirlo antes de probar)
 
 En el padrón hay **768.096 documentos que aparecen en más de un registro**. Al
-analizarlos:
+analizarlos se separan en cuatro grupos (cifras exactas, contadas en producción
+el 4-ago):
 
-| | | |
-|---|---|---|
-| **92 %** | la **misma persona** duplicada en el sistema de origen | no hay nada que decidir |
-| **6,8 %** | personas **realmente distintas** que comparten el número | hay que preguntar |
-| resto | valores de **relleno** (un "documento" con miles de nombres detrás) | no identifican a nadie |
+| Clase | Cuántos | Qué es | Qué hace el sistema |
+|---|---|---|---|
+| `DUPLICADO_FUENTE` | **706.301** (92 %) | la **misma persona** duplicada en el origen | no molesta: muestra una ficha |
+| `AMBIGUO` | **51.996** (6,8 %) | personas **realmente distintas** con el mismo número | **pregunta cuál es** |
+| `VARIANTE_NOMBRE` | **9.710** (1,3 %) | la misma persona con el nombre escrito distinto | no molesta |
+| `NO_IDENTIFICANTE` | **89** | valores de **relleno** (uno tiene 4.297 filas detrás) | no muestra a nadie |
 
 La regla de diseño: **preguntar solo cuando hay algo que decidir**. Si el sistema
 pregunta siempre, el encuestador aprende a ignorar el aviso — y entonces falla
@@ -110,18 +140,23 @@ justo el 6,8 % de los casos donde importaba.
 
 ### Caso 2.2 — Documento repetido que es LA MISMA persona (`DUPLICADO_FUENTE`)
 
-Es el 92 % de los repetidos.
+Es el 92 % de los repetidos. El caso que trae el script tiene **505 filas de la
+misma señora**.
 
 - **Qué se hace:** buscar el documento `DUPLICADO_FUENTE` del script.
 - **Qué debe pasar:** responde normal, con **una sola ficha**. El encuestador
-  **no debe notar nada**: puede haber cientos de filas de la misma señora en la
-  fuente, pero eso no es una decisión suya.
-- **Qué sería un fallo:** que pregunte cuál es. Preguntar cuando no hay nada que
-  decidir es exactamente lo que enseña a ignorar el aviso del caso siguiente.
+  **no debe notar nada**: son 505 filas de la misma persona en la fuente, y eso
+  no es una decisión suya.
+- **Qué sería un fallo:** que pregunte cuál es, o que muestre 505 opciones.
+  Preguntar cuando no hay nada que decidir es exactamente lo que enseña a
+  ignorar el aviso del caso siguiente.
+- **Qué decir:** *"acá el sistema hizo 505 comparaciones y decidió no molestarlo.
+  Eso es lo que queremos."*
 
 ### Caso 2.3 — Personas realmente distintas (`AMBIGUO`) ⭐
 
-**Este es el caso que hay que mirar con lupa.**
+**Este es el caso que hay que mirar con lupa.** El caso que trae el script son
+**18 personas distintas con el mismo número de documento**.
 
 - **Qué se hace:** buscar el documento `AMBIGUO`.
 - **Qué debe pasar:** el sistema **pide confirmar cuál es**, mostrando los
@@ -136,13 +171,26 @@ Es el 92 % de los repetidos.
 
 ### Caso 2.4 — Documento de relleno (`NO_IDENTIFICANTE`)
 
+El caso que trae el script tiene **4.297 filas detrás y no identifica a nadie**.
+
 - **Qué se hace:** buscar el documento `NO_IDENTIFICANTE`.
 - **Qué debe pasar:** **no muestra a nadie** y lleva al alta manual.
 - **Qué sería un fallo:** que muestre una lista de candidatos. Ofrecer a elegir
-  entre miles de personas que comparten un valor de relleno es peor que no
-  mostrar nada: invita a elegir al azar.
+  entre 4.297 registros que comparten un valor de relleno es peor que no mostrar
+  nada: invita a elegir al azar y a quedarse con la persona equivocada.
 
-### Caso 2.5 — Sin señal
+### Caso 2.5 — La misma persona con el nombre escrito distinto (`VARIANTE_NOMBRE`)
+
+Son **9.710 casos**. No estaba en el guion de la sesión anterior y conviene
+mirarlo, porque es el que más fácil se confunde con el ambiguo.
+
+- **Qué se hace:** pedir un caso de esta clase (cambiar `clase=` en el script).
+- **Qué debe pasar:** **una sola ficha, sin avisos** — es la misma persona, solo
+  que escrita distinto en la fuente.
+- **Qué sería un fallo:** que lo trate como ambiguo y pregunte. Sumaría 9.710
+  interrupciones inútiles, que es justo lo que erosiona la atención al aviso real.
+
+### Caso 2.6 — Sin señal
 
 Repetir **2.1 y 2.3** con el dispositivo **en modo avión**.
 
