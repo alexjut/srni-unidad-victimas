@@ -171,3 +171,102 @@ def leer_hechos(cursor, documento: str, *, estricto: bool = True) -> LecturaHech
         personas_ruv=len(personas),
         hechos=tuple(hechos),
     )
+
+
+# ── Persistencia ─────────────────────────────────────────────────────────────
+# Lo de arriba solo lee. Esto es lo único que toca el ORM, y va acá y no en un
+# módulo aparte porque separarlo obligaría a leer dos archivos para entender un
+# solo asunto.
+
+@dataclasses.dataclass
+class ResultadoSync:
+    """Qué pasó al sincronizar los hechos de UNA víctima."""
+
+    documento: str
+    personas_ruv: int = 0
+    leidos: int = 0
+    creados: int = 0
+    ya_estaban: int = 0
+    #: Códigos que el RUV trajo pero que no existen en `CatalogoHechoVictimizante`.
+    sin_catalogo: tuple[str, ...] = ()
+
+    @property
+    def es_ambigua(self) -> bool:
+        return self.personas_ruv > 1
+
+    def __str__(self) -> str:
+        if self.es_ambigua:
+            return (f"documento {self.documento}: AMBIGUO "
+                    f"({self.personas_ruv} personas en el RUV), no se escribió nada")
+        return (f"documento {self.documento}: {self.leidos} leído(s), "
+                f"{self.creados} nuevo(s), {self.ya_estaban} ya estaba(n)")
+
+
+def sincronizar_hechos(victima, cursor, *, estricto: bool = True,
+                       guardar: bool = True) -> ResultadoSync:
+    """
+    Trae del RUV los hechos de `victima` y los deja en `HechoVictima`.
+
+    Es **idempotente**: la unicidad por `(fuente, id_origen)` hace que volver a
+    correrlo no duplique nada, así que se puede repetir sin miedo.
+
+    Con `guardar=False` hace todo el trabajo menos escribir — el DRY-RUN que usa
+    el resto de esta capa.
+
+    Una lectura ambigua **no escribe nada**: ver el encabezado del módulo.
+    """
+    # Import diferido: mantiene este módulo importable sin Django cargado, igual
+    # que el import de `oracledb` en `conexion.py`.
+    from apps.victimas.models import CatalogoHechoVictimizante, HechoVictima
+
+    documento = getattr(victima, "numero_documento", "") or ""
+    lectura = leer_hechos(cursor, documento, estricto=estricto)
+
+    res = ResultadoSync(
+        documento=lectura.documento,
+        personas_ruv=lectura.personas_ruv,
+        leidos=len(lectura.hechos),
+    )
+    if lectura.es_ambigua or not lectura.hechos:
+        return res
+
+    catalogo = {c.codigo: c for c in CatalogoHechoVictimizante.objects.all()}
+    ya = set(
+        HechoVictima.objects
+        .filter(victima=victima, fuente="RUV")
+        .exclude(id_origen="")
+        .values_list("id_origen", flat=True)
+    )
+
+    sin_catalogo, nuevos = [], []
+    for h in lectura.hechos:
+        if str(h.id_ruv) in ya:
+            res.ya_estaban += 1
+            continue
+        entrada = catalogo.get(h.codigo_sicav)
+        if entrada is None:
+            # El catálogo de SICAV no está cargado o le falta el código. No se
+            # inventa la fila: se reporta para que alguien cargue el fixture.
+            sin_catalogo.append(h.codigo_sicav)
+            continue
+        nuevos.append(HechoVictima(
+            victima=victima,
+            hecho=entrada,
+            fecha_hecho=h.fecha,
+            # `lugar_hecho` queda NULL a propósito: los ids del RUV son
+            # surrogate. Se conservan en texto para no perderlos.
+            lugar_hecho=None,
+            fuente="RUV",
+            id_origen=str(h.id_ruv),
+            observaciones=(
+                f"RUV TBSINIESTROS_PERSONA.ID={h.id_ruv}"
+                + (f" · dpto={h.id_departamento} mpio={h.id_municipio}"
+                   if h.tiene_lugar else "")
+            ),
+        ))
+
+    res.sin_catalogo = tuple(dict.fromkeys(sin_catalogo))
+    res.creados = len(nuevos)
+    if guardar and nuevos:
+        HechoVictima.objects.bulk_create(nuevos, ignore_conflicts=True)
+    return res

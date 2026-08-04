@@ -265,6 +265,15 @@ class HechoVictima(models.Model):
         related_name='hechos_ocurridos',
     )
     fuente = models.CharField(max_length=15, choices=FUENTE_REGISTRO, default='RUV')
+    id_origen = models.CharField(
+        max_length=40, blank=True, db_index=True,
+        verbose_name='id en el sistema de origen',
+        help_text=(
+            'Identificador del hecho en la fuente. Para RUV es '
+            '`TBSINIESTROS_PERSONA.ID`. Permite volver a sincronizar sin '
+            'duplicar y poder rastrear cada fila hasta su origen.'
+        ),
+    )
     observaciones = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -272,7 +281,20 @@ class HechoVictima(models.Model):
         verbose_name = 'Hecho Victimizante'
         verbose_name_plural = 'Hechos Victimizantes'
         # Una víctima puede tener el mismo tipo de hecho más de una vez
-        # (e.g., desplazado dos veces), así que no se pone unique_together.
+        # (e.g., desplazado dos veces), así que no se pone unique_together
+        # sobre (victima, hecho).
+        #
+        # Sobre (fuente, id_origen) sí: dos filas con el mismo id en la misma
+        # fuente son la MISMA fila traída dos veces. Sin esto, volver a correr
+        # la importación duplicaría los hechos de todo el mundo en silencio, y
+        # el reporte contaría dos veces a cada persona.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['fuente', 'id_origen'],
+                condition=models.Q(id_origen__gt=''),
+                name='hecho_unico_por_origen',
+            ),
+        ]
         indexes = [
             models.Index(fields=['victima', 'hecho']),
         ]

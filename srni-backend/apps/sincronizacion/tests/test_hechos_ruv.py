@@ -172,3 +172,96 @@ def test_la_consulta_filtra_los_inactivos_y_va_por_el_dblink():
     assert "NVL(s.ACTIVO, 1) = 1" in cur.sql
     # El documento va como bind, no interpolado: es dato de origen externo.
     assert cur.params == {"documento": "123"}
+
+
+# ── Persistencia: lo único que toca la base ──────────────────────────────────
+
+@pytest.fixture
+def victima(db):
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import CatalogoHechoVictimizante, Victima
+
+    tipo = TipoDocumento.objects.create(codigo="CC", nombre="Cédula")
+    for codigo, nombre in [("HV01", "Desplazamiento forzado"),
+                           ("HV03", "Amenaza"),
+                           ("HV16", "Censo Masivo")]:
+        CatalogoHechoVictimizante.objects.create(codigo=codigo, nombre=nombre)
+    return Victima.objects.create(
+        tipo_documento=tipo,
+        numero_documento="1070752540",
+        primer_nombre="ANA",
+        primer_apellido="GOMEZ",
+        fecha_nacimiento="1990-01-01",
+        genero="F",
+    )
+
+
+def test_los_hechos_del_ruv_quedan_guardados_con_su_origen(victima):
+    from apps.victimas.models import HechoVictima
+
+    cur = _CursorFalso([
+        _fila(5, id_ruv=9001, fecha=datetime.datetime(2015, 3, 12), dpto=6394, mpio=7219),
+        _fila(2, id_ruv=9002),
+    ])
+    res = H.sincronizar_hechos(victima, cur)
+
+    assert (res.leidos, res.creados) == (2, 2)
+    guardados = HechoVictima.objects.filter(victima=victima).order_by("id_origen")
+    assert [h.hecho.codigo for h in guardados] == ["HV01", "HV03"]
+    assert [h.id_origen for h in guardados] == ["9001", "9002"]
+    assert guardados[0].fecha_hecho == datetime.date(2015, 3, 12)
+    assert guardados[0].fuente == "RUV"
+    # El lugar NO se traduce: los ids del RUV son surrogate.
+    assert guardados[0].lugar_hecho is None
+    assert "dpto=6394" in guardados[0].observaciones
+
+
+def test_volver_a_sincronizar_no_duplica(victima):
+    """
+    Sin esto, cada corrida duplicaría los hechos de todo el mundo y el reporte
+    contaría dos veces a cada persona.
+    """
+    from apps.victimas.models import HechoVictima
+
+    filas = [_fila(5, id_ruv=9001), _fila(2, id_ruv=9002)]
+    H.sincronizar_hechos(victima, _CursorFalso(filas))
+    res = H.sincronizar_hechos(victima, _CursorFalso(filas))
+
+    assert (res.creados, res.ya_estaban) == (0, 2)
+    assert HechoVictima.objects.filter(victima=victima).count() == 2
+
+
+def test_un_documento_ambiguo_no_escribe_nada(victima):
+    from apps.victimas.models import HechoVictima
+
+    cur = _CursorFalso([_fila(5, persona=111), _fila(2, persona=222)])
+    res = H.sincronizar_hechos(victima, cur)
+
+    assert res.es_ambigua
+    assert res.creados == 0
+    assert not HechoVictima.objects.filter(victima=victima).exists()
+
+
+def test_en_dry_run_lee_pero_no_guarda(victima):
+    from apps.victimas.models import HechoVictima
+
+    cur = _CursorFalso([_fila(5, id_ruv=9001)])
+    res = H.sincronizar_hechos(victima, cur, guardar=False)
+
+    assert res.leidos == 1
+    assert not HechoVictima.objects.filter(victima=victima).exists()
+
+
+def test_un_codigo_que_falta_en_el_catalogo_se_reporta_y_no_rompe(victima):
+    """
+    `HV15` no se cargó en este fixture. No se inventa la fila ni se pierde el
+    resto: se avisa cuál faltó para que alguien cargue el catálogo.
+    """
+    from apps.victimas.models import HechoVictima
+
+    cur = _CursorFalso([_fila(5, id_ruv=9001), _fila(12, id_ruv=9002)])
+    res = H.sincronizar_hechos(victima, cur)
+
+    assert res.sin_catalogo == ("HV15",)
+    assert res.creados == 1
+    assert HechoVictima.objects.filter(victima=victima).count() == 1
