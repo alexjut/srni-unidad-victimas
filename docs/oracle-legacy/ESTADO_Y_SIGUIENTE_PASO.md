@@ -9,6 +9,73 @@
 
 ---
 
+## 0-septies. 2026-08-03 (tarde) — **1.150 ENCUESTADORES VEN SU TRABAJO EN SICAV**
+
+Entró una novedad del territorio (Pandi) y terminó abriendo el trabajo del día.
+Todo lo de abajo está **desplegado y corriendo en producción**.
+
+### El caso: la encuesta nunca llegó
+
+Detalle completo en [`caso_pandi_encuesta_no_aparece.md`](caso_pandi_encuesta_no_aparece.md).
+Resumen: el documento no está en `GIC_PERSONA`, ni en el histórico, ni en las 7
+tablas de staging del móvil. `JGUARINH` no capturó nada el 2-jul (su hueco va del
+25-may al 29-jul). Ese día sí se crearon 429 hogares de otros. **Hay que
+repetirla** — pero antes conviene confirmar el documento: existe una MONICA …
+CORTES AGATON de 2015 con el número terminado en **…545** y no en …540.
+
+### Lo construido, y lo que mide
+
+| | |
+|---|---|
+| `diagnosticar_encuesta_legacy` | 7 causas de "no aparece"; en 5 el dato NO se perdió. Modos `--documento/--usuario/--hogar/--perdidas` |
+| `importar_usuarios_legacy` | los 8.172 de `GIC_USUARIO` (histórico) + `--medir-autoria` |
+| `crear_usuarios_activos` | **1.150 cuentas creadas** con identidad de Vivanto |
+| `importar_caracterizaciones_legacy` | **222.094 caracterizaciones** de 1.151 encuestadores |
+| `/api/sincronizacion/mis-caracterizaciones/` + `/resumen/` | el encuestador entra y ve lo suyo |
+
+**2.422 caracterizaciones con datos que ningún reporte ve**, y en todas el dato
+está en la base: 1.459 `NO_CERRO_POR_CAPITULOS`, 885 `ABIERTO_CON_DATOS`, 62
+`ARCHIVADO_FUERA_DE_REPORTES`, 16 `CERRADO_SIN_ARCHIVAR`. (Las 4.763 `ANULADA` y
+3.303 `MARCADA_ERROR` son decisiones tomadas, no pérdida.)
+
+### Cinco cosas que la base nos enseñó, contra lo que teníamos escrito
+
+1. **`CERRADA` son 62 hogares en toda la base.** El estado normal de uno
+   terminado es `MIGRADOAHISTORICO` (1.039.334). Verificar el cierre contra el
+   literal `'CERRADA'` funciona minutos y falla para siempre. Corregido.
+2. **`GIC_USUARIO` está congelado desde 2017.** De los 1.153 encuestadores
+   activos, solo **26** figuran ahí. El directorio vivo es
+   `ADMINUSUARIOS.USUARIO ⨝ PERSONA` en Vivanto: 1.150 de 1.153, con correo y
+   sin duplicados (el local tiene 608 repetidos).
+3. **`GIC_HOGAR.USU_IDUSUARIO` es el id de VIVANTO**, no el de `GIC_USUARIO`.
+   `JGUARINH` = 197035, y sus hogares se llaman `197035-31TUK`. El "99,7 % que no
+   cruzaba" era una lectura equivocada nuestra, no dato roto.
+4. **`LOG_ERRORES_ENCUESTA` está vacía.** Es la tabla correcta por su forma, así
+   que queda cerrada la pregunta de "por qué falló": **no hay nada que leer**.
+5. **La `Ñ` viene rota** en 6 logins (UTF-8 escrito con el charset mal), y dejaba
+   131 caracterizaciones sin autor. Reparado validando contra el directorio.
+
+### Cuatro defectos propios, todos encontrados al correrlo de verdad
+
+- Una fila ilegible (`LookupError: unknown encoding`) tumbaba los 1.150, y el
+  guardado iba al final: se perdían los 334 anteriores. Ahora va por usuario.
+- **3.284 hogares anulados se presentaban como trabajo recuperable** — el listado
+  le decía a su propio encuestador "está completa, no hay que repetirla".
+- Las fechas del legacy entraban con **+5 h** (Oracle `DATE` es hora local y
+  `USE_TZ=True` las leía como UTC): el trabajo de una tarde aparecía al día
+  siguiente.
+- El `/resumen/` decía "total 18" y el desglose sumaba 3: el `ordering` del
+  modelo entraba al `GROUP BY`.
+
+### 🔴 Lo único que bloquea
+
+**Las 1.150 cuentas no pueden iniciar sesión.** Se crearon con
+`set_unusable_password()`: no se leyó la columna `CONTRASENA` de Vivanto ni se
+inventaron claves. Falta decidir cómo se entrega el acceso —restablecimiento por
+correo, o que SICAV valide contra Vivanto, que es donde ya vive la credencial—.
+
+---
+
 ## 0-sexies. 2026-08-03 — **LOS DIEZ PASOS ESTÁN CABLEADOS** (y lo que falta ya no es código)
 
 Ayer faltaban los pasos 4, 5 y 6. Hoy están: **validadores**, **hechos
