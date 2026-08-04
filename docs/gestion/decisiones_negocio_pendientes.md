@@ -95,7 +95,51 @@ salga perfecto.
 
 - **Opciones:** (A) **traerlos del mismo origen que el padrón** — `M_CARACT_TABLA_RA_PER@DBL_VIVANTO` o la tabla de hechos de Vivanto — en una pasada como la del padrón. (B) capturarlos en campo (hay preguntas de hechos en el instrumento, pero preguntan por hechos *declarados en los últimos 6 meses*, que **no** es lo mismo que los hechos por los que la persona está en el RUV). (C) dejarlas vacías y decirlo por escrito.
 - **Mi recomendación:** **(A).** Es el mismo dblink y el mismo cruce por `cons_persona` que ya funcionó para 5,9 M de personas; lo que falta es saber qué tabla de Vivanto tiene los hechos y pedir una muestra. (B) escribiría un dato que significa otra cosa.
-- **Tu decisión:** ☐ A traerlos de Vivanto ☐ B capturarlos ☐ C dejarlas vacías ☐ ______
+- **Tu decisión:** ☑ **A — traerlos del RUV** *(4-ago-2026)*
+
+#### ✅ RESUELTO el 4-ago-2026 — **ya sabemos de dónde salen, y el dato existe**
+
+El área funcional aportó el nombre de la tabla (`Tbsiniestros_persona`) y con eso se
+ubicó todo lo demás. **No hace falta pedir accesos nuevos:** vive en el esquema `RUV`,
+alcanzable desde `ENTREVISTARN` por el dblink **`CONSULTARUV`** que ya existe.
+
+| Objeto | Qué es | Volumen |
+|---|---|---|
+| `RUV.TBHECHOS_VICTIMIZANTES` | el catálogo oficial | **13 hechos** |
+| `RUV.TBSINIESTROS_PERSONA` | el hecho con **fecha y municipio** | **4.033.355** |
+| `RUV.TBREG_PERSONA_HECHOS` | persona ↔ hecho | **9.331.396** |
+| `RUV.TBPERSONAS` | `ID`, `NUMERODOCUMENTO`, `PARAM_TIPODOCUMENTO` | 7.330.769 |
+
+El enlace **está declarado con foreign keys** (`FK_REGPER_SINIESTRO` y
+`FK_REGISTRO_PERSONA_HECHOS`, ambas contra `PK_TBREGISTROS_PERSONAS`), así que la ruta
+hasta el documento no es conjetura. Y como `TBSINIESTROS_PERSONA` trae fecha y lugar,
+no solo se llenan las 14 columnas: se puede poner **cuándo y dónde**.
+
+**Verificado con datos, no solo con nombres:** la distribución de `PARAM_TIPOHECHO` da
+**51,8 % al 5 (Desplazamiento Forzado)** —lo que tiene que dominar en Colombia— y ningún
+valor cae fuera de 1..13.
+
+**Decisión tomada (Javier, 4-ago-2026):** se trae **el catálogo, no las 9,3 M de filas**;
+el cruce por persona se resuelve **bajo demanda** contra `TBSINIESTROS_PERSONA`, sin
+replicar media base. Catálogo cargado en producción el mismo día (0 → 16 filas).
+
+### 5a-bis. 🟠 'Censo Masivo' y 'Otro' del RUV — **resuelto, con pérdida de precisión declarada**
+
+Al conectar el catálogo apareció que **son tres catálogos y no dos**, y que RUV y legacy
+divergen justo donde está el volumen:
+
+| Código | Catálogo del legacy | Catálogo del RUV |
+|---|---|---|
+| 1–11 | idénticos | idénticos |
+| **12** | Pérdida de bienes muebles o inmuebles | **Otro** (75.264) |
+| **13** | Otros | **Censo Masivo** (434.178) |
+
+Copiar el número escribiría el hecho equivocado en **509.442 registros (12,6 %)** sin que
+nada falle.
+
+- **Opciones:** (A) agregar los dos códigos a SICAV y traducir por significado al escribir al legacy. (B) forzarlos a un hecho existente de SICAV. (C) descartarlos.
+- **Mi recomendación:** **(A).** (B) era la trampa: mandar 'Censo Masivo' a `HV13` para que aterrizara en el 'Otros' del legacy habría marcado a **434.178 personas como CONFINAMIENTO dentro de SICAV** —un hecho real y distinto—. Con (A) la pérdida ocurre **solo en la frontera** con el legacy, que es donde debe ocurrir.
+- **Tu decisión:** ☑ **A — «censo masivo a otros»** *(4-ago-2026)*. Aplicada: `HV15 Otro` y `HV16 Censo Masivo` en SICAV, ambos → 13 `'Otros'` al escribir al legacy, declarados en `HECHO_VICTIMIZANTE_APROXIMADO` para que el escritor lo informe en cada corrida.
 
 ### 5b. 🟠 'Confinamiento' no existe en el catálogo del legacy
 

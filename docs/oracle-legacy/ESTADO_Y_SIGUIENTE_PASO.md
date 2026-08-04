@@ -136,6 +136,101 @@ conexión). Esto no bloquea la decisión, pero sí es trabajo, y no está hecho.
 
 ---
 
+## 0-octies-bis. 2026-08-04 (tarde) — **APARECIERON LOS HECHOS VICTIMIZANTES**
+
+El área funcional aportó un nombre —`Tbsiniestros_persona`— y con eso se cayó el
+pendiente **5a**, que llevaba días esperando respuesta de negocio.
+
+### No había que pedir nada: ya teníamos el acceso
+
+Vive en el esquema `RUV`, alcanzable desde `ENTREVISTARN` por el dblink
+**`CONSULTARUV`**, que ya existía.
+
+| Objeto | Qué es | Volumen |
+|---|---|---|
+| `RUV.TBHECHOS_VICTIMIZANTES` | el catálogo oficial | **13 hechos** |
+| `RUV.TBSINIESTROS_PERSONA` | el hecho con **fecha y municipio** | **4.033.355** |
+| `RUV.TBREG_PERSONA_HECHOS` | persona ↔ hecho | **9.331.396** |
+| `RUV.TBPERSONAS` | `ID`, `NUMERODOCUMENTO`, `PARAM_TIPODOCUMENTO` | 7.330.769 |
+
+El enlace **está declarado con foreign keys** (`FK_REGPER_SINIESTRO` y
+`FK_REGISTRO_PERSONA_HECHOS`, ambas contra `PK_TBREGISTROS_PERSONAS`): la ruta
+hasta el documento no es conjetura nuestra. Y como `TBSINIESTROS_PERSONA` trae
+fecha y lugar, no solo se llenan las 14 columnas — se puede poner **cuándo y
+dónde**.
+
+### El catálogo, verificado con datos y no solo con nombres
+
+La distribución de `PARAM_TIPOHECHO` da **51,8 % al 5 (Desplazamiento Forzado)**,
+que es lo que tiene que dominar en Colombia, y **ningún valor cae fuera de 1..13**.
+Con eso queda confirmado por evidencia lo que antes era inferencia: el
+desplazamiento es el **5**, no el 1.
+
+| | | | |
+|---|---|---|---|
+| 5 Desplazamiento **51,8 %** | 2 Amenaza 15,5 % | 13 Censo Masivo 10,8 % | 6 Homicidio 6,8 % |
+| 1 Acto terrorista 3,4 % | 11 Despojo 3,2 % | 8 Secuestro 2,2 % | 12 Otro 1,9 % |
+| 3 · 4 · 9 · 10 · 7 (sexual, desaparición, tortura, NNA, minas) 4,6 % | | | |
+
+### 🔴 Son TRES catálogos, no dos — y la trampa se repite
+
+```
+SICAV   HV01..HV16   (este repo)
+legacy  1..14        (GIC, congelado 2015)
+RUV     1..13        (el nuevo)
+```
+
+RUV y legacy coinciden en 1..11 y **divergen justo donde está el volumen**:
+
+| Código | Legacy | RUV |
+|---|---|---|
+| **12** | Pérdida de bienes muebles o inmuebles | **Otro** (75.264) |
+| **13** | Otros | **Censo Masivo** (434.178) |
+
+Copiar el número de un lado al otro escribe el hecho equivocado en **509.442
+registros (12,6 %)** sin que nada falle — exactamente el mismo modo de fallo que
+ya estaba documentado para el cruce SICAV→legacy, pero contra un tercer catálogo.
+
+### La decisión, y por qué no se resolvió con lo que ya había
+
+**Decisión de Javier:** traer **el catálogo, no las 9,3 M de filas**; el cruce por
+persona se resuelve **bajo demanda**. Y «censo masivo a otros».
+
+Aplicarla mandando `HV13` habría sido el error: para que Censo Masivo aterrizara
+en el `'Otros'` del legacy había que mapearlo a `HV13`… que en SICAV es
+**Confinamiento**. Eso habría marcado a **434.178 personas como confinadas** en
+nuestra propia base. Por eso se agregaron **`HV15 Otro`** y **`HV16 Censo
+Masivo`**: la pérdida de precisión ocurre **solo en la frontera** con el legacy
+—ambos se escriben como `13 'Otros'`—, declarada en
+`HECHO_VICTIMIZANTE_APROXIMADO` para que el escritor la informe en cada corrida.
+
+### Lo hecho
+
+| | |
+|---|---|
+| `HECHO_RUV_A_SICAV` | nuevo mapeo por **significado**, en `oracle/catalogos.py` |
+| `HECHO_SIN_ORIGEN_EN_RUV` | `HV12`/`HV13`/`HV14` — su ausencia al importar es lo esperado |
+| Fixture del catálogo | **16 entradas**, y con eso mueren los **14 `TODO: confirmar texto oficial`**: ahora llevan el texto del RUV |
+| Producción | catálogo cargado: **0 → 16 filas** (estaba vacío desde siempre) |
+| Tests | **7 nuevos** · suite **729 pass / 1 xfail** |
+
+### Lo que falta para que el reporte se llene
+
+El catálogo por sí solo no puebla `HechoVictima`: **falta el cruce por persona**
+contra `TBSINIESTROS_PERSONA`, bajo demanda. Ese es el paso que finalmente llena
+las 14 columnas.
+
+> **Detalle operativo:** barrer varios dblinks en una sesión da
+> `ORA-02020: too many database links in use` (límite `OPEN_LINKS`, 4 por
+> defecto). El comando de importación tendrá que cerrar cada link al terminar.
+
+> **Nota de despliegue:** el fixture nuevo entró a producción por `docker cp`
+> sobre el contenedor, no en la imagen. Los **datos** ya están en PostgreSQL y
+> persisten; la imagen traerá el fixture correcto en el próximo deploy, porque ya
+> está en git.
+
+---
+
 ## 0-septies. 2026-08-03 (tarde) — **1.150 ENCUESTADORES VEN SU TRABAJO EN SICAV**
 
 Entró una novedad del territorio (Pandi) y terminó abriendo el trabajo del día.
