@@ -31,6 +31,7 @@ from .base import (
     ResultadoBusqueda,
     VictimaRepository,
     VictimaResumen,
+    describir_elegibilidad,
 )
 
 
@@ -362,43 +363,20 @@ class MockVictimaRepository(VictimaRepository):
         clave = (tipo_documento.upper(), numero_documento.strip())
         victima = _VICTIMAS.get(clave)
 
-        if victima is None:
-            return ResultadoBusqueda(
-                encontrado=False,
-                victima=None,
-                fuente=self.FUENTE,
-                mensaje='No se encontró registro en RUV ni en Registraduría.',
-            )
-
-        if victima.estado_ruv == 'EXCLUIDO':
-            return ResultadoBusqueda(
-                encontrado=True,
-                victima=victima,
-                fuente=self.FUENTE,
-                mensaje='Persona excluida del RUV — no elegible para caracterización.',
-            )
-
-        if not victima.habilitado_para_caracterizacion:
-            if victima.fecha_ult_caracterizacion:
-                ts = victima.fecha_ult_caracterizacion.strftime('%d/%m/%Y')
-                msg = f'Ya fue caracterizada el {ts}. Requiere autorización para nueva sesión.'
-            elif victima.estado_ruv == 'NO_INCLUIDO':
-                msg = 'Persona no incluida en el RUV — no habilitada para caracterización UARIV.'
-            elif victima.estado_ruv == 'NO_VERIFICADO':
-                msg = 'Persona sin verificar contra el RUV — no habilitada para nueva caracterización.'
-            else:
-                msg = 'Persona no habilitada para nueva caracterización.'
-            return ResultadoBusqueda(
-                encontrado=True,
-                victima=victima,
-                fuente=self.FUENTE,
-                mensaje=msg,
-            )
-
+        # El veredicto sale de `describir_elegibilidad`, igual que en el
+        # repositorio real. Antes el mock tenía su propio árbol y decía cosas
+        # distintas para la misma situación —"No se encontró registro en RUV ni
+        # en Registraduría" contra "No se encontró la persona en el padrón"—, así
+        # que las pruebas contra mock validaban textos que producción nunca
+        # emitía.
+        veredicto = describir_elegibilidad(victima)
         return ResultadoBusqueda(
-            encontrado=True,
+            encontrado=victima is not None,
             victima=victima,
             fuente=self.FUENTE,
+            mensaje=veredicto.mensaje,
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
         )
 
     def listar_todas(self, limite: int | None = None) -> list[VictimaResumen]:
@@ -437,19 +415,12 @@ class MockVictimaRepository(VictimaRepository):
         tipo_documento: str,
         numero_documento: str,
     ) -> EstadoHabilitacion:
-        resultado = self.buscar_por_documento(tipo_documento, numero_documento)
-
-        if not resultado.encontrado:
-            return EstadoHabilitacion(
-                habilitado=False,
-                razon='No se encontró registro en RUV ni en Registraduría.',
-            )
-
-        victima = resultado.victima
-        if not victima.habilitado_para_caracterizacion:
-            return EstadoHabilitacion(
-                habilitado=False,
-                razon=resultado.mensaje,
-            )
-
-        return EstadoHabilitacion(habilitado=True)
+        veredicto = describir_elegibilidad(
+            _VICTIMAS.get((tipo_documento.upper(), numero_documento.strip()))
+        )
+        return EstadoHabilitacion(
+            habilitado=veredicto.elegible,
+            razon=veredicto.mensaje,
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
+        )

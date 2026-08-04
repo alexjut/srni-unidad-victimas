@@ -148,6 +148,16 @@ class ResultadoBusquedaSerializer(serializers.Serializer):
     # que decir eso, no "no está en el padrón": son cosas distintas.
     no_identificante = serializers.BooleanField(required=False, default=False)
 
+    # El porqué, en código. Sin esto la app solo podía pintar `mensaje` y no
+    # sabía qué acción ofrecer, así que un bloqueo previsto se leía en campo
+    # como una falla del sistema. Ver `MotivoNoElegible` en repository/base.py.
+    motivo = serializers.CharField(required=False, allow_blank=True, default='')
+
+    # Cuándo vuelve a estar disponible (fecha de la última caracterización + los
+    # años de vigencia). Permite decir "vuelva a intentar el …" sin que la app
+    # tenga que conocer la regla.
+    disponible_desde = serializers.DateField(required=False, allow_null=True)
+
 
 class ConsultarFuenteInputSerializer(serializers.Serializer):
     """

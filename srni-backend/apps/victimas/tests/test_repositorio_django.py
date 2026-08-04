@@ -19,7 +19,7 @@ import pytest
 from django.test import override_settings
 
 from apps.victimas.repository import DjangoVictimaRepository, get_repository
-from apps.victimas.repository.base import doc_hash
+from apps.victimas.repository.base import MotivoNoElegible, doc_hash
 
 pytestmark = pytest.mark.django_db
 
@@ -98,18 +98,64 @@ def test_una_persona_excluida_se_encuentra_y_se_explica(catalogo):
     assert "excluida" in r.mensaje.lower()
 
 
-def test_ya_caracterizada_dice_cuando(catalogo):
+def test_ya_caracterizada_dice_cuando_hasta_cuando_y_como_seguir(catalogo):
+    """
+    El mensaje tiene que responder las cuatro preguntas que se hace el
+    encuestador con la persona enfrente, y la tercera es la que evita que un
+    bloqueo previsto se reporte como falla del sistema.
+    """
     _crear_victima(catalogo, habilitado=False,
                    fecha_ult=datetime.datetime(2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc))
     r = DjangoVictimaRepository().buscar_por_documento("CC", "1030547250")
+
     assert r.encontrado is True
-    assert "2026-03-14" in r.mensaje
+    assert "14/03/2026" in r.mensaje                    # qué pasó, y cuándo
+    assert "14/03/2028" in r.mensaje                    # hasta cuándo (2 años)
+    assert "no es una falla" in r.mensaje.lower()       # que NO es un error
+    assert "constitucional" in r.mensaje.lower()        # cómo continuar
+    assert "foto" in r.mensaje.lower()                  # con qué soporte
+
+    # Y el motivo en código, que es lo que permite a la app ofrecer el botón.
+    assert r.motivo == MotivoNoElegible.FICHA_VIGENTE
+    assert r.disponible_desde == datetime.date(2028, 3, 14)
+
+
+def test_no_estar_en_el_padron_no_se_dice_como_no_ser_victima(catalogo):
+    """
+    El padrón se armó desde el legacy, así que hay víctimas del RUV que no están
+    en SICAV. Decir "no se encontró" a secas se lee como "no es víctima" y manda
+    a dar de alta a alguien que quizá ya existe en otra fuente.
+    """
+    r = DjangoVictimaRepository().buscar_por_documento("CC", "9999999999")
+
+    assert r.encontrado is False
+    assert r.motivo == MotivoNoElegible.NO_EN_PADRON
+    assert "vivanto" in r.mensaje.lower()      # dónde verificar
+    assert "alta manual" in r.mensaje.lower()  # qué hacer
 
 
 def test_habilitacion_es_consulta_ligera_y_da_la_razon(catalogo):
     _crear_victima(catalogo, estado="EXCLUIDO", habilitado=False)
     e = DjangoVictimaRepository().verificar_habilitacion("CC", "1030547250")
     assert e.habilitado is False and e.razon
+    assert e.motivo == MotivoNoElegible.EXCLUIDA_RUV
+
+
+def test_los_dos_caminos_dan_EXACTAMENTE_el_mismo_veredicto(catalogo):
+    """
+    `buscar_por_documento` y `verificar_habilitacion` decidían por separado y ya
+    divergían en el texto. Que respondan distinto sobre la misma persona, según
+    por dónde entre la app, es un defecto esperando a ocurrir.
+    """
+    _crear_victima(catalogo, habilitado=False,
+                   fecha_ult=datetime.datetime(2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc))
+    repo = DjangoVictimaRepository()
+    r = repo.buscar_por_documento("CC", "1030547250")
+    e = repo.verificar_habilitacion("CC", "1030547250")
+
+    assert r.motivo == e.motivo
+    assert r.mensaje == e.razon
+    assert r.disponible_desde == e.disponible_desde
 
 
 def test_habilitada_no_necesita_razon(catalogo):
