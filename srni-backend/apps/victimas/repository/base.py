@@ -228,6 +228,10 @@ class MotivoNoElegible:
     """
 
     ELEGIBLE = 'ELEGIBLE'
+    #: Tenía ficha vigente, pero se entra por una ruta que omite la vigencia
+    #: (Manual §5.1.1). **Exige soporte**: es saltarse un control, y sin rastro
+    #: la regla de vigencia se vuelve opcional en la práctica.
+    ELEGIBLE_POR_EXCEPCION = 'ELEGIBLE_POR_EXCEPCION'
     #: No está en el padrón de SICAV. **No significa "no es víctima"**: el padrón
     #: se armó desde el legacy, así que hay víctimas del RUV que no están acá.
     NO_EN_PADRON = 'NO_EN_PADRON'
@@ -254,7 +258,13 @@ class Elegibilidad:
 
     @property
     def elegible(self) -> bool:
-        return self.motivo == MotivoNoElegible.ELEGIBLE
+        return self.motivo in (MotivoNoElegible.ELEGIBLE,
+                               MotivoNoElegible.ELEGIBLE_POR_EXCEPCION)
+
+    @property
+    def exige_soporte(self) -> bool:
+        """Entró por una ruta de excepción: hay que adjuntar el soporte."""
+        return self.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
 
 
 #: Texto de `NO_EN_PADRON`. Va aparte porque lo usan la búsqueda y la
@@ -266,7 +276,7 @@ MENSAJE_NO_EN_PADRON = (
 )
 
 
-def describir_elegibilidad(victima, hoy=None) -> Elegibilidad:
+def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
     """
     Único lugar donde se decide **por qué** alguien no puede caracterizarse.
 
@@ -274,12 +284,18 @@ def describir_elegibilidad(victima, hoy=None) -> Elegibilidad:
     `estado_ruv`, `habilitado_para_caracterizacion` y `fecha_ult_caracterizacion`.
     `None` significa que no está en el padrón.
 
+    `ruta` es la ruta de entrevista (Manual §5.1.1). Tres de las cuatro
+    **omiten la regla de vigencia**; ver `RUTAS_QUE_OMITEN_VIGENCIA`. Sin este
+    parámetro la ruta no se considera, que es lo correcto para una búsqueda
+    normal: primero se ve el estado real, y recién si hay ficha vigente el
+    encuestador elige una ruta de excepción.
+
     Existe porque `buscar_por_documento` y `estado_habilitacion` decidían lo
     mismo por separado —y ya habían empezado a divergir en el texto—. Dos
     respuestas distintas para la misma persona según por dónde entre la app es
     un defecto esperando a ocurrir.
     """
-    from ..homologacion import ANIOS_VIGENCIA_CARACTERIZACION
+    from ..homologacion import ANIOS_VIGENCIA_CARACTERIZACION, ruta_omite_vigencia
 
     if victima is None:
         return Elegibilidad(MotivoNoElegible.NO_EN_PADRON, MENSAJE_NO_EN_PADRON)
@@ -311,6 +327,20 @@ def describir_elegibilidad(victima, hoy=None) -> Elegibilidad:
         # vez de reventar — un caso al año, pero revienta el día que ocurre.
         disponible = fecha.replace(month=3, day=1,
                                    year=fecha.year + ANIOS_VIGENCIA_CARACTERIZACION)
+
+    # La excepción del manual: tres rutas omiten la vigencia. Se sigue diciendo
+    # que la ficha está vigente —el encuestador tiene que saberlo— pero deja de
+    # ser un bloqueo y pasa a exigir soporte.
+    if ruta_omite_vigencia(ruta):
+        return Elegibilidad(
+            MotivoNoElegible.ELEGIBLE_POR_EXCEPCION,
+            f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
+            f'estaba vigente hasta el {disponible:%d/%m/%Y}. Puede continuar por '
+            f'la ruta seleccionada, que omite la regla de vigencia. '
+            f'Adjunte foto del soporte: queda registrado quién autorizó la '
+            f'excepción y sobre quién.',
+            disponible_desde=disponible,
+        )
 
     # El texto dice las cuatro cosas que el encuestador necesita, en orden:
     # qué pasó, hasta cuándo, que NO es una falla, y cómo continuar. Sin la

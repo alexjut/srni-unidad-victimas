@@ -15,6 +15,7 @@ Diseño:
 - El porcentaje_completado se recalcula al guardar cada respuesta.
 - Una sesión COMPLETADA no admite más cambios de respuesta.
 """
+import os
 import uuid
 from django.db import models
 from django.conf import settings
@@ -201,3 +202,107 @@ class RespuestaEncuesta(models.Model):
     def __str__(self):
         miembro = f' [m={str(self.miembro_id)[:8]}]' if self.miembro_id else ''
         return f'[{self.pregunta.codigo_externo}]{miembro} → "{self.valor[:40]}"'
+
+
+def ruta_soporte_excepcion(instance, filename):
+    """
+    Ruta del soporte que acredita la excepción de vigencia.
+
+    Sin PII en el nombre: se organiza por sesión y se nombra con el id del
+    registro (UUID). Conserva solo la extensión original.
+    """
+    ext = os.path.splitext(filename)[1].lower()[:10]
+    return f'excepciones_vigencia/{instance.sesion_id}/{instance.id}{ext}'
+
+
+class ExcepcionVigencia(models.Model):
+    """
+    Rastro de una caracterización hecha sobre una persona con ficha vigente.
+
+    ─── Por qué existe ───────────────────────────────────────────────────────
+    El Manual UARIV §5.1.1 (pág. 22) define tres rutas que **omiten la regla de
+    vigencia**: acciones constitucionales, modificación de núcleo familiar y
+    ruta especial. Hasta ahora `ruta_entrevista` era solo una etiqueta y no
+    omitía nada, así que una tutela no habilitaba absolutamente nada —lo
+    contrario de para lo que existe la ruta— y esos casos se escalaban a
+    soporte.
+
+    Al implementarlas hay que aceptar lo que son: **saltarse un control**. Y un
+    control que se salta sin dejar rastro deja de ser un control. Como la ruta
+    la elige el encuestador (no un perfil aparte), sin este registro la regla de
+    vigencia se volvería opcional en la práctica.
+
+    Por eso cada excepción queda con **quién**, **sobre quién**, **cuándo**,
+    **por qué ruta** y **con qué soporte** — la foto del fallo, la tutela o el
+    auto.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    sesion = models.ForeignKey(
+        SesionEncuesta,
+        on_delete=models.CASCADE,
+        related_name='excepciones_vigencia',
+    )
+    victima = models.ForeignKey(
+        'victimas.Victima',
+        on_delete=models.PROTECT,
+        related_name='excepciones_vigencia',
+        help_text='La persona que tenía ficha vigente.',
+    )
+    ruta = models.CharField(
+        max_length=30,
+        choices=SesionEncuesta.RUTA_ENTREVISTA,
+        help_text='Ruta por la que se omitió la vigencia.',
+    )
+
+    # Lo que hacía vigente la ficha, congelado en el momento de la excepción.
+    # Se copia en vez de referenciarse: si la persona se recaracteriza, la fecha
+    # del modelo cambia y se perdería la razón por la que se hizo la excepción.
+    fecha_ult_caracterizacion = models.DateField(
+        null=True, blank=True,
+        help_text='Fecha de la caracterización que estaba vigente.',
+    )
+    vigente_hasta = models.DateField(
+        null=True, blank=True,
+        help_text='Hasta cuándo estaba vigente esa ficha.',
+    )
+
+    # El soporte. `expo-image-picker` en el móvil, igual que la constancia de
+    # tutor/cuidador de `hogares.MiembroHogar`.
+    soporte = models.FileField(
+        upload_to=ruta_soporte_excepcion, null=True, blank=True,
+        help_text='Foto del fallo, la tutela o el auto que acredita la excepción.',
+    )
+    soporte_nombre = models.CharField(
+        max_length=255, blank=True,
+        help_text='Nombre original del archivo (para mostrar al usuario).',
+    )
+    observacion = models.TextField(
+        blank=True,
+        help_text='Número de radicado del fallo, o lo que el encuestador anote.',
+    )
+
+    autorizada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True,
+        related_name='excepciones_vigencia',
+        help_text='Quién usó la ruta de excepción.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Excepción de vigencia'
+        verbose_name_plural = 'Excepciones de vigencia'
+        indexes = [
+            models.Index(fields=['victima', 'created_at']),
+            models.Index(fields=['ruta']),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_ruta_display()} — {self.victima_id} ({self.created_at:%Y-%m-%d})'
+
+    @property
+    def tiene_soporte(self) -> bool:
+        return bool(self.soporte)

@@ -265,6 +265,47 @@ def es_victima(valor) -> bool:
 # recaracterizarse. Ese es el trabajo pendiente que el sistema tiene que poder señalar.
 ANIOS_VIGENCIA_CARACTERIZACION = 2
 
+# ── Rutas de entrevista que OMITEN la regla de vigencia ──────────────────────
+#
+# Manual de usuario UARIV, §5.1.1 «Posibles rutas» (pág. 22), textual:
+#
+#   · Ruta general: «entran todos los casos que no presentan ficha vigente, por
+#     lo cual, en este caso SE RESPETA la regla de vigencia».
+#   · Ruta Acciones Constitucionales: «ingresan todos los casos que lleguen por
+#     el canal de Acciones constitucionales, por ejemplo: fallos, tutelas, Autos
+#     de seguimiento […] y que al momento de proceder con la formulación de
+#     entrevistas se evidencia una ficha de caracterización vigente, por lo cual,
+#     se deberá OMITIR la regla de vigencia».
+#   · Ruta modificación núcleo familiar: ficha vigente pero «existen diferencias
+#     en su conformación, por lo cual, se deberá OMITIR la regla de vigencia».
+#   · Ruta especial: «casos que por su naturaleza deben ser tramitados, pero
+#     cuentan con una ficha de caracterización vigente […] se deberá OMITIR».
+#
+# ⚠️ Son TRES las rutas que omiten, no una. Antes de esto, las cuatro eran una
+# etiqueta en `SesionEncuesta` y ninguna omitía nada: una tutela no habilitaba
+# absolutamente nada, que es lo contrario de para lo que existe la ruta.
+RUTAS_QUE_OMITEN_VIGENCIA = frozenset({
+    'ACCIONES_CONSTITUCIONALES',
+    'MODIFICACION_NUCLEO',
+    'ESPECIAL',
+})
+
+#: Ruta que respeta la vigencia. Es el default, y el manual además indica que en
+#: jornadas de caracterización «se debe seleccionar RUTA GENERAL» salvo la que
+#: hace la Unidad por solicitud de atención humanitaria.
+RUTA_GENERAL = 'GENERAL'
+
+
+def ruta_omite_vigencia(ruta) -> bool:
+    """
+    ¿Esta ruta permite caracterizar a alguien con ficha vigente?
+
+    Solo levanta la **vigencia**. Una persona excluida del RUV sigue sin ser
+    elegible por ninguna ruta: el manual prevé la excepción para fichas
+    vigentes, no para revertir una decisión del RUV.
+    """
+    return (ruta or '').strip().upper() in RUTAS_QUE_OMITEN_VIGENCIA
+
 
 def debe_recaracterizarse(fecha_ult_caracterizacion, hoy=None) -> bool:
     """
