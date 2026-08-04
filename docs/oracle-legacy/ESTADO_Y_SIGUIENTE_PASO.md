@@ -9,6 +9,96 @@
 
 ---
 
+## 0-octies. 2026-08-04 (mañana) — **LA UARIV YA TIENE SERVICIO DE AUTENTICACIÓN, Y ESTÁ AL LADO**
+
+Sesión desde la sede (red institucional). El objetivo era desatascar el acceso de
+las 1.150 cuentas y apareció una vía que no estábamos considerando.
+
+### La .9 está arriba, y sabemos por qué se había caído
+
+| | |
+|---|---|
+| Sesión Oracle real | **OK en 0,09 s** — `ENTREVIS` / `RNIENTREVISTA`, sin `ORA-12518` |
+| Instancia | `entrevistarn` **OPEN / ACTIVE**, `startup_time` = **3-ago 09:26** |
+| Margen | 128 procesos de 1500 · 155 sesiones de 2272 (pico 135) |
+| API prod | `/api/` → **200** |
+| Los 4 interruptores | **apagados** — no hay ni una variable de escritura en el `.env` de prod |
+
+El `ORA-12518` de ayer fue un **reinicio de la instancia**, no la VPN ni nuestro
+código: el `startup_time` cae justo en esa mañana. Y no era agotamiento de
+recursos — la base usa el **8 %** de sus procesos. Lleva 24 h estable.
+
+### Las dos opciones que teníamos escritas, medidas de verdad
+
+1. **Restablecimiento por correo: hoy no tiene por dónde salir.** `production.py`
+   **no define ningún `EMAIL_*`** (el único backend de correo del proyecto es el
+   de consola, en `development.py:49`) y el `.env` de producción **no tiene
+   ninguna variable de correo**. Django caería a `smtp.EmailBackend` contra
+   `localhost`, que en el contenedor no existe. No es un `settings`: requiere que
+   OTI habilite un relay SMTP institucional y que el firewall lo deje salir.
+2. **Copiar el hash de Vivanto: peor de lo que parecía.** El catálogo de
+   `ADMINUSUARIOS.USUARIO` (solo metadatos, no se leyó ni una credencial) muestra
+   que Vivanto **ya tiene política de credenciales completa**:
+   `CAMBIARCONTRASENIA`, `CANTIDADDEINTENTOS`, `FECHACADUCIDAD`,
+   `FECHAULTIMOINTENTO`, `DESBLOQUEOAUTOMATICO`, `FECHACAMBIOCONTRASENA`,
+   `IDESTADO`. Replicar el hash obligaría a replicar **toda esa política**, o
+   SICAV quedaría desincronizado: alguien bloqueado en Vivanto entraría igual, y
+   una clave caducada seguiría sirviendo. Se mantiene el criterio de
+   `crear_usuarios_activos`: **la contraseña no se copia**.
+
+### La tercera vía: `UARIV.AUTH.API`, ya desplegada en el mismo servidor
+
+En el `docker ps` del `.109` llevan semanas corriendo dos contenedores que no son
+nuestros (proyecto compose `auth-api`, en `/home/adminuariv/auth-api`):
+
+| | |
+|---|---|
+| `uariv-auth-api` | `crunidad.azurecr.io/uariv-auth-api:1.0.0` — **:8080**, Up 4 semanas |
+| `uariv-auth-ui` | `crunidad.azurecr.io/uariv-auth-ui:1.0.1` — **:8081**, Up 2 semanas |
+
+Su contrato es público en `/swagger/v1/swagger.json` (16 rutas, seguridad
+`Bearer`), y es exactamente lo que necesitamos:
+
+```
+POST /auth/AuthByUser      { userName, password }
+                        →  { success, access_token, refresh_token, errors[] }
+POST /auth/AuthByEntraId   (SSO Microsoft Entra ID)
+GET  /auth/start · /auth/callback · /auth/result   (flujo OIDC)
+PUT  /api/User/ChangePassword
+```
+
+Es decir: **la institución ya resolvió identidad**, con SSO corporativo incluido,
+y el servicio está a un salto de red de SICAV (`localhost:8080`) — sin VPN, sin
+Oracle y sin el dblink en el camino del login.
+
+> **Hasta acá llegó el sondeo, a propósito.** El servicio es de otro equipo: no se
+> inspeccionaron sus variables de entorno ni su cadena de conexión, y **no se
+> probó ninguna credencial contra él**. Solo se leyó el swagger que publica.
+
+### 🔴 La pregunta que decide todo (para OTI / dueño de `auth-api`)
+
+**¿Los 1.150 encuestadores de campo existen en el directorio de `UARIV.AUTH.API`?**
+Si su base es la misma `ADMINUSUARIOS` de Vivanto —de donde sacamos su identidad—
+la respuesta es sí y el bloqueo se cae solo. Si es un directorio distinto (por
+ejemplo solo funcionarios de planta), esta vía no sirve para el territorio y
+volvemos al SMTP. **No se puede responder desde nuestro lado sin husmear infra
+ajena: hay que preguntarlo.**
+
+Con eso hay que preguntar también: si nos autorizan a consumirlo desde SICAV,
+cómo se emiten las credenciales de cliente, y cuál es el tiempo de vida del
+`access_token`.
+
+### Lo que igual queda por resolver, aunque la respuesta sea sí
+
+**El campo trabaja sin señal.** Un login delegado a un servicio en línea resuelve
+la primera entrada, no la operación offline. Hay que diseñar el esquema
+—autenticación en línea la primera vez y credencial derivada en el dispositivo
+para las jornadas sin cobertura—, que además es coherente con
+[`project_arquitectura_offline`] (la precarga del padrón ya asume una primera
+conexión). Esto no bloquea la decisión, pero sí es trabajo, y no está hecho.
+
+---
+
 ## 0-septies. 2026-08-03 (tarde) — **1.150 ENCUESTADORES VEN SU TRABAJO EN SICAV**
 
 Entró una novedad del territorio (Pandi) y terminó abriendo el trabajo del día.
