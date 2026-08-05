@@ -593,6 +593,18 @@ class PersonaUniverso(models.Model):
         related_name='registros_universo',
     )
 
+    #: Cuando varias filas del corte comparten documento, esta es la que la
+    #: búsqueda debe devolver. Las otras se conservan —no se borran— y quedan
+    #: con `False` más una fila en `DescarteUniverso` que dice por qué perdieron.
+    #:
+    #: Se marca DESPUÉS de cargar, con una consulta sobre la base, y no durante:
+    #: deduplicar al vuelo obligaría a mantener 12 M de hashes en memoria (~800
+    #: MB) y a ordenar por documento en Oracle, que ya está medido en 12 h sobre
+    #: una tabla de este tamaño. Cargar y después resolver cuesta minutos.
+    es_preferida = models.BooleanField(
+        default=True, db_index=True,
+        help_text='False = otra fila del mismo corte ganó ese documento.')
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
