@@ -12,7 +12,7 @@
 
 **Para:** Oscar Andrés Manosalva García — Supervisión SRNI
 **CC:** [PMO — Rommey Edwin Ruiz Rivera] · [OTI — infraestructura]
-**Asunto:** 🔴 URGENTE — El servidor de SICAV se queda sin disco: la migración del universo de víctimas no cabe (PRY-0662064)
+**Asunto:** 🔴 URGENTE — El servidor de SICAV se queda sin disco: la base de víctimas no tiene respaldo y la operación mensual no cabe (PRY-0662064)
 
 Oscar, buen día.
 
@@ -25,9 +25,13 @@ sostenerla**, y sin resolverlo la migración no se puede completar ni operar mes
 
 ## 1. La situación, en una línea
 
-El servidor tiene **61 GB de disco y hoy quedan 18 GB libres (71 % ocupado)**. Solo el
-universo de víctimas que estamos cargando ocupa entre **13 y 19 GB**, y el paso
-siguiente —enlazar ese universo con el padrón— necesita **8 GB más de los que hay**.
+El servidor tiene **61 GB de disco**. Solo el universo de víctimas que estamos cargando
+ocupa **13 GB**, y esta tarde tuvimos que hacer optimizaciones de emergencia sobre la
+base —en caliente, con la carga corriendo— **para que la operación de este mes cupiera**.
+
+Cupo. Lo que **no** cabe es todo lo demás: **la base de 5.926.004 víctimas no tiene
+copia de seguridad, y no hay espacio para crearla**; tampoco para el mantenimiento de la
+base ni para la actualización mensual del universo.
 
 ## 2. Qué se está cargando y por qué es necesario
 
@@ -44,12 +48,13 @@ responder "esta persona sí es víctima" sobre el universo real y no sobre un su
 
 | | |
 |---|---|
-| Disco del servidor | **61 GB** · 43 usados · **18 libres** |
-| Base de datos hoy | 23 GB — de los cuales el padrón operativo son 15 GB |
-| Universo, ya cargado a medias | 7 GB (4,5 de 12 millones de personas) |
-| Universo completo, proyectado | **13 a 19 GB** según se optimice |
-| Espacio que pide el paso de enlace | **8 GB** que no existen |
+| Disco del servidor | **61 GB** · 41 usados · 21 libres *(tras las optimizaciones de hoy)* |
+| Base de datos | 21 GB — de los cuales el padrón operativo son 15 GB |
+| Universo, cargado a medias | 5 GB (4,8 de 12 millones de personas) |
+| Universo completo, proyectado | **13 GB** |
+| Actualización mensual del universo | **13 GB más**, cada mes |
 | **Copias de seguridad de la base** | **NINGUNA** — no hay ni tarea programada ni respaldo, y no cabría |
+| Espacio para mantenimiento de la base | **0** — hacen falta 15 GB libres y no los hay |
 
 Esa última fila es la que más me preocupa y la traigo aparte: **hoy la base con
 5.926.004 víctimas no tiene respaldo**, y no se puede crear uno porque no hay espacio
@@ -66,15 +71,21 @@ no solo para SICAV.
 Antes de escalar, exprimimos lo que estaba en nuestras manos:
 
 - **Corregimos un proceso** que iba a pedir 19 GB de golpe; ahora pide 88 MB.
-- **Detectamos 5,8 GB en índices que no se usan** (medido: cero usos) y los vamos a
-  eliminar.
+- **Eliminamos 6 índices que no se usaban** (medido: cero consultas). Se hizo en
+  caliente, con la carga corriendo: liberó 2,2 GB de inmediato, y como además dejó de
+  escribirlos en cada registro, **la carga se aceleró un 35 %** (de 573 mil a 772 mil
+  registros por hora). El universo completo pasa de ocupar 19 GB a **13 GB**.
 - **Instalamos un vigilante** que detiene la carga si el disco baja de 4 GB, para que
   el servidor no se caiga mientras se resuelve esto.
 - Identificamos ~5 GB recuperables en imágenes y registros viejos.
 
-Con todo eso **la carga actual termina**. Lo que no se sostiene es la **operación**: el
-universo se actualiza **cada mes**, y cada actualización vuelve a pedir el mismo
-espacio.
+**Con eso la carga de este mes termina y queda margen para el paso siguiente.** Lo hago
+explícito para que no se lea como una alarma exagerada: el problema inmediato lo
+resolvimos nosotros.
+
+Lo que **no** se sostiene es lo que viene: el universo se actualiza **cada mes** y cada
+actualización vuelve a pedir el mismo espacio; no hay respaldo de la base ni forma de
+crearlo; y no hay espacio para mantenerla. Esas tres cosas no se arreglan optimizando.
 
 ## 5. Cuánto disco se necesita
 
@@ -144,9 +155,11 @@ Las dos vías posibles, ambas estándar y de bajo impacto:
    la forma segura de validar, y son 13 GB adicionales. Si la respuesta es no, la
    validación del corte nuevo hay que hacerla antes de cargarlo y con otro método.
 
-Quedo atento. Mientras tanto la carga sigue en curso y vigilada; si el disco llega al
-límite, el sistema se detiene solo y sin dañar nada, pero **no podremos avanzar a la
-etapa de enlace** hasta tener el espacio.
+Quedo atento. La carga sigue en curso y vigilada, y con las optimizaciones de hoy
+alcanza a terminar. Lo que necesito que quede registrado es que **estamos operando sin
+red de seguridad**: sin copia de respaldo de la base de víctimas y sin espacio para
+mantenerla, cualquier incidente en ese servidor hoy se resuelve **volviendo a construir
+el padrón desde cero**, que son varios días de trabajo.
 
 Cordialmente,
 

@@ -165,7 +165,44 @@ debajo de eso volvemos a quedar sin espacio de mantenimiento.
 
 ---
 
-## 7. Decisión que no es técnica
+## 7. Lo que pasó al aplicar la poda — medido, 5-ago 21:44 UTC
+
+Se aplicó **en caliente**, con la carga corriendo. Los 6 `DROP INDEX` en una sola
+transacción y con `lock_timeout`, para que en el peor caso abortara sin encolar nada.
+
+> **Primer intento fallido, y su lección.** Con `lock_timeout = 5s` los seis DROP
+> abortaron: `bulk_create` mantiene una transacción de 5.000 filas que al ritmo de
+> entonces duraba ~30 s, más que la espera. Con **90 s y los seis en una sola
+> transacción** —para pagar la cola una vez y no seis— entró a la primera. Tomó 78
+> segundos en total, casi todos esperando el lock.
+
+| | Antes | Después |
+|---|---:|---:|
+| Índices en la tabla | 12 | **6** |
+| Disco libre | 19 GB | **21 GB** |
+| Ritmo de carga | 572.580 filas/h | **772.000 filas/h** (+35 %) |
+| ETA de la fase 1 | 12,6 h | **9 h** |
+| Costo por fila | 1,633 KB | **1,09 KB** |
+
+**El efecto sobre la velocidad no estaba previsto y es la mitad del beneficio.** Los
+índices no solo ocupaban: se escribían en cada una de los 12 M de filas, con I/O
+aleatorio contra un `shared_buffers` de 128 MB. Quitar 6 de 12 aceleró la carga más de
+un tercio.
+
+### La proyección, rehecha con el costo real
+
+| | Antes de podar | Ahora |
+|---|---:|---:|
+| Universo completo | 18,7 GB | **13,1 GB** |
+| Libre al terminar la fase 1 | 7,3 GB | **~13 GB** |
+| Fase 3 (enlace) | 8,2 GB ⇒ **no cabía** | 5,5 GB ⇒ **cabe, con 7,5 GB de margen** |
+
+**El bloqueo inmediato quedó resuelto.** Lo que sigue sin resolverse es lo estructural:
+respaldos, mantenimiento y la actualización mensual (sección 6).
+
+---
+
+## 8. Decisión que no es técnica
 
 **¿Se conserva el corte anterior mientras se valida el nuevo?**
 

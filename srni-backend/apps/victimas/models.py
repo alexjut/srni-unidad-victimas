@@ -539,6 +539,9 @@ class PersonaUniverso(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     #: `CONS_PERSONA` del universo. Ver la advertencia de arriba.
+    #: Este índice **se queda** aunque hoy marque 0 usos: la unicidad por corte
+    #: empieza por `corte`, así que no sirve para buscar por el id solo, que es
+    #: como llega una consulta desde la fuente ("¿qué es CONS_PERSONA 23988216?").
     cons_persona_universo = models.BigIntegerField(
         db_index=True,
         verbose_name='CONS_PERSONA del universo',
@@ -551,12 +554,21 @@ class PersonaUniverso(models.Model):
         help_text='TIPO_DOC tal como viene de la fuente, sin homologar.',
     )
     numero_documento = EncryptedField()
-    numero_documento_hash = models.CharField(max_length=64, db_index=True, blank=True,
-                                             default='')
+    #: Sin índice **a propósito**. Medido el 5-ago sobre la carga real: 0 usos, y
+    #: 2.878 MB proyectados a 12 M entre el btree y el `_like` que Django agrega
+    #: solo. Acá el cruce va por el hash SIN tipo (ver abajo), así que este campo
+    #: se guarda para trazabilidad, no para buscar. Si algún día se busca por él,
+    #: hay que reponer el índice con su migración — y sabiendo lo que cuesta.
+    numero_documento_hash = models.CharField(max_length=64, blank=True, default='')
     #: Hash solo del número. Es la llave real del cruce con `Victima`, porque el
     #: tipo de documento no siempre viene y no siempre coincide entre fuentes.
+    #:
+    #: Tampoco lleva `db_index`: el índice compuesto
+    #: `(numero_documento_hash_sin_tipo, corte)` de `Meta.indexes` ya lo cubre —
+    #: es su prefijo izquierdo— y el suelto costaba otros 2.871 MB a 12 M, con
+    #: 0 usos medidos.
     numero_documento_hash_sin_tipo = models.CharField(
-        max_length=64, db_index=True, blank=True, default='')
+        max_length=64, blank=True, default='')
 
     # ── Identidad y demografía ──────────────────────────────────────────────
     primer_nombre = EncryptedField(blank=True, default='')
@@ -579,7 +591,12 @@ class PersonaUniverso(models.Model):
     #: Se guarda para poder responder "¿de cuándo es este dato?" sin adivinar, y
     #: para detectar cortes viejos: el antecedente de `GIC_REPORTE_HOGAR`,
     #: congelado desde 2021 sin que nadie lo notara, es la razón.
-    corte = models.CharField(max_length=40, db_index=True)
+    #:
+    #: Sin `db_index`: la tabla tiene **un solo valor** de corte (dos mientras se
+    #: valida el nuevo), y un índice sobre una columna así no lo elige el planner
+    #: — medido: 0 usos. Además `persona_universo_unica_por_corte` empieza por
+    #: `corte`, así que ya está cubierto por su prefijo izquierdo.
+    corte = models.CharField(max_length=40)
     fecha_corte = models.DateField(
         null=True, blank=True,
         help_text='Primer día del mes del corte (010726 → 2026-07-01).')
@@ -601,6 +618,10 @@ class PersonaUniverso(models.Model):
     #: deduplicar al vuelo obligaría a mantener 12 M de hashes en memoria (~800
     #: MB) y a ordenar por documento en Oracle, que ya está medido en 12 h sobre
     #: una tabla de este tamaño. Cargar y después resolver cuesta minutos.
+    #: El índice **se queda**, aunque un booleano suele ser mala idea indexar: el
+    #: reset de la fase 2 filtra por `es_preferida=False`, que son ~55.100 de 12 M
+    #: (0,45 %). Ahí el índice es justamente lo que hace que ese UPDATE sea barato
+    #: en vez de un recorrido de la tabla entera.
     es_preferida = models.BooleanField(
         default=True, db_index=True,
         help_text='False = otra fila del mismo corte ganó ese documento.')

@@ -62,14 +62,39 @@ detiene y se lleva servicios de otros equipos por delante.
 > minutos de solo lectura: el `count` de verificación, el `GROUP BY` sobre 12 M y
 > el bucle de ~55 K grupos. El polling es de 20 s.
 
+### Poda de índices — aplicada EN CALIENTE a las 21:44 UTC
+
+No se esperó a la ventana: la carga se había degradado a la mitad (572.580 filas/h
+contra 1,14 M/h al arrancar, con el backend en `LWLock` sobre el `INSERT`) y la
+causa era la misma que la del espacio — **cada fila mantenía 12 índices, 6 de ellos
+sin un solo uso**.
+
+Los 6 `DROP INDEX` fueron en **una sola transacción** con `lock_timeout`. Con 5 s
+abortaron los seis: `bulk_create` sostiene una transacción de 5.000 filas que
+duraba ~30 s. Con 90 s entró a la primera, en 78 segundos totales.
+
+| | Antes | Después |
+|---|---:|---:|
+| Índices | 12 | **6** |
+| Disco libre | 19 GB | **21 GB** |
+| Ritmo | 572.580 filas/h | **772.000 filas/h** (+35 %) |
+| Universo proyectado | 18,7 GB | **13,1 GB** |
+| Fase 3 (enlace) | 8,2 GB — **no cabía** | 5,5 GB — **cabe con 7,5 GB de margen** |
+
+La migración `0016_podar_indices_universo` deja el modelo consistente con eso. Al
+aplicarla será un **no-op** (`DROP INDEX IF EXISTS` sobre índices ya borrados), y
+eso está bien: lo que importa es que el estado de Django y el de la base coincidan.
+Detalle completo: [`docs/infraestructura/analisis_capacidad_disco.md`](../infraestructura/analisis_capacidad_disco.md).
+
 ### 🌅 Siguiente paso, **en este orden**
 
-1. **Dejar terminar la fase 1.** Interrumpirla obliga a borrar y reempezar: el
-   guard de `_cargar` no deja reanudar un corte a medias.
+1. **Dejar terminar la fase 1** (ETA ~9 h desde las 21:45 UTC ⇒ madrugada del 6-ago).
+   Interrumpirla obliga a borrar y reempezar: el guard de `_cargar` no deja reanudar
+   un corte a medias.
 2. Confirmar en `/tmp/vigilante_universo.log` que el proceso murió **antes** de la
    fase 2.
-3. **Recién ahí desplegar** la imagen con el parche. Desplegar antes reinicia
-   `cz_backend` y **mata la carga en curso**.
+3. **Recién ahí desplegar** la imagen con el parche y la migración. Desplegar antes
+   reinicia `cz_backend` y **mata la carga en curso**.
 4. Fase 2 sola, con el disco a la vista:
    `docker exec cz_backend python manage.py cargar_universo_victimas --solo-resolver --sin-enlace --confirmar`
 5. `VACUUM ANALYZE` + medir, y recién entonces la fase 3 (sin `--sin-enlace`).
