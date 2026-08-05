@@ -198,6 +198,11 @@ class Command(BaseCommand):
 
         cont = {"leidas": 0, "cargadas": 0, "sin_documento": 0, "sin_id": 0}
         acumulador, descartes = [], []
+        # Vocabularios que la fuente trae y SICAV no reconoce. Se juntan para
+        # avisarlos al final: `homologar_genero` devuelve ND ante lo desconocido
+        # —correcto, nunca inventa— pero si el RUV agrega un valor mañana, sin
+        # esto se lo traga en silencio.
+        generos_nuevos = set()
 
         while True:
             filas = cur.fetchmany(lote)
@@ -205,6 +210,8 @@ class Command(BaseCommand):
                 break
             for fila in filas:
                 cont["leidas"] += 1
+                if not H.genero_es_conocido(fila[7]):
+                    generos_nuevos.add(str(fila[7]))
                 registro = self._a_registro(fila, corte, fecha_corte)
                 if registro is None:
                     cont["sin_id"] += 1
@@ -258,6 +265,14 @@ class Command(BaseCommand):
             f"  sin documento   : {cont['sin_documento']:,}"
             f"{'  (cargadas igual)' if con_sin_doc else '  (descartadas)'}\n"
             f"  sin id de fuente: {cont['sin_id']:,}"))
+
+        if generos_nuevos:
+            self.stdout.write(self.style.ERROR(
+                f"  🔴 GENERO_HOM con valores que SICAV no reconoce: "
+                f"{', '.join(sorted(generos_nuevos))}\n"
+                f"     Se guardan crudos y homologan a ND. Hay que decidir su "
+                f"equivalencia en apps/victimas/homologacion.py antes de que el "
+                f"universo alimente altas de víctimas."))
 
     def _a_registro(self, fila, corte, fecha_corte):
         from apps.victimas.models import PersonaUniverso

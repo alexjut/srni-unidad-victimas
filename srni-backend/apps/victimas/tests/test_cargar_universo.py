@@ -355,3 +355,61 @@ def test_la_discapacidad_usa_la_homologacion_canonica():
     # NULL es "no consta", no "no tiene": la canónica lo trata como False.
     fila[9] = None
     assert C.Command()._a_registro(tuple(fila), CORTE, None).discapacidad is False
+
+
+# ── Homologación de género: los cinco valores REALES del universo ───────────
+#
+# Medidos el 5-ago sobre 1.172.594 filas ya cargadas del corte de julio:
+#   Hombre 50,010 % · Mujer 49,890 % · LGBTI 0,068 % ·
+#   No Informa 0,026 % · Intersexual 0,006 %
+# Los que no son Hombre/Mujer proyectan a ~12.448 personas sobre los 12,5 M.
+
+from apps.victimas import homologacion as H   # noqa: E402
+
+
+@pytest.mark.parametrize("crudo,esperado", [
+    ("Hombre", "M"),
+    ("Mujer", "F"),
+    ("No Informa", "ND"),
+    ("LGBTI", "ND"),         # no es un género: ver GENERO_APROXIMADO
+    ("Intersexual", "ND"),   # condición biológica, no identidad declarada
+])
+def test_los_cinco_valores_del_universo_se_homologan(crudo, esperado):
+    assert H.homologar_genero(crudo) == esperado
+
+
+def test_ninguno_de_los_cinco_cae_al_default_por_accidente():
+    """
+    Que LGBTI e Intersexual den ND es una DECISIÓN, no un descuido. Si estuvieran
+    solo por el default, un valor nuevo de la fuente sería indistinguible de
+    ellos y nadie se enteraría.
+    """
+    for valor in ("Hombre", "Mujer", "No Informa", "LGBTI", "Intersexual"):
+        assert H.genero_es_conocido(valor), f"{valor} caería al default"
+
+
+def test_un_valor_nuevo_de_la_fuente_se_detecta():
+    """
+    `homologar_genero` seguirá devolviendo ND —nunca inventa un género— pero la
+    carga tiene que poder avisar que apareció algo que no contemplamos.
+    """
+    assert not H.genero_es_conocido("Género fluido")
+    assert H.homologar_genero("Género fluido") == "ND"   # sin inventar
+
+
+def test_las_perdidas_de_precision_estan_declaradas_con_su_razon():
+    """Una pérdida que solo vive en un comentario es una que nadie vuelve a mirar."""
+    assert set(H.GENERO_APROXIMADO) == {"lgbti", "intersexual"}
+    for razon in H.GENERO_APROXIMADO.values():
+        assert len(razon) > 40
+
+
+def test_el_universo_guarda_el_genero_CRUDO_no_el_homologado():
+    """
+    `PersonaUniverso` es un snapshot fiel de la fuente: guarda 'Mujer', no 'F'.
+    La homologación ocurre al usarlo, y así el valor real de las ~12.448
+    personas que no son Hombre/Mujer no se pierde.
+    """
+    r = C.Command()._a_registro(_fila(), CORTE, None)
+    assert r.genero == "Mujer"
+    assert H.homologar_genero(r.genero) == "F"
