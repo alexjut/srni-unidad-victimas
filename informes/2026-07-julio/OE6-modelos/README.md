@@ -25,3 +25,11 @@ ambas (una mujer puede estar embarazada/lactando después de los 50).
 - Prueba de paridad con el motor real: `srni-mobile/src/services/__tests__/datosBasicosB2.test.ts`
   (mujer 60 → visible; mujer 10 → oculto; hombre → oculto; B2="Sí" → aparece B2_CANT).
 - Commit `3249a85` en `main` (GitHub + Azure DevOps).
+
+## Evidencia física recolectada
+
+Archivos en [`evidencias/`](evidencias/):
+
+| Archivo | Qué prueba |
+|---|---|
+| `modelos-instrumentos-y-parametricas-produccion.txt` | Los instrumentos cargados con sus capítulos y preguntas, las preguntas por tipo de dato, las reglas de visibilidad condicional, el catálogo de hechos victimizantes, los perfiles con sus permisos y las paramétricas territoriales — todo extraído de la base de producción |

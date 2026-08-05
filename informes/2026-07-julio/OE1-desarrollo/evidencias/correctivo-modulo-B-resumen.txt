@@ -1,0 +1,54 @@
+commit 3249a85262e46b159065b9eb5e5cefe8ceb92738
+Author: Javier Alexander Aguilar Castro <ingaguilarsistemas@gmail.com>
+Date:   Wed Jul 1 10:48:36 2026 -0500
+
+    feat(modulo-b): precarga por miembro + condicional embarazo/gestación (Bug 1 y Bug 2)
+    
+    Módulo B. DATOS BÁSICOS — dos defectos del formulario móvil de caracterización.
+    
+    Bug 1 — Hidratación por CADA miembro (antes solo el autorizado → "0 de 3"):
+    - [temaId].tsx: el prellenado ahora itera todos los miembros del hogar y siembra
+      A6/B9/B10/A8 + primer nombre desde MiembroHogarResumen (mismo origen que usa el
+      motor de skip-logic), disponible para todos online y offline.
+    - Autorizado: además NOMBRE_1/2, A3, A5 desde su VictimaResumenFuente persistida.
+    - Adicional offline: A5 (nº documento) desde el payload crudo de miembros_offline.
+    - B9 (años) y B10 (grupo etario) pasan a solo-lectura (calculados) + efecto de
+      recálculo automático desde A6 por miembro (campo automático del manual).
+    - A3 (tipo doc) fallback por edad cuando no hay dato (RC 0-6, TI 7-17, CC 18+),
+      según "se precarga según la edad" del manual.
+    
+    Bug 2 — Condicional de embarazo + ajuste lactante (4 perfiles: Buenaventura,
+    San Andrés, Territorial, Urbano-Étnico), en fixture + bundle:
+    - B2 opciones: "Sí, ¿Cuántas?" / "No" (elimina la opción huérfana TEXTO).
+    - Nueva pregunta hija B2_CANT (NUMERICO, solo_numerico, sin rango) que aparece
+      cuando B2 == "Sí" (regla HABILITAR B2_CANT si B2==1).
+    - DESVIACIÓN deliberada del manual 520.06.06-1, avalada por el líder funcional
+      (Alejandro): embarazo (B2) y lactante (B2A) con piso de 12 años y SIN tope
+      superior → `sexo == '2' and edad >= 12` en ambas.
+    - scripts/patch_bug2_embarazo_gestacion.py: reconciliación idempotente (fixture +
+      bundle). Aviso en generar_buenaventura/san_andres_desde_diccionario.py para
+      re-correrlo tras regenerar desde el Excel (la curación vive en el fixture).
+    
+    Verificación: tsc 0 errores; jest 77/77 (incluye datosBasicosB2.test.ts, paridad
+    con el motor real contra el bundle patcheado).
+    
+    PENDIENTE (fuera de este commit, requiere decisión): bump de versión del
+    instrumento (2a) por implicación de UUID/sesiones; y siembra + verificación en
+    Pruebas en el APK real.
+    
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+ .../fixtures/perfil_buenaventura_v7.json           |  98 +++++----
+ .../formulario/fixtures/perfil_san_andres_v7.json  |  96 +++++----
+ .../formulario/fixtures/perfil_territorial_v7.json | 102 ++++++----
+ .../fixtures/perfil_urbano_etnico_v1.json          |  98 +++++----
+ .../generar_buenaventura_desde_diccionario.py      |  11 +
+ .../generar_san_andres_desde_diccionario.py        |  11 +
+ .../scripts/patch_bug2_embarazo_gestacion.py       | 185 +++++++++++++++++
+ srni-mobile/app/(main)/formulario/[temaId].tsx     | 223 ++++++++++++++++-----
+ .../assets/instrumentos/buenaventura_v7.json       |   2 +-
+ srni-mobile/assets/instrumentos/san_andres_v7.json |   2 +-
+ .../assets/instrumentos/territorial_v7.json        |   2 +-
+ .../assets/instrumentos/urbano_etnico_v1.json      |   2 +-
+ .../src/services/__tests__/datosBasicosB2.test.ts  |  59 ++++++
+ 13 files changed, 674 insertions(+), 217 deletions(-)
