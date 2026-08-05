@@ -216,3 +216,44 @@ def test_la_ruta_es_opcional_y_su_ausencia_no_rompe_nada():
         'tipo_documento': 'CC', 'numero_documento': '1115724047'})
     assert s.is_valid(), s.errors
     assert s.validated_data.get('ruta_entrevista', '') == ''
+
+
+# ── La regla de 2 años es real y NO se deroga ───────────────────────────────
+#
+# Confirmado por Javier el 5-ago-2026. Un análisis previo la marcó como "sin
+# fuente citada" y esa observación era incorrecta. Estos tests la fijan: si
+# alguien la cambia, tiene que ser una decisión, no un descuido.
+
+def test_la_vigencia_es_de_dos_anios():
+    from apps.victimas.homologacion import ANIOS_VIGENCIA_CARACTERIZACION
+    assert ANIOS_VIGENCIA_CARACTERIZACION == 2
+
+
+def test_la_ruta_general_SIEMPRE_respeta_la_vigencia():
+    """
+    Es el caso por defecto y el que sostiene la regla. Si la General dejara de
+    respetarla, la vigencia dejaría de existir en la práctica: es la ruta que
+    usa la inmensa mayoría de las entrevistas.
+    """
+    assert 'GENERAL' not in RUTAS_QUE_OMITEN_VIGENCIA
+    assert ruta_omite_vigencia('GENERAL') is False
+
+    v = describir_elegibilidad(_con_ficha_vigente(), ruta='GENERAL')
+    assert not v.elegible
+    assert v.motivo == MotivoNoElegible.FICHA_VIGENTE
+
+
+def test_una_ficha_de_hace_menos_de_dos_anios_sigue_vigente():
+    from apps.victimas.homologacion import debe_recaracterizarse
+
+    hoy = datetime.date(2026, 8, 5)
+    assert debe_recaracterizarse(datetime.date(2025, 8, 5), hoy=hoy) is False   # 1 año
+    assert debe_recaracterizarse(datetime.date(2024, 8, 6), hoy=hoy) is False   # 1 año 364 d
+    assert debe_recaracterizarse(datetime.date(2024, 8, 5), hoy=hoy) is True    # 2 años justos
+    assert debe_recaracterizarse(datetime.date(2020, 1, 1), hoy=hoy) is True    # vencida
+
+
+def test_sin_fecha_se_debe_recaracterizar():
+    """Nunca caracterizada es justamente a quien hay que caracterizar."""
+    from apps.victimas.homologacion import debe_recaracterizarse
+    assert debe_recaracterizarse(None) is True

@@ -107,8 +107,23 @@ El encuestador lee *"no se encontró"* y entiende **"no es víctima"**. Pero
 Le falta todo lo que permite actuar:
 
 - **Hasta cuándo.** La regla es `ANIOS_VIGENCIA_CARACTERIZACION = 2`
-  (`apps/victimas/homologacion.py:266`), pero el encuestador no la conoce: ve una
+  (`apps/victimas/homologacion.py`), pero el encuestador no la conoce: ve una
   fecha suelta y no sabe si faltan dos meses o dos años.
+
+> ### ✅ La regla de 2 años es real y NO se deroga
+>
+> **Confirmado por Javier el 5-ago-2026.** Un análisis posterior a este documento
+> la marcó como *"sin fuente citada"* por no encontrarla en los manuales 11-MU /
+> 14-MU, y **esa observación era incorrecta**. Queda anulada: una nota que dice
+> que un control no tiene respaldo es una invitación a quitarlo.
+>
+> **Cómo se aplica:** la **ruta general** la respeta —es el caso por defecto— y
+> las otras tres rutas la omiten, según el Manual §5.1.1 (pág. 22).
+>
+> **Las fechas que la sustentan** están en `TEMP_UNIV_VICT_CONTING`
+> (`ENTRE_FICHA_VIGENTE`, `FECHA_CREACION`, `ID_ENTREVISTA`): la vigencia **dicha
+> por la fuente**, no calculada por nosotros. Mientras no haya acceso a esa tabla,
+> el cálculo con `fecha_ult_caracterizacion` es un **sustituto**, no la fuente.
 - **Que existe una vía.** Con acción constitucional **sí debe poder
   caracterizarla**, y el mensaje no lo menciona. Por eso se escala en vez de
   resolverse en campo — que es exactamente lo que pasó.

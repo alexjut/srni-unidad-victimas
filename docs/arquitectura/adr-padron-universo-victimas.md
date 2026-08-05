@@ -181,22 +181,46 @@ universo); de lo contrario son volumen sin función.
 
 ---
 
-## 7. Vigencia: menos huérfana de lo que parecía
+## 7. Vigencia: la regla es real, y su fuente está identificada
 
-Las columnas `CARACTERIZADO` y `ENTRE_FICHA_VIGENTE` viven en
-`TEMP_UNIV_VICT_CONTING`, objeto **no accesible** desde nuestro usuario (probado:
-acceso directo y los 22 dblinks, `ORA-00942` en todos).
+### ✅ La regla de 2 años NO se deroga
 
-**Pero la capa 2 no queda vacía:** hoy la vigencia se calcula con
-`fecha_ult_caracterizacion`, que viene del legacy vía
-`cargar_fechas_caracterizacion`. Lo que falta es la **confirmación de la fuente**,
-no el dato entero. Eso baja la urgencia de `VIGENCIA_NO_VERIFICABLE`, sin
-eliminarla.
+**Confirmado por Javier el 5-ago-2026.** Un análisis previo la marcó como *"sin
+fuente citada"* por no encontrarla en los manuales 11-MU / 14-MU; **esa
+observación era incorrecta y queda anulada**. Una nota que afirma que un control
+no tiene respaldo es una invitación a quitarlo.
 
-**Decisión de supervisión pendiente** — qué hacer cuando la vigencia no se pueda
-verificar:
+**Cómo se aplica:**
 
-- tratarlo como *no elegible* niega caracterización por una limitación técnica;
+| Ruta | Regla de vigencia |
+|---|---|
+| **General** | **se respeta** — es el caso por defecto |
+| Acciones constitucionales · Modificación de núcleo · Especial | se omite (Manual §5.1.1, pág. 22) |
+
+Ya está implementado así en `RUTAS_QUE_OMITEN_VIGENCIA`
+(`apps/victimas/homologacion.py`), con la excepción registrada en
+`ExcepcionVigencia` y soporte fotográfico obligatorio.
+
+### De dónde salen las fechas
+
+**`TEMP_UNIV_VICT_CONTING`** es la fuente autoritativa: trae
+`ENTRE_FICHA_VIGENTE`, `FECHA_CREACION` e `ID_ENTREVISTA` — la vigencia **dicha
+por la fuente**, no calculada por nosotros.
+
+Hoy ese objeto **no es accesible** desde nuestro usuario (probado el 5-ago: acceso
+directo y los 22 dblinks, `ORA-00942` en todos; falta el `SERVICE_NAME` donde sí
+resuelve). Mientras tanto, la vigencia se calcula con `fecha_ult_caracterizacion`,
+que viene del legado vía `cargar_fechas_caracterizacion`.
+
+⚠️ **Ese cálculo es un sustituto, no la fuente.** Cuando la tabla esté disponible,
+la fecha debe salir de ahí, y el cálculo pasa a ser el respaldo para quien no
+figure en ella.
+
+### Lo que sigue siendo decisión de supervisión
+
+Qué hacer con quien **no aparezca** en la fuente de vigencia cuando la tengamos:
+
+- tratarlo como *no elegible* niega caracterización por una limitación de datos;
 - tratarlo como *elegible* habilita casos que podrían no corresponder.
 
 Ambas tienen implicaciones frente a la Ley 1448. **No es decisión de desarrollo.**

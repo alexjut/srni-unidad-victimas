@@ -306,6 +306,30 @@ def es_victima(valor) -> bool:
 #
 # ⇒ con la regla de 2 años, **1.936.352 personas (58,2 %) están vencidas** y deberían
 # recaracterizarse. Ese es el trabajo pendiente que el sistema tiene que poder señalar.
+#
+# ─── LA REGLA ES REAL. NO SE DEROGA. ─────────────────────────────────────────
+# Confirmado por Javier el 5-ago-2026, a raíz de un análisis que la había marcado
+# como "sin fuente citada" por no encontrarla en los manuales 11-MU / 14-MU.
+# **Esa observación era incorrecta y queda anulada acá**, porque una nota que dice
+# que un control no tiene respaldo es una invitación a quitarlo.
+#
+# Cómo se aplica:
+#   · RUTA GENERAL  → la regla SE RESPETA. Es el caso por defecto.
+#   · Las otras tres rutas (acciones constitucionales, modificación de núcleo,
+#     especial) → la OMITEN, según el Manual §5.1.1 pág. 22.
+#     Ver `RUTAS_QUE_OMITEN_VIGENCIA` abajo.
+#
+# ─── De dónde salen las fechas que la sustentan ──────────────────────────────
+# La fuente autoritativa de la vigencia es `TEMP_UNIV_VICT_CONTING`, que trae
+# `ENTRE_FICHA_VIGENTE`, `FECHA_CREACION` e `ID_ENTREVISTA` — o sea, la vigencia
+# **dicha por la fuente**, no calculada por nosotros.
+#
+# Mientras no tengamos acceso a esa tabla (probado el 5-ago: `ORA-00942` por
+# acceso directo y por los 22 dblinks), la vigencia se calcula acá con
+# `fecha_ult_caracterizacion`, que viene del legado vía
+# `cargar_fechas_caracterizacion`. El cálculo es un **sustituto**, no la fuente:
+# cuando la tabla esté disponible, la fecha debe salir de ahí y este cálculo pasa
+# a ser el respaldo para quien no figure en ella.
 ANIOS_VIGENCIA_CARACTERIZACION = 2
 
 # ── Rutas de entrevista que OMITEN la regla de vigencia ──────────────────────
