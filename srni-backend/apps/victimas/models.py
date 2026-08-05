@@ -642,6 +642,10 @@ class DescarteUniverso(models.Model):
         ('SIN_DOCUMENTO',      'Sin documento usable (menos de 5 caracteres)'),
         ('DOCUMENTO_REPETIDO', 'Otra fila del mismo corte ya tomó ese documento'),
         ('SIN_CONS_PERSONA',   'Sin identificador en la fuente'),
+        # El documento resuelve a MÁS DE UNA víctima del padrón. No se enlaza a
+        # ninguna: elegir una sería inventar una correspondencia, y el padrón
+        # tiene documentos compartidos por cientos de filas.
+        ('ENLACE_AMBIGUO',     'El documento resuelve a más de una víctima'),
         ('OTRO',               'Otro — ver detalle'),
     ]
 

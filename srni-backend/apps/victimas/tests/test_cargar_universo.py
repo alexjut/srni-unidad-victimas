@@ -222,3 +222,136 @@ def test_sin_documento_no_entra_al_desempate():
     C.Command()._resolver_duplicados(CORTE, "completitud", confirmar=True)
 
     assert PersonaUniverso.objects.filter(es_preferida=False).count() == 0
+
+
+# ── Defectos que encontró la revisión adversarial (5-ago) ───────────────────
+#
+# Los cuatro pasaban los tests anteriores. Cada uno de estos falla con el código
+# de antes del arreglo.
+
+@pytest.mark.django_db
+def test_el_acumulador_se_vacia_tambien_en_DRY_RUN():
+    """
+    Antes `_volcar` solo se llamaba con `--confirmar`, así que un ensayo SIN
+    `--limite` acumulaba los 12,5 M de objetos en memoria y moría por OOM.
+    Justo la corrida que se hace para NO arriesgar nada.
+    """
+    acumulador = [PersonaUniverso(cons_persona_universo=1, corte=CORTE),
+                  PersonaUniverso(cons_persona_universo=2, corte=CORTE)]
+    C.Command._volcar(PersonaUniverso, acumulador, confirmar=False)
+
+    assert acumulador == []                        # se vació: no crece sin límite
+    assert PersonaUniverso.objects.count() == 0    # y no escribió nada
+
+
+@pytest.mark.django_db
+def test_volcar_con_confirmar_si_escribe():
+    acumulador = [PersonaUniverso(cons_persona_universo=1, corte=CORTE)]
+    C.Command._volcar(PersonaUniverso, acumulador, confirmar=True)
+
+    assert acumulador == []
+    assert PersonaUniverso.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_re_resolver_con_otra_regla_no_deja_al_grupo_sin_preferida():
+    """
+    La fase 2 es TOTAL, no incremental. Antes solo marcaba `False` a las
+    perdedoras y nunca reseteaba: al re-resolver con otra regla se acumulaban
+    los `False` y el grupo quedaba SIN NINGUNA preferida — esa persona
+    desaparecía del enlace y de toda derivación, que es el caso que este módulo
+    vino a arreglar.
+    """
+    h = num_hash("28548486")
+    PersonaUniverso.objects.create(
+        cons_persona_universo=100, corte=CORTE, numero_documento="28548486",
+        numero_documento_hash_sin_tipo=h, primer_nombre="RUBIELA",
+        primer_apellido="DIAZ", genero="Mujer", num_hechos=0)
+    PersonaUniverso.objects.create(
+        cons_persona_universo=200, corte=CORTE, numero_documento="28548486",
+        numero_documento_hash_sin_tipo=h, num_hechos=9)
+
+    cmd = C.Command()
+    cmd._resolver_duplicados(CORTE, "completitud", confirmar=True)   # gana 100
+    cmd._resolver_duplicados(CORTE, "hechos", confirmar=True)        # gana 200
+
+    preferidas = PersonaUniverso.objects.filter(corte=CORTE, es_preferida=True)
+    assert preferidas.count() == 1, "el grupo quedó sin preferida"
+    assert preferidas.first().cons_persona_universo == 200
+
+
+@pytest.mark.django_db
+def test_re_resolver_no_duplica_los_descartes():
+    """
+    `DescarteUniverso` existe para responder "cuántas personas faltan". Sin
+    reemplazar los de la fase, después de dos corridas respondía el doble.
+    """
+    h = num_hash("28548486")
+    for cons in (100, 200):
+        PersonaUniverso.objects.create(
+            cons_persona_universo=cons, corte=CORTE, numero_documento="28548486",
+            numero_documento_hash_sin_tipo=h)
+
+    cmd = C.Command()
+    cmd._resolver_duplicados(CORTE, "completitud", confirmar=True)
+    cmd._resolver_duplicados(CORTE, "completitud", confirmar=True)
+
+    assert DescarteUniverso.objects.filter(motivo="DOCUMENTO_REPETIDO").count() == 1
+
+
+@pytest.mark.django_db
+def test_un_documento_que_resuelve_a_dos_victimas_NO_se_enlaza_a_ninguna():
+    """
+    El hash está indexado pero no es único, y en el padrón hay documentos
+    compartidos por cientos de filas. Antes ganaba "la última que devolviera
+    Postgres": no determinista, y en los grupos que son personas DISTINTAS
+    enlazaba con otra. Elegir una es inventar una correspondencia.
+    """
+    from apps.parametricas.models import TipoDocumento
+
+    tipo = TipoDocumento.objects.create(codigo="CC", nombre="Cédula")
+    h = num_hash("28548486")
+    for nombre in ("RUBIELA", "MARIA"):
+        Victima.objects.create(
+            tipo_documento=tipo, numero_documento="28548486",
+            numero_documento_hash_sin_tipo=h,
+            primer_nombre=nombre, primer_apellido="DIAZ",
+            fecha_nacimiento="1975-01-01", genero="F")
+    PersonaUniverso.objects.create(
+        cons_persona_universo=23988216, corte=CORTE,
+        numero_documento="28548486", numero_documento_hash_sin_tipo=h)
+
+    C.Command()._enlazar_con_padron(CORTE, confirmar=True)
+
+    p = PersonaUniverso.objects.get(cons_persona_universo=23988216)
+    assert p.victima_id is None, "eligió una víctima arbitraria entre dos"
+    assert DescarteUniverso.objects.filter(motivo="ENLACE_AMBIGUO").count() == 1
+
+
+def test_el_umbral_de_5_se_mide_sobre_el_documento_normalizado():
+    """
+    `1.2.3` tiene cinco caracteres crudos pero normaliza a `123`, que no
+    identifica a nadie. Medir sobre el crudo lo dejaba pasar.
+    """
+    r = C.Command()._a_registro(_fila(doc="1.2.3"), CORTE, None)
+    assert r.numero_documento_hash_sin_tipo == ""
+
+    r = C.Command()._a_registro(_fila(doc="28.548.486"), CORTE, None)
+    assert r.numero_documento_hash_sin_tipo != ""
+
+
+def test_la_discapacidad_usa_la_homologacion_canonica():
+    """
+    Había dos homologaciones de lo mismo en el repo: `bool()` acá y
+    `homologar_discapacidad` allá. Tener dos es el defecto que ya costó una
+    tarde con los hechos victimizantes.
+    """
+    assert C.Command()._a_registro(_fila(), CORTE, None).discapacidad is False
+
+    fila = list(_fila())
+    fila[9] = 1
+    assert C.Command()._a_registro(tuple(fila), CORTE, None).discapacidad is True
+
+    # NULL es "no consta", no "no tiene": la canónica lo trata como False.
+    fila[9] = None
+    assert C.Command()._a_registro(tuple(fila), CORTE, None).discapacidad is False

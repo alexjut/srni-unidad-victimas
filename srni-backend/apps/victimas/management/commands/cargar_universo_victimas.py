@@ -39,7 +39,8 @@ import re
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.victimas.repository.base import doc_hash, num_hash
+from apps.victimas import homologacion as H
+from apps.victimas.repository.base import doc_hash, normalizar_doc, num_hash
 
 #: Días de antigüedad tolerados antes de gritar. El antecedente es
 #: `GIC_REPORTE_HOGAR`, congelado desde 2021 sin que nadie lo notara.
@@ -221,19 +222,35 @@ class Command(BaseCommand):
                 acumulador.append(registro)
                 cont["cargadas"] += 1
 
-            if confirmar and len(acumulador) >= lote:
-                self._volcar(PersonaUniverso, acumulador)
-            if confirmar and len(descartes) >= lote:
-                self._volcar(DescarteUniverso, descartes)
+            # El vaciado va SIEMPRE, también en DRY-RUN. Si solo se vaciara al
+            # escribir, un ensayo sin `--limite` acumularía los 12,5 M de objetos
+            # en memoria y moriría por OOM — justo la corrida que se hace para
+            # NO arriesgar nada.
+            if len(acumulador) >= lote:
+                self._volcar(PersonaUniverso, acumulador, confirmar)
+            if len(descartes) >= lote:
+                self._volcar(DescarteUniverso, descartes, confirmar)
             if cont["leidas"] % (lote * 20) == 0:
                 self.stdout.write(f"  {cont['leidas']:>10,} leídas · "
                                   f"{cont['cargadas']:>10,} cargadas")
             if limite and cont["leidas"] >= limite:
                 break
 
+        self._volcar(PersonaUniverso, acumulador, confirmar)
+        self._volcar(DescarteUniverso, descartes, confirmar)
+
+        # `ignore_conflicts` hace que un choque contra la unicidad por corte se
+        # pierda SIN excepción, así que el contador de arriba puede estar
+        # mintiendo. Se compara contra la base y se avisa: un descarte silencioso
+        # es indistinguible de una fuente incompleta.
         if confirmar:
-            self._volcar(PersonaUniverso, acumulador)
-            self._volcar(DescarteUniverso, descartes)
+            reales = PersonaUniverso.objects.filter(corte=corte).count()
+            if reales != cont["cargadas"]:
+                self.stdout.write(self.style.ERROR(
+                    f"  🔴 se contaron {cont['cargadas']:,} cargadas pero la base "
+                    f"tiene {reales:,}: {cont['cargadas'] - reales:,} chocaron "
+                    f"contra la unicidad por corte y se perdieron sin aviso. "
+                    f"Revisar si CONS_PERSONA se repite en el origen."))
 
         self.stdout.write(self.style.SUCCESS(
             f"\n  leídas          : {cont['leidas']:,}\n"
@@ -252,9 +269,11 @@ class Command(BaseCommand):
 
         documento = (documento or "").strip()
         tipo_doc = (tipo_doc or "").strip().upper()
-        # Mismo umbral que el resto del padrón: menos de 5 caracteres no
-        # identifica a nadie (hay 1,2 M de documentos de un solo carácter).
-        usable = len(documento) >= 5
+        # El umbral se mide sobre el documento YA NORMALIZADO, que es lo que se
+        # hashea. Medirlo sobre el crudo dejaba pasar '1.2.3' —cinco caracteres
+        # con separadores— que al normalizar queda en '123' y no identifica a
+        # nadie: exactamente lo que el umbral quiere evitar.
+        usable = len(normalizar_doc("", documento).split("|", 1)[-1]) >= 5
 
         return PersonaUniverso(
             cons_persona_universo=int(cons),
@@ -268,7 +287,10 @@ class Command(BaseCommand):
             segundo_apellido=(a2 or "").strip(),
             genero=(genero or "").strip()[:20],
             pertenencia_etnica=(etnia or "").strip()[:60],
-            discapacidad=bool(discap),
+            # La canónica, no `bool()`: es type-agnostic y trata NULL como
+            # 'no consta'. Tener dos homologaciones de lo mismo en el repo es
+            # el defecto que ya costó una tarde con los hechos victimizantes.
+            discapacidad=H.homologar_discapacidad(discap),
             tipo_discapacidad=str(tipo_discap or "").strip()[:20],
             ciclo_vital=(ciclo or "").strip()[:20],
             num_hechos=int(num_hechos) if num_hechos is not None else None,
@@ -277,11 +299,12 @@ class Command(BaseCommand):
         )
 
     @staticmethod
-    def _volcar(modelo, acumulador):
-        if acumulador:
+    def _volcar(modelo, acumulador, confirmar):
+        """Vacía el acumulador SIEMPRE; escribe solo si `confirmar`."""
+        if acumulador and confirmar:
             modelo.objects.bulk_create(acumulador, batch_size=1000,
                                        ignore_conflicts=True)
-            acumulador.clear()
+        acumulador.clear()
 
     # ── fase 2: resolver documentos repetidos ───────────────────────────────
     def _resolver_duplicados(self, corte, regla, confirmar) -> None:
@@ -327,7 +350,19 @@ class Command(BaseCommand):
         self.stdout.write(f"  filas que no quedan como preferidas: {len(perdedoras):,}")
         if confirmar and perdedoras:
             with transaction.atomic():
+                # 1) Reset a True antes de marcar. La fase es TOTAL, no
+                #    incremental: sin esto, volver a resolver con otra regla
+                #    acumula los `False` de la corrida anterior y un grupo puede
+                #    quedar SIN NINGUNA preferida — esa persona desaparecería del
+                #    enlace y de toda derivación posterior, que es exactamente el
+                #    caso que este módulo vino a arreglar.
+                PersonaUniverso.objects.filter(corte=corte).update(es_preferida=True)
                 PersonaUniverso.objects.filter(pk__in=perdedoras).update(es_preferida=False)
+                # 2) Y los descartes de esta fase se reemplazan, no se suman:
+                #    la tabla existe para responder "cuántas personas faltan", y
+                #    después de dos corridas respondía el doble.
+                DescarteUniverso.objects.filter(
+                    corte=corte, motivo="DOCUMENTO_REPETIDO").delete()
                 DescarteUniverso.objects.bulk_create(descartes, batch_size=1000)
             self.stdout.write(self.style.SUCCESS("  marcadas y registradas."))
 
@@ -366,27 +401,54 @@ class Command(BaseCommand):
         if not total:
             return
 
-        enlazadas = 0
+        from apps.victimas.models import DescarteUniverso
+
+        enlazadas = ambiguas = 0
         for chunk in self._por_lotes(pendientes, 2000):
             hashes = {p.numero_documento_hash_sin_tipo for p in chunk}
-            victimas = {v.numero_documento_hash_sin_tipo: v
-                        for v in Victima.objects
-                        .filter(numero_documento_hash_sin_tipo__in=hashes)
-                        .only("id", "numero_documento_hash_sin_tipo")}
-            actualizar = []
+
+            # Un hash puede resolver a VARIAS víctimas: el campo está indexado
+            # pero no es único, y en el padrón hay documentos compartidos por
+            # cientos de filas (medido: hasta 505 de la misma persona). Sin
+            # orden, gana "la última que devuelva Postgres" — no determinista, y
+            # en los grupos que son personas DISTINTAS enlazaría con otra.
+            candidatas = {}
+            for v in (Victima.objects
+                      .filter(numero_documento_hash_sin_tipo__in=hashes)
+                      .only("id", "numero_documento_hash_sin_tipo")
+                      .order_by("numero_documento_hash_sin_tipo", "id")):
+                candidatas.setdefault(v.numero_documento_hash_sin_tipo, []).append(v)
+
+            actualizar, descartes = [], []
             for p in chunk:
-                v = victimas.get(p.numero_documento_hash_sin_tipo)
-                if v is not None:
-                    p.victima = v
+                opciones = candidatas.get(p.numero_documento_hash_sin_tipo, [])
+                if len(opciones) == 1:
+                    p.victima = opciones[0]
                     actualizar.append(p)
+                elif len(opciones) > 1:
+                    # Más de una candidata: NO se elige. Inventar una
+                    # correspondencia es peor que no tenerla — el mismo criterio
+                    # que ya aplica `ColisionDocumento.victima_preferida=NULL`
+                    # para los documentos ambiguos.
+                    ambiguas += 1
+                    descartes.append(DescarteUniverso(
+                        corte=corte,
+                        cons_persona_universo=p.cons_persona_universo,
+                        numero_documento_hash_sin_tipo=p.numero_documento_hash_sin_tipo,
+                        motivo="ENLACE_AMBIGUO",
+                        detalle=f"{len(opciones)} víctimas comparten ese documento"))
             if confirmar and actualizar:
                 PersonaUniverso.objects.bulk_update(actualizar, ["victima"],
                                                     batch_size=1000)
+            if confirmar and descartes:
+                DescarteUniverso.objects.bulk_create(descartes, batch_size=1000)
             enlazadas += len(actualizar)
 
         self.stdout.write(
             f"  enlazadas          : {enlazadas:,}\n"
-            f"  solo en el universo: {total - enlazadas:,}  "
+            f"  ambiguas (sin enlazar): {ambiguas:,}  "
+            f"(el documento resuelve a más de una víctima: no se elige)\n"
+            f"  solo en el universo: {total - enlazadas - ambiguas:,}  "
             f"(personas que SICAV no tenía — el hueco que esto viene a cubrir)")
 
     @staticmethod
