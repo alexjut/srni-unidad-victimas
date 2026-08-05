@@ -115,6 +115,11 @@ class Command(BaseCommand):
         parser.add_argument("--solo-resolver", action="store_true",
                             help="Salta la carga y solo resuelve duplicados de un "
                                  "corte ya cargado.")
+        parser.add_argument("--sin-enlace", action="store_true",
+                            help="No corre el enlace con el padrón operativo. La "
+                                 "fase 3 reescribe una fila por cada cruce (millones) "
+                                 "y en disco apretado conviene correrla aparte, "
+                                 "midiendo entre fases.")
 
     # ── entrada ──────────────────────────────────────────────────────────────
     def handle(self, *args, **opts):
@@ -133,7 +138,12 @@ class Command(BaseCommand):
             conexion["con"].close()
 
         self._resolver_duplicados(corte, opts["desempate"], confirmar)
-        self._enlazar_con_padron(corte, confirmar)
+        if opts["sin_enlace"]:
+            self.stdout.write(self.style.WARNING(
+                "\n--sin-enlace: no se enlazó con el padrón operativo. "
+                "Correr después `--solo-resolver` sin este flag."))
+        else:
+            self._enlazar_con_padron(corte, confirmar)
 
         if not confirmar:
             self.stdout.write(self.style.WARNING(
@@ -371,7 +381,22 @@ class Command(BaseCommand):
                 #    quedar SIN NINGUNA preferida — esa persona desaparecería del
                 #    enlace y de toda derivación posterior, que es exactamente el
                 #    caso que este módulo vino a arreglar.
-                PersonaUniverso.objects.filter(corte=corte).update(es_preferida=True)
+                #
+                #    🔴 El filtro `es_preferida=False` NO es una optimización
+                #    cosmética: sin él, el UPDATE toca las 12 M de filas del
+                #    corte. Como `es_preferida` está indexada, Postgres no puede
+                #    hacer HOT update y reescribe el heap COMPLETO más los 12
+                #    índices: medido el 5-ago sobre la carga real, 1,58 KB por
+                #    fila ⇒ ~19 GB, y en el servidor quedaban 6 GB libres. El
+                #    disco es compartido con sidi, catalogo-si y uariv-auth: un
+                #    Postgres sin espacio se detiene y se lleva servicios de
+                #    otros equipos.
+                #
+                #    El resultado es idéntico —las que ya están en True no
+                #    cambian— y en la primera corrida el UPDATE toca 0 filas
+                #    porque el default del modelo ya es True.
+                PersonaUniverso.objects.filter(
+                    corte=corte, es_preferida=False).update(es_preferida=True)
                 PersonaUniverso.objects.filter(pk__in=perdedoras).update(es_preferida=False)
                 # 2) Y los descartes de esta fase se reemplazan, no se suman:
                 #    la tabla existe para responder "cuántas personas faltan", y

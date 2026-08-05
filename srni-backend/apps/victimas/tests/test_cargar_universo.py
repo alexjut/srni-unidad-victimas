@@ -281,6 +281,37 @@ def test_re_resolver_con_otra_regla_no_deja_al_grupo_sin_preferida():
 
 
 @pytest.mark.django_db
+def test_el_reset_a_preferida_no_reescribe_las_filas_que_ya_estaban_en_True():
+    """
+    El reset debe tocar SOLO las que están en `False`.
+
+    Sin el filtro, el UPDATE alcanza a las 12 M de filas del corte. Como
+    `es_preferida` está indexada, Postgres no puede hacer HOT update y reescribe
+    el heap entero más los 12 índices: ~19 GB medidos sobre la carga del 5-ago,
+    con 6 GB libres en un disco compartido con otros servicios de la entidad.
+    """
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    h = num_hash("28548486")
+    for cons in (100, 200):
+        PersonaUniverso.objects.create(
+            cons_persona_universo=cons, corte=CORTE, numero_documento="28548486",
+            numero_documento_hash_sin_tipo=h)
+
+    with CaptureQueriesContext(connection) as capturadas:
+        C.Command()._resolver_duplicados(CORTE, "completitud", confirmar=True)
+
+    resets = [q["sql"] for q in capturadas.captured_queries
+              if "UPDATE" in q["sql"].upper() and "es_preferida" in q["sql"]
+              and "IN (" not in q["sql"].upper()]
+    assert resets, "no se encontró el UPDATE de reset"
+    for sql in resets:
+        assert "es_preferida" in sql.split("WHERE", 1)[1], (
+            "el reset no filtra por es_preferida: reescribiría el corte entero")
+
+
+@pytest.mark.django_db
 def test_re_resolver_no_duplica_los_descartes():
     """
     `DescarteUniverso` existe para responder "cuántas personas faltan". Sin

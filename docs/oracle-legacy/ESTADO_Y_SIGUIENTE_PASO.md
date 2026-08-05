@@ -9,6 +9,73 @@
 
 ---
 
+## 0-novies. 2026-08-05 — **EL UNIVERSO SE ESTÁ CARGANDO, Y LA FASE 2 NO CABE EN EL DISCO**
+
+La carga del universo (12,5 M) arrancó a las **16:23 UTC** dentro de `cz_backend`:
+
+```
+docker exec cz_backend python manage.py cargar_universo_victimas --confirmar --lote 5000
+log: /tmp/carga_universo_20260805_1623.log     (sobrevive a la VPN)
+```
+
+Medido a las 20:11 UTC, con 3 h 47 min de corrida:
+
+| | |
+|---|---|
+| Corte | `TEMP_UNIV_VICT_PER_MI010726ALL` (julio, 35 días) — el de agosto **no existe**; el fallback avisó y funcionó |
+| Avance | 4.300.000 leídas · 4.132.190 cargadas de **12.496.965** (34 %) |
+| Ritmo | ~1,13 M/h ⇒ fin de la fase 1 hacia las **03:20 UTC del 6-ago** |
+| Descartes | 164.313 `SIN_DOCUMENTO` (3,9 %, en línea con los 487.473 proyectados) |
+
+### 🔴 El hallazgo: el reset de la fase 2 pedía ~19 GB que no hay
+
+`victimas_personauniverso` va a **1,58 KB por fila** (heap 3.212 MB + índices
+3.323 MB sobre 4,15 M filas, **12 índices**). Proyectada a 12 M: **~19 GB**, y el
+disco del servidor tiene **19 GB libres de 61**, así que al terminar la fase 1
+quedan ~6 GB.
+
+Y la fase 2 empezaba con un `UPDATE` sobre **las 12 M de filas**
+(`es_preferida=True`). Como `es_preferida` está indexada, Postgres no puede hacer
+HOT update: reescribe el heap completo **y** los 12 índices ⇒ otros ~19 GB, más
+el WAL de una transacción `atomic()` que no se recicla hasta el commit.
+
+**No era solo nuestro problema:** ese disco es compartido con `sidi-api`,
+`catalogo-si`, `uariv-auth` y el `nginx-proxy-manager`. Un Postgres sin espacio se
+detiene y se lleva servicios de otros equipos por delante.
+
+### Lo que se hizo (5-ago, tarde)
+
+1. **Parche** — el reset se acota a `filter(corte=corte, es_preferida=False)`. El
+   resultado es idéntico (las que ya están en `True` no cambian) y en la primera
+   corrida toca **0 filas**, porque el default del modelo ya es `True`. La fase 2
+   pasa a mover las ~55.100 perdedoras, no 12 M.
+   Con test que **falla** si alguien le quita el filtro.
+2. **Flag `--sin-enlace`** — la fase 3 (`_enlazar_con_padron`) reescribe una fila
+   por cada cruce con el padrón de 5,9 M: millones más. Con el disco así, se corre
+   aparte y midiendo entre fases.
+3. **Vigilante** en el servidor (`/tmp/vigilante_universo.sh`, lanzado con
+   `setsid nohup`, log en `/tmp/vigilante_universo.log`): detecta el fin de la
+   fase 1 en el log y **mata el proceso antes del UPDATE**. Corta también si el
+   disco baja de 4 GB. Los dos patrones de corte están probados contra el log real.
+
+> **La ventana es cómoda.** Entre el fin de la carga y el primer UPDATE hay varios
+> minutos de solo lectura: el `count` de verificación, el `GROUP BY` sobre 12 M y
+> el bucle de ~55 K grupos. El polling es de 20 s.
+
+### 🌅 Siguiente paso, **en este orden**
+
+1. **Dejar terminar la fase 1.** Interrumpirla obliga a borrar y reempezar: el
+   guard de `_cargar` no deja reanudar un corte a medias.
+2. Confirmar en `/tmp/vigilante_universo.log` que el proceso murió **antes** de la
+   fase 2.
+3. **Recién ahí desplegar** la imagen con el parche. Desplegar antes reinicia
+   `cz_backend` y **mata la carga en curso**.
+4. Fase 2 sola, con el disco a la vista:
+   `docker exec cz_backend python manage.py cargar_universo_victimas --solo-resolver --sin-enlace --confirmar`
+5. `VACUUM ANALYZE` + medir, y recién entonces la fase 3 (sin `--sin-enlace`).
+
+---
+
 ## 0-octies. 2026-08-04 (mañana) — **LA UARIV YA TIENE SERVICIO DE AUTENTICACIÓN, Y ESTÁ AL LADO**
 
 Sesión desde la sede (red institucional). El objetivo era desatascar el acceso de
