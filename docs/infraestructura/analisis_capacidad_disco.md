@@ -116,7 +116,8 @@ Con este disco, esa validación **no se puede hacer como está diseñada**.
 
 | Palanca | Libera | Riesgo | Cuándo |
 |---|---:|---|---|
-| Imágenes Docker huérfanas (6 × 772 MB de builds viejos del backend) | **~4,6 GB** | ninguno | ya |
+| Imágenes Docker de versiones anteriores (`docker system df`: 65 % de 6,8 GB) | **4,4 GB** | bajo — el disco es compartido, así que conviene `image prune` **sin** `-a`, no vaya a borrarse una imagen de otro equipo | ya |
+| Caché de compilación de Docker (`docker builder prune`) | **2,2 GB** | ninguno — se regenera | ya |
 | Podar los 5 índices muertos | **~5,8 GB** | ninguno (0 usos medidos) | en la ventana entre fase 1 y fase 2 |
 | `journalctl --vacuum` sobre `/var/log` (641 MB) | ~0,4 GB | ninguno | ya |
 | WAL, al terminar la carga | ~2 GB | se recupera solo | automático |

@@ -77,7 +77,8 @@ Antes de escalar, exprimimos lo que estaba en nuestras manos:
   registros por hora). El universo completo pasa de ocupar 19 GB a **13 GB**.
 - **Instalamos un vigilante** que detiene la carga si el disco baja de 4 GB, para que
   el servidor no se caiga mientras se resuelve esto.
-- Identificamos ~5 GB recuperables en imágenes y registros viejos.
+- Identificamos **6,6 GB recuperables** en material de trabajo del servidor: 4,4 GB en
+  imágenes de versiones anteriores y 2,2 GB en caché de compilación.
 
 **Con eso la carga de este mes termina y queda margen para el paso siguiente.** Lo hago
 explícito para que no se lea como una alarma exagerada: el problema inmediato lo
