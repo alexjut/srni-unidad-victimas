@@ -504,3 +504,149 @@ class CargaPadron(models.Model):
 
     def __str__(self):
         return f'Carga {self.iniciada_en:%Y-%m-%d %H:%M} — {self.estado} ({self.leidas:,} leídas)'
+
+
+class PersonaUniverso(models.Model):
+    """
+    El universo de víctimas, tal como lo publica la fuente — **no** nuestro dominio.
+
+    ─── Por qué es una tabla aparte y no más filas en `Victima` ───────────────
+    `Victima` es el padrón operativo de SICAV: tiene 24 índices, PII cifrada,
+    hechos, colisiones resueltas y `cons_persona`, que es lo que se escribe al
+    legacy. Meterle 12,5 M de filas de un *snapshot* externo tendría dos costos:
+    encarece cada escritura del padrón operativo (medido: una fila cuesta 25×
+    por los índices) y mezcla dos cosas con vidas distintas — el universo se
+    reemplaza entero cada mes; `Victima` acumula historia.
+
+    Acá vive el snapshot, liviano y desechable. `Victima` sigue siendo la fuente
+    de verdad de lo que SICAV caracteriza.
+
+    ─── 🔴 `cons_persona_universo` NO es `Victima.cons_persona` ──────────────
+    Medido el 5-ago-2026 sobre 243.610 pares con el mismo documento: **cero
+    coincidencias** entre `CONS_PERSONA` del universo y `PER_IDPERSONA` del
+    legacy. Son espacios de identificadores distintos.
+
+        1115724047 → universo    CONS_PERSONA  = 23664117
+        1115724047 → GIC_PERSONA PER_IDPERSONA = 958858 / 6566478 / 9184606
+
+    Por eso el id del universo tiene **campo propio**. Escribirlo en
+    `Victima.cons_persona` haría que `apps/sincronizacion/oracle/mapeo.py` mande
+    al legacy identificadores de otro sistema: no falla, escribe mal en silencio.
+
+    **El cruce con `Victima` se hace por documento (hash), nunca por id.**
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    #: `CONS_PERSONA` del universo. Ver la advertencia de arriba.
+    cons_persona_universo = models.BigIntegerField(
+        db_index=True,
+        verbose_name='CONS_PERSONA del universo',
+        help_text='Identificador en la fuente. NO es el cons_persona del legacy.',
+    )
+
+    # ── Documento: mismo patrón que `Victima` — cifrado + hash para buscar ──
+    tipo_documento = models.CharField(
+        max_length=10, blank=True, default='',
+        help_text='TIPO_DOC tal como viene de la fuente, sin homologar.',
+    )
+    numero_documento = EncryptedField()
+    numero_documento_hash = models.CharField(max_length=64, db_index=True, blank=True,
+                                             default='')
+    #: Hash solo del número. Es la llave real del cruce con `Victima`, porque el
+    #: tipo de documento no siempre viene y no siempre coincide entre fuentes.
+    numero_documento_hash_sin_tipo = models.CharField(
+        max_length=64, db_index=True, blank=True, default='')
+
+    # ── Identidad y demografía ──────────────────────────────────────────────
+    primer_nombre = EncryptedField(blank=True, default='')
+    segundo_nombre = EncryptedField(blank=True, default='')
+    primer_apellido = EncryptedField(blank=True, default='')
+    segundo_apellido = EncryptedField(blank=True, default='')
+
+    genero = models.CharField(max_length=20, blank=True, default='')
+    pertenencia_etnica = models.CharField(max_length=60, blank=True, default='')
+    discapacidad = models.BooleanField(default=False)
+    tipo_discapacidad = models.CharField(max_length=20, blank=True, default='')
+    ciclo_vital = models.CharField(max_length=20, blank=True, default='')
+
+    #: `NUM_HECHOS` de la fuente. Es un CONTEO, no el detalle: los hechos con su
+    #: fecha y lugar salen de `RUV.TBSINIESTROS_PERSONA` (ver `hechos_ruv.py`).
+    num_hechos = models.IntegerField(null=True, blank=True)
+
+    # ── Trazabilidad del snapshot ───────────────────────────────────────────
+    #: Nombre del corte del que salió, p. ej. `TEMP_UNIV_VICT_PER_MI010726ALL`.
+    #: Se guarda para poder responder "¿de cuándo es este dato?" sin adivinar, y
+    #: para detectar cortes viejos: el antecedente de `GIC_REPORTE_HOGAR`,
+    #: congelado desde 2021 sin que nadie lo notara, es la razón.
+    corte = models.CharField(max_length=40, db_index=True)
+    fecha_corte = models.DateField(
+        null=True, blank=True,
+        help_text='Primer día del mes del corte (010726 → 2026-07-01).')
+
+    #: Enlace con el padrón operativo, resuelto **por documento**. Nullable a
+    #: propósito: la mayoría del universo no tiene fila en `Victima` —ese es
+    #: justamente el hueco que esta tabla viene a cubrir— y forzar el enlace
+    #: inventaría correspondencias.
+    victima = models.ForeignKey(
+        'victimas.Victima', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='registros_universo',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Persona del universo'
+        verbose_name_plural = 'Personas del universo'
+        constraints = [
+            # Una persona por corte. Permite tener dos cortes conviviendo
+            # mientras se valida el nuevo, sin que se pisen.
+            models.UniqueConstraint(
+                fields=['corte', 'cons_persona_universo'],
+                name='persona_universo_unica_por_corte',
+            ),
+        ]
+        indexes = [
+            # El cruce con `Victima` y la búsqueda offline van por acá.
+            models.Index(fields=['numero_documento_hash_sin_tipo', 'corte']),
+        ]
+
+    def __str__(self):
+        return f'[{self.corte}] {self.cons_persona_universo}'
+
+
+class DescarteUniverso(models.Model):
+    """
+    Filas del universo que la carga NO ingresó, con el motivo.
+
+    Existe porque una carga que descarta en silencio es indistinguible de una
+    fuente incompleta: sin esta tabla, "faltan 55.100 personas" no se puede
+    responder. Medido sobre el corte 01/07/2026: 12.496.965 filas y 11.954.392
+    documentos únicos, o sea **al menos 55.100 filas comparten documento**, más
+    **487.473 sin documento usable**.
+    """
+
+    MOTIVO = [
+        ('SIN_DOCUMENTO',      'Sin documento usable (menos de 5 caracteres)'),
+        ('DOCUMENTO_REPETIDO', 'Otra fila del mismo corte ya tomó ese documento'),
+        ('SIN_CONS_PERSONA',   'Sin identificador en la fuente'),
+        ('OTRO',               'Otro — ver detalle'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    corte = models.CharField(max_length=40, db_index=True)
+    cons_persona_universo = models.BigIntegerField(null=True, blank=True, db_index=True)
+    #: Hash, no el documento: para contar y rastrear no hace falta el número.
+    numero_documento_hash_sin_tipo = models.CharField(max_length=64, blank=True,
+                                                      default='', db_index=True)
+    motivo = models.CharField(max_length=20, choices=MOTIVO, db_index=True)
+    detalle = models.CharField(max_length=200, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Descarte del universo'
+        verbose_name_plural = 'Descartes del universo'
+        indexes = [models.Index(fields=['corte', 'motivo'])]
+
+    def __str__(self):
+        return f'[{self.corte}] {self.motivo}'
