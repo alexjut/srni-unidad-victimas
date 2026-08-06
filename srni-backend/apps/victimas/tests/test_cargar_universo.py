@@ -281,6 +281,40 @@ def test_re_resolver_con_otra_regla_no_deja_al_grupo_sin_preferida():
 
 
 @pytest.mark.django_db
+def test_resolver_no_hace_una_consulta_por_grupo():
+    """
+    El costo de la fase 2 no puede crecer con la cantidad de grupos.
+
+    Antes sí crecía: un `GROUP BY` sobre 12 M para contar, otro para iterar, y
+    **una consulta por grupo**. Medido en producción el 6-ago: 60.438 grupos,
+    más de 20 minutos y el log mudo. Con dos y con seis grupos, el número de
+    consultas tiene que ser el mismo.
+    """
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    def sembrar(n_grupos):
+        PersonaUniverso.objects.all().delete()
+        for g in range(n_grupos):
+            h = num_hash(f"1000{g}")
+            for cons in (g * 10 + 1, g * 10 + 2):
+                PersonaUniverso.objects.create(
+                    cons_persona_universo=cons, corte=CORTE,
+                    numero_documento=f"1000{g}", numero_documento_hash_sin_tipo=h)
+
+    def consultas_con(n_grupos):
+        sembrar(n_grupos)
+        with CaptureQueriesContext(connection) as c:
+            C.Command()._resolver_duplicados(CORTE, "completitud", confirmar=True)
+        return len(c.captured_queries)
+
+    con_2, con_6 = consultas_con(2), consultas_con(6)
+    assert con_2 == con_6, (
+        f"el costo escala con los grupos: {con_2} consultas con 2 grupos y "
+        f"{con_6} con 6. Vuelve a haber una consulta por grupo.")
+
+
+@pytest.mark.django_db
 def test_el_reset_a_preferida_no_reescribe_las_filas_que_ya_estaban_en_True():
     """
     El reset debe tocar SOLO las que están en `False`.

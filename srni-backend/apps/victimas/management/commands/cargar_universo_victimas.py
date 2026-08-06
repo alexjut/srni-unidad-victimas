@@ -35,6 +35,7 @@ fila**: las no preferidas se conservan, marcadas.
 
 import datetime
 import re
+from itertools import groupby
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -348,21 +349,36 @@ class Command(BaseCommand):
         base = (PersonaUniverso.objects
                 .filter(corte=corte)
                 .exclude(numero_documento_hash_sin_tipo=""))
-        repetidos = (base.values("numero_documento_hash_sin_tipo")
-                         .annotate(n=Count("id")).filter(n__gt=1))
 
-        total_grupos = repetidos.count()
+        # Los hashes repetidos viajan como SUBCONSULTA, no como resultado que
+        # haya que traer y recorrer. Antes esta fase costaba, sobre 12 M de
+        # filas: un GROUP BY para contar los grupos, OTRO para iterarlos, y
+        # además **una consulta por grupo** — 60.438 idas a la base, medidas en
+        # producción el 6-ago, con el log mudo durante más de 20 minutos.
+        #
+        # Ahora es un solo recorrido: las filas de todos los grupos llegan
+        # ordenadas por hash y se agrupan acá con `groupby`, que es exactamente
+        # lo que la base ya venía haciendo al ordenar.
+        repetidos = (base.values("numero_documento_hash_sin_tipo")
+                         .annotate(n=Count("id")).filter(n__gt=1)
+                         .values("numero_documento_hash_sin_tipo"))
+        filas_repetidas = (base.filter(numero_documento_hash_sin_tipo__in=repetidos)
+                               .order_by("numero_documento_hash_sin_tipo"))
+
         self.stdout.write(self.style.MIGRATE_HEADING(
-            f"\nDocumentos compartidos por más de una fila: {total_grupos:,}"))
-        if not total_grupos:
-            return
+            "\nResolviendo documentos compartidos por más de una fila…"))
 
         orden = self._orden_de(regla)
         perdedoras, descartes = [], []
-        for grupo in repetidos.iterator(chunk_size=1000):
-            filas = list(base.filter(
-                numero_documento_hash_sin_tipo=grupo["numero_documento_hash_sin_tipo"]))
-            filas.sort(key=orden)
+        total_grupos = 0
+        # `groupby` exige que las filas vengan ordenadas por la clave, y el
+        # `order_by` de arriba es lo que lo garantiza. Si alguien lo quita, esto
+        # no falla: parte los grupos en pedazos y **cada pedazo elegiría su
+        # propia preferida**. Por eso van juntos.
+        for _hash, grupo in groupby(filas_repetidas.iterator(chunk_size=2000),
+                                    key=lambda p: p.numero_documento_hash_sin_tipo):
+            total_grupos += 1
+            filas = sorted(grupo, key=orden)
             for fila in filas[1:]:
                 perdedoras.append(fila.pk)
                 descartes.append(DescarteUniverso(
@@ -371,8 +387,16 @@ class Command(BaseCommand):
                     numero_documento_hash_sin_tipo=fila.numero_documento_hash_sin_tipo,
                     motivo="DOCUMENTO_REPETIDO",
                     detalle=f"ganó {filas[0].cons_persona_universo} por «{regla}»"))
+            # El log mudo no es cosmético: con 60.438 grupos, sin esto no hay
+            # forma de saber si avanza o si se colgó.
+            if total_grupos % 10_000 == 0:
+                self.stdout.write(f"  {total_grupos:>8,} grupos resueltos")
 
-        self.stdout.write(f"  filas que no quedan como preferidas: {len(perdedoras):,}")
+        self.stdout.write(
+            f"  documentos compartidos            : {total_grupos:,}\n"
+            f"  filas que no quedan como preferidas: {len(perdedoras):,}")
+        if not total_grupos:
+            return
         if confirmar and perdedoras:
             with transaction.atomic():
                 # 1) Reset a True antes de marcar. La fase es TOTAL, no
@@ -397,7 +421,11 @@ class Command(BaseCommand):
                 #    porque el default del modelo ya es True.
                 PersonaUniverso.objects.filter(
                     corte=corte, es_preferida=False).update(es_preferida=True)
-                PersonaUniverso.objects.filter(pk__in=perdedoras).update(es_preferida=False)
+                # Por lotes: son ~60.000 UUID y en una sola sentencia el SQL
+                # ronda los 2 MB de parámetros.
+                for i in range(0, len(perdedoras), 10_000):
+                    PersonaUniverso.objects.filter(
+                        pk__in=perdedoras[i:i + 10_000]).update(es_preferida=False)
                 # 2) Y los descartes de esta fase se reemplazan, no se suman:
                 #    la tabla existe para responder "cuántas personas faltan", y
                 #    después de dos corridas respondía el doble.
