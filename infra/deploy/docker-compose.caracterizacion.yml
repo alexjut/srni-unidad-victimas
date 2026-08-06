@@ -78,12 +78,30 @@ services:
   cz_postgres:
     image: postgres:16-alpine
     container_name: cz_postgres
+    # Docker da 64 MB de /dev/shm por defecto, y Postgres lo usa para la memoria
+    # compartida DINÁMICA de las consultas paralelas. Con el universo de 12 M
+    # cargado eso se quedó corto y reventó un mantenimiento de rutina:
+    #
+    #   ERROR: could not resize shared memory segment to 67145408 bytes:
+    #          No space left on device            (6-ago-2026, VACUUM ANALYZE)
+    #
+    # 67145408 son exactamente esos 64 MB — no era el disco, que tenía 15 GB
+    # libres, y el host ofrece 7,8 GB de shm. El síntoma engaña: dice "no space
+    # left on device" y manda a mirar el lugar equivocado.
+    #
+    # Afecta a cualquier consulta que el planner quiera paralelizar sobre estas
+    # tablas, no solo al VACUUM.
+    shm_size: 1gb
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - cz_pgdata:/var/lib/postgresql/data
+    # Un apagado a la fuerza deja la base en recuperación al arrancar. Los 10 s
+    # que da Docker por defecto no alcanzan para el checkpoint de una base de
+    # 28 GB.
+    stop_grace_period: 3m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
