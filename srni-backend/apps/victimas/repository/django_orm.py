@@ -255,9 +255,18 @@ class DjangoVictimaRepository(VictimaRepository):
                          f"es '{tipo_documento}'. VERIFIQUE la identidad. ")
 
         if not encontradas:
+            # Antes de responder "no está", hay que preguntarle al UNIVERSO. El
+            # padrón se armó desde el legado —el registro de quién ya fue
+            # caracterizado— así que una víctima que nunca pasó por una
+            # entrevista no está acá aunque sí esté en el RUV. Es el caso de
+            # `28548486`, que en Vivanto se podía caracterizar y en SICAV "no
+            # existía".
+            del_universo = self._buscar_en_universo(numero_documento, ruta=ruta)
+            if del_universo is not None:
+                return del_universo
+
             # El texto vive en `base.py`: el anterior —"No se encontró la
-            # persona"— se leía como "no es víctima", y no lo es. El padrón se
-            # armó desde el legacy, así que hay víctimas del RUV que no están acá.
+            # persona"— se leía como "no es víctima", y no lo es.
             return ResultadoBusqueda(
                 encontrado=False, victima=None, fuente=self.FUENTE,
                 mensaje=MENSAJE_NO_EN_PADRON,
@@ -314,6 +323,89 @@ class DjangoVictimaRepository(VictimaRepository):
             candidatos=[self._a_resumen(v, con_hechos=False) for v in otras],
             motivo=veredicto.motivo,
             disponible_desde=veredicto.disponible_desde,
+        )
+
+    # ── el universo: existencia e identidad de quien no está en el padrón ────
+    def _buscar_en_universo(self, numero_documento, *, ruta=None):
+        """
+        Busca en `PersonaUniverso` y devuelve la ficha lista para caracterizar.
+
+        Devuelve `None` si tampoco está ahí — recién entonces la respuesta es
+        "no está en el padrón".
+        """
+        from apps.victimas import vigencia_legacy as VL
+        from apps.victimas.models import PersonaUniverso
+
+        persona = (PersonaUniverso.objects
+                   .filter(numero_documento_hash_sin_tipo=num_hash(numero_documento),
+                           es_preferida=True)
+                   .order_by("-fecha_corte")
+                   .first())
+        if persona is None:
+            return None
+
+        # El universo dice quién es, no si tiene ficha vigente: verificado sobre
+        # las 12.496.965 filas del corte, `IDENTIFICADO` viene en 0 y `ESTADO_RUV`
+        # ni existe. La vigencia se resuelve contra el legado y se guarda.
+        fecha, verificada = VL.resolver(persona)
+        veredicto = describir_elegibilidad(
+            VL.PersonaParaElegibilidad(fecha, verificada=verificada), ruta=ruta)
+
+        aviso = ""
+        if not verificada:
+            # Se entrega igual, pero diciéndolo. Callarlo sería afirmar que no
+            # tiene ficha vigente, que es justo lo que no se pudo comprobar.
+            aviso = ("No se pudo verificar si ya fue caracterizada (sin conexión "
+                     "con el sistema anterior). Verifique antes de continuar. ")
+
+        return ResultadoBusqueda(
+            encontrado=True,
+            victima=self._resumen_de_universo(persona, fecha),
+            fuente="UNIVERSO_RUV",
+            mensaje=(aviso + (veredicto.mensaje or "")).strip(),
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
+        )
+
+    def _resumen_de_universo(self, persona, fecha_ult) -> VictimaResumen:
+        """
+        Ficha de una persona del universo, con lo que la fuente sí trae.
+
+        🔴 `cons_persona=None` **a propósito**: el id del universo NO es el
+        `cons_persona` del legado —cero coincidencias en 243.610 pares medidos— y
+        ponerlo ahí haría que la escritura al legado mande identificadores de otro
+        sistema sin fallar. Viaja aparte, en `cons_persona_universo`.
+        """
+        from apps.victimas import homologacion as H
+
+        return VictimaResumen(
+            cons_persona=None,
+            cons_persona_universo=persona.cons_persona_universo,
+            tipo_documento=persona.tipo_documento or "",
+            numero_documento=persona.numero_documento or "",
+            primer_nombre=persona.primer_nombre or "",
+            segundo_nombre=persona.segundo_nombre or "",
+            primer_apellido=persona.primer_apellido or "",
+            segundo_apellido=persona.segundo_apellido or "",
+            # El corte NO trae fecha de nacimiento: sus columnas de edad son
+            # `CICLO_VITAL`. Se deja vacía en vez de derivarla del ciclo, que
+            # daría un dato inventado con apariencia de exacto.
+            fecha_nacimiento=None,
+            genero=H.homologar_genero(persona.genero),
+            estado_ruv="NO_VERIFICADO",
+            habilitado_para_caracterizacion=(fecha_ult is None),
+            fecha_ult_caracterizacion=fecha_ult,
+            pertenencia_etnica=persona.pertenencia_etnica or "",
+            pueblo_indigena="",
+            discapacidad=persona.discapacidad,
+            tipo_discapacidad=persona.tipo_discapacidad or "",
+            # `num_hechos` es un CONTEO. El detalle con fecha y municipio vive en
+            # `RUV.TBSINIESTROS_PERSONA` y se resuelve bajo demanda (decisión del
+            # 4-ago: traer el catálogo, no replicar 9,3 M de filas).
+            hechos_victimizantes=[],
+            municipio_residencia_codigo=None,
+            municipio_residencia_nombre=None,
+            fuente_origen="UNIVERSO_RUV",
         )
 
     def obtener_grupo_familiar(self, cons_persona) -> list[VictimaResumen]:

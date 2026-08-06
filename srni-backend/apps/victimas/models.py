@@ -626,6 +626,25 @@ class PersonaUniverso(models.Model):
         default=True, db_index=True,
         help_text='False = otra fila del mismo corte ganó ese documento.')
 
+    # ── Vigencia, resuelta contra el legado y guardada acá ───────────────────
+    #: Última caracterización según `GIC_HOGAR`, para quien está en el universo
+    #: pero NO en `Victima` — que es justo el caso que el universo vino a cubrir.
+    #:
+    #: El universo **no trae vigencia**: verificado sobre las 12.496.965 filas del
+    #: corte, `IDENTIFICADO` viene en 0 y `ESTADO_RUV` ni siquiera existe como
+    #: columna. Sin esto, una persona con ficha vigente aparecería como
+    #: caracterizable y la regla de los 2 años se perdería en silencio.
+    fecha_ult_caracterizacion = models.DateTimeField(null=True, blank=True)
+
+    #: Cuándo se resolvió lo anterior contra el legado. Se guarda para no volver
+    #: a preguntarle a Oracle en cada búsqueda: la primera consulta paga el viaje
+    #: y las siguientes se responden acá.
+    #:
+    #: `NULL` significa "todavía no se preguntó", que **no** es lo mismo que
+    #: "no tiene fecha" (nunca caracterizada). Sin este campo, los dos casos son
+    #: indistinguibles y el segundo se trataría como el primero cada vez.
+    vigencia_verificada_en = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

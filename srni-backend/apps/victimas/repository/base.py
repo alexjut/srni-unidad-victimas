@@ -149,6 +149,14 @@ class VictimaResumen:
     # y fechas de millones de filas) y se hace una sola vez, en el servidor.
     clase_colision: Optional[str] = None
 
+    # `CONS_PERSONA` del universo, cuando la persona vino de ahí y no del padrón.
+    #
+    # 🔴 Va en un campo PROPIO y nunca en `cons_persona`: son numeraciones
+    # distintas —cero coincidencias en 243.610 pares medidos— y `cons_persona` es
+    # lo que `apps/sincronizacion/oracle/mapeo.py` escribe al legado. Mezclarlos
+    # no falla: escribe mal en silencio.
+    cons_persona_universo: Optional[int] = None
+
 
 @dataclass
 class ResultadoBusqueda:
