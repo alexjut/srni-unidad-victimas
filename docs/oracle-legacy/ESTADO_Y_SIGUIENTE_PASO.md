@@ -1,11 +1,151 @@
 # Oracle legacy → SICAV — Estado y siguiente paso
 
 > **Traspaso de sesión.** Qué hicimos, dónde está todo, qué falta y **con qué empezar
-> la próxima vez** (incluye el prompt listo para pegar). Fecha de corte: 2026-07-16.
+> la próxima vez**. **Fecha de corte: 2026-08-06** — lo más reciente arriba (§0-decies:
+> el universo de 12 M cargado y las tres fases, una por una).
 > **Worktree:** `feat/oracle-legacy-writer` en `D:\desarrollo\uv-oracle-writer`.
-> Todo lo hecho fue **solo lectura** contra Oracle (local + prod), excepto un único
-> `DROP` autorizado de una master table huérfana. La escritura real a Oracle **NO
-> está activada** (todo en DRY-RUN).
+> Lo hecho contra Oracle fue **solo lectura** (local + prod), excepto un único `DROP`
+> autorizado de una master table huérfana y el piloto de escritura del 28-jul
+> (§0-bis). Sobre **PostgreSQL de producción sí se escribe**: es donde vive el padrón
+> y el universo. El prompt para retomar está en §5 y quedó viejo — para el frente del
+> universo, arrancar por §0-decies.
+
+---
+
+## 0-decies. 2026-08-06 — **EL UNIVERSO ESTÁ CARGADO; LAS TRES FASES, UNA POR UNA**
+
+Resumen: **12.009.492 personas cargadas**, duplicados resueltos y el enlace con el
+padrón corriendo. Las tres fases funcionaron, pero **ninguna a la primera**: cada
+una tuvo un problema de escala que solo aparece con 12 M de filas delante.
+
+### Fase 1 — cerró sola, y el vigilante hizo su trabajo
+
+```
+leídas          : 12,496,965
+cargadas        : 12,009,492
+sin documento   :    487,473  (descartadas)
+sin id de fuente:          0
+```
+
+12 h 51 min (16:23 del 5-ago → 05:14 del 6-ago). El vigilante detectó el fin de la
+fase 1, mandó `SIGTERM` al PID 1546 y confirmó `procesos que quedan: 0`: **el UPDATE
+de 12 M de filas nunca se ejecutó**.
+
+Las dos cifras coinciden **exactamente** con lo medido en Oracle antes de cargar
+(12.009.492 con documento usable, 487.473 sin él): no se perdió una fila por el
+`ignore_conflicts`. Tabla: **13 GB** (heap 9.212 MB + índices 3.669 MB), o sea la
+proyección con los índices podados y no los 18,7 GB del diseño original.
+
+### Deploy del parche
+
+`git archive` → build → `up --force-recreate` de los cuatro servicios → `migrate`
+(`0016` aplicada, no-op como se esperaba) → `restart cz_nginx` → `/api/` **200**.
+
+**No se usó `deploy-all.sh`**: su paso `40-cargar-datos.sh` recarga los 8
+instrumentos con `cargar_perfil --reemplazar` (purga capítulos en cascada) y
+reconstruye el frontend. Para un cambio de código Python, eso es riesgo gratis.
+
+### Fase 2 — el doble `GROUP BY` (y el N+1 detrás)
+
+Primer intento: **más de 45 minutos con el log mudo**. En `pg_stat_activity` estaba
+la causa: un `DECLARE CURSOR` sobre el `GROUP BY`, o sea **la segunda pasada
+completa** sobre 12 M. El método hacía tres cosas caras:
+
+```python
+total_grupos = repetidos.count()                  # GROUP BY sobre 12 M   (1)
+for grupo in repetidos.iterator():                # GROUP BY sobre 12 M   (2)
+    filas = list(base.filter(hash=grupo["hash"])) # una consulta POR GRUPO (60.438)
+```
+
+Se cortó **sin haber escrito nada** (acumula en memoria y escribe al final, en una
+sola transacción: verificado, 0 marcadas). Arreglado con subconsulta + `groupby`
+sobre un único recorrido ordenado, progreso cada 10.000 grupos y el UPDATE de
+perdedoras por lotes de 10.000. **Segunda corrida: menos de 5 minutos.**
+
+| | |
+|---|---:|
+| Documentos compartidos | 60.438 |
+| Filas que pierden el desempate | 62.202 |
+| Preferidas | **11.947.290** |
+| **Grupos con ≠ 1 preferida** | **0** ← la invariante, medida sobre los 12 M |
+
+### 🔴 Postgres tenía 64 MB de `/dev/shm`
+
+El `VACUUM ANALYZE` de rutina falló:
+
+```
+ERROR: could not resize shared memory segment to 67145408 bytes: No space left on device
+```
+
+67145408 son **exactamente los 64 MB** que Docker da por defecto cuando el compose
+no declara `shm_size`. **No era el disco** —había 15 GB libres— y el host ofrece
+7,8 GB de shm. El mensaje engaña: dice "no space left on device" y manda a mirar la
+partición equivocada.
+
+Postgres usa esa memoria para las consultas **paralelas**, así que alcanzaba a
+cualquier consulta grande, no solo al `VACUUM`. Arreglado en el compose
+(`shm_size: 1gb`) junto con `stop_grace_period: 3m` — Docker da 10 s antes del
+SIGKILL y el checkpoint de apagado de una base de 28 GB no cabe ahí.
+
+Recrear `cz_postgres` se hizo con `CHECKPOINT` previo. El log confirma apagado
+limpio (`database system was shut down`, no "was interrupted") y los datos quedaron
+intactos: 11.947.290 preferidas · 5.926.004 víctimas.
+
+### Fase 3 — el enlace no podía hacerse desde Python
+
+Primer intento cancelado: en varios minutos no había enlazado ni el 0,05 %.
+
+```
+DECLARE ... CURSOR WITH HOLD FOR SELECT "victimas_personauniverso"."id", ...
+temp_files: 1840   temp_bytes: 24 GB
+```
+
+Tres costos, y el tercero lo hacía inviable: un cursor que **materializa 11,9 M
+filas antes de entregar la primera**; trae las 20 columnas necesitando dos; y
+`numero_documento` más los cuatro nombres son `EncryptedField`, así que instanciar
+cada objeto **descifra cinco campos** — 11,9 millones de veces, para escribir un id.
+
+Ahora el cruce ocurre **dentro de la base**: `UPDATE … FROM victimas_victima` con
+`NOT EXISTS` (que es literalmente "solo si es la única con ese documento"),
+troceado en 16 lotes por el primer carácter del hash, con `>=`/`<` y no `LIKE`
+—el `LIKE` querría el `varchar_pattern_ops` que podamos ayer—. Cada lote commitea
+y loguea.
+
+**En curso al momento de escribir esto:**
+
+```
+Enlazando con el padrón operativo (11,941,782 sin enlazar)
+  [0] enlazadas   178,519 · ambiguas   60,419
+  [1] enlazadas   357,418 · ambiguas  120,445
+```
+
+~6,5 min por lote ⇒ ETA ~1 h 45. Proyección: **~2,9 M enlazadas y ~960 K
+ambiguas** — una de cada tres que cruza resuelve a más de una `Victima` y por
+diseño no se enlaza a ninguna (coherente con las 768.096 filas de
+`victimas_colisiondocumento`). Quedan registradas como `ENLACE_AMBIGUO`.
+
+Vigilando mientras corre: guardián de disco a 5 GB (`/tmp/vigilante_disco.log`) y
+un `VACUUM` en paralelo, porque el autovacuum no se dispara hasta 2,4 M de tuplas
+muertas y cada lote costaba ~0,5 GB.
+
+### Lo aprendido, que vale más que las cifras
+
+1. **Todo lo que traiga 12 M de filas a Python es inviable**, y con PII cifrada lo
+   es dos veces. Las tres fases fallaron por lo mismo.
+2. **Un proceso sin log de progreso es indistinguible de uno colgado.** Costó 40
+   minutos de espera antes de mirar `pg_stat_activity`.
+3. **Cortar es barato si la escritura es al final o por lote**; las tres corridas
+   canceladas no dejaron un solo dato a medias.
+
+### 🌅 Siguiente paso
+
+1. Esperar el cierre de los 16 lotes y verificar enlazadas + ambiguas.
+2. `VACUUM ANALYZE` y medir el disco.
+3. Con eso cierra el paso 2 del ADR. Quedan los pasos 3 a 5:
+   **derivar el subconjunto territorial** desde el servidor, `NO_VERIFICABLE` en el
+   cliente móvil y la reconsulta automática al recuperar conexión.
+4. Aparte, y sin relación con el código: el escalamiento de disco a Oscar
+   (`docs/gestion/correo_oscar_espacio_disco_urgente.md`) sigue pendiente de envío.
 
 ---
 
