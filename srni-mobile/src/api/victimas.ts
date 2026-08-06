@@ -10,10 +10,20 @@ export const victimasApi = {
    * No modifica ni consulta la DB local Django.
    * POST /api/victimas/consultar-fuente/
    */
-  consultarFuente: (tipo_documento: string, numero_documento: string) =>
+  consultarFuente: (
+    tipo_documento: string,
+    numero_documento: string,
+    ruta_entrevista?: string,
+  ) =>
     apiClient.post<ResultadoBusquedaFuente>('/api/victimas/consultar-fuente/', {
       tipo_documento,
       numero_documento,
+      // Sin ruta, el servidor aplica la GENERAL — que respeta la regla de los
+      // dos años. Por eso una persona con ficha vigente salía "no habilitada"
+      // sin salida posible: la app nunca le decía por qué ruta iba a
+      // caracterizarla. Con una de las tres rutas de excepción del Manual
+      // §5.1.1, la misma consulta devuelve ELEGIBLE_POR_EXCEPCION.
+      ...(ruta_entrevista ? { ruta_entrevista } : {}),
     }),
 
   /**
