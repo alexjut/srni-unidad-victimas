@@ -10,12 +10,28 @@
 import { create } from 'zustand';
 import type { VictimaResumenFuente } from '../types';
 
+/**
+ * Foto del fallo, la tutela o el auto que acredita una ruta de excepción.
+ *
+ * Vive en el store —y no en la pantalla de búsqueda— porque se captura al
+ * encontrar a la persona pero se envía mucho después, cuando ya existe la
+ * sesión de encuesta a la que colgarla. Sin esto, el encuestador adjuntaba el
+ * soporte y se perdía al navegar.
+ */
+export interface SoporteExcepcion {
+  ruta: string;
+  uri: string;
+  nombre: string;
+}
+
 interface CaracterizacionState {
   victimaFuente: VictimaResumenFuente | null;
   victimaLocalId: string | null;
   hogarId: string | null;
   /** Ruta de entrevista seleccionada en búsqueda — se pasa al crear la sesión. */
   rutaEntrevista: string;
+  /** Solo cuando se caracteriza a alguien CON ficha vigente. Null en la ruta general. */
+  soporteExcepcion: SoporteExcepcion | null;
   /** ID del instrumento seleccionado en búsqueda — se usa al crear la sesión desde hogares/nuevo. */
   instrumentoId: string | null;
 
@@ -23,6 +39,7 @@ interface CaracterizacionState {
   setVictimaLocalId: (id: string | null) => void;
   setHogarId: (id: string | null) => void;
   setRutaEntrevista: (ruta: string) => void;
+  setSoporteExcepcion: (soporte: SoporteExcepcion | null) => void;
   setInstrumentoId: (id: string | null) => void;
   limpiar: () => void;
 }
@@ -32,15 +49,17 @@ export const useCaracterizacionStore = create<CaracterizacionState>((set) => ({
   victimaLocalId: null,
   hogarId: null,
   rutaEntrevista: 'GENERAL',
+  soporteExcepcion: null,
   instrumentoId: null,
 
   setVictimaFuente: (v) => set({ victimaFuente: v }),
   setVictimaLocalId: (id) => set({ victimaLocalId: id }),
   setHogarId: (id) => set({ hogarId: id }),
   setRutaEntrevista: (ruta) => set({ rutaEntrevista: ruta }),
+  setSoporteExcepcion: (soporte) => set({ soporteExcepcion: soporte }),
   setInstrumentoId: (id) => set({ instrumentoId: id }),
   limpiar: () => set({
     victimaFuente: null, victimaLocalId: null, hogarId: null,
-    rutaEntrevista: 'GENERAL', instrumentoId: null,
+    rutaEntrevista: 'GENERAL', soporteExcepcion: null, instrumentoId: null,
   }),
 }));

@@ -19,6 +19,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 
+import * as DocumentPicker from 'expo-document-picker';
+
 import { GovHeader } from '../../src/components/GovHeader';
 import { SelectorFecha } from '../../src/components/SelectorFecha';
 
@@ -91,7 +93,7 @@ function SelectTipoDoc({ valor, onChange }: SelectTipoDocProps) {
         <Pressable style={styles.modalOverlay} onPress={() => setVisible(false)}>
           <View style={styles.modalCard}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitulo}>Tipo de documento</Text>
+            <Text style={styles.excTitulo}>Tipo de documento</Text>
 
             {(Object.entries(TIPOS_DOC) as [TipoDoc, typeof TIPOS_DOC[TipoDoc]][]).map(([code, info]) => (
               <Pressable
@@ -263,10 +265,31 @@ function nombreCompleto(v: VictimaResumenFuente): string {
     .filter(Boolean).join(' ').trim();
 }
 
+// ── Rutas que OMITEN la regla de vigencia (Manual UARIV §5.1.1, pág. 22) ─────
+//
+// La ruta GENERAL no está acá a propósito: es la única que RESPETA los dos años,
+// y es el caso por defecto. Si estuviera en esta lista, la regla de vigencia
+// sería opcional en la práctica.
+const RUTAS_EXCEPCION = [
+  { valor: 'ACCIONES_CONSTITUCIONALES', etiqueta: 'Acción constitucional',
+    ayuda: 'Fallo, tutela o auto de seguimiento' },
+  { valor: 'MODIFICACION_NUCLEO', etiqueta: 'Modificación del núcleo familiar',
+    ayuda: 'Diferencias en la conformación del hogar' },
+  { valor: 'ESPECIAL', etiqueta: 'Ruta especial',
+    ayuda: 'Protección especial o urgencia manifiesta' },
+];
+
 // ── Tarjeta: no habilitado ────────────────────────────────────────────────────
 
-function TarjetaNoHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente }) {
+function TarjetaNoHabilitado({ resultado, onUsarExcepcion }: {
+  resultado: ResultadoBusquedaFuente;
+  onUsarExcepcion?: () => void;
+}) {
   const v = resultado.victima!;
+  // Ficha vigente NO es un callejón: el manual autoriza tres rutas a omitir la
+  // regla de los dos años. Antes acá terminaba el camino y el caso se escalaba
+  // a soporte, que es lo contrario de para lo que existen esas rutas.
+  const puedeExcepcion = resultado.motivo === 'FICHA_VIGENTE' && !!onUsarExcepcion;
   return (
     <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
       <View style={styles.tarjetaEncabezado}>
@@ -284,6 +307,24 @@ function TarjetaNoHabilitado({ resultado }: { resultado: ResultadoBusquedaFuente
           {v.estado_ruv.replace('_', ' ')}
         </Chip>
       </View>
+      {puedeExcepcion && (
+        <>
+          <Divider style={{ marginVertical: SPACING.md }} />
+          <Text style={styles.tarjetaMensaje}>
+            Si cuenta con un fallo, tutela o auto de seguimiento, puede
+            caracterizarla por una ruta de excepción adjuntando el soporte.
+          </Text>
+          <Button
+            mode="contained"
+            icon="file-document-edit"
+            onPress={onUsarExcepcion}
+            style={{ marginTop: SPACING.sm }}
+            buttonColor={GOV.azul}
+          >
+            Caracterizar por ruta de excepción
+          </Button>
+        </>
+      )}
       <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
     </Surface>
   );
@@ -568,6 +609,14 @@ export default function BusquedaScreen() {
   const [cargando, setCargando] = useState(false);
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
   const [resultado, setResultado] = useState<ResultadoBusquedaFuente | null>(null);
+  // Ruta de excepción: se elige acá pero el soporte se envía mucho después,
+  // cuando ya existe la sesión a la que colgarlo (por eso va al store).
+  const [modalExcepcion, setModalExcepcion] = useState(false);
+  const [rutaElegida, setRutaElegida] = useState('');
+  const [soporteNombre, setSoporteNombre] = useState('');
+  const [soporteUri, setSoporteUri] = useState('');
+  const [errorExcepcion, setErrorExcepcion] = useState('');
+  const [verificandoExcepcion, setVerificandoExcepcion] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
   // Personas distintas que comparten el documento buscado. Mientras esta lista
   // tenga algo, NO hay resultado: falta que el encuestador confirme cuál es.
@@ -768,6 +817,70 @@ export default function BusquedaScreen() {
       setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
     } finally {
       setCargandoRegistro(false);
+    }
+  }
+
+  /** Abre el selector de archivo para adjuntar el soporte de la excepción. */
+  async function adjuntarSoporte() {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.length) return;
+      setSoporteNombre(res.assets[0].name);
+      setSoporteUri(res.assets[0].uri);
+      setErrorExcepcion('');
+    } catch (err: any) {
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'adjuntarSoporte falló: ' + (err?.message ?? String(err)),
+        pantalla: 'busqueda',
+      });
+      setErrorExcepcion('No se pudo adjuntar el archivo. Intente de nuevo.');
+    }
+  }
+
+  /**
+   * Vuelve a preguntar al servidor, ahora diciendo POR QUÉ RUTA.
+   *
+   * No se habilita a la persona desde el cliente: se consulta de nuevo y manda
+   * lo que responda el servidor. Decidirlo acá dejaría la regla de vigencia en
+   * manos de la app, que es exactamente lo que hay que evitar.
+   */
+  async function confirmarExcepcion() {
+    if (!rutaElegida) {
+      setErrorExcepcion('Seleccione la ruta que corresponde al caso.');
+      return;
+    }
+    if (!soporteUri) {
+      // El soporte no es opcional: es lo que deja rastro de haberse saltado un
+      // control. Sin él, la regla de vigencia sería opcional en la práctica.
+      setErrorExcepcion('Adjunte el soporte (fallo, tutela o auto).');
+      return;
+    }
+    setVerificandoExcepcion(true);
+    try {
+      const { data } = await victimasApi.consultarFuente(
+        tipoDoc, documento.trim(), rutaElegida);
+      if (!data.victima?.habilitado_para_caracterizacion) {
+        setErrorExcepcion(data.mensaje ||
+          'Esa ruta no habilita este caso. Verifique con su supervisor.');
+        return;
+      }
+      const store = useCaracterizacionStore.getState();
+      store.setRutaEntrevista(rutaElegida);
+      store.setSoporteExcepcion({
+        ruta: rutaElegida, uri: soporteUri, nombre: soporteNombre,
+      });
+      setResultado(data);
+      setModalExcepcion(false);
+    } catch (err: any) {
+      reportarError({
+        nivel: 'warn',
+        mensaje: 'confirmarExcepcion falló: ' + (err?.message ?? String(err)),
+        pantalla: 'busqueda',
+      });
+      setErrorExcepcion('No se pudo verificar con el servidor. Revise la conexión.');
+    } finally {
+      setVerificandoExcepcion(false);
     }
   }
 
@@ -1006,7 +1119,18 @@ export default function BusquedaScreen() {
     }
 
     if (!resultado.victima?.habilitado_para_caracterizacion) {
-      return <TarjetaNoHabilitado resultado={resultado} />;
+      return (
+        <TarjetaNoHabilitado
+          resultado={resultado}
+          onUsarExcepcion={() => {
+            setRutaElegida('');
+            setSoporteNombre('');
+            setSoporteUri('');
+            setErrorExcepcion('');
+            setModalExcepcion(true);
+          }}
+        />
+      );
     }
 
     // Regla universal: 1 víctima → 1 hogar. El backend devuelve hogar_activo si existe.
@@ -1168,6 +1292,77 @@ export default function BusquedaScreen() {
 
           {!cargando && renderTarjeta()}
         </ScrollView>
+
+        {/* ── Ruta de excepción a la regla de vigencia (Manual §5.1.1) ─────── */}
+        <Modal
+          visible={modalExcepcion}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setModalExcepcion(false)}
+        >
+          <View style={styles.excFondo}>
+            <Surface style={styles.excCaja}>
+              <Text style={styles.excTitulo}>Ruta de excepción</Text>
+              <Text style={styles.excAyuda}>
+                Esta persona tiene una caracterización vigente. Solo puede
+                caracterizarla por una de estas rutas, y debe adjuntar el soporte.
+              </Text>
+
+              {RUTAS_EXCEPCION.map((r) => (
+                <Pressable
+                  key={r.valor}
+                  onPress={() => { setRutaElegida(r.valor); setErrorExcepcion(''); }}
+                  style={[
+                    styles.opcionRuta,
+                    rutaElegida === r.valor && styles.opcionRutaActiva,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={rutaElegida === r.valor ? 'radiobox-marked' : 'radiobox-blank'}
+                    size={22}
+                    color={rutaElegida === r.valor ? GOV.azul : GOV.textoS}
+                  />
+                  <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+                    <Text style={styles.opcionRutaTitulo}>{r.etiqueta}</Text>
+                    <Text style={styles.opcionRutaAyuda}>{r.ayuda}</Text>
+                  </View>
+                </Pressable>
+              ))}
+
+              <Button
+                mode="outlined"
+                icon={soporteNombre ? 'check-circle' : 'paperclip'}
+                onPress={adjuntarSoporte}
+                style={{ marginTop: SPACING.md }}
+              >
+                {soporteNombre ? `Adjunto: ${soporteNombre}` : 'Adjuntar soporte'}
+              </Button>
+
+              {!!errorExcepcion && (
+                <HelperText type="error" visible>{errorExcepcion}</HelperText>
+              )}
+
+              <View style={styles.excBotones}>
+                <Button
+                  mode="text"
+                  onPress={() => setModalExcepcion(false)}
+                  disabled={verificandoExcepcion}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={confirmarExcepcion}
+                  loading={verificandoExcepcion}
+                  disabled={verificandoExcepcion}
+                  buttonColor={GOV.azul}
+                >
+                  Continuar
+                </Button>
+              </View>
+            </Surface>
+          </View>
+        </Modal>
       </ImageBackground>
     </View>
   );
@@ -1176,6 +1371,27 @@ export default function BusquedaScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  excFondo: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', padding: SPACING.lg,
+  },
+  excCaja: {
+    backgroundColor: '#FFFFFF', borderRadius: RADIUS.lg, padding: SPACING.lg,
+  },
+  excTitulo: { ...FONT.h2, color: GOV.azul, marginBottom: SPACING.xs },
+  excAyuda: { ...FONT.body, color: GOV.textoS, marginBottom: SPACING.md },
+  opcionRuta: {
+    flexDirection: 'row', alignItems: 'center', padding: SPACING.sm,
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#E0E0E0',
+    marginBottom: SPACING.xs,
+  },
+  opcionRutaActiva: { borderColor: GOV.azul, backgroundColor: '#F0F6FC' },
+  opcionRutaTitulo: { ...FONT.label, color: GOV.textoS },
+  opcionRutaAyuda: { ...FONT.caption, color: '#757575' },
+  excBotones: {
+    flexDirection: 'row', justifyContent: 'flex-end',
+    gap: SPACING.sm, marginTop: SPACING.md,
+  },
   root: { flex: 1, backgroundColor: '#00234E' },
   imagenFondo: { flex: 1 },
   scroll: { flex: 1 },
