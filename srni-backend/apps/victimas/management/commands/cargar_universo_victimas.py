@@ -72,6 +72,63 @@ DESEMPATES = {
 }
 
 
+#: El enlace se trocea por el primer carácter del hash (hex ⇒ 16 lotes de ~750 K).
+#: Con `>=` y `<` en vez de `LIKE 'a%'`: el rango usa el índice btree normal, y el
+#: `LIKE` necesitaría un índice `varchar_pattern_ops` — justamente uno de los que
+#: se podaron el 5-ago por no usarse.
+RANGOS_HASH = [(f"{c:x}", f"{c + 1:x}" if c < 15 else "g") for c in range(16)]
+
+#: 🔴 El enlace ocurre DENTRO de la base, y no trayendo filas a Python.
+#:
+#: La versión anterior iteraba `PersonaUniverso` con un cursor y actualizaba con
+#: `bulk_update`. Medido en producción el 6-ago sobre 11.947.290 filas: Postgres
+#: materializaba un `CURSOR WITH HOLD` con **todas las columnas** —24 GB de
+#: archivos temporales— y Python instanciaba cada objeto, lo que **descifra los
+#: cinco `EncryptedField`** (documento y los cuatro nombres) para escribir un
+#: único id. Se canceló sin haber enlazado ni el 0,05 %.
+#:
+#: `NOT EXISTS` en vez de `MIN(id)` porque Postgres no define `min()` sobre uuid,
+#: y porque expresa lo que la regla realmente dice: se enlaza **solo si esa
+#: víctima es la única con ese documento**. Si hay más de una, no se elige
+#: ninguna — inventar la correspondencia es peor que no tenerla.
+SQL_ENLACE = """
+    UPDATE victimas_personauniverso
+       SET victima_id = v.id
+      FROM victimas_victima v
+     WHERE victimas_personauniverso.numero_documento_hash_sin_tipo = v.numero_documento_hash_sin_tipo
+       AND victimas_personauniverso.corte = %s
+       AND victimas_personauniverso.es_preferida
+       AND victimas_personauniverso.victima_id IS NULL
+       AND victimas_personauniverso.numero_documento_hash_sin_tipo >= %s
+       AND victimas_personauniverso.numero_documento_hash_sin_tipo <  %s
+       AND v.numero_documento_hash_sin_tipo >= %s
+       AND v.numero_documento_hash_sin_tipo <  %s
+       AND NOT EXISTS (SELECT 1 FROM victimas_victima v2
+                        WHERE v2.numero_documento_hash_sin_tipo = v.numero_documento_hash_sin_tipo
+                          AND v2.id <> v.id)
+"""
+
+#: Los que quedan sin enlazar por ambigüedad, para registrarlos con su motivo.
+#: Son pocos frente a los 12 M, así que estos sí se traen: hacen falta el
+#: `cons_persona_universo` y el conteo para el detalle.
+SQL_AMBIGUOS = """
+    SELECT p.cons_persona_universo, p.numero_documento_hash_sin_tipo, c.n
+      FROM victimas_personauniverso p
+      JOIN (SELECT numero_documento_hash_sin_tipo AS h, COUNT(*) AS n
+              FROM victimas_victima
+             WHERE numero_documento_hash_sin_tipo >= %s
+               AND numero_documento_hash_sin_tipo <  %s
+             GROUP BY numero_documento_hash_sin_tipo
+            HAVING COUNT(*) > 1) c
+        ON c.h = p.numero_documento_hash_sin_tipo
+     WHERE p.corte = %s
+       AND p.es_preferida
+       AND p.victima_id IS NULL
+       AND p.numero_documento_hash_sin_tipo >= %s
+       AND p.numero_documento_hash_sin_tipo <  %s
+"""
+
+
 def fecha_de_corte(nombre: str):
     """`TEMP_UNIV_VICT_PER_MI010726ALL` → date(2026, 7, 1). None si no matchea."""
     m = _RE_CORTE.search(nombre or "")
@@ -458,7 +515,9 @@ class Command(BaseCommand):
         Por id sería inútil: `CONS_PERSONA` y `cons_persona` son numeraciones
         distintas (0 coincidencias en 243.610 pares medidos).
         """
-        from apps.victimas.models import PersonaUniverso, Victima
+        from django.db import connection
+
+        from apps.victimas.models import DescarteUniverso, PersonaUniverso
 
         pendientes = (PersonaUniverso.objects
                       .filter(corte=corte, es_preferida=True, victima__isnull=True)
@@ -468,49 +527,35 @@ class Command(BaseCommand):
             f"\nEnlazando con el padrón operativo ({total:,} sin enlazar)"))
         if not total:
             return
+        if not confirmar:
+            self.stdout.write("  DRY-RUN: no se enlaza nada.")
+            return
 
-        from apps.victimas.models import DescarteUniverso
+        # Los descartes de ESTA fase se reemplazan, no se suman — mismo criterio
+        # que la fase 2. Sin esto, como los ambiguos nunca llegan a enlazarse,
+        # cada corrida los volvía a registrar y la tabla respondía de más.
+        DescarteUniverso.objects.filter(corte=corte, motivo="ENLACE_AMBIGUO").delete()
 
         enlazadas = ambiguas = 0
-        for chunk in self._por_lotes(pendientes, 2000):
-            hashes = {p.numero_documento_hash_sin_tipo for p in chunk}
+        for lo, hi in RANGOS_HASH:
+            with connection.cursor() as cur:
+                cur.execute(SQL_ENLACE, [corte, lo, hi, lo, hi])
+                enlazadas += cur.rowcount
 
-            # Un hash puede resolver a VARIAS víctimas: el campo está indexado
-            # pero no es único, y en el padrón hay documentos compartidos por
-            # cientos de filas (medido: hasta 505 de la misma persona). Sin
-            # orden, gana "la última que devuelva Postgres" — no determinista, y
-            # en los grupos que son personas DISTINTAS enlazaría con otra.
-            candidatas = {}
-            for v in (Victima.objects
-                      .filter(numero_documento_hash_sin_tipo__in=hashes)
-                      .only("id", "numero_documento_hash_sin_tipo")
-                      .order_by("numero_documento_hash_sin_tipo", "id")):
-                candidatas.setdefault(v.numero_documento_hash_sin_tipo, []).append(v)
+                # Ojo al orden: acá el rango va PRIMERO (está en la subconsulta)
+                # y el corte después. No es el mismo que `SQL_ENLACE`.
+                cur.execute(SQL_AMBIGUOS, [lo, hi, corte, lo, hi])
+                filas = cur.fetchall()
 
-            actualizar, descartes = [], []
-            for p in chunk:
-                opciones = candidatas.get(p.numero_documento_hash_sin_tipo, [])
-                if len(opciones) == 1:
-                    p.victima = opciones[0]
-                    actualizar.append(p)
-                elif len(opciones) > 1:
-                    # Más de una candidata: NO se elige. Inventar una
-                    # correspondencia es peor que no tenerla — el mismo criterio
-                    # que ya aplica `ColisionDocumento.victima_preferida=NULL`
-                    # para los documentos ambiguos.
-                    ambiguas += 1
-                    descartes.append(DescarteUniverso(
-                        corte=corte,
-                        cons_persona_universo=p.cons_persona_universo,
-                        numero_documento_hash_sin_tipo=p.numero_documento_hash_sin_tipo,
-                        motivo="ENLACE_AMBIGUO",
-                        detalle=f"{len(opciones)} víctimas comparten ese documento"))
-            if confirmar and actualizar:
-                PersonaUniverso.objects.bulk_update(actualizar, ["victima"],
-                                                    batch_size=1000)
-            if confirmar and descartes:
-                DescarteUniverso.objects.bulk_create(descartes, batch_size=1000)
-            enlazadas += len(actualizar)
+            DescarteUniverso.objects.bulk_create([
+                DescarteUniverso(
+                    corte=corte, cons_persona_universo=cons,
+                    numero_documento_hash_sin_tipo=hsh, motivo="ENLACE_AMBIGUO",
+                    detalle=f"{n} víctimas comparten ese documento")
+                for cons, hsh, n in filas], batch_size=1000)
+            ambiguas += len(filas)
+            self.stdout.write(f"  [{lo}] enlazadas {enlazadas:>9,} · "
+                              f"ambiguas {ambiguas:>8,}")
 
         self.stdout.write(
             f"  enlazadas          : {enlazadas:,}\n"

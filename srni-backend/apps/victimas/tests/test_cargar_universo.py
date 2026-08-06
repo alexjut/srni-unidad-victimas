@@ -393,6 +393,46 @@ def test_un_documento_que_resuelve_a_dos_victimas_NO_se_enlaza_a_ninguna():
     assert DescarteUniverso.objects.filter(motivo="ENLACE_AMBIGUO").count() == 1
 
 
+@pytest.mark.django_db
+def test_el_troceo_por_rangos_cubre_TODO_el_espacio_de_hashes():
+    """
+    El enlace se hace en 16 lotes por el primer carácter del hash. Un rango mal
+    armado —olvidar la `f`, o cortar en `9` creyendo que después viene `10`— no
+    da error: deja **una fracción de las personas sin enlazar, en silencio**.
+
+    Se siembra una persona por cada prefijo hexadecimal y se exige que las 16
+    queden enlazadas.
+    """
+    from apps.parametricas.models import TipoDocumento
+
+    tipo = TipoDocumento.objects.create(codigo="CC", nombre="Cédula")
+    por_prefijo = {}
+    doc = 0
+    while len(por_prefijo) < 16 and doc < 5000:
+        doc += 1
+        h = num_hash(str(doc))
+        por_prefijo.setdefault(h[0], (str(doc), h))
+    assert len(por_prefijo) == 16, "no se consiguió un documento por prefijo"
+
+    for i, (documento, h) in enumerate(por_prefijo.values()):
+        Victima.objects.create(
+            tipo_documento=tipo, numero_documento=documento,
+            numero_documento_hash_sin_tipo=h, primer_nombre="X",
+            primer_apellido="Y", fecha_nacimiento="1980-01-01", genero="F")
+        PersonaUniverso.objects.create(
+            cons_persona_universo=1000 + i, corte=CORTE,
+            numero_documento=documento, numero_documento_hash_sin_tipo=h)
+
+    C.Command()._enlazar_con_padron(CORTE, confirmar=True)
+
+    sin_enlazar = list(PersonaUniverso.objects
+                       .filter(corte=CORTE, victima__isnull=True)
+                       .values_list("numero_documento_hash_sin_tipo", flat=True))
+    assert not sin_enlazar, (
+        "quedaron sin enlazar los hashes que empiezan por "
+        f"{sorted({h[0] for h in sin_enlazar})}: el troceo no cubre todo")
+
+
 def test_el_umbral_de_5_se_mide_sobre_el_documento_normalizado():
     """
     `1.2.3` tiene cinco caracteres crudos pero normaliza a `123`, que no
