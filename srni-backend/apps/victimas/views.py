@@ -477,8 +477,12 @@ class RegistrarDesdeFuenteView(APIView):
         victima.segundo_nombre = data.get('segundo_nombre', '')
         victima.primer_apellido = data['primer_apellido']
         victima.segundo_apellido = data.get('segundo_apellido', '')
-        # fecha_nacimiento viene como objeto date; EncryptedField almacena texto
-        victima.fecha_nacimiento = str(data['fecha_nacimiento'])
+        # fecha_nacimiento viene como objeto date; EncryptedField almacena texto.
+        # Puede no venir (persona del universo que nunca pasó por el legado): se
+        # guarda vacía, NO el texto 'None', que es lo que haría un str() directo
+        # y quedaría almacenado como si fuera un dato.
+        nacimiento = data.get('fecha_nacimiento')
+        victima.fecha_nacimiento = str(nacimiento) if nacimiento else ''
         victima.genero = data['genero']
         victima.estado_ruv = data['estado_ruv']
         victima.habilitado_para_caracterizacion = data['habilitado_para_caracterizacion']

@@ -184,3 +184,36 @@ class FinalizarSesionSerializer(serializers.Serializer):
     observaciones = serializers.CharField(
         allow_blank=True, required=False, default='', max_length=2_000,
     )
+
+
+class ExcepcionVigenciaSerializer(serializers.Serializer):
+    """
+    Input para POST /api/encuestas/{id}/excepcion-vigencia/
+
+    Registra que se caracterizó a una persona **con ficha vigente**, por una de
+    las tres rutas que el Manual §5.1.1 autoriza a omitir la regla de los dos
+    años. Es, literalmente, saltarse un control: por eso el soporte es
+    obligatorio y no un adjunto opcional.
+    """
+    victima_id = serializers.UUIDField()
+    ruta = serializers.CharField(max_length=30)
+    # Obligatorio a propósito. Un control que se salta sin dejar rastro deja de
+    # ser un control, y como la ruta la elige el encuestador —no un perfil
+    # aparte— sin la foto la regla de vigencia sería opcional en la práctica.
+    soporte = serializers.FileField()
+    observacion = serializers.CharField(
+        allow_blank=True, required=False, default='', max_length=2_000,
+        help_text='Número de radicado del fallo, o lo que el encuestador anote.',
+    )
+
+    def validate_ruta(self, value):
+        from apps.victimas.homologacion import RUTAS_QUE_OMITEN_VIGENCIA
+
+        ruta = (value or '').strip().upper()
+        if ruta not in RUTAS_QUE_OMITEN_VIGENCIA:
+            raise serializers.ValidationError(
+                f"La ruta '{value}' no omite la regla de vigencia. Solo la omiten: "
+                f"{', '.join(sorted(RUTAS_QUE_OMITEN_VIGENCIA))}. La ruta general la "
+                f"respeta, así que no hay excepción que registrar."
+            )
+        return ruta

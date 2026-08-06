@@ -40,13 +40,16 @@ log = logging.getLogger(__name__)
 #: La fecha se busca por documento. `GIC_PERSONA` tiene índice sobre el documento
 #: (15 índices, ninguno sobre `PER_IDPERSONA`), así que esta consulta es barata;
 #: la del padrón completo, que agrupaba por persona, no lo era.
+#: Los `LEFT JOIN` no son cosméticos: quien está en `GIC_PERSONA` pero nunca
+#: participó en un hogar —o sea, nunca fue caracterizado— tiene que devolver su
+#: fecha de nacimiento igual, con la de caracterización en NULL. Con `JOIN`
+#: normal esa persona no devolvía ninguna fila y perdíamos las dos cosas.
 CONSULTA_FECHA = """
-    SELECT MAX(h.usu_fechacreacion)
+    SELECT MAX(p.per_fechanacimiento), MAX(h.usu_fechacreacion)
       FROM gic_persona p
-      JOIN gic_miembros_hogar m ON m.per_idpersona = p.per_idpersona
-      JOIN gic_hogar h          ON h.hog_codigo    = m.hog_codigo
+      LEFT JOIN gic_miembros_hogar m ON m.per_idpersona = p.per_idpersona
+      LEFT JOIN gic_hogar h          ON h.hog_codigo    = m.hog_codigo
      WHERE TRIM(p.per_numerodoc) = :doc
-       AND h.usu_fechacreacion IS NOT NULL
 """
 
 
@@ -55,7 +58,15 @@ class VigenciaNoVerificable(Exception):
 
 
 def _consultar_legado(numero_documento: str):
-    """Devuelve la fecha (o None si el legado no tiene ninguna). Puede fallar."""
+    """
+    Devuelve `(fecha_nacimiento, fecha_ult_caracterizacion)`; cada una puede ser
+    `None` si el legado no la tiene. Puede fallar: eso es `VigenciaNoVerificable`.
+
+    Si la persona tiene varios registros en el legado —`1115724047` tiene tres—
+    se toma el máximo. Ante discrepancia de fechas de nacimiento entre registros
+    del legado, el encuestador puede corregirla en campo; lo que no puede es
+    quedarse sin ninguna, que es lo que pasaba antes.
+    """
     from apps.sincronizacion.oracle import conexion as cx
 
     try:
@@ -67,7 +78,7 @@ def _consultar_legado(numero_documento: str):
         cur = con.cursor()
         cur.execute(CONSULTA_FECHA, {"doc": (numero_documento or "").strip()})
         fila = cur.fetchone()
-        return fila[0] if fila else None
+        return (fila[0], fila[1]) if fila else (None, None)
     except Exception as exc:
         raise VigenciaNoVerificable(str(exc)) from exc
     finally:
@@ -92,7 +103,7 @@ def resolver(persona, *, forzar: bool = False):
         return persona.fecha_ult_caracterizacion, True
 
     try:
-        fecha = _consultar_legado(persona.numero_documento)
+        nacimiento, fecha = _consultar_legado(persona.numero_documento)
     except VigenciaNoVerificable as exc:
         log.warning("vigencia no verificable para persona del universo %s: %s",
                     persona.cons_persona_universo, exc)
@@ -105,8 +116,13 @@ def resolver(persona, *, forzar: bool = False):
         fecha = timezone.make_aware(fecha, timezone.get_default_timezone())
 
     persona.fecha_ult_caracterizacion = fecha
+    if nacimiento is not None and persona.fecha_nacimiento is None:
+        # `DateTimeField` de Oracle → `DateField` nuestro.
+        persona.fecha_nacimiento = (nacimiento.date() if hasattr(nacimiento, "date")
+                                    else nacimiento)
     persona.vigencia_verificada_en = timezone.now()
-    persona.save(update_fields=["fecha_ult_caracterizacion", "vigencia_verificada_en"])
+    persona.save(update_fields=["fecha_ult_caracterizacion", "fecha_nacimiento",
+                                "vigencia_verificada_en"])
     return fecha, True
 
 

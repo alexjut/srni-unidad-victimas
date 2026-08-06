@@ -636,6 +636,14 @@ class PersonaUniverso(models.Model):
     #: caracterizable y la regla de los 2 años se perdería en silencio.
     fecha_ult_caracterizacion = models.DateTimeField(null=True, blank=True)
 
+    #: Fecha de nacimiento, que **el corte del universo no trae** —sus columnas
+    #: de edad son `CICLO_VITAL`— y que el alta necesita para poder caracterizar.
+    #: Se resuelve contra `GIC_PERSONA` en el mismo viaje que la vigencia.
+    #:
+    #: Queda vacía para quien nunca pasó por el legado (el caso de `28548486`):
+    #: ahí la captura el encuestador en campo, que es un dato que la persona sabe.
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+
     #: Cuándo se resolvió lo anterior contra el legado. Se guarda para no volver
     #: a preguntarle a Oracle en cada búsqueda: la primera consulta paga el viaje
     #: y las siguientes se responden acá.

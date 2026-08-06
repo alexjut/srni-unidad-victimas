@@ -29,7 +29,7 @@ def _sembrar(documento, cons, **extra):
 def repo(monkeypatch):
     # La vigencia se resuelve contra Oracle; en pruebas se controla la respuesta.
     from apps.victimas import vigencia_legacy as VL
-    monkeypatch.setattr(VL, "_consultar_legado", lambda doc: None)
+    monkeypatch.setattr(VL, "_consultar_legado", lambda doc: (None, None))
     return DjangoVictimaRepository()
 
 
@@ -66,7 +66,7 @@ def test_con_ficha_vigente_avisa_y_no_la_da_por_elegible(monkeypatch):
     """Caso real 1115724047: caracterizada el 28-jul-2026."""
     from apps.victimas import vigencia_legacy as VL
     monkeypatch.setattr(VL, "_consultar_legado",
-                        lambda doc: datetime.datetime(2026, 7, 28))
+                        lambda doc: (None, datetime.datetime(2026, 7, 28)))
     _sembrar("1115724047", 23664117)
 
     r = DjangoVictimaRepository().buscar_por_documento("CC", "1115724047")
@@ -84,7 +84,7 @@ def test_una_ruta_de_excepcion_SI_la_habilita(monkeypatch):
     """
     from apps.victimas import vigencia_legacy as VL
     monkeypatch.setattr(VL, "_consultar_legado",
-                        lambda doc: datetime.datetime(2026, 7, 28))
+                        lambda doc: (None, datetime.datetime(2026, 7, 28)))
     _sembrar("1115724047", 23664117)
 
     r = DjangoVictimaRepository().buscar_por_documento(

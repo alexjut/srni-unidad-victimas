@@ -208,7 +208,12 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     segundo_nombre = serializers.CharField(max_length=100, allow_blank=True, default='')
     primer_apellido = serializers.CharField(max_length=100)
     segundo_apellido = serializers.CharField(max_length=100, allow_blank=True, default='')
-    fecha_nacimiento = serializers.DateField()
+    # Puede faltar: quien viene del UNIVERSO y nunca pasó por el legado no tiene
+    # fecha de nacimiento en ninguna fuente —el corte solo trae `CICLO_VITAL`— y
+    # exigirla acá impedía caracterizarlo. Es el caso de `28548486`: existe en el
+    # RUV, nunca fue caracterizada, y era justamente a quien esto vino a
+    # habilitar. Cuando falta, la captura el encuestador en campo.
+    fecha_nacimiento = serializers.DateField(allow_null=True, required=False)
     genero = serializers.ChoiceField(choices=['M', 'F', 'NB', 'ND'], default='ND')
     # Default 'NO_VERIFICADO', no 'NO_INCLUIDO': si el cliente no manda el estado
     # es porque no lo resolvió contra el padrón — y "no lo sé" no es "no está".

@@ -387,10 +387,12 @@ class DjangoVictimaRepository(VictimaRepository):
             segundo_nombre=persona.segundo_nombre or "",
             primer_apellido=persona.primer_apellido or "",
             segundo_apellido=persona.segundo_apellido or "",
-            # El corte NO trae fecha de nacimiento: sus columnas de edad son
-            # `CICLO_VITAL`. Se deja vacía en vez de derivarla del ciclo, que
-            # daría un dato inventado con apariencia de exacto.
-            fecha_nacimiento=None,
+            # El corte NO la trae —sus columnas de edad son `CICLO_VITAL`— así
+            # que sale del legado cuando la persona pasó por ahí. Si nunca pasó
+            # (el caso de `28548486`), va vacía y **la captura el encuestador**:
+            # nunca se deriva del ciclo vital, que daría un dato inventado con
+            # apariencia de exacto.
+            fecha_nacimiento=persona.fecha_nacimiento,
             genero=H.homologar_genero(persona.genero),
             estado_ruv="NO_VERIFICADO",
             habilitado_para_caracterizacion=(fecha_ult is None),
