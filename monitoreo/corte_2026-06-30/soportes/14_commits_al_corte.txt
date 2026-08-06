@@ -1,0 +1,285 @@
+2026-06-30|5fba1fa|feat(ui): integra gov-amarillo — franja full-width, sidebar activo, badges EN_PROGRESO,    Alert warning, Pagination dot, PageHeader accent
+2026-06-30|177c9d4|feat(ui): amarillo GOV.CO full-width — franja global, sidebar activo, header accent,   PageHeader, badge
+2026-06-30|c6ffab7|Se cambia el nombre del favicon
+2026-06-30|2ba5eb2|Se cambia el logo oficial para el login y se implementan imagenes para el fondo
+2026-06-30|cfd95fe|feat(instrumento): reconstruye Urbano Étnico desde diccionario V1 (175 preg, 66 reglas)
+2026-06-30|a7c3d42|feat(instrumento): reconstruye San Andrés desde diccionario V7 (333 preg, 182 reglas)
+2026-06-30|a55f31b|feat(instrumento): reconstruye Buenaventura desde diccionario V7 (379 preg, 182 reglas)
+2026-06-30|a241d65|feat(instrumento): reconstruye Asistencia desde diccionario V8 + manual 14-MU (105 preg, 8 caps)
+2026-06-30|99403cd|feat(marca): renombra APK a "SICAV Móvil" (Sistema de Caracterización a Víctimas - Móvil)
+2026-06-28|bda2278|feat(instrumento): campo "¿cuál?" (especifique) para todas las opciones Otro/Otra
+2026-06-28|28c1d9a|fix(mobile): orden manual (intercala HOGAR/PERSONA), faltan-8 precargadas, autollenar correspondencia
+2026-06-28|37f242f|fix(mobile): cargar TODAS las reglas en el formulario — skip-logic no disparaba
+2026-06-26|290c12d|fix(mobile): no renderizar preguntas precargadas (duplicadas con flujo inicial)
+2026-06-26|240a299|feat(instrumento): corrige skip-logic Territorial vs manual 11-MU + agrega D7
+2026-06-26|87e7174|feat: conformación sin parentesco/género + constancia + étnico por persona
+2026-06-26|7a917b3|feat(mobile): captura grupal — preguntas de persona por pregunta (todos los miembros)
+2026-06-26|7b2aa42|feat(instrumento): capítulo C (Vivienda) completo según manual (Territorial)
+2026-06-26|80c8ffc|feat(instrumento): reconstruir cap A (Identificación) al manual + deps cap B
+2026-06-26|f98745c|feat(mobile): sincronización instantánea al recuperar la red (NetInfo)
+2026-06-26|72f9195|feat(instrumento): flujos skip-logic en TODOS los capítulos (89→179 reglas)
+2026-06-26|490e98d|fix(admin): toggle del sidebar funciona en todas las páginas
+2026-06-26|dba5338|fix(mobile): precarga datos persona sobrevive + login con personas enfocadas
+2026-06-26|38381f1|fix(deploy): sembrar Territorial desde fixture (cargar_perfil), no comando hardcodeado
+2026-06-26|0aff8c6|docs(sprint/informes): sprint 15 + actualización informe junio (trabajo 26-jun)
+2026-06-26|24ed8f4|feat(mobile): nuevas fotos de regiones en el login (comunidades de Colombia)
+2026-06-26|1c339cc|feat(mobile): fondo del buscador de cédulas → caficultor colombiano
+2026-06-26|6999857|fix(instrumento): precarga RUV visible + datos persona desbloqueados + obligatoriedad al manual
+2026-06-24|4c9f6f0|perf(mobile): optimiza fotos del login (PNG 13MB -> JPG 0.7MB, -12MB en APK)
+2026-06-24|14cd101|feat(instrumento): cerrar H5/H6 — GAP del manual 18/18
+2026-06-24|bb194d0|fix(instrumento): recuperar opciones faltantes + obligatoriedad + DT (3 frentes)
+2026-06-24|5117bcb|feat(instrumento): celular = 10 dígitos numéricos (norma formato CO)
+2026-06-24|7258c27|feat(instrumento): alinear flujos al manual oficial + motor cross-capítulo
+2026-06-24|53796a9|feat(instrumento): flujos Fuerza Pública, Uso Territorio, Identificación, Perfil Sociolaboral
+2026-06-24|f46053e|fix(instrumento): truncar no_pregunta a 10 chars (PostgreSQL del servidor)
+2026-06-24|39276f9|feat(instrumento): UUIDs deterministas en Territorial (alinea APK ↔ servidor)
+2026-06-24|5e3afb6|feat(instrumento): flujos Educación, Salud, Rehabilitación, Reunificación (validados)
+2026-06-24|abd3b6e|feat(mobile): motor skip-logic evalúa edad/sexo/etnia/RUV offline (quita limitación)
+2026-06-24|840d362|feat(instrumento): flujos Vivienda + Reunificación + lógica D3 de Retornos (validados)
+2026-06-24|7d88989|feat(instrumento): flujos Datos Básicos (8 reglas validadas) + generador de flujos
+2026-06-24|12c9aba|feat(instrumento): reconstruir Territorial V7 desde el diccionario oficial (268 preguntas)
+2026-06-23|7493396|feat(mobile): hecho victimizante no se pregunta — prellenado desde el RUV
+2026-06-23|df2a1e8|feat(mobile): autocompletar grupo etario + biometría sobrevive al logout
+2026-06-23|36e5c04|fix(instrumento): restaurar orden de capítulos Territorial (Datos básicos 2do)
+2026-06-23|d2e049e|docs(informe): actualizar informe de junio 2026 y estado del proyecto
+2026-06-23|9e33ea6|feat(mobile): nombre del launcher → "Vínculo Colombiano"
+2026-06-23|9e127a4|feat(mobile): login muestra el nombre de la APK "Vínculo Colombiano" + pie institucional
+2026-06-23|23bacc6|docs: informe de arquitectura y estado (brief para claude.ai)
+2026-06-23|455cda3|feat(instrumento): ajustes Territorial V7 — sub-campos condicionales + textos (DATOS)
+2026-06-21|a5b1df7|fix(mobile): auditoria APK #22 — biometria opt-in con consentimiento (oleada 3)
+2026-06-21|b5d8218|fix(mobile): auditoria APK #14 — reconciliacion de cola offline al arrancar (oleada 3)
+2026-06-21|986631f|perf/ux(mobile): auditoria APK #23/#34 + #27 — memo PreguntaItem y badge (oleada 3)
+2026-06-21|80020d4|fix(mobile): auditoria APK #16 — hub caracterizaciones degrada offline (oleada 3)
+2026-06-21|c09fb8e|fix(mobile): auditoria APK #15 — flujo IA conserva hogarId/borradorId (oleada 3)
+2026-06-21|e7bc99a|fix(mobile): auditoria APK #4/#38 — hogar online capturable offline (oleada 3)
+2026-06-21|8c2d543|fix(mobile): auditoria APK #8/#18 — progreso real con skip-logic (oleada 3)
+2026-06-20|f2d36b0|fix(mobile): auditoria APK oleada 2 — motor de formulario, UX, perf y mecanicos
+2026-06-20|9ebdbb5|fix(mobile): auditoria APK oleada 1 — integridad de cola, sync, login y privacidad
+2026-06-20|6567a82|fix(instrumento): orden de capitulos Territorial (Datos basicos 2do) + preguntas de apellido
+2026-06-20|be332b1|fix(mobile): prellenado de datos basicos + hogar fantasma tras borrado
+2026-06-19|b10fe19|fix(mobile): flujo de caracterizacion 100% offline de punta a punta
+2026-06-19|c85cee8|fix(mobile): iniciar caracterizacion offline sin 'no se pudo iniciar la sesion'
+2026-06-19|4a141d2|fix(mobile): encuesta offline — un solo borrador hilado + sin navegar al hub del servidor
+2026-06-19|ad0de2b|style(admin): incrustar el sidebar desde 1024px (estaba sobrepuesto)
+2026-06-19|f8a8abd|style(admin): CSS compacto del panel unfold (se veía muy grande)
+2026-06-19|3f4a5c1|feat(admin): dashboard de inicio con cards KPI + charts + tabla (unfold)
+2026-06-19|09cf226|style(admin): íconos por ítem en sidebar + badges de color en tablas (unfold)
+2026-06-19|63302a4|feat(admin): migrar admin a django-unfold + logo de la Unidad (reemplaza jazzmin)
+2026-06-19|57551c9|refactor(marca): organizar logos institucionales en assets/marca (fuente única)
+2026-06-19|d6edb20|feat(admin): tema moderno Jazzmin + auditoría de seguridad en el admin
+2026-06-19|c51a84c|feat(seguridad): caché Redis + bloqueo de cuenta por intentos fallidos
+2026-06-19|2c30993|fix(seguridad): aplicar realmente Django 5.2.15 + npm audit fix (frontend)
+2026-06-19|7df9ad5|docs(gestion): respuesta al análisis de seguridad (triage hallazgo por hallazgo)
+2026-06-19|f62930b|docs(gestion): acta de constitución del proyecto PRY-0662064 (PETI 2026)
+2026-06-19|7aec504|fix(seguridad): actualizar dependencias vulnerables (informe seguridad 18-jun)
+2026-06-19|811169c|fix(mobile): crear hogar offline aunque estaOnline esté desactualizado (fallback por red)
+2026-06-18|162a034|feat(mobile): indicador "listo para campo" (conexión + datos precargados)
+2026-06-17|5ff7ce6|docs(arquitectura): plan de pre-llenado desde el RUV (no re-preguntar lo conocido)
+2026-06-17|3b0386a|feat(mobile): Fase A — conformar hogar y sesión 100% offline (cola + remapeo de ids)
+2026-06-17|bc5090f|feat(backend): Fase B — padrón offline escalable y descargable (Oracle-ready)
+2026-06-17|7f366d4|feat(mobile): Fase 0 offline — pre-carga al login, búsqueda/selector/cascada offline
+2026-06-17|79480a6|feat(backend): Fase 0 offline — endpoint /precarga/ + refresh token a 7 días
+2026-06-17|b059889|docs(arquitectura): precisar campos del padrón y reconciliación online
+2026-06-17|ae43053|docs(arquitectura): plan de funcionamiento offline con pre-carga al login
+2026-06-17|1ad8018|fix(demo): documentos y nombres demo sin colision con las cedulas del mock
+2026-06-17|88f8efa|fix(backend): validators de hogar usan campos reales del modelo (rol/es_autorizado)
+2026-06-17|afa6db6|fix(backend): idempotencia filtrada por dueño en hogares y sesiones (404 -> 409)
+2026-06-17|3d7f807|fix(backend): ampliar fuente_origen a 20 y agregar choice REGISTRADURIA
+2026-06-17|59f47ab|feat(mobile): logo institucional en el header de todas las secciones
+2026-06-17|7f0c61a|fix(backend): registrar-desde-fuente fallaba con 500 (accion de auditoría > varchar(30))
+2026-06-17|9d2df44|fix(frontend): import del logo del sidebar con case correcto (rompía build en Linux)
+2026-06-17|42900d4|fix(frontend): import del logo del sidebar con case correcto (rompía build en Linux)
+2026-06-17|c68a25f|fix(backend): eliminar deuda de carga de instrumentos (cargan los 7, no 1)
+2026-06-17|2474500|feat(mobile): observaciones APK — vivienda/ocupación/estrato en chips + recordar código
+2026-06-17|c2031a2|feat(mobile): logo institucional en login + ciclo de fondo 5s aleatorio
+2026-06-17|9f45a52|fix(frontend): barras de progreso ya no se desbordan (clamp 0-100 + % redondeado)
+2026-06-16|387162c|docs(frontend): actualizar bitacora dia 15 y estado-actual — Usuarios, Nunito Sans, logos
+2026-06-16|ffbbf2a|fix(sidebar): eliminar linea separadora bajo el logo
+2026-06-16|0a61950|Eliminamos la pildora SRNI · Panel Web
+2026-06-16|e324b57|feat(ui): migrar tipografia a Nunito Sans en todo el proyecto
+2026-06-16|6a58e3f|feat(sidebar): agrandar badge SRNI Panel Web para mejor visibilidad e implementacion del logo Horizontal de la unidad en negativo
+2026-06-16|3f9a10b|feat(login): reemplazar badge GOV.CO por logo institucional y limpiar jerarquia visual
+2026-06-16|fa6dad5|feat(frontend): mejorar pagina de Administracion de usuarios
+2026-06-15|7582425|fix(apk): extraer URL del .apk tolerante al JSON formateado de EAS + script test-paneldata
+2026-06-15|3641653|feat(demo): generador de datos de ejemplo para la presentacion
+2026-06-15|b65b792|docs(correos): ajustar enfoque — OTI (que falta), Brando (lo nuevo en front), directivos (pruebas + usuarios)
+2026-06-15|7d7dd9b|docs(correos): solicitud OTI (URL), credenciales Brando + datos demo, aviso directivos (fase pruebas)
+2026-06-15|41d2949|feat(frontend): pagina de Administracion de usuarios en el panel
+2026-06-15|abf4b5c|feat(apk): script de build+deploy automatizado (Opcion A) + docs
+2026-06-15|8738e4e|fix(despliegue): incluir origen publico (ngrok/dominio) en CORS+CSRF para /admin/
+2026-06-15|751b6d6|docs: credenciales de usuarios de prueba + guia Brando del modulo de usuarios
+2026-06-15|cd124e1|feat(usuarios): modulo de administracion de usuarios (API CRUD, solo admin)
+2026-06-15|1cad25c|feat(movil): control de versiones + descarga auditada de la APK
+2026-06-12|e88ca37|fix(mobile): .npmrc legacy-peer-deps + lockfile sincronizado para EAS Build
+2026-06-12|57959b2|feat(despliegue): infraestructura de despliegue en servidor UARIV + fixes de carga
+2026-06-11|64b5563|docs(frontend): actualizar documentación con arquitectura, code splitting y build guide
+2026-06-11|d20aab7|estilo(frontend): actualiza el color del texto para mejorar la visibilidad en los componentes MainLayout y Sidebar.
+2026-06-10|11cb45e|style(frontend): liquid glass en layout — sidebar/header integrados, dropdown glass azul
+2026-06-10|d756653|feat(frontend): mejora el panel de control con los componentes GlassCard y QuickLink para una interfaz de usuario mejorada.
+2026-06-10|7b65756|style(frontend): login liquid glass — glassmorphism minimalista
+2026-06-10|5a44c2a|eat(frontend): parametricas completas — 3 tabs nuevas (veredas, comunidades negras, resguardos indígenas)
+2026-06-10|64fc1d2|docs(publicacion): política de privacidad + manual de uso para entrega UARIV
+2026-06-10|2428f88|fix(scripts): UTF-8 con BOM en arrancar-*.ps1 para que PS 5.1 muestre acentos
+2026-06-10|1f81b80|docs(auditoria): informe auditoría pre-tiendas 2026-06-10
+2026-06-10|277a6d9|fix(backend): endurecimiento pre-producción (debug, Gemini, hogar idempotente)
+2026-06-10|15dde36|feat(mobile): configuración de builds para tiendas (eas.json + versioning)
+2026-06-10|53cbeb1|fix(mobile): robustez de sincronización + bugs de formulario y estilos
+2026-06-05|e870ff7|docs(frontend): bitácora día 13 + estado-actual actualizado
+2026-06-05|bb66010|test(backend): resucitar suite tras desfase de esquema Sprint 6→7
+2026-06-05|ffc611f|feat(mobile): debounce de respuestas + navegación directa al formulario
+2026-06-05|97d01ca|refactor(caracterizacion): revertir excepción víctima-pruebas → regla universal
+2026-06-05|cd42c6f| fix(reportes): instrumentos del modal de exportación desde API real
+2026-06-05|635cd97|feat(reportes): exportar Excel con formato + modal filtros + fix UI botón + documentacion
+2026-06-03|0ccef19|chore: agregar "type": "module" en package.json
+2026-06-03|7784422| docs(frontend): bitácora día 11 + estado-actual actualizado
+2026-06-03|a327315|feat(perf): code splitting + a11y modal + migración a jsdom
+2026-06-03|c240634|hore: agregar "type": "module" en package.json
+2026-06-03|d6a32bb|fix(a11y): Modal usa aria-labelledby en lugar de aria-label
+2026-06-03|42fe815|feat(perf): code splitting con React.lazy + manualChunks
+2026-06-03|fae8cf1|Arreglados la UI del filtro dropdown de parametricas y actualizamos nuestra documentacion
+2026-06-02|3baac9c|feat(ui): componente Dropdown personalizado + aplicado en 5 páginas
+2026-06-02|5ebbe26|Actualización de documentación del avance del frontend
+2026-06-02|7e1215d|style(ui): nivel 3 — revisión UI completa de las 15 páginas
+2026-06-02|4c4d56d|docs(frontend): actualizar bitácora día 8 + reescribir estado-actual del proyecto
+2026-06-02|128056d|style(ui): mejorar base global y componentes con diseño Apple-style
+2026-06-02|3a5c91a|feat(layout): mover info usuario del sidebar al header con dropdown y bottom sheet mobile
+2026-06-02|0ab2abb|docs(bitacora): registrar progreso día 7 — fase 6 completada + fase 7 parcial
+2026-06-02|6406a66| feat(fase6-7): completar fase 6 + setup testing + correcciones UI
+2026-06-02|2a79c2b|feat(fase6): cambiar contraseña + logout real + dependencias form
+2026-06-02|73f8ed9|feat(auditoria): adaptar página a endpoint real + fix codigo_hogar + fix build TS 5.9
+2026-06-02|6cc970c|docs(informes): scaffold informe junio + cerrar OE1 mayo + limpieza correos
+2026-06-01|5c1f25d|feat(auditoria): endpoint GET /api/auditoria/logs/ + codigo_hogar en serializers
+2026-05-31|0e1ab50|feat(auditoria): vista de logs de acceso + actualización bitácora semanal
+2026-05-31|35cd9bf| docs(bitacora): registrar progreso fases 3-5 (víctimas, supervisión, instrumentos, paramétricas)
+2026-05-31|3a9239b|feat(parametricas): mapa de departamentos + filtros mejorados en todas las tabs
+2026-05-31|2ff8687|feat(instrumentos): vista de instrumentos con árbol de capítulos y preguntas
+2026-05-31|905949c| feat(victimas): mejorar página de búsqueda — tarjetas info, recientes, resultado enriquecido
+2026-05-31|9f7f49e|feat(supervision): panel de supervisión con gráficas — Fase 4
+2026-05-31|3f46c92|feat(victimas): búsqueda de víctimas + vista detalle — Fase 3
+2026-05-31|2f0f7ef|Actualizamos nuestra documentacion del frontend
+2026-05-31|723973c|refactor(layout): extraer Sidebar a componente independiente
+2026-05-31|6d9e15d|refactor(pages): integrar componentes UI reutilizables en las 6 páginas existentes
+2026-05-31|7cba112|feat(ui): crear 8 componentes reutilizables — Button, Input, Select, Modal, Card, Alert, Breadcrumb, Table
+2026-05-29|a6f05e9|feat(encuestas): vista detalle sesión + tabla interactiva con filas clickeables
+2026-05-29|11569df|feat(hogares): vista detalle + tabla interactiva con filas clickeables   - Crear HogarDetalle.tsx: cards info (estado, miembros, municipio, fecha),     datos del hogar (vivienda, ocupación, estrato), tabla de miembros con     badge "Autorizado", tabla de sesiones clickeables a /encuestas/:id   - Tabla Hogares: filas clickeables a /hogares/:id + botón "Ver detalle"   - Actualizar tipos en hogares.ts con campos reales del serializer backend   - Agregar ruta /hogares/:id en App.tsx   - Pendiente: pedir a Javier agregar codigo_hogar al serializer
+2026-05-29|979029b|feat(ui): agregamos  el componente PageHeader para mejorar la presentación de encabezados en las páginas Encuestas, Hogares y Reportes.
+2026-05-29|cf4054d|feat(ui): implementa el componente paginación para una navegación consistente en las páginas Encuestas, Hogares y Reportes.
+2026-05-29|6cc2a62|feat(ui): agrega el componente EmptyState para mejorar la retroalimentación del usuario en las páginas Encuestas, Hogares y Reportes.
+2026-05-29|0e90fc1|feat(ui): implementamos el componente Badge para indicadores de estado consistentes en las páginas de Encuestas, Hogares y Reportes.
+2026-05-29|1f38b45|feat(ui): agregamos el  componente Spinner para indicadores de carga;  para reemplazar el spinner en línea en RequireAuth
+2026-05-29|26c0f88|Creamos la pagina 404 y componente ErrorBoundary; integrar notificaciones emergentes para errores de API; actualizar dependencias
+2026-05-29|fd55ae7|feat(busqueda): mostrar 'Nueva caracterización' si víctima ya tiene hogar
+2026-05-29|3ce89ba|feat(encuestas): 1 hogar → 1 caracterización (excepto víctima de pruebas)
+2026-05-29|44471fd|fix(hogares): aplicar idempotencia SIEMPRE — 1 víctima → 1 hogar → N sesiones
+2026-05-29|b41290c|feat(hogares): bypass 'una víctima un hogar' para usuarios admin (rol pruebas)
+2026-05-29|5e25a8e|fix(hogares): validar una víctima → un hogar (idempotente) + limpieza
+2026-05-29|1361913|fix(ui): display progreso cap + botón Anular + limpiar referencias PAARI
+2026-05-29|8005dae|fix(uuid): fallback Math.random en Hermes (no tiene crypto global)
+2026-05-29|70d6101|debug(formulario/cap): logs detallados para diagnosticar borrador no creado
+2026-05-29|2248f67|fix(formulario/index): forzar perfil activo + logs para debug del progreso
+2026-05-29|1858319|fix(formulario/index): refrescar progreso al volver con useFocusEffect
+2026-05-29|258c347|fix(formulario/index): contar obligatorias PERSONA × N miembros
+2026-05-29|3ac62f3|fix(formulario/index): diferenciación visual clara de capítulos completos vs incompletos
+2026-05-29|0d37b4e|fix(formulario): nav explícita + UX opciones tipo tarjeta tocable
+2026-05-28|de72857|chore: restaurar nombre README.md en informe Mayo
+2026-05-28|9dc2df0|docs(informe-mayo): + Actividad y Evidencia por cada OE + archivo copia-pega
+2026-05-28|7d1a6b9|docs(informe-mayo): + EXTRAS actividades por fuera del cronograma
+2026-05-28|6462314|docs(informe-mayo): carpeta organizada por las 9 obligaciones del contrato
+2026-05-27|5a1ef49|Implementacion de un diseño adaptable para MainLayout y Dashboard, corregir la carga del perfil de usuario al actualizar.
+2026-05-27|d4877a9|Refactorice MainLayout para implementar navegación responsive en la barra lateral y el cajón
+2026-05-27|9f9a0d6|Se crea el favicon de nuestra pagina
+2026-05-27|fda45c6|Documentacion frontend
+2026-05-27|7aaeca3|Refactorizar la estructura del código para mejorar su legibilidad y mantenibilidad.
+2026-05-26|81a9e00|chore: limpiar working tree — gitignore + migración 0004 + package-lock
+2026-05-26|0aa818d|docs: correo único para Brando (reemplaza sprint20+sprint21)
+2026-05-26|db71a73|docs(sprint21): correo de cierre para Brando con cambios del modelo
+2026-05-26|eab3075|fix(sprint21-D): calendario en agregar miembro y búsqueda RNI
+2026-05-26|be8755e|feat(sprint21-F): wizard por miembro con botones Anterior/Siguiente
+2026-05-26|e847990|feat(sprint21-E): headers del formulario muestran nombre del miembro
+2026-05-26|fb75ca2|feat(sprint21-D): SelectorFecha con calendario nativo en preguntas FECHA
+2026-05-26|82e8318|feat(sprint21-C): motor formulario muestra preguntas PERSONA por miembro
+2026-05-26|c9248da|feat(sprint21-B): mobile DAO + cola con miembro_id (preguntas PERSONA)
+2026-05-26|1be5470|feat(sprint21-A): RespuestaEncuesta.miembro + validación HOGAR/PERSONA
+2026-05-26|4a0130b|feat(sprint20-QA-B): render COMBO_DINAMICO con SelectorMunicipio (DIVIPOLA)
+2026-05-26|53807e3|fix(sprint20-QA): cargar cap T en TERRITORIAL+TELEFONICO + reporte QA
+2026-05-26|771761e|fix(sprint20): nombres descriptivos para los 8 instrumentos
+2026-05-26|6af612e|docs(sprint20): correo a Brando + mapa estado actual del proyecto
+2026-05-26|74e8ca0|feat(sprint20): backend habilitador panel web (aliases + fix Usuario)
+2026-05-26|2794ff5|feat(sprint19-E): desactivar 4 preguntas obsoletas + regenerar 8 bundles
+2026-05-26|094242f|feat(sprint19-D): pantalla mobile ubicacion-atencion con cascada UARIV
+2026-05-26|7f51ff2|feat(sprint19-C): cascada DT->Depto/Punto/Mun via filtros existentes
+2026-05-26|a0e2d7e|feat(sprint19-B): 4 FKs de ubicación de atención en SesionEncuesta
+2026-05-26|7aa7940|feat(sprint19-A): puntos de atención placeholder (2 por DT)
+2026-05-26|e88e2ed|feat(sprint19-A): cargar 21 DTs UARIV + 1102 municipios DANE
+2026-05-26|d289a7c|fix(sprint18-G): redactar PII en logs remotos del interceptor axios
+2026-05-26|e820e32|chore(sprint18-F): migration V4 drop tablas de instrumento obsoletas
+2026-05-26|d5295db|chore(sprint18-E): eliminar codigo muerto de descarga de instrumentos
+2026-05-26|7429777|refactor(sprint18-D): pantallas IA leen instrumentos desde memoria
+2026-05-26|31d3477|fix(sprint18-C): un solo perfil en memoria, libera el anterior al cambiar
+2026-05-26|478b305|fix(sprint18-B): instrumento_codigo de la sesion es autoridad unica
+2026-05-26|9feddf8|fix(sprint18-A): desconectar descargarInstrumento del syncStore polling
+2026-05-26|e8b1ef6|feat(sprint18-F1B): instrumentos en memoria, no SQLite - fin del 'database is locked'
+2026-05-26|f71fb1c|fix(sprint18): SQLite database is locked - busy_timeout + mutex global guardar
+2026-05-26|2f6811f|feat(sprint18-F1): arquitectura offline-first - instrumentos bundled en APK
+2026-05-26|a1c976f|fix(sprint17): SQLite database is locked - mutex + reescritura limpia guardar
+2026-05-26|44cd5eb|debug(sprint17): logs granulares en descarga + guardado SQLite
+2026-05-26|b515004|feat(sprint17): logger remoto activo + fix descarga cuando instrumento cambia
+2026-05-26|8cd4a3e|fix(sprint17): descarga de instrumento - campos backend correctos + auto-recuperacion
+2026-05-26|837519b|feat(sprint17): sistema de captura de errores movil (ErrorBoundary + endpoint debug)
+2026-05-26|b1d2fc9|fix(sprint17/qa): repara detalle de hogar con sesiones + mensajes de error claros
+2026-05-26|f967fb1|fix(sprint17): hogares no aparecian en pantalla index — fetch incondicional + useFocusEffect
+2026-05-26|b65188a|feat(sprint17): miga de pan + back navegación coherente en flujo móvil
+2026-05-26|890eb83|fix(sprint17): continuar formulario sin instrumento + comando limpiar BD
+2026-05-26|9525ee1|fix(sprint17): formato LISTA_MULTIPLE y BOOLEAN alineado con backend + UX
+2026-05-26|7001b7e|fix(sprint17): bug critico SQLite NPE + quitar selector instrumento de busqueda
+2026-05-25|6d2a044|fix(sprint17): bugs criticos sincronizacion offline + multi-instrumento
+2026-05-25|dac0dfe|feat(sprint17): cargar 8o instrumento VICTIMAS_EXTERIOR + validacion E2E completa
+2026-05-25|7483184|test(sprint17): validacion E2E backend - 7 instrumentos con 0 bugs
+2026-05-25|b187b3b|fix(sprint16): cargar opciones oficiales UARIV en las 34 preguntas LISTA vacias
+2026-05-25|b4b5c62|fix(sprint16): bug Instrumento.perfil y limpieza de busqueda al volver
+2026-05-25|27dbe60|chore(sprint15): cargar los 7 instrumentos + scripts de arranque PowerShell
+2026-05-25|908dc4b|feat(sprint14): flujo movil cosido - hub de caracterizaciones por hogar
+2026-05-25|f442e1f|feat(sprint13): backend habilitador panel web — filtros, supervisor, dashboard, cursor
+2026-05-25|f6902e7|docs(sprint12): documentar panel web React + modelo Hogar v2 y limpiar raiz
+2026-05-22|bdffdca|feat(sprint12): scaffold frontend React + rol miembro en conformar hogar
+2026-05-22|88d7195|feat(sprint12): panel web scaffold + flujo conformar hogar mobile
+2026-05-22|eeb3737|feat(sprint12): flujo autorizado + modelo miembro v2
+2026-05-21|c644593|docs: actualizar api-endpoints y estado-actual hasta Sprint 11
+2026-05-21|189afa2|docs(sprints): documentar Sprints 8-11 en docs/sprints/
+2026-05-21|5ff906b|feat(sprint11): security hardening — throttling, AST eval, input limits, CSP/Nginx
+2026-05-21|9373d0b|feat(sprint10): reportes de producción — backend + pantalla móvil
+2026-05-21|6648be8|feat(sprint9): sincronización masiva robusta — backoff, RESPONDER_BULK, polling y pantalla de cola
+2026-05-21|2c5230c|feat(sprint8): motor de formulario end-to-end — carga previa, validación, bulk sync y progreso real
+2026-05-21|4742167|feat(sprint7): UX rediseño login + búsqueda + flujo caracterización completo
+2026-05-08|e599986|fix(sprint7/mobile): corregir bug — no finalizar sesión al guardar un capítulo
+2026-05-08|6259b08|feat(sprint7/mobile): botón y modal de finalizar sesión desde la lista de capítulos
+2026-05-08|c8d9d37|feat(sprint7): modo Gemini batch — grabacion-entrevista + revision-ia + endpoint procesar-entrevista
+2026-05-07|414e587|docs(sprint7): sprint-07.md + estado-actual móvil + api-endpoints actualizado
+2026-05-07|0266f66|feat(formulario/sprint7): loader data-driven + catálogo opciones compartidas + fixture TERRITORIAL
+2026-05-04|caa8e59|feat(mobile/sprint7): migrar a UUIDs, skip logic V8 y flujo sesión→formulario
+2026-05-04|31b82ba|fix(backend): migrar tests y código al modelo Sprint 6 (Diccionario V8)
+2026-05-04|3c67dc1|docs: documentación completa + tab Caracterizar — cierre Sprint 6
+2026-04-28|06376de|docs: simplificar guía de arranque — solo comandos del usuario
+2026-04-28|ad2ce0b|docs: guía de arranque paso a paso para entorno de desarrollo (PowerShell)
+2026-04-28|768fa3d|refactor(mobile): limpiar comentarios de proceso y console.error en producción
+2026-04-28|f06e694|fix(mobile): GovHeader en sesión + miga de pan + sesionId vinculado al formulario
+2026-04-28|10d98c8|docs(sprint6): marcar sprint 6 completado — 6/6 loaders listos
+2026-04-28|046b356|feat(formulario): loaders Urbano Étnico V1 y Rural Étnico V1 — sprint6 completo
+2026-04-28|8bace02|feat(formulario): cargar Perfil Telefónico SAAH V8 — 7 caps, 54 preguntas
+2026-04-28|0453bf4|feat(sprint6): loader SAI V7 + estructura docs/ para agente documentador
+2026-04-28|dd91ee6|feat(formulario): cargar Perfil Buenaventura V7 completo — 17 caps, ~300 preguntas
+2026-04-28|0fa48ed|feat(formulario): cargar Perfil Territorial V7 completo — 14 caps, 248 preguntas
+2026-04-21|5f38078|feat(sprint6): alinear modelo con diccionario V8 + validadores hogar
+2026-04-21|c8b7cd7|docs(claude): actualizar contexto — sprints completados, remotes Azure/GitHub, estructura real
+2026-04-19|11ee14a|fix(mobile): corrige barra de tabs — íconos, labels y rutas ocultas
+2026-04-19|4bf168a|feat(mobile): rediseño UI estilo GOV.CO institucional
+2026-04-19|13fb285|chore(dev): ngrok dominios permanentes + actualización paquetes Expo
+2026-04-19|082cc13|fix(dev): ngrok para celular físico + label login simplificado
+2026-04-19|0624d94|fix(mobile): corregir Render Error — reemplazar navegación imperativa con <Redirect />
+2026-04-19|530b5dd|fix(mobile): evitar navegación antes del mount del Stack (Render Error)
+2026-04-19|2abf579|feat(sprint5): integración IA Gemini — proxy backend, consentimiento y asistente de voz
+2026-04-19|6a66d64|feat(sprint4): motor offline completo con sincronización automática
+2026-04-16|ec50cb3|feat(sprint3): hogares, encuestas y pantallas móviles
+2026-04-16|f47e74a|Added README.md
+2026-04-13|12c7d7b|feat(sprint2): paramétricas, motor de formularios y víctimas con PII cifrado
+2026-04-13|b08bc47|chore: initial commit — SRNI backend Sprint 1 + mobile scaffold
