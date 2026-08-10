@@ -14,9 +14,7 @@ escrita.
 `dictaminar` es pura a propósito: se prueba sin Oracle, que es justo lo que hace
 falta cuando la base no responde (que fue el caso el día que se escribió esto).
 """
-from apps.sincronizacion.management.commands.diagnosticar_encuesta_legacy import (
-    dictaminar,
-)
+from apps.sincronizacion.oracle.diagnostico import dictaminar
 
 
 def _medido(**kw):
@@ -150,6 +148,58 @@ def test_el_id_de_usuario_que_no_cruza_se_reporta_aparte():
     d = _medido(id_usuario_en_catalogo=False, id_usuario=999999)
     assert any("999999" in c and "productividad" in c for c in d["carencias"])
     assert not any("INNER JOIN" in c for c in d["carencias"])
+
+
+def test_archivado_con_un_estado_que_los_reportes_no_filtran():
+    """
+    `CERRADA_APP_MOVIL`: terminado, con sus respuestas en la tabla definitiva, y
+    aun así fuera de todo reporte porque `PKG_REPORTE_CARACTERIZACION` busca el
+    literal 'CERRADA'. Medido el 3-ago: **111 hogares** están así y los 111
+    tienen respuestas archivadas.
+
+    No puede salir como 'REVISAR': la diferencia entre este veredicto y
+    `NO_CERRO_POR_CAPITULOS` es si hay que volver a la vereda o basta con
+    reconocer un literal.
+    """
+    d = _medido(estado="CERRADA_APP_MOVIL", en_trabajo=0, definitivas=295)
+    assert d["veredicto"] == "ARCHIVADO_FUERA_DE_REPORTES"
+    assert "NO hay que repetirlo" in d["explicacion"]
+
+
+def test_el_typo_del_estado_tambien_cae_en_esa_categoria():
+    """`MIGRADOHISTORICO` — una letra menos, un hogar fuera de todos los conteos."""
+    d = _medido(estado="MIGRADOHISTORICO", en_trabajo=0, definitivas=210)
+    assert d["veredicto"] == "ARCHIVADO_FUERA_DE_REPORTES"
+
+
+def test_un_hogar_anulado_no_se_presenta_como_trabajo_recuperable():
+    """
+    Un hogar anulado con respuestas archivadas caía en
+    `ARCHIVADO_FUERA_DE_REPORTES`, cuyo texto dice "está completo, NO hay que
+    repetirlo, solo le sobra un literal". Sobre un hogar que el propio
+    encuestador anuló, eso es falso — y creíble, que es lo peor.
+
+    Medido al importar los 1.148 encuestadores: **3.284 hogares** estaban
+    recibiendo esa afirmación.
+    """
+    d = _medido(estado="ANULADA", en_trabajo=0, definitivas=180)
+    assert d["veredicto"] == "ANULADA"
+    assert "no es trabajo perdido" in d["explicacion"]
+
+
+def test_anulada_gana_sobre_cualquier_otra_lectura():
+    """Anulada con respuestas a medias sigue siendo anulada, no 'sin cerrar'."""
+    for kw in (dict(en_trabajo=40, definitivas=0, capitulos=2),
+               dict(en_trabajo=0, definitivas=0, capitulos=0),
+               dict(en_trabajo=40, definitivas=0, capitulos=9)):
+        assert _medido(estado="ANULADA", **kw)["veredicto"] == "ANULADA"
+
+
+def test_el_estado_ERROR_dice_que_no_hay_nada_que_rescatar():
+    """8.979 hogares y CERO con respuestas archivadas: medido, no supuesto."""
+    d = _medido(estado="ERROR", en_trabajo=0, definitivas=0, capitulos=0)
+    assert d["veredicto"] == "MARCADA_ERROR"
+    assert "no hay dato que rescatar" in d["explicacion"]
 
 
 def test_un_dict_parcial_no_revienta():

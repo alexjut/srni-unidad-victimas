@@ -1,0 +1,105 @@
+EVIDENCIA — Cifrado de datos personales (PII) en SICAV
+Extraido del codigo fuente del proyecto. Ley 1581/2012 y CONPES 3995.
+
+=== 1. Implementacion del campo cifrado (apps/victimas/fields.py) ===
+"""
+Campo de cifrado simétrico para PII.
+Usa Fernet (AES-128-CBC + HMAC-SHA256) de la librería cryptography.
+La clave de 32 bytes base64 se lee desde settings.FIELD_ENCRYPTION_KEY.
+"""
+import base64
+import hashlib
+from django.db import models
+from django.conf import settings
+from cryptography.fernet import Fernet, InvalidToken
+
+
+def _get_fernet():
+    raw_key = getattr(settings, 'FIELD_ENCRYPTION_KEY', '')
+    if not raw_key:
+        raise ValueError(
+            'FIELD_ENCRYPTION_KEY no está configurado. '
+            'Añade la variable al .env antes de guardar datos cifrados.'
+        )
+    # La clave puede ser un string base64 de 32 bytes o una Fernet key de 44 chars.
+    key_bytes = raw_key.encode() if isinstance(raw_key, str) else raw_key
+    # Fernet requiere exactamente 32 bytes codificados en base64url (44 chars).
+    # Si el usuario proveyó 32 bytes planos en base64, los usamos directamente.
+    try:
+        decoded = base64.urlsafe_b64decode(key_bytes + b'==')
+        if len(decoded) == 32:
+            fernet_key = base64.urlsafe_b64encode(decoded)
+        else:
+            fernet_key = key_bytes
+    except Exception:
+        fernet_key = key_bytes
+    return Fernet(fernet_key)
+
+
+def encrypt_value(plaintext: str) -> str:
+    """Cifra un string y devuelve el token Fernet como string."""
+    if not plaintext:
+        return plaintext
+    fernet = _get_fernet()
+    return fernet.encrypt(plaintext.encode('utf-8')).decode('utf-8')
+
+
+def decrypt_value(ciphertext: str) -> str:
+    """Descifra un token Fernet y devuelve el plaintext."""
+    if not ciphertext:
+        return ciphertext
+    fernet = _get_fernet()
+    try:
+        return fernet.decrypt(ciphertext.encode('utf-8')).decode('utf-8')
+    except InvalidToken:
+        # Si no se puede descifrar, devuelve el valor tal cual
+        # (p.ej. en migraciones en blanco o datos legacy).
+        return ciphertext
+
+
+
+=== 2. Campos de Victima que van cifrados ===
+118:    numero_documento = EncryptedField()
+139:    primer_nombre = EncryptedField()
+140:    segundo_nombre = EncryptedField(blank=True, default='')
+141:    primer_apellido = EncryptedField()
+142:    segundo_apellido = EncryptedField(blank=True, default='')
+145:    fecha_nacimiento = EncryptedField()
+553:    numero_documento = EncryptedField()
+562:    primer_nombre = EncryptedField(blank=True, default='')
+563:    segundo_nombre = EncryptedField(blank=True, default='')
+564:    primer_apellido = EncryptedField(blank=True, default='')
+565:    segundo_apellido = EncryptedField(blank=True, default='')
+
+=== 3. Busqueda sin descifrar: hash SHA-256 del documento ===
+36:    El campo numero_documento_hash permite buscar por documento
+110:    # personas se encuentran por `numero_documento_hash_sin_tipo`, con aviso al
+120:    numero_documento_hash = models.CharField(max_length=64, db_index=True)
+132:    numero_documento_hash_sin_tipo = models.CharField(
+201:            models.Index(fields=['numero_documento_hash', 'tipo_documento']),
+224:            self.numero_documento_hash = doc_hash(tipo, str(self.numero_documento))
+
+=== 4. Registro de auditoria de accesos (apps/auditoria) ===
+6:class LogAcceso(models.Model):
+7-    """
+8-    Registro de auditoría INMUTABLE.
+9-
+10-    Reglas de inmutabilidad:
+11-    - No se puede llamar .save() en un registro existente
+12-    - No se puede llamar .delete()
+13-    - Solo se crea vía el método de clase LogAcceso.registrar()
+14-    - A nivel de BD, el usuario de la app no tiene permisos UPDATE/DELETE sobre esta tabla
+15-
+16-    Cumple con el requisito de trazabilidad de la Ley 1581 de 2012.
+17-    """
+18-    ACCIONES = [
+19-        ('LOGIN', 'Inicio de sesión'),
+20-        ('LOGOUT', 'Cierre de sesión'),
+21-        ('LOGIN_FALLIDO', 'Intento de login fallido'),
+22-        ('BUSQUEDA_RNI', 'Búsqueda en el RNI'),
+23-        ('VER_VICTIMA', 'Vista de datos de víctima'),
+24-        ('CREAR_HOGAR', 'Creación de hogar'),
+25-        ('AGREGAR_MIEMBRO', 'Miembro agregado al hogar'),
+26-        ('SUBIR_CONSTANCIA', 'Constancia de tutor/cuidador subida'),
+27-        ('RESPONDER_PREGUNTA', 'Respuesta a pregunta'),
+28-        ('FINALIZAR_ENCUESTA', 'Encuesta finalizada'),

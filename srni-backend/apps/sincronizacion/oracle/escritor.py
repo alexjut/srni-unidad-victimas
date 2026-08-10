@@ -31,6 +31,7 @@ DRY-RUN por defecto: no conecta, no ejecuta; registra el bloque PL/SQL exacto y
 el payload redactado por cada paso. `confirmar=True` (+ destino explícito) es la
 ÚNICA vía que abre conexión y escribe — y requiere aprobación de Javier.
 """
+import logging
 from dataclasses import dataclass, field
 
 from apps.sincronizacion.models import (
@@ -38,6 +39,8 @@ from apps.sincronizacion.models import (
 )
 from . import procedimientos as P
 from . import verificacion as V
+
+log = logging.getLogger(__name__)
 from . import mapeo
 from .conexion import abrir_conexion
 
@@ -382,6 +385,44 @@ class EscritorOracle:
         return ResultadoPaso(PasoEscritura.VALIDADOR, str(origen), estado,
                              res.bloque, detalle)
 
+    def _asegurar_hechos(self, miembro) -> None:
+        """
+        Trae del RUV los hechos de este miembro, si no los tiene ya.
+
+        Nunca interrumpe la escritura. Un fallo trayendo hechos deja a la
+        persona sin sus validadores 101..114 —que es donde estábamos antes de
+        tener esto— pero no puede tumbar el hogar entero, que es dato capturado
+        en campo y cuesta mucho más.
+
+        En DRY-RUN lee pero **no guarda**: el ensayo no deja rastro en ninguna de
+        las dos bases. Como efecto, en DRY-RUN el paso HECHO sigue viendo la
+        lista vacía; lo que se traería queda en el log.
+        """
+        from . import hechos_ruv
+
+        victima = getattr(miembro, "victima", None)
+        if victima is None:
+            return
+        try:
+            res = hechos_ruv.sincronizar_hechos(
+                victima, self._cursor, estricto=False, guardar=self.confirmar,
+            )
+        except Exception as exc:                      # noqa: BLE001
+            log.warning("no se pudieron traer los hechos del RUV: %s", exc)
+            return
+        if res.es_ambigua:
+            log.warning(
+                "hechos del RUV NO traídos: el documento resuelve a %d personas. "
+                "No se elige una: %s", res.personas_ruv, res,
+            )
+        elif res.sin_catalogo:
+            log.warning(
+                "el RUV trajo códigos que no están en CatalogoHechoVictimizante "
+                "(¿falta cargar el fixture?): %s", ", ".join(res.sin_catalogo),
+            )
+        elif res.creados:
+            log.info("hechos traídos del RUV: %s", res)
+
     def paso_hecho(self, hogar, miembro, hecho, *, hog_codigo, per_idpersona) -> ResultadoPaso:
         """
         UN hecho victimizante de la persona → validador 101..114.
@@ -609,6 +650,11 @@ class EscritorOracle:
                 self.paso_validador(hogar, miembro, hog_codigo=hog_codigo,
                                     per_idpersona=per_id)
             )
+            # Los hechos no están en SICAV hasta que alguien los trae del RUV:
+            # `cargar_padron_oracle` nunca los seleccionó. Se traen ACÁ, con el
+            # cursor que ya está abierto contra ENTREVISTARN —que es desde donde
+            # sale el dblink CONSULTARUV—, justo antes de necesitarlos.
+            self._asegurar_hechos(miembro)
             for hecho in mapeo.hechos_de_miembro(miembro):
                 rh.pasos.append(
                     self.paso_hecho(hogar, miembro, hecho, hog_codigo=hog_codigo,

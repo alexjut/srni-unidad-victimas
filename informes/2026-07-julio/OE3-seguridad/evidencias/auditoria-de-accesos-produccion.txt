@@ -1,0 +1,17 @@
+EVIDENCIA — Estructura y contenido de la base de datos de SICAV
+Generado desde el contenedor de produccion (cz_backend), solo lectura.
+
+==========================================================================
+6. Auditoria de accesos registrada
+==========================================================================
+ACCION                                REGISTROS
+RESPONDER_PREGUNTA                          701
+CONSULTA_FUENTE_EXTERNA                     179
+DESCARGA_APK                                170
+REGISTRAR_VICTIMA_FUENTE_EXTERNA            100
+PRECARGA_OFFLINE                             55
+BUSQUEDA_RNI                                 31
+CREAR_HOGAR                                  17
+AGREGAR_MIEMBRO                              14
+FINALIZAR_ENCUESTA                            4
+VER_VICTIMA                                   1

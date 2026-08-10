@@ -151,19 +151,62 @@ def homologar_etnia(valor):
 
 
 # ── género ───────────────────────────────────────────────────────────────────
-# Medido: Mujer 3.885.620 · Hombre 3.882.341 · NULL 2.133.894 · No Informa 57.964
-# · LGBTI 1.684.
-_GENERO = {"mujer": "F", "hombre": "M", "no informa": "ND"}
+# Medido en `M_CARACT_TABLA_RA_PER`: Mujer 3.885.620 · Hombre 3.882.341 ·
+# NULL 2.133.894 · No Informa 57.964 · LGBTI 1.684.
+#
+# Medido en el UNIVERSO (`TEMP_UNIV_VICT_PER_MI010726ALL`, 5-ago-2026, sobre
+# 1.172.594 filas cargadas) — es un vocabulario **más ancho**:
+#     Hombre 50,010 % · Mujer 49,890 % · LGBTI 0,068 % ·
+#     No Informa 0,026 % · Intersexual 0,006 %
+# Los que no son Hombre/Mujer proyectan a ~12.448 personas sobre los 12,5 M.
+_GENERO = {
+    "mujer": "F",
+    "hombre": "M",
+    "no informa": "ND",
+    # Los dos que el catálogo de SICAV no puede representar. Van explícitos —y
+    # no por el default— para que se vea que la decisión se tomó, y para que un
+    # valor NUEVO de la fuente no se confunda con estos.
+    "lgbti": "ND",
+    "intersexual": "ND",
+}
+
+#: Valores que se homologan **perdiendo precisión**, con la razón. Se listan
+#: aparte para poder informarlo en cada corrida, igual que
+#: `HECHO_VICTIMIZANTE_APROXIMADO`: una pérdida que solo vive en un comentario
+#: es una pérdida que nadie vuelve a mirar.
+GENERO_APROXIMADO = {
+    "lgbti": "LGBTI describe orientación o identidad de forma agregada, no un "
+             "género. Asumir que esas personas son no binarias les atribuiría "
+             "una identidad que no declararon; ND dice lo que sí es cierto: el "
+             "dato que tenemos no responde a esta pregunta.",
+    "intersexual": "Intersexual es una condición biológica, no una identidad de "
+                   "género. Mapearla a NB (no binario) afirmaría algo que la "
+                   "persona no declaró. El catálogo M/F/NB/ND no la puede "
+                   "representar; el valor real se conserva en el universo.",
+}
+
+
+def genero_es_conocido(valor) -> bool:
+    """
+    ¿Este valor está contemplado, o cae al default sin que nadie se entere?
+
+    Existe porque `homologar_genero` devuelve `ND` para cualquier cosa que no
+    reconozca. Eso está bien como comportamiento —nunca inventa un género— pero
+    si el RUV agrega un valor mañana, se lo tragaría en silencio. Con esto la
+    carga puede avisar en vez de perderlo.
+    """
+    texto = _norm(valor)
+    return (not texto) or texto == "none" or texto in _GENERO
 
 
 def homologar_genero(valor):
     """
     GENERO_HOM → M/F/NB/ND.
 
-    "LGBTI" (1.684 personas) se homologa a **ND (no declara)**, no a NB (no binario).
-    LGBTI describe orientación o identidad de forma agregada; asumir que esas personas
-    son no binarias sería atribuirles una identidad que no declararon. ND dice la
-    verdad: el dato que tenemos no responde a esta pregunta.
+    **Nunca inventa un género**: lo que no se reconoce cae a `ND`, que es la
+    verdad —no sabemos— y no una afirmación falsa. Para saber si un valor cayó
+    ahí por decisión o por desconocimiento, ver `genero_es_conocido` y
+    `GENERO_APROXIMADO`.
     """
     texto = _norm(valor)
     if not texto or texto == "none":
@@ -263,7 +306,72 @@ def es_victima(valor) -> bool:
 #
 # ⇒ con la regla de 2 años, **1.936.352 personas (58,2 %) están vencidas** y deberían
 # recaracterizarse. Ese es el trabajo pendiente que el sistema tiene que poder señalar.
+#
+# ─── LA REGLA ES REAL. NO SE DEROGA. ─────────────────────────────────────────
+# Confirmado por Javier el 5-ago-2026, a raíz de un análisis que la había marcado
+# como "sin fuente citada" por no encontrarla en los manuales 11-MU / 14-MU.
+# **Esa observación era incorrecta y queda anulada acá**, porque una nota que dice
+# que un control no tiene respaldo es una invitación a quitarlo.
+#
+# Cómo se aplica:
+#   · RUTA GENERAL  → la regla SE RESPETA. Es el caso por defecto.
+#   · Las otras tres rutas (acciones constitucionales, modificación de núcleo,
+#     especial) → la OMITEN, según el Manual §5.1.1 pág. 22.
+#     Ver `RUTAS_QUE_OMITEN_VIGENCIA` abajo.
+#
+# ─── De dónde salen las fechas que la sustentan ──────────────────────────────
+# La fuente autoritativa de la vigencia es `TEMP_UNIV_VICT_CONTING`, que trae
+# `ENTRE_FICHA_VIGENTE`, `FECHA_CREACION` e `ID_ENTREVISTA` — o sea, la vigencia
+# **dicha por la fuente**, no calculada por nosotros.
+#
+# Mientras no tengamos acceso a esa tabla (probado el 5-ago: `ORA-00942` por
+# acceso directo y por los 22 dblinks), la vigencia se calcula acá con
+# `fecha_ult_caracterizacion`, que viene del legado vía
+# `cargar_fechas_caracterizacion`. El cálculo es un **sustituto**, no la fuente:
+# cuando la tabla esté disponible, la fecha debe salir de ahí y este cálculo pasa
+# a ser el respaldo para quien no figure en ella.
 ANIOS_VIGENCIA_CARACTERIZACION = 2
+
+# ── Rutas de entrevista que OMITEN la regla de vigencia ──────────────────────
+#
+# Manual de usuario UARIV, §5.1.1 «Posibles rutas» (pág. 22), textual:
+#
+#   · Ruta general: «entran todos los casos que no presentan ficha vigente, por
+#     lo cual, en este caso SE RESPETA la regla de vigencia».
+#   · Ruta Acciones Constitucionales: «ingresan todos los casos que lleguen por
+#     el canal de Acciones constitucionales, por ejemplo: fallos, tutelas, Autos
+#     de seguimiento […] y que al momento de proceder con la formulación de
+#     entrevistas se evidencia una ficha de caracterización vigente, por lo cual,
+#     se deberá OMITIR la regla de vigencia».
+#   · Ruta modificación núcleo familiar: ficha vigente pero «existen diferencias
+#     en su conformación, por lo cual, se deberá OMITIR la regla de vigencia».
+#   · Ruta especial: «casos que por su naturaleza deben ser tramitados, pero
+#     cuentan con una ficha de caracterización vigente […] se deberá OMITIR».
+#
+# ⚠️ Son TRES las rutas que omiten, no una. Antes de esto, las cuatro eran una
+# etiqueta en `SesionEncuesta` y ninguna omitía nada: una tutela no habilitaba
+# absolutamente nada, que es lo contrario de para lo que existe la ruta.
+RUTAS_QUE_OMITEN_VIGENCIA = frozenset({
+    'ACCIONES_CONSTITUCIONALES',
+    'MODIFICACION_NUCLEO',
+    'ESPECIAL',
+})
+
+#: Ruta que respeta la vigencia. Es el default, y el manual además indica que en
+#: jornadas de caracterización «se debe seleccionar RUTA GENERAL» salvo la que
+#: hace la Unidad por solicitud de atención humanitaria.
+RUTA_GENERAL = 'GENERAL'
+
+
+def ruta_omite_vigencia(ruta) -> bool:
+    """
+    ¿Esta ruta permite caracterizar a alguien con ficha vigente?
+
+    Solo levanta la **vigencia**. Una persona excluida del RUV sigue sin ser
+    elegible por ninguna ruta: el manual prevé la excepción para fichas
+    vigentes, no para revertir una decisión del RUV.
+    """
+    return (ruta or '').strip().upper() in RUTAS_QUE_OMITEN_VIGENCIA
 
 
 def debe_recaracterizarse(fecha_ult_caracterizacion, hoy=None) -> bool:

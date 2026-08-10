@@ -1,0 +1,229 @@
+EVIDENCIA — Estructura y contenido de la base de datos de SICAV
+Generado desde el contenedor de produccion (cz_backend), solo lectura.
+
+==========================================================================
+1. Tablas del esquema, con su numero de columnas y filas
+==========================================================================
+TABLA                                         COLUMNAS          FILAS
+auditoria_logacceso                                 11          1,272
+autenticacion_perfil                                10              4
+auth_group                                           2              0
+auth_group_permissions                               3              0
+auth_permission                                      4            164
+auth_usuario                                        13          1,161
+auth_usuario_groups                                  3              0
+auth_usuario_user_permissions                        3              0
+django_admin_log                                     8             11
+django_content_type                                  3             41
+django_migrations                                    4             83
+django_session                                       3             10
+encuestas_excepcionvigencia                         11              0
+encuestas_respuestaencuesta                          7             59
+encuestas_sesionencuesta                            16              1
+formulario_capitulo                                  9             92
+formulario_instrumento                              10              9
+formulario_opcionrespuesta                           7          4,453
+formulario_pregunta                                 16          1,646
+formulario_reglaskiplogic                            9          1,058
+hogares_hogar                                       14              1
+hogares_miembrohogar                                23              9
+ia_consentimientoia                                  6              0
+ia_sesionia                                          6              0
+parametricas_comunidadnegra                          5              0
+parametricas_departamento                            4             33
+parametricas_direccionterritorial                    4             21
+parametricas_direccionterritorial_departamentos         3             35
+parametricas_municipio                               5          1,102
+parametricas_puntoatencion                           7            307
+parametricas_resguardoindigena                       6              0
+parametricas_tipodocumento                           6              8
+parametricas_vereda                                  5              0
+sincronizacion_caracterizacionlegacy                14        222,094
+sincronizacion_registroescrituraoracle              14              0
+sincronizacion_usuariolegacy                        13          8,172
+token_blacklist_blacklistedtoken                     3            135
+token_blacklist_outstandingtoken                     6            473
+victimas_cargapadron                                12              5
+victimas_catalogohechovictimizante                   6             16
+victimas_colisiondocumento                           6        768,096
+victimas_descarteuniverso                            7         66,861
+victimas_hechovictima                                9              0
+victimas_marcaagualegacy                             7              2
+victimas_personauniverso                            21      1,748,953
+victimas_victima                                    26      5,926,004
+
+Total de tablas: 46
+
+==========================================================================
+2. Estructura de victimas_victima (la tabla del padron)
+==========================================================================
+COLUMNA                                TIPO                        LARGO  NULL
+id                                     uuid                                 NO
+numero_documento                       text                                 NO
+numero_documento_hash                  character varying              64    NO
+primer_nombre                          text                                 NO
+segundo_nombre                         text                                 NO
+primer_apellido                        text                                 NO
+segundo_apellido                       text                                 NO
+fecha_nacimiento                       text                                 NO
+genero                                 character varying               2    NO
+estado_civil                           character varying              15    NO
+pertenencia_etnica                     character varying              20    NO
+pueblo_indigena                        character varying             150    NO
+discapacidad                           boolean                              NO
+tipo_discapacidad                      character varying             100    NO
+estado_ruv                             character varying              15    NO
+created_at                             timestamp with time zone             NO
+updated_at                             timestamp with time zone             NO
+creado_por_id                          uuid                                YES
+municipio_residencia_id                bigint                              YES
+tipo_documento_id                      bigint                              YES
+cons_persona                           integer                             YES
+estado_valoracion                      character varying              15    NO
+fecha_ult_caracterizacion              timestamp with time zone            YES
+fuente_origen                          character varying              20    NO
+habilitado_para_caracterizacion        boolean                              NO
+numero_documento_hash_sin_tipo         character varying              64    NO
+
+==========================================================================
+3. Indices de victimas_victima
+==========================================================================
+  victimas_vi_estado__5638c8_idx
+      CREATE INDEX victimas_vi_estado__5638c8_idx ON public.victimas_victima USING btree (estado_ruv, pertenencia_etnica)
+  victimas_vi_habilit_e2fe44_idx
+      CREATE INDEX victimas_vi_habilit_e2fe44_idx ON public.victimas_victima USING btree (habilitado_para_caracterizacion, estado_ruv)
+  victimas_vi_numero__444a91_idx
+      CREATE INDEX victimas_vi_numero__444a91_idx ON public.victimas_victima USING btree (numero_documento_hash, tipo_documento_id)
+  victimas_victima_cons_persona_9f01840f
+      CREATE INDEX victimas_victima_cons_persona_9f01840f ON public.victimas_victima USING btree (cons_persona)
+  victimas_victima_creado_por_id_32108db2
+      CREATE INDEX victimas_victima_creado_por_id_32108db2 ON public.victimas_victima USING btree (creado_por_id)
+  victimas_victima_discapacidad_acad8df5
+      CREATE INDEX victimas_victima_discapacidad_acad8df5 ON public.victimas_victima USING btree (discapacidad)
+  victimas_victima_estado_ruv_f7d1192d
+      CREATE INDEX victimas_victima_estado_ruv_f7d1192d ON public.victimas_victima USING btree (estado_ruv)
+  victimas_victima_estado_ruv_f7d1192d_like
+      CREATE INDEX victimas_victima_estado_ruv_f7d1192d_like ON public.victimas_victima USING btree (estado_ruv varchar_pattern_ops)
+  victimas_victima_estado_valoracion_f218b1cb
+      CREATE INDEX victimas_victima_estado_valoracion_f218b1cb ON public.victimas_victima USING btree (estado_valoracion)
+  victimas_victima_estado_valoracion_f218b1cb_like
+      CREATE INDEX victimas_victima_estado_valoracion_f218b1cb_like ON public.victimas_victima USING btree (estado_valoracion varchar_pattern_ops)
+  victimas_victima_fuente_origen_f90aa22e
+      CREATE INDEX victimas_victima_fuente_origen_f90aa22e ON public.victimas_victima USING btree (fuente_origen)
+  victimas_victima_fuente_origen_f90aa22e_like
+      CREATE INDEX victimas_victima_fuente_origen_f90aa22e_like ON public.victimas_victima USING btree (fuente_origen varchar_pattern_ops)
+  victimas_victima_genero_cd0f5857
+      CREATE INDEX victimas_victima_genero_cd0f5857 ON public.victimas_victima USING btree (genero)
+  victimas_victima_genero_cd0f5857_like
+      CREATE INDEX victimas_victima_genero_cd0f5857_like ON public.victimas_victima USING btree (genero varchar_pattern_ops)
+  victimas_victima_habilitado_para_caracterizacion_66a02d11
+      CREATE INDEX victimas_victima_habilitado_para_caracterizacion_66a02d11 ON public.victimas_victima USING btree (habilitado_para_caracterizacion)
+  victimas_victima_municipio_residencia_id_2501e72f
+      CREATE INDEX victimas_victima_municipio_residencia_id_2501e72f ON public.victimas_victima USING btree (municipio_residencia_id)
+  victimas_victima_numero_documento_hash_4779e950
+      CREATE INDEX victimas_victima_numero_documento_hash_4779e950 ON public.victimas_victima USING btree (numero_documento_hash)
+  victimas_victima_numero_documento_hash_4779e950_like
+      CREATE INDEX victimas_victima_numero_documento_hash_4779e950_like ON public.victimas_victima USING btree (numero_documento_hash varchar_pattern_ops)
+  victimas_victima_numero_documento_hash_sin_tipo_14cb7966
+      CREATE INDEX victimas_victima_numero_documento_hash_sin_tipo_14cb7966 ON public.victimas_victima USING btree (numero_documento_hash_sin_tipo)
+  victimas_victima_numero_documento_hash_sin_tipo_14cb7966_like
+      CREATE INDEX victimas_victima_numero_documento_hash_sin_tipo_14cb7966_like ON public.victimas_victima USING btree (numero_documento_hash_sin_tipo varc
+  victimas_victima_pertenencia_etnica_0e093dd1
+      CREATE INDEX victimas_victima_pertenencia_etnica_0e093dd1 ON public.victimas_victima USING btree (pertenencia_etnica)
+  victimas_victima_pertenencia_etnica_0e093dd1_like
+      CREATE INDEX victimas_victima_pertenencia_etnica_0e093dd1_like ON public.victimas_victima USING btree (pertenencia_etnica varchar_pattern_ops)
+  victimas_victima_pkey
+      CREATE UNIQUE INDEX victimas_victima_pkey ON public.victimas_victima USING btree (id)
+  victimas_victima_tipo_documento_id_2482058b
+      CREATE INDEX victimas_victima_tipo_documento_id_2482058b ON public.victimas_victima USING btree (tipo_documento_id)
+
+Total de indices: 24
+
+==========================================================================
+7. Migraciones aplicadas
+==========================================================================
+  2026-06-12  contenttypes       0001_initial
+  2026-06-12  contenttypes       0002_remove_content_type_name
+  2026-06-12  auth               0001_initial
+  2026-06-12  auth               0002_alter_permission_name_max_length
+  2026-06-12  auth               0003_alter_user_email_max_length
+  2026-06-12  auth               0004_alter_user_username_opts
+  2026-06-12  auth               0005_alter_user_last_login_null
+  2026-06-12  auth               0006_require_contenttypes_0002
+  2026-06-12  auth               0007_alter_validators_add_error_messages
+  2026-06-12  auth               0008_alter_user_username_max_length
+  2026-06-12  auth               0009_alter_user_last_name_max_length
+  2026-06-12  auth               0010_alter_group_name_max_length
+  2026-06-12  auth               0011_update_proxy_permissions
+  2026-06-12  auth               0012_alter_user_first_name_max_length
+  2026-06-12  autenticacion      0001_initial
+  2026-06-12  admin              0001_initial
+  2026-06-12  admin              0002_logentry_remove_auto_add
+  2026-06-12  admin              0003_logentry_add_action_flag_choices
+  2026-06-12  auditoria          0001_initial
+  2026-06-12  auditoria          0002_initial
+  2026-06-12  auditoria          0003_alter_logacceso_accion
+  2026-06-12  parametricas       0001_initial
+  2026-06-12  victimas           0001_initial
+  2026-06-12  victimas           0002_add_catalogo_hecho_campos_caracterizacion
+  2026-06-12  hogares            0001_initial
+  2026-06-12  hogares            0002_hogar_codigo_hogar_miembrohogar_fuente_origen_and_more
+  2026-06-12  hogares            0003_autorizado_rol_es_autorizado_estado_inclusion
+  2026-06-12  hogares            0004_remove_miembrohogar_hogares_mie_hogar_i_53eb30_idx_and_more
+  2026-06-12  formulario         0001_initial
+  2026-06-12  formulario         0002_add_nivel_capitulo_y_campos_pregunta
+  2026-06-12  formulario         0003_alter_instrumentoversion_unique_together_and_more
+  2026-06-12  encuestas          0001_initial
+  2026-06-12  encuestas          0002_initial
+  2026-06-12  encuestas          0003_sesionencuesta_ruta_entrevista
+  2026-06-12  encuestas          0004_alter_sesionencuesta_instrumento_and_more
+  2026-06-12  formulario         0004_delete_instrumentoversion
+  2026-06-12  encuestas          0005_sesionencuesta_departamento_atencion_and_more
+  2026-06-12  encuestas          0006_alter_respuestaencuesta_options_and_more
+  2026-06-12  hogares            0005_hogar_uniq_hogar_no_archivado_por_autorizado
+  2026-06-12  ia                 0001_initial
+  2026-06-12  ia                 0002_rename_ia_consent_sesion_acepto_idx_ia_consenti_sesion__22126f_idx_and_more
+  2026-06-12  sessions           0001_initial
+  2026-06-12  token_blacklist    0001_initial
+  2026-06-12  token_blacklist    0002_outstandingtoken_jti_hex
+  2026-06-12  token_blacklist    0003_auto_20171017_2007
+  2026-06-12  token_blacklist    0004_auto_20171017_2013
+  2026-06-12  token_blacklist    0005_remove_outstandingtoken_jti
+  2026-06-12  token_blacklist    0006_auto_20171017_2113
+  2026-06-12  token_blacklist    0007_auto_20171017_2214
+  2026-06-12  token_blacklist    0008_migrate_to_bigautofield
+  2026-06-12  token_blacklist    0010_fix_migrate_to_bigautofield
+  2026-06-12  token_blacklist    0011_linearizes_history
+  2026-06-12  token_blacklist    0012_alter_outstandingtoken_user
+  2026-06-12  parametricas       0002_alter_direccionterritorial_codigo
+  2026-06-12  parametricas       0003_alter_puntoatencion_codigo
+  2026-06-15  auditoria          0004_logacceso_descarga_apk
+  2026-06-17  auditoria          0005_alter_logacceso_accion
+  2026-06-17  victimas           0003_alter_victima_fuente_origen
+  2026-06-17  auditoria          0006_alter_logacceso_accion
+  2026-07-01  formulario         0005_widen_pregunta_no_pregunta
+  2026-07-06  auditoria          0007_alter_logacceso_accion
+  2026-07-06  hogares            0006_miembrohogar_constancia_and_more
+  2026-07-28  sincronizacion     0001_initial
+  2026-07-28  sincronizacion     0002_remove_registroescrituraoracle_uniq_registro_escritura_oracle_paso_origen_and_more
+  2026-07-31  victimas           0004_recalcular_hash_documento
+  2026-07-31  victimas           0005_victima_numero_documento_hash_sin_tipo
+  2026-07-31  victimas           0006_alter_victima_tipo_documento
+  2026-07-31  victimas           0007_cargapadron
+  2026-08-02  hogares            0007_alter_miembrohogar_estado_inclusion
+  2026-08-02  victimas           0008_alter_victima_estado_ruv
+  2026-08-02  victimas           0009_normalizar_altas_manuales
+  2026-08-02  victimas           0010_colisiondocumento
+  2026-08-02  victimas           0011_marcaagualegacy
+  2026-08-02  sincronizacion     0003_alter_registroescrituraoracle_estado
+  2026-08-02  sincronizacion     0004_alter_registroescrituraoracle_paso
+  2026-08-03  sincronizacion     0005_alter_registroescrituraoracle_paso
+  2026-08-03  sincronizacion     0006_usuariolegacy
+  2026-08-03  sincronizacion     0007_caracterizacionlegacy
+  2026-08-05  victimas           0012_hechovictima_id_origen_and_more
+  2026-08-05  encuestas          0007_excepcionvigencia
+  2026-08-05  victimas           0013_descarteuniverso_personauniverso
+  2026-08-05  victimas           0014_personauniverso_es_preferida
+  2026-08-05  victimas           0015_alter_descarteuniverso_motivo
+
+Total de migraciones aplicadas: 83

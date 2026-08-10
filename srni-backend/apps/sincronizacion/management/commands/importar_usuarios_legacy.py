@@ -62,6 +62,7 @@ from django.db import transaction
 
 from apps.sincronizacion.models import UsuarioLegacy
 from apps.sincronizacion.oracle.conexion import abrir_conexion, describir_destino
+from apps.sincronizacion.oracle.mapeo import fecha_oracle_a_django
 
 CONSULTA_USUARIOS = """
     SELECT usu_idusuario, usu_usuario,
@@ -206,7 +207,7 @@ class Command(BaseCommand):
                         codigo=_texto(cod),
                         dado_de_baja=_texto(baja) not in ("", "0"),
                         id_usuario_vivanto=int(vivanto) if vivanto is not None else None,
-                        creado_en_legacy=fcre,
+                        creado_en_legacy=fecha_oracle_a_django(fcre),
                     ),
                 )
                 nuevos += creado

@@ -1,11 +1,532 @@
 # Oracle legacy → SICAV — Estado y siguiente paso
 
 > **Traspaso de sesión.** Qué hicimos, dónde está todo, qué falta y **con qué empezar
-> la próxima vez** (incluye el prompt listo para pegar). Fecha de corte: 2026-07-16.
+> la próxima vez**. **Fecha de corte: 2026-08-06** — lo más reciente arriba (§0-decies:
+> el universo de 12 M cargado y las tres fases, una por una).
 > **Worktree:** `feat/oracle-legacy-writer` en `D:\desarrollo\uv-oracle-writer`.
-> Todo lo hecho fue **solo lectura** contra Oracle (local + prod), excepto un único
-> `DROP` autorizado de una master table huérfana. La escritura real a Oracle **NO
-> está activada** (todo en DRY-RUN).
+> Lo hecho contra Oracle fue **solo lectura** (local + prod), excepto un único `DROP`
+> autorizado de una master table huérfana y el piloto de escritura del 28-jul
+> (§0-bis). Sobre **PostgreSQL de producción sí se escribe**: es donde vive el padrón
+> y el universo. El prompt para retomar está en §5 y quedó viejo — para el frente del
+> universo, arrancar por §0-decies.
+
+---
+
+## 0-decies. 2026-08-06 — **EL UNIVERSO ESTÁ CARGADO; LAS TRES FASES, UNA POR UNA**
+
+Resumen: **12.009.492 personas cargadas**, duplicados resueltos y el enlace con el
+padrón corriendo. Las tres fases funcionaron, pero **ninguna a la primera**: cada
+una tuvo un problema de escala que solo aparece con 12 M de filas delante.
+
+### Fase 1 — cerró sola, y el vigilante hizo su trabajo
+
+```
+leídas          : 12,496,965
+cargadas        : 12,009,492
+sin documento   :    487,473  (descartadas)
+sin id de fuente:          0
+```
+
+12 h 51 min (16:23 del 5-ago → 05:14 del 6-ago). El vigilante detectó el fin de la
+fase 1, mandó `SIGTERM` al PID 1546 y confirmó `procesos que quedan: 0`: **el UPDATE
+de 12 M de filas nunca se ejecutó**.
+
+Las dos cifras coinciden **exactamente** con lo medido en Oracle antes de cargar
+(12.009.492 con documento usable, 487.473 sin él): no se perdió una fila por el
+`ignore_conflicts`. Tabla: **13 GB** (heap 9.212 MB + índices 3.669 MB), o sea la
+proyección con los índices podados y no los 18,7 GB del diseño original.
+
+### Deploy del parche
+
+`git archive` → build → `up --force-recreate` de los cuatro servicios → `migrate`
+(`0016` aplicada, no-op como se esperaba) → `restart cz_nginx` → `/api/` **200**.
+
+**No se usó `deploy-all.sh`**: su paso `40-cargar-datos.sh` recarga los 8
+instrumentos con `cargar_perfil --reemplazar` (purga capítulos en cascada) y
+reconstruye el frontend. Para un cambio de código Python, eso es riesgo gratis.
+
+### Fase 2 — el doble `GROUP BY` (y el N+1 detrás)
+
+Primer intento: **más de 45 minutos con el log mudo**. En `pg_stat_activity` estaba
+la causa: un `DECLARE CURSOR` sobre el `GROUP BY`, o sea **la segunda pasada
+completa** sobre 12 M. El método hacía tres cosas caras:
+
+```python
+total_grupos = repetidos.count()                  # GROUP BY sobre 12 M   (1)
+for grupo in repetidos.iterator():                # GROUP BY sobre 12 M   (2)
+    filas = list(base.filter(hash=grupo["hash"])) # una consulta POR GRUPO (60.438)
+```
+
+Se cortó **sin haber escrito nada** (acumula en memoria y escribe al final, en una
+sola transacción: verificado, 0 marcadas). Arreglado con subconsulta + `groupby`
+sobre un único recorrido ordenado, progreso cada 10.000 grupos y el UPDATE de
+perdedoras por lotes de 10.000. **Segunda corrida: menos de 5 minutos.**
+
+| | |
+|---|---:|
+| Documentos compartidos | 60.438 |
+| Filas que pierden el desempate | 62.202 |
+| Preferidas | **11.947.290** |
+| **Grupos con ≠ 1 preferida** | **0** ← la invariante, medida sobre los 12 M |
+
+### 🔴 Postgres tenía 64 MB de `/dev/shm`
+
+El `VACUUM ANALYZE` de rutina falló:
+
+```
+ERROR: could not resize shared memory segment to 67145408 bytes: No space left on device
+```
+
+67145408 son **exactamente los 64 MB** que Docker da por defecto cuando el compose
+no declara `shm_size`. **No era el disco** —había 15 GB libres— y el host ofrece
+7,8 GB de shm. El mensaje engaña: dice "no space left on device" y manda a mirar la
+partición equivocada.
+
+Postgres usa esa memoria para las consultas **paralelas**, así que alcanzaba a
+cualquier consulta grande, no solo al `VACUUM`. Arreglado en el compose
+(`shm_size: 1gb`) junto con `stop_grace_period: 3m` — Docker da 10 s antes del
+SIGKILL y el checkpoint de apagado de una base de 28 GB no cabe ahí.
+
+Recrear `cz_postgres` se hizo con `CHECKPOINT` previo. El log confirma apagado
+limpio (`database system was shut down`, no "was interrupted") y los datos quedaron
+intactos: 11.947.290 preferidas · 5.926.004 víctimas.
+
+### Fase 3 — el enlace no podía hacerse desde Python
+
+Primer intento cancelado: en varios minutos no había enlazado ni el 0,05 %.
+
+```
+DECLARE ... CURSOR WITH HOLD FOR SELECT "victimas_personauniverso"."id", ...
+temp_files: 1840   temp_bytes: 24 GB
+```
+
+Tres costos, y el tercero lo hacía inviable: un cursor que **materializa 11,9 M
+filas antes de entregar la primera**; trae las 20 columnas necesitando dos; y
+`numero_documento` más los cuatro nombres son `EncryptedField`, así que instanciar
+cada objeto **descifra cinco campos** — 11,9 millones de veces, para escribir un id.
+
+Ahora el cruce ocurre **dentro de la base**: `UPDATE … FROM victimas_victima` con
+`NOT EXISTS` (que es literalmente "solo si es la única con ese documento"),
+troceado en 16 lotes por el primer carácter del hash, con `>=`/`<` y no `LIKE`
+—el `LIKE` querría el `varchar_pattern_ops` que podamos ayer—. Cada lote commitea
+y loguea.
+
+**En curso al momento de escribir esto:**
+
+```
+Enlazando con el padrón operativo (11,941,782 sin enlazar)
+  [0] enlazadas   178,519 · ambiguas   60,419
+  [1] enlazadas   357,418 · ambiguas  120,445
+```
+
+~6,5 min por lote ⇒ ETA ~1 h 45. Proyección: **~2,9 M enlazadas y ~960 K
+ambiguas** — una de cada tres que cruza resuelve a más de una `Victima` y por
+diseño no se enlaza a ninguna (coherente con las 768.096 filas de
+`victimas_colisiondocumento`). Quedan registradas como `ENLACE_AMBIGUO`.
+
+Vigilando mientras corre: guardián de disco a 5 GB (`/tmp/vigilante_disco.log`) y
+un `VACUUM` en paralelo, porque el autovacuum no se dispara hasta 2,4 M de tuplas
+muertas y cada lote costaba ~0,5 GB.
+
+### Lo aprendido, que vale más que las cifras
+
+1. **Todo lo que traiga 12 M de filas a Python es inviable**, y con PII cifrada lo
+   es dos veces. Las tres fases fallaron por lo mismo.
+2. **Un proceso sin log de progreso es indistinguible de uno colgado.** Costó 40
+   minutos de espera antes de mirar `pg_stat_activity`.
+3. **Cortar es barato si la escritura es al final o por lote**; las tres corridas
+   canceladas no dejaron un solo dato a medias.
+
+### 🌅 Siguiente paso
+
+1. Esperar el cierre de los 16 lotes y verificar enlazadas + ambiguas.
+2. `VACUUM ANALYZE` y medir el disco.
+3. Con eso cierra el paso 2 del ADR. Quedan los pasos 3 a 5:
+   **derivar el subconjunto territorial** desde el servidor, `NO_VERIFICABLE` en el
+   cliente móvil y la reconsulta automática al recuperar conexión.
+4. Aparte, y sin relación con el código: el escalamiento de disco a Oscar
+   (`docs/gestion/correo_oscar_espacio_disco_urgente.md`) sigue pendiente de envío.
+
+---
+
+## 0-novies. 2026-08-05 — **EL UNIVERSO SE ESTÁ CARGANDO, Y LA FASE 2 NO CABE EN EL DISCO**
+
+La carga del universo (12,5 M) arrancó a las **16:23 UTC** dentro de `cz_backend`:
+
+```
+docker exec cz_backend python manage.py cargar_universo_victimas --confirmar --lote 5000
+log: /tmp/carga_universo_20260805_1623.log     (sobrevive a la VPN)
+```
+
+Medido a las 20:11 UTC, con 3 h 47 min de corrida:
+
+| | |
+|---|---|
+| Corte | `TEMP_UNIV_VICT_PER_MI010726ALL` (julio, 35 días) — el de agosto **no existe**; el fallback avisó y funcionó |
+| Avance | 4.300.000 leídas · 4.132.190 cargadas de **12.496.965** (34 %) |
+| Ritmo | ~1,13 M/h ⇒ fin de la fase 1 hacia las **03:20 UTC del 6-ago** |
+| Descartes | 164.313 `SIN_DOCUMENTO` (3,9 %, en línea con los 487.473 proyectados) |
+
+### 🔴 El hallazgo: el reset de la fase 2 pedía ~19 GB que no hay
+
+`victimas_personauniverso` va a **1,58 KB por fila** (heap 3.212 MB + índices
+3.323 MB sobre 4,15 M filas, **12 índices**). Proyectada a 12 M: **~19 GB**, y el
+disco del servidor tiene **19 GB libres de 61**, así que al terminar la fase 1
+quedan ~6 GB.
+
+Y la fase 2 empezaba con un `UPDATE` sobre **las 12 M de filas**
+(`es_preferida=True`). Como `es_preferida` está indexada, Postgres no puede hacer
+HOT update: reescribe el heap completo **y** los 12 índices ⇒ otros ~19 GB, más
+el WAL de una transacción `atomic()` que no se recicla hasta el commit.
+
+**No era solo nuestro problema:** ese disco es compartido con `sidi-api`,
+`catalogo-si`, `uariv-auth` y el `nginx-proxy-manager`. Un Postgres sin espacio se
+detiene y se lleva servicios de otros equipos por delante.
+
+### Lo que se hizo (5-ago, tarde)
+
+1. **Parche** — el reset se acota a `filter(corte=corte, es_preferida=False)`. El
+   resultado es idéntico (las que ya están en `True` no cambian) y en la primera
+   corrida toca **0 filas**, porque el default del modelo ya es `True`. La fase 2
+   pasa a mover las ~55.100 perdedoras, no 12 M.
+   Con test que **falla** si alguien le quita el filtro.
+2. **Flag `--sin-enlace`** — la fase 3 (`_enlazar_con_padron`) reescribe una fila
+   por cada cruce con el padrón de 5,9 M: millones más. Con el disco así, se corre
+   aparte y midiendo entre fases.
+3. **Vigilante** en el servidor (`/tmp/vigilante_universo.sh`, lanzado con
+   `setsid nohup`, log en `/tmp/vigilante_universo.log`): detecta el fin de la
+   fase 1 en el log y **mata el proceso antes del UPDATE**. Corta también si el
+   disco baja de 4 GB. Los dos patrones de corte están probados contra el log real.
+
+> **La ventana es cómoda.** Entre el fin de la carga y el primer UPDATE hay varios
+> minutos de solo lectura: el `count` de verificación, el `GROUP BY` sobre 12 M y
+> el bucle de ~55 K grupos. El polling es de 20 s.
+
+### Poda de índices — aplicada EN CALIENTE a las 21:44 UTC
+
+No se esperó a la ventana: la carga se había degradado a la mitad (572.580 filas/h
+contra 1,14 M/h al arrancar, con el backend en `LWLock` sobre el `INSERT`) y la
+causa era la misma que la del espacio — **cada fila mantenía 12 índices, 6 de ellos
+sin un solo uso**.
+
+Los 6 `DROP INDEX` fueron en **una sola transacción** con `lock_timeout`. Con 5 s
+abortaron los seis: `bulk_create` sostiene una transacción de 5.000 filas que
+duraba ~30 s. Con 90 s entró a la primera, en 78 segundos totales.
+
+| | Antes | Después |
+|---|---:|---:|
+| Índices | 12 | **6** |
+| Disco libre | 19 GB | **21 GB** |
+| Ritmo | 572.580 filas/h | **772.000 filas/h** (+35 %) |
+| Universo proyectado | 18,7 GB | **13,1 GB** |
+| Fase 3 (enlace) | 8,2 GB — **no cabía** | 5,5 GB — **cabe con 7,5 GB de margen** |
+
+La migración `0016_podar_indices_universo` deja el modelo consistente con eso. Al
+aplicarla será un **no-op** (`DROP INDEX IF EXISTS` sobre índices ya borrados), y
+eso está bien: lo que importa es que el estado de Django y el de la base coincidan.
+Detalle completo: [`docs/infraestructura/analisis_capacidad_disco.md`](../infraestructura/analisis_capacidad_disco.md).
+
+### 🌅 Siguiente paso, **en este orden**
+
+1. **Dejar terminar la fase 1** (ETA ~9 h desde las 21:45 UTC ⇒ madrugada del 6-ago).
+   Interrumpirla obliga a borrar y reempezar: el guard de `_cargar` no deja reanudar
+   un corte a medias.
+2. Confirmar en `/tmp/vigilante_universo.log` que el proceso murió **antes** de la
+   fase 2.
+3. **Recién ahí desplegar** la imagen con el parche y la migración. Desplegar antes
+   reinicia `cz_backend` y **mata la carga en curso**.
+4. Fase 2 sola, con el disco a la vista:
+   `docker exec cz_backend python manage.py cargar_universo_victimas --solo-resolver --sin-enlace --confirmar`
+5. `VACUUM ANALYZE` + medir, y recién entonces la fase 3 (sin `--sin-enlace`).
+
+---
+
+## 0-octies. 2026-08-04 (mañana) — **LA UARIV YA TIENE SERVICIO DE AUTENTICACIÓN, Y ESTÁ AL LADO**
+
+Sesión desde la sede (red institucional). El objetivo era desatascar el acceso de
+las 1.150 cuentas y apareció una vía que no estábamos considerando.
+
+### La .9 está arriba, y sabemos por qué se había caído
+
+| | |
+|---|---|
+| Sesión Oracle real | **OK en 0,09 s** — `ENTREVIS` / `RNIENTREVISTA`, sin `ORA-12518` |
+| Instancia | `entrevistarn` **OPEN / ACTIVE**, `startup_time` = **3-ago 09:26** |
+| Margen | 128 procesos de 1500 · 155 sesiones de 2272 (pico 135) |
+| API prod | `/api/` → **200** |
+| Los 4 interruptores | **apagados** — no hay ni una variable de escritura en el `.env` de prod |
+
+El `ORA-12518` de ayer fue un **reinicio de la instancia**, no la VPN ni nuestro
+código: el `startup_time` cae justo en esa mañana. Y no era agotamiento de
+recursos — la base usa el **8 %** de sus procesos. Lleva 24 h estable.
+
+### Las dos opciones que teníamos escritas, medidas de verdad
+
+1. **Restablecimiento por correo: hoy no tiene por dónde salir.** `production.py`
+   **no define ningún `EMAIL_*`** (el único backend de correo del proyecto es el
+   de consola, en `development.py:49`) y el `.env` de producción **no tiene
+   ninguna variable de correo**. Django caería a `smtp.EmailBackend` contra
+   `localhost`, que en el contenedor no existe. No es un `settings`: requiere que
+   OTI habilite un relay SMTP institucional y que el firewall lo deje salir.
+2. **Copiar el hash de Vivanto: sigue siendo mala idea, por otra razón.** El
+   catálogo de `ADMINUSUARIOS.USUARIO` (solo metadatos, no se leyó ni una
+   credencial) trae todo el aparato de una política de credenciales:
+   `CAMBIARCONTRASENIA`, `CANTIDADDEINTENTOS`, `FECHACADUCIDAD`,
+   `FECHAULTIMOINTENTO`, `DESBLOQUEOAUTOMATICO`, `FECHACAMBIOCONTRASENA`,
+   `IDESTADO`. Replicar el hash obligaría a replicar la parte que **sí** se
+   aplica —bloqueo y estado— o SICAV quedaría desincronizado: alguien bloqueado
+   en Vivanto entraría igual acá. Se mantiene el criterio de
+   `crear_usuarios_activos`: **la contraseña no se copia**.
+
+   > **Corrección (4-ago, tarde).** Arriba se escribió que Vivanto "ya tiene
+   > política de credenciales completa". Medido, es **a medias**: ver el bloque
+   > siguiente. Tiene el aparato; aplica el bloqueo y las franjas horarias, pero
+   > **no caduca las claves** ni usa el cambio forzado.
+
+### La política de Vivanto, medida (no supuesta)
+
+Está declarada en `ADMINUSUARIOS.POLITICA` — **4 políticas activas**, todas
+creadas entre 2014 y 2016:
+
+| Política | Horario | Días | `MAXINTENTOS` | `TIEMPOBLOQUEO` | Longitud | `DURACIONCLAVE` |
+|---|---|---|---|---|---|---|
+| `GENERAL` | 06:00–19:00 | L-S (**sin domingo**) | 3 | 30 | 6–10 | **vacío** |
+| `7X24` | 04:00–23:59 | todos | 3 | 30 | 6–10 | **vacío** |
+| `JORNADA CONTINUA` | 00:01–23:59 | todos | 3 | 30 | 6–10 | **vacío** |
+| `POLITICA OPERADORES` | 06:00–21:59 | L-S | 3 | 30 | 6–10 | **vacío** |
+
+Tres lecturas que cambian el diseño:
+
+1. **`DURACIONCLAVE` vacío en las cuatro: Vivanto NO caduca las contraseñas.**
+   Lo confirman los datos: `CAMBIARCONTRASENIA` y `DESBLOQUEOAUTOMATICO` están en
+   **0 en las 81.370 cuentas**, y la diferencia entre `FECHACADUCIDAD` y
+   `FECHACAMBIOCONTRASENA` no tiene ningún período estable (225 días en 2.410
+   cuentas, pero **miles en negativo**: caducidad anterior al último cambio).
+   Si SICAV rota cada 45 días, **es una decisión nuestra, no paridad con ellos**,
+   y como tal hay que documentarla.
+2. **Longitud máxima de 10 caracteres.** Es una política de 2014 y no se copia:
+   un tope de longitud impide frases de paso y no aporta nada. SICAV usa Argon2 y
+   los validadores de Django, sin techo.
+3. **Franjas horarias y días.** `GENERAL` **no permite domingo** y corta a las
+   19:00. Copiar eso dejaría a un encuestador sin poder entrar un domingo en
+   territorio. **No se replica**; el trabajo de campo no tiene horario de oficina.
+
+Lo que **sí** vale la pena adoptar de ellos: `MAXINTENTOS = 3` con
+`TIEMPOBLOQUEO = 30` minutos (hoy SICAV usa 5 intentos / 15 min de bloqueo, en
+`apps/autenticacion/views.py`).
+
+### La tercera vía: `UARIV.AUTH.API`, ya desplegada en el mismo servidor
+
+En el `docker ps` del `.109` llevan semanas corriendo dos contenedores que no son
+nuestros (proyecto compose `auth-api`, en `/home/adminuariv/auth-api`):
+
+| | |
+|---|---|
+| `uariv-auth-api` | `crunidad.azurecr.io/uariv-auth-api:1.0.0` — **:8080**, Up 4 semanas |
+| `uariv-auth-ui` | `crunidad.azurecr.io/uariv-auth-ui:1.0.1` — **:8081**, Up 2 semanas |
+
+Su contrato es público en `/swagger/v1/swagger.json` (16 rutas, seguridad
+`Bearer`), y es exactamente lo que necesitamos:
+
+```
+POST /auth/AuthByUser      { userName, password }
+                        →  { success, access_token, refresh_token, errors[] }
+POST /auth/AuthByEntraId   (SSO Microsoft Entra ID)
+GET  /auth/start · /auth/callback · /auth/result   (flujo OIDC)
+PUT  /api/User/ChangePassword
+```
+
+Es decir: **la institución ya resolvió identidad**, con SSO corporativo incluido,
+y el servicio está a un salto de red de SICAV (`localhost:8080`) — sin VPN, sin
+Oracle y sin el dblink en el camino del login.
+
+> **Hasta acá llegó el sondeo, a propósito.** El servicio es de otro equipo: no se
+> inspeccionaron sus variables de entorno ni su cadena de conexión, y **no se
+> probó ninguna credencial contra él**. Solo se leyó el swagger que publica.
+
+### 🔴 La pregunta que decide todo (para OTI / dueño de `auth-api`)
+
+**¿Los 1.150 encuestadores de campo existen en el directorio de `UARIV.AUTH.API`?**
+Si su base es la misma `ADMINUSUARIOS` de Vivanto —de donde sacamos su identidad—
+la respuesta es sí y el bloqueo se cae solo. Si es un directorio distinto (por
+ejemplo solo funcionarios de planta), esta vía no sirve para el territorio y
+volvemos al SMTP. **No se puede responder desde nuestro lado sin husmear infra
+ajena: hay que preguntarlo.**
+
+Con eso hay que preguntar también: si nos autorizan a consumirlo desde SICAV,
+cómo se emiten las credenciales de cliente, y cuál es el tiempo de vida del
+`access_token`.
+
+### Lo que igual queda por resolver, aunque la respuesta sea sí
+
+**El campo trabaja sin señal.** Un login delegado a un servicio en línea resuelve
+la primera entrada, no la operación offline. Hay que diseñar el esquema
+—autenticación en línea la primera vez y credencial derivada en el dispositivo
+para las jornadas sin cobertura—, que además es coherente con
+[`project_arquitectura_offline`] (la precarga del padrón ya asume una primera
+conexión). Esto no bloquea la decisión, pero sí es trabajo, y no está hecho.
+
+---
+
+## 0-octies-bis. 2026-08-04 (tarde) — **APARECIERON LOS HECHOS VICTIMIZANTES**
+
+El área funcional aportó un nombre —`Tbsiniestros_persona`— y con eso se cayó el
+pendiente **5a**, que llevaba días esperando respuesta de negocio.
+
+### No había que pedir nada: ya teníamos el acceso
+
+Vive en el esquema `RUV`, alcanzable desde `ENTREVISTARN` por el dblink
+**`CONSULTARUV`**, que ya existía.
+
+| Objeto | Qué es | Volumen |
+|---|---|---|
+| `RUV.TBHECHOS_VICTIMIZANTES` | el catálogo oficial | **13 hechos** |
+| `RUV.TBSINIESTROS_PERSONA` | el hecho con **fecha y municipio** | **4.033.355** |
+| `RUV.TBREG_PERSONA_HECHOS` | persona ↔ hecho | **9.331.396** |
+| `RUV.TBPERSONAS` | `ID`, `NUMERODOCUMENTO`, `PARAM_TIPODOCUMENTO` | 7.330.769 |
+
+El enlace **está declarado con foreign keys** (`FK_REGPER_SINIESTRO` y
+`FK_REGISTRO_PERSONA_HECHOS`, ambas contra `PK_TBREGISTROS_PERSONAS`): la ruta
+hasta el documento no es conjetura nuestra. Y como `TBSINIESTROS_PERSONA` trae
+fecha y lugar, no solo se llenan las 14 columnas — se puede poner **cuándo y
+dónde**.
+
+### El catálogo, verificado con datos y no solo con nombres
+
+La distribución de `PARAM_TIPOHECHO` da **51,8 % al 5 (Desplazamiento Forzado)**,
+que es lo que tiene que dominar en Colombia, y **ningún valor cae fuera de 1..13**.
+Con eso queda confirmado por evidencia lo que antes era inferencia: el
+desplazamiento es el **5**, no el 1.
+
+| | | | |
+|---|---|---|---|
+| 5 Desplazamiento **51,8 %** | 2 Amenaza 15,5 % | 13 Censo Masivo 10,8 % | 6 Homicidio 6,8 % |
+| 1 Acto terrorista 3,4 % | 11 Despojo 3,2 % | 8 Secuestro 2,2 % | 12 Otro 1,9 % |
+| 3 · 4 · 9 · 10 · 7 (sexual, desaparición, tortura, NNA, minas) 4,6 % | | | |
+
+### 🔴 Son TRES catálogos, no dos — y la trampa se repite
+
+```
+SICAV   HV01..HV16   (este repo)
+legacy  1..14        (GIC, congelado 2015)
+RUV     1..13        (el nuevo)
+```
+
+RUV y legacy coinciden en 1..11 y **divergen justo donde está el volumen**:
+
+| Código | Legacy | RUV |
+|---|---|---|
+| **12** | Pérdida de bienes muebles o inmuebles | **Otro** (75.264) |
+| **13** | Otros | **Censo Masivo** (434.178) |
+
+Copiar el número de un lado al otro escribe el hecho equivocado en **509.442
+registros (12,6 %)** sin que nada falle — exactamente el mismo modo de fallo que
+ya estaba documentado para el cruce SICAV→legacy, pero contra un tercer catálogo.
+
+### La decisión, y por qué no se resolvió con lo que ya había
+
+**Decisión de Javier:** traer **el catálogo, no las 9,3 M de filas**; el cruce por
+persona se resuelve **bajo demanda**. Y «censo masivo a otros».
+
+Aplicarla mandando `HV13` habría sido el error: para que Censo Masivo aterrizara
+en el `'Otros'` del legacy había que mapearlo a `HV13`… que en SICAV es
+**Confinamiento**. Eso habría marcado a **434.178 personas como confinadas** en
+nuestra propia base. Por eso se agregaron **`HV15 Otro`** y **`HV16 Censo
+Masivo`**: la pérdida de precisión ocurre **solo en la frontera** con el legacy
+—ambos se escriben como `13 'Otros'`—, declarada en
+`HECHO_VICTIMIZANTE_APROXIMADO` para que el escritor la informe en cada corrida.
+
+### Lo hecho
+
+| | |
+|---|---|
+| `HECHO_RUV_A_SICAV` | nuevo mapeo por **significado**, en `oracle/catalogos.py` |
+| `HECHO_SIN_ORIGEN_EN_RUV` | `HV12`/`HV13`/`HV14` — su ausencia al importar es lo esperado |
+| Fixture del catálogo | **16 entradas**, y con eso mueren los **14 `TODO: confirmar texto oficial`**: ahora llevan el texto del RUV |
+| Producción | catálogo cargado: **0 → 16 filas** (estaba vacío desde siempre) |
+| Tests | **7 nuevos** · suite **729 pass / 1 xfail** |
+
+### Lo que falta para que el reporte se llene
+
+El catálogo por sí solo no puebla `HechoVictima`: **falta el cruce por persona**
+contra `TBSINIESTROS_PERSONA`, bajo demanda. Ese es el paso que finalmente llena
+las 14 columnas.
+
+> **Detalle operativo:** barrer varios dblinks en una sesión da
+> `ORA-02020: too many database links in use` (límite `OPEN_LINKS`, 4 por
+> defecto). El comando de importación tendrá que cerrar cada link al terminar.
+
+> **Nota de despliegue:** el fixture nuevo entró a producción por `docker cp`
+> sobre el contenedor, no en la imagen. Los **datos** ya están en PostgreSQL y
+> persisten; la imagen traerá el fixture correcto en el próximo deploy, porque ya
+> está en git.
+
+---
+
+## 0-septies. 2026-08-03 (tarde) — **1.150 ENCUESTADORES VEN SU TRABAJO EN SICAV**
+
+Entró una novedad del territorio (Pandi) y terminó abriendo el trabajo del día.
+Todo lo de abajo está **desplegado y corriendo en producción**.
+
+### El caso: la encuesta nunca llegó
+
+Detalle completo en [`caso_pandi_encuesta_no_aparece.md`](caso_pandi_encuesta_no_aparece.md).
+Resumen: el documento no está en `GIC_PERSONA`, ni en el histórico, ni en las 7
+tablas de staging del móvil. `JGUARINH` no capturó nada el 2-jul (su hueco va del
+25-may al 29-jul). Ese día sí se crearon 429 hogares de otros. **Hay que
+repetirla** — pero antes conviene confirmar el documento: existe una MONICA …
+CORTES AGATON de 2015 con el número terminado en **…545** y no en …540.
+
+### Lo construido, y lo que mide
+
+| | |
+|---|---|
+| `diagnosticar_encuesta_legacy` | 7 causas de "no aparece"; en 5 el dato NO se perdió. Modos `--documento/--usuario/--hogar/--perdidas` |
+| `importar_usuarios_legacy` | los 8.172 de `GIC_USUARIO` (histórico) + `--medir-autoria` |
+| `crear_usuarios_activos` | **1.150 cuentas creadas** con identidad de Vivanto |
+| `importar_caracterizaciones_legacy` | **222.094 caracterizaciones** de 1.151 encuestadores |
+| `/api/sincronizacion/mis-caracterizaciones/` + `/resumen/` | el encuestador entra y ve lo suyo |
+
+**2.422 caracterizaciones con datos que ningún reporte ve**, y en todas el dato
+está en la base: 1.459 `NO_CERRO_POR_CAPITULOS`, 885 `ABIERTO_CON_DATOS`, 62
+`ARCHIVADO_FUERA_DE_REPORTES`, 16 `CERRADO_SIN_ARCHIVAR`. (Las 4.763 `ANULADA` y
+3.303 `MARCADA_ERROR` son decisiones tomadas, no pérdida.)
+
+### Cinco cosas que la base nos enseñó, contra lo que teníamos escrito
+
+1. **`CERRADA` son 62 hogares en toda la base.** El estado normal de uno
+   terminado es `MIGRADOAHISTORICO` (1.039.334). Verificar el cierre contra el
+   literal `'CERRADA'` funciona minutos y falla para siempre. Corregido.
+2. **`GIC_USUARIO` está congelado desde 2017.** De los 1.153 encuestadores
+   activos, solo **26** figuran ahí. El directorio vivo es
+   `ADMINUSUARIOS.USUARIO ⨝ PERSONA` en Vivanto: 1.150 de 1.153, con correo y
+   sin duplicados (el local tiene 608 repetidos).
+3. **`GIC_HOGAR.USU_IDUSUARIO` es el id de VIVANTO**, no el de `GIC_USUARIO`.
+   `JGUARINH` = 197035, y sus hogares se llaman `197035-31TUK`. El "99,7 % que no
+   cruzaba" era una lectura equivocada nuestra, no dato roto.
+4. **`LOG_ERRORES_ENCUESTA` está vacía.** Es la tabla correcta por su forma, así
+   que queda cerrada la pregunta de "por qué falló": **no hay nada que leer**.
+5. **La `Ñ` viene rota** en 6 logins (UTF-8 escrito con el charset mal), y dejaba
+   131 caracterizaciones sin autor. Reparado validando contra el directorio.
+
+### Cuatro defectos propios, todos encontrados al correrlo de verdad
+
+- Una fila ilegible (`LookupError: unknown encoding`) tumbaba los 1.150, y el
+  guardado iba al final: se perdían los 334 anteriores. Ahora va por usuario.
+- **3.284 hogares anulados se presentaban como trabajo recuperable** — el listado
+  le decía a su propio encuestador "está completa, no hay que repetirla".
+- Las fechas del legacy entraban con **+5 h** (Oracle `DATE` es hora local y
+  `USE_TZ=True` las leía como UTC): el trabajo de una tarde aparecía al día
+  siguiente.
+- El `/resumen/` decía "total 18" y el desglose sumaba 3: el `ordering` del
+  modelo entraba al `GROUP BY`.
+
+### 🔴 Lo único que bloquea
+
+**Las 1.150 cuentas no pueden iniciar sesión.** Se crearon con
+`set_unusable_password()`: no se leyó la columna `CONTRASENA` de Vivanto ni se
+inventaron claves. Falta decidir cómo se entrega el acceso —restablecimiento por
+correo, o que SICAV valide contra Vivanto, que es donde ya vive la credencial—.
 
 ---
 

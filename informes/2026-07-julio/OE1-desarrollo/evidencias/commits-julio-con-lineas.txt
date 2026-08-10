@@ -1,0 +1,640 @@
+2026-08-01|5182ae9|fix(precarga): pedia el padron ENTERO al login (5,9 M) y dejaba la APK colgada
+13	7	srni-backend/apps/victimas/repository/base.py
+9	2	srni-backend/apps/victimas/repository/django_orm.py
+3	2	srni-backend/apps/victimas/repository/mock.py
+65	0	srni-backend/apps/victimas/tests/test_repositorio_django.py
+19	2	srni-backend/apps/victimas/views.py
+6	0	srni-backend/srni/settings/base.py
+
+2026-08-01|1aeb173|perf(padron): las fechas se aplican con COPY, no fila a fila (25 h -> minutos)
+135	52	srni-backend/apps/victimas/management/commands/cargar_fechas_caracterizacion.py
+40	0	srni-backend/apps/victimas/tests/test_fechas_caracterizacion.py
+
+2026-08-01|026790c|fix(victimas): produccion respondia con el MOCK, no con el padron real
+179	0	docs/ciclo_completo_tablas.md
+7	0	infra/deploy/docker-compose.caracterizacion.yml
+11	10	srni-backend/apps/victimas/tests/test_fechas_caracterizacion.py
+37	0	srni-backend/apps/victimas/tests/test_repositorio_django.py
+14	0	srni-backend/srni/settings/base.py
+
+2026-07-31|686d0ad|fix(deploy): el compose no propagaba las credenciales de Oracle al contenedor
+11	0	infra/deploy/.env.caracterizacion.example
+11	0	infra/deploy/docker-compose.caracterizacion.yml
+
+2026-07-31|b6a3f54|fix(padron): la purga preguntaba con NOT IN sobre los 3,5 M del padron
+19	8	srni-backend/apps/victimas/management/commands/purgar_padron.py
+52	17	srni-backend/apps/victimas/tests/test_purgar_padron.py
+
+2026-07-31|9f71a2d|feat(padron): comando purgar_padron para recargar sin perder trabajo de campo
+136	0	srni-backend/apps/victimas/management/commands/purgar_padron.py
+116	0	srni-backend/apps/victimas/tests/test_purgar_padron.py
+
+2026-07-31|fd7417e|feat(padron): el padron carga SOLO victimas incluidas + regla de 2 anios
+339	0	docs/oracle-legacy-padron/hallazgos_identidad_padron.md
+9	3	docs/oracle-legacy/defectos_bd_legacy.md
+2	1	srni-backend/apps/victimas/homologacion.py
+187	0	srni-backend/apps/victimas/management/commands/cargar_fechas_caracterizacion.py
+93	71	srni-backend/apps/victimas/management/commands/cargar_padron_oracle.py
+41	17	srni-backend/apps/victimas/tests/test_cargar_padron.py
+185	0	srni-backend/apps/victimas/tests/test_fechas_caracterizacion.py
+
+2026-07-31|37cee6b|feat(padron): estados confirmados con RUV.TBESTADO_VAL + regla de recaracterizacion
+80	29	srni-backend/apps/victimas/homologacion.py
+69	10	srni-backend/apps/victimas/tests/test_homologacion.py
+
+2026-07-31|6f94ce5|fix(deploy): declara oracledb en requirements
+6	0	srni-backend/requirements.txt
+
+2026-07-31|f9d1849|feat(padron): carga por lotes (42h -> 2h) + ESTADO_RUV como dato informativo
+50	0	srni-backend/apps/victimas/homologacion.py
+91	21	srni-backend/apps/victimas/management/commands/cargar_padron_oracle.py
+28	12	srni-backend/apps/victimas/tests/test_cargar_padron.py
+21	0	srni-backend/apps/victimas/tests/test_homologacion.py
+
+2026-07-31|dd70a7e|perf(padron): la carga baja de ~10 h a ~20 min + corrige la constancia de accesos
+36	12	docs/gestion/constancia_accesos_vivanto.md
+3	2	srni-backend/apps/victimas/homologacion.py
+75	24	srni-backend/apps/victimas/management/commands/cargar_padron_oracle.py
+23	0	srni-backend/apps/victimas/tests/test_homologacion.py
+
+2026-07-30|1a6aa7f|docs(gestion): constancia de que en Vivanto solo se leyo
+133	0	docs/gestion/constancia_accesos_vivanto.md
+
+2026-07-30|82d219e|feat(victimas): carga del padron desde el Oracle legacy — cierra el circuito
+237	0	srni-backend/apps/victimas/management/commands/cargar_padron_oracle.py
+36	0	srni-backend/apps/victimas/migrations/0007_cargapadron.py
+50	0	srni-backend/apps/victimas/models.py
+201	0	srni-backend/apps/victimas/tests/test_cargar_padron.py
+
+2026-07-29|ee144ef|feat(victimas): homologacion de la fuente Oracle, medida y probada
+183	0	srni-backend/apps/victimas/homologacion.py
+136	0	srni-backend/apps/victimas/tests/test_homologacion.py
+
+2026-07-29|40307a7|feat(victimas): duplicados sin fusionar + indice de respaldo para quien no tiene tipo
+66	0	srni-backend/apps/victimas/migrations/0005_victima_numero_documento_hash_sin_tipo.py
+20	0	srni-backend/apps/victimas/migrations/0006_alter_victima_tipo_documento.py
+30	1	srni-backend/apps/victimas/models.py
+38	2	srni-backend/apps/victimas/repository/base.py
+48	6	srni-backend/apps/victimas/repository/django_orm.py
+76	3	srni-backend/apps/victimas/tests/test_repositorio_django.py
+
+2026-07-29|da5f4fe|docs(padron): la fuente existe y no hay que pedirsela a nadie
+37	0	docs/oracle-legacy-padron/estado_lectura_padron.md
+
+2026-07-29|c410da8|docs: corrupcion fisica en produccion (ORA-01578) + los cortes no sirven como padron
+21	0	docs/oracle-legacy-padron/estado_lectura_padron.md
+47	0	docs/oracle-legacy/veredicto_calidad_bd.md
+
+2026-07-29|fd9a0a4|feat(victimas): el padron vive en NUESTRA base + unifica el hash de documento
+22	2	srni-backend/apps/hogares/services/alta_miembro.py
+94	0	srni-backend/apps/victimas/migrations/0004_recalcular_hash_documento.py
+14	3	srni-backend/apps/victimas/models.py
+13	4	srni-backend/apps/victimas/repository/__init__.py
+206	0	srni-backend/apps/victimas/repository/django_orm.py
+210	0	srni-backend/apps/victimas/tests/test_repositorio_django.py
+8	4	srni-backend/apps/victimas/views.py
+6	4	srni-backend/tests/test_victimas.py
+
+2026-07-29|6dd2f70|docs: solicitud de acceso al Parametrizador + como funciona la parametrizacion
+80	0	docs/gestion/solicitud_acceso_parametrizador.md
+71	0	docs/oracle-legacy-padron/como_consultar_el_ruv.md
+
+2026-07-29|e9f34f5|docs(padron): el mapa para consultar el RUV, sacado de la propia base
+108	0	docs/oracle-legacy-padron/como_consultar_el_ruv.md
+
+2026-07-29|c3d60f6|docs(padron): el RUV se consulta por servicio, no por tabla
+59	0	docs/oracle-legacy-padron/estado_lectura_padron.md
+
+2026-07-29|e85d7bb|merge: trae el frontend de Brando (14 commits) a main
+2026-07-28|455a669|Merge branch 'feat/oracle-legacy-writer'
+2026-07-28|2f71ff0|fix(instrumento): cura telefonico_v8 y rural_etnico_v1 con el uso real de produccion
+59	0	docs/oracle-legacy/bloqueante_id_preg_subcampos.md
+15	15	srni-backend/apps/formulario/fixtures/perfil_rural_etnico_v1.json
+16	16	srni-backend/apps/formulario/fixtures/perfil_telefonico_v8.json
+46	10	srni-backend/apps/sincronizacion/tests/test_id_preg_no_apunta_a_pregunta_ajena.py
+
+2026-07-28|a4c83f8|docs(padron): la referencia del padron era falsa; estado real y camino
+77	0	docs/oracle-legacy-padron/estado_lectura_padron.md
+
+2026-07-28|07bff5a|feat(sincronizacion): la escritura a Oracle se dispara sola al cerrar la encuesta
+13	0	srni-backend/apps/encuestas/views.py
+34	0	srni-backend/apps/sincronizacion/serializers.py
+135	0	srni-backend/apps/sincronizacion/tasks.py
+95	0	srni-backend/apps/sincronizacion/tests/test_api_estado.py
+133	0	srni-backend/apps/sincronizacion/tests/test_tasks_sincronizacion.py
+9	0	srni-backend/apps/sincronizacion/urls.py
+110	0	srni-backend/apps/sincronizacion/views.py
+34	0	srni-backend/srni/settings/base.py
+8	0	srni-backend/srni/urls.py
+
+2026-07-28|c216613|Merge branch 'feat/oracle-legacy-writer'
+2026-07-28|c4d3d25|feat(oracle): PILOTO EN PRODUCCION - primera caracterizacion de SICAV en la UARIV
+58	0	docs/oracle-legacy/plan_escalon_2.md
+22	0	srni-backend/apps/sincronizacion/migrations/0002_remove_registroescrituraoracle_uniq_registro_escritura_oracle_paso_origen_and_more.py
+15	3	srni-backend/apps/sincronizacion/models.py
+18	6	srni-backend/apps/sincronizacion/oracle/escritor.py
+88	0	srni-backend/apps/sincronizacion/tests/test_idempotencia_por_destino.py
+
+2026-07-28|df1a39e|docs(oracle-legacy): territorial_v8 cerrado; por qué telefonico y rural no admiten arreglo masivo
+47	0	docs/oracle-legacy/bloqueante_id_preg_subcampos.md
+
+2026-07-28|f6dbf6f|fix(instrumento): territorial_v8 deja de escribir en preguntas ajenas de Oracle
+42	42	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+99	0	srni-backend/apps/sincronizacion/tests/test_id_preg_no_apunta_a_pregunta_ajena.py
+21	7	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+
+2026-07-28|bf4f6d6|docs(oracle-legacy): inventario exacto de movimientos en la BD de la UARIV
+1	0	.gitignore
+167	0	docs/oracle-legacy/movimientos_en_la_bd.md
+
+2026-07-28|8c7029b|fix(oracle-legacy): 3a.3 resuelto + detecta 75 id_preg apuntando a la pregunta equivocada
+1	0	.gitignore
+98	0	docs/oracle-legacy/bloqueante_id_preg_subcampos.md
+24	4	srni-backend/apps/sincronizacion/oracle/catalogos.py
+27	0	srni-backend/apps/sincronizacion/tests/test_geografia.py
+
+2026-07-28|0393eb7|docs(oracle-legacy): veredicto de calidad de datos del Oracle de producción
+840	0	docs/oracle-legacy/veredicto_calidad_bd.md
+
+2026-07-28|7fe69e1|merge: Escalón 2 de la migración a Oracle + catálogo real de puntos (3a.11)
+2026-07-28|9236967|docs(oracle-legacy): registro de defectos de la BD para arreglar post-migración
+4	0	.gitignore
+228	0	docs/oracle-legacy/defectos_bd_legacy.md
+
+2026-07-28|af2ea30|chore(oracle): elimina puntos_atencion_oracle.json — era duplicado
+0	13721	srni-backend/apps/sincronizacion/oracle/puntos_atencion_oracle.json
+
+2026-07-28|1fb7fcf|feat(parametricas): 3a.11 — los 266 puntos de atención reales de Oracle
+53	5	docs/oracle-legacy/plan_escalon_2.md
+5	1	infra/deploy/scripts/40-cargar-datos.sh
+13	0	srni-backend/apps/parametricas/management/commands/cargar_puntos_atencion.py
+204	0	srni-backend/apps/parametricas/management/commands/cargar_puntos_atencion_oracle.py
+96	0	srni-backend/apps/parametricas/tests/test_cargar_puntos_atencion_oracle.py
+
+2026-07-28|cf22da1|feat(oracle): Escalón 2 — ruta geográfica verificada + guarda de destino
+5	0	.gitignore
+26	0	docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+75	0	docs/oracle-legacy/plan_escalon_1.md
+150	0	docs/oracle-legacy/plan_escalon_2.md
+76	0	infra/oracle-local/cargar_geografia_local.py
+10	0	srni-backend/.env.example
+46	7	srni-backend/apps/sincronizacion/management/commands/cargar_hogar_demo_oracle.py
+5	1	srni-backend/apps/sincronizacion/management/commands/escribir_a_oracle.py
+60	0	srni-backend/apps/sincronizacion/oracle/catalogos.py
+33	1	srni-backend/apps/sincronizacion/oracle/conexion.py
+6974	0	srni-backend/apps/sincronizacion/oracle/geografia_oracle.json
+52	1	srni-backend/apps/sincronizacion/oracle/mapeo.py
+13721	0	srni-backend/apps/sincronizacion/oracle/puntos_atencion_oracle.json
+25	2	srni-backend/apps/sincronizacion/tests/test_cargar_hogar_demo_oracle.py
+55	0	srni-backend/apps/sincronizacion/tests/test_conexion_destino.py
+92	0	srni-backend/apps/sincronizacion/tests/test_geografia.py
+
+2026-07-24|860597c|feat(oracle): Escalón 1 — primera escritura real de caracterización a Oracle legacy (réplica local)
+70	0	infra/oracle-local/setup_escalon1_geografia_stub.py
+55	0	srni-backend/apps/sincronizacion/management/commands/cargar_hogar_demo_oracle.py
+13	8	srni-backend/apps/sincronizacion/management/commands/escribir_a_oracle.py
+28	6	srni-backend/apps/sincronizacion/oracle/escritor.py
+64	18	srni-backend/apps/sincronizacion/oracle/mapeo.py
+6	1	srni-backend/apps/sincronizacion/oracle/procedimientos.py
+25	12	srni-backend/apps/sincronizacion/tests/test_escritor_territorio.py
+32	0	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+
+2026-07-24|35df985|feat(oracle-legacy): T_VICTIMA -> NULL + plan del Escalon 1
+12	22	srni-backend/apps/sincronizacion/oracle/mapeo.py
+9	36	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+
+2026-07-24|5ee6e69|Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+2026-07-23|9411d66|feat(oracle-legacy): Cédula -> 93 + soporte BOOLEAN en el resolver
+8	6	docs/gestion/decisiones_negocio_pendientes.md
+14	2	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+19	5	srni-backend/apps/sincronizacion/oracle/mapeo.py
+45	4	srni-backend/apps/sincronizacion/tests/test_resolver_respuestas.py
+
+2026-07-23|c6cabcb|fix(layout): añadir espaciado en MainLayout y actualizar la información institucional en la barra lateral style(login): mejorar los estilos de los botones y actualizar el degradado del fondo
+1	0	srni-frontend/src/components/MainLayout.tsx
+5	2	srni-frontend/src/components/Sidebar.tsx
+5	4	srni-frontend/src/pages/Login.tsx
+
+2026-07-23|b9e460d|Merge remote-tracking branch 'origin/main' into frontend
+2026-07-23|ae9df89|Merge branch 'main' into feat/oracle-legacy-writer
+2026-07-23|ae67cde|feat(oracle-legacy): mapeo booleano del bloque PR (PR2->353, PR4->228)
+197	0	docs/gestion/curacion_bloque_pr.md
+47	2	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+
+2026-07-23|1118a2d|fix(instrumento): re-engancha bloque PR (rural-etnico) a Oracle
+4	4	srni-backend/apps/formulario/fixtures/perfil_rural_etnico_v1.json
+
+2026-07-23|0152aa7|Merge branch 'main' into feat/oracle-legacy-writer
+2026-07-23|0583077|feat(oracle-legacy): 5 entradas de crosswalk (decisiones de Javier)
+81	0	docs/gestion/decisiones_negocio_pendientes.md
+58	2	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+
+2026-07-23|6834ca3|fix(instrumento): divide "Atención médica y psicosocial" en dos (PR3_re / AHE)
+4	3	srni-backend/apps/formulario/fixtures/opciones_compartidas.json
+1	1	srni-mobile/assets/instrumentos/rural_etnico_v1.json
+
+2026-07-23|1dcfe17|feat(oracle-legacy): PR3_re engancha a AHE (pre 354) + 3 entradas de crosswalk
+196	0	docs/gestion/curacion_pr3_ayuda_humanitaria.md
+36	2	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+15	0	srni-backend/apps/sincronizacion/tests/test_resolver_respuestas.py
+
+2026-07-23|ebf5973|Merge branch 'main' into feat/oracle-legacy-writer
+2026-07-23|29d37fa|fix(instrumento): parentesco A24 al manual + PR3_re engancha a ayuda humanitaria
+1	1	srni-backend/apps/formulario/fixtures/perfil_buenaventura_v7.json
+1	1	srni-backend/apps/formulario/fixtures/perfil_rural_etnico_v1.json
+1	1	srni-backend/apps/formulario/fixtures/perfil_urbano_etnico_v1.json
+1	1	srni-mobile/assets/instrumentos/buenaventura_v7.json
+1	1	srni-mobile/assets/instrumentos/urbano_etnico_v1.json
+
+2026-07-23|26bc23d|refactor(oracle-legacy): reconcilia el crosswalk tras corregir etiquetas al manual
+10	4	docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+9	184	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+18	9	srni-backend/apps/sincronizacion/tests/test_resolver_respuestas.py
+
+2026-07-23|1dd5928|merge: trae correcciones de etiquetas del instrumento (main) al worktree
+2026-07-22|b59a1bd|feat(oracle-legacy): catalogo Oracle completo + crosswalk curado + curacion vs manual
+7	0	.gitignore
+183	0	docs/gestion/batch_fixture_correcciones.md
+46	0	docs/gestion/correo_correccion_parentescos_oscar.md
+233	0	docs/gestion/curacion_crosswalk_propuesta.md
+140	0	docs/gestion/informe_mejoras_2026-07-22.md
+125	0	docs/gestion/plan_alineacion_bd_apk.md
+672	43	docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+3070	0	docs/oracle-legacy/query_a_v2_completo.tsv
+49	7	srni-backend/apps/sincronizacion/management/commands/cargar_hogar_demo_oracle.py
+195	0	srni-backend/apps/sincronizacion/management/commands/generar_catalogo_respuestas.py
+171	0	srni-backend/apps/sincronizacion/oracle/catalogos.py
+1814	0	srni-backend/apps/sincronizacion/oracle/crosswalk_opciones.json
+304	48	srni-backend/apps/sincronizacion/oracle/mapeo.py
+26816	0	srni-backend/apps/sincronizacion/oracle/respuestas_oracle.json
+29	8	srni-backend/apps/sincronizacion/tests/test_escritor_territorio.py
+25	13	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+530	0	srni-backend/apps/sincronizacion/tests/test_resolver_respuestas.py
+111	0	srni-backend/scripts/cargar_catalogo_local.py
+
+2026-07-22|55de1dc|fix(instrumento): alinea 21 etiquetas de opciones al manual
+6	6	srni-backend/apps/formulario/fixtures/perfil_asistencia_v8.json
+16	16	srni-backend/apps/formulario/fixtures/perfil_buenaventura_v7.json
+16	16	srni-backend/apps/formulario/fixtures/perfil_san_andres_v7.json
+2	2	srni-backend/apps/formulario/fixtures/perfil_telefonico_v8.json
+17	17	srni-backend/apps/formulario/fixtures/perfil_territorial_v7.json
+16	16	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+9	9	srni-backend/apps/formulario/fixtures/perfil_urbano_etnico_v1.json
+1	1	srni-mobile/assets/instrumentos/asistencia_v8.json
+1	1	srni-mobile/assets/instrumentos/buenaventura_v7.json
+1	1	srni-mobile/assets/instrumentos/san_andres_v7.json
+1	1	srni-mobile/assets/instrumentos/telefonico_v8.json
+1	1	srni-mobile/assets/instrumentos/territorial_v8.json
+1	1	srni-mobile/assets/instrumentos/urbano_etnico_v1.json
+
+2026-07-21|baa0cc3|feat(usuarios): añadir modal de confirmación para la eliminación de usuarios e implementar la funcionalidad de eliminación
+2	0	srni-frontend/src/api/usuarios.ts
+5	1	srni-frontend/src/pages/SesionDetalle.tsx
+69	2	srni-frontend/src/pages/Usuarios.tsx
+
+2026-07-16|88cad0a|docs(oracle-legacy): actualiza el traspaso tras los incrementos 6 y 7
+133	23	docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+
+2026-07-16|e57a99d|feat(oracle-legacy): comando del escenario reproducible para el Escalon 1
+229	0	srni-backend/apps/sincronizacion/management/commands/cargar_hogar_demo_oracle.py
+136	0	srni-backend/apps/sincronizacion/tests/test_cargar_hogar_demo_oracle.py
+
+2026-07-16|38e4bf0|feat(oracle-legacy): cablea TERRITORIO y RESPUESTA + resolver_territorio real
+65	0	srni-backend/apps/sincronizacion/oracle/catalogos.py
+116	7	srni-backend/apps/sincronizacion/oracle/escritor.py
+313	21	srni-backend/apps/sincronizacion/oracle/mapeo.py
+20	3	srni-backend/apps/sincronizacion/oracle/procedimientos.py
+129	0	srni-backend/apps/sincronizacion/tests/test_escritor_territorio.py
+175	15	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+
+2026-07-16|90f6593|docs(oracle-legacy): versiona el traspaso de estado y siguiente paso
+3	2	.gitignore
+96	0	docs/oracle-legacy/ESTADO_Y_SIGUIENTE_PASO.md
+
+2026-07-15|b504d79|feat(oracle-legacy): Etapa A — capa de escritura vía procedures + ResolverCatalogos (DRY-RUN)
+23	0	srni-backend/apps/sincronizacion/admin.py
+0	0	srni-backend/apps/sincronizacion/management/__init__.py
+0	0	srni-backend/apps/sincronizacion/management/commands/__init__.py
+91	0	srni-backend/apps/sincronizacion/management/commands/escribir_a_oracle.py
+42	0	srni-backend/apps/sincronizacion/migrations/0001_initial.py
+117	1	srni-backend/apps/sincronizacion/models.py
+8	0	srni-backend/apps/sincronizacion/oracle/__init__.py
+61	0	srni-backend/apps/sincronizacion/oracle/catalogos.py
+13826	0	srni-backend/apps/sincronizacion/oracle/catalogos_oracle.json
+76	0	srni-backend/apps/sincronizacion/oracle/conexion.py
+215	0	srni-backend/apps/sincronizacion/oracle/escritor.py
+212	0	srni-backend/apps/sincronizacion/oracle/mapeo.py
+232	0	srni-backend/apps/sincronizacion/oracle/procedimientos.py
+111	0	srni-backend/apps/sincronizacion/oracle/verificacion.py
+0	0	srni-backend/apps/sincronizacion/tests/__init__.py
+109	0	srni-backend/apps/sincronizacion/tests/test_resolver_catalogos.py
+6	0	srni-backend/srni/settings/base.py
+
+2026-07-15|f13415a|Se actualiza la documentación
+69	0	docs/frontend/bitacora-desarrollo.md
+55	2	docs/frontend/estado-actual.md
+
+2026-07-15|cefc6af|fix(parametricas): normalizar casing de nombres con toTitleCase (H-023)   fix(sesionDetalle): proteger campos nullable para eliminar textos   "undefined"/"NaN" (H-010/H-011)   fix(encuestas): proteger encuestador_nombre nullable
+1	1	srni-frontend/src/pages/Encuestas.tsx
+6	6	srni-frontend/src/pages/SesionDetalle.tsx
+
+2026-07-15|aa77310|feat(parametricas): Normalizar nombres a formato de título en varias pestañas.
+28	14	srni-frontend/src/pages/Parametricas.tsx
+
+2026-07-15|1476feb|feat(oracle-legacy): versiona generador de export de estructura (DBMS_DATAPUMP)
+6	0	.gitignore
+199	0	srni-backend/scripts/generar_expdp_estructura.py
+
+2026-07-15|161a0eb|feat(usuarios): añadir modal de confirmación para activar/desactivar usuarios y refactorizar menú de acciones
+122	34	srni-frontend/src/pages/Usuarios.tsx
+
+2026-07-15|8a89b1f|fix(encuestas): asegurar que el total de páginas sea al menos 1 y mostrar estado de carga en el encabezado fix(hogares): asegurar que el total de páginas sea al menos 1 feat(sesion detalle): agregar agrupación de respuestas por miembro y carga de miembros del hogar
+2	2	srni-frontend/src/pages/Encuestas.tsx
+1	1	srni-frontend/src/pages/Hogares.tsx
+96	33	srni-frontend/src/pages/SesionDetalle.tsx
+
+2026-07-15|9c5edae|Fix(hogares): actualizar el nombre del parámetro de 'busqueda' a 'search' para mantener la coherencia Fix(hogarDetalle): mejorar las etiquetas para miembros registrados y personas declaradas; gestionar valores no definidos
+1	1	srni-frontend/src/api/hogares.ts
+5	5	srni-frontend/src/pages/HogarDetalle.tsx
+2	3	srni-frontend/src/pages/Hogares.tsx
+
+2026-07-15|20d1b8f|feat(víctimas): añadir notificaciones tipo «toast» para la validación de búsqueda de documentos feat(menú desplegable): actualizar el estilo de sombra del menú desplegable para mejorar la interfaz feat(diseño principal): borrar las notificaciones tipo «toast» al navegar entre módulos
+6	0	srni-frontend/src/components/MainLayout.tsx
+1	1	srni-frontend/src/components/ui/Dropdown.tsx
+9	3	srni-frontend/src/pages/Victimas.tsx
+
+2026-07-15|10160cf|fix(inicio de sesión): añadir retraso antes de navegar al panel tras el intento de inicio de sesión
+5	0	srni-frontend/src/pages/Login.tsx
+
+2026-07-15|d9d06d7|fix(login): actualizar el campo de nombre de usuario para preservar las mayúsculas y minúsculas originales
+1	2	srni-frontend/src/pages/Login.tsx
+
+2026-07-15|ca112ac|feat(oracle-legacy): infra Oracle local (Docker) para validar estructura RNIENTREVISTA
+9	1	.gitignore
+122	0	docs/oracle-legacy/oracle-local-setup.md
+12	0	infra/oracle-local/.env.example
+36	0	infra/oracle-local/docker-compose.yml
+2	0	infra/oracle-local/dumps/.gitkeep
+9	0	srni-backend/.env.example
+180	0	srni-backend/scripts/import_estructura.py
+12	0	srni-backend/srni/settings/base.py
+
+2026-07-15|d71c1ba|feat(oracle-legacy): porta lógica PL/SQL GIC_* a servicios Django (sin Oracle)
+3	0	.gitignore
+20	0	srni-backend/apps/encuestas/services/__init__.py
+134	0	srni-backend/apps/encuestas/services/respuestas.py
+115	0	srni-backend/apps/encuestas/services/territorio.py
+0	0	srni-backend/apps/encuestas/tests/__init__.py
+123	0	srni-backend/apps/encuestas/tests/test_respuestas.py
+110	0	srni-backend/apps/encuestas/tests/test_territorio.py
+28	0	srni-backend/apps/hogares/services/__init__.py
+73	0	srni-backend/apps/hogares/services/alta_hogar.py
+173	0	srni-backend/apps/hogares/services/alta_miembro.py
+56	0	srni-backend/apps/hogares/services/codigo_hogar.py
+107	0	srni-backend/apps/hogares/tests/test_alta_hogar.py
+120	0	srni-backend/apps/hogares/tests/test_alta_miembro.py
+
+2026-07-14|4c9e541|fix(inicio de sesión): reemplazar el estado de error por notificaciones tipo "toast" para informar al usuario
+1	1	srni-frontend/src/api/client.ts
+5	20	srni-frontend/src/pages/Login.tsx
+
+2026-07-10|ab4db73|feat(usuarios): admin total para Jorge (QA) y Karen (documental)
+3	0	srni-backend/apps/autenticacion/management/commands/crear_usuarios_demo.py
+
+2026-07-10|a75c162|feat(dump): fixture inicial de 10 hogares listos para caracterización
+102	0	dump/README.md
+1304	0	dump/hogares_demo_10.json
+
+2026-07-07|8f7c59c|Merge remote-tracking branch 'azure/frontend' into frontend
+2026-07-07|4684928|fix(frontend): alinea tipos de perfil con el backend (build tsc limpio)
+2	2	srni-frontend/src/App.tsx
+4	2	srni-frontend/src/api/auth.ts
+1	1	srni-frontend/src/stores/authStore.test.ts
+1	1	srni-frontend/src/stores/authStore.ts
+
+2026-07-07|387e383|Merge branch 'main' into frontend
+2026-07-07|a096281|fix(auth): alinear tipo PerfilUsuario con Usuario del store +   migrar imagenes login a avif
+2026-07-07|5c55b65|fix(permisos): roles supervisión/admin acceden a referencia, operación y reportes
+41	7	srni-backend/apps/autenticacion/permissions.py
+0	0	srni-backend/apps/autenticacion/tests/__init__.py
+100	0	srni-backend/apps/autenticacion/tests/test_permisos_roles.py
+5	3	srni-backend/apps/encuestas/views.py
+4	2	srni-backend/apps/formulario/views.py
+5	3	srni-backend/apps/hogares/views.py
+10	7	srni-backend/apps/reportes/views.py
+
+2026-07-07|e8a657b| fix(auth): alinear tipo PerfilUsuario con Usuario del store (perfil.codigo +   permisos)   feat(login): migrar imágenes de fondo de .jpg a .avif para reducir peso
+-	-	srni-frontend/public/img/1.avif
+-	-	srni-frontend/public/img/1.jpg
+-	-	srni-frontend/public/img/2.avif
+-	-	srni-frontend/public/img/2.jpg
+-	-	srni-frontend/public/img/3.avif
+-	-	srni-frontend/public/img/3.jpg
+-	-	srni-frontend/public/img/4.avif
+-	-	srni-frontend/public/img/4.jpg
+-	-	srni-frontend/public/img/5.avif
+-	-	srni-frontend/public/img/5.jpg
+-	-	srni-frontend/public/img/6.avif
+-	-	srni-frontend/public/img/6.jpg
+-	-	srni-frontend/public/img/7.avif
+-	-	srni-frontend/public/img/7.jpg
+3	1	srni-frontend/src/api/auth.ts
+2	2	srni-frontend/src/pages/Login.tsx
+
+2026-07-07|685941c|chore(gitignore): excluye depósito de fotos crudas del login móvil y PNG sueltos en raíz
+4	0	.gitignore
+
+2026-07-07|3162063|docs(presentaciones): resumen directivo + contexto del acto de lanzamiento
+221	0	docs/presentaciones/contexto-acto-protocolario-2026-07-01.md
+117	0	docs/presentaciones/resumen-directivo-lanzamiento-sicav-movil.md
+
+2026-07-07|257ca49|Merge branch 'main' into frontend
+2026-07-07|590e2c8|perf(frontend): optimiza imágenes de fondo del login (34MB→4MB total)
+-	-	srni-frontend/public/img/1.jpg
+-	-	srni-frontend/public/img/2.jpg
+-	-	srni-frontend/public/img/3.jpg
+-	-	srni-frontend/public/img/4.jpg
+-	-	srni-frontend/public/img/5.jpg
+-	-	srni-frontend/public/img/6.jpg
+-	-	srni-frontend/public/img/7.jpg
+
+2026-07-06|f123649|docs(sprint-19): cierre de sprint + scripts de ops (reset/porta barrido)
+202	0	docs/sprints/sprint-19.md
+59	0	srni-backend/scripts/reset_conservar_hogar05.py
+105	0	srni-backend/scripts/reset_y_demo_territorial.py
+
+2026-07-06|298ce6a|Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+2026-07-06|7338993|chore(formulario): comando desactivar_instrumento + retira cargar_territorial_v7
+3	1	srni-backend/apps/formulario/management/commands/crear_instrumentos_base.py
+59	0	srni-backend/apps/formulario/management/commands/desactivar_instrumento.py
+
+2026-07-06|ed89bdb|feat(hogares): persistir constancia de tutor/cuidador + endpoint de subida
+18	0	srni-backend/apps/auditoria/migrations/0007_alter_logacceso_accion.py
+1	0	srni-backend/apps/auditoria/models.py
+29	0	srni-backend/apps/hogares/migrations/0006_miembrohogar_constancia_and_more.py
+27	0	srni-backend/apps/hogares/models.py
+4	0	srni-backend/apps/hogares/serializers.py
+106	0	srni-backend/apps/hogares/tests/test_constancia.py
+61	0	srni-backend/apps/hogares/views.py
+
+2026-07-06|d34ef67|feat(skip-logic): condiciones AND vía referencia a respuestas de otras preguntas
+14	4	srni-backend/apps/formulario/views.py
+44	0	srni-mobile/src/services/__tests__/skipLogic.test.ts
+38	11	srni-mobile/src/services/skipLogic.ts
+
+2026-07-06|9a9780f|fix(instrumento): A30->B17 trigger 'true' + porta barrido V8 a Buenaventura/San Andrés/Urbano
+137	11	srni-backend/apps/formulario/fixtures/perfil_buenaventura_v7.json
+137	11	srni-backend/apps/formulario/fixtures/perfil_san_andres_v7.json
+2	2	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+71	8	srni-backend/apps/formulario/fixtures/perfil_urbano_etnico_v1.json
+0	435	srni-backend/apps/formulario/management/commands/cargar_territorial_v7.py
+6	3	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+120	0	srni-backend/scripts/portar_barrido_v8_a_perfil.py
+1	1	srni-mobile/assets/instrumentos/buenaventura_v7.json
+3	3	srni-mobile/assets/instrumentos/index.json
+1	1	srni-mobile/assets/instrumentos/san_andres_v7.json
+1	1	srni-mobile/assets/instrumentos/territorial_v8.json
+1	1	srni-mobile/assets/instrumentos/urbano_etnico_v1.json
+
+2026-07-05|25854bb|docs: actualización documentación día 16 — Dashboard role-based, Instrumentos rediseño,    permisos sidebar
+79	0	docs/frontend/bitacora-desarrollo.md
+91	7	docs/frontend/estado-actual.md
+
+2026-07-05|ba5e7fb|Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+2026-07-05|50a374b|feat(instrumentos): rediseño con grid de cards y drill-down al detalle
+224	114	srni-frontend/src/pages/Instrumentos.tsx
+
+2026-07-05|1b18350|fix(sidebar,dashboard): ajustar visibilidad de módulos por rol
+12	10	srni-frontend/src/components/Sidebar.tsx
+3	1	srni-frontend/src/pages/Dashboard.tsx
+
+2026-07-05|aa15601|feat(dashboard): información contextual por rol del usuario
+249	60	srni-frontend/src/pages/Dashboard.tsx
+
+2026-07-05|60b709a|fix(mobile): require del bundle territorial apunta a v8 (rompía el build EAS)
+1	1	srni-mobile/src/services/instrumentos.ts
+
+2026-07-05|ea560e0|fix(bundle): agrega territorial_v8.json + index (faltaron en 6e8165c)
+3	3	srni-mobile/assets/instrumentos/index.json
+1	0	srni-mobile/assets/instrumentos/territorial_v8.json
+
+2026-07-05|6e8165c|feat(bundle): territorial V8 para el APK (363 preguntas)
+0	1	srni-mobile/assets/instrumentos/territorial_v7.json
+
+2026-07-05|07f500b|fix(instrumento): instrumento_version es dict {numero,vigente_desde}, no string
+4	1	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+7	2	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|da610b3|feat(instrumento): lote 4 — DIVIPOLA (D6/D11 a selector de municipio)
+18	4	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+22	0	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|bf1accb|feat(instrumento): lote 3 — multi-select (6 preguntas)
+6	6	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+19	0	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|4660192|docs(manual-movil): auditoría vs código real + rebrand a SICAV Móvil
+30	24	docs/publicacion/manual-de-uso-srni-mobile.md
+
+2026-07-05|4b6e92e|feat(instrumento): lote 2 (parte 5) — inputs embebidos → preguntas-hija
+436	165	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+110	1	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|3eb904e|feat(instrumento): lote 2 (parte 4) — valores $ de ingresos J31-J40
+245	21	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+55	1	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|2d03922|feat(instrumento): lote 2 (parte 3) — sub-campos de cursos K17-19 + K35 ¿cuál?
+298	29	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+107	1	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|3b70894|feat(instrumento): lote 2 (parte 2) — estrato de vivienda (C7/energía)
+83	17	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+62	1	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|66042ec|feat(instrumento): lote 2 (parte 1) — observaciones por capítulo
+96	0	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+84	0	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|14a8e26|feat: incorporación de gestión de permisos y componentes de acceso restringido
+274	0	docs/frontend/CREDENCIALES-PRUEBA.md
+109	0	docs/frontend/VALIDACION-PERMISOS.md
+-	-	srni-frontend/public/img/1.jpg
+-	-	srni-frontend/public/img/4.jpg
+60	4	srni-frontend/src/App.tsx
+12	4	srni-frontend/src/components/Sidebar.tsx
+1	1	srni-frontend/src/stores/authStore.ts
+
+2026-07-05|70ae75a|feat(instrumento): lote 1 completo — P26/P27 (B26->B27 territorio colectivo)
+3	3	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+18	1	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|86498d3|feat(instrumento): migración territorial v7->v8 lote 1 (skip-logic)
+12775	0	srni-backend/apps/formulario/fixtures/perfil_territorial_v8.json
+98	0	srni-backend/scripts/migrar_territorial_v7_a_v8.py
+
+2026-07-05|788f1fa|feat(instrumento): H2 skip-logic dispara sobre multi-select + triage de observaciones
+162	0	docs/instrumento/observaciones-territorial-triage.md
+29	4	srni-backend/apps/formulario/views.py
+40	0	srni-mobile/src/services/__tests__/skipLogic.test.ts
+27	5	srni-mobile/src/services/skipLogic.ts
+
+2026-07-03|49051cc|chore(infra): dominio institucional en ALLOWED_HOSTS/CORS del .env.example
+2	2	infra/deploy/.env.caracterizacion.example
+
+2026-07-03|3e158f9|fix(movil): descarga APK falla 500 tras el WAF (IP con puerto en X-Forwarded-For)
+21	4	srni-backend/apps/movil/views.py
+
+2026-07-03|1bb8f2e|feat(mobile): apunta la APK (preview/production) al dominio institucional
+2	2	srni-mobile/eas.json
+
+2026-07-03|6e910f0|fix(infra): cz_nginx en uariv-network para exponer el dominio institucional vía WAF
+7	1	infra/deploy/docker-compose.caracterizacion.yml
+
+2026-07-03|482e243|feat(demo): mock víctimas 9990100001–10 todas habilitadas + manual funcional publicado
+431	0	docs/publicacion/manual-funcional-app-movil.md
+7	0	infra/deploy/descargar/index.html
+633	0	infra/deploy/descargar/manual.html
+33	18	srni-backend/apps/victimas/repository/mock.py
+
+2026-07-03|ca9bc1f|fix(mobile): timeout en refresh de token para evitar carga infinita al abrir hogar
+148	0	docs/diagnostico/precarga-hogar-colgada.md
+70	0	docs/fixes/timeout-refresh-token-precarga.md
+12	2	srni-mobile/app/(main)/formulario/[temaId].tsx
+24	1	srni-mobile/src/api/client.ts
+19	0	srni-mobile/src/services/__tests__/miembrosHogar.test.ts
+
+2026-07-03|6745012|fix(hogares): muestra nombre de integrante y sincroniza AGREGAR_MIEMBRO en una pasada
+7	0	srni-mobile/app/(main)/hogares/[hogarId]/index.tsx
+15	0	srni-mobile/src/db/colaDao.ts
+48	1	srni-mobile/src/services/__tests__/sincronizacion.test.ts
+8	1	srni-mobile/src/services/sincronizacion.ts
+
+2026-07-02|82a68bf|Merge remote-tracking branch 'origin/main' into frontend
+2026-07-01|e70a2cd|feat(instrumento): completa cadena de primas J. Fuerza de Trabajo (Territorial)
+248	48	srni-backend/apps/formulario/fixtures/perfil_territorial_v7.json
+175	0	srni-backend/scripts/patch_primas_jf.py
+1	1	srni-mobile/assets/instrumentos/territorial_v7.json
+
+2026-07-01|a6f1521|fix(cargar_perfil): --reemplazar no purga si hay respuestas de campo (evita ProtectedError)
+17	5	srni-backend/apps/formulario/management/commands/cargar_perfil.py
+
+2026-07-01|a5151e9|fix(instrumento): recorta fuente_documental de Rural Étnico a <=300 (cabía en varchar(300))
+1	1	srni-backend/apps/formulario/fixtures/perfil_rural_etnico_v1.json
+
+2026-07-01|1ba113f|fix(formulario): amplía Pregunta.no_pregunta a varchar(40)
+19	0	srni-backend/apps/formulario/migrations/0005_widen_pregunta_no_pregunta.py
+1	1	srni-backend/apps/formulario/models.py
+
+2026-07-01|f0c22f4|fix(instrumento): sincroniza UUID de preguntas fixture↔bundle en los 8 perfiles + deploy determinista
+12	12	infra/deploy/scripts/40-cargar-datos.sh
+5	0	infra/deploy/scripts/50-verificar.sh
+210	105	srni-backend/apps/formulario/fixtures/perfil_asistencia_v8.json
+758	379	srni-backend/apps/formulario/fixtures/perfil_buenaventura_v7.json
+2255	144	srni-backend/apps/formulario/fixtures/perfil_rural_etnico_v1.json
+666	333	srni-backend/apps/formulario/fixtures/perfil_san_andres_v7.json
+132	66	srni-backend/apps/formulario/fixtures/perfil_telefonico_v8.json
+350	175	srni-backend/apps/formulario/fixtures/perfil_urbano_etnico_v1.json
+220	110	srni-backend/apps/formulario/fixtures/perfil_victimas_exterior_v1.json
+15	0	srni-backend/apps/formulario/management/commands/cargar_perfil.py
+102	0	srni-backend/scripts/sincronizar_ids_fixture_desde_bundle.py

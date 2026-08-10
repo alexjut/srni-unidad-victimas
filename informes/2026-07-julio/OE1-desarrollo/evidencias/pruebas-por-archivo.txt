@@ -1,0 +1,60 @@
+EVIDENCIA — Cobertura de pruebas automatizadas del backend SICAV
+Conteo de funciones de prueba por archivo (grep 'def test_').
+Total ejecutado: ver suite-de-pruebas-salida.txt
+
+ARCHIVO DE PRUEBAS                                             PRUEBAS
+-------------------------------------------------------------- -------
+apps/auditoria/tests/test_red.py                                     5
+apps/autenticacion/tests/test_permisos_roles.py                      7
+apps/encuestas/tests/test_marca_caracterizacion.py                   3
+apps/encuestas/tests/test_respuestas.py                              6
+apps/encuestas/tests/test_territorio.py                              6
+apps/formulario/tests/test_cargar_diccionario.py                    12
+apps/hogares/tests/test_alta_hogar.py                                6
+apps/hogares/tests/test_alta_miembro.py                              6
+apps/hogares/tests/test_constancia.py                                3
+apps/hogares/tests/test_validators.py                               17
+apps/parametricas/tests/test_cargar_puntos_atencion_oracle.py        6
+apps/sincronizacion/tests/test_api_estado.py                         6
+apps/sincronizacion/tests/test_capitulos_y_cierre.py                12
+apps/sincronizacion/tests/test_cargar_hogar_demo_oracle.py          13
+apps/sincronizacion/tests/test_conexion_destino.py                   5
+apps/sincronizacion/tests/test_diagnostico_encuesta_legacy.py       19
+apps/sincronizacion/tests/test_dominios_oracle.py                   11
+apps/sincronizacion/tests/test_escritor_territorio.py               11
+apps/sincronizacion/tests/test_geografia.py                         11
+apps/sincronizacion/tests/test_guarda_fusion_hogares.py              7
+apps/sincronizacion/tests/test_hechos_ruv.py                        17
+apps/sincronizacion/tests/test_id_preg_no_apunta_a_pregunta_ajena.py       4
+apps/sincronizacion/tests/test_idempotencia_por_destino.py           4
+apps/sincronizacion/tests/test_identidad_hacia_oracle.py             6
+apps/sincronizacion/tests/test_mis_caracterizaciones.py             11
+apps/sincronizacion/tests/test_resolver_catalogos.py                33
+apps/sincronizacion/tests/test_resolver_respuestas.py               36
+apps/sincronizacion/tests/test_tasks_reintento.py                   18
+apps/sincronizacion/tests/test_tasks_sincronizacion.py              11
+apps/sincronizacion/tests/test_usuarios_legacy.py                    7
+apps/sincronizacion/tests/test_validadores_y_hechos.py              33
+apps/victimas/tests/test_alta_manual.py                              8
+apps/victimas/tests/test_cargar_padron.py                           14
+apps/victimas/tests/test_cargar_universo.py                         29
+apps/victimas/tests/test_documento_duplicado.py                     19
+apps/victimas/tests/test_fechas_caracterizacion.py                  12
+apps/victimas/tests/test_homologacion.py                            20
+apps/victimas/tests/test_identidad.py                               23
+apps/victimas/tests/test_padron_offline.py                           7
+apps/victimas/tests/test_purgar_padron.py                            8
+apps/victimas/tests/test_repositorio_django.py                      29
+apps/victimas/tests/test_rutas_vigencia.py                          15
+apps/victimas/tests/test_tasks_padron.py                            14
+apps/victimas/tests/test_universo.py                                 8
+tests/test_beat_schedule.py                                         14
+tests/test_bloqueos.py                                               8
+tests/test_encuestas.py                                             13
+tests/test_formulario.py                                            15
+tests/test_hogares.py                                               21
+tests/test_ia.py                                                    13
+tests/test_parametricas.py                                          11
+tests/test_victimas.py                                              10
+
+TOTAL de funciones de prueba declaradas                            663

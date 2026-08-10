@@ -20,8 +20,91 @@ from rest_framework.response import Response
 from apps.autenticacion.permissions import PuedeConsultarOperacion
 from srni.pagination import CursorTimePagination
 
-from .models import EstadoPaso, RegistroEscrituraOracle
-from .serializers import EstadoHogarSerializer, RegistroEscrituraSerializer
+from .models import CaracterizacionLegacy, EstadoPaso, RegistroEscrituraOracle
+from .serializers import (
+    CaracterizacionLegacySerializer, EstadoHogarSerializer,
+    RegistroEscrituraSerializer,
+)
+
+
+class CursorCaracterizacionLegacy(CursorTimePagination):
+    """Cursor sobre la fecha de captura en el legacy, que es el eje real."""
+    ordering = "-creado_en_legacy"
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Mis caracterizaciones del sistema anterior",
+        description=(
+            "Lo que el encuestador autenticado capturó en la aplicación vieja "
+            "(Vivanto), traído a SICAV para que pueda verlo.\n\n"
+            "Cada fila trae **`visible_en_reportes`**, y esa es la columna que "
+            "importa: una caracterización puede estar hecha, completa y guardada, "
+            "y aun así no contar en ningún reporte de la UARIV. Hasta ahora eso "
+            "solo se descubría cuando alguien del territorio lo reclamaba por "
+            "correo.\n\n"
+            "No trae datos personales: es el recibo del trabajo (código, fecha, "
+            "estado, conteos), no la encuesta."
+        ),
+        tags=["Sincronización Oracle"],
+    ),
+)
+class MisCaracterizacionesLegacyViewSet(mixins.ListModelMixin,
+                                        viewsets.GenericViewSet):
+    """
+    Solo lo del usuario autenticado. El filtro va en `get_queryset`, no en un
+    parámetro: un listado de "lo mío" que acepta decir de quién es no es un
+    listado de lo mío.
+
+    El cruce es por `codigo_usuario` == `USU_USUARIOCREACION`, la cadena que
+    quedó escrita en el hogar. **No pasa por `GIC_USUARIO`**: el 97,7 % de los
+    hogares tiene un creador que no existe en ese catálogo, así que cruzar por
+    ahí le mostraría cero a casi todo el mundo.
+    """
+    serializer_class = CaracterizacionLegacySerializer
+    permission_classes = [IsAuthenticated]
+    # `CursorTimePagination` ordena por `created_at`, que este modelo no tiene:
+    # su eje temporal es la fecha en que se capturó en el legacy, no la fecha en
+    # que nosotros la importamos. Ordenar por la de importación mostraría todo
+    # junto —se trae de una sola vez— y perdería el orden que al encuestador le
+    # sirve, que es el cronológico de su propio trabajo.
+    pagination_class = CursorCaracterizacionLegacy
+    filterset_fields = ["estado", "visible_en_reportes", "veredicto"]
+
+    def get_queryset(self):
+        codigo = (getattr(self.request.user, "codigo_usuario", "") or "").strip()
+        if not codigo:
+            return CaracterizacionLegacy.objects.none()
+        return (CaracterizacionLegacy.objects
+                .filter(usuario_creador__iexact=codigo)
+                .order_by("-creado_en_legacy"))
+
+    @extend_schema(
+        summary="Resumen de mi trabajo en el sistema anterior",
+        description="Cuántas caracterizaciones hice y cuántas no está viendo nadie.",
+        tags=["Sincronización Oracle"],
+    )
+    @action(detail=False, methods=["get"], url_path="resumen")
+    def resumen(self, request):
+        qs = self.get_queryset()
+        total = qs.count()
+        visibles = qs.filter(visible_en_reportes=True).count()
+        return Response({
+            "total": total,
+            "visibles_en_reportes": visibles,
+            "invisibles": total - visibles,
+            "personas_caracterizadas": sum(qs.values_list("miembros", flat=True)),
+            # `.order_by()` VACÍO no es decorativo: `CaracterizacionLegacy` tiene
+            # `ordering = ["-creado_en_legacy"]` en su Meta, y Django mete el
+            # campo de ordenamiento en el GROUP BY. Sin limpiarlo, agrupa por
+            # (veredicto, fecha) y devuelve una fila por caracterización con n=1:
+            # el resumen decía "total 18" y el desglose sumaba 3.
+            "por_veredicto": {
+                r["veredicto"]: r["n"]
+                for r in qs.values("veredicto").order_by()
+                           .annotate(n=Count("hog_codigo"))
+            },
+        })
 
 
 @extend_schema_view(

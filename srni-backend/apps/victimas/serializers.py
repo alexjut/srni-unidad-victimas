@@ -148,6 +148,16 @@ class ResultadoBusquedaSerializer(serializers.Serializer):
     # que decir eso, no "no está en el padrón": son cosas distintas.
     no_identificante = serializers.BooleanField(required=False, default=False)
 
+    # El porqué, en código. Sin esto la app solo podía pintar `mensaje` y no
+    # sabía qué acción ofrecer, así que un bloqueo previsto se leía en campo
+    # como una falla del sistema. Ver `MotivoNoElegible` en repository/base.py.
+    motivo = serializers.CharField(required=False, allow_blank=True, default='')
+
+    # Cuándo vuelve a estar disponible (fecha de la última caracterización + los
+    # años de vigencia). Permite decir "vuelva a intentar el …" sin que la app
+    # tenga que conocer la regla.
+    disponible_desde = serializers.DateField(required=False, allow_null=True)
+
 
 class ConsultarFuenteInputSerializer(serializers.Serializer):
     """
@@ -158,11 +168,28 @@ class ConsultarFuenteInputSerializer(serializers.Serializer):
     tipo_documento = serializers.CharField(max_length=10)
     numero_documento = serializers.CharField(max_length=20, trim_whitespace=True)
 
+    # La ruta viaja junto al documento porque el Manual §5.1.1 (pág. 22) las pide
+    # en el mismo paso: «Diligenciar el número de documento con el cual iniciarán
+    # la conformación del hogar y establecer la ruta respectiva».
+    #
+    # Opcional a propósito: sin ruta se responde el estado real de la persona,
+    # que es lo que corresponde en la primera búsqueda. El encuestador elige una
+    # ruta de excepción recién DESPUÉS de ver que hay ficha vigente.
+    ruta_entrevista = serializers.CharField(
+        max_length=30, required=False, allow_blank=True, default='',
+        help_text=('Ruta de entrevista. ACCIONES_CONSTITUCIONALES, '
+                   'MODIFICACION_NUCLEO y ESPECIAL omiten la regla de vigencia '
+                   '(Manual §5.1.1); GENERAL la respeta.'),
+    )
+
     def validate_numero_documento(self, value):
         return value.strip().upper()
 
     def validate_tipo_documento(self, value):
         return value.strip().upper()
+
+    def validate_ruta_entrevista(self, value):
+        return (value or '').strip().upper()
 
 
 # ---------------------------------------------------------------------------

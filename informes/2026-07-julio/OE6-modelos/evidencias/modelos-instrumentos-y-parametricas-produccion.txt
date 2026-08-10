@@ -1,0 +1,83 @@
+
+EVIDENCIA — Modelos de datos e instrumentos de captura
+Generado desde la base de produccion de SICAV, solo lectura.
+
+==========================================================================
+1. Instrumentos de captura cargados (perfiles)
+==========================================================================
+CODIGO                 VER    CAPS  PREGUNTAS  NOMBRE
+ASISTENCIA             V8        8        105  Asistencia humanitaria
+BUENAVENTURA           V7       16        380  Caracterización Buenaventura
+RURAL_ETNICO           V1       14        106  Perfil Rural Étnico UARIV V1
+SAN_ANDRES             V7       15        334  Caracterización San Andrés
+TELEFONICO             V8        7         69  Perfil Telefónico SAAH
+TERRITORIAL            V7        0          0  Caracterización territorial
+TERRITORIAL            V8       14        366  Caracterización territorial
+URBANO_ETNICO          V1       10        176  Caracterización Urbano Étnico
+VICTIMAS_EXTERIOR      V1        8        110  Perfil Víctimas en el Exterior UAR
+
+==========================================================================
+2. Preguntas por tipo de dato
+==========================================================================
+TIPO                        PREGUNTAS
+LISTA                             622
+BOOLEAN                           385
+TEXTO                             357
+NUMERICO                          160
+COMBO_DINAMICO                     35
+TEXTO_LARGO                        31
+LISTA_MULTIPLE                     28
+FECHA                              28
+
+==========================================================================
+3. Reglas de skip-logic (visibilidad condicional)
+==========================================================================
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/psycopg/cursor.py", line 97, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "tipo_regla" does not exist
+LINE 1: select tipo_regla, count(*) from formulario_reglaskiplogic
+               ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/manage.py", line 20, in <module>
+    main()
+  File "/app/manage.py", line 16, in main
+    execute_from_command_line(sys.argv)
+  File "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/usr/local/lib/python3.12/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/usr/local/lib/python3.12/site-packages/django/core/management/base.py", line 420, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/usr/local/lib/python3.12/site-packages/django/core/management/base.py", line 464, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/core/management/commands/shell.py", line 247, in handle
+    exec(options["command"], {**globals(), **self.get_namespace(**options)})
+  File "<string>", line 1, in <module>
+  File "<string>", line 36, in <module>
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/psycopg/cursor.py", line 97, in execute
+    raise ex.with_traceback(None)
+django.db.utils.ProgrammingError: column "tipo_regla" does not exist
+LINE 1: select tipo_regla, count(*) from formulario_reglaskiplogic
+               ^

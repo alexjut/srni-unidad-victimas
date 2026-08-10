@@ -82,21 +82,46 @@ def test_el_desplazamiento_forzado_cruza_al_5_que_es_el_que_dispara_el_506():
     assert P.validador_de_hecho(5) == 105
 
 
+#: Los catorce que el legacy sí sabe nombrar. HV15/HV16 se agregaron después,
+#: con el catálogo del RUV, y no tienen destino propio allá.
+CODIGOS_CON_DESTINO_PROPIO = [f'HV{n:02d}' for n in range(1, 15)]
+
+
 def test_los_catorce_hechos_cruzan_y_ninguno_se_repite():
     """Catorce códigos SICAV → catorce ids Oracle distintos, sin huecos."""
-    valores = list(catalogos.HECHO_VICTIMIZANTE.values())
-    assert len(catalogos.HECHO_VICTIMIZANTE) == 14
-    assert sorted(valores) == list(range(P.HECHO_MINIMO, P.HECHO_MAXIMO + 1))
+    base = {c: catalogos.HECHO_VICTIMIZANTE[c] for c in CODIGOS_CON_DESTINO_PROPIO}
+    assert sorted(base.values()) == list(range(P.HECHO_MINIMO, P.HECHO_MAXIMO + 1))
 
 
-def test_el_unico_cruce_aproximado_esta_declarado_como_tal():
+def test_los_dos_hechos_del_ruv_comparten_destino_sin_inventar_uno_nuevo():
     """
-    'Confinamiento' no existe en el catálogo del legacy (congelado en 2015) y se
-    escribe como 'Otros'. Es una pérdida de precisión consciente, y tiene que
-    poder informarse en cada corrida — no vivir solo en un comentario.
+    HV15 ('Otro') y HV16 ('Censo Masivo') entraron el 4-ago-2026 con el catálogo
+    del RUV. El legacy no tiene cómo nombrarlos, así que van al 13 ('Otros'),
+    igual que HV13 — comparten destino a propósito y NO agregan ids nuevos.
+
+    Que el destino se repita es justamente lo que el test de arriba no debe
+    contar: por eso aquel mira solo los catorce con destino propio.
     """
-    assert set(catalogos.HECHO_VICTIMIZANTE_APROXIMADO) == {'HV13'}
-    assert catalogos.HECHO_VICTIMIZANTE['HV13'] == 13
+    assert catalogos.HECHO_VICTIMIZANTE['HV15'] == 13
+    assert catalogos.HECHO_VICTIMIZANTE['HV16'] == 13
+    assert len(catalogos.HECHO_VICTIMIZANTE) == 16
+    # Ningún destino fuera del dominio que Oracle acepta.
+    for valor in catalogos.HECHO_VICTIMIZANTE.values():
+        assert P.HECHO_MINIMO <= valor <= P.HECHO_MAXIMO
+
+
+def test_los_cruces_aproximados_estan_declarados_como_tales():
+    """
+    Ni 'Confinamiento', ni 'Otro', ni 'Censo Masivo' existen en el catálogo del
+    legacy (congelado en 2015) y los tres se escriben como 'Otros'. Es pérdida de
+    precisión consciente, y tiene que poder informarse en cada corrida — no vivir
+    solo en un comentario.
+
+    El de mayor volumen es 'Censo Masivo': 434.178 registros en el RUV.
+    """
+    assert set(catalogos.HECHO_VICTIMIZANTE_APROXIMADO) == {'HV13', 'HV15', 'HV16'}
+    for codigo in ('HV13', 'HV15', 'HV16'):
+        assert catalogos.HECHO_VICTIMIZANTE[codigo] == 13
 
     class _Cat:
         codigo = 'HV13'
@@ -115,6 +140,98 @@ def test_un_hecho_sin_cruce_lanza_en_vez_de_aproximar():
 
     with pytest.raises(mapeo.MapeoDesconocido):
         _resolver().resolver_id_hecho(_Cat())
+
+
+# ── 1b. El TERCER catálogo: el del RUV, que tampoco cruza por número ─────────
+
+def test_el_hecho_del_ruv_tampoco_se_cruza_por_el_numero():
+    """
+    La misma trampa del legacy, en el otro extremo. En el RUV el 5 es
+    'Desplazamiento Forzado' y el 1 es 'Acto terrorista' — al revés que los
+    códigos de SICAV, donde HV01 es el desplazamiento.
+    """
+    assert catalogos.HECHO_RUV_A_SICAV[5] == 'HV01'
+    assert catalogos.HECHO_RUV_A_SICAV[1] == 'HV02'
+    assert catalogos.HECHO_RUV_A_SICAV[2] == 'HV03'
+    # Y explícitamente: el id del RUV NO es el número del código SICAV.
+    for id_ruv in (1, 2, 3, 4, 5):
+        assert int(catalogos.HECHO_RUV_A_SICAV[id_ruv][2:]) != id_ruv
+
+
+def test_los_trece_del_ruv_cruzan_a_codigos_distintos_que_existen():
+    """Trece ids del RUV → trece códigos SICAV distintos, todos reales."""
+    destinos = list(catalogos.HECHO_RUV_A_SICAV.values())
+    assert sorted(catalogos.HECHO_RUV_A_SICAV) == list(range(1, 14))
+    assert len(set(destinos)) == 13
+    for codigo in destinos:
+        assert codigo in catalogos.HECHO_VICTIMIZANTE
+
+
+def test_el_doce_y_el_trece_del_ruv_no_son_el_doce_y_el_trece_del_legacy():
+    """
+    Acá está el daño concreto: son 509.442 registros (12,6 %).
+
+    En el RUV el 12 es 'Otro' y el 13 es 'Censo Masivo'. En el legacy el 12 es
+    'Perdida de bienes muebles o inmuebles' —otro hecho— y el 13 es 'Otros'.
+    Copiar el número escribiría 'Perdida de bienes' en la fila de los 75.264 que
+    el RUV marcó como 'Otro', sin que nada falle.
+    """
+    # RUV 12 'Otro' NO puede terminar en el 12 del legacy.
+    assert catalogos.HECHO_RUV_A_SICAV[12] == 'HV15'
+    assert catalogos.HECHO_VICTIMIZANTE['HV15'] == 13
+    assert catalogos.HECHO_VICTIMIZANTE['HV15'] != 12
+
+    # RUV 13 'Censo Masivo' → 'Otros' del legacy (decisión de negocio, 4-ago-2026).
+    assert catalogos.HECHO_RUV_A_SICAV[13] == 'HV16'
+    assert catalogos.HECHO_VICTIMIZANTE['HV16'] == 13
+
+    # Y no se confunde con 'Perdida de bienes', que sigue teniendo su propio id.
+    assert catalogos.HECHO_VICTIMIZANTE['HV12'] == 12
+
+
+def test_la_cadena_completa_ruv_a_legacy_conserva_el_desplazamiento():
+    """
+    RUV → SICAV → legacy, de punta a punta, para el hecho que más pesa (51,8 %) y
+    el único con consecuencia en cadena sobre el hogar.
+    """
+    codigo_sicav = catalogos.HECHO_RUV_A_SICAV[5]      # RUV 5 = Desplazamiento
+    assert codigo_sicav == 'HV01'
+    assert catalogos.HECHO_VICTIMIZANTE[codigo_sicav] == 5   # legacy 5 = ídem
+    assert P.validador_de_hecho(5) == 105
+
+
+def test_los_hechos_que_el_ruv_no_origina_estan_declarados():
+    """
+    'Perdida de bienes', 'Confinamiento' y 'Sin información' no existen en el
+    catálogo del RUV. Que nunca lleguen por esa vía es lo esperado, no un fallo
+    del cruce, y queda declarado para no tener que redescubrirlo.
+    """
+    assert catalogos.HECHO_SIN_ORIGEN_EN_RUV == ('HV12', 'HV13', 'HV14')
+    for codigo in catalogos.HECHO_SIN_ORIGEN_EN_RUV:
+        assert codigo not in catalogos.HECHO_RUV_A_SICAV.values()
+        assert codigo in catalogos.HECHO_VICTIMIZANTE
+
+
+def test_el_catalogo_del_repo_y_el_mapeo_no_se_desincronizan():
+    """
+    El fixture es lo que se carga en la base; el mapeo es lo que se escribe a
+    Oracle. Si alguien agrega un hecho en uno y se olvida del otro, el fallo
+    aparecería recién al escribir en producción. Acá aparece en la suite.
+    """
+    import json
+    import pathlib
+
+    ruta = (pathlib.Path(__file__).resolve().parents[2]
+            / 'victimas' / 'fixtures' / 'catalogo_hechos_victimizantes.json')
+    fixture = json.loads(ruta.read_text(encoding='utf-8'))
+    codigos = {f['fields']['codigo'] for f in fixture}
+
+    assert codigos == set(catalogos.HECHO_VICTIMIZANTE)
+    # Y los dos que agregó el RUV están en el fixture con su nombre real, no
+    # con el del legacy: en SICAV un censo masivo se llama censo masivo.
+    por_codigo = {f['fields']['codigo']: f['fields']['nombre'] for f in fixture}
+    assert por_codigo['HV15'] == 'Otro'
+    assert por_codigo['HV16'] == 'Censo Masivo'
 
 
 # ── 2. Los dominios que el procedure NO comprueba ────────────────────────────

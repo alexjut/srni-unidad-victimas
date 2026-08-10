@@ -1,0 +1,18 @@
+EVIDENCIA — Estructura y contenido de la base de datos de SICAV
+Generado desde el contenedor de produccion (cz_backend), solo lectura.
+
+==========================================================================
+4. El padron por estado en el RUV
+==========================================================================
+ESTADO_RUV                 PERSONAS    HABILITADAS
+INCLUIDO                  5,926,004      4,867,033
+TOTAL                     5,926,004
+
+==========================================================================
+5. Clasificacion de documentos compartidos por varias personas
+==========================================================================
+CLASE                      GRUPOS        FILAS    MAYOR  PERSONAS
+DUPLICADO_FUENTE          706,301    1,612,559      505         1
+AMBIGUO                    51,996      124,673      484        18
+VARIANTE_NOMBRE             9,710       21,945       34         1
+NO_IDENTIFICANTE               89        6,198    4,297         0

@@ -29,3 +29,15 @@ Perfiles intervenidos: **Buenaventura, San Andrés, Territorial, Urbano-Étnico*
   re-correr el script de reconciliación (la curación del cap. B vive en el fixture).
 - Siembra en servidor: `python manage.py cargar_perfil --instrumento {BUENAVENTURA,SAN_ANDRES,TERRITORIAL,URBANO_ETNICO}`
   seguido de `python manage.py exportar_a_mobile`.
+
+## Evidencia física recolectada
+
+Archivos en [`evidencias/`](evidencias/):
+
+| Archivo | Qué prueba |
+|---|---|
+| `padron-cargado-y-calidad-produccion.txt` | El padrón real cargado, por estado en el RUV, y la clasificación de los documentos compartidos por varias personas |
+| `veredicto_calidad_bd.md` | Auditoría de calidad de la base de origen, con los defectos medidos |
+| `hallazgos_identidad_padron.md` | Análisis de la identidad no resuelta en la fuente (el 24 % que no pudo incorporarse) |
+| `defectos_bd_legacy.md` | Registro de defectos de la base del legado para atender post-migración |
+| `commits-calidad-datos-julio.txt` | Los cambios de calidad de datos del mes, del histórico del repositorio |

@@ -1,0 +1,59 @@
+EVIDENCIA — Inventario de documentos del informe de julio 2026
+Contrato 2226-2026. Generado el 2026-08-05.
+
+Cada carpeta OEn corresponde a una obligacion especifica del contrato y
+contiene su README (actividad del periodo) y una subcarpeta evidencias/
+con los archivos que la respaldan.
+
+ARCHIVO                                                      LINEAS  TAMANO
+---------------------------------------------------------- --------  ------
+COPIAR-PEGAR-FORMATO-SUPERVISOR.md                              148  8.0K
+EXTRAS-actividades-adicionales/evidencias/cierre-julio-2026.md      301  20K
+EXTRAS-actividades-adicionales/evidencias/implementacion_capacitacion_despliegue.md      396  32K
+EXTRAS-actividades-adicionales/README.md                         58  4.0K
+OE1-desarrollo/evidencias/commits-correctivos-julio.txt          41  8.0K
+OE1-desarrollo/evidencias/commits-julio-con-lineas.txt          640  36K
+OE1-desarrollo/evidencias/correctivo-modulo-B-resumen.txt        54  4.0K
+OE1-desarrollo/evidencias/pruebas-por-archivo.txt                60  4.0K
+OE1-desarrollo/evidencias/suite-de-pruebas-salida.txt            40  4.0K
+OE1-desarrollo/README.md                                         70  4.0K
+OE2-datos/evidencias/commits-calidad-datos-julio.txt             60  8.0K
+OE2-datos/evidencias/defectos_bd_legacy.md                      234  16K
+OE2-datos/evidencias/hallazgos_identidad_padron.md              344  16K
+OE2-datos/evidencias/padron-cargado-y-calidad-produccion.txt       18  4.0K
+OE2-datos/evidencias/veredicto_calidad_bd.md                    887  48K
+OE2-datos/README.md                                              43  4.0K
+OE3-seguridad/evidencias/auditoria-de-accesos-produccion.txt       17  4.0K
+OE3-seguridad/evidencias/cifrado-de-pii-codigo-fuente.txt       105  8.0K
+OE3-seguridad/evidencias/constancia_accesos_vivanto.md          157  8.0K
+OE3-seguridad/README.md                                          50  4.0K
+OE4-arquitectura/evidencias/commits-arquitectura-julio.txt       35  4.0K
+OE4-arquitectura/evidencias/como_consultar_el_ruv.md            179  12K
+OE4-arquitectura/evidencias/estado_lectura_padron.md            194  12K
+OE4-arquitectura/evidencias/movimientos_en_la_bd.md             167  12K
+OE4-arquitectura/evidencias/plan_escalon_1.md                    75  8.0K
+OE4-arquitectura/evidencias/plan_escalon_2.md                   256  16K
+OE4-arquitectura/README.md                                       32  4.0K
+OE5-bd/evidencias/estructura-y-volumen-base-produccion.txt      229  16K
+OE5-bd/evidencias/migraciones-del-proyecto.txt                   54  4.0K
+OE5-bd/evidencias/oracle-local-setup.md                         122  8.0K
+OE5-bd/README.md                                                 44  4.0K
+OE6-modelos/evidencias/modelos-instrumentos-y-parametricas-produccion.txt       83  8.0K
+OE6-modelos/README.md                                            35  4.0K
+OE7-reuniones/evidencias/acta-constitucion-PRY-0662064.md       125  8.0K
+OE7-reuniones/evidencias/informe_mejoras_2026-07-22.md          140  12K
+OE7-reuniones/evidencias/informe_quincenal_2026-07-23.md        128  8.0K
+OE7-reuniones/README.md                                          40  4.0K
+OE8-informes/evidencias/inventario-documentos-julio.txt          46  4.0K
+OE8-informes/README.md                                           43  4.0K
+OE9-adicionales/evidencias/correo_correccion_parentescos_oscar.md       46  4.0K
+OE9-adicionales/evidencias/correo_oti_identidad_padron.md       116  8.0K
+OE9-adicionales/evidencias/decisiones_negocio_pendientes.md      157  12K
+OE9-adicionales/evidencias/solicitud_acceso_parametrizador.md       80  8.0K
+OE9-adicionales/README.md                                        43  4.0K
+README.md                                                        59  4.0K
+
+Totales:
+  carpetas por obligacion : 10
+  archivos de evidencia   : 33
+  documentos totales      : 45

@@ -1,0 +1,42 @@
+2026-08-01  5182ae9  fix(precarga): pedia el padron ENTERO al login (5,9 M) y dejaba la APK colgada
+2026-08-01  1aeb173  perf(padron): las fechas se aplican con COPY, no fila a fila (25 h -> minutos)
+2026-08-01  026790c  fix(victimas): produccion respondia con el MOCK, no con el padron real
+2026-07-31  686d0ad  fix(deploy): el compose no propagaba las credenciales de Oracle al contenedor
+2026-07-31  b6a3f54  fix(padron): la purga preguntaba con NOT IN sobre los 3,5 M del padron
+2026-07-31  6f94ce5  fix(deploy): declara oracledb en requirements
+2026-07-31  dd70a7e  perf(padron): la carga baja de ~10 h a ~20 min + corrige la constancia de accesos
+2026-07-28  2f71ff0  fix(instrumento): cura telefonico_v8 y rural_etnico_v1 con el uso real de produccion
+2026-07-28  f6dbf6f  fix(instrumento): territorial_v8 deja de escribir en preguntas ajenas de Oracle
+2026-07-28  8c7029b  fix(oracle-legacy): 3a.3 resuelto + detecta 75 id_preg apuntando a la pregunta equivocada
+2026-07-23  c6cabcb  fix(layout): añadir espaciado en MainLayout y actualizar la información institucional en la barra lateral style(login): mejorar los estilos de los botones y actualizar el degradado del fondo
+2026-07-23  1118a2d  fix(instrumento): re-engancha bloque PR (rural-etnico) a Oracle
+2026-07-23  6834ca3  fix(instrumento): divide "Atención médica y psicosocial" en dos (PR3_re / AHE)
+2026-07-23  29d37fa  fix(instrumento): parentesco A24 al manual + PR3_re engancha a ayuda humanitaria
+2026-07-22  55de1dc  fix(instrumento): alinea 21 etiquetas de opciones al manual
+2026-07-16  e57a99d  feat(oracle-legacy): comando del escenario reproducible para el Escalon 1
+2026-07-15  cefc6af  fix(parametricas): normalizar casing de nombres con toTitleCase (H-023)   fix(sesionDetalle): proteger campos nullable para eliminar textos   "undefined"/"NaN" (H-010/H-011)   fix(encuestas): proteger encuestador_nombre nullable
+2026-07-15  8a89b1f  fix(encuestas): asegurar que el total de páginas sea al menos 1 y mostrar estado de carga en el encabezado fix(hogares): asegurar que el total de páginas sea al menos 1 feat(sesion detalle): agregar agrupación de respuestas por miembro y carga de miembros del hogar
+2026-07-15  10160cf  fix(inicio de sesión): añadir retraso antes de navegar al panel tras el intento de inicio de sesión
+2026-07-15  d9d06d7  fix(login): actualizar el campo de nombre de usuario para preservar las mayúsculas y minúsculas originales
+2026-07-14  4c9e541  fix(inicio de sesión): reemplazar el estado de error por notificaciones tipo "toast" para informar al usuario
+2026-07-07  4684928  fix(frontend): alinea tipos de perfil con el backend (build tsc limpio)
+2026-07-07  a096281  fix(auth): alinear tipo PerfilUsuario con Usuario del store +   migrar imagenes login a avif
+2026-07-07  5c55b65  fix(permisos): roles supervisión/admin acceden a referencia, operación y reportes
+2026-07-07  590e2c8  perf(frontend): optimiza imágenes de fondo del login (34MB→4MB total)
+2026-07-06  f123649  docs(sprint-19): cierre de sprint + scripts de ops (reset/porta barrido)
+2026-07-06  9a9780f  fix(instrumento): A30->B17 trigger 'true' + porta barrido V8 a Buenaventura/San Andrés/Urbano
+2026-07-05  1b18350  fix(sidebar,dashboard): ajustar visibilidad de módulos por rol
+2026-07-05  60b709a  fix(mobile): require del bundle territorial apunta a v8 (rompía el build EAS)
+2026-07-05  ea560e0  fix(bundle): agrega territorial_v8.json + index (faltaron en 6e8165c)
+2026-07-05  6e8165c  feat(bundle): territorial V8 para el APK (363 preguntas)
+2026-07-05  07f500b  fix(instrumento): instrumento_version es dict {numero,vigente_desde}, no string
+2026-07-05  da610b3  feat(instrumento): lote 4 — DIVIPOLA (D6/D11 a selector de municipio)
+2026-07-03  3e158f9  fix(movil): descarga APK falla 500 tras el WAF (IP con puerto en X-Forwarded-For)
+2026-07-03  1bb8f2e  feat(mobile): apunta la APK (preview/production) al dominio institucional
+2026-07-03  6e910f0  fix(infra): cz_nginx en uariv-network para exponer el dominio institucional vía WAF
+2026-07-03  ca9bc1f  fix(mobile): timeout en refresh de token para evitar carga infinita al abrir hogar
+2026-07-03  6745012  fix(hogares): muestra nombre de integrante y sincroniza AGREGAR_MIEMBRO en una pasada
+2026-07-01  a6f1521  fix(cargar_perfil): --reemplazar no purga si hay respuestas de campo (evita ProtectedError)
+2026-07-01  a5151e9  fix(instrumento): recorta fuente_documental de Rural Étnico a <=300 (cabía en varchar(300))
+2026-07-01  1ba113f  fix(formulario): amplía Pregunta.no_pregunta a varchar(40)
+2026-07-01  f0c22f4  fix(instrumento): sincroniza UUID de preguntas fixture↔bundle en los 8 perfiles + deploy determinista

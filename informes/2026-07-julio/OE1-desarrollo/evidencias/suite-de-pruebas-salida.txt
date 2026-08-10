@@ -1,0 +1,40 @@
+tests\test_parametricas.py ...........                                   [ 48%]
+tests\test_victimas.py ..........                                        [ 49%]
+apps\auditoria\tests\test_red.py .........                               [ 50%]
+apps\autenticacion\tests\test_permisos_roles.py .                        [ 50%]
+apps\hogares\tests\test_validators.py .................                  [ 53%]
+apps\sincronizacion\tests\test_conexion_destino.py ..........            [ 54%]
+apps\sincronizacion\tests\test_diagnostico_encuesta_legacy.py .......... [ 55%]
+.........                                                                [ 56%]
+apps\sincronizacion\tests\test_escritor_territorio.py ...........        [ 57%]
+apps\sincronizacion\tests\test_geografia.py .........................    [ 61%]
+apps\sincronizacion\tests\test_hechos_ruv.py ............                [ 62%]
+apps\sincronizacion\tests\test_id_preg_no_apunta_a_pregunta_ajena.py ... [ 62%]
+........                                                                 [ 63%]
+apps\sincronizacion\tests\test_resolver_catalogos.py ................... [ 66%]
+..............................                                           [ 69%]
+apps\sincronizacion\tests\test_resolver_respuestas.py .................. [ 72%]
+...................                                                      [ 74%]
+apps\victimas\tests\test_alta_manual.py ..........                       [ 75%]
+apps\victimas\tests\test_cargar_universo.py ..........................   [ 78%]
+apps\victimas\tests\test_homologacion.py ............................... [ 82%]
+..............................................                           [ 88%]
+apps\victimas\tests\test_identidad.py ..............................     [ 92%]
+apps\victimas\tests\test_padron_offline.py .                             [ 92%]
+apps\victimas\tests\test_rutas_vigencia.py ...............               [ 94%]
+apps\victimas\tests\test_tasks_padron.py ..............                  [ 95%]
+tests\test_beat_schedule.py .........................                    [ 99%]
+tests\test_bloqueos.py ........                                          [100%]
+
+============================== warnings summary ===============================
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+apps/auditoria/tests/test_red.py::test_buscar_con_la_ip_del_WAF_no_responde_500
+  D:\desarrollo\unidad-victima\srni-backend\.venv\Lib\site-packages\rest_framework\urlpatterns.py:108: RemovedInDjango60Warning: Converter 'drf_format_suffix' is already registered. Support for overriding registered converters is deprecated and will be removed in Django 6.0.
+    register_converter(suffix_converter, converter_name)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 808 passed, 1 xfailed, 6 warnings in 19.79s =================

@@ -28,11 +28,14 @@ import datetime
 import logging
 
 from .base import (
+    MENSAJE_NO_EN_PADRON,
     EstadoHabilitacion,
     HechoResumen,
+    MotivoNoElegible,
     ResultadoBusqueda,
     VictimaRepository,
     VictimaResumen,
+    describir_elegibilidad,
     doc_hash,
     num_hash,
 )
@@ -231,7 +234,8 @@ class DjangoVictimaRepository(VictimaRepository):
         return resultado
 
     # ── contrato ──────────────────────────────────────────────────────────────
-    def buscar_por_documento(self, tipo_documento, numero_documento) -> ResultadoBusqueda:
+    def buscar_por_documento(self, tipo_documento, numero_documento, *,
+                             ruta=None) -> ResultadoBusqueda:
         # Por hash, nunca por el campo cifrado: Fernet no es determinista y un
         # `filter(numero_documento=...)` no encontraría jamás nada.
         encontradas = list(self._base_qs().filter(
@@ -251,9 +255,13 @@ class DjangoVictimaRepository(VictimaRepository):
                          f"es '{tipo_documento}'. VERIFIQUE la identidad. ")
 
         if not encontradas:
+            # El texto vive en `base.py`: el anterior —"No se encontró la
+            # persona"— se leía como "no es víctima", y no lo es. El padrón se
+            # armó desde el legacy, así que hay víctimas del RUV que no están acá.
             return ResultadoBusqueda(
                 encontrado=False, victima=None, fuente=self.FUENTE,
-                mensaje="No se encontró la persona en el padrón cargado en SICAV.",
+                mensaje=MENSAJE_NO_EN_PADRON,
+                motivo=MotivoNoElegible.NO_EN_PADRON,
             )
 
         # Varios registros con el mismo documento. Antes se avisaba en TODOS los
@@ -278,6 +286,7 @@ class DjangoVictimaRepository(VictimaRepository):
                 mensaje=("Este número no identifica a una persona: en el padrón figura "
                          "como valor de relleno, compartido por muchos registros. "
                          "Verifique el documento o regístrela por alta manual."),
+                motivo=MotivoNoElegible.DOCUMENTO_NO_IDENTIFICANTE,
             )
 
         if len(encontradas) > 1:
@@ -292,23 +301,19 @@ class DjangoVictimaRepository(VictimaRepository):
         # Se devuelve `encontrado=True` aunque no sea elegible: el encuestador
         # necesita ver a quién tiene enfrente y POR QUÉ no puede caracterizarla.
         # Decirle "no existe" cuando en realidad está excluida sería mentirle.
-        if victima.estado_ruv == "EXCLUIDO":
-            mensaje = "Persona excluida del RUV — no elegible para caracterización."
-        elif not victima.habilitado_para_caracterizacion:
-            if victima.fecha_ult_caracterizacion:
-                mensaje = (f"Ya fue caracterizada el "
-                           f"{victima.fecha_ult_caracterizacion:%Y-%m-%d}.")
-            else:
-                mensaje = "La persona no está habilitada para caracterización."
-        else:
-            mensaje = ""
+        #
+        # El veredicto lo arma `describir_elegibilidad` — el MISMO que usa
+        # `estado_habilitacion` más abajo, para que no puedan volver a divergir.
+        veredicto = describir_elegibilidad(victima, ruta=ruta)
 
         # El aviso va PRIMERO: que haya que verificar la identidad importa más que el
         # estado en el RUV — si es otra persona, lo del RUV ni aplica.
         return ResultadoBusqueda(
             encontrado=True, victima=resumen, fuente=self.FUENTE,
-            mensaje=(aviso + mensaje).strip(),
+            mensaje=(aviso + veredicto.mensaje).strip(),
             candidatos=[self._a_resumen(v, con_hechos=False) for v in otras],
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
         )
 
     def obtener_grupo_familiar(self, cons_persona) -> list[VictimaResumen]:
@@ -386,7 +391,8 @@ class DjangoVictimaRepository(VictimaRepository):
                 clase_colision=clases.get(victima.numero_documento_hash),
             )
 
-    def verificar_habilitacion(self, tipo_documento, numero_documento) -> EstadoHabilitacion:
+    def verificar_habilitacion(self, tipo_documento, numero_documento, *,
+                               ruta=None) -> EstadoHabilitacion:
         """Consulta ligera: solo los tres campos que deciden, sin descifrar el resto."""
         from apps.victimas.models import Victima
 
@@ -396,19 +402,15 @@ class DjangoVictimaRepository(VictimaRepository):
                          "fecha_ult_caracterizacion")
                    .first())
 
-        if victima is None:
-            return EstadoHabilitacion(
-                habilitado=False,
-                razon="La persona no está en el padrón cargado en SICAV.")
-        if victima.estado_ruv == "EXCLUIDO":
-            return EstadoHabilitacion(habilitado=False,
-                                      razon="Persona excluida del RUV.")
-        if not victima.habilitado_para_caracterizacion:
-            if victima.fecha_ult_caracterizacion:
-                return EstadoHabilitacion(
-                    habilitado=False,
-                    razon=(f"Ya fue caracterizada el "
-                           f"{victima.fecha_ult_caracterizacion:%Y-%m-%d}."))
-            return EstadoHabilitacion(habilitado=False,
-                                      razon="No habilitada para caracterización.")
-        return EstadoHabilitacion(habilitado=True)
+        # Un solo árbol de decisión para los dos métodos: antes cada uno tenía el
+        # suyo y ya divergían en el texto ("No habilitada para caracterización."
+        # contra "La persona no está habilitada para caracterización."). Dos
+        # respuestas para la misma persona según por dónde entre la app es un
+        # defecto esperando a ocurrir.
+        veredicto = describir_elegibilidad(victima, ruta=ruta)
+        return EstadoHabilitacion(
+            habilitado=veredicto.elegible,
+            razon=veredicto.mensaje,
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
+        )

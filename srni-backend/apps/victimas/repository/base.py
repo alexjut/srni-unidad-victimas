@@ -186,12 +186,174 @@ class ResultadoBusqueda:
     # cambie el título en vez de tener que adivinar leyendo el texto.
     no_identificante: bool = False
 
+    # POR QUÉ, en forma de código y no de prosa. Ver `MotivoNoElegible`.
+    #
+    # `mensaje` se sigue enviando y sigue siendo lo que se le muestra a la
+    # persona, pero la interfaz ya no tiene que leer el texto para saber qué
+    # ofrecer: con `motivo` decide el botón, y con `disponible_desde` puede
+    # decir "vuelva a intentar el …" sin conocer la regla de vigencia.
+    motivo: str = ''
+    disponible_desde: Optional[date] = None
+
 
 @dataclass
 class EstadoHabilitacion:
     """Resultado de verificar si una persona puede ser caracterizada."""
     habilitado: bool
     razon: str = ''                     # descripción si no habilitado
+
+    # Mismo motivo enumerado que `ResultadoBusqueda`. Ver `MotivoNoElegible`.
+    motivo: str = ''
+    disponible_desde: Optional[date] = None
+
+
+# ---------------------------------------------------------------------------
+# Por qué NO se puede caracterizar — un solo lugar
+# ---------------------------------------------------------------------------
+
+class MotivoNoElegible:
+    """
+    Motivo enumerado del veredicto, además del texto para el humano.
+
+    ─── Por qué hace falta ───────────────────────────────────────────────────
+    Antes el porqué viajaba **solo** como texto libre en `mensaje`, y eso tenía
+    una consecuencia concreta: la app no podía ofrecer la salida correcta porque
+    no sabía en qué caso estaba. Solo podía pintar la cadena. Por eso todo
+    terminaba en un mensaje sin botón, y en campo un bloqueo previsto **se lee
+    como una falla del sistema**.
+
+    Con el motivo, la interfaz decide: `NO_EN_PADRON` → "Dar de alta";
+    `FICHA_VIGENTE` → "Registrar ruta de excepción". El texto sigue estando,
+    pero ya no es lo único.
+    """
+
+    ELEGIBLE = 'ELEGIBLE'
+    #: Tenía ficha vigente, pero se entra por una ruta que omite la vigencia
+    #: (Manual §5.1.1). **Exige soporte**: es saltarse un control, y sin rastro
+    #: la regla de vigencia se vuelve opcional en la práctica.
+    ELEGIBLE_POR_EXCEPCION = 'ELEGIBLE_POR_EXCEPCION'
+    #: No está en el padrón de SICAV. **No significa "no es víctima"**: el padrón
+    #: se armó desde el legacy, así que hay víctimas del RUV que no están acá.
+    NO_EN_PADRON = 'NO_EN_PADRON'
+    #: El número es un valor de relleno ('99', '0'…) y no identifica a nadie.
+    DOCUMENTO_NO_IDENTIFICANTE = 'DOCUMENTO_NO_IDENTIFICANTE'
+    #: Excluida del RUV. No hay ruta de excepción que la habilite.
+    EXCLUIDA_RUV = 'EXCLUIDA_RUV'
+    #: Tiene entrevista vigente (menos de `ANIOS_VIGENCIA_CARACTERIZACION` años).
+    #: **Es el caso masivo**: 1.058.971 personas al 4-ago-2026. Se levanta con
+    #: una ruta de excepción, no es un callejón.
+    FICHA_VIGENTE = 'FICHA_VIGENTE'
+    #: Marcada como no habilitada pero sin fecha que lo explique. No debería
+    #: pasar (0 casos medidos en producción); si aparece, es un dato roto.
+    BLOQUEADA_SIN_MOTIVO = 'BLOQUEADA_SIN_MOTIVO'
+
+
+@dataclass(frozen=True)
+class Elegibilidad:
+    """Veredicto sobre una persona: el motivo, el texto y hasta cuándo."""
+
+    motivo: str
+    mensaje: str = ''
+    disponible_desde: Optional[date] = None
+
+    @property
+    def elegible(self) -> bool:
+        return self.motivo in (MotivoNoElegible.ELEGIBLE,
+                               MotivoNoElegible.ELEGIBLE_POR_EXCEPCION)
+
+    @property
+    def exige_soporte(self) -> bool:
+        """Entró por una ruta de excepción: hay que adjuntar el soporte."""
+        return self.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+
+
+#: Texto de `NO_EN_PADRON`. Va aparte porque lo usan la búsqueda y la
+#: verificación, y porque el anterior —"No se encontró la persona"— se leía como
+#: "no es víctima" y mandaba a dar de alta a alguien que quizá ya existe.
+MENSAJE_NO_EN_PADRON = (
+    'No está en el padrón de SICAV. Puede ser víctima igual: verifique en '
+    'Vivanto. Si allí aparece, dele de alta manualmente para continuar.'
+)
+
+
+def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
+    """
+    Único lugar donde se decide **por qué** alguien no puede caracterizarse.
+
+    Recibe un `victimas.Victima` (el modelo) o cualquier objeto con
+    `estado_ruv`, `habilitado_para_caracterizacion` y `fecha_ult_caracterizacion`.
+    `None` significa que no está en el padrón.
+
+    `ruta` es la ruta de entrevista (Manual §5.1.1). Tres de las cuatro
+    **omiten la regla de vigencia**; ver `RUTAS_QUE_OMITEN_VIGENCIA`. Sin este
+    parámetro la ruta no se considera, que es lo correcto para una búsqueda
+    normal: primero se ve el estado real, y recién si hay ficha vigente el
+    encuestador elige una ruta de excepción.
+
+    Existe porque `buscar_por_documento` y `estado_habilitacion` decidían lo
+    mismo por separado —y ya habían empezado a divergir en el texto—. Dos
+    respuestas distintas para la misma persona según por dónde entre la app es
+    un defecto esperando a ocurrir.
+    """
+    from ..homologacion import ANIOS_VIGENCIA_CARACTERIZACION, ruta_omite_vigencia
+
+    if victima is None:
+        return Elegibilidad(MotivoNoElegible.NO_EN_PADRON, MENSAJE_NO_EN_PADRON)
+
+    if getattr(victima, 'estado_ruv', '') == 'EXCLUIDO':
+        return Elegibilidad(
+            MotivoNoElegible.EXCLUIDA_RUV,
+            'Persona excluida del RUV — no elegible para caracterización. '
+            'Ninguna ruta de excepción habilita este caso.',
+        )
+
+    if getattr(victima, 'habilitado_para_caracterizacion', False):
+        return Elegibilidad(MotivoNoElegible.ELEGIBLE)
+
+    fecha = getattr(victima, 'fecha_ult_caracterizacion', None)
+    if not fecha:
+        return Elegibilidad(
+            MotivoNoElegible.BLOQUEADA_SIN_MOTIVO,
+            'No habilitada para caracterización, y no consta la fecha que lo '
+            'explique. Repórtelo a soporte: es un dato incompleto, no una regla.',
+        )
+
+    if hasattr(fecha, 'date'):
+        fecha = fecha.date()
+    try:
+        disponible = fecha.replace(year=fecha.year + ANIOS_VIGENCIA_CARACTERIZACION)
+    except ValueError:
+        # 29 de febrero: el año destino no lo tiene. Se corre al 1 de marzo en
+        # vez de reventar — un caso al año, pero revienta el día que ocurre.
+        disponible = fecha.replace(month=3, day=1,
+                                   year=fecha.year + ANIOS_VIGENCIA_CARACTERIZACION)
+
+    # La excepción del manual: tres rutas omiten la vigencia. Se sigue diciendo
+    # que la ficha está vigente —el encuestador tiene que saberlo— pero deja de
+    # ser un bloqueo y pasa a exigir soporte.
+    if ruta_omite_vigencia(ruta):
+        return Elegibilidad(
+            MotivoNoElegible.ELEGIBLE_POR_EXCEPCION,
+            f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
+            f'estaba vigente hasta el {disponible:%d/%m/%Y}. Puede continuar por '
+            f'la ruta seleccionada, que omite la regla de vigencia. '
+            f'Adjunte foto del soporte: queda registrado quién autorizó la '
+            f'excepción y sobre quién.',
+            disponible_desde=disponible,
+        )
+
+    # El texto dice las cuatro cosas que el encuestador necesita, en orden:
+    # qué pasó, hasta cuándo, que NO es una falla, y cómo continuar. Sin la
+    # tercera, en campo un bloqueo previsto se reporta como error del sistema.
+    return Elegibilidad(
+        MotivoNoElegible.FICHA_VIGENTE,
+        f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
+        f'sigue vigente hasta el {disponible:%d/%m/%Y}. No es una falla del '
+        f'sistema. Solo puede caracterizarla por una ruta de excepción '
+        f'(acción constitucional, modificación de núcleo familiar o ruta '
+        f'especial); si la tiene, tome foto del soporte para continuar.',
+        disponible_desde=disponible,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -212,9 +374,17 @@ class VictimaRepository(ABC):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta: Optional[str] = None,
     ) -> ResultadoBusqueda:
         """
         Busca una víctima por tipo y número de documento.
+
+        `ruta` es la ruta de entrevista, y va acá porque el Manual §5.1.1 la
+        pide **en el mismo paso que el documento**: «Diligenciar el número de
+        documento con el cual iniciarán la conformación del hogar y establecer
+        la ruta respectiva». Tres de las cuatro omiten la regla de vigencia.
+        Sin ruta se responde el estado real, que es lo correcto por defecto.
 
         Retorna ResultadoBusqueda con encontrado=True si la persona existe
         en la fuente de datos, independientemente de su estado en el RUV.
@@ -309,6 +479,8 @@ class VictimaRepository(ABC):
         self,
         tipo_documento: str,
         numero_documento: str,
+        *,
+        ruta: Optional[str] = None,
     ) -> EstadoHabilitacion:
         """
         Verifica si la persona puede iniciar una nueva caracterización.

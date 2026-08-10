@@ -1,0 +1,36 @@
+2026-07-30  1a6aa7f  docs(gestion): constancia de que en Vivanto solo se leyo
+2026-07-29  da5f4fe  docs(padron): la fuente existe y no hay que pedirsela a nadie
+2026-07-29  c410da8  docs: corrupcion fisica en produccion (ORA-01578) + los cortes no sirven como padron
+2026-07-29  fd9a0a4  feat(victimas): el padron vive en NUESTRA base + unifica el hash de documento
+2026-07-29  6dd2f70  docs: solicitud de acceso al Parametrizador + como funciona la parametrizacion
+2026-07-29  e9f34f5  docs(padron): el mapa para consultar el RUV, sacado de la propia base
+2026-07-29  c3d60f6  docs(padron): el RUV se consulta por servicio, no por tabla
+2026-07-28  a4c83f8  docs(padron): la referencia del padron era falsa; estado real y camino
+2026-07-28  c4d3d25  feat(oracle): PILOTO EN PRODUCCION - primera caracterizacion de SICAV en la UARIV
+2026-07-28  df1a39e  docs(oracle-legacy): territorial_v8 cerrado; por qué telefonico y rural no admiten arreglo masivo
+2026-07-28  bf4f6d6  docs(oracle-legacy): inventario exacto de movimientos en la BD de la UARIV
+2026-07-28  8c7029b  fix(oracle-legacy): 3a.3 resuelto + detecta 75 id_preg apuntando a la pregunta equivocada
+2026-07-28  0393eb7  docs(oracle-legacy): veredicto de calidad de datos del Oracle de producción
+2026-07-28  7fe69e1  merge: Escalón 2 de la migración a Oracle + catálogo real de puntos (3a.11)
+2026-07-28  9236967  docs(oracle-legacy): registro de defectos de la BD para arreglar post-migración
+2026-07-28  af2ea30  chore(oracle): elimina puntos_atencion_oracle.json — era duplicado
+2026-07-28  cf22da1  feat(oracle): Escalón 2 — ruta geográfica verificada + guarda de destino
+2026-07-24  860597c  feat(oracle): Escalón 1 — primera escritura real de caracterización a Oracle legacy (réplica local)
+2026-07-24  35df985  feat(oracle-legacy): T_VICTIMA -> NULL + plan del Escalon 1
+2026-07-23  9411d66  feat(oracle-legacy): Cédula -> 93 + soporte BOOLEAN en el resolver
+2026-07-23  ae67cde  feat(oracle-legacy): mapeo booleano del bloque PR (PR2->353, PR4->228)
+2026-07-23  0583077  feat(oracle-legacy): 5 entradas de crosswalk (decisiones de Javier)
+2026-07-23  1dcfe17  feat(oracle-legacy): PR3_re engancha a AHE (pre 354) + 3 entradas de crosswalk
+2026-07-22  b59a1bd  feat(oracle-legacy): catalogo Oracle completo + crosswalk curado + curacion vs manual
+2026-07-16  88cad0a  docs(oracle-legacy): actualiza el traspaso tras los incrementos 6 y 7
+2026-07-16  e57a99d  feat(oracle-legacy): comando del escenario reproducible para el Escalon 1
+2026-07-16  38e4bf0  feat(oracle-legacy): cablea TERRITORIO y RESPUESTA + resolver_territorio real
+2026-07-16  90f6593  docs(oracle-legacy): versiona el traspaso de estado y siguiente paso
+2026-07-15  b504d79  feat(oracle-legacy): Etapa A — capa de escritura vía procedures + ResolverCatalogos (DRY-RUN)
+2026-07-15  1476feb  feat(oracle-legacy): versiona generador de export de estructura (DBMS_DATAPUMP)
+2026-07-15  ca112ac  feat(oracle-legacy): infra Oracle local (Docker) para validar estructura RNIENTREVISTA
+2026-07-15  d71c1ba  feat(oracle-legacy): porta lógica PL/SQL GIC_* a servicios Django (sin Oracle)
+2026-07-07  3162063  docs(presentaciones): resumen directivo + contexto del acto de lanzamiento
+2026-07-06  f123649  docs(sprint-19): cierre de sprint + scripts de ops (reset/porta barrido)
+2026-07-05  25854bb  docs: actualización documentación día 16 — Dashboard role-based, Instrumentos rediseño,    permisos sidebar
+2026-07-05  4660192  docs(manual-movil): auditoría vs código real + rebrand a SICAV Móvil

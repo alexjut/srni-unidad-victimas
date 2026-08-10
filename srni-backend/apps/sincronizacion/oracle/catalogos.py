@@ -132,6 +132,13 @@ HECHO_VICTIMIZANTE = {
     # un alta de catálogo; el día que exista, acá se cambia un número.
     "HV13": 13,  # Confinamiento → 'Otros'  (pérdida de precisión, ver arriba)
     "HV14": 14,  # Sin informacion
+    # ── Los dos que entran por el RUV y el legacy tampoco sabe nombrar ────────
+    # Se agregaron el 4-ago-2026, cuando se ubicó el catálogo del RUV
+    # (`RUV.TBHECHOS_VICTIMIZANTES`, ver `HECHO_RUV_A_SICAV` más abajo). Ambos
+    # caen en 13 = 'Otros', igual que HV13, y por la misma razón: preferimos que
+    # la persona quede contada y visible antes que desaparecida del reporte.
+    "HV15": 13,  # Otro (RUV 12)          → 'Otros'
+    "HV16": 13,  # Censo Masivo (RUV 13)  → 'Otros'
 }
 
 #: Códigos SICAV cuyo cruce no es exacto sino por aproximación. Se listan aparte
@@ -140,7 +147,57 @@ HECHO_VICTIMIZANTE = {
 HECHO_VICTIMIZANTE_APROXIMADO = {
     "HV13": "Confinamiento se escribe como 'Otros' (13): el catálogo del legacy, "
             "congelado en 2015, no tiene el hecho.",
+    "HV15": "'Otro' del RUV se escribe como 'Otros' (13). El número coincide con "
+            "'Perdida de bienes' (12) del legacy, que es OTRO hecho: por eso se "
+            "traduce por significado y no por número.",
+    "HV16": "Censo Masivo se escribe como 'Otros' (13): el catálogo del legacy no "
+            "tiene el hecho. Es el caso de mayor volumen —434.178 registros en el "
+            "RUV— así que la pérdida de precisión no es marginal.",
 }
+
+# ── Catálogo 4d — hecho del RUV → código SICAV ───────────────────────────────
+#
+# El tercer catálogo de hechos, y la tercera oportunidad de equivocarse igual.
+# Ubicado el 4-ago-2026 en `RUV.TBHECHOS_VICTIMIZANTES`, alcanzable desde
+# `ENTREVISTARN` por el dblink `CONSULTARUV`. Es la fuente de
+# `RUV.TBSINIESTROS_PERSONA.PARAM_TIPOHECHO` (4.033.355 filas) y de
+# `RUV.TBREG_PERSONA_HECHOS.PARAM_HECHO` (9.331.396 filas).
+#
+# ⚠️ SON TRES CATÁLOGOS DISTINTOS, NO DOS:
+#
+#     SICAV   HV01..HV16  (16, este repo)
+#     legacy  1..14       (GIC, congelado 2015 — ver `HECHO_VICTIMIZANTE`)
+#     RUV     1..13       (este)
+#
+# RUV y legacy coinciden en 1..11 y divergen justo al final, que es donde está
+# el volumen: el 12 del RUV es 'Otro' pero el 12 del legacy es 'Perdida de
+# bienes', y el 13 del RUV es 'Censo Masivo' pero el 13 del legacy es 'Otros'.
+# Copiar el número de un lado al otro escribe el hecho equivocado en 509.442
+# registros (12,6 %) sin que nada falle.
+#
+# Verificado con los datos, no solo con los nombres: la distribución de
+# `PARAM_TIPOHECHO` da 51,8 % al 5 (Desplazamiento Forzado), que es lo que tiene
+# que dominar en Colombia, y ningún valor cae fuera de 1..13.
+HECHO_RUV_A_SICAV = {
+    1:  "HV02",  # Acto terrorista / Atentados / Combates / Enfrentamientos …
+    2:  "HV03",  # Amenaza
+    3:  "HV04",  # Delitos contra la libertad y la integridad sexual …
+    4:  "HV05",  # Desaparicion Forzada
+    5:  "HV01",  # Desplazamiento Forzado          ← el 51,8 % de los registros
+    6:  "HV06",  # Homicidio / Masacre
+    7:  "HV07",  # Minas Antipersonal, Municion sin explotar …
+    8:  "HV08",  # Secuestro
+    9:  "HV09",  # Tortura
+    10: "HV10",  # Vinculacion de Niños, Niñas y Adolescentes …
+    11: "HV11",  # Abandono o despojo forzado de tierras
+    12: "HV15",  # Otro          → NO es el 12 del legacy ('Perdida de bienes')
+    13: "HV16",  # Censo Masivo  → NO es el 13 del legacy ('Otros')
+}
+
+#: Hechos de SICAV que el RUV no puede originar, porque no existen en su
+#: catálogo. Se listan para que quede explícito que su ausencia al importar es lo
+#: esperado y no un fallo del cruce.
+HECHO_SIN_ORIGEN_EN_RUV = ("HV12", "HV13", "HV14")
 
 # ── Catálogo 4b — tipo de víctima → GIC_PERSONA.PER_TIPOVICTIMA ──────────────
 # ⚠️ PENDIENTE: no se identificó tabla catálogo ni campo SICAV de origen. Vacío.

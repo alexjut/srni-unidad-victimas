@@ -51,6 +51,18 @@ Al responder "Sí" a embarazo no aparecía el campo para capturar la cantidad.
   paridad `datosBasicosB2.test.ts` que corre el motor real contra el bundle).
 - Publicado en ambos remotes (GitHub + Azure DevOps).
 
+## Evidencia física recolectada
+
+Archivos en [`evidencias/`](evidencias/):
+
+| Archivo | Qué prueba |
+|---|---|
+| `suite-de-pruebas-salida.txt` | Salida real de la ejecución completa de la suite automatizada |
+| `pruebas-por-archivo.txt` | Conteo de pruebas declaradas por archivo, con el total |
+| `commits-correctivos-julio.txt` | Los correctivos y mejoras del mes, del histórico del repositorio |
+| `commits-julio-con-lineas.txt` | Histórico completo del mes con líneas agregadas y eliminadas por archivo |
+| `correctivo-modulo-B-resumen.txt` | Detalle de archivos tocados por el correctivo del módulo B |
+
 ## Pendiente / siguiente paso
 
 - Siembra en el servidor (`cargar_perfil` ×4 + `exportar_a_mobile`), reconciliación

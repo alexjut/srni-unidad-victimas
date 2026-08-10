@@ -18,3 +18,15 @@
 
 - Push a producción: `cfd95fe..3249a85 main -> main` (GitHub + Azure DevOps).
 - Memoria técnica del pipeline de instrumentos y del versionado (decisión "no bump").
+
+## Evidencia física recolectada
+
+Archivos en [`evidencias/`](evidencias/):
+
+| Archivo | Qué prueba |
+|---|---|
+| `plan_escalon_1.md` · `plan_escalon_2.md` | Diseño por escalones de la integración con la base de la entidad |
+| `movimientos_en_la_bd.md` | Inventario exacto de lo que se escribió en la base de la entidad |
+| `estado_lectura_padron.md` | Diseño de la lectura del padrón y su estado |
+| `como_consultar_el_ruv.md` | Documentación de cómo se consulta el RUV, sacada de la propia base |
+| `commits-arquitectura-julio.txt` | Los cambios de arquitectura del mes, del histórico del repositorio |
