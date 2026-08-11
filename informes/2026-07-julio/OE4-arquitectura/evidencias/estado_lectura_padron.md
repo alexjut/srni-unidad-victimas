@@ -4,6 +4,40 @@
 > mock. Este documento existe para que el siguiente que lo retome no empiece por donde
 > empezamos nosotros — que resultó ser un callejón.
 
+---
+
+> ## ⚠️ CORRECCIÓN — 2026-08-11
+>
+> **Dos afirmaciones de este documento son FALSAS.** Se dejan tal cual abajo
+> porque es un informe entregado y su historia no se reescribe, pero **no deben
+> usarse**:
+>
+> | Lo que dice el documento | Lo verificado el 11-ago contra producción |
+> |---|---|
+> | «ni esa tabla ni ese dblink existen» | **`INH_REPORTE_GAVE` SÍ EXISTE: 1.832 filas** |
+> | «`CONSULTAMODELO110` no está entre los dblinks» | **SÍ está**, y es alcanzable |
+>
+> La consulta que lo demuestra, desde `RNIENTREVISTA@30.0.1.9/ENTREVISTARN`:
+>
+> ```sql
+> SELECT COUNT(*) FROM rnientrevista.inh_reporte_gave@consultamodelo110;  -- 1.832
+> ```
+>
+> `CONSULTAMODELO110` y `DBL_RNIENTREVISTA` van ambos a la base **MODELO**. Ojo con
+> `OPEN_LINKS=4`: cada dblink abre su propia conexión o sale `ORA-02020`.
+>
+> **Por qué importa:** el documento se escribió para evitar que alguien perdiera
+> tiempo en un callejón, y acabó creando otro — mandando a descartar una tabla que
+> sí está. Se desmintió el 4-ago y la corrección no había llegado hasta acá.
+>
+> **Esto no cambia la conclusión de fondo del documento.** El padrón operativo se
+> resolvió por otra vía —`GIC_PERSONA` + el universo del RUV, cargados el 1 y el
+> 6-ago— y hoy está en producción con 5.926.005 y 12.009.492 filas. Lo que cambia
+> es que `INH_REPORTE_GAVE` vuelve a ser una fuente que se puede mirar, no una que
+> se dio por inexistente.
+
+---
+
 ## El callejón: la referencia que teníamos era falsa
 
 El proyecto arrastraba una nota de referencia que situaba el padrón en
