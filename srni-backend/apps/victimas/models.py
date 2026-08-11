@@ -50,6 +50,35 @@ class Victima(models.Model):
         ('NO_VERIFICADO', 'No verificado — no está en el padrón descargado'),
     ]
 
+    #: **De dónde salió `estado_ruv`, y por eso cuánto vale.**
+    #:
+    #: Existe por lo que se midió el 11-ago-2026: el padrón se cargó uniendo
+    #: `GIC_PERSONA` con `M_CARACT_TABLA_RA_PER` por `CONS_PERONA`, que resultó ser
+    #: **un contador de filas** —1, 2, 3…—, no un identificador de persona. El
+    #: estado no quedó "desalineado": la asignación fue aleatoria, y además el
+    #: valor se gastó en el `WHERE` que eligió quién entra al padrón, así que las
+    #: 5.926.004 filas salieron con `INCLUIDO` constante por construcción.
+    #: Ver `docs/oracle-legacy/join_caracterizacion_roto.md`.
+    #:
+    #: La lección: un estado sin procedencia no se puede auditar. Con este campo,
+    #: "no lo sabemos" deja de ser indistinguible de "lo sabemos y es INCLUIDO",
+    #: que es exactamente el error que costó cinco millones de filas.
+    ESTADO_RUV_FUENTE = [
+        # El snapshot mensual del RUV (`PersonaUniverso`), cruzado por hash de
+        # documento. Es la fuente fiable: el cruce va por documento, no por un id
+        # de otro sistema.
+        ('UNIVERSO_RUV',  'Universo del RUV (snapshot mensual)'),
+        # `M_CARACT_TABLA_RA_PER` del legado. 🔴 NO USAR para cargas nuevas: es la
+        # fuente del defecto. Se conserva como valor para poder marcar lo que
+        # venga de ahí si alguna vez se recupera con una llave válida.
+        ('LEGACY_CARACT', 'Caracterización del legado — no confiable'),
+        # Lo declaró un funcionario en el alta manual, con la persona enfrente.
+        ('MANUAL',        'Declarado en campo por el funcionario'),
+        # Nadie lo verificó. Es el valor honesto por defecto, y el que llevan las
+        # 5,9 M cargadas con el join roto hasta que se recarguen.
+        ('SIN_VERIFICAR', 'Sin verificar — nadie lo ha resuelto'),
+    ]
+
     ESTADO_CIVIL = [
         ('SOLTERO',     'Soltero/a'),
         ('CASADO',      'Casado/a'),
@@ -166,8 +195,29 @@ class Victima(models.Model):
     tipo_discapacidad = models.CharField(max_length=100, blank=True)
 
     # --- Estado en el RUV ---
+    #
+    # ⚠️ `estado_ruv` NUNCA se lee solo: se lee con `estado_ruv_fuente`. Un estado
+    # sin procedencia no se puede auditar, y esa es justamente la lección de las
+    # 5.926.004 filas que quedaron con `INCLUIDO` sin que nadie lo hubiera
+    # verificado. Para saber si el valor vale algo, `es_estado_ruv_confiable`.
     estado_ruv = models.CharField(
         max_length=15, choices=ESTADO_RUV, default='EN_PROCESO', db_index=True
+    )
+    #: Default `SIN_VERIFICAR` a propósito: quien no diga de dónde sacó el estado,
+    #: no lo sabe. Es el valor honesto y el que se quiere ver cuando algo falla.
+    estado_ruv_fuente = models.CharField(
+        max_length=15, choices=ESTADO_RUV_FUENTE, default='SIN_VERIFICAR',
+        db_index=True,
+        help_text='De dónde salió el estado RUV. Sin esto, "no lo sabemos" es '
+                  'indistinguible de "lo sabemos y está incluido".',
+    )
+    #: Corte o momento del que viene el estado — p. ej. la fecha del snapshot del
+    #: universo. Sirve para responder "¿de cuándo es este dato?" sin adivinar y
+    #: para detectar fuentes congeladas, que es lo que pasó con
+    #: `GIC_REPORTE_HOGAR`: llevaba desde 2021 sin actualizarse y nadie lo notó.
+    estado_ruv_fecha = models.DateField(
+        null=True, blank=True,
+        help_text='Fecha del corte del que proviene el estado RUV.',
     )
 
     # --- Control de caracterización ---
@@ -236,6 +286,27 @@ class Victima(models.Model):
             # Índice de respaldo para quien no tiene tipo registrado (ver el campo).
             self.numero_documento_hash_sin_tipo = num_hash(str(self.numero_documento))
         super().save(*args, **kwargs)
+
+    #: Fuentes cuyo estado RUV sí se puede afirmar. `LEGACY_CARACT` NO está: es la
+    #: del join roto. `SIN_VERIFICAR` tampoco, por definición.
+    FUENTES_RUV_CONFIABLES = frozenset({'UNIVERSO_RUV', 'MANUAL'})
+
+    @property
+    def es_estado_ruv_confiable(self) -> bool:
+        """
+        ¿Se puede afirmar el `estado_ruv` de esta persona?
+
+        Existe para que la pregunta tenga UNA respuesta y no la improvise cada
+        pantalla. Antes no se podía ni formular: las 5.926.004 filas decían
+        `INCLUIDO` y no había forma de distinguir las verificadas de las que
+        heredaron el dato de otra persona — porque eran todas.
+
+        Un `False` acá **no dice que la persona no sea víctima**. Dice que
+        nosotros no lo hemos resuelto, que es una afirmación sobre nuestro dato y
+        no sobre ella. La diferencia importa cuando el resultado se le muestra a
+        alguien que está sentado enfrente del encuestador.
+        """
+        return self.estado_ruv_fuente in self.FUENTES_RUV_CONFIABLES
 
     def __str__(self):
         return f'Víctima {self.numero_documento_hash[:8]}… ({self.tipo_documento_id})'
