@@ -55,14 +55,14 @@ códigos**: `ALEXJUT`, `BRANDO` y `QAPRUEBA`. Las 1.158 encuestadoras figuran
 Las cuentas existen y están habilitadas; lo que no está verificado es que las
 credenciales repartidas coincidan con lo que quedó en la base.
 
-**Riesgo operativo:** el día que arranque el trabajo en campo, o coinciden o hay
-1.158 reportes iguales a la vez. Conviene comprobarlo **antes**, con una prueba
-sobre un puñado de cuentas reales.
+**Decidido el 11-ago (Javier):** las credenciales las asigna él cuando se
+confirme la fecha de inicio de la operación en campo. No es un pendiente técnico
+abierto — la carga masiva se hará contra una fecha conocida, no antes.
 
-Pendiente de revisar: qué contraseña les asignó el comando que las creó
-(`apps/sincronizacion/management/commands/`). Si hay un patrón deducible se
-comunica; si quedaron claves aleatorias que nadie guardó, hay que planear un
-restablecimiento masivo con entrega segura.
+Lo que sí conviene recordar cuando llegue ese momento: probar un puñado de
+cuentas reales **antes** de repartir, porque el modo de falla es que 1.158
+personas reporten lo mismo el mismo día. Y que el reporte va a llegar como "no me
+funciona el usuario" aunque la causa sea el `codigo_usuario` (§1).
 
 ---
 
