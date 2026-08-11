@@ -20,6 +20,42 @@ Por eso va por LOTES con `VACUUM` cada tanto, y por eso conviene correrla
 **después** de trasladar la base a `/datos` (239 GB libres); ver
 `docs/infraestructura/runbook_traslado_bd_a_datos.md`.
 
+──────────────────────────────────────────────────────────────────────────────
+POR QUÉ ACTUALIZA POR `ctid` Y NO POR CLAVE PRIMARIA
+──────────────────────────────────────────────────────────────────────────────
+La primera versión traía los ids del lote a Python y los devolvía en un
+`WHERE id IN (...)`. Se corrió así en producción el 11-ago y avanzaba a **18
+minutos por lote de 200.000** —5,8 horas para lo que faltaba—, con el backend
+clavado en `wait_event = IO DataFileRead`. Los planes explican por qué:
+
+    por id (UUID)   cost 1.358.918   Nested Loop → Index Scan on ..._pkey
+    por ctid        cost    65.517   Nested Loop → Tid Scan
+
+Localizar las filas cuesta igual en los dos (`Seq Scan`, 62.210: son 3,7 M de
+5,9 M, demasiadas para que valga un índice). Toda la diferencia está en cómo se
+aplica el `UPDATE`: por clave primaria son 200.000 búsquedas ALEATORIAS en el
+índice de UUID más otras tantas lecturas del heap; el `ctid` ya es la posición
+física de la fila, así que el `Tid Scan` va directo a la página. 20× más barato,
+y además el lote entero se resuelve dentro de Postgres —sin traer 200.000 UUID
+a Python para reenviarlos como 7 MB de SQL—.
+
+Un UUID aleatorio como clave primaria es cómodo para todo lo demás y muy caro
+justo aquí: no tiene localidad, así que recorrerlo en volumen es puro salto de
+disco.
+
+**Ojo con esperar el 20× completo: el plan no cuenta lo que cuesta escribir.**
+La tabla tiene **26 índices (5,9 GB)** y uno de los indexados es `estado_ruv`,
+así que ninguna de estas filas se puede actualizar en modo HOT: cada una inserta
+una entrada en los 26. Son ~97 millones de inserciones de índice para las 3,7 M
+restantes, y eso no lo arregla el `ctid` —ni ningún `WHERE`—. El `ctid` quita el
+costo de BUSCAR; el piso lo pone MANTENER los índices.
+
+Ahí hay una deuda aparte que conviene mirar con calma y no en medio de una
+migración: buena parte de esos 26 son de baja cardinalidad sobre 5,9 M filas
+(`genero`, `pertenencia_etnica`, `estado_valoracion`, `discapacidad`,
+`fuente_origen`), y cada uno de los `varchar` arrastra además su gemelo `_like`.
+Se pagan enteros en cada escritura.
+
 ⚠️ **Aplicarla acotando la migración**, no con un `migrate` a secas:
 
     python manage.py migrate victimas 0021
@@ -49,7 +85,11 @@ from django.db import migrations
 
 #: Filas por lote. Cada `UPDATE` es una transacción corta, importante en una base
 #: que otros están usando.
-LOTE = 200_000
+#:
+#: Subió de 200.000 a 500.000 al pasar a `ctid`: lo caro dejó de ser aplicar el
+#: `UPDATE` y pasó a ser el `Seq Scan` que busca las filas —recorre hasta juntar
+#: `LOTE` coincidencias—, así que menos lotes es menos veces recorrida la tabla.
+LOTE = 500_000
 
 #: Cada cuántos lotes se aspira. **No es cada lote, y eso importa.**
 #:
@@ -59,10 +99,10 @@ LOTE = 200_000
 #: cada vez; con 119 lotes eso es más de un terabyte de lectura para mover unas
 #: columnas.
 #:
-#: Aspirando cada 5 lotes de 200.000 —cada millón de filas— el bloat máximo entre
-#: pasadas es ~1,5 GB (1/5,9 de los 9,2 GB), que cabe de sobra, y las pasadas de
-#: `VACUUM` bajan de 119 a 6.
-VACUUM_CADA = 5
+#: Aspirando cada 3 lotes de 500.000 —cada millón y medio de filas— el bloat
+#: máximo entre pasadas es ~2,3 GB (1,5/5,9 de los 9,2 GB), que cabe de sobra con
+#: `/datos`, y las pasadas de `VACUUM` bajan de 119 a 4.
+VACUUM_CADA = 3
 
 
 def _mover(apps, schema_editor, desde, hacia):
@@ -71,11 +111,14 @@ def _mover(apps, schema_editor, desde, hacia):
 
     **Es retomable.** Si se corta a mitad —se canceló la consulta, se cayó la
     VPN— basta con volver a lanzar la migración: el filtro solo toma las que aún
-    no se movieron. Probado en producción el 11-ago, donde se cortó con 200.001
-    filas ya migradas y el estado quedó consistente.
+    no se movieron. Probado dos veces en producción el 11-ago: se cortó con
+    200.001 filas migradas y otra vez con 2.200.001 —esta segunda a propósito,
+    para reemplazar el recorrido por clave primaria por el de `ctid`—, y las dos
+    veces el estado quedó consistente y la siguiente corrida siguió de largo.
     """
     Victima = apps.get_model('victimas', 'Victima')
     conn = schema_editor.connection
+    tabla = Victima._meta.db_table
 
     def aspirar():
         # VACUUM no puede correr dentro de una transacción. En SQLite (tests) no
@@ -86,27 +129,42 @@ def _mover(apps, schema_editor, desde, hacia):
         conn.set_autocommit(True)
         try:
             with conn.cursor() as cur:
-                cur.execute('VACUUM victimas_victima')
+                cur.execute(f'VACUUM {tabla}')
         finally:
             conn.set_autocommit(estaba)
+
+    if conn.vendor != 'postgresql':
+        # SQLite (tests): no hay `ctid` ni razón para lotear un volumen de juguete.
+        return Victima.objects.filter(
+            estado_ruv=desde, estado_ruv_fuente='SIN_VERIFICAR',
+        ).update(estado_ruv=hacia)
+
+    tabla = Victima._meta.db_table
+    # El `LIMIT` acota el lote sin traerlo a Python: el subselect y el `UPDATE`
+    # se resuelven dentro de Postgres, y el `ctid` de cada fila lleva al
+    # `Tid Scan` directo a su página. Un UPDATE sobre el filtro entero tomaría
+    # los 9,2 GB en una sola transacción, que es justo lo que se quiere evitar.
+    sql = (
+        f'UPDATE {tabla} SET estado_ruv = %s WHERE ctid IN ('
+        f' SELECT ctid FROM {tabla}'
+        f" WHERE estado_ruv = %s AND estado_ruv_fuente = 'SIN_VERIFICAR'"
+        f' LIMIT %s)'
+    )
 
     total = 0
     lotes = 0
     while True:
-        # `pk__in` sobre un subconjunto acotado: un UPDATE sobre el filtro entero
-        # tomaría los 9,2 GB en una sola transacción, que es justo lo que se
-        # quiere evitar.
-        ids = list(
-            Victima.objects.filter(
-                estado_ruv=desde, estado_ruv_fuente='SIN_VERIFICAR',
-            ).values_list('pk', flat=True)[:LOTE]
-        )
-        if not ids:
+        with conn.cursor() as cur:
+            cur.execute(sql, [hacia, desde, LOTE])
+            movidas = cur.rowcount
+        if not movidas:
             break
 
-        Victima.objects.filter(pk__in=ids).update(estado_ruv=hacia)
-        total += len(ids)
+        total += movidas
         lotes += 1
+        # Va al log del servidor: la migración corre desatendida y sin esto no
+        # hay forma de saber si avanza o si está clavada esperando disco.
+        print(f'  lote {lotes}: {movidas:,} filas ({total:,} en total)', flush=True)
 
         if lotes % VACUUM_CADA == 0:
             aspirar()
