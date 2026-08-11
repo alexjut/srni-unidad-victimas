@@ -126,12 +126,20 @@ class DjangoVictimaRepository(VictimaRepository):
         primero el más completo.
 
         NO decide identidad ni descarta a nadie: solo el orden en que se muestran.
+
+        ⚠️ Mismo criterio —y misma razón— que `identidad._completitud`: solo se
+        cuentan campos de procedencia fiable. `genero`, `pertenencia_etnica`,
+        `tipo_discapacidad` y `estado_ruv` vienen del join por `CONS_PERONA`, que
+        es un contador de filas y no un identificador de persona
+        (`docs/oracle-legacy/join_caracterizacion_roto.md`).
+
+        Contarlos hacía que, entre dos filas de la misma persona, se ofreciera
+        primero **la que más datos ajenos había recibido** — y esa es la que el
+        encuestador ve arriba cuando tiene que elegir cuál es quien está enfrente.
         """
         campos = (victima.primer_nombre, victima.segundo_nombre, victima.primer_apellido,
-                  victima.segundo_apellido, victima.fecha_nacimiento, victima.genero,
-                  victima.pertenencia_etnica, victima.tipo_discapacidad,
-                  victima.municipio_residencia_id, victima.cons_persona,
-                  victima.estado_ruv)
+                  victima.segundo_apellido, victima.fecha_nacimiento,
+                  victima.municipio_residencia_id, victima.cons_persona)
         return sum(1 for c in campos if c not in (None, "", 0))
 
     @staticmethod

@@ -493,6 +493,24 @@ class RegistrarDesdeFuenteView(APIView):
         victima.tipo_discapacidad = data.get('tipo_discapacidad', '')
         victima.fuente_origen = data.get('fuente_origen', 'RUV')
 
+        # ── Procedencia del estado RUV ────────────────────────────────────────
+        #
+        # El estado se sigue guardando, pero SIEMPRE acompañado de dónde salió.
+        # No se ignora el campo: en un alta manual la persona está enfrente del
+        # encuestador y lo que él captura es el mejor dato disponible. Lo que no
+        # se puede es aceptarlo sin decir de dónde viene.
+        #
+        # Importa aquí más que en ningún otro punto: este endpoint es por donde
+        # el dato del padrón vuelve a entrar. Sin esto, un estado que salió del
+        # join roto, viajó a la APK y regresó en el alta se guardaría como si
+        # fuera **capturado en campo** — lavado, y ya indistinguible de uno real.
+        _FUENTE_ESTADO = {
+            'UNIVERSO_RUV': 'UNIVERSO_RUV',   # lo resolvió el snapshot del RUV
+            'MANUAL':       'MANUAL',         # lo declaró el funcionario en campo
+        }
+        victima.estado_ruv_fuente = _FUENTE_ESTADO.get(
+            victima.fuente_origen, 'SIN_VERIFICAR')
+
         # 5. Resolver municipio de residencia (no es error si no existe)
         codigo_mun = data.get('municipio_residencia_codigo')
         if codigo_mun:
