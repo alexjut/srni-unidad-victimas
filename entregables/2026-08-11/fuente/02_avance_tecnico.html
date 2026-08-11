@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SICAV — Avance técnico</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI","Nunito Sans",Calibri,Arial,sans-serif; font-size: 10pt; line-height: 1.5; color: #1a1a1a; margin: 0; }
+  .marca { height: 5px; background: #ffcc03; margin-bottom: 14px; }
+  header { border-bottom: 1.5px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 18px; }
+  h1 { font-size: 18pt; margin: 0 0 2px; }
+  .sub { font-size: 10pt; color: #555; margin: 0; }
+  .meta { font-size: 8.5pt; color: #777; margin-top: 6px; }
+  h2 { font-size: 12pt; margin: 20px 0 8px; padding-left: 8px; border-left: 4px solid #ffcc03; }
+  h3 { font-size: 10.5pt; margin: 13px 0 4px; color: #333; }
+  p { margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 9pt; }
+  th { background: #1a1a1a; color: #fff; text-align: left; padding: 7px 9px; font-size: 8.5pt; }
+  td { padding: 6px 9px; border-bottom: 1px solid #e4e4e4; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .antes { color: #999; }
+  .flecha { color: #ffcc03; font-weight: 700; }
+  .destacado { background: #fffbe6; border: 1px solid #ffe58a; border-radius: 4px; padding: 11px 14px; margin: 12px 0; }
+  ul { margin: 4px 0 10px; padding-left: 18px; }
+  li { margin-bottom: 5px; }
+  code { font-family: Consolas, monospace; font-size: 8.5pt; background: #f2f2f2; padding: 1px 4px; border-radius: 2px; }
+  footer { margin-top: 22px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 8pt; color: #888; }
+  .nota { font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+<div class="marca"></div>
+<header>
+  <h1>Avance técnico del periodo</h1>
+  <p class="sub">SICAV Móvil · Sistema de Caracterización de Víctimas</p>
+  <p class="meta">Proyecto PRY-0662064 · Corte: 11 de agosto de 2026</p>
+</header>
+
+<h2>1. Datos en producción</h2>
+
+<table>
+  <tr><th>Conjunto</th><th class="num">Registros</th><th>Origen</th><th>Uso</th></tr>
+  <tr><td><strong>Padrón operativo</strong></td><td class="num">5.926.005</td><td>GIC_PERSONA (sistema heredado)</td><td>Personas con caracterización previa</td></tr>
+  <tr><td><strong>Universo del RUV</strong></td><td class="num">12.009.492</td><td>Corte mensual del RUV</td><td>Existencia e identidad de toda la población víctima</td></tr>
+  <tr><td>Personas únicas combinadas</td><td class="num">12.677.172</td><td>Unión por documento</td><td>Cobertura total del sistema</td></tr>
+  <tr><td>Solo en el universo</td><td class="num">8.123.873</td><td>—</td><td>Víctimas reconocidas nunca entrevistadas</td></tr>
+</table>
+
+<p class="nota">El cruce entre ambos conjuntos se hace <strong>por documento</strong> y no
+por identificadores internos: se comprobó que los identificadores de los dos sistemas
+pertenecen a numeraciones distintas, y usarlos habría vinculado registros equivocados.</p>
+
+<h2>2. Operación sin conexión</h2>
+
+<p>El archivo que la aplicación descarga para trabajar en terreno se rediseñó por
+completo:</p>
+
+<table>
+  <tr><th>Indicador</th><th class="num">Antes</th><th class="num">Ahora</th><th class="num">Variación</th></tr>
+  <tr><td>Personas reconocidas sin conexión</td><td class="num antes">5.000</td><td class="num"><strong>12.677.172</strong></td><td class="num">×2.535</td></tr>
+  <tr><td>Peso del archivo descargado</td><td class="num antes">896 MB</td><td class="num"><strong>319 MB</strong></td><td class="num">−64 %</td></tr>
+  <tr><td>Registros con ficha completa</td><td class="num antes">5.000</td><td class="num">5.001.403</td><td class="num">×1.000</td></tr>
+</table>
+
+<div class="destacado">
+  <strong>Cómo se logró cubrir 12,7 millones en menos espacio.</strong> Llevar los datos
+  completos de toda la población habría requerido más de 1 GB. En su lugar se implementó
+  una estructura que responde <em>“¿esta persona está en el RUV?”</em> ocupando 21,7 MB
+  para los 12,7 millones. El fundamento operativo: en un registro manual la persona está
+  frente al encuestador, que le pregunta sus datos — el dispositivo solo necesita
+  confirmar que procede atenderla.
+</div>
+
+<p>La estructura no produce omisiones: si la persona está en el RUV, siempre la
+reconoce. Puede en cambio dar una coincidencia falsa en aproximadamente 1 de cada 1.000
+consultas sobre personas ajenas al RUV, lo cual se advierte en pantalla y se confirma al
+sincronizar.</p>
+
+<h2>3. Aplicación móvil</h2>
+
+<table>
+  <tr><th>Elemento</th><th>Detalle</th></tr>
+  <tr><td>Versión publicada</td><td>1.1.0 (compilación 54)</td></tr>
+  <tr><td>Distribución</td><td>Código QR institucional — no cambia entre versiones</td></tr>
+  <tr><td>Instalación</td><td>Se instala sobre la versión anterior sin desinstalar</td></tr>
+  <tr><td>Novedad principal</td><td>Reconoce el universo del RUV sin conexión y habilita el registro manual en terreno</td></tr>
+</table>
+
+<h3>Cambio funcional en la búsqueda</h3>
+<p>Cuando el padrón local no encuentra a la persona, la aplicación ahora indica
+<strong>“Está en el RUV, sin caracterizar”</strong> y ofrece registrarla, advirtiendo que
+la coincidencia se confirma al sincronizar. Anteriormente mostraba únicamente un mensaje
+de error sin ninguna acción disponible.</p>
+
+<h2>4. Infraestructura</h2>
+
+<table>
+  <tr><th>Elemento</th><th class="num">Antes</th><th class="num">Ahora</th></tr>
+  <tr><td>Espacio disponible para la base de datos</td><td class="num antes">16 GB</td><td class="num"><strong>207 GB</strong></td></tr>
+  <tr><td>Uso del disco principal</td><td class="num antes">76 % (con picos de 87 %)</td><td class="num">estable</td></tr>
+  <tr><td>Interrupción del servicio durante el traslado</td><td class="num" colspan="2">12 minutos</td></tr>
+</table>
+
+<p>La base de datos se trasladó al disco ampliado provisto por la Unidad. La verificación
+comparó la totalidad de los archivos entre origen y destino antes de reanudar el servicio.
+Los demás sistemas alojados en el mismo servidor no se vieron afectados: se confirmó
+previamente que no comparten la base de datos.</p>
+
+<p class="nota">Se conserva una copia íntegra del estado anterior como respaldo durante 14
+días. Al retirarla se liberarán 33 GB adicionales en el disco principal.</p>
+
+<h2>5. Verificación</h2>
+
+<table>
+  <tr><th>Componente</th><th class="num">Pruebas automáticas</th><th>Resultado</th></tr>
+  <tr><td>Servicios del backend</td><td class="num">857</td><td>Todas en verde</td></tr>
+  <tr><td>Aplicación móvil</td><td class="num">115</td><td>Todas en verde</td></tr>
+  <tr><td><strong>Total</strong></td><td class="num"><strong>972</strong></td><td>—</td></tr>
+</table>
+
+<h3>Prueba con casos reales del territorio</h3>
+<p>Se verificaron 68 cédulas remitidas desde terreno. Resultado: <strong>68 de 68
+reconocidas sin conexión</strong>, ninguna invisible. Como control, se comprobó que
+documentos inexistentes no produjeran coincidencias.</p>
+
+<h2>6. Correcciones aplicadas en el periodo</h2>
+
+<ul>
+  <li><strong>Registro de personas del universo.</strong> El registro de una persona
+  proveniente del RUV fallaba con un error de validación que la aplicación mostraba como
+  problema de conexión, llevando al encuestador a buscar señal sin necesidad.</li>
+  <li><strong>Reconocimiento sin conexión.</strong> Se corrigió un defecto de cálculo que
+  habría impedido reconocer aproximadamente a la mitad de la población, sin generar
+  ningún mensaje de error.</li>
+  <li><strong>Trazabilidad del estado en el RUV.</strong> El sistema ahora registra
+  siempre de qué fuente proviene ese dato, de modo que “no verificado” deje de ser
+  indistinguible de “verificado e incluido”.</li>
+  <li><strong>Documentación corregida.</strong> Un informe anterior daba por inexistente
+  una tabla del sistema heredado que sí existe; se anotó la corrección con su evidencia.</li>
+</ul>
+
+<footer>
+  SICAV Móvil · Unidad para la Atención y Reparación Integral a las Víctimas ·
+  PRY-0662064 · Documento generado el 11 de agosto de 2026
+</footer>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SICAV — Riesgos y decisiones</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI","Nunito Sans",Calibri,Arial,sans-serif; font-size: 10pt; line-height: 1.5; color: #1a1a1a; margin: 0; }
+  .marca { height: 5px; background: #ffcc03; margin-bottom: 14px; }
+  header { border-bottom: 1.5px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 18px; }
+  h1 { font-size: 18pt; margin: 0 0 2px; }
+  .sub { font-size: 10pt; color: #555; margin: 0; }
+  .meta { font-size: 8.5pt; color: #777; margin-top: 6px; }
+  h2 { font-size: 12pt; margin: 20px 0 8px; padding-left: 8px; border-left: 4px solid #ffcc03; }
+  h3 { font-size: 10.5pt; margin: 13px 0 4px; }
+  p { margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 9pt; }
+  th { background: #1a1a1a; color: #fff; text-align: left; padding: 7px 9px; font-size: 8.5pt; }
+  td { padding: 7px 9px; border-bottom: 1px solid #e4e4e4; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .alto { border-left: 4px solid #cf1322; }
+  .medio { border-left: 4px solid #d48806; }
+  .bajo { border-left: 4px solid #237804; }
+  .et { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 8pt; font-weight: 600; color: #fff; }
+  .e-alto { background: #cf1322; } .e-medio { background: #d48806; } .e-bajo { background: #237804; }
+  .decision { background: #f6f9ff; border: 1px solid #c5d9f5; border-radius: 4px; padding: 11px 14px; margin: 12px 0; }
+  ul { margin: 4px 0 10px; padding-left: 18px; }
+  li { margin-bottom: 5px; }
+  footer { margin-top: 22px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 8pt; color: #888; }
+  .nota { font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+<div class="marca"></div>
+<header>
+  <h1>Riesgos y decisiones pendientes</h1>
+  <p class="sub">SICAV Móvil · Sistema de Caracterización de Víctimas</p>
+  <p class="meta">Proyecto PRY-0662064 · Corte: 11 de agosto de 2026</p>
+</header>
+
+<h2>1. Riesgos vigentes</h2>
+
+<table>
+  <tr><th style="width:24%">Riesgo</th><th style="width:9%">Nivel</th><th>Situación y manejo</th></tr>
+
+  <tr class="alto">
+    <td><strong>Atributos demográficos asociados a la persona equivocada</strong></td>
+    <td><span class="et e-alto">Alto</span></td>
+    <td>
+      Sexo, pertenencia étnica y discapacidad del padrón provienen de una carga que usó
+      como identificador una columna del sistema heredado que no lo es. Coincidencia
+      medida: 50 %, equivalente al azar.<br><br>
+      <strong>Contenido:</strong> no salió hacia las bases de la Unidad; la identidad
+      (documento, nombres, fecha de nacimiento) es correcta; no afecta la decisión de si
+      una persona puede ser atendida. Ya se bloquearon las vías de propagación y el dato
+      está marcado como no verificado.<br><br>
+      <strong>Impacto real:</strong> los reportes con enfoque diferencial (étnico, género,
+      discapacidad) construidos sobre esta población no son válidos hasta la recarga.
+    </td>
+  </tr>
+
+  <tr class="medio">
+    <td><strong>Credenciales de campo sin probar</strong></td>
+    <td><span class="et e-medio">Medio</span></td>
+    <td>
+      Las 1.158 encuestadoras están cargadas y habilitadas, pero ninguna ha ingresado
+      todavía. No está verificado que las credenciales que se entreguen coincidan con las
+      registradas.<br><br>
+      <strong>Manejo:</strong> la asignación se hará contra la fecha de inicio confirmada.
+      Se recomienda probar un grupo reducido antes del despliegue general: el modo de falla
+      es que muchas personas reporten lo mismo el mismo día.
+    </td>
+  </tr>
+
+  <tr class="medio">
+    <td><strong>Dependencia de un sistema de terceros</strong></td>
+    <td><span class="et e-medio">Medio</span></td>
+    <td>
+      La tabla que originó el defecto pertenece a otro sistema de la entidad y no dispone
+      de una columna que identifique a la persona.<br><br>
+      <strong>Manejo:</strong> la solución adoptada <em>no depende</em> de ese sistema —
+      se reemplaza por el universo del RUV, que cruza por documento. Consultar a quien
+      administra el sistema de origen queda como vía complementaria, no bloqueante.
+    </td>
+  </tr>
+
+  <tr class="bajo">
+    <td><strong>Capacidad de almacenamiento</strong></td>
+    <td><span class="et e-bajo">Bajo</span></td>
+    <td>
+      Resuelto en el periodo. La base pasó de 16 GB a 207 GB disponibles.<br><br>
+      <strong>Pendiente menor:</strong> retirar la copia de respaldo tras 14 días de
+      operación normal, lo que liberará 33 GB adicionales.
+    </td>
+  </tr>
+</table>
+
+<h2>2. Decisiones que requieren definición</h2>
+
+<div class="decision">
+  <h3>2.1 Fuente definitiva del estado en el RUV</h3>
+  <p>La corrección de los atributos demográficos requiere definir de dónde se toma el
+  estado de inclusión en el RUV. Existen dos alternativas:</p>
+  <ul>
+    <li><strong>El universo del RUV</strong> — corte mensual ya cargado; es la fuente
+    natural y está disponible de inmediato.</li>
+    <li><strong>El catálogo oficial de estados</strong> — requiere acceso adicional.</li>
+  </ul>
+  <p>No es una definición únicamente técnica: <strong>determina qué personas componen el
+  padrón operativo de 5,9 millones</strong>. Se solicita definición de la supervisión del
+  proyecto.</p>
+</div>
+
+<div class="decision">
+  <h3>2.2 Fecha de inicio de la operación en campo</h3>
+  <p>La asignación de credenciales a las 1.158 encuestadoras se ejecutará contra una fecha
+  confirmada. Se requiere esa fecha para programar la carga y la verificación previa.</p>
+</div>
+
+<h2>3. Seguimiento del riesgo alto</h2>
+
+<table>
+  <tr><th>Etapa</th><th>Estado</th></tr>
+  <tr><td>Detección y medición del alcance</td><td>Completada — con evidencia documentada</td></tr>
+  <tr><td>Verificación de que no salió a bases de la Unidad</td><td>Completada — registro de escritura vacío</td></tr>
+  <tr><td>Bloqueo de vías de propagación</td><td>Completada</td></tr>
+  <tr><td>Marcado del dato como no verificado</td><td>Completada</td></tr>
+  <tr><td>Definición de la fuente de reemplazo</td><td><strong>Pendiente de decisión</strong></td></tr>
+  <tr><td>Recarga y regeneración</td><td>Posterior a la decisión</td></tr>
+</table>
+
+<p class="nota">La cobertura de la fuente de reemplazo es del 84 % de la población del
+padrón. El 16 % restante quedará registrado <em>sin dato</em>, lo cual es preferible a
+conservar un dato incorrecto: “no consta” y “ninguna” son afirmaciones distintas y el
+sistema las distingue.</p>
+
+<h2>4. Observación de método</h2>
+
+<p>El defecto descrito en la sección 1 <strong>no producía ningún error visible</strong>:
+el sistema operaba con normalidad emparejando registros equivocados. Se detectó al
+verificar 68 casos concretos remitidos desde el territorio, no mediante una revisión
+programada.</p>
+
+<p>Se sugiere mantener la práctica de <strong>verificar casos reales de terreno de forma
+periódica</strong>. Los defectos que no generan errores son los que permanecen más tiempo
+sin detectarse, y este permaneció varios meses.</p>
+
+<footer>
+  SICAV Móvil · Unidad para la Atención y Reparación Integral a las Víctimas ·
+  PRY-0662064 · Documento generado el 11 de agosto de 2026
+</footer>
+</body>
+</html>
