@@ -81,6 +81,17 @@ class Victima(models.Model):
         ('LEGADO',        'Migración del sistema legado (IgedEncuesta)'),
         ('MANUAL',        'Registro manual por funcionario'),
         ('REGISTRADURIA', 'Registraduría Nacional del Estado Civil'),
+        # La búsqueda ya devolvía este valor (`django_orm.py`, alta desde el
+        # universo) pero no estaba en la lista, así que el propio backend producía
+        # un payload que su serializer rechazaba con 400. En campo eso se leía
+        # como "Revisa la conexión": un error de contrato disfrazado de falla de
+        # red, que manda a buscar señal donde no hay nada que buscar.
+        #
+        # No se homologa a 'RUV' —que también haría pasar la validación— porque
+        # es la ÚNICA traza de que la persona vino del universo y nunca fue
+        # entrevistada. Son 8,12 M de personas: perder esa distinción las mezcla
+        # con quienes sí tienen ficha.
+        ('UNIVERSO_RUV',  'Universo del RUV — víctima aún sin caracterizar'),
     ]
 
     ESTADO_VALORACION = [

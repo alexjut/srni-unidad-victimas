@@ -219,7 +219,12 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     # es porque no lo resolvió contra el padrón — y "no lo sé" no es "no está".
     estado_ruv = serializers.CharField(max_length=15, default='NO_VERIFICADO')
     habilitado_para_caracterizacion = serializers.BooleanField(default=True)
-    pertenencia_etnica = serializers.CharField(max_length=20, default='NINGUNA')
+    # `allow_blank`: el universo trae la etnia vacía cuando la fuente no la
+    # registró, y "no consta" no es "NINGUNA" — colapsarlas borraría de las
+    # estadísticas a los 2,13 M de personas sin dato (ver `homologar_etnia`).
+    # Sin esto, toda alta desde el universo moría en 400.
+    pertenencia_etnica = serializers.CharField(
+        max_length=20, allow_blank=True, default='NINGUNA')
     pueblo_indigena = serializers.CharField(max_length=150, allow_blank=True, default='')
     discapacidad = serializers.BooleanField(default=False)
     tipo_discapacidad = serializers.CharField(max_length=100, allow_blank=True, default='')

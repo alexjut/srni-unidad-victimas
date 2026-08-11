@@ -397,7 +397,12 @@ class DjangoVictimaRepository(VictimaRepository):
             estado_ruv="NO_VERIFICADO",
             habilitado_para_caracterizacion=(fecha_ult is None),
             fecha_ult_caracterizacion=fecha_ult,
-            pertenencia_etnica=persona.pertenencia_etnica or "",
+            # Homologada, NO cruda: el universo guarda el texto de la fuente en
+            # un campo de 60 —'Negro(a) o Afrocolombiano(a)' son 28 caracteres—
+            # y el destino admite 20. Devolverla tal cual hacía que el alta
+            # muriera en 400 para toda persona con etnia registrada, que es
+            # justo la población a la que más cuesta llegar.
+            pertenencia_etnica=H.homologar_etnia(persona.pertenencia_etnica),
             pueblo_indigena="",
             discapacidad=persona.discapacidad,
             tipo_discapacidad=persona.tipo_discapacidad or "",
