@@ -16,9 +16,18 @@ muerta. Tocar las 5.926.005 de una vez reescribe los 9,2 GB de tabla más los
 16 GB libres**. Si Postgres llena ese disco se detiene, y no solo para SICAV: el
 servidor es compartido con `sidi-*`, `catalogo-si-*` y `uariv-auth-*`.
 
-Por eso va por LOTES con `VACUUM` entre medias, y por eso conviene correrla
+Por eso va por LOTES con `VACUUM` cada tanto, y por eso conviene correrla
 **después** de trasladar la base a `/datos` (239 GB libres); ver
 `docs/infraestructura/runbook_traslado_bd_a_datos.md`.
+
+⚠️ **Aplicarla acotando la migración**, no con un `migrate` a secas:
+
+    python manage.py migrate victimas 0021
+
+Un `migrate victimas` arrastra todo lo pendiente. El 11-ago se lanzó así por
+error y esta migración empezó a correr sin querer; se canceló con
+`pg_cancel_backend` y el estado quedó consistente —200.001 filas ya movidas—
+porque el diseño es retomable. Salió barato, pero conviene no repetirlo.
 
 ──────────────────────────────────────────────────────────────────────────────
 POR QUÉ ES SEGURA EN CUANTO A DATOS
@@ -38,20 +47,53 @@ incluidas en el RUV cuando nadie lo verificó. Eso viajaba al padrón offline co
 
 from django.db import migrations
 
-#: Filas por lote. 50.000 mantiene cada transacción corta —importante en una base
-#: que otros están usando— y deja que el `VACUUM` recupere espacio antes del
-#: siguiente, en vez de acumular 15 GB de versiones muertas.
-LOTE = 50_000
+#: Filas por lote. Cada `UPDATE` es una transacción corta, importante en una base
+#: que otros están usando.
+LOTE = 200_000
+
+#: Cada cuántos lotes se aspira. **No es cada lote, y eso importa.**
+#:
+#: La primera versión hacía `VACUUM` tras cada lote de 50.000 y se probó contra
+#: producción: 150.000 filas en 12 minutos, o sea ~8 HORAS para las 5,9 M. La
+#: causa es que `VACUUM victimas_victima` recorre los 9,2 GB de tabla ENTEROS
+#: cada vez; con 119 lotes eso es más de un terabyte de lectura para mover unas
+#: columnas.
+#:
+#: Aspirando cada 5 lotes de 200.000 —cada millón de filas— el bloat máximo entre
+#: pasadas es ~1,5 GB (1/5,9 de los 9,2 GB), que cabe de sobra, y las pasadas de
+#: `VACUUM` bajan de 119 a 6.
+VACUUM_CADA = 5
 
 
 def _mover(apps, schema_editor, desde, hacia):
-    """Mueve `estado_ruv` de un valor a otro, por lotes y aspirando entre medias."""
+    """
+    Mueve `estado_ruv` de un valor a otro, por lotes, aspirando cada tanto.
+
+    **Es retomable.** Si se corta a mitad —se canceló la consulta, se cayó la
+    VPN— basta con volver a lanzar la migración: el filtro solo toma las que aún
+    no se movieron. Probado en producción el 11-ago, donde se cortó con 200.001
+    filas ya migradas y el estado quedó consistente.
+    """
     Victima = apps.get_model('victimas', 'Victima')
     conn = schema_editor.connection
 
+    def aspirar():
+        # VACUUM no puede correr dentro de una transacción. En SQLite (tests) no
+        # aplica igual, así que solo en Postgres.
+        if conn.vendor != 'postgresql':
+            return
+        estaba = conn.get_autocommit()
+        conn.set_autocommit(True)
+        try:
+            with conn.cursor() as cur:
+                cur.execute('VACUUM victimas_victima')
+        finally:
+            conn.set_autocommit(estaba)
+
     total = 0
+    lotes = 0
     while True:
-        # `pk__in` con un subconjunto acotado: un UPDATE sobre el filtro entero
+        # `pk__in` sobre un subconjunto acotado: un UPDATE sobre el filtro entero
         # tomaría los 9,2 GB en una sola transacción, que es justo lo que se
         # quiere evitar.
         ids = list(
@@ -64,18 +106,12 @@ def _mover(apps, schema_editor, desde, hacia):
 
         Victima.objects.filter(pk__in=ids).update(estado_ruv=hacia)
         total += len(ids)
+        lotes += 1
 
-        # VACUUM no puede correr dentro de una transacción. En SQLite (tests) el
-        # comando existe pero no aplica igual, así que solo se hace en Postgres.
-        if conn.vendor == 'postgresql':
-            estaba = conn.get_autocommit()
-            conn.set_autocommit(True)
-            try:
-                with conn.cursor() as cur:
-                    cur.execute('VACUUM victimas_victima')
-            finally:
-                conn.set_autocommit(estaba)
+        if lotes % VACUUM_CADA == 0:
+            aspirar()
 
+    aspirar()          # una última, para devolver el espacio del tramo final
     return total
 
 
