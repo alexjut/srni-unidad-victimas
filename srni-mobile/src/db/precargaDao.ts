@@ -297,6 +297,31 @@ export async function leerParametrica<T = unknown>(tipo: string): Promise<T[]> {
   }
 }
 
+/**
+ * Guarda los parámetros del filtro del universo.
+ *
+ * Van en `meta_offline` —clave/valor TEXT, que ya existe— y no en una tabla
+ * propia: añadir una obligaba a una migración de esquema, y el mecanismo de la
+ * APK no envuelve las migraciones en transacción ni registra cuáles se
+ * aplicaron. Por un JSON de cinco números no vale la pena correr ese riesgo.
+ */
+export async function guardarParametrosBloom(params: unknown): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO meta_offline (clave, valor) VALUES ('universo_bloom_params', ?)`,
+    [JSON.stringify(params ?? null)],
+  );
+}
+
+/** Parámetros del filtro, o cadena vacía si nunca se descargó. */
+export async function getParametrosBloom(): Promise<string> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM meta_offline WHERE clave = 'universo_bloom_params'",
+  );
+  return row?.valor ?? '';
+}
+
 /** Versión del padrón persistida (vacío si nunca se precargó). */
 export async function getPadronVersion(): Promise<string> {
   const db = await openDb();

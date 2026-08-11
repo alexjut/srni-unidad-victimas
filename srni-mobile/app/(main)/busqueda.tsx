@@ -37,6 +37,7 @@ import type { PadronRow } from '../../src/db/precargaDao';
 import * as victimasOfflineDao from '../../src/db/victimasOfflineDao';
 import * as colaDao from '../../src/db/colaDao';
 import { reportarError } from '../../src/services/errorReporter';
+import * as filtroUniverso from '../../src/services/filtroUniverso';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
 // ── Tipos de documento ───────────────────────────────────────────────────────
@@ -414,6 +415,9 @@ function TarjetaNoEncontrado({
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [genero, setGenero] = useState<'M' | 'F' | 'NB' | 'ND'>('ND');
 
+  /** La encontró el filtro del universo, sin conexión y sin ficha en el padrón. */
+  const enUniverso = resultado.fuente === 'UNIVERSO_RUV_OFFLINE';
+
   function puedeAgregar() {
     return primerNombre.trim() && primerApellido.trim() && fechaNacimiento.match(/^\d{4}-\d{2}-\d{2}$/);
   }
@@ -433,16 +437,33 @@ function TarjetaNoEncontrado({
           valor de relleno, quizá SÍ está y solo hace falta el documento correcto.
           Decir lo mismo en los dos casos manda a crear un duplicado.
         */}
+        {/*
+          Tercer caso, añadido con el filtro del universo: la persona SÍ está en
+          el RUV y solo le falta la ficha. Decirle "No está en el padrón" —que es
+          cierto y suena a "no es víctima"— es exactamente la confusión que el
+          filtro vino a quitar. Aquí el encuestador debe entender que procede.
+        */}
         <Text style={styles.tarjetaTitulo}>
           {resultado.no_identificante
             ? 'Este número no identifica a una persona'
-            : 'No está en el padrón'}
+            : enUniverso
+              ? 'Está en el RUV, sin caracterizar'
+              : 'No está en el padrón'}
         </Text>
       </View>
       <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
       {resultado.no_identificante && (
         <Text style={[styles.tarjetaMensaje, { fontWeight: '700' }]}>
           Verifique el documento con la persona antes de darla de alta.
+        </Text>
+      )}
+      {enUniverso && (
+        // El precio del filtro, dicho donde se toma la decisión y no en un
+        // manual: ~1 de cada 1.000 aciertos es falso. No invalida el alta —el
+        // backend revalida al sincronizar— pero el encuestador tiene que saber
+        // que esto es una coincidencia probable, no una identificación.
+        <Text style={[styles.tarjetaMensaje, { fontWeight: '700' }]}>
+          Coincidencia encontrada sin conexión. Se confirma al sincronizar.
         </Text>
       )}
       <Text style={styles.tarjetaFuente}>Fuente: {resultado.fuente}</Text>
@@ -675,6 +696,23 @@ export default function BusquedaScreen() {
    * Fase 0 offline: busca en el padrón local. Devuelve true si encontró y ya
    * pintó el resultado; false si no hay nada local (para mostrar el error de red).
    */
+  /**
+   * Parámetros del filtro del universo, si hay uno descargado y usable.
+   *
+   * Devuelve `null` cuando no lo hay, y en ese caso la búsqueda offline se
+   * comporta exactamente como antes. Es deliberado: el filtro es un accesorio
+   * que amplía lo que la APK reconoce, no un requisito para funcionar.
+   */
+  async function obtenerParametrosFiltro() {
+    try {
+      return filtroUniverso.parsearParametros(
+        await precargaDao.getParametrosBloom(),
+      );
+    } catch {
+      return null;
+    }
+  }
+
   async function buscarOffline(): Promise<boolean> {
     try {
       const doc = documento.trim();
@@ -694,7 +732,31 @@ export default function BusquedaScreen() {
         return true;
       }
 
-      if (r.candidatos.length === 0) return false;
+      // El padrón local no la tiene. Antes esto era el final del camino: se
+      // respondía "no está en los datos offline" y la pantalla no ofrecía nada
+      // más. Pero el padrón solo trae a quien YA fue entrevistado — 8,12 M de
+      // víctimas reconocidas nunca lo fueron, y decirle a una de ellas que no
+      // existe, teniéndola enfrente, es el error que este bloque corrige.
+      if (r.candidatos.length === 0) {
+        const params = await obtenerParametrosFiltro();
+        if (params && filtroUniverso.estaEnUniverso(doc, params)) {
+          setResultado({
+            encontrado: false,
+            victima: null,
+            // `motivo` es lo que la tarjeta usa para decidir qué ofrecer:
+            // NO_EN_PADRON ya habilita el alta manual, y este caso es ese mismo
+            // camino con una certeza distinta que la pantalla debe transmitir.
+            motivo: 'NO_EN_PADRON',
+            fuente: 'UNIVERSO_RUV_OFFLINE',
+            mensaje:
+              'No tiene ficha, pero figura en el universo del RUV. Puede ' +
+              'registrarla por alta manual. La coincidencia se confirma al ' +
+              'sincronizar.',
+          } as ResultadoBusquedaFuente);
+          return true;
+        }
+        return false;
+      }
 
       // Varias personas con el mismo documento: decide quien la tiene enfrente.
       // Elegir por ella sería entregarle los datos de otra sin que se entere, y

@@ -65,6 +65,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from apps.victimas.bloom import BLOOM_FORMATO, ConstructorBloom
 from apps.victimas.repository import get_repository
 from apps.victimas.repository.base import doc_hash
 
@@ -78,7 +79,8 @@ MANIFIESTO_NOMBRE = 'padron-latest.json'
 #: si entiende lo que descargó, en vez de fallar al consultarlo.
 #:   1 → doc_hash en hexadecimal, tres columnas booleanas, índice aparte
 #:   2 → doc_hash BLOB de 16 bytes, WITHOUT ROWID, booleanos en `flags`
-ESQUEMA_VERSION = 2
+#:   3 → + tabla `universo_bloom`: filtro de Bloom de los 12,68 M del universo
+ESQUEMA_VERSION = 3
 
 #: Cuántos bytes del SHA-256 se guardan. 16 bytes = 128 bits: con 5 millones de
 #: claves la probabilidad de colisión ronda 10⁻²⁶, y el campo solo se usa para
@@ -144,6 +146,11 @@ class Command(BaseCommand):
             help='Cuántas versiones del padrón conservar (default: 3).',
         )
 
+    #: Lo llena `_escribir_bloom`. Queda en None si no hay universo cargado, y en
+    #: ese caso el manifiesto declara `bloom: null` — que es información, no un
+    #: hueco: le dice a la APK que ese archivo no reconoce al universo.
+    _bloom_info = None
+
     def handle(self, *args, **options):
         batch_size = max(1, options['batch_size'])
         keep = max(1, options['keep'])
@@ -207,6 +214,10 @@ class Command(BaseCommand):
             'formato': FORMATO,
             'archivo': archivo_nombre,
             'fuente': fuente,
+            # Parámetros del filtro del universo (esquema 3). `null` significa que
+            # este archivo NO lleva filtro: la APK debe entonces responder "no
+            # encontrada" como antes, en vez de asumir que el universo está vacío.
+            'bloom': self._bloom_info,
         }
         manifiesto_path = os.path.join(destino_dir, MANIFIESTO_NOMBRE)
         with open(manifiesto_path, 'w', encoding='utf-8') as fh:
@@ -370,6 +381,11 @@ class Command(BaseCommand):
             # pero sí tarda): es lo que la APK va a poder encontrar.
             filas = conn.execute('SELECT count(*) FROM padron;').fetchone()[0]
 
+            # El filtro del universo va DESPUÉS del padrón, para que si la fuente
+            # no tiene universo (el mock) el archivo siga siendo válido: la tabla
+            # queda vacía y el manifiesto lo declara.
+            self._escribir_bloom(conn)
+
             # Ya no se crea ningún índice: con `WITHOUT ROWID` la tabla está
             # organizada por (doc_hash, seq), o sea que la búsqueda por documento
             # ya usa la propia estructura. El `idx_padron_doc` de la versión
@@ -381,6 +397,118 @@ class Command(BaseCommand):
             return leidos, filas
         finally:
             conn.close()
+
+    # ──────────────────────────────────────────────────────────────────────
+    def _escribir_bloom(self, conn) -> None:
+        """
+        Construye el filtro de Bloom del universo y lo guarda en el archivo.
+
+        ── Por qué se lee así y no con el ORM normal ──────────────────────────
+        Son 12,68 M de documentos. `values_list(flat=True).iterator()` trae UNA
+        columna con un cursor del lado del servidor: no instancia modelos y, sobre
+        todo, **no toca `EncryptedField`**. Instanciar `PersonaUniverso` descifra
+        cinco campos por fila — el mismo error que costó tres corridas canceladas
+        cargando el universo. Acá solo viajan strings de 64 caracteres.
+
+        ── Por qué NO se deduplica en Python ─────────────────────────────────
+        Un `set` de 12,68 M de hashes hex pesa ~1,5 GB. No hace falta: meter dos
+        veces el mismo elemento en un Bloom no cambia un solo bit. Los dos flujos
+        se vuelcan tal cual y la duplicación sale gratis. Lo único que sí necesita
+        el conteo real de únicos es el **dimensionado**, y ese va aparte.
+        """
+        from apps.victimas.models import PersonaUniverso, Victima
+
+        # Dimensionar con el número de únicos. Se paga un COUNT sobre la unión
+        # —minutos— porque errarle es caro en las dos direcciones: quedarse corto
+        # llena el filtro y dispara los falsos positivos por encima de lo
+        # declarado; pasarse infla el archivo que baja el celular.
+        n_unicos = self._contar_universo_unico()
+        if not n_unicos:
+            self.stdout.write(self.style.WARNING(
+                '[AVISO] No hay universo cargado: el archivo va SIN filtro de Bloom.\n'
+                '        La APK solo podrá reconocer a quien tenga ficha.'
+            ))
+            conn.execute(
+                'CREATE TABLE universo_bloom ('
+                ' formato INTEGER NOT NULL, m INTEGER NOT NULL, k INTEGER NOT NULL,'
+                ' n INTEGER NOT NULL, p REAL NOT NULL, bits BLOB NOT NULL)'
+            )
+            conn.commit()
+            return
+
+        bloom = ConstructorBloom(n_unicos)
+        self.stdout.write(
+            f'  Bloom del universo: {n_unicos} documentos únicos → '
+            f'{bloom.m // 8 / 1048576:.1f} MB, k={bloom.k}'
+        )
+
+        for modelo in (PersonaUniverso, Victima):
+            qs = (modelo.objects
+                  .exclude(numero_documento_hash_sin_tipo='')
+                  .values_list('numero_documento_hash_sin_tipo', flat=True))
+            for h in qs.iterator(chunk_size=50_000):
+                bloom.agregar(h)
+
+        real = bloom.falsos_positivos_reales()
+        conn.execute(
+            'CREATE TABLE universo_bloom ('
+            ' formato INTEGER NOT NULL, m INTEGER NOT NULL, k INTEGER NOT NULL,'
+            ' n INTEGER NOT NULL, p REAL NOT NULL, bits BLOB NOT NULL)'
+        )
+        conn.execute(
+            'INSERT INTO universo_bloom (formato, m, k, n, p, bits)'
+            ' VALUES (?, ?, ?, ?, ?, ?)',
+            (BLOOM_FORMATO, bloom.m, bloom.k, n_unicos, real, bloom.to_bytes()),
+        )
+        conn.commit()
+
+        # Se declara la tasa MEDIDA sobre el filtro construido, no la teórica: si
+        # el dimensionado se quedó corto, esta cifra lo dice y la de diseño no.
+        self._bloom_info = {
+            'formato': BLOOM_FORMATO,
+            'm': bloom.m,
+            'k': bloom.k,
+            'n': n_unicos,
+            'documentos_agregados': bloom.n,
+            'falsos_positivos': round(real, 6),
+            'bytes': bloom.m // 8,
+        }
+        self.stdout.write(
+            f'  Bloom listo: {bloom.n} agregados, '
+            f'falsos positivos reales {real:.4%}'
+        )
+
+    def _contar_universo_unico(self) -> int:
+        """
+        Documentos distintos en `PersonaUniverso ∪ Victima`.
+
+        En SQL y no en Python: son 18 M de filas y la unión con `DISTINCT` la
+        resuelve Postgres sin traer nada. Devuelve 0 si las tablas no existen
+        —el mock no las tiene— para que el generador siga funcionando en pruebas.
+        """
+        from django.db import connection as django_conn
+        from django.db.utils import OperationalError, ProgrammingError
+
+        try:
+            with django_conn.cursor() as cur:
+                # El techo de tiempo es de PostgreSQL; en los tests la base es
+                # SQLite y `SET LOCAL` es un error de sintaxis, no un no-op.
+                if django_conn.vendor == 'postgresql':
+                    cur.execute("SET LOCAL statement_timeout = '30min'")
+                cur.execute("""
+                    SELECT COUNT(*) FROM (
+                        SELECT numero_documento_hash_sin_tipo AS h
+                          FROM victimas_personauniverso
+                         WHERE numero_documento_hash_sin_tipo <> ''
+                        UNION
+                        SELECT numero_documento_hash_sin_tipo
+                          FROM victimas_victima
+                         WHERE numero_documento_hash_sin_tipo <> ''
+                    ) u
+                """)
+                return cur.fetchone()[0]
+        except (ProgrammingError, OperationalError):
+            return 0
 
     # ──────────────────────────────────────────────────────────────────────
     def _limpiar_viejos(self, destino_dir: str, conservar: str, keep: int) -> int:

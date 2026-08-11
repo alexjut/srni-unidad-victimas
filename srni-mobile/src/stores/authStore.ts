@@ -10,6 +10,7 @@ import { authApi, type UsuarioMe } from '../api/auth';
 import { precargarEnSegundoPlano } from '../services/precarga';
 import * as precargaDao from '../db/precargaDao';
 import * as colaDao from '../db/colaDao';
+import * as filtroUniverso from '../services/filtroUniverso';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
 
@@ -144,6 +145,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         } else {
           await precargaDao.limpiarPrecarga();
         }
+        // El filtro del universo es un archivo aparte, así que no se lo lleva
+        // el DELETE de las tablas. En los dos casos se borra: sus parámetros
+        // viven en `meta_offline`, que sí se vacía, y dejarlo huérfano solo
+        // ocuparía 22,7 MB que nadie puede consultar.
+        filtroUniverso.borrarFiltro();
       } catch { /* best-effort */ }
       set({ usuario: null, error: null });
     }

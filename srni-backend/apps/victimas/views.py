@@ -10,9 +10,10 @@ Seguridad:
 """
 import json
 import os
+import sqlite3
 
 from django.conf import settings
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, StreamingHttpResponse
 from django.utils import timezone
 from rest_framework import mixins, viewsets, status
 from rest_framework.views import APIView
@@ -546,6 +547,39 @@ def _nombre_completo(v) -> str:
     responses={200: {'type': 'object', 'properties': {
         'version': {'type': 'string'},
         'padron': {'type': 'array', 'items': {'type': 'object'}},
+        # Referencia al padrón COMPLETO descargable. `padron` (arriba) es solo el
+        # arranque rápido de la jornada, topado en PRECARGA_LIMITE_PERSONAS.
+        'padron_archivo': {
+            'type': 'object', 'nullable': True,
+            'properties': {
+                'version': {'type': 'string'},
+                'checksum': {'type': 'string'},
+                'total_registros': {'type': 'integer'},
+                'formato': {'type': 'string'},
+                'url': {'type': 'string'},
+                'esquema': {'type': 'integer'},
+                'hash_bytes': {'type': 'integer'},
+                'bloom': {
+                    'type': 'object', 'nullable': True,
+                    'description': (
+                        'Filtro de Bloom del universo del RUV. Responde "¿está '
+                        'esta persona en el universo?" sin llevar sus datos. Se '
+                        'consulta con el SHA-256 del NÚMERO SIN TIPO, a '
+                        'diferencia de la tabla padron. Un acierto es un '
+                        'CANDIDATO a alta manual (p de falso positivo en el '
+                        'campo `falsos_positivos`), nunca una identificación.'
+                    ),
+                    'properties': {
+                        'formato': {'type': 'integer'},
+                        'm': {'type': 'integer'},
+                        'k': {'type': 'integer'},
+                        'n': {'type': 'integer'},
+                        'falsos_positivos': {'type': 'number'},
+                        'bytes': {'type': 'integer'},
+                    },
+                },
+            },
+        },
         'jornada': {'type': 'array', 'items': {'type': 'object'}},
         'parametricas': {'type': 'object'},
     }}},
@@ -648,6 +682,26 @@ class PrecargaOfflineView(APIView):
                 'total_registros': manifiesto.get('total_registros'),
                 'formato': manifiesto.get('formato'),
                 'url': request.build_absolute_uri('/api/victimas/padron/download/'),
+                # La APK necesita saber QUÉ esquema trae el archivo antes de
+                # consultarlo: entre el 2 y el 3 cambia dónde vive el universo, y
+                # un cliente que lea el archivo equivocado no falla — devuelve
+                # respuestas mal formadas sin avisar.
+                'esquema': manifiesto.get('esquema'),
+                'hash_bytes': manifiesto.get('hash_bytes'),
+                # Parámetros del filtro del universo. `None` = este archivo no lo
+                # trae, y la APK debe seguir respondiendo "no encontrada" para
+                # quien no tenga ficha, en vez de asumir un universo vacío.
+                'bloom': (
+                    {
+                        **manifiesto['bloom'],
+                        # El filtro se descarga SUELTO, no dentro del padrón: son
+                        # 22,7 MB contra cientos, y es lo único que hace falta
+                        # para habilitar el alta manual sin señal.
+                        'url': request.build_absolute_uri(
+                            '/api/victimas/padron/bloom/'),
+                    }
+                    if manifiesto.get('bloom') else None
+                ),
             }
 
         payload = {
@@ -837,3 +891,142 @@ class PadronDownloadView(APIView):
         )
         resp['ETag'] = etag
         return resp
+
+
+@extend_schema(
+    summary='Descarga del filtro de Bloom del universo (solo el filtro)',
+    description=(
+        'Entrega ÚNICAMENTE el filtro de Bloom del universo de víctimas — 22,7 MB — '
+        'sin el resto del padrón, que pesa cientos de MB. Responde "¿esta persona '
+        'está en el universo del RUV?" en campo y sin señal, que es lo que habilita '
+        'un alta manual: el nombre se lo pregunta el encuestador a la persona, que '
+        'está enfrente.\n\n'
+        'Se consulta con el SHA-256 del NÚMERO SIN TIPO (`num_hash`), a diferencia '
+        'de la tabla `padron`, que usa `doc_hash(tipo, numero)`.\n\n'
+        'Los parámetros (m, k, formato) vienen en `padron/version/` y en la '
+        'precarga; sin ellos el filtro no se puede consultar.'
+    ),
+    tags=['Víctimas'],
+)
+class PadronBloomView(APIView):
+    """
+    GET /api/victimas/padron/bloom/
+
+    ── Por qué existe, en vez de que la APK saque el filtro del padrón ─────────
+    El filtro vive DENTRO del `padron-<version>.sqlite3`, que con el padrón real
+    pesa cientos de MB. Atar el alta manual offline a esa descarga la ata también
+    a la red institucional (el WAF corta seguido) y al disco del .109, que está al
+    81 %. Son 22,7 MB contra ~300: el 7 %, y resuelve el caso que más duele.
+
+    ── Por qué se transmite con `blobopen` y no se lee entero ─────────────────
+    `SELECT bits FROM universo_bloom` materializaría 22,7 MB en RAM por cada
+    petición concurrente. `blobopen` da un descriptor sobre el BLOB y se envía por
+    trozos, así que la memoria no depende del tamaño del filtro ni del número de
+    encuestadores descargando a la vez.
+
+    Tampoco se escribe un archivo aparte: serían 22,7 MB por versión conservada
+    sobre un disco que ya está al límite.
+    """
+    permission_classes = [IsAuthenticated, PuedeCaracterizar]
+
+    #: Tamaño de trozo del streaming. 1 MB es el equilibrio medido entre número de
+    #: llamadas al descriptor y memoria por petición.
+    TROZO = 1024 * 1024
+
+    def get(self, request):
+        manifiesto = _leer_manifiesto()
+        if manifiesto is None:
+            return Response(
+                {'detail': 'El padrón offline aún no ha sido generado. '
+                           'Ejecute el command generar_padron.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        bloom = manifiesto.get('bloom')
+        if not bloom:
+            # No es un error del cliente: es un padrón generado sin universo
+            # cargado. Se dice explícitamente para que la APK siga respondiendo
+            # "no encontrada" en vez de asumir que el universo está vacío.
+            return Response(
+                {'detail': 'Este padrón no incluye el filtro del universo '
+                           '(se generó sin universo cargado).'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        archivo_path = os.path.join(_padron_dir(), manifiesto.get('archivo', ''))
+        if not os.path.exists(archivo_path):
+            return Response(
+                {'detail': 'El archivo del padrón referenciado por el manifiesto no existe.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # ETag propio: el filtro cambia con el padrón, pero es un recurso distinto.
+        # Sin el sufijo, un cliente que ya tenga el padrón completo recibiría 304
+        # aquí y se quedaría sin filtro.
+        checksum = manifiesto.get('checksum', '')
+        etag = f'"{checksum}:bloom"'
+        if_none_match = request.META.get('HTTP_IF_NONE_MATCH', '')
+        enviados = {t.strip() for t in if_none_match.split(',')} if if_none_match else set()
+
+        ip = _ip_de_request(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+
+        if etag in enviados:
+            LogAcceso.registrar(
+                usuario=request.user, accion='PRECARGA_OFFLINE',
+                recurso='PadronBloom', recurso_id=manifiesto.get('version', ''),
+                ip=ip, user_agent=ua, resultado='EXITO',
+                detalle={'operacion': 'bloom', 'status': 304, 'checksum': checksum},
+            )
+            resp = Response(status=status.HTTP_304_NOT_MODIFIED)
+            resp['ETag'] = etag
+            return resp
+
+        LogAcceso.registrar(
+            usuario=request.user, accion='PRECARGA_OFFLINE',
+            recurso='PadronBloom', recurso_id=manifiesto.get('version', ''),
+            ip=ip, user_agent=ua, resultado='EXITO',
+            detalle={
+                'operacion': 'bloom', 'status': 200, 'checksum': checksum,
+                'm': bloom.get('m'), 'k': bloom.get('k'), 'n': bloom.get('n'),
+            },
+        )
+
+        resp = StreamingHttpResponse(
+            self._trozos(archivo_path),
+            content_type='application/octet-stream',
+        )
+        resp['ETag'] = etag
+        # Content-Length sale del manifiesto, no del archivo: permite que la APK
+        # muestre progreso y, sobre todo, que detecte una descarga truncada. Un
+        # filtro corto no falla al consultarlo —responde "no está" para todos—,
+        # así que este es el único punto donde el truncamiento se puede cazar.
+        resp['Content-Length'] = str(bloom['m'] // 8)
+        resp['Content-Disposition'] = (
+            f'attachment; filename="bloom-{manifiesto.get("version", "")}.bin"'
+        )
+        # Los parámetros viajan también en cabeceras para que un cliente que solo
+        # descargue este recurso no necesite otra llamada para poder usarlo.
+        resp['X-Bloom-M'] = str(bloom['m'])
+        resp['X-Bloom-K'] = str(bloom['k'])
+        resp['X-Bloom-Formato'] = str(bloom.get('formato', 1))
+        return resp
+
+    def _trozos(self, archivo_path: str):
+        """Lee el BLOB por partes, sin cargarlo entero en memoria."""
+        conn = sqlite3.connect(f'file:{archivo_path}?mode=ro', uri=True)
+        try:
+            fila = conn.execute('SELECT rowid FROM universo_bloom LIMIT 1').fetchone()
+            if fila is None:
+                return
+            with conn.blobopen('universo_bloom', 'bits', fila[0], readonly=True) as blob:
+                total = len(blob)
+                leido = 0
+                while leido < total:
+                    trozo = blob.read(min(self.TROZO, total - leido))
+                    if not trozo:
+                        break
+                    leido += len(trozo)
+                    yield trozo
+        finally:
+            conn.close()

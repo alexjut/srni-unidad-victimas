@@ -86,7 +86,7 @@ def test_generar_padron_crea_archivo_y_manifiesto(media_padron):
     # El SQLite se consulta por doc_hash, que va en BINARIO truncado a 16 bytes
     # (esquema 2): en hexadecimal costaba 64 bytes por fila y otros tantos en el
     # índice — el 74 % del archivo de 896 MB.
-    assert m['esquema'] == 2
+    assert m['esquema'] == 3
     assert m['hash_bytes'] == 16
 
     conn = sqlite3.connect(archivo_path)
@@ -180,3 +180,215 @@ def test_padron_requiere_autenticacion(media_padron):
     anon = APIClient()
     assert anon.get('/api/victimas/padron/version/').status_code in (401, 403)
     assert anon.get('/api/victimas/padron/download/').status_code in (401, 403)
+
+
+# ── Filtro de Bloom del universo (esquema 3) ─────────────────────────────────
+#
+# El padrón lleva a quien tiene ficha. El universo son 12,68 M de personas, y las
+# 8,12 M que solo están ahí no cabían: con nombre y datos costaban ~190 MB. El
+# filtro responde "¿está en el universo?" en 21,7 MiB, que es lo único que hace
+# falta para habilitar un alta manual en campo — el nombre se lo pregunta el
+# encuestador a la persona, que está enfrente.
+
+def _sembrar_universo(documento, cons):
+    """Una fila del universo, con el hash SIN tipo que es el que usa el filtro."""
+    import datetime
+
+    from apps.victimas.models import PersonaUniverso
+    from apps.victimas.repository.base import num_hash
+
+    return PersonaUniverso.objects.create(
+        cons_persona_universo=cons,
+        corte='TEMP_UNIV_VICT_PER_MI010726ALL',
+        fecha_corte=datetime.date(2026, 7, 1),
+        numero_documento=documento, tipo_documento='CC',
+        numero_documento_hash_sin_tipo=num_hash(documento),
+        primer_nombre='ROSA', primer_apellido='MOSQUERA',
+        genero='Mujer', num_hechos=4,
+    )
+
+
+@pytest.mark.django_db
+def test_bloom_reconoce_a_quien_solo_esta_en_el_universo(media_padron):
+    """
+    Los casos reales del 11-ago: cédulas que están en el RUV y no en el padrón.
+
+    Sin filtro, en campo y sin señal responden "no encontrada" — falso, y deja a
+    una víctima reconocida sin poder caracterizarse.
+    """
+    from apps.victimas.bloom import contiene
+    from apps.victimas.repository.base import num_hash
+
+    solo_universo = ['28683981', '93021801', '1075263069']
+    for i, doc in enumerate(solo_universo):
+        _sembrar_universo(doc, 17309123 + i)
+
+    call_command('generar_padron')
+
+    padron_dir = os.path.join(str(media_padron), 'padron')
+    with open(os.path.join(padron_dir, 'padron-latest.json'), encoding='utf-8') as fh:
+        m = json.load(fh)
+
+    assert m['esquema'] == 3
+    assert m['bloom'] is not None, 'el archivo salió sin filtro del universo'
+    assert m['bloom']['n'] == len(solo_universo)
+    assert m['bloom']['formato'] == 1
+
+    conn = sqlite3.connect(os.path.join(padron_dir, m['archivo']))
+    try:
+        formato, mm, kk, n, p, bits = conn.execute(
+            'SELECT formato, m, k, n, p, bits FROM universo_bloom').fetchone()
+
+        assert mm == m['bloom']['m'] and kk == m['bloom']['k']
+        assert len(bits) == mm // 8, 'el blob no tiene el tamaño que declara m'
+
+        # Lo que hará la APK: hash SIN tipo → consulta al filtro.
+        for doc in solo_universo:
+            assert contiene(bits, mm, kk, num_hash(doc)), \
+                f'{doc} está en el universo y el filtro no lo reconoce'
+    finally:
+        conn.close()
+
+
+@pytest.mark.django_db
+def test_bloom_se_consulta_sin_el_tipo_de_documento(media_padron):
+    """
+    La trampa a evitar: la tabla `padron` usa doc_hash(tipo, numero) y el filtro
+    usa num_hash(numero). Consultar el filtro con el hash de identidad no
+    encuentra NADA, y el fallo es silencioso —responde "no está" y ya—.
+    """
+    from apps.victimas.bloom import contiene
+    from apps.victimas.repository.base import num_hash
+
+    _sembrar_universo('28683981', 17309123)
+    call_command('generar_padron')
+
+    padron_dir = os.path.join(str(media_padron), 'padron')
+    with open(os.path.join(padron_dir, 'padron-latest.json'), encoding='utf-8') as fh:
+        m = json.load(fh)
+
+    conn = sqlite3.connect(os.path.join(padron_dir, m['archivo']))
+    try:
+        mm, kk, bits = conn.execute(
+            'SELECT m, k, bits FROM universo_bloom').fetchone()
+
+        assert contiene(bits, mm, kk, num_hash('28683981'))
+        assert not contiene(bits, mm, kk, doc_hash('CC', '28683981'))
+    finally:
+        conn.close()
+
+
+@pytest.mark.django_db
+def test_bloom_se_descarga_suelto_sin_bajar_el_padron(media_padron, client_auth):
+    """
+    El endpoint que hace viable todo esto: 22,7 MB en vez de cientos.
+
+    Si el filtro solo se pudiera sacar del padrón completo, el alta manual
+    offline quedaría atada a una descarga enorme sobre una red institucional que
+    se corta — y a un disco que está al 81 %.
+    """
+    from apps.victimas.bloom import contiene
+    from apps.victimas.repository.base import num_hash
+
+    _sembrar_universo('28683981', 17309123)
+    call_command('generar_padron')
+
+    padron_dir = os.path.join(str(media_padron), 'padron')
+    with open(os.path.join(padron_dir, 'padron-latest.json'), encoding='utf-8') as fh:
+        m = json.load(fh)
+
+    resp = client_auth.get('/api/victimas/padron/bloom/')
+    assert resp.status_code == 200
+
+    bits = b''.join(resp.streaming_content)
+
+    # El cuerpo es EXACTAMENTE el filtro, del tamaño que declara m.
+    assert len(bits) == m['bloom']['m'] // 8
+    assert resp['Content-Length'] == str(m['bloom']['m'] // 8)
+    assert resp['X-Bloom-M'] == str(m['bloom']['m'])
+    assert resp['X-Bloom-K'] == str(m['bloom']['k'])
+
+    # Y sirve para lo que tiene que servir.
+    assert contiene(bits, m['bloom']['m'], m['bloom']['k'], num_hash('28683981'))
+    assert not contiene(bits, m['bloom']['m'], m['bloom']['k'], num_hash('99999999'))
+
+
+@pytest.mark.django_db
+def test_bloom_304_con_etag_propio(media_padron, client_auth):
+    """
+    El ETag lleva sufijo ':bloom' a propósito.
+
+    Sin él, un cliente que ya tenga el padrón completo mandaría el mismo
+    If-None-Match aquí, recibiría 304 y se quedaría sin filtro — con la APK
+    convencida de que ya lo tiene.
+    """
+    _sembrar_universo('28683981', 17309123)
+    call_command('generar_padron')
+
+    resp = client_auth.get('/api/victimas/padron/bloom/')
+    etag = resp['ETag']
+    assert etag.endswith(':bloom"')
+
+    r304 = client_auth.get('/api/victimas/padron/bloom/', HTTP_IF_NONE_MATCH=etag)
+    assert r304.status_code == 304
+
+    # El ETag del padrón NO sirve para el filtro.
+    with open(os.path.join(str(media_padron), 'padron', 'padron-latest.json'),
+              encoding='utf-8') as fh:
+        checksum = json.load(fh)['checksum']
+    r200 = client_auth.get('/api/victimas/padron/bloom/',
+                           HTTP_IF_NONE_MATCH=f'"{checksum}"')
+    assert r200.status_code == 200
+
+
+@pytest.mark.django_db
+def test_bloom_404_si_el_padron_no_lo_trae(media_padron, client_auth):
+    """Sin universo cargado se dice explícitamente, no se devuelve un filtro vacío."""
+    call_command('generar_padron')
+    assert client_auth.get('/api/victimas/padron/bloom/').status_code == 404
+
+
+@pytest.mark.django_db
+def test_bloom_requiere_autenticacion(media_padron):
+    _sembrar_universo('28683981', 17309123)
+    call_command('generar_padron')
+    assert APIClient().get('/api/victimas/padron/bloom/').status_code in (401, 403)
+
+
+@pytest.mark.django_db
+def test_la_precarga_publica_la_url_del_filtro(media_padron, client_auth):
+    """La APK descubre el filtro por aquí; sin la URL no sabría que existe."""
+    _sembrar_universo('28683981', 17309123)
+    call_command('generar_padron')
+
+    datos = client_auth.get('/api/victimas/precarga/').json()
+    bloom = datos['padron_archivo']['bloom']
+
+    assert bloom is not None
+    assert bloom['url'].endswith('/api/victimas/padron/bloom/')
+    assert bloom['m'] > 0 and bloom['k'] > 0
+    assert datos['padron_archivo']['esquema'] == 3
+
+
+@pytest.mark.django_db
+def test_sin_universo_el_manifiesto_lo_declara(media_padron):
+    """
+    Sin universo cargado el archivo sigue siendo válido, pero `bloom: null` lo
+    dice. Es información, no un hueco: la APK debe volver a responder "no
+    encontrada" en vez de asumir que el universo está vacío.
+    """
+    call_command('generar_padron')
+
+    padron_dir = os.path.join(str(media_padron), 'padron')
+    with open(os.path.join(padron_dir, 'padron-latest.json'), encoding='utf-8') as fh:
+        m = json.load(fh)
+
+    assert m['bloom'] is None
+
+    conn = sqlite3.connect(os.path.join(padron_dir, m['archivo']))
+    try:
+        # La tabla existe igual: un cliente que la consulte debe encontrarla
+        # vacía, no fallar con "no such table".
+        assert conn.execute('SELECT COUNT(*) FROM universo_bloom').fetchone()[0] == 0
+    finally:
+        conn.close()
