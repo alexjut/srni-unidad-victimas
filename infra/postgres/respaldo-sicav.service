@@ -1,0 +1,9 @@
+[Unit]
+Description=Respaldo fisico de la base de SICAV (pg_basebackup, rotacion de 3)
+Documentation=file:/home/admin_rni/respaldo_semanal.sh
+
+[Service]
+Type=oneshot
+ExecStart=/home/admin_rni/respaldo_semanal.sh
+# El respaldo tarda ~40 min sobre 31 GB; que systemd no lo mate antes de tiempo.
+TimeoutStartSec=4h
