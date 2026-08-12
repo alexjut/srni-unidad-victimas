@@ -640,7 +640,13 @@ class PrecargaOfflineView(APIView):
                 'nombre': _nombre_completo(v),
                 'ubicacion': v.municipio_residencia_nombre,
                 'cantidad_hechos': len(v.hechos_victimizantes or []),
-                'en_ruv': v.estado_ruv == 'INCLUIDO',
+                # 🔴 Del universo del RUV, NO de `estado_ruv`. Este es el dato que
+                # la APK muestra HOY en campo —el archivo del padrón todavía no se
+                # descarga— y hasta el 12-ago decía `estado_ruv == 'INCLUIDO'`, que
+                # venía del join por `CONS_PERONA`: un contador de filas. Le decía
+                # al encuestador "Incluida en RUV" con el registro de otra persona.
+                # Lo pone `listar_todas` cruzando el documento contra el universo.
+                'en_ruv': v.en_universo_ruv,
                 'habilitada': v.habilitado_para_caracterizacion,
                 # Fase 0: la caracterización no está en la fuente externa, así que no
                 # podemos derivarla barato desde el repo. Se reporta False; la APK

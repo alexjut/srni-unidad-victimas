@@ -147,6 +147,43 @@ class DjangoVictimaRepository(VictimaRepository):
         return sum(1 for c in campos if c not in (None, "", 0))
 
     @staticmethod
+    def _anotar_universo_ruv(qs):
+        """
+        Marca cada fila con si su documento aparece en el universo del RUV.
+
+        Es lo que alimenta el "está en el RUV" que ve el encuestador, por las dos
+        rutas: la precarga de la jornada (`listar_todas`) y el padrón descargable
+        (`iterar_padron`). Van por el MISMO helper a propósito: cuando cada una
+        calculaba lo suyo, el celular podía mostrar una cosa en la búsqueda y otra
+        en la ficha de la misma persona.
+
+        🔴 NO sale de `estado_ruv`. Ese campo llegaba del join por `CONS_PERONA`
+        —un contador de filas, no un identificador de persona—, así que decía
+        `INCLUIDO` para 5,9 M copiando el registro de otra, y eso viajaba al
+        celular como "Incluida en RUV". Ver
+        `docs/oracle-legacy/join_caracterizacion_roto.md` y la migración
+        `victimas/0021`, que dejó el campo en `NO_VERIFICADO`.
+
+        Se resuelve en SQL y no en Python: un `set` con los 12,68 M de hashes del
+        universo pesa ~1,5 GB en memoria. Y no se usa el filtro de Bloom que ya
+        existe en el padrón, porque sus falsos positivos son exactamente el error
+        que se está corrigiendo —marcar como incluido a quien no lo está—.
+
+        El `exclude` del hash vacío no es defensivo de más: sin él, una víctima
+        sin hash cruzaría con cualquier fila del universo sin hash, y saldríamos
+        marcando gente al azar. `''  = ''` es verdadero.
+        """
+        from django.db.models import Exists, OuterRef
+
+        from apps.victimas.models import PersonaUniverso
+
+        return qs.annotate(en_universo_ruv=Exists(
+            PersonaUniverso.objects
+            .filter(numero_documento_hash_sin_tipo=OuterRef('numero_documento_hash_sin_tipo'))
+            .exclude(numero_documento_hash_sin_tipo='')
+        ))
+
+    @staticmethod
     def _solo_una_fila_por_persona(qs):
         """
         Quita las filas que el veredicto declara duplicados de la misma persona,
@@ -452,7 +489,10 @@ class DjangoVictimaRepository(VictimaRepository):
         # duplicados de la fuente no viajan, y las que exigen confirmar van
         # marcadas. Si no, la precarga con la que arranca la jornada llenaría el
         # dispositivo con la misma persona repetida y sin avisar de las ambiguas.
-        qs = self._solo_una_fila_por_persona(self._base_qs())
+        # La anotación va ANTES del `LIMIT`: sobre un queryset ya recortado,
+        # Django no deja anotar. Con el tope de la precarga son 5.000 filas, así
+        # que el cruce contra el universo cuesta poco.
+        qs = self._anotar_universo_ruv(self._solo_una_fila_por_persona(self._base_qs()))
         if limite is not None:
             qs = qs[:limite]
         filas = list(qs)
@@ -484,32 +524,9 @@ class DjangoVictimaRepository(VictimaRepository):
         Python: sobre 5,9 M de filas, filtrar acá significaría descifrar y armar el
         DTO de un millón de filas para tirarlas.
         """
-        from django.db.models import Exists, OuterRef
+        from apps.victimas.models import ColisionDocumento
 
-        from apps.victimas.models import ColisionDocumento, PersonaUniverso
-
-        # ── De dónde sale `FLAG_EN_RUV` del padrón descargable ────────────────
-        # Del universo del RUV, cruzando por documento. NO de `estado_ruv`, que
-        # venía del join por `CONS_PERONA` —un contador de filas— y afirmaba
-        # `INCLUIDO` para 5,9 M de personas con el registro de otra; eso llegaba
-        # al celular como "Incluida en RUV" en la pantalla del encuestador.
-        #
-        # Se resuelve en SQL, no en Python: un `set` con los 12,68 M de hashes
-        # del universo pesa ~1,5 GB en memoria, y un filtro de Bloom no sirve acá
-        # porque sus falsos positivos son exactamente el error que se corrige
-        # —marcar a alguien como incluido sin estarlo—.
-        #
-        # El `exclude` del hash vacío no es decorativo: sin él, una víctima sin
-        # hash coincidiría con cualquier fila del universo sin hash y el padrón
-        # saldría marcando gente al azar.
-        en_el_universo = Exists(
-            PersonaUniverso.objects
-            .filter(numero_documento_hash_sin_tipo=OuterRef('numero_documento_hash_sin_tipo'))
-            .exclude(numero_documento_hash_sin_tipo='')
-        )
-
-        qs = (self._solo_una_fila_por_persona(self._base_qs())
-              .annotate(en_universo_ruv=en_el_universo))
+        qs = self._anotar_universo_ruv(self._solo_una_fila_por_persona(self._base_qs()))
 
         # Solo los documentos donde hay algo que advertir. Son ~7 % de los
         # repetidos, así que el diccionario es chico y cabe de sobra en memoria.

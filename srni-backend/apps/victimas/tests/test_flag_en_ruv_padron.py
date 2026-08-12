@@ -90,6 +90,38 @@ def test_un_NO_VERIFICADO_que_SI_esta_en_el_universo_se_marca(tipo_cc):
     )
 
 
+# ── La ruta que la APK usa HOY ──────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_la_precarga_de_jornada_cruza_igual_que_el_padron(tipo_cc):
+    """
+    La precarga es la ruta VIVA, y por poco se queda sin arreglar.
+
+    El archivo del padrón todavía no se descarga al dispositivo —es la Fase B—,
+    así que lo que hoy ve el encuestador en campo sale de
+    `GET /api/victimas/precarga/`, que se arma con `listar_todas`. Ahí el
+    `en_ruv` también salía de `estado_ruv`.
+
+    Las dos rutas pasan por el mismo helper justo para que no puedan divergir:
+    si cada una calculara lo suyo, el celular podría decir una cosa en la
+    búsqueda y otra en la ficha de la misma persona.
+    """
+    _victima(tipo_cc, '1000000005', estado_ruv='INCLUIDO')       # NO está en el universo
+    _victima(tipo_cc, '1000000006', estado_ruv='NO_VERIFICADO')  # SÍ está
+    _en_universo('1000000006', cons=2)
+
+    por_doc = {v.numero_documento: v
+               for v in DjangoVictimaRepository().listar_todas(limite=10)}
+
+    assert not por_doc['1000000005'].en_universo_ruv, (
+        'un INCLUIDO heredado del join roto no puede llegar marcado a la jornada'
+    )
+    assert por_doc['1000000006'].en_universo_ruv, (
+        'quien está en el universo del RUV debe llegar marcado, aunque la 0021 '
+        'haya dejado su estado_ruv en NO_VERIFICADO'
+    )
+
+
 # ── Los bordes que harían marcar gente al azar ──────────────────────────────
 
 @pytest.mark.django_db
