@@ -349,7 +349,19 @@ class Command(BaseCommand):
 
                 flags = 0
                 if not no_identificante:
-                    if v.estado_ruv == 'INCLUIDO':
+                    # 🔴 Sale del universo del RUV, NO de `estado_ruv`.
+                    #
+                    # Hasta el 12-ago acá decía `v.estado_ruv == 'INCLUIDO'`, y ese
+                    # campo llegaba del join por `CONS_PERONA` —un contador de
+                    # filas, no un identificador de persona—. Resultado: el padrón
+                    # que se descargaban los celulares marcaba ~5 M de fichas como
+                    # "Incluida en RUV" copiando el registro de otra persona, y el
+                    # encuestador lo leía en pantalla (`busqueda.tsx`).
+                    #
+                    # `en_universo_ruv` lo pone `iterar_padron` cruzando el
+                    # documento contra `PersonaUniverso`, que es el snapshot real
+                    # del RUV. Ver `docs/oracle-legacy/join_caracterizacion_roto.md`.
+                    if v.en_universo_ruv:
                         flags |= FLAG_EN_RUV
                     if v.habilitado_para_caracterizacion:
                         flags |= FLAG_HABILITADA

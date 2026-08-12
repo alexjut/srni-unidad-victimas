@@ -99,6 +99,10 @@ class DjangoVictimaRepository(VictimaRepository):
                 victima.municipio_residencia.nombre
                 if victima.municipio_residencia_id else None),
             fuente_origen=victima.fuente_origen or "RUV",
+            # Solo viene con valor cuando el queryset trae la anotación —hoy,
+            # `iterar_padron`—. En el resto de las consultas nadie preguntó por el
+            # universo, y no preguntar no autoriza a afirmar: queda en `False`.
+            en_universo_ruv=bool(getattr(victima, "en_universo_ruv", False)),
         )
 
     @staticmethod
@@ -480,9 +484,32 @@ class DjangoVictimaRepository(VictimaRepository):
         Python: sobre 5,9 M de filas, filtrar acá significaría descifrar y armar el
         DTO de un millón de filas para tirarlas.
         """
-        from apps.victimas.models import ColisionDocumento
+        from django.db.models import Exists, OuterRef
 
-        qs = self._solo_una_fila_por_persona(self._base_qs())
+        from apps.victimas.models import ColisionDocumento, PersonaUniverso
+
+        # ── De dónde sale `FLAG_EN_RUV` del padrón descargable ────────────────
+        # Del universo del RUV, cruzando por documento. NO de `estado_ruv`, que
+        # venía del join por `CONS_PERONA` —un contador de filas— y afirmaba
+        # `INCLUIDO` para 5,9 M de personas con el registro de otra; eso llegaba
+        # al celular como "Incluida en RUV" en la pantalla del encuestador.
+        #
+        # Se resuelve en SQL, no en Python: un `set` con los 12,68 M de hashes
+        # del universo pesa ~1,5 GB en memoria, y un filtro de Bloom no sirve acá
+        # porque sus falsos positivos son exactamente el error que se corrige
+        # —marcar a alguien como incluido sin estarlo—.
+        #
+        # El `exclude` del hash vacío no es decorativo: sin él, una víctima sin
+        # hash coincidiría con cualquier fila del universo sin hash y el padrón
+        # saldría marcando gente al azar.
+        en_el_universo = Exists(
+            PersonaUniverso.objects
+            .filter(numero_documento_hash_sin_tipo=OuterRef('numero_documento_hash_sin_tipo'))
+            .exclude(numero_documento_hash_sin_tipo='')
+        )
+
+        qs = (self._solo_una_fila_por_persona(self._base_qs())
+              .annotate(en_universo_ruv=en_el_universo))
 
         # Solo los documentos donde hay algo que advertir. Son ~7 % de los
         # repetidos, así que el diccionario es chico y cabe de sobra en memoria.
