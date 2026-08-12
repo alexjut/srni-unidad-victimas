@@ -35,20 +35,33 @@ Localizar las filas cuesta igual en los dos (`Seq Scan`, 62.210: son 3,7 M de
 5,9 M, demasiadas para que valga un índice). Toda la diferencia está en cómo se
 aplica el `UPDATE`: por clave primaria son 200.000 búsquedas ALEATORIAS en el
 índice de UUID más otras tantas lecturas del heap; el `ctid` ya es la posición
-física de la fila, así que el `Tid Scan` va directo a la página. 20× más barato,
-y además el lote entero se resuelve dentro de Postgres —sin traer 200.000 UUID
-a Python para reenviarlos como 7 MB de SQL—.
+física de la fila, así que el `Tid Scan` va directo a la página. 20× más barato
+**en el plan** —ojo con esa palabra, ver abajo—, y además el lote entero se
+resuelve dentro de Postgres, sin traer 200.000 UUID a Python para reenviarlos
+como 7 MB de SQL.
 
 Un UUID aleatorio como clave primaria es cómodo para todo lo demás y muy caro
 justo aquí: no tiene localidad, así que recorrerlo en volumen es puro salto de
 disco.
 
-**Ojo con esperar el 20× completo: el plan no cuenta lo que cuesta escribir.**
-La tabla tiene **26 índices (5,9 GB)** y uno de los indexados es `estado_ruv`,
-así que ninguna de estas filas se puede actualizar en modo HOT: cada una inserta
-una entrada en los 26. Son ~97 millones de inserciones de índice para las 3,7 M
-restantes, y eso no lo arregla el `ctid` —ni ningún `WHERE`—. El `ctid` quita el
-costo de BUSCAR; el piso lo pone MANTENER los índices.
+🔴 **Y sin embargo NO fue más rápido. Medido de punta a punta:**
+
+    por id (UUID)   10.870 filas/min   (2.000.000 en 3h04)
+    por ctid        10.325 filas/min   (3.726.004 en 6h01, 8 lotes, 12-ago 05:04)
+
+Un 5% por debajo, o sea lo mismo dentro del ruido. **El costo de un plan no
+incluye lo que cuesta escribir** —ni el heap, ni el WAL, ni las entradas de
+índice—, y ahí estaba el cuello: la tabla tiene **26 índices (5,9 GB)** y uno de
+los indexados es `estado_ruv`, así que ninguna de estas filas se puede
+actualizar en modo HOT y cada una inserta una entrada en los 26. Son ~97
+millones de inserciones de índice que no evita ningún `WHERE`. Medido en vivo
+durante la corrida: **260 MB de WAL por minuto**, el backend en `DataFileRead`.
+
+El `ctid` quita el costo de BUSCAR, que resultó ser la mitad que no dolía; el
+piso lo pone MANTENER los índices. Se deja igual porque el código es mejor —el
+lote se resuelve dentro de Postgres, sin mandar 7 MB de UUID por la red— pero
+**que nadie espere velocidad de este cambio**: para eso hay que tocar los
+índices, no la consulta.
 
 Ahí hay una deuda aparte que conviene mirar con calma y no en medio de una
 migración: buena parte de esos 26 son de baja cardinalidad sobre 5,9 M filas
