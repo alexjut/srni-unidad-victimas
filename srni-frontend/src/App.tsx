@@ -19,6 +19,7 @@ const SupervisionPage     = lazy(() => import('@/pages/Supervision'));
 const InstrumentosPage    = lazy(() => import('@/pages/Instrumentos'));
 const ParametricasPage    = lazy(() => import('@/pages/Parametricas'));
 const AuditoriaPage       = lazy(() => import('@/pages/Auditoria'));
+const AutorizacionesPage  = lazy(() => import('@/pages/Autorizaciones'));
 const UsuariosPage        = lazy(() => import('@/pages/Usuarios'));
 const CambiarPasswordPage = lazy(() => import('@/pages/CambiarPassword'));
 const NotFound            = lazy(() => import('@/pages/NotFound'));
@@ -122,6 +123,20 @@ export default function App() {
         <Route path="supervision" element={
           <RequirePermission permiso="puede_ver_reportes">
             <SuspensePage><SupervisionPage /></SuspensePage>
+          </RequirePermission>
+        } />
+        {/*
+          Excepciones de vigencia. La guarda va por el FLAG del perfil y no por
+          una lista de códigos: el permiso lo tienen coordinación, supervisión y
+          administración, pero también cualquier perfil nuevo al que se lo
+          enciendan. Con códigos a mano, esa cuenta vería el menú y recibiría un
+          403 al entrar.
+        */}
+        <Route path="autorizaciones" element={
+          <RequirePermission check={(u) =>
+            !!u.perfil?.puede_autorizar_excepciones || !!u.perfil?.puede_administrar
+          }>
+            <SuspensePage><AutorizacionesPage /></SuspensePage>
           </RequirePermission>
         } />
         <Route path="instrumentos" element={<SuspensePage><InstrumentosPage /></SuspensePage>} />

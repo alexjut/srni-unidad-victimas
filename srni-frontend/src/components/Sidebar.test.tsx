@@ -81,13 +81,13 @@ describe('Sidebar — Autorizaciones', () => {
     expect(itemAutorizaciones(await pintar())).toBeDefined();
   });
 
-  it('apunta al backend y no a una ruta de la SPA', async () => {
+  it('apunta a la página del panel', async () => {
     conPerfil({ codigo: 'COORDINADOR', puede_autorizar_excepciones: true });
     const item = itemAutorizaciones(await pintar());
 
-    // `/api/` es lo único que el nginx del stack y el proxy de Vite mandan al
-    // Django. Si algún día esto apunta a `/autorizaciones/` sin que el nginx
-    // nuevo esté desplegado, la pantalla vuelve a caer en la SPA.
-    expect(item!.getAttribute('href')).toBe('/api/autorizaciones/');
+    // Ruta interna: la pantalla vive dentro del panel y hereda header, menú y
+    // footer. Cuando se servía desde Django (`/api/autorizaciones/`) se abría
+    // como otra aplicación y el usuario perdía la navegación.
+    expect(item!.getAttribute('href')).toBe('/autorizaciones');
   });
 });
