@@ -51,6 +51,7 @@ def api_root(request, format=None):
             },
             'hogares': request.build_absolute_uri('/api/hogares/'),
             'encuestas': request.build_absolute_uri('/api/encuestas/'),
+            'habilitaciones': request.build_absolute_uri('/api/habilitaciones/'),
             'ia': request.build_absolute_uri('/api/ia/'),
             'reportes': {
                 'produccion':        request.build_absolute_uri('/api/reportes/produccion/'),
@@ -87,6 +88,10 @@ urlpatterns = [
     # Módulos Sprint 3
     path('api/hogares/', include('apps.hogares.urls')),
     path('api/encuestas/', include('apps.encuestas.urls')),
+
+    # Excepciones de vigencia — las autoriza el front web, no la app de campo
+    # (decidido el 14-ago-2026: el caracterizador no debe tener el soporte).
+    path('api/habilitaciones/', include('apps.encuestas.urls_habilitaciones')),
 
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),

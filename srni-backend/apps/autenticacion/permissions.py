@@ -46,6 +46,26 @@ class PuedeCaracterizar(BasePermission):
         )
 
 
+class PuedeAutorizarExcepciones(BasePermission):
+    """
+    Quién puede habilitar una caracterización sobre una ficha vigente.
+
+    Decidido el 14-ago-2026: el soporte documental (fallo, tutela, auto) no
+    llega al encuestador —llega por canal institucional al nivel central—, así
+    que la excepción se autoriza desde el front web y el celular solo la
+    consume. Por eso `caracterizar` NO satisface este permiso: quien autoriza el
+    salto de un control no puede ser el mismo que lo ejecuta en campo.
+
+    No se acepta `ver_reportes` como sustituto: DOCUMENTADOR lo tiene y se creó
+    de solo lectura a propósito.
+    """
+    message = ('Se requiere perfil autorizado para habilitar excepciones de '
+               'vigencia (coordinación, supervisión o administración).')
+
+    def has_permission(self, request, view):
+        return _puede_cualquiera(request.user, 'autorizar_excepciones', 'administrar')
+
+
 class PuedeVerReportes(BasePermission):
     """
     Acceso al módulo de reportes.

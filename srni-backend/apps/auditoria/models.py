@@ -38,6 +38,12 @@ class LogAcceso(models.Model):
         ('CAMBIAR_AUTORIZADO', 'Cambio de autorizado del hogar'),
         ('HABILITAR', 'Verificación de habilitación'),
         ('PRECARGA_OFFLINE', 'Precarga de datos para trabajo offline'),
+        # 14-ago-2026 — la excepción de vigencia se autoriza desde el front, no
+        # en campo. Son acciones propias y no un 'CAMBIO_USUARIO' cualquiera:
+        # levantar la regla de los dos años es lo primero que una auditoría va a
+        # querer filtrar.
+        ('HABILITAR_EXCEPCION', 'Excepción de vigencia autorizada'),
+        ('ANULAR_EXCEPCION', 'Excepción de vigencia anulada'),
     ]
 
     RESULTADOS = [

@@ -653,6 +653,13 @@ class PrecargaOfflineView(APIView):
                 # tratará 'habilitada' como la señal operativa. Cuando exista Oracle se
                 # poblará desde fecha_ult_caracterizacion.
                 'ya_caracterizada': bool(v.fecha_ult_caracterizacion),
+                # La excepción de vigencia se autoriza desde el front (14-ago) y
+                # viaja acá para que sirva SIN señal. Sin esto, una persona
+                # habilitada por tutela seguiría bloqueada en campo hasta que el
+                # celular encontrara red, que es donde no la hay.
+                'habilitada_por_excepcion': v.habilitada_por_excepcion,
+                'excepcion_ruta': v.excepcion_ruta,
+                'excepcion_radicado': v.excepcion_radicado,
                 'cons_persona': v.cons_persona,
                 # Sin esto, en campo y sin señal la app no puede saber que el
                 # documento lo comparten dos personas — y mostraría una como si

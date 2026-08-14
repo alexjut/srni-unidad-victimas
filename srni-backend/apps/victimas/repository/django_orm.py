@@ -72,7 +72,8 @@ class DjangoVictimaRepository(VictimaRepository):
 
     # ── construcción del DTO ──────────────────────────────────────────────────
     def _a_resumen(self, victima, *, con_hechos: bool = True,
-                   clase_colision: str | None = None) -> VictimaResumen:
+                   clase_colision: str | None = None,
+                   habilitacion=None) -> VictimaResumen:
         return VictimaResumen(
             clase_colision=clase_colision,
             cons_persona=victima.cons_persona,
@@ -103,6 +104,14 @@ class DjangoVictimaRepository(VictimaRepository):
             # `iterar_padron`—. En el resto de las consultas nadie preguntó por el
             # universo, y no preguntar no autoriza a afirmar: queda en `False`.
             en_universo_ruv=bool(getattr(victima, "en_universo_ruv", False)),
+            # Igual criterio: solo la trae quien la consultó —hoy `listar_todas`,
+            # para la precarga de la jornada—. NO va en `iterar_padron`: ese
+            # archivo se genera cada tantos días y una habilitación autorizada
+            # después quedaría invisible, o una ya usada seguiría diciendo que
+            # habilita. Un permiso desactualizado es peor que no llevarlo.
+            habilitada_por_excepcion=habilitacion is not None,
+            excepcion_ruta=getattr(habilitacion, 'ruta', None),
+            excepcion_radicado=getattr(habilitacion, 'radicado', None),
         )
 
     @staticmethod
@@ -497,11 +506,44 @@ class DjangoVictimaRepository(VictimaRepository):
             qs = qs[:limite]
         filas = list(qs)
         clases = self._clases_de_colision(filas)
+        habilitaciones = self._habilitaciones_vigentes(filas)
         return [
             self._a_resumen(v, con_hechos=False,
-                            clase_colision=clases.get(v.numero_documento_hash))
+                            clase_colision=clases.get(v.numero_documento_hash),
+                            habilitacion=habilitaciones.get(v.id))
             for v in filas
         ]
+
+    @staticmethod
+    def _habilitaciones_vigentes(filas) -> dict:
+        """
+        `{victima_id: ExcepcionVigencia}` para las personas de este lote.
+
+        Una sola consulta y no una por persona: sobre las 5.000 de la precarga,
+        preguntar de a una son 5.000 viajes a la base en el arranque de jornada,
+        que es justo el momento en que la APK está esperando para dejar entrar
+        al encuestador.
+
+        Se filtra por las víctimas del lote y no se traen todas las vigentes,
+        porque el lote es el que acota: el día que haya muchas habilitaciones
+        abiertas, traerlas enteras sería peor.
+        """
+        from apps.encuestas.models import ExcepcionVigencia
+
+        ids = [v.id for v in filas]
+        if not ids:
+            return {}
+        habilitaciones = (ExcepcionVigencia.objects
+                          .filter(victima_id__in=ids,
+                                  estado=ExcepcionVigencia.VIGENTE)
+                          .order_by('victima_id', '-created_at'))
+        # La más reciente por persona gana: si hay dos, la última autorizada es
+        # la que refleja la decisión actual. El dict se llena en orden, así que
+        # se conserva la primera de cada víctima, que es la más nueva.
+        resultado = {}
+        for h in habilitaciones:
+            resultado.setdefault(h.victima_id, h)
+        return resultado
 
     def iterar_padron(self, batch_size: int = 1000):
         """

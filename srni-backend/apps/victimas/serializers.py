@@ -289,6 +289,12 @@ class PadronItemSerializer(serializers.Serializer):
     en_ruv = serializers.BooleanField()
     habilitada = serializers.BooleanField()
     ya_caracterizada = serializers.BooleanField()
+    # Excepción de vigencia autorizada desde el front web (14-ago-2026). Cuando
+    # es `True`, la persona tiene ficha vigente PERO puede actualizarse: la app
+    # debe dejar pasar y mostrar por qué, no bloquear.
+    habilitada_por_excepcion = serializers.BooleanField(required=False, default=False)
+    excepcion_ruta = serializers.CharField(allow_null=True, required=False)
+    excepcion_radicado = serializers.CharField(allow_null=True, required=False)
     cons_persona = serializers.IntegerField(allow_null=True)
     # null = documento limpio; 'AMBIGUO' = varias personas lo comparten y hay que
     # preguntar; 'NO_IDENTIFICANTE' = valor de relleno que no identifica a nadie.

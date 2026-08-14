@@ -30,6 +30,26 @@ class _Victima:
         self.fecha_ult_caracterizacion = fecha_ult
 
 
+class _Habilitacion:
+    """
+    Lo mínimo que mira `describir_elegibilidad` de una habilitación autorizada.
+
+    Se usa un doble y no el modelo real para que los tests de la regla no
+    necesiten base de datos: la decisión es pura, y meterle `django_db` a
+    cuarenta casos por un objeto de tres atributos los vuelve lentos sin
+    verificar nada más.
+    """
+
+    def __init__(self, *, ruta='ACCIONES_CONSTITUCIONALES', radicado='T-2026-451',
+                 autorizada_por='KLMUÑOZM'):
+        self.ruta = ruta
+        self.radicado = radicado
+        self.autorizada_por = type('U', (), {'codigo_usuario': autorizada_por})()
+
+    def get_ruta_display(self):
+        return self.ruta.replace('_', ' ').capitalize()
+
+
 FECHA = datetime.date(2026, 3, 14)
 
 
@@ -60,24 +80,76 @@ def test_la_ruta_general_respeta_la_vigencia():
 
 
 @pytest.mark.parametrize('ruta', sorted(RUTAS_QUE_OMITEN_VIGENCIA))
-def test_cada_ruta_de_excepcion_levanta_el_bloqueo(ruta):
-    veredicto = describir_elegibilidad(_con_ficha_vigente(), ruta=ruta)
-
-    assert veredicto.elegible
-    assert veredicto.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
-    assert veredicto.exige_soporte
-
-
-def test_sin_ruta_el_bloqueo_sigue_en_pie():
+def test_ninguna_ruta_levanta_el_bloqueo_por_si_sola(ruta):
     """
-    La búsqueda normal no pasa ruta: primero se ve el estado real, y recién si
-    hay ficha vigente el encuestador elige una ruta de excepción.
+    Cambio del 14-ago-2026. La ruta sigue siendo la que omite la vigencia según
+    el manual, pero **elegirla ya no basta**: hace falta que la excepción esté
+    autorizada desde el front.
+
+    Antes alcanzaba con elegirla en el celular y adjuntar una foto, o sea que
+    quien ejecutaba el salto de control era el mismo que lo autorizaba. La
+    operación además indicó que el caracterizador no debe tener el documento.
     """
-    veredicto = describir_elegibilidad(_con_ficha_vigente())
+    veredicto = describir_elegibilidad(_con_ficha_vigente(), ruta=ruta,
+                                       habilitacion=None)
 
     assert not veredicto.elegible
     assert veredicto.motivo == MotivoNoElegible.FICHA_VIGENTE
-    assert not veredicto.exige_soporte
+    assert not veredicto.por_excepcion
+    # El mensaje tiene que decir a dónde ir. Sin esto el encuestador cree que la
+    # app falló, que es exactamente lo que reportó el territorio la vez pasada.
+    assert 'plataforma web' in veredicto.mensaje
+
+
+@pytest.mark.parametrize('ruta', sorted(RUTAS_QUE_OMITEN_VIGENCIA))
+def test_con_la_excepcion_autorizada_si_se_levanta(ruta):
+    """Autorizada desde el front, la persona pasa — por cualquiera de las tres."""
+    habilitacion = _Habilitacion(ruta=ruta)
+
+    veredicto = describir_elegibilidad(_con_ficha_vigente(), ruta=ruta,
+                                       habilitacion=habilitacion)
+
+    assert veredicto.elegible
+    assert veredicto.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+    assert veredicto.por_excepcion
+
+
+def test_la_habilitacion_levanta_el_bloqueo_aunque_no_se_pase_ruta():
+    """
+    El encuestador no tiene que volver a elegir la ruta: ya la eligió quien
+    autorizó. Si hubiera que elegirla otra vez en el celular, una habilitación
+    otorgada se vería como bloqueo hasta acertar con la misma opción.
+    """
+    veredicto = describir_elegibilidad(_con_ficha_vigente(),
+                                       habilitacion=_Habilitacion())
+
+    assert veredicto.elegible
+    assert veredicto.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+
+
+def test_el_mensaje_de_la_habilitacion_dice_quien_autorizo_y_con_que_radicado():
+    """
+    Es lo que convierte "puede continuar" en algo que el encuestador puede
+    defender si alguien le pregunta por qué recaracterizó a una persona con
+    ficha vigente.
+    """
+    veredicto = describir_elegibilidad(_con_ficha_vigente(),
+                                       habilitacion=_Habilitacion(radicado='T-2026-451'))
+
+    assert 'T-2026-451' in veredicto.mensaje
+    assert 'KLMUÑOZM' in veredicto.mensaje
+
+
+def test_sin_ruta_ni_habilitacion_el_bloqueo_sigue_en_pie():
+    """
+    La búsqueda normal no pasa ruta: primero se ve el estado real, y recién si
+    hay ficha vigente se solicita la excepción.
+    """
+    veredicto = describir_elegibilidad(_con_ficha_vigente(), habilitacion=None)
+
+    assert not veredicto.elegible
+    assert veredicto.motivo == MotivoNoElegible.FICHA_VIGENTE
+    assert not veredicto.por_excepcion
 
 
 def test_la_ruta_general_no_levanta_nada():
@@ -113,12 +185,12 @@ def test_ninguna_ruta_inventa_a_quien_no_esta_en_el_padron():
 
 
 def test_una_persona_ya_elegible_no_pasa_por_la_excepcion():
-    """Si no tenía ficha vigente, la ruta no cambia nada y NO exige soporte."""
+    """Si no tenía ficha vigente, la ruta no cambia nada: es elegible a secas."""
     libre = _Victima(habilitado=True)
 
     veredicto = describir_elegibilidad(libre, ruta='ACCIONES_CONSTITUCIONALES')
     assert veredicto.motivo == MotivoNoElegible.ELEGIBLE
-    assert not veredicto.exige_soporte
+    assert not veredicto.por_excepcion
 
 
 # ── Lo que ve el encuestador ─────────────────────────────────────────────────
@@ -128,11 +200,10 @@ def test_la_excepcion_igual_le_dice_que_habia_ficha_vigente():
     Que pueda continuar no significa ocultarle el dato: tiene que saber que
     está recaracterizando a alguien con entrevista vigente.
     """
-    v = describir_elegibilidad(_con_ficha_vigente(), ruta='ACCIONES_CONSTITUCIONALES')
+    v = describir_elegibilidad(_con_ficha_vigente(), habilitacion=_Habilitacion())
 
     assert '14/03/2026' in v.mensaje
     assert '14/03/2028' in v.mensaje
-    assert 'soporte' in v.mensaje.lower()
     assert v.disponible_desde == datetime.date(2028, 3, 14)
 
 
@@ -174,7 +245,23 @@ def victima_con_ficha_vigente(db):
     )
 
 
-def test_el_repositorio_recibe_la_ruta_y_levanta_el_bloqueo(victima_con_ficha_vigente):
+def _autorizar(victima, ruta='ACCIONES_CONSTITUCIONALES'):
+    """Lo que hace el front en `POST /api/habilitaciones/`."""
+    from apps.encuestas.models import ExcepcionVigencia
+
+    return ExcepcionVigencia.objects.create(
+        victima=victima, ruta=ruta, radicado='T-2026-451',
+        observacion='Fallo de tutela que ordena caracterizar de nuevo.',
+        estado=ExcepcionVigencia.VIGENTE,
+    )
+
+
+def test_el_repositorio_bloquea_hasta_que_la_excepcion_este_autorizada(
+        victima_con_ficha_vigente):
+    """
+    El recorrido completo del cambio: la ruta sola no alcanza; cuando el front
+    autoriza, la misma búsqueda pasa a devolver elegible.
+    """
     from apps.victimas.repository import DjangoVictimaRepository
 
     repo = DjangoVictimaRepository()
@@ -184,16 +271,56 @@ def test_el_repositorio_recibe_la_ruta_y_levanta_el_bloqueo(victima_con_ficha_vi
 
     con_ruta = repo.buscar_por_documento('CC', '1115724047',
                                          ruta='ACCIONES_CONSTITUCIONALES')
-    assert con_ruta.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+    assert con_ruta.motivo == MotivoNoElegible.FICHA_VIGENTE, (
+        'elegir la ruta en el celular ya no habilita — 14-ago-2026')
+
+    _autorizar(victima_con_ficha_vigente)
+
+    autorizada = repo.buscar_por_documento('CC', '1115724047')
+    assert autorizada.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+    assert 'T-2026-451' in autorizada.mensaje
 
 
-def test_verificar_habilitacion_tambien_recibe_la_ruta(victima_con_ficha_vigente):
+def test_una_habilitacion_ya_usada_no_vuelve_a_habilitar(victima_con_ficha_vigente):
+    """
+    Es de un solo uso. Si siguiera sirviendo, esa persona quedaría con permiso
+    permanente para saltarse la regla de los dos años.
+    """
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    habilitacion = _autorizar(victima_con_ficha_vigente)
+    habilitacion.marcar_usada()
+
+    r = DjangoVictimaRepository().buscar_por_documento('CC', '1115724047')
+    assert r.motivo == MotivoNoElegible.FICHA_VIGENTE
+
+
+def test_una_habilitacion_anulada_no_habilita(victima_con_ficha_vigente):
+    from apps.victimas.repository import DjangoVictimaRepository
+
+    habilitacion = _autorizar(victima_con_ficha_vigente)
+    habilitacion.anular(None, 'Se autorizó sobre la persona equivocada.')
+
+    r = DjangoVictimaRepository().buscar_por_documento('CC', '1115724047')
+    assert r.motivo == MotivoNoElegible.FICHA_VIGENTE
+
+
+def test_verificar_habilitacion_ve_lo_mismo_que_la_busqueda(victima_con_ficha_vigente):
+    """
+    Las dos puertas de entrada tienen que responder igual sobre la misma
+    persona. Ya divergieron una vez en el texto, y una app que dice una cosa en
+    la búsqueda y otra en la ficha es un defecto esperando a ocurrir.
+    """
     from apps.victimas.repository import DjangoVictimaRepository
 
     repo = DjangoVictimaRepository()
     assert repo.verificar_habilitacion('CC', '1115724047').habilitado is False
     assert repo.verificar_habilitacion(
-        'CC', '1115724047', ruta='ESPECIAL').habilitado is True
+        'CC', '1115724047', ruta='ESPECIAL').habilitado is False
+
+    _autorizar(victima_con_ficha_vigente, ruta='ESPECIAL')
+
+    assert repo.verificar_habilitacion('CC', '1115724047').habilitado is True
 
 
 def test_el_serializer_de_entrada_acepta_la_ruta():

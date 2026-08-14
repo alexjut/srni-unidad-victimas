@@ -32,6 +32,21 @@ class Perfil(models.Model):
         verbose_name='puede administrar',
         help_text='CRUD de usuarios, instrumentos y paramétricas',
     )
+    # Flag propio y no reutilizar `puede_ver_reportes`: DOCUMENTADOR también lo
+    # tiene, y ese perfil se creó explícitamente sin poder alterar la
+    # caracterización de una víctima. Habilitar una excepción de vigencia es
+    # alterarla —levanta el bloqueo de los dos años—, así que colgarlo de
+    # reportes le daría por la puerta de atrás justo lo que se le negó de frente.
+    puede_autorizar_excepciones = models.BooleanField(
+        default=False,
+        verbose_name='puede autorizar excepciones de vigencia',
+        help_text=(
+            'Habilitar desde el front la actualización de una caracterización '
+            'vigente por una ruta que omite la regla de los dos años '
+            '(Manual §5.1.1). No lo tiene el encuestador: quien autoriza no es '
+            'quien ejecuta.'
+        ),
+    )
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

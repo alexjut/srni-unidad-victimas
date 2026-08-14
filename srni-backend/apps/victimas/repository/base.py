@@ -177,6 +177,21 @@ class VictimaResumen:
     #: `False` por defecto: quien no haga el cruce no afirma nada.
     en_universo_ruv: bool = False
 
+    #: ¿Tiene una excepción de vigencia autorizada desde el front?
+    #:
+    #: Viaja en la precarga para que funcione **sin señal**: la habilitación se
+    #: otorga en la web y el encuestador está en territorio, así que si solo se
+    #: pudiera consultar en línea el caso quedaría igual de bloqueado que antes.
+    #: El límite es conocido: una habilitación otorgada después de que arrancó la
+    #: jornada no llega hasta la sincronización siguiente.
+    #:
+    #: `False` por defecto, igual que arriba: quien no consulte no afirma nada.
+    habilitada_por_excepcion: bool = False
+    #: Ruta y radicado de esa excepción — para que la app pueda decir *por qué*
+    #: está habilitada en vez de solo dejarla pasar.
+    excepcion_ruta: Optional[str] = None
+    excepcion_radicado: Optional[str] = None
+
 
 @dataclass
 class ResultadoBusqueda:
@@ -290,8 +305,16 @@ class Elegibilidad:
                                MotivoNoElegible.ELEGIBLE_POR_EXCEPCION)
 
     @property
-    def exige_soporte(self) -> bool:
-        """Entró por una ruta de excepción: hay que adjuntar el soporte."""
+    def por_excepcion(self) -> bool:
+        """
+        Puede caracterizarse **pese a tener ficha vigente**, porque hay una
+        excepción autorizada.
+
+        Se llamaba `exige_soporte` mientras el encuestador adjuntaba una foto
+        del fallo desde el celular. Desde el 14-ago-2026 no adjunta nada: el
+        soporte lo tiene quien autoriza, en el front. Mantener el nombre viejo
+        haría creer que la app todavía debe pedir un archivo.
+        """
         return self.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
 
 
@@ -304,7 +327,15 @@ MENSAJE_NO_EN_PADRON = (
 )
 
 
-def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
+#: Centinela para distinguir "no me dijeron nada, averígualo" de "te digo
+#: explícitamente que no hay habilitación". Con `None` como default las dos
+#: cosas serían indistinguibles y la consulta se haría de más en la precarga,
+#: que ya trae las habilitaciones resueltas en bloque.
+_SIN_CONSULTAR = object()
+
+
+def describir_elegibilidad(victima, hoy=None, *, ruta=None,
+                           habilitacion=_SIN_CONSULTAR) -> Elegibilidad:
     """
     Único lugar donde se decide **por qué** alguien no puede caracterizarse.
 
@@ -313,10 +344,17 @@ def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
     `None` significa que no está en el padrón.
 
     `ruta` es la ruta de entrevista (Manual §5.1.1). Tres de las cuatro
-    **omiten la regla de vigencia**; ver `RUTAS_QUE_OMITEN_VIGENCIA`. Sin este
-    parámetro la ruta no se considera, que es lo correcto para una búsqueda
-    normal: primero se ve el estado real, y recién si hay ficha vigente el
-    encuestador elige una ruta de excepción.
+    **omiten la regla de vigencia**; ver `RUTAS_QUE_OMITEN_VIGENCIA`.
+
+    ⚠️ Desde el 14-ago-2026 elegir una de esas rutas **ya no habilita por sí
+    solo**. Hace falta una habilitación vigente (`encuestas.ExcepcionVigencia`)
+    otorgada desde el front por un perfil con `puede_autorizar_excepciones`. El
+    motivo es operativo: el soporte documental no llega al encuestador, así que
+    pedirle que lo adjunte en campo era pedirle algo que no tiene. El efecto es
+    de control: quien autoriza el salto dejó de ser quien lo ejecuta.
+
+    `habilitacion` permite pasarla ya resuelta —la precarga las trae en bloque
+    para no hacer una consulta por persona—. Si no se pasa, se busca acá.
 
     Existe porque `buscar_por_documento` y `estado_habilitacion` decidían lo
     mismo por separado —y ya habían empezado a divergir en el texto—. Dos
@@ -356,17 +394,35 @@ def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
         disponible = fecha.replace(month=3, day=1,
                                    year=fecha.year + ANIOS_VIGENCIA_CARACTERIZACION)
 
-    # La excepción del manual: tres rutas omiten la vigencia. Se sigue diciendo
-    # que la ficha está vigente —el encuestador tiene que saberlo— pero deja de
-    # ser un bloqueo y pasa a exigir soporte.
-    if ruta_omite_vigencia(ruta):
+    # La excepción del manual: tres rutas omiten la vigencia. Pero la ruta sola
+    # no habilita — tiene que haber una habilitación otorgada desde el front.
+    if habilitacion is _SIN_CONSULTAR:
+        habilitacion = _buscar_habilitacion(victima)
+
+    if habilitacion is not None:
+        quien = getattr(getattr(habilitacion, 'autorizada_por', None),
+                        'codigo_usuario', '') or 'la coordinación'
+        radicado = getattr(habilitacion, 'radicado', '') or 'sin radicado'
         return Elegibilidad(
             MotivoNoElegible.ELEGIBLE_POR_EXCEPCION,
             f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
-            f'estaba vigente hasta el {disponible:%d/%m/%Y}. Puede continuar por '
-            f'la ruta seleccionada, que omite la regla de vigencia. '
-            f'Adjunte foto del soporte: queda registrado quién autorizó la '
-            f'excepción y sobre quién.',
+            f'estaba vigente hasta el {disponible:%d/%m/%Y}. Está habilitada por '
+            f'excepción ({habilitacion.get_ruta_display()}, radicado {radicado}), '
+            f'autorizada por {quien}. Puede actualizar la caracterización.',
+            disponible_desde=disponible,
+        )
+
+    # Elegir la ruta sin habilitación ya no alcanza. Se dice aparte del caso
+    # general porque el encuestador que eligió una ruta de excepción cree que
+    # con eso basta —así funcionó hasta el 14-ago— y necesita saber qué cambió.
+    if ruta_omite_vigencia(ruta):
+        return Elegibilidad(
+            MotivoNoElegible.FICHA_VIGENTE,
+            f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
+            f'sigue vigente hasta el {disponible:%d/%m/%Y}. La ruta que eligió '
+            f'omite la regla de vigencia, pero la excepción se autoriza desde la '
+            f'plataforma web: solicítela a su coordinación con el radicado del '
+            f'soporte. Cuando quede autorizada, la verá habilitada acá.',
             disponible_desde=disponible,
         )
 
@@ -377,11 +433,28 @@ def describir_elegibilidad(victima, hoy=None, *, ruta=None) -> Elegibilidad:
         MotivoNoElegible.FICHA_VIGENTE,
         f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
         f'sigue vigente hasta el {disponible:%d/%m/%Y}. No es una falla del '
-        f'sistema. Solo puede caracterizarla por una ruta de excepción '
-        f'(acción constitucional, modificación de núcleo familiar o ruta '
-        f'especial); si la tiene, tome foto del soporte para continuar.',
+        f'sistema. Para actualizarla hace falta una excepción (acción '
+        f'constitucional, modificación de núcleo familiar o ruta especial), que '
+        f'se autoriza desde la plataforma web: solicítela a su coordinación con '
+        f'el radicado del soporte.',
         disponible_desde=disponible,
     )
+
+
+def _buscar_habilitacion(victima):
+    """
+    La habilitación vigente de esta persona, o `None`.
+
+    Devuelve `None` también cuando el objeto no es una víctima del padrón —el
+    adaptador del universo (`PersonaParaElegibilidad`) no tiene `id`—, y ahí es
+    correcto: quien no está en el padrón no tiene ficha vigente que exceptuar.
+    """
+    victima_id = getattr(victima, 'id', None) or getattr(victima, 'pk', None)
+    if not victima_id:
+        return None
+    from apps.encuestas.models import ExcepcionVigencia
+
+    return ExcepcionVigencia.vigente_para(victima_id)
 
 
 # ---------------------------------------------------------------------------
