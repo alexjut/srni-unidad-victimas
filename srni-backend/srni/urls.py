@@ -98,9 +98,28 @@ urlpatterns = [
     # por `srni-frontend/` a propósito: se despliega con lo que ya está en
     # produccion, no depende del ciclo del front web y no pisa su trabajo.
     # Es HTML plano — la proteccion real está en la API, que exige el permiso.
+    #
+    # Va en DOS rutas y no es un descuido:
+    #
+    #   /api/autorizaciones/  → la que funciona HOY, en local y en producción.
+    #       Tanto el proxy de Vite como el nginx del stack (`cz_nginx`) mandan
+    #       al backend únicamente `/api/`, `/admin/`, `/static/`, `/movil/` y
+    #       `/descargar`. Todo lo demás cae en la SPA de React, que no conoce
+    #       esta ruta y responde con su pantalla de error — que es exactamente
+    #       lo que pasó al abrir `/autorizaciones/` la primera vez.
+    #
+    #   /autorizaciones/      → la dirección definitiva, más corta y sin `api`
+    #       en medio de algo que no es una API. Funciona al entrar directo al
+    #       backend, y en producción cuando se redespliegue el nginx que ya
+    #       trae su `location` (infra/deploy/nginx.caracterizacion.conf).
+    #
+    # Cuando el nginx nuevo esté en producción, la de `/api/` puede retirarse.
     path('autorizaciones/',
          TemplateView.as_view(template_name='autorizaciones/index.html'),
          name='autorizaciones'),
+    path('api/autorizaciones/',
+         TemplateView.as_view(template_name='autorizaciones/index.html'),
+         name='autorizaciones-api'),
 
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),

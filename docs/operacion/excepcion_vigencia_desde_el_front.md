@@ -194,20 +194,80 @@ intento repetido devolviendo `YA_HABILITADA` sin duplicar nada.
 
 ## 5. Cómo probarla
 
-En local, con la base de desarrollo ya migrada y sembrada:
+### La URL — ojo con esto
 
-```
-http://127.0.0.1:8001/autorizaciones/     usuario QACOORD · SrniTest2026!
+**Use `/api/autorizaciones/`.** Es la que funciona hoy en los dos entornos.
+
+`/autorizaciones/` a secas todavía no llega al backend: tanto el proxy de Vite
+como el nginx del stack (`cz_nginx`) enrutan al Django solo `/api/`, `/admin/`,
+`/static/`, `/movil/` y `/descargar` — **todo lo demás cae en la SPA de React**,
+que no conoce esa ruta y muestra su pantalla de error. Es exactamente lo que pasó
+la primera vez que se abrió.
+
+`infra/deploy/nginx.caracterizacion.conf` ya trae su `location` para la URL
+corta; empezará a funcionar cuando ese nginx se redespliegue. Hasta entonces
+conviven las dos y la de `/api/` es la viva.
+
+| Entorno | URL |
+|---|---|
+| Local (front en Vite) | `http://localhost:5173/api/autorizaciones/` |
+| Local (backend directo) | `http://localhost:8001/autorizaciones/` |
+| Producción | `https://caracterizacion.unidadvictimas.gov.co/api/autorizaciones/` |
+
+### Los datos de prueba
+
+Un comando los deja listos, idempotente y sin tocar datos reales (todos los
+documentos empiezan por `999`):
+
+```bash
+python manage.py sembrar_pruebas_excepcion
 ```
 
-Hay dos personas de prueba con ficha vigente —`9990000001` y `9990000002`— y una
-excepción ya autorizada sobre ambas, para ver los dos estados. En producción la
-URL es `https://caracterizacion.unidadvictimas.gov.co/autorizaciones/` y se entra
-con el usuario real de SICAV.
+| Qué | Quién | Para probar |
+|---|---|---|
+| **Ruta normal** | `CC 9990000003` CARLOS | Sin ficha previa: se caracteriza de una, sin autorizar nada. |
+| **Ruta de edición** | `CC 9990000001` ANA (autorizada del hogar)<br>`CC 9990000002` MARIA (miembro) | Hogar conformado y encuesta **COMPLETADA**, ficha vigente hasta 2028. Bloqueadas hasta que coordinación autorice. |
+| Autoriza | `QACOORD` | Perfil que **no** caracteriza en campo. |
+| Caracteriza | `QAENC` | Encuestador — es el que usa la APK. |
+
+Clave de ambos: `SrniTest2026!`
+
+Dos usuarios y no uno a propósito: el sentido del cambio es que quien autoriza no
+sea quien ejecuta, y probarlo con una sola cuenta que pueda todo no probaría nada.
+
+Si una corrida anterior dejó excepciones vigentes, el comando lo avisa — esas
+personas aparecerán habilitadas de entrada y hay que anularlas desde la pantalla
+para volver a ver el bloqueo.
 
 ---
 
-## 6. Límites conocidos
+## 6. Qué se puede editar al actualizar un hogar — y qué no
+
+La ruta de excepción existe para **actualizar una caracterización ya hecha**, y
+`MODIFICACION_NUCLEO` es literalmente «cambió la conformación del hogar». Medido
+contra el código, hoy la APK puede:
+
+| Acción | Estado | Endpoint |
+|---|:--:|---|
+| Agregar un miembro al hogar existente | ✅ | `POST /api/hogares/{id}/agregar-miembro/` |
+| Editar datos del hogar (vivienda, estrato, cuartos) | ✅ | `PATCH /api/hogares/{id}/` |
+| Cambiar quién es el autorizado | ✅ | `PATCH /api/hogares/{id}/cambiar-autorizado/` |
+| Rehacer las respuestas de la encuesta | ✅ | nueva sesión sobre el mismo hogar |
+| **Quitar un miembro del hogar** | ❌ | no existe |
+| **Editar un miembro** (parentesco, datos) | ❌ | no existe |
+
+🔴 **Ese hueco importa justo en la ruta de modificación de núcleo.** Si alguien
+murió, se fue del hogar o quedó con el parentesco equivocado, hoy no hay forma de
+corregirlo desde la APK ni desde la API: solo se puede agregar.
+
+No se resolvió acá para no mezclarlo con el cambio de la excepción, que ya está
+cerrado y probado. Queda como lo siguiente a definir: si quitar un miembro es un
+borrado, un estado (`estado_inclusion` ya existe en `MiembroHogar`) o una novedad
+que viaja al legado — y esa decisión cambia lo que se construye.
+
+---
+
+## 7. Límites conocidos
 
 - **Una habilitación otorgada después de que arrancó la jornada no llega al
   celular hasta la sincronización siguiente.** Es la consecuencia de que

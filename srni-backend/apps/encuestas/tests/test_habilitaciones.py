@@ -429,12 +429,19 @@ def test_el_encuestador_no_puede_autorizar_en_lote(escenario, otra_victima):
     assert r.status_code == 403
 
 
-def test_la_pantalla_de_autorizacion_responde(escenario):
+@pytest.mark.parametrize('url', ['/autorizaciones/', '/api/autorizaciones/'])
+def test_la_pantalla_de_autorizacion_responde(escenario, url):
     """
     HTML plano servido por el backend: la protección real está en la API. Si
     esta URL se cae, coordinación no tiene por dónde autorizar.
+
+    Las DOS rutas importan. El nginx del stack y el proxy de Vite mandan al
+    backend solo `/api/`, `/admin/`, `/static/`, `/movil/` y `/descargar`: todo
+    lo demás cae en la SPA de React, que no conoce `/autorizaciones/` y muestra
+    su pantalla de error. Hasta que el nginx nuevo esté desplegado, la vía viva
+    es la de `/api/`.
     """
-    r = escenario['coordinador'].get('/autorizaciones/')
+    r = escenario['coordinador'].get(url)
     assert r.status_code == 200
     assert b'Autorizar excepciones' in r.content
 
