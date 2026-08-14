@@ -1,0 +1,911 @@
+<title>Quincena SICAV Móvil</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SICAV Móvil · Avance quincenal 29-jul → 13-ago-2026
+   Sistema de marca del proyecto: amarillo institucional #ffcc03,
+   tinta cálida, geometría recta (documento, no tarjeta).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Tinta y superficies — neutros con sesgo cálido hacia el acento */
+  --ink:        #17160f;
+  --ink-2:      #4a473b;
+  --ink-3:      #7c7869;
+  --surface:    #fbfaf6;
+  --panel:      #f2efe4;
+  --panel-2:    #e8e4d5;
+  --line:       #dcd8c7;
+  --line-soft:  #ebe7d9;
+
+  /* Acento institucional */
+  --marca:      #ffcc03;
+  --marca-ink:  #7a5c00;
+
+  /* Estado — reservados, nunca usados como color de serie */
+  --ok:         #1f6b3a;
+  --ok-bg:      #e6f0e6;
+  --alerta:     #9c5a00;
+  --alerta-bg:  #f7ecd7;
+  --grave:      #a81f1a;
+  --grave-bg:   #f8e5e2;
+
+  /* Marcas de datos */
+  --mark-antes: #c9c4b0;
+  --mark-ahora: #ffcc03;
+
+  --display: "Segoe UI Variable Display", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --body:    "Segoe UI Variable Text", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:    Consolas, "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:       #f4f1e4;
+    --ink-2:     #b9b4a2;
+    --ink-3:     #8a8574;
+    --surface:   #131309;
+    --panel:     #1e1d13;
+    --panel-2:   #29271a;
+    --line:      #38361f;
+    --line-soft: #26241a;
+    --marca:     #ffcc03;
+    --marca-ink: #ffdf6b;
+    --ok:        #78c48d;
+    --ok-bg:     #16281c;
+    --alerta:    #e0a44a;
+    --alerta-bg: #2c2113;
+    --grave:     #ef8279;
+    --grave-bg:  #2e1614;
+    --mark-antes:#514d3c;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:       #f4f1e4;
+  --ink-2:     #b9b4a2;
+  --ink-3:     #8a8574;
+  --surface:   #131309;
+  --panel:     #1e1d13;
+  --panel-2:   #29271a;
+  --line:      #38361f;
+  --line-soft: #26241a;
+  --marca:     #ffcc03;
+  --marca-ink: #ffdf6b;
+  --ok:        #78c48d;
+  --ok-bg:     #16281c;
+  --alerta:    #e0a44a;
+  --alerta-bg: #2c2113;
+  --grave:     #ef8279;
+  --grave-bg:  #2e1614;
+  --mark-antes:#514d3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Escenario: la diapositiva es 16:9 y todo su interior escala en em ── */
+
+.escenario {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 1rem 1rem 0.6rem;
+  background: var(--surface);
+}
+
+.diapo {
+  display: none;
+  position: relative;
+  width: min(100% , calc((100vh - 5.5rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  font-size: calc(min(100vw - 2rem, (100vh - 5.5rem) * 16 / 9) / 58);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2.1em 2.5em 1.9em;
+  overflow: hidden;
+}
+.diapo.activa { display: flex; flex-direction: column; }
+
+/* Filete de marca superior */
+.diapo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.32em;
+  background: var(--marca);
+}
+
+/* ── Tipografía ── */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin: 0 0 0.9em;
+  flex: none;
+}
+.eyebrow b { color: var(--marca-ink); font-weight: 700; }
+
+h1 {
+  font-family: var(--display);
+  font-size: 3.5em;
+  line-height: 1.02;
+  letter-spacing: -0.026em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--display);
+  font-size: 2em;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+  margin: 0 0 0.42em;
+  text-wrap: balance;
+}
+h3 {
+  font-family: var(--display);
+  font-size: 1.02em;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  font-weight: 700;
+  margin: 0 0 0.5em;
+}
+p { margin: 0 0 0.7em; line-height: 1.5; font-size: 1em; color: var(--ink-2); }
+p.bajada { font-size: 1.12em; color: var(--ink-2); max-width: 46em; }
+strong { color: var(--ink); font-weight: 700; }
+em { font-style: normal; color: var(--marca-ink); font-weight: 600; }
+
+.cuerpo { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.95em; min-height: 0; }
+.cuerpo.arriba { justify-content: flex-start; }
+
+/* ── Portada ── */
+
+.portada { justify-content: space-between; }
+.portada .sello {
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.portada h1 { font-size: 4.1em; max-width: 15em; }
+.portada .periodo {
+  font-family: var(--mono);
+  font-size: 1.05em;
+  color: var(--ink);
+  margin-top: 0.9em;
+  padding-top: 0.8em;
+  border-top: 0.14em solid var(--marca);
+  display: inline-block;
+}
+.portada .pieportada {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2em;
+  font-size: 0.82em;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+
+/* ── Divisor de sección ── */
+
+.divisor { justify-content: center; background: var(--panel); }
+.divisor .num {
+  font-family: var(--mono);
+  font-size: 7em;
+  line-height: 0.85;
+  font-weight: 700;
+  color: var(--marca);
+  letter-spacing: -0.03em;
+}
+.divisor h1 { font-size: 3.2em; margin-top: 0.18em; }
+.divisor p { font-size: 1.1em; max-width: 34em; margin-top: 0.5em; }
+.divisor .pie { margin-top: auto; }
+
+/* ── Cifras (stat tiles) ── */
+
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9em; }
+.cifras.tres { grid-template-columns: repeat(3, 1fr); }
+.tile {
+  border-top: 0.22em solid var(--marca);
+  background: var(--panel);
+  padding: 0.95em 1em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.tile .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.05em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.tile .l { font-size: 0.8em; color: var(--ink-2); line-height: 1.35; }
+.tile.sobria { border-top-color: var(--line); }
+
+/* ── El motivo: de → a ── */
+
+.deltas { display: flex; flex-direction: column; gap: 0.55em; }
+.delta {
+  display: grid;
+  grid-template-columns: 1.35fr auto auto auto;
+  align-items: baseline;
+  gap: 0.9em;
+  padding: 0.62em 0.9em;
+  background: var(--panel);
+  border-left: 0.28em solid var(--marca);
+}
+.delta .que { font-size: 0.95em; color: var(--ink-2); }
+.delta .antes {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  font-size: 1.05em;
+}
+.delta .flecha { color: var(--marca-ink); font-weight: 700; }
+.delta .ahora {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── Barras comparativas (una medida, dos estados, ambos rotulados) ── */
+
+.barras { display: flex; flex-direction: column; gap: 0.5em; }
+.barra { display: grid; grid-template-columns: 6.5em 1fr 6em; align-items: center; gap: 0.8em; }
+.barra .rot { font-size: 0.82em; color: var(--ink-2); font-family: var(--mono); }
+.barra .pista { height: 1.5em; background: var(--line-soft); position: relative; }
+.barra .mark {
+  display: block; height: 100%;
+  border-radius: 0 0.25em 0.25em 0;
+  background: var(--mark-antes);
+}
+.barra .mark.ahora { background: var(--mark-ahora); }
+.barra .val {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95em;
+  font-weight: 700;
+  text-align: right;
+}
+.pie-barras { font-size: 0.78em; color: var(--ink-3); margin-top: 0.2em; }
+
+/* ── Paneles problema / solución ── */
+
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1em; align-items: stretch; }
+.par.ancho-der { grid-template-columns: 0.85fr 1.15fr; }
+.panel {
+  background: var(--panel);
+  border-left: 0.28em solid var(--line);
+  padding: 1.05em 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  min-width: 0;
+}
+.panel.problema { border-left-color: var(--grave); background: var(--grave-bg); }
+.panel.solucion { border-left-color: var(--marca); }
+.panel .rotulo {
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.15em;
+}
+.panel p { font-size: 0.92em; margin: 0 0 0.45em; }
+.panel p:last-child { margin-bottom: 0; }
+
+/* ── Listas ── */
+
+ul.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5em; }
+ul.lista li {
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: var(--ink-2);
+  padding-left: 1.15em;
+  position: relative;
+}
+ul.lista li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.55em;
+  width: 0.42em; height: 0.42em;
+  background: var(--marca);
+}
+ul.lista.compacta li { font-size: 0.88em; }
+
+/* ── Tabla ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.82em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 0 0.7em 0.5em;
+  border-bottom: 0.12em solid var(--ink);
+}
+td { padding: 0.55em 0.7em; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-2); }
+td strong { color: var(--ink); }
+td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ── Chips de estado (con etiqueta, nunca color solo) ── */
+
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.16em 0.6em;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.pend { color: var(--alerta); background: var(--alerta-bg); }
+.chip.riesgo { color: var(--grave); background: var(--grave-bg); }
+
+/* ── Cita / remate ── */
+
+.remate {
+  border-left: 0.28em solid var(--marca);
+  padding: 0.8em 0 0.8em 1.1em;
+  font-family: var(--display);
+  font-size: 1.28em;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.nota { font-size: 0.82em; color: var(--ink-3); line-height: 1.45; }
+
+/* ── Pie de diapositiva ── */
+
+.pie {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+  margin-top: 1em;
+  padding-top: 0.7em;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── Controles ── */
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+.controles button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+.controles button:hover { background: var(--panel-2); }
+.controles button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+.controles .contador { font-variant-numeric: tabular-nums; min-width: 4.5rem; text-align: center; }
+.controles .pista-prog { width: 12rem; height: 3px; background: var(--line); }
+.controles .pista-prog span { display: block; height: 100%; background: var(--marca); transition: width 0.2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .controles .pista-prog span { transition: none; }
+}
+
+/* ── Pantallas angostas: se suelta el 16:9 y la diapositiva fluye ── */
+
+@media (max-width: 760px) {
+  .diapo {
+    width: 100%;
+    aspect-ratio: auto;
+    min-height: 70vh;
+    font-size: 13px;
+    padding: 1.8em 1.4em 1.4em;
+    overflow-y: auto;
+  }
+  .cifras, .cifras.tres { grid-template-columns: repeat(2, 1fr); }
+  .par, .par.ancho-der { grid-template-columns: 1fr; }
+  .delta { grid-template-columns: 1fr auto; row-gap: 0.2em; }
+  .portada h1, h1 { font-size: 2.4em; }
+  .divisor .num { font-size: 4.5em; }
+}
+
+/* ── Impresión / exportación a PDF: una diapositiva por página ── */
+
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  .controles { display: none; }
+  .escenario { display: block; padding: 0; min-height: 0; }
+  .diapo {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    font-size: 13pt;
+    border: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .diapo:last-child { break-after: auto; page-break-after: auto; }
+  .divisor { background: var(--panel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+}
+</style>
+
+<div class="escenario">
+<main id="deck">
+
+<!-- 01 · PORTADA -->
+<section class="diapo portada activa" aria-label="Portada">
+  <div class="sello">Unidad para las Víctimas · PRY-0662064</div>
+  <div>
+    <h1>SICAV Móvil pasó de reconocer 5.000 personas a reconocer 12,68 millones.</h1>
+    <div class="periodo">Avance quincenal · 29 jul → 13 ago 2026</div>
+  </div>
+  <div class="pieportada">
+    <span>Sistema de Caracterización de Víctimas</span>
+    <span>114 cambios versionados en 15 días</span>
+  </div>
+</section>
+
+<!-- 02 · LA QUINCENA EN CIFRAS -->
+<section class="diapo" aria-label="La quincena en cifras">
+  <div class="eyebrow"><b>Resumen</b> · La quincena en cifras</div>
+  <div class="cuerpo">
+    <h2>El sistema dejó de correr contra datos de prueba</h2>
+    <p class="bajada">Hoy opera contra los datos reales de la Unidad, y la aplicación está publicada
+    y disponible para el personal de campo.</p>
+    <div class="cifras">
+      <div class="tile"><span class="v">12,68 M</span><span class="l">personas que la app reconoce sin conexión</span></div>
+      <div class="tile"><span class="v">5,93 M</span><span class="l">víctimas en el padrón operativo</span></div>
+      <div class="tile"><span class="v">1.158</span><span class="l">encuestadoras cargadas y habilitadas</span></div>
+      <div class="tile"><span class="v">977</span><span class="l">pruebas automáticas en verde</span></div>
+    </div>
+    <div class="remate">Una víctima que nunca fue entrevistada ya puede ser atendida aunque no haya señal.
+    Antes, el sistema respondía que no existía.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance quincenal</span><span>02 / 15</span></div>
+</section>
+
+<!-- 03 · DIVISOR AVANCES -->
+<section class="diapo divisor" aria-label="Sección: avances">
+  <div class="num">01</div>
+  <h1>Avances</h1>
+  <p>Cuatro frentes cerrados en la quincena: los datos reales en producción, la operación
+  sin conexión, el puente con el sistema heredado y la capacidad de la infraestructura.</p>
+  <div class="pie"><span>SICAV Móvil · Avance quincenal</span><span>03 / 15</span></div>
+</section>
+
+<!-- 04 · DATOS REALES -->
+<section class="diapo" aria-label="Datos reales en producción">
+  <div class="eyebrow"><b>Avance 1</b> · Datos reales en producción</div>
+  <div class="cuerpo">
+    <h2>Dos fuentes cargadas, cruzadas por documento</h2>
+    <table>
+      <tr><th>Conjunto</th><th style="text-align:right">Registros</th><th>Para qué sirve</th></tr>
+      <tr><td><strong>Padrón operativo</strong></td><td class="num">5.926.005</td><td>Personas con caracterización previa</td></tr>
+      <tr><td><strong>Universo del RUV</strong></td><td class="num">12.009.492</td><td>Existencia e identidad de toda la población víctima</td></tr>
+      <tr><td>Personas únicas combinadas</td><td class="num">12.677.172</td><td>Cobertura total del sistema</td></tr>
+      <tr><td>Solo en el universo</td><td class="num">8.123.873</td><td>Víctimas reconocidas que nunca fueron entrevistadas</td></tr>
+    </table>
+    <p class="nota">El cruce se hace <strong>por número de documento</strong> y nunca por identificadores
+    internos: se comprobó que los dos sistemas usan numeraciones distintas, y usarlas habría
+    vinculado registros de personas diferentes.</p>
+  </div>
+  <div class="pie"><span>Avances</span><span>04 / 15</span></div>
+</section>
+
+<!-- 05 · SIN CONEXIÓN -->
+<section class="diapo" aria-label="Operación sin conexión">
+  <div class="eyebrow"><b>Avance 2</b> · Operación sin conexión</div>
+  <div class="cuerpo">
+    <h2>El celular ya conoce a toda la población víctima</h2>
+    <div class="deltas">
+      <div class="delta">
+        <span class="que">Personas reconocidas sin conexión</span>
+        <span class="antes">5.000</span><span class="flecha">→</span>
+        <span class="ahora">12.677.172</span>
+      </div>
+      <div class="delta">
+        <span class="que">Peso del archivo que descarga el celular</span>
+        <span class="antes">896 MB</span><span class="flecha">→</span>
+        <span class="ahora">319 MB</span>
+      </div>
+      <div class="delta">
+        <span class="que">Registros con ficha completa</span>
+        <span class="antes">5.000</span><span class="flecha">→</span>
+        <span class="ahora">5.001.403</span>
+      </div>
+    </div>
+    <div class="par ancho-der">
+      <div class="panel">
+        <div class="rotulo">Cambio en pantalla</div>
+        <p>Cuando la persona no tiene ficha, la app ahora dice <strong>«Está en el RUV, sin caracterizar»</strong>
+        y habilita su registro. Antes mostraba un error sin ninguna acción disponible.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">Publicado</div>
+        <p><strong>APK versión 1.1.0</strong> (compilación 54), distribuida por el código QR institucional
+        —que no cambia entre versiones— e instalable sobre la anterior sin desinstalar.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Avances</span><span>05 / 15</span></div>
+</section>
+
+<!-- 06 · PUENTE CON EL LEGACY -->
+<section class="diapo" aria-label="Puente con el sistema heredado">
+  <div class="eyebrow"><b>Avance 3</b> · Puente con el sistema heredado</div>
+  <div class="cuerpo">
+    <h2>El trabajo viejo y el nuevo dejaron de ser dos mundos</h2>
+    <div class="par">
+      <ul class="lista">
+        <li><strong>1.158 encuestadoras</strong> creadas en SICAV con su identidad del sistema anterior, y cada una ve en la app lo que hizo en la aplicación vieja.</li>
+        <li><strong>111 caracterizaciones completas</strong> que ningún reporte estaba contando, recuperadas y visibles.</li>
+        <li><strong>131 caracterizaciones sin autor</strong> reasignadas: seis usuarios tenían la «Ñ» rota en el login.</li>
+      </ul>
+      <ul class="lista">
+        <li><strong>Hechos victimizantes</strong> leídos directamente del RUV, tras confirmar que son <em>tres catálogos distintos</em> y que copiar el número entre ellos habría corrompido 509.442 registros.</li>
+        <li><strong>Sincronización de novedades cada 15 minutos</strong>, con interruptor propio.</li>
+        <li><strong>Escritura hacia el sistema heredado</strong> completa: los diez pasos, incluidos capítulo y cierre —los que hacen que el hogar exista para los reportes.</li>
+      </ul>
+    </div>
+    <p class="nota">La escritura usa los procedimientos oficiales del sistema anterior, nunca inserciones
+    directas: es la única vía que respeta sus validaciones.</p>
+  </div>
+  <div class="pie"><span>Avances</span><span>06 / 15</span></div>
+</section>
+
+<!-- 07 · INFRAESTRUCTURA -->
+<section class="diapo" aria-label="Infraestructura y continuidad">
+  <div class="eyebrow"><b>Avance 4</b> · Infraestructura y continuidad</div>
+  <div class="cuerpo">
+    <h2>Capacidad y respaldo, que era lo que faltaba</h2>
+    <div class="deltas">
+      <div class="delta">
+        <span class="que">Espacio disponible para la base de datos</span>
+        <span class="antes">16 GB</span><span class="flecha">→</span>
+        <span class="ahora">207 GB</span>
+      </div>
+      <div class="delta">
+        <span class="que">Copias de respaldo de la base</span>
+        <span class="antes">ninguna útil</span><span class="flecha">→</span>
+        <span class="ahora">3 en rotación</span>
+      </div>
+    </div>
+    <div class="par">
+      <div class="panel">
+        <div class="rotulo">Traslado</div>
+        <p>La base se movió al disco ampliado con <strong>12 minutos de interrupción</strong>, verificando
+        archivo por archivo entre origen y destino antes de reanudar. Ningún otro sistema del
+        servidor se vio afectado.</p>
+      </div>
+      <div class="panel">
+        <div class="rotulo">Respaldo semanal</div>
+        <p>Copia física automática, <strong>15 GB en 24 minutos</strong>, verificada antes de borrar la más
+        antigua: un respaldo a medias es peor que ninguno, porque parece uno.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Avances</span><span>07 / 15</span></div>
+</section>
+
+<!-- 08 · DIVISOR DIFICULTADES -->
+<section class="diapo divisor" aria-label="Sección: dificultades y soluciones">
+  <div class="num">02</div>
+  <h1>Dificultades y soluciones</h1>
+  <p>Cuatro obstáculos reales del periodo. Tres son de tamaño —el del celular, el del
+  servidor y el del tiempo— y el cuarto es un defecto heredado que no producía ningún
+  error visible.</p>
+  <div class="pie"><span>SICAV Móvil · Avance quincenal</span><span>08 / 15</span></div>
+</section>
+
+<!-- 09 · TAMAÑO EN EL CELULAR -->
+<section class="diapo" aria-label="Dificultad: el tamaño en el celular">
+  <div class="eyebrow"><b>Dificultad 1</b> · El tamaño en el celular</div>
+  <div class="cuerpo">
+    <h2>12,7 millones de personas no caben en un teléfono</h2>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>Llevar los datos completos de toda la población víctima al dispositivo habría
+        superado <strong>1 GB</strong> por encuestadora. El archivo anterior ya pesaba
+        <strong>896 MB</strong> y solo cubría 5.000 personas.</p>
+        <p>Descargarlo con datos móviles en terreno no era viable.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p>Se separó la pregunta en dos. La ficha completa solo se lleva de quien ya tiene
+        caracterización. Para el resto basta responder <em>«¿esta persona está en el RUV?»</em>,
+        y eso cabe en una estructura de <strong>21,7 MB para los 12,7 millones</strong>.</p>
+        <p>El fundamento es operativo: en un registro manual la persona está frente al
+        encuestador, que le pregunta sus datos. El dispositivo solo necesita confirmar que
+        procede atenderla.</p>
+      </div>
+    </div>
+    <div class="barras">
+      <div class="barra"><span class="rot">Antes</span><span class="pista"><span class="mark" style="width:100%"></span></span><span class="val">896 MB</span></div>
+      <div class="barra"><span class="rot">Ahora</span><span class="pista"><span class="mark ahora" style="width:35.6%"></span></span><span class="val">319 MB</span></div>
+    </div>
+    <p class="pie-barras">Cubriendo 2.535 veces más personas · La estructura no omite a nadie que esté en el RUV;
+    puede dar una coincidencia falsa en 1 de cada 1.000 consultas de personas ajenas, que se advierte en pantalla.</p>
+  </div>
+  <div class="pie"><span>Dificultades y soluciones</span><span>09 / 15</span></div>
+</section>
+
+<!-- 10 · TAMAÑO EN EL SERVIDOR -->
+<section class="diapo" aria-label="Dificultad: el tamaño en el servidor">
+  <div class="eyebrow"><b>Dificultad 2</b> · El tamaño en el servidor</div>
+  <div class="cuerpo">
+    <h2>El disco no daba para cargar el padrón</h2>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>El servidor tiene un disco de <strong>61 GB compartido con otros sistemas</strong> y llegó a
+        picos del 87 % de uso. Actualizar 5,9 millones de filas no cabía: la operación
+        proyectaba <strong>8 horas</strong> y dejaba la base inflada.</p>
+        <p>Además, la memoria compartida del motor estaba en <strong>64 MB</strong>, con lo cual el
+        mantenimiento reventaba sin explicación.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución, en tres tiempos</div>
+        <p><strong>1. Ganar espacio en caliente.</strong> Se retiraron 6 índices sin uso: 2,2 GB liberados
+        y un 35 % más de velocidad de escritura, sin sacar el sistema de servicio.</p>
+        <p><strong>2. Partir el trabajo.</strong> La actualización se dividió en lotes retomables, con
+        limpieza cada tres. Se cortó dos veces sin daño: el diseño quedó probado en producción.</p>
+        <p><strong>3. Mudarse.</strong> La base se trasladó al disco ampliado de la Unidad y pasó de
+        16 GB a 207 GB disponibles.</p>
+      </div>
+    </div>
+    <p class="nota">Quedan por liberar <strong>33 GB adicionales</strong> cuando se retire la copia del estado
+    anterior, que se conserva a propósito como vía de retorno durante 14 días.</p>
+  </div>
+  <div class="pie"><span>Dificultades y soluciones</span><span>10 / 15</span></div>
+</section>
+
+<!-- 11 · TIEMPO -->
+<section class="diapo" aria-label="Dificultad: el tiempo de las cargas">
+  <div class="eyebrow"><b>Dificultad 3</b> · El tiempo de las cargas</div>
+  <div class="cuerpo">
+    <h2>Procesos de días, reducidos a minutos</h2>
+    <div class="deltas">
+      <div class="delta">
+        <span class="que">Carga inicial del padrón</span>
+        <span class="antes">42 h</span><span class="flecha">→</span>
+        <span class="ahora">2 h</span>
+      </div>
+      <div class="delta">
+        <span class="que">Aplicación de fechas sobre 3,3 M de registros</span>
+        <span class="antes">25 h</span><span class="flecha">→</span>
+        <span class="ahora">minutos</span>
+      </div>
+      <div class="delta">
+        <span class="que">Enlace del padrón con el universo</span>
+        <span class="antes">3 recorridos</span><span class="flecha">→</span>
+        <span class="ahora">1 recorrido</span>
+      </div>
+    </div>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">La lección que costó 50 minutos</div>
+        <p>Un análisis previo prometía que cierta reescritura sería <strong>20 veces más rápida</strong>.
+        Se cortó la migración a mitad para aplicarla. Medida de punta a punta, fue un 5 %
+        <em>más lenta</em>.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">Por qué, y qué queda anotado</div>
+        <p>El límite no era la consulta: la tabla tiene <strong>26 índices</strong>, y cada fila
+        actualizada escribe en los 26. Son 260 MB por minuto de registro de transacciones que
+        ninguna consulta evita.</p>
+        <p>Queda escrito en la migración: <strong>sobre esta tabla, el techo lo ponen los índices</strong>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Dificultades y soluciones</span><span>11 / 15</span></div>
+</section>
+
+<!-- 12 · JOIN ROTO -->
+<section class="diapo" aria-label="Dificultad: el dato que no era de esa persona">
+  <div class="eyebrow"><b>Dificultad 4</b> · Un defecto heredado, sin síntoma</div>
+  <div class="cuerpo">
+    <h2>El sexo, la etnia y la discapacidad eran de otra persona</h2>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El problema <span class="chip riesgo">Riesgo alto</span></div>
+        <p>La carga inicial usó como identificador una columna del sistema anterior que
+        <strong>no identifica a nadie</strong>: es un contador de filas. Los atributos demográficos
+        quedaron asociados a la persona equivocada.</p>
+        <p>Coincidencia medida: <strong>50 %, igual que el azar</strong>. No producía ningún error
+        visible; se detectó al verificar 68 cédulas del territorio, al ver nombres femeninos
+        marcados como masculinos.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p><strong>Contención.</strong> Se verificó que el dato nunca salió hacia las bases de la Unidad,
+        se bloquearon las vías de propagación y los 5.926.005 registros quedaron marcados
+        explícitamente como <strong>no verificados</strong>.</p>
+        <p><strong>Reemplazo.</strong> El dato ahora se cruza contra el universo del RUV
+        <strong>por número de documento</strong>. Cobertura medida: <strong>86,1 %</strong>. El resto queda
+        sin dato, que también es información: «no consta» y «ninguna» no son lo mismo.</p>
+        <p><strong>Trazabilidad.</strong> Cada registro guarda de qué fuente salió su estado.</p>
+      </div>
+    </div>
+    <p class="nota">La identidad —documento, nombres, apellidos y fecha de nacimiento— <strong>no está
+    afectada</strong>: viene de otra fuente. Lo comprometido son atributos que no deciden si una persona
+    puede ser atendida, pero sí invalidan temporalmente los reportes con enfoque diferencial.</p>
+  </div>
+  <div class="pie"><span>Dificultades y soluciones</span><span>12 / 15</span></div>
+</section>
+
+<!-- 13 · VERIFICACIÓN -->
+<section class="diapo" aria-label="Verificación">
+  <div class="eyebrow"><b>Control</b> · Cómo se comprobó</div>
+  <div class="cuerpo">
+    <h2>Nada de esto se afirma sin medición</h2>
+    <div class="cifras tres">
+      <div class="tile"><span class="v">977</span><span class="l">pruebas automáticas en verde — 862 del servidor y 115 de la app</span></div>
+      <div class="tile"><span class="v">68 / 68</span><span class="l">cédulas del territorio reconocidas sin conexión, ninguna invisible</span></div>
+      <div class="tile"><span class="v">33</span><span class="l">de esas cédulas no aparecían antes por ningún medio</span></div>
+    </div>
+    <div class="remate">El defecto de datos no lo encontró una revisión programada: lo encontró
+    verificar 68 casos concretos que llegaron desde terreno.</div>
+    <p class="nota">Se recomienda mantener esa práctica de forma periódica. Los defectos que no
+    generan ningún error son los que permanecen más tiempo sin detectarse — este llevaba meses.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance quincenal</span><span>13 / 15</span></div>
+</section>
+
+<!-- 14 · LO QUE SIGUE -->
+<section class="diapo" aria-label="Lo que sigue">
+  <div class="eyebrow"><b>Siguiente</b> · Lo que sigue y de qué depende</div>
+  <div class="cuerpo">
+    <h2>Dos definiciones desbloquean el resto</h2>
+    <table>
+      <tr><th>Acción</th><th>Depende de</th><th style="width:8em">Estado</th></tr>
+      <tr>
+        <td><strong>Fuente definitiva del estado en el RUV</strong><br><span class="nota">Define quiénes componen el padrón de 5,9 M; no es solo una decisión técnica</span></td>
+        <td>Definición de la supervisión del proyecto</td>
+        <td><span class="chip pend">Pendiente</span></td>
+      </tr>
+      <tr>
+        <td><strong>Inicio de la operación en campo</strong><br><span class="nota">Las credenciales se asignan contra la fecha confirmada; conviene probar un grupo reducido primero</span></td>
+        <td>Confirmación de fecha</td>
+        <td><span class="chip pend">Pendiente</span></td>
+      </tr>
+      <tr>
+        <td><strong>Recarga del padrón con la fuente definitiva</strong></td>
+        <td>La decisión anterior</td>
+        <td><span class="chip ok">Listo para ejecutar</span></td>
+      </tr>
+      <tr>
+        <td><strong>Ficha completa sin conexión para 4,5 M de personas</strong></td>
+        <td>Equipo técnico</td>
+        <td><span class="chip ok">En curso</span></td>
+      </tr>
+      <tr>
+        <td><strong>Liberación de 33 GB adicionales</strong></td>
+        <td>14 días de operación normal tras el traslado</td>
+        <td><span class="chip ok">Programado</span></td>
+      </tr>
+    </table>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance quincenal</span><span>14 / 15</span></div>
+</section>
+
+<!-- 15 · CIERRE -->
+<section class="diapo portada" aria-label="Cierre">
+  <div class="sello">Equipo SICAV Móvil</div>
+  <div>
+    <h1>El sistema ya opera contra los datos reales de la Unidad.</h1>
+    <div class="periodo">Corte: 13 de agosto de 2026</div>
+  </div>
+  <div class="par" style="font-size:0.9em">
+    <ul class="lista compacta">
+      <li><strong>Javier Aguilar</strong> — arquitectura, backend, base de datos, aplicación móvil e infraestructura</li>
+      <li><strong>Brando</strong> — frontend web de la plataforma</li>
+    </ul>
+    <ul class="lista compacta">
+      <li><strong>Oscar</strong> — supervisión del proyecto por parte de la Unidad</li>
+      <li>Proyecto <strong>PRY-0662064</strong> · Unidad para la Atención y Reparación Integral a las Víctimas</li>
+    </ul>
+  </div>
+  <div class="pieportada">
+    <span>Cifras medidas contra producción, no estimadas</span>
+    <span>15 / 15</span>
+  </div>
+</section>
+
+</main>
+
+<nav class="controles" aria-label="Navegación de la presentación">
+  <button type="button" id="ant" aria-label="Diapositiva anterior">◀ Anterior</button>
+  <span class="contador" id="contador">01 / 15</span>
+  <button type="button" id="sig" aria-label="Diapositiva siguiente">Siguiente ▶</button>
+  <span class="pista-prog" aria-hidden="true"><span id="prog" style="width:6.6%"></span></span>
+</nav>
+</div>
+
+<script>
+(function () {
+  var diapos = Array.prototype.slice.call(document.querySelectorAll('.diapo'));
+  var contador = document.getElementById('contador');
+  var prog = document.getElementById('prog');
+  var actual = 0;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function mostrar(i) {
+    actual = Math.max(0, Math.min(diapos.length - 1, i));
+    diapos.forEach(function (d, n) { d.classList.toggle('activa', n === actual); });
+    contador.textContent = pad(actual + 1) + ' / ' + diapos.length;
+    prog.style.width = ((actual + 1) / diapos.length * 100).toFixed(1) + '%';
+  }
+
+  document.getElementById('ant').addEventListener('click', function () { mostrar(actual - 1); });
+  document.getElementById('sig').addEventListener('click', function () { mostrar(actual + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { mostrar(actual + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { mostrar(actual - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { mostrar(0); e.preventDefault(); }
+    else if (e.key === 'End') { mostrar(diapos.length - 1); e.preventDefault(); }
+  });
+
+  var x0 = null;
+  document.addEventListener('touchstart', function (e) { x0 = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 55) { mostrar(actual + (dx < 0 ? 1 : -1)); }
+    x0 = null;
+  }, { passive: true });
+
+  function desdeHash() {
+    var n = parseInt((location.hash || '').replace('#', ''), 10);
+    return isNaN(n) ? 0 : n - 1;
+  }
+  window.addEventListener('hashchange', function () { mostrar(desdeHash()); });
+
+  mostrar(desdeHash());
+})();
+</script>
