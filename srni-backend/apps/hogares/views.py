@@ -3,6 +3,7 @@ Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
 from django.db import IntegrityError, transaction
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -218,6 +219,85 @@ class HogarViewSet(viewsets.ModelViewSet):
         hogar = self.get_object()
         miembros = hogar.miembros.select_related('victima', 'tipo_documento').all()
         return Response(MiembroHogarSerializer(miembros, many=True).data)
+
+    @extend_schema(
+        summary='Corregir o quitar un integrante agregado por error',
+        description=(
+            'PATCH corrige los datos del integrante; DELETE lo quita del hogar. '
+            'Solo mientras el hogar NO tenga una caracterización completada.'
+        ),
+        tags=['Hogares'],
+        responses={200: MiembroHogarSerializer},
+    )
+    @action(detail=True, methods=['patch', 'delete'],
+            url_path=r'miembros/(?P<miembro_id>[^/.]+)')
+    def editar_miembro(self, request, pk=None, miembro_id=None):
+        """
+        APK-004 — hasta ahora se podía agregar un integrante pero no corregirlo
+        ni quitarlo, ni en la app ni en la API. Quien se equivocaba al capturar
+        quedaba con el error adentro del hogar para siempre.
+
+        ─── Quitar es BORRAR, y solo acá ────────────────────────────────────
+        Se borra la fila en vez de marcarla con un estado, porque esto atiende
+        un caso muy concreto: **el integrante nunca debió existir**. Es distinto
+        de «esta persona ya no vive en el hogar», que sí es un hecho histórico y
+        pide una novedad hacia el legado — eso queda pendiente de definir, y por
+        eso la operación está acotada.
+
+        La guarda es esa acotación: si el hogar ya tiene una encuesta
+        COMPLETADA, el integrante forma parte de algo que ya se reportó y
+        borrarlo cambiaría un dato entregado. Ahí se responde 409.
+
+        Al autorizado no se le toca: es el titular del hogar y quitarlo dejaría
+        un hogar sin dueño. Para cambiarlo existe `cambiar-autorizado`.
+        """
+        hogar = self.get_object()
+        miembro = get_object_or_404(MiembroHogar, pk=miembro_id, hogar=hogar)
+
+        if miembro.es_autorizado:
+            return Response(
+                {'detail': 'No se puede modificar ni quitar a la persona autorizada: '
+                           'es el titular del hogar. Use "cambiar autorizado".'},
+                status=status.HTTP_409_CONFLICT)
+
+        if hogar.sesiones.filter(estado='COMPLETADA').exists():
+            return Response(
+                {'detail': 'Este hogar ya tiene una caracterización completada. '
+                           'No se pueden quitar ni corregir integrantes de un dato '
+                           'ya reportado; solicite el ajuste a su coordinación.'},
+                status=status.HTTP_409_CONFLICT)
+
+        if request.method == 'DELETE':
+            datos = {'hogar_id': str(hogar.id),
+                     'documento_hash': getattr(miembro, 'numero_documento_hash', '')}
+            miembro.delete()
+            LogAcceso.registrar(
+                usuario=request.user,
+                accion='QUITAR_MIEMBRO',
+                recurso='MiembroHogar',
+                recurso_id=str(miembro_id),
+                ip=_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                resultado='EXITO',
+                detalle=datos,
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        serializer = AgregarMiembroSerializer(miembro, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        miembro = serializer.save()
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='EDITAR_MIEMBRO',
+            recurso='MiembroHogar',
+            recurso_id=str(miembro.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'hogar_id': str(hogar.id), 'campos': list(request.data.keys())},
+        )
+        return Response(MiembroHogarSerializer(miembro).data)
 
     @extend_schema(
         summary='Subir constancia de tutor/cuidador de un miembro',

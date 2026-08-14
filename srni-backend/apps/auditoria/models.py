@@ -44,6 +44,11 @@ class LogAcceso(models.Model):
         # querer filtrar.
         ('HABILITAR_EXCEPCION', 'Excepción de vigencia autorizada'),
         ('ANULAR_EXCEPCION', 'Excepción de vigencia anulada'),
+        # APK-004 — corregir un integrante capturado por error. Van aparte de
+        # AGREGAR_MIEMBRO: quitar a alguien de un hogar es lo que una auditoría
+        # va a querer poder buscar, y confundirlo con un alta lo esconde.
+        ('EDITAR_MIEMBRO', 'Integrante del hogar corregido'),
+        ('QUITAR_MIEMBRO', 'Integrante quitado del hogar'),
     ]
 
     RESULTADOS = [

@@ -38,6 +38,8 @@ import { GovHeader } from '../../../src/components/GovHeader';
 import { SelectorFecha } from '../../../src/components/SelectorFecha';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
+import { interpretarError } from '../../../src/utils/errores';
+import { reportarError } from '../../../src/services/errorReporter';
 
 // ── Catálogos locales ─────────────────────────────────────────────────────────
 
@@ -75,6 +77,12 @@ const requiereConstancia = (rol: string) => ROLES_CON_CONSTANCIA.includes(rol);
 
 interface IntegranteAgregado {
   key: string;
+  /**
+   * Id en el servidor. Solo lo tienen los que se agregaron con señal — es lo
+   * que permite quitarlos (APK-004). Los guardados offline todavía no existen
+   * allá, así que no hay qué borrar hasta que sincronicen.
+   */
+  miembro_id?: string;
   es_autorizado: boolean;
   nombre_display: string;        // nombre completo para mostrar
   tipo_documento: string;        // código p.ej. "CC"
@@ -152,7 +160,11 @@ function CampoSelector({
 
 // ── Card de integrante ya agregado ────────────────────────────────────────────
 
-function IntegranteCard({ item }: { item: IntegranteAgregado }) {
+function IntegranteCard({ item, onQuitar }: {
+  item: IntegranteAgregado;
+  /** APK-004 — sin esto, un integrante capturado por error se quedaba adentro. */
+  onQuitar?: (item: IntegranteAgregado) => void;
+}) {
   return (
     <View style={styles.integranteCard}>
       <View style={styles.integranteIconWrap}>
@@ -187,6 +199,21 @@ function IntegranteCard({ item }: { item: IntegranteAgregado }) {
           </View>
         ) : null}
       </View>
+      {/*
+        Al autorizado no se le ofrece: es el titular del hogar y quitarlo lo
+        dejaría sin dueño. El servidor lo rechaza igual, pero mostrar un botón
+        que siempre falla es peor que no mostrarlo.
+      */}
+      {!item.es_autorizado && onQuitar && (
+        <Pressable
+          onPress={() => onQuitar(item)}
+          hitSlop={10}
+          accessibilityLabel={`Quitar a ${item.nombre_display}`}
+          style={styles.quitarBtn}
+        >
+          <MaterialCommunityIcons name="close-circle-outline" size={22} color={GOV.rojo} />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -305,12 +332,20 @@ export default function ConformarHogarScreen() {
           constancia_nombre: '',
         }]);
       } catch (err: any) {
-        const detalle = err?.response?.data;
-        if (typeof detalle === 'object') {
-          setErrorHogar(JSON.stringify(detalle));
-        } else {
-          const msg = err?.message ? ` (${String(err.message).slice(0, 140)})` : '';
-          setErrorHogar(`No se pudo crear el hogar.${msg}`);
+        // APK-002. Antes acá iba `JSON.stringify(err.response.data)`, que le
+        // ponía al encuestador el JSON crudo del servidor — y con el cuerpo
+        // vacío, la palabra «null», porque `typeof null === 'object'`.
+        const info = interpretarError(err, 'No se pudo crear el hogar.');
+        setErrorHogar(info.mensaje);
+        // El diagnóstico va al reporte, no a la pantalla: es lo que le faltaba
+        // a soporte para saber si fue un 409, un 500 o falta de señal.
+        if (!info.sinRed) {
+          reportarError({
+            nivel: 'error',
+            mensaje: `conformar/crearHogar — ${info.diagnostico}`,
+            pantalla: 'hogares/conformar',
+            contexto: { autorizado_id: victimaLocalId ?? '' },
+          });
         }
       } finally {
         setCreandoHogar(false);
@@ -379,6 +414,7 @@ export default function ConformarHogarScreen() {
     };
 
     let guardado = false;
+    let idEnServidor: string | undefined;
     try {
       if (hogarEsLocal) {
         // Fase A — sin red: el `hogar` se referencia por su id_local;
@@ -386,8 +422,10 @@ export default function ConformarHogarScreen() {
         // este AGREGAR_MIEMBRO.
         await guardarOffline();
       } else {
-        // Online: POST directo al servidor.
-        await hogaresApi.agregarMiembro(hogarId, miembroPayload);
+        // Online: POST directo al servidor. Se guarda el id que devuelve —sin
+        // él después no hay a quién borrar si lo agregaron por error (APK-004).
+        const { data } = await hogaresApi.agregarMiembro(hogarId, miembroPayload);
+        idEnServidor = data?.id;
       }
       guardado = true;
     } catch (err: any) {
@@ -402,10 +440,20 @@ export default function ConformarHogarScreen() {
         } catch { /* fallo de SQLite — se informa abajo */ }
       }
       if (!guardado) {
-        Alert.alert(
-          'Error al agregar',
-          err?.response?.data?.detail ?? 'No se pudo agregar el integrante. Intente nuevamente.',
-        );
+        // Mismo criterio que al crear el hogar: `data.detail` solo existe en
+        // algunos errores. Sin esto, un 400 de validación por campo caía al
+        // texto genérico y el encuestador no sabía QUÉ dato estaba mal.
+        const info = interpretarError(
+          err, 'No se pudo agregar el integrante. Intente nuevamente.');
+        Alert.alert('Error al agregar', info.mensaje);
+        if (!info.sinRed) {
+          reportarError({
+            nivel: 'error',
+            mensaje: `conformar/agregarMiembro — ${info.diagnostico}`,
+            pantalla: 'hogares/conformar',
+            contexto: { hogar_id: String(hogarId ?? '') },
+          });
+        }
       }
     }
 
@@ -415,6 +463,7 @@ export default function ConformarHogarScreen() {
         ...prev,
         {
           key: `${Date.now()}`,
+          miembro_id: idEnServidor,
           es_autorizado: false,
           nombre_display: nombreCompleto,
           tipo_documento: tipoDoc,
@@ -444,6 +493,59 @@ export default function ConformarHogarScreen() {
   // registra una referencia-marcador para no bloquear el flujo en campo y se
   // informa al usuario. Al instalar la dep, este handler usará el picker real
   // sin más cambios en la UI.
+  /**
+   * Quita un integrante capturado por error (APK-004).
+   *
+   * Confirma con el nombre adentro: en una lista de cinco personas, un
+   * "¿Confirma quitar?" a secas no dice a cuál.
+   *
+   * Solo se ofrece para los que ya están en el servidor. Un integrante guardado
+   * offline todavía tiene su alta en la cola: borrarlo solo de la pantalla lo
+   * haría reaparecer al sincronizar, que es peor que no poder quitarlo.
+   */
+  function quitarIntegrante(item: IntegranteAgregado) {
+    // Sin hogar en el servidor no hay a quién pedirle el borrado. Se trata igual
+    // que el integrante sin sincronizar: mismo aviso, misma salida.
+    if (!item.miembro_id || !hogarId) {
+      Alert.alert(
+        'Todavía no se puede quitar',
+        'Este integrante se guardó sin señal y aún no ha sincronizado. Cuando '
+        + 'haya conexión podrá quitarlo desde el detalle del hogar.',
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Quitar integrante',
+      `¿Quitar a ${item.nombre_display} del hogar? Esto es para corregir una `
+      + 'captura equivocada; no se usa cuando la persona dejó de vivir en el hogar.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Quitar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await hogaresApi.quitarMiembro(hogarId, item.miembro_id!);
+              setIntegrantes(prev => prev.filter(i => i.key !== item.key));
+            } catch (err: any) {
+              const info = interpretarError(err, 'No se pudo quitar el integrante.');
+              Alert.alert('No se pudo quitar', info.mensaje);
+              if (!info.sinRed) {
+                reportarError({
+                  nivel: 'warn',
+                  mensaje: `conformar/quitarMiembro — ${info.diagnostico}`,
+                  pantalla: 'hogares/conformar',
+                  contexto: { hogar_id: String(hogarId ?? '') },
+                });
+              }
+            }
+          },
+        },
+      ],
+    );
+  }
+
   async function adjuntarConstancia() {
     try {
       // Carga perezosa: si algún día se instala expo-document-picker, se usa.
@@ -619,7 +721,7 @@ export default function ConformarHogarScreen() {
             Integrantes del hogar ({integrantes.length})
           </Text>
           {integrantes.map(item => (
-            <IntegranteCard key={item.key} item={item} />
+            <IntegranteCard key={item.key} item={item} onQuitar={quitarIntegrante} />
           ))}
 
           <Divider style={styles.divider} />
@@ -951,6 +1053,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     ...SHADOW.card,
     gap: SPACING.sm,
+  },
+  // Alineado arriba, junto al nombre: es la línea que identifica a quién se
+  // está quitando. Centrado quedaría a la altura de los metadatos.
+  quitarBtn: {
+    paddingTop: 2,
+    paddingLeft: SPACING.xs,
   },
   integranteIconWrap: {
     width: 36,

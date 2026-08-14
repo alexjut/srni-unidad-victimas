@@ -295,6 +295,13 @@ function TarjetaNoHabilitado({ resultado, onUsarExcepcion, reconsultando }: {
           No habilitado para caracterización
         </Text>
       </View>
+      {/*
+        APK-007. El nombre faltaba justo acá, que es donde más se necesita: la
+        persona está enfrente y el encuestador tiene que confirmar que el
+        bloqueo es de ELLA y no de un homónimo antes de mandarla a coordinación.
+        La tarjeta de habilitada sí lo mostraba; esta no.
+      */}
+      <Text style={styles.nombreCompleto}>{nombreCompleto(v)}</Text>
       <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
       <View style={styles.chipsFila}>
         <Chip
