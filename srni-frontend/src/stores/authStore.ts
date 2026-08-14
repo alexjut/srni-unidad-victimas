@@ -19,6 +19,12 @@ export interface Usuario {
     puede_buscar_rni: boolean;
     puede_ver_reportes?: boolean;
     puede_administrar?: boolean;
+    /**
+     * Autoriza excepciones de vigencia (14-ago-2026). Opcional: un backend
+     * anterior no lo manda y el menú simplemente no muestra la opción, en vez
+     * de romper la sesión de quien ya estaba dentro.
+     */
+    puede_autorizar_excepciones?: boolean;
   } | null;
 }
 

@@ -21,6 +21,8 @@ export interface PerfilUsuario {
     puede_caracterizar: boolean;
     puede_ver_reportes?: boolean;
     puede_administrar?: boolean;
+    /** Autoriza excepciones de vigencia — ver `authStore`. */
+    puede_autorizar_excepciones?: boolean;
   } | null;
 }
 

@@ -194,6 +194,12 @@ intento repetido devolviendo `YA_HABILITADA` sin duplicar nada.
 
 ## 5. Cómo probarla
 
+### Cómo se entra
+
+Desde el panel web hay un ítem **«Autorizaciones»** en el menú lateral, visible
+solo para quien tiene `puede_autorizar_excepciones` (y para el administrador).
+Es un enlace normal y no una ruta de la SPA — ver abajo por qué.
+
 ### La URL — ojo con esto
 
 **Use `/api/autorizaciones/`.** Es la que funciona hoy en los dos entornos.

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, Shield, ChevronRight, UserCog,
+  FileText, Database, Shield, ChevronRight, UserCog, FileCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import LogoHorizontalNegativo from '@/assets/LogoHorizontalnegativo.svg';
@@ -13,6 +13,17 @@ export const NAV_ITEMS = [
   { to: '/encuestas',    icon: ClipboardList,   label: 'Encuestas',     caracterizadorOnly: true },
   { to: '/reportes',     icon: BarChart3,       label: 'Reportes',      caracterizadorOnly: true },
   { to: '/supervision',  icon: Eye,             label: 'Supervisión',   supervisorOnly: true },
+  // Excepciones de vigencia (14-ago-2026). `externo` porque NO es una ruta de
+  // esta SPA: la pantalla la sirve Django. Con un NavLink, react-router
+  // intentaría resolverla adentro y mostraría su pantalla de error sin salir
+  // nunca al backend — que es exactamente lo que pasó al probarla.
+  //
+  // Apunta a `/api/autorizaciones/` y no a `/autorizaciones/` porque el nginx
+  // del stack y el proxy de Vite solo enrutan `/api/` al Django; todo lo demás
+  // vuelve a caer acá. Cuando el nginx con la location nueva esté desplegado,
+  // esto puede acortarse.
+  { to: '/api/autorizaciones/', icon: FileCheck, label: 'Autorizaciones',
+    autorizadorOnly: true, externo: true },
   { to: '/instrumentos', icon: FileText,        label: 'Instrumentos'  },
   { to: '/parametricas', icon: Database,        label: 'Paramétricas'  },
   { to: '/auditoria',    icon: Shield,          label: 'Auditoría',     coordinadorOnly: true },
@@ -30,11 +41,18 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
   const puedeCaracterizar  = !!usuario?.perfil?.puede_caracterizar;
   const codigoPerfil       = usuario?.perfil?.codigo ?? '';
   const puedeVerAuditoria  = ['COORDINADOR', 'ADMINISTRADOR'].includes(codigoPerfil);
+  // Del flag del perfil y no del código: el permiso lo tienen coordinación,
+  // supervisión y administración, pero también cualquier perfil nuevo al que se
+  // lo enciendan. Listar códigos a mano deja el menú desactualizado el día que
+  // se cree una cuenta más, y un menú que aparece de más termina en un 403.
+  const puedeAutorizar     = !!usuario?.perfil?.puede_autorizar_excepciones
+    || esAdmin;
   const items = NAV_ITEMS.filter((i) => {
     if ('adminOnly'         in i && i.adminOnly         && !esAdmin)           return false;
     if ('supervisorOnly'    in i && i.supervisorOnly    && !puedeSupervisar)   return false;
     if ('coordinadorOnly'   in i && i.coordinadorOnly   && !puedeVerAuditoria) return false;
     if ('caracterizadorOnly' in i && i.caracterizadorOnly && !puedeCaracterizar) return false;
+    if ('autorizadorOnly'   in i && i.autorizadorOnly   && !puedeAutorizar)    return false;
     return true;
   });
   return (
@@ -46,7 +64,28 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Navegación */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto" aria-label="Menú principal">
-        {items.map(({ to, icon: Icon, label }) => (
+        {items.map((item) => {
+          const { to, icon: Icon, label } = item;
+
+          // Página servida por Django, fuera de esta SPA: se navega con un
+          // enlace de verdad. Se pinta con el mismo estilo del estado inactivo
+          // —nunca queda "activo" porque el navegador sale de la aplicación.
+          if ('externo' in item && item.externo) {
+            return (
+              <a
+                key={to}
+                href={to}
+                onClick={onNavigate}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border-l-2 border-transparent text-white/70 hover:bg-white/[0.07] hover:text-white"
+              >
+                <Icon size={17} />
+                <span className="flex-1">{label}</span>
+                <ChevronRight size={13} className="shrink-0 opacity-20" />
+              </a>
+            );
+          }
+
+          return (
           <NavLink
             key={to}
             to={to}
@@ -70,7 +109,8 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
               </>
             )}
           </NavLink>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Info institucional + versión */}
