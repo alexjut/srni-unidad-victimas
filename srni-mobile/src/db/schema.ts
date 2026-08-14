@@ -24,7 +24,7 @@
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -532,6 +532,28 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     // vacía: la jornada es del día y se repuebla en la precarga siguiente; su
     // json no sirve para nada sin el padrón que lo acompaña.
     await db.execAsync(MIGRATION_V11);
+  }
+
+  if (currentVersion < 12) {
+    // La excepción de vigencia se autoriza desde la web (14-ago-2026) y tiene
+    // que sobrevivir sin señal: si solo viviera en la respuesta de la precarga,
+    // el encuestador la vería al iniciar jornada y la perdería al cerrar la app,
+    // que es cuando de verdad la necesita.
+    //
+    // Con ALTER y no recreando la tabla: la precarga NO se dispara al restaurar
+    // una sesión ya abierta, así que borrar el padrón deja a alguien sin nada en
+    // pleno campo (la lección de la v10).
+    for (const columna of [
+      "habilitada_por_excepcion INTEGER NOT NULL DEFAULT 0",
+      "excepcion_ruta TEXT",
+      "excepcion_radicado TEXT",
+    ]) {
+      try {
+        await db.execAsync(`ALTER TABLE padron ADD COLUMN ${columna}`);
+      } catch (e: any) {
+        if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
+      }
+    }
   }
 
   if (currentVersion < SCHEMA_VERSION) {
