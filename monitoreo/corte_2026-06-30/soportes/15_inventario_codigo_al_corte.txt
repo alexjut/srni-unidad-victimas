@@ -1,0 +1,32 @@
+INVENTARIO DE CÓDIGO AL CORTE 2026-06-30 (commit 5fba1fa682c109089ccd397ecffc86cce6c4ac67)
+
+MÓDULOS DEL BACKEND:
+srni-backend/apps/__init__
+srni-backend/apps/auditoria
+srni-backend/apps/autenticacion
+srni-backend/apps/encuestas
+srni-backend/apps/formulario
+srni-backend/apps/hogares
+srni-backend/apps/ia
+srni-backend/apps/movil
+srni-backend/apps/parametricas
+srni-backend/apps/reportes
+srni-backend/apps/sincronizacion
+srni-backend/apps/victimas
+
+INSTRUMENTOS EMPAQUETADOS EN LA APK:
+srni-mobile/assets/instrumentos/asistencia_v8.json
+srni-mobile/assets/instrumentos/buenaventura_v7.json
+srni-mobile/assets/instrumentos/index.json
+srni-mobile/assets/instrumentos/rural_etnico_v1.json
+srni-mobile/assets/instrumentos/san_andres_v7.json
+srni-mobile/assets/instrumentos/telefonico_v8.json
+srni-mobile/assets/instrumentos/territorial_v7.json
+srni-mobile/assets/instrumentos/urbano_etnico_v1.json
+srni-mobile/assets/instrumentos/victimas_exterior_v1.json
+
+CONTEO DE ARCHIVOS POR COMPONENTE:
+  backend (.py)        : 204
+  móvil (.ts/.tsx)     : 77
+  panel web (.js/.jsx) : 37
+  documentación (.md)  : 49

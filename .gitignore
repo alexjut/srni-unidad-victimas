@@ -92,6 +92,11 @@ docs/oracle-legacy/*
 # existe en el disco de quien lo corrió. No llevan datos de prod ni credenciales.
 !docs/oracle-legacy/plan_escalon_1.md
 !docs/oracle-legacy/plan_escalon_2.md
+# El join roto de la caracterización: mismo criterio. Es un defecto de la fuente que
+# afecta a los 5,9 M del padrón y cuya evidencia costó medir; sin versionarlo se
+# vuelve a "descubrir" en seis meses. Cita nombres de tabla y cifras agregadas, no
+# datos de personas.
+!docs/oracle-legacy/join_caracterizacion_roto.md
 # Mismo criterio: el analisis de QUE exige el legacy para que salgan los reportes y
 # el plan que sale de ahi. Cita nombres de procedures y numeros de linea del volcado,
 # pero NO lleva codigo fuente de prod ni datos de personas — el volcado crudo

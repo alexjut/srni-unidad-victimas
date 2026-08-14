@@ -139,11 +139,30 @@ def _completitud(v) -> int:
     tiene, y a igualdad, la caracterizada más recientemente.
 
     NO decide identidad: solo el orden.
+
+    ⚠️ **Solo cuenta campos de procedencia fiable.** Quedaron fuera `genero`,
+    `pertenencia_etnica`, `tipo_discapacidad` y `estado_ruv`: vienen del join por
+    `CONS_PERONA`, que resultó ser un contador de filas y no un identificador de
+    persona (medido el 11-ago-2026; ver
+    `docs/oracle-legacy/join_caracterizacion_roto.md`).
+
+    Dejarlos aquí tenía un efecto perverso concreto: entre dos filas de la misma
+    persona ganaba **la que más datos ajenos había recibido**, porque cada campo
+    corrupto sumaba un punto de "completitud". La fila con el género de otro se
+    imponía sobre la que honestamente lo tenía vacío, y esa era la que viajaba al
+    padrón descargable como la versión buena.
+
+    `estado_ruv` sale además por otra razón: vale `INCLUIDO` en las 5,9 M por
+    construcción del `WHERE` de la carga, así que sumaba un punto **a todas** —
+    ruido puro que no desempataba nada.
+
+    Los que quedan —nombres, fecha de nacimiento, municipio, `cons_persona` y la
+    fecha de caracterización— vienen de `GIC_PERSONA` o de joins locales, y sí
+    describen a la persona de la fila.
     """
     campos = (
         v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido,
-        v.fecha_nacimiento, v.genero, v.pertenencia_etnica, v.tipo_discapacidad,
-        v.municipio_residencia_id, v.cons_persona, v.estado_ruv,
+        v.fecha_nacimiento, v.municipio_residencia_id, v.cons_persona,
         v.fecha_ult_caracterizacion,
     )
     return sum(1 for c in campos if c not in (None, '', 0))

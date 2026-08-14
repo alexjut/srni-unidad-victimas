@@ -293,4 +293,17 @@ export interface ResultadoBusquedaFuente {
    * existir, pero ese número no sirve para encontrarla.
    */
   no_identificante?: boolean;
+  /**
+   * Motivo enumerado del veredicto, además del texto de `mensaje`.
+   *
+   * Sin esto la app solo podía pintar la cadena y por eso un bloqueo previsto
+   * —"ficha vigente"— se leía en campo como una falla del sistema: no había
+   * forma de saber en qué caso estábamos para ofrecer la salida correcta.
+   *
+   * `FICHA_VIGENTE` habilita el botón de ruta de excepción; `NO_EN_PADRON`, el
+   * alta manual.
+   */
+  motivo?: string;
+  /** Desde cuándo se podrá recaracterizar por la ruta general (fecha + 2 años). */
+  disponible_desde?: string | null;
 }

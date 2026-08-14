@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>SICAV — Resumen ejecutivo</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 16mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Nunito Sans", Calibri, Arial, sans-serif;
+    font-size: 10.5pt; line-height: 1.5; color: #1a1a1a; margin: 0;
+  }
+  .marca { height: 5px; background: #ffcc03; margin-bottom: 14px; }
+  header { border-bottom: 1.5px solid #1a1a1a; padding-bottom: 10px; margin-bottom: 18px; }
+  h1 { font-size: 19pt; margin: 0 0 2px; letter-spacing: -0.3px; }
+  .sub { font-size: 10pt; color: #555; margin: 0; }
+  .meta { font-size: 8.5pt; color: #777; margin-top: 6px; }
+  h2 {
+    font-size: 12pt; margin: 20px 0 8px; padding-left: 8px;
+    border-left: 4px solid #ffcc03;
+  }
+  h3 { font-size: 10.5pt; margin: 14px 0 4px; color: #333; }
+  p { margin: 0 0 8px; }
+  .destacado {
+    background: #fffbe6; border: 1px solid #ffe58a; border-radius: 4px;
+    padding: 11px 14px; margin: 12px 0;
+  }
+  .alerta {
+    background: #fff1f0; border-left: 4px solid #cf1322; border-radius: 3px;
+    padding: 11px 14px; margin: 12px 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 9.5pt; }
+  th {
+    background: #1a1a1a; color: #fff; text-align: left; padding: 7px 9px;
+    font-weight: 600; font-size: 9pt;
+  }
+  td { padding: 6px 9px; border-bottom: 1px solid #e4e4e4; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .kpis { display: flex; gap: 10px; margin: 14px 0; }
+  .kpi {
+    flex: 1; border: 1px solid #ddd; border-top: 3px solid #ffcc03;
+    border-radius: 4px; padding: 10px 12px;
+  }
+  .kpi .v { font-size: 17pt; font-weight: 700; line-height: 1.1; }
+  .kpi .l { font-size: 8pt; color: #666; margin-top: 3px; }
+  ul { margin: 4px 0 10px; padding-left: 18px; }
+  li { margin-bottom: 5px; }
+  .ok { color: #237804; font-weight: 600; }
+  .pend { color: #ad6800; font-weight: 600; }
+  .riesgo { color: #cf1322; font-weight: 600; }
+  footer {
+    margin-top: 22px; padding-top: 8px; border-top: 1px solid #ddd;
+    font-size: 8pt; color: #888;
+  }
+  .nota { font-size: 9pt; color: #555; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="marca"></div>
+<header>
+  <h1>SICAV Móvil — Resumen ejecutivo</h1>
+  <p class="sub">Sistema de Caracterización de Víctimas · Unidad para las Víctimas</p>
+  <p class="meta">Proyecto PRY-0662064 · Corte: 11 de agosto de 2026 · Documento gerencial</p>
+</header>
+
+<h2>1. En una página</h2>
+
+<p>El sistema <strong>ya opera contra los datos reales de la Unidad</strong>. Dejó de
+ser un desarrollo contra datos de prueba: hoy hay 5,9 millones de víctimas en la base
+operativa y 12 millones en el universo del RUV, y la aplicación móvil está desplegada y
+disponible para el personal de campo.</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">12,68 M</div><div class="l">personas que la app reconoce sin conexión</div></div>
+  <div class="kpi"><div class="v">5,93 M</div><div class="l">víctimas en el padrón operativo</div></div>
+  <div class="kpi"><div class="v">1.158</div><div class="l">encuestadoras cargadas y habilitadas</div></div>
+  <div class="kpi"><div class="v">972</div><div class="l">pruebas automáticas en verde</div></div>
+</div>
+
+<div class="destacado">
+  <strong>El avance más relevante del periodo:</strong> la aplicación pasó de reconocer
+  <strong>5.000</strong> personas sin conexión a reconocer <strong>12,68 millones</strong>.
+  En terreno esto significa que una víctima que nunca fue entrevistada antes ya puede ser
+  atendida aunque no haya señal — antes el sistema respondía que no existía.
+</div>
+
+<h2>2. Qué se logró en el periodo</h2>
+
+<table>
+  <tr><th>Frente</th><th>Resultado</th><th>Estado</th></tr>
+  <tr>
+    <td><strong>Datos reales en producción</strong></td>
+    <td>Padrón operativo con 5.926.005 víctimas y universo del RUV con 12.009.492 personas, cargados desde los sistemas de la Unidad</td>
+    <td class="ok">Operando</td>
+  </tr>
+  <tr>
+    <td><strong>Operación sin conexión</strong></td>
+    <td>Cobertura ampliada de 5.000 a 12,68 M de personas. El archivo que descarga el celular se redujo de 896 MB a 319 MB</td>
+    <td class="ok">Desplegado</td>
+  </tr>
+  <tr>
+    <td><strong>Aplicación móvil</strong></td>
+    <td>Versión 1.1.0 publicada y disponible por código QR, instalable sobre la versión anterior</td>
+    <td class="ok">Publicada</td>
+  </tr>
+  <tr>
+    <td><strong>Capacidad de infraestructura</strong></td>
+    <td>Base de datos trasladada al disco ampliado. Pasó de 16 GB disponibles a 207 GB</td>
+    <td class="ok">Completado</td>
+  </tr>
+  <tr>
+    <td><strong>Calidad de datos</strong></td>
+    <td>Identificado y documentado un defecto de origen en los datos heredados (ver sección 4)</td>
+    <td class="pend">En corrección</td>
+  </tr>
+</table>
+
+<h3>Verificación con casos reales</h3>
+<p>Se recibieron 68 cédulas desde el territorio para comprobar el funcionamiento.
+<strong>Las 68 son reconocidas por el sistema sin conexión</strong>. Antes de esta
+intervención, 33 de ellas no aparecían por ningún medio: son víctimas reconocidas en el
+RUV que nunca habían sido entrevistadas, y para las que el sistema no ofrecía ninguna
+salida al encuestador que las tenía enfrente.</p>
+
+<h2>3. Qué significa en terreno</h2>
+
+<ul>
+  <li><strong>Una víctima sin entrevista previa ya puede ser atendida sin señal.</strong>
+  Son 8,12 millones de personas en esa condición.</li>
+  <li><strong>El encuestador no queda sin salida.</strong> Cuando la persona no tiene
+  ficha, la aplicación ahora indica que sí está en el RUV y habilita su registro, en vez
+  de responder que no existe.</li>
+  <li><strong>Menos consumo de datos móviles.</strong> La descarga inicial se redujo en
+  un 64 %, cubriendo más del doble de población.</li>
+</ul>
+
+<h2>4. Riesgo identificado y su manejo</h2>
+
+<div class="alerta">
+  <strong>Defecto en los datos heredados.</strong> Se detectó que la información de
+  <strong>sexo, pertenencia étnica y discapacidad</strong> del padrón quedó asociada a la
+  persona equivocada durante la carga inicial desde el sistema anterior. El origen es una
+  columna del sistema heredado que se usó como identificador sin serlo.
+</div>
+
+<p><strong>Cómo se detectó:</strong> durante la verificación de las 68 cédulas del
+territorio, al advertir que registros con nombre femenino figuraban como masculinos. La
+comprobación posterior confirmó que la coincidencia es del 50 %, equivalente al azar.</p>
+
+<p><strong>Alcance, verificado:</strong></p>
+<ul>
+  <li>La información <span class="ok">no salió</span> hacia las bases de la Unidad: el
+  registro de escritura al sistema heredado está vacío.</li>
+  <li>Los datos de <span class="ok">identidad son correctos</span> — documento, nombres,
+  apellidos y fecha de nacimiento provienen de una fuente distinta y confiable.</li>
+  <li>Lo afectado son atributos demográficos, que <span class="pend">no se usan</span>
+  para decidir si una persona puede ser atendida.</li>
+</ul>
+
+<p><strong>Medidas ya aplicadas:</strong> se bloquearon las vías por las que el dato podía
+seguir propagándose, se marcó explícitamente como no verificado en el sistema, y se
+documentó con la evidencia técnica completa. <strong>La corrección definitiva</strong>
+consiste en reemplazar la fuente por el universo del RUV, que sí cruza correctamente por
+documento y cubre el 84 % de la población del padrón.</p>
+
+<p class="nota">Este hallazgo no era parte del plan del periodo. Se detectó al verificar
+un caso puntual y se atendió de inmediato por su implicación en los reportes con enfoque
+diferencial.</p>
+
+<h2>5. Próximos pasos</h2>
+
+<table>
+  <tr><th>Acción</th><th>Depende de</th></tr>
+  <tr><td>Recarga de los atributos demográficos desde el universo del RUV</td><td>Decisión de la fuente definitiva (supervisión del proyecto)</td></tr>
+  <tr><td>Inicio de la operación en campo con las 1.158 encuestadoras</td><td>Confirmación de fecha de inicio</td></tr>
+  <tr><td>Ampliación de la información disponible sin conexión</td><td>Equipo técnico</td></tr>
+  <tr><td>Liberación de 33 GB adicionales de almacenamiento</td><td>Periodo de verificación del traslado (14 días)</td></tr>
+</table>
+
+<footer>
+  SICAV Móvil · Unidad para la Atención y Reparación Integral a las Víctimas ·
+  PRY-0662064 · Documento generado el 11 de agosto de 2026
+</footer>
+</body>
+</html>

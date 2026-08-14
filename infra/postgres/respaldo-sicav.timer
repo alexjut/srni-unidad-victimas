@@ -1,0 +1,11 @@
+[Unit]
+Description=Respaldo semanal de SICAV, domingos a las 02:00
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00
+# Si el servidor estuvo apagado el domingo a las 2, lo corre al encender.
+# Es la ventaja sobre cron, que simplemente se saltaria la semana.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -208,13 +208,23 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     segundo_nombre = serializers.CharField(max_length=100, allow_blank=True, default='')
     primer_apellido = serializers.CharField(max_length=100)
     segundo_apellido = serializers.CharField(max_length=100, allow_blank=True, default='')
-    fecha_nacimiento = serializers.DateField()
+    # Puede faltar: quien viene del UNIVERSO y nunca pasó por el legado no tiene
+    # fecha de nacimiento en ninguna fuente —el corte solo trae `CICLO_VITAL`— y
+    # exigirla acá impedía caracterizarlo. Es el caso de `28548486`: existe en el
+    # RUV, nunca fue caracterizada, y era justamente a quien esto vino a
+    # habilitar. Cuando falta, la captura el encuestador en campo.
+    fecha_nacimiento = serializers.DateField(allow_null=True, required=False)
     genero = serializers.ChoiceField(choices=['M', 'F', 'NB', 'ND'], default='ND')
     # Default 'NO_VERIFICADO', no 'NO_INCLUIDO': si el cliente no manda el estado
     # es porque no lo resolvió contra el padrón — y "no lo sé" no es "no está".
     estado_ruv = serializers.CharField(max_length=15, default='NO_VERIFICADO')
     habilitado_para_caracterizacion = serializers.BooleanField(default=True)
-    pertenencia_etnica = serializers.CharField(max_length=20, default='NINGUNA')
+    # `allow_blank`: el universo trae la etnia vacía cuando la fuente no la
+    # registró, y "no consta" no es "NINGUNA" — colapsarlas borraría de las
+    # estadísticas a los 2,13 M de personas sin dato (ver `homologar_etnia`).
+    # Sin esto, toda alta desde el universo moría en 400.
+    pertenencia_etnica = serializers.CharField(
+        max_length=20, allow_blank=True, default='NINGUNA')
     pueblo_indigena = serializers.CharField(max_length=150, allow_blank=True, default='')
     discapacidad = serializers.BooleanField(default=False)
     tipo_discapacidad = serializers.CharField(max_length=100, allow_blank=True, default='')

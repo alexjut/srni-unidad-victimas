@@ -116,9 +116,17 @@ def test_el_puente_al_modelo_integrado_nunca_va_en_null():
 
 def test_si_la_persona_viene_del_padron_el_puente_va_resuelto():
     """
-    Su `cons_persona` ES ese identificador: el job lo cruza contra
-    `M_CARACT_TABLA_RA_PER.CONS_PERONA`, que es de donde lo sacamos. Se escribe
-    resuelto y no hay que esperar a ningún job.
+    Se escribe el `cons_persona` en vez de 0, para no depender del job.
+
+    🔴 La justificación que había aquí era falsa: afirmaba que el job cruza contra
+    `M_CARACT_TABLA_RA_PER.CONS_PERONA` «que es de donde lo sacamos». Esa columna
+    resultó ser un contador de filas (medido el 11-ago-2026,
+    `docs/oracle-legacy/join_caracterizacion_roto.md`) y no es el origen de
+    `cons_persona`, que viene de `GIC_PERSONA.PER_IDPERSONA`.
+
+    Este test fija el COMPORTAMIENTO —se escribe el valor, no 0—, que no cambia.
+    Lo que queda por verificar es si `PER_IDMODELOINT` es el mismo espacio de
+    identificadores; ver la nota en `mapeo.resolver_idpermi`.
     """
     binds = _binds(MiembroFalso(victima=VictimaFalsa(cons_persona=6882450)))
     assert binds['idpermi'] == 6882450

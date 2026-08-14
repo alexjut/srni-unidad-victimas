@@ -132,8 +132,21 @@ function construirPrefillVictima(v: VictimaResumenFuente): Record<string, string
   // código del RUV (CC/CE…, M/F) al valor de la opción del instrumento.
   const docA3 = v.tipo_documento ? MAP_TIPO_DOC_A3[v.tipo_documento.toUpperCase()] : undefined;
   if (docA3) m.A3 = docA3;                            // tipo de documento (LISTA)
-  const sexoA8 = v.genero ? MAP_GENERO_A8[v.genero.toUpperCase()] : undefined;
-  if (sexoA8) m.A8 = sexoA8;                          // sexo (LISTA)
+
+  // ⚠️ A8/Sexo NO se prellena. Se pregunta.
+  //
+  // Se prellenaba desde `v.genero`, y ese campo del padrón viene del join por
+  // `CONS_PERONA` —un contador de filas, no un identificador de persona—, así que
+  // acierta el 50 % (medido el 11-ago-2026, azar puro en una binaria). El valor
+  // no se quedaba en pantalla: se PERSISTE como respuesta de la entrevista y se
+  // encola para sincronizar, o sea que quedaba grabado como si alguien lo hubiera
+  // respondido.
+  //
+  // Prellenar un dato que acierta la mitad de las veces es peor que no
+  // prellenarlo: el encuestador tiene la respuesta ya puesta y no vuelve sobre
+  // ella. Cuando el padrón se recargue desde una fuente fiable
+  // (`PersonaUniverso`, que cruza por documento) se puede reponer.
+  // Ver docs/oracle-legacy/join_caracterizacion_roto.md
   // Hecho victimizante: NO se pregunta (el RUV ya lo tiene). Se prellena desde el
   // hecho principal y se MUESTRA en modo solo-lectura (PREGUNTAS_RUV_READONLY) para
   // que el encuestador lo confirme. H_V = hecho · Ocur_HV = fecha de ocurrencia.
@@ -576,16 +589,27 @@ export default function CapituloScreen() {
       const fechaNac = respMiembro.A6 || miembro?.fecha_nacimiento || fuente?.fecha_nacimiento || '';
       const edadResp = respMiembro.B9 ? Number(respMiembro.B9) : NaN;
       const edad = Number.isFinite(edadResp) ? edadResp : Number(calcularEdad(fechaNac));
-      // sexo: A8 captura '1'=Hombre/'2'=Mujer; cae al genero del miembro (M/F),
-      // y para el autorizado al genero de la víctima fuente.
+      // sexo: A8 lo captura el encuestador ('1'=Hombre/'2'=Mujer) y cae al genero
+      // del MIEMBRO, que se registró en la conformación del hogar.
+      //
+      // ⚠️ Ya NO cae a `fuente?.genero`: ese campo viene del padrón, cuyo join por
+      // `CONS_PERONA` empareja con la caracterización de otra persona y acierta el
+      // 50 % (medido el 11-ago-2026). Decidir con él qué preguntas se muestran es
+      // sortear el cuestionario. Sin dato, el motor de condiciones trata el sexo
+      // como desconocido, que es lo correcto: no afirma nada.
       let sexo = respMiembro.A8 || '';
-      const genero = miembro?.genero || fuente?.genero || '';
+      const genero = miembro?.genero || '';
       if (!sexo && genero) sexo = genero === 'M' ? '1' : genero === 'F' ? '2' : '';
-      // etnia: solo la víctima fuente (autorizado) la tiene fiable. El resto
-      // 'ninguno' por defecto (no hay dato por-miembro persistido).
-      const etnia = esAutorizado ? mapearEtnia(fuente?.pertenencia_etnica) : 'ninguno';
-      // RUV: del propio miembro; para el autorizado cae a la víctima fuente.
-      const ruvIncluido = miembro?.incluido_ruv ?? (fuente?.estado_ruv === 'INCLUIDO');
+      // etnia: **se pregunta, no se hereda**. Antes se tomaba del padrón para el
+      // autorizado, y de ahí salía si aparecía o no el capítulo étnico — con un
+      // dato que es de otra persona. Se prefiere no mostrarlo por defecto a
+      // mostrárselo a quien no corresponde (o negárselo a quien sí).
+      // Ver docs/oracle-legacy/join_caracterizacion_roto.md
+      const etnia = 'ninguno';
+      // RUV: del propio miembro. Para el autorizado ya NO cae al padrón: allí
+      // `estado_ruv` vale 'INCLUIDO' en los 5,9 M por construcción del filtro de
+      // carga, así que no distinguía a nadie de nadie.
+      const ruvIncluido = miembro?.incluido_ruv ?? false;
       return {
         edad: Number.isFinite(edad) ? edad : undefined,
         sexo: sexo || undefined,

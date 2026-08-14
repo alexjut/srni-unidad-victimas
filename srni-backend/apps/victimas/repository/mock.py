@@ -79,6 +79,15 @@ def _v(
         municipio_residencia_codigo=mpio_cod,
         municipio_residencia_nombre=mpio_nom,
         fuente_origen=fuente,
+        # En producción esto NO sale de `estado_ruv` —ese campo venía del join
+        # roto por `CONS_PERONA`— sino de cruzar el documento contra el universo
+        # del RUV; ver `iterar_padron` en `django_orm.py`.
+        #
+        # Acá sí puede derivarse del estado, y no es una excepción a la regla: el
+        # mock son datos inventados y consistentes consigo mismos, sin ningún join
+        # de por medio del que desconfiar. Sirve para que el padrón de pruebas
+        # tenga fichas con el bit encendido y con él apagado.
+        en_universo_ruv=(estado_ruv == 'INCLUIDO'),
     )
 
 

@@ -149,6 +149,34 @@ class VictimaResumen:
     # y fechas de millones de filas) y se hace una sola vez, en el servidor.
     clase_colision: Optional[str] = None
 
+    # `CONS_PERSONA` del universo, cuando la persona vino de ahí y no del padrón.
+    #
+    # 🔴 Va en un campo PROPIO y nunca en `cons_persona`: son numeraciones
+    # distintas —cero coincidencias en 243.610 pares medidos— y `cons_persona` es
+    # lo que `apps/sincronizacion/oracle/mapeo.py` escribe al legado. Mezclarlos
+    # no falla: escribe mal en silencio.
+    cons_persona_universo: Optional[int] = None
+
+    #: ¿El documento de esta persona aparece en el universo del RUV?
+    #:
+    #: Va acá abajo, lejos de `estado_ruv`, solo porque un `dataclass` no admite
+    #: campos con valor por defecto antes de los que no lo tienen. Conceptualmente
+    #: pertenece al bloque "Estado en el RUV".
+    #:
+    #: 🔴 Es lo que alimenta `FLAG_EN_RUV` del padrón descargable, y NO `estado_ruv`.
+    #: `estado_ruv` llegaba del join por `CONS_PERONA` —un contador de filas, no un
+    #: identificador de persona—, así que decía `INCLUIDO` para 5,9 M de personas
+    #: copiando el registro de otra, y eso viajaba al celular como "Incluida en RUV"
+    #: en la pantalla del encuestador. Ver `docs/oracle-legacy/join_caracterizacion_roto.md`
+    #: y la migración `victimas/0021`, que dejó ese campo en `NO_VERIFICADO`.
+    #:
+    #: Esto en cambio sale de cruzar el documento contra `PersonaUniverso` —el
+    #: snapshot del RUV, 12,68 M de personas— por `numero_documento_hash_sin_tipo`.
+    #: Cruce por documento, nunca por id.
+    #:
+    #: `False` por defecto: quien no haga el cruce no afirma nada.
+    en_universo_ruv: bool = False
+
 
 @dataclass
 class ResultadoBusqueda:

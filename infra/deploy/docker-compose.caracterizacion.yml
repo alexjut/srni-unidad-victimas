@@ -97,7 +97,9 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - cz_pgdata:/var/lib/postgresql/data
+      # Vive en /datos (disco de 256 GB), no en el raíz. Ver el bloque `volumes:`
+      # al final del archivo y docs/infraestructura/runbook_traslado_bd_a_datos.md
+      - cz_pgdata_datos:/var/lib/postgresql/data
     # Un apagado a la fuerza deja la base en recuperación al arrancar. Los 10 s
     # que da Docker por defecto no alcanzan para el checkpoint de una base de
     # 28 GB.
@@ -242,7 +244,27 @@ services:
     restart: unless-stopped
 
 volumes:
-  cz_pgdata:
+  # ── Datos de PostgreSQL: en /datos, NO en el disco raíz ──────────────────────
+  #
+  # El raíz son 61 GB compartidos con sidi-*, catalogo-si-* y uariv-auth-*, y la
+  # base sola pesa 30 GB. Con 16 GB libres, cada operación normal —regenerar el
+  # padrón pide ~4 GB de temporales— dejaba el disco al 87 %. /datos es
+  # /dev/sdc1, 251 GB, montado por UUID en /etc/fstab.
+  #
+  # ⚠️ `type: none` + `o: bind` y NO un bind mount plano, a propósito: si /datos
+  # no estuviera montado, así el contenedor **falla ruidosamente**. Un bind plano
+  # crearía el directorio en el raíz y Postgres arrancaría sobre una carpeta
+  # vacía — que se lee como "se perdió la base" y es el modo de falla peligroso.
+  #
+  # El volumen viejo `cz_pgdata` NO se declara ya, pero SIGUE EXISTIENDO en el
+  # servidor: es el rollback. No borrarlo hasta 14 días de operación normal,
+  # incluido un reinicio del servidor. Ver el runbook.
+  cz_pgdata_datos:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /datos/pgdata
   cz_redisdata:
   cz_static:
   # Padrón SQLite descargable: lo escribe cz_celery_padron, lo sirve cz_backend.

@@ -99,6 +99,10 @@ class DjangoVictimaRepository(VictimaRepository):
                 victima.municipio_residencia.nombre
                 if victima.municipio_residencia_id else None),
             fuente_origen=victima.fuente_origen or "RUV",
+            # Solo viene con valor cuando el queryset trae la anotación —hoy,
+            # `iterar_padron`—. En el resto de las consultas nadie preguntó por el
+            # universo, y no preguntar no autoriza a afirmar: queda en `False`.
+            en_universo_ruv=bool(getattr(victima, "en_universo_ruv", False)),
         )
 
     @staticmethod
@@ -126,13 +130,58 @@ class DjangoVictimaRepository(VictimaRepository):
         primero el más completo.
 
         NO decide identidad ni descarta a nadie: solo el orden en que se muestran.
+
+        ⚠️ Mismo criterio —y misma razón— que `identidad._completitud`: solo se
+        cuentan campos de procedencia fiable. `genero`, `pertenencia_etnica`,
+        `tipo_discapacidad` y `estado_ruv` vienen del join por `CONS_PERONA`, que
+        es un contador de filas y no un identificador de persona
+        (`docs/oracle-legacy/join_caracterizacion_roto.md`).
+
+        Contarlos hacía que, entre dos filas de la misma persona, se ofreciera
+        primero **la que más datos ajenos había recibido** — y esa es la que el
+        encuestador ve arriba cuando tiene que elegir cuál es quien está enfrente.
         """
         campos = (victima.primer_nombre, victima.segundo_nombre, victima.primer_apellido,
-                  victima.segundo_apellido, victima.fecha_nacimiento, victima.genero,
-                  victima.pertenencia_etnica, victima.tipo_discapacidad,
-                  victima.municipio_residencia_id, victima.cons_persona,
-                  victima.estado_ruv)
+                  victima.segundo_apellido, victima.fecha_nacimiento,
+                  victima.municipio_residencia_id, victima.cons_persona)
         return sum(1 for c in campos if c not in (None, "", 0))
+
+    @staticmethod
+    def _anotar_universo_ruv(qs):
+        """
+        Marca cada fila con si su documento aparece en el universo del RUV.
+
+        Es lo que alimenta el "está en el RUV" que ve el encuestador, por las dos
+        rutas: la precarga de la jornada (`listar_todas`) y el padrón descargable
+        (`iterar_padron`). Van por el MISMO helper a propósito: cuando cada una
+        calculaba lo suyo, el celular podía mostrar una cosa en la búsqueda y otra
+        en la ficha de la misma persona.
+
+        🔴 NO sale de `estado_ruv`. Ese campo llegaba del join por `CONS_PERONA`
+        —un contador de filas, no un identificador de persona—, así que decía
+        `INCLUIDO` para 5,9 M copiando el registro de otra, y eso viajaba al
+        celular como "Incluida en RUV". Ver
+        `docs/oracle-legacy/join_caracterizacion_roto.md` y la migración
+        `victimas/0021`, que dejó el campo en `NO_VERIFICADO`.
+
+        Se resuelve en SQL y no en Python: un `set` con los 12,68 M de hashes del
+        universo pesa ~1,5 GB en memoria. Y no se usa el filtro de Bloom que ya
+        existe en el padrón, porque sus falsos positivos son exactamente el error
+        que se está corrigiendo —marcar como incluido a quien no lo está—.
+
+        El `exclude` del hash vacío no es defensivo de más: sin él, una víctima
+        sin hash cruzaría con cualquier fila del universo sin hash, y saldríamos
+        marcando gente al azar. `''  = ''` es verdadero.
+        """
+        from django.db.models import Exists, OuterRef
+
+        from apps.victimas.models import PersonaUniverso
+
+        return qs.annotate(en_universo_ruv=Exists(
+            PersonaUniverso.objects
+            .filter(numero_documento_hash_sin_tipo=OuterRef('numero_documento_hash_sin_tipo'))
+            .exclude(numero_documento_hash_sin_tipo='')
+        ))
 
     @staticmethod
     def _solo_una_fila_por_persona(qs):
@@ -255,9 +304,18 @@ class DjangoVictimaRepository(VictimaRepository):
                          f"es '{tipo_documento}'. VERIFIQUE la identidad. ")
 
         if not encontradas:
+            # Antes de responder "no está", hay que preguntarle al UNIVERSO. El
+            # padrón se armó desde el legado —el registro de quién ya fue
+            # caracterizado— así que una víctima que nunca pasó por una
+            # entrevista no está acá aunque sí esté en el RUV. Es el caso de
+            # `28548486`, que en Vivanto se podía caracterizar y en SICAV "no
+            # existía".
+            del_universo = self._buscar_en_universo(numero_documento, ruta=ruta)
+            if del_universo is not None:
+                return del_universo
+
             # El texto vive en `base.py`: el anterior —"No se encontró la
-            # persona"— se leía como "no es víctima", y no lo es. El padrón se
-            # armó desde el legacy, así que hay víctimas del RUV que no están acá.
+            # persona"— se leía como "no es víctima", y no lo es.
             return ResultadoBusqueda(
                 encontrado=False, victima=None, fuente=self.FUENTE,
                 mensaje=MENSAJE_NO_EN_PADRON,
@@ -316,6 +374,96 @@ class DjangoVictimaRepository(VictimaRepository):
             disponible_desde=veredicto.disponible_desde,
         )
 
+    # ── el universo: existencia e identidad de quien no está en el padrón ────
+    def _buscar_en_universo(self, numero_documento, *, ruta=None):
+        """
+        Busca en `PersonaUniverso` y devuelve la ficha lista para caracterizar.
+
+        Devuelve `None` si tampoco está ahí — recién entonces la respuesta es
+        "no está en el padrón".
+        """
+        from apps.victimas import vigencia_legacy as VL
+        from apps.victimas.models import PersonaUniverso
+
+        persona = (PersonaUniverso.objects
+                   .filter(numero_documento_hash_sin_tipo=num_hash(numero_documento),
+                           es_preferida=True)
+                   .order_by("-fecha_corte")
+                   .first())
+        if persona is None:
+            return None
+
+        # El universo dice quién es, no si tiene ficha vigente: verificado sobre
+        # las 12.496.965 filas del corte, `IDENTIFICADO` viene en 0 y `ESTADO_RUV`
+        # ni existe. La vigencia se resuelve contra el legado y se guarda.
+        fecha, verificada = VL.resolver(persona)
+        veredicto = describir_elegibilidad(
+            VL.PersonaParaElegibilidad(fecha, verificada=verificada), ruta=ruta)
+
+        aviso = ""
+        if not verificada:
+            # Se entrega igual, pero diciéndolo. Callarlo sería afirmar que no
+            # tiene ficha vigente, que es justo lo que no se pudo comprobar.
+            aviso = ("No se pudo verificar si ya fue caracterizada (sin conexión "
+                     "con el sistema anterior). Verifique antes de continuar. ")
+
+        return ResultadoBusqueda(
+            encontrado=True,
+            victima=self._resumen_de_universo(persona, fecha),
+            fuente="UNIVERSO_RUV",
+            mensaje=(aviso + (veredicto.mensaje or "")).strip(),
+            motivo=veredicto.motivo,
+            disponible_desde=veredicto.disponible_desde,
+        )
+
+    def _resumen_de_universo(self, persona, fecha_ult) -> VictimaResumen:
+        """
+        Ficha de una persona del universo, con lo que la fuente sí trae.
+
+        🔴 `cons_persona=None` **a propósito**: el id del universo NO es el
+        `cons_persona` del legado —cero coincidencias en 243.610 pares medidos— y
+        ponerlo ahí haría que la escritura al legado mande identificadores de otro
+        sistema sin fallar. Viaja aparte, en `cons_persona_universo`.
+        """
+        from apps.victimas import homologacion as H
+
+        return VictimaResumen(
+            cons_persona=None,
+            cons_persona_universo=persona.cons_persona_universo,
+            tipo_documento=persona.tipo_documento or "",
+            numero_documento=persona.numero_documento or "",
+            primer_nombre=persona.primer_nombre or "",
+            segundo_nombre=persona.segundo_nombre or "",
+            primer_apellido=persona.primer_apellido or "",
+            segundo_apellido=persona.segundo_apellido or "",
+            # El corte NO la trae —sus columnas de edad son `CICLO_VITAL`— así
+            # que sale del legado cuando la persona pasó por ahí. Si nunca pasó
+            # (el caso de `28548486`), va vacía y **la captura el encuestador**:
+            # nunca se deriva del ciclo vital, que daría un dato inventado con
+            # apariencia de exacto.
+            fecha_nacimiento=persona.fecha_nacimiento,
+            genero=H.homologar_genero(persona.genero),
+            estado_ruv="NO_VERIFICADO",
+            habilitado_para_caracterizacion=(fecha_ult is None),
+            fecha_ult_caracterizacion=fecha_ult,
+            # Homologada, NO cruda: el universo guarda el texto de la fuente en
+            # un campo de 60 —'Negro(a) o Afrocolombiano(a)' son 28 caracteres—
+            # y el destino admite 20. Devolverla tal cual hacía que el alta
+            # muriera en 400 para toda persona con etnia registrada, que es
+            # justo la población a la que más cuesta llegar.
+            pertenencia_etnica=H.homologar_etnia(persona.pertenencia_etnica),
+            pueblo_indigena="",
+            discapacidad=persona.discapacidad,
+            tipo_discapacidad=persona.tipo_discapacidad or "",
+            # `num_hechos` es un CONTEO. El detalle con fecha y municipio vive en
+            # `RUV.TBSINIESTROS_PERSONA` y se resuelve bajo demanda (decisión del
+            # 4-ago: traer el catálogo, no replicar 9,3 M de filas).
+            hechos_victimizantes=[],
+            municipio_residencia_codigo=None,
+            municipio_residencia_nombre=None,
+            fuente_origen="UNIVERSO_RUV",
+        )
+
     def obtener_grupo_familiar(self, cons_persona) -> list[VictimaResumen]:
         """
         Devuelve [] a propósito, y conviene entender por qué.
@@ -341,7 +489,10 @@ class DjangoVictimaRepository(VictimaRepository):
         # duplicados de la fuente no viajan, y las que exigen confirmar van
         # marcadas. Si no, la precarga con la que arranca la jornada llenaría el
         # dispositivo con la misma persona repetida y sin avisar de las ambiguas.
-        qs = self._solo_una_fila_por_persona(self._base_qs())
+        # La anotación va ANTES del `LIMIT`: sobre un queryset ya recortado,
+        # Django no deja anotar. Con el tope de la precarga son 5.000 filas, así
+        # que el cruce contra el universo cuesta poco.
+        qs = self._anotar_universo_ruv(self._solo_una_fila_por_persona(self._base_qs()))
         if limite is not None:
             qs = qs[:limite]
         filas = list(qs)
@@ -375,7 +526,7 @@ class DjangoVictimaRepository(VictimaRepository):
         """
         from apps.victimas.models import ColisionDocumento
 
-        qs = self._solo_una_fila_por_persona(self._base_qs())
+        qs = self._anotar_universo_ruv(self._solo_una_fila_por_persona(self._base_qs()))
 
         # Solo los documentos donde hay algo que advertir. Son ~7 % de los
         # repetidos, así que el diccionario es chico y cabe de sobra en memoria.

@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -488,3 +489,71 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             .order_by('pregunta__orden')
         )
         return Response(RespuestaEncuestaSerializer(respuestas, many=True).data)
+
+    @action(detail=True, methods=['post'], url_path='excepcion-vigencia',
+            parser_classes=[MultiPartParser, FormParser])
+    def excepcion_vigencia(self, request, pk=None):
+        """
+        Registra el uso de una ruta que **omite la regla de vigencia**.
+
+        El Manual §5.1.1 autoriza tres rutas a caracterizar sobre una ficha
+        vigente: acciones constitucionales, modificación de núcleo familiar y
+        ruta especial. Este endpoint es lo que deja el rastro de que se usó una:
+        quién, sobre quién, cuándo, por qué ruta y con qué soporte.
+
+        Sin él, el modelo existía pero nadie podía escribirlo, así que en la
+        práctica la excepción no se podía usar desde la aplicación — que es
+        exactamente lo que reportó el territorio.
+        """
+        from apps.victimas.models import Victima
+        from apps.victimas.repository.base import describir_elegibilidad
+
+        from .models import ExcepcionVigencia
+        from .serializers import ExcepcionVigenciaSerializer
+
+        sesion = self.get_object()
+        serializer = ExcepcionVigenciaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+
+        try:
+            victima = Victima.objects.get(pk=datos['victima_id'])
+        except Victima.DoesNotExist:
+            return Response({'detail': 'La víctima indicada no existe.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        # La razón se congela acá y no se referencia: al recaracterizar, la fecha
+        # de la víctima cambia y se perdería el motivo por el que se hizo la
+        # excepción. Lo que se audita es la situación al momento de saltarse el
+        # control, no la de después.
+        veredicto = describir_elegibilidad(victima)
+        soporte = datos['soporte']
+
+        excepcion = ExcepcionVigencia.objects.create(
+            sesion=sesion,
+            victima=victima,
+            ruta=datos['ruta'],
+            fecha_ult_caracterizacion=(
+                victima.fecha_ult_caracterizacion.date()
+                if getattr(victima.fecha_ult_caracterizacion, 'date', None)
+                else victima.fecha_ult_caracterizacion),
+            vigente_hasta=veredicto.disponible_desde,
+            soporte=soporte,
+            soporte_nombre=getattr(soporte, 'name', '')[:255],
+            observacion=datos.get('observacion', ''),
+            autorizada_por=request.user,
+        )
+
+        LogAcceso.objects.create(
+            usuario=request.user,
+            accion='EXCEPCION_VIGENCIA',
+            detalle=(f"Ruta {datos['ruta']} sobre víctima {victima.id} "
+                     f"(ficha vigente hasta {veredicto.disponible_desde})"),
+            ip=request.META.get('REMOTE_ADDR', ''),
+        )
+
+        return Response(
+            {'id': str(excepcion.id), 'ruta': excepcion.ruta,
+             'vigente_hasta': excepcion.vigente_hasta,
+             'soporte_nombre': excepcion.soporte_nombre},
+            status=status.HTTP_201_CREATED)

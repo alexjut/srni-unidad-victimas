@@ -1,14 +1,97 @@
 # Oracle legacy → SICAV — Estado y siguiente paso
 
 > **Traspaso de sesión.** Qué hicimos, dónde está todo, qué falta y **con qué empezar
-> la próxima vez**. **Fecha de corte: 2026-08-06** — lo más reciente arriba (§0-decies:
-> el universo de 12 M cargado y las tres fases, una por una).
+> la próxima vez**. **Fecha de corte: 2026-08-12** — lo más reciente arriba
+> (§0-undecies: el padrón dejó de afirmar lo que no sabe, y la decisión que desbloquea
+> lo que sigue).
 > **Worktree:** `feat/oracle-legacy-writer` en `D:\desarrollo\uv-oracle-writer`.
 > Lo hecho contra Oracle fue **solo lectura** (local + prod), excepto un único `DROP`
 > autorizado de una master table huérfana y el piloto de escritura del 28-jul
 > (§0-bis). Sobre **PostgreSQL de producción sí se escribe**: es donde vive el padrón
 > y el universo. El prompt para retomar está en §5 y quedó viejo — para el frente del
-> universo, arrancar por §0-decies.
+> universo, arrancar por §0-undecies.
+
+---
+
+## 0-undecies. 2026-08-11/12 — **EL PADRÓN DEJÓ DE AFIRMAR LO QUE NO SABE**
+
+Arrancó como una verificación de rutina —68 cédulas reportadas desde el territorio— y
+terminó destapando que el estado RUV de 5,9 M de personas venía del registro de otra.
+Lo del 11 está documentado aparte; acá va el cierre y **el estado con el que se
+retoma**.
+
+### Lo que ya tiene su propio documento
+
+| Qué | Dónde |
+|---|---|
+| 🔴 El join roto (`CONS_PERONA` es un contador de filas, no un id de persona) | [`join_caracterizacion_roto.md`](join_caracterizacion_roto.md) |
+| Traslado de la base a `/datos` (disco de 256 GB, 12 min de corte) | [`runbook_traslado_bd_a_datos.md`](../infraestructura/runbook_traslado_bd_a_datos.md) |
+| Usuarios y perfiles — el login es `codigo_usuario`, no el nombre | [`usuarios_y_perfiles.md`](../operacion/usuarios_y_perfiles.md) |
+
+El bloom del universo quedó desplegado y verificado (68/68 cédulas reconocidas, cero
+invisibles): la APK offline pasó de conocer 5.000 personas a 12.677.172, y el padrón
+bajó de 896 MiB a 318,7 MiB. APK v1.1.0 / versionCode 54.
+
+⚠️ El volumen viejo `caracterizacion_cz_pgdata` **sigue intacto a propósito** — es el
+rollback del traslado. No borrarlo hasta ~14 días y un reinicio del servidor.
+
+### La 0021 corrió entera: 5.926.005 en `NO_VERIFICADO`
+
+```
+estado_ruv     estado_ruv_fuente    count
+NO_VERIFICADO  SIN_VERIFICAR      5.926.005     ← todas
+INCLUIDO sin verificar:                    0
+total de filas:                    5.926.005     ← intacto
+tabla 9.199 MB · n_dead_tup 0 · VACUUM final 12-ago 05:04:13 · /datos 207 GB libres
+```
+
+Terminó el **12-ago a las 05:04**, en 8 lotes, y la tabla pesa exactamente lo mismo que
+antes de empezar: el loteo con `VACUUM` cada 3 no dejó bloat. Se cortó dos veces sin
+daño (200.001 y 2.200.001 filas), así que **el diseño retomable está probado en
+producción**, no solo escrito.
+
+### La lección cara: un `EXPLAIN` no mide lo que cuesta escribir
+
+A mitad de camino se cortó la migración para cambiar el `UPDATE ... WHERE id IN (...)`
+—que hacía 200.000 búsquedas aleatorias por UUID— por uno con `ctid`. El plan prometía
+20×:
+
+```
+por id (UUID)   cost 1.358.918   Nested Loop → Index Scan on ..._pkey
+por ctid        cost    65.517   Nested Loop → Tid Scan
+```
+
+**Y no sirvió de nada.** Medido de punta a punta:
+
+```
+por id (UUID)   10.870 filas/min   (2.000.000 en 3h04)
+por ctid        10.325 filas/min   (3.726.004 en 6h01)
+```
+
+Un 5% por debajo, o sea lo mismo. El costo de un plan **no incluye el heap, ni el WAL,
+ni las entradas de índice**, y ahí estaba el cuello: `victimas_victima` tiene **26
+índices (5,9 GB)** y `estado_ruv` es uno de los indexados, así que ninguna fila se
+puede actualizar en modo HOT y cada una inserta una entrada en los 26 — ~97 millones
+de escrituras de índice que no evita ningún `WHERE`. Medido en vivo: **260 MB de WAL
+por minuto**. Cortar y relanzar costó ~50 min de reloj **en pérdida**.
+
+Queda anotado en el docstring de la migración. **Para futuras escrituras masivas sobre
+el padrón, el techo lo ponen los índices, no la consulta** — y buena parte de esos 26
+son de baja cardinalidad sobre 5,9 M filas (`genero`, `pertenencia_etnica`,
+`estado_valoracion`, `discapacidad`, `fuente_origen`), cada `varchar` con su gemelo
+`_like`. Revisarlos es una tarea aparte, con calma, nunca en medio de una migración.
+
+### 🔴 Con qué se retoma: la decisión, no el padrón
+
+El padrón ya no miente, pero **tampoco informa**: `FLAG_EN_RUV` saldría `false` para
+todos. Regenerarlo ahora sería hacer el trabajo caro dos veces, y ya se midió lo que
+cuesta escribir sobre esta tabla.
+
+Lo que desbloquea todo es **la decisión pendiente de Javier: la fuente definitiva de
+`estado_ruv`** —el universo del RUV o `RUV.TBESTADO_VAL`—, porque redefine quiénes son
+esas 5,9 M. Ver [`decisiones_negocio_pendientes.md`](../gestion/decisiones_negocio_pendientes.md).
+Decidido eso: regenerar el padrón, y después B2 en móvil (que offline reconozca a los
+4,5 M con ficha, no solo su existencia).
 
 ---
 

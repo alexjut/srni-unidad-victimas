@@ -274,10 +274,26 @@ class ResolverCatalogos:
            `WHERE PER_IDMODELOINT = 0`. Una fila en NULL no la ve **nunca**: queda
            fuera del cruce para siempre, sin que nadie lo note.
 
-        Y cuando la persona viene del padrón podemos hacer algo mejor que 0: su
-        `cons_persona` **es** ese identificador —el job lo cruza contra
-        `M_CARACT_TABLA_RA_PER.CONS_PERONA`, que es de donde lo sacamos—, así que se
-        escribe resuelto de entrada y no hace falta esperar a ningún job.
+        Y cuando la persona viene del padrón se escribe su `cons_persona` en vez
+        de 0, para no depender de que el job lo resuelva.
+
+        🔴 **La justificación original de esta línea era falsa.** Decía que el job
+        cruza contra `M_CARACT_TABLA_RA_PER.CONS_PERONA` «que es de donde lo
+        sacamos». Medido el 11-ago-2026: `CONS_PERONA` es **un contador de filas**
+        de esa tabla —1, 2, 3…—, no un identificador de persona, y no es de donde
+        sale `cons_persona`. Ver `docs/oracle-legacy/join_caracterizacion_roto.md`.
+
+        El **valor** que se escribe sigue siendo defendible por otro motivo:
+        `Victima.cons_persona` viene de `GIC_PERSONA.PER_IDPERSONA` (del lado `p.`
+        de la consulta, el sano). Lo que **no está verificado** es que
+        `PER_IDMODELOINT` sea el mismo espacio de identificadores que
+        `PER_IDPERSONA` — la premisa que se creía probada y no lo estaba.
+
+        ⚠️ Verificar antes de reactivar la escritura a Oracle. Hoy no urge: el
+        ledger `RegistroEscrituraOracle` está en 0 filas, o sea que nada de esto
+        ha llegado nunca al legado de la UARIV. Si la comprobación falla, la
+        alternativa segura es escribir 0 y dejar que el job lo resuelva, que es lo
+        que hace el legacy por su cuenta.
         """
         if nombre != 'idpermi':
             return None

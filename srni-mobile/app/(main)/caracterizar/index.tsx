@@ -8,9 +8,10 @@ import { GovHeader } from '../../../src/components/GovHeader';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import apiClient from '../../../src/api/client';
-import { encuestasApi } from '../../../src/api/encuestas';
+import { encuestasApi, registrarExcepcionVigencia } from '../../../src/api/encuestas';
 import { hogaresApi } from '../../../src/api/hogares';
 import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStore';
+import { reportarError } from '../../../src/services/errorReporter';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { activarPerfil, listaInstrumentosBundle } from '../../../src/services/instrumentos';
 import type { HogarResumen } from '../../../src/types';
@@ -185,6 +186,32 @@ export default function CaracterizarScreen() {
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
+
+      // Si se llegó acá por una ruta de EXCEPCIÓN, hay que dejar el rastro: el
+      // soporte se adjuntó en la búsqueda pero recién ahora existe la sesión a
+      // la que colgarlo. Si esto falla, la caracterización NO se cancela —la
+      // persona ya está en la entrevista— pero se reporta: una excepción sin
+      // soporte registrado es justamente lo que no puede quedar en silencio.
+      const soporte = useCaracterizacionStore.getState().soporteExcepcion;
+      const victimaLocalId = useCaracterizacionStore.getState().victimaLocalId;
+      if (soporte && victimaLocalId) {
+        try {
+          await registrarExcepcionVigencia(sesion.id, {
+            victima_id: victimaLocalId,
+            ruta: soporte.ruta,
+            soporte_uri: soporte.uri,
+            soporte_nombre: soporte.nombre,
+          });
+          useCaracterizacionStore.getState().setSoporteExcepcion(null);
+        } catch (errExc: any) {
+          reportarError({
+            nivel: 'error',
+            mensaje: 'No se pudo registrar la excepción de vigencia: '
+              + (errExc?.message ?? String(errExc)),
+            pantalla: 'caracterizar',
+          });
+        }
+      }
 
       // Sprint 19: tras crear la caracterización, pedir la ubicación de
       // atención (DT / Depto / Mun / Punto) antes de devolver al hub. Si el
