@@ -1,6 +1,12 @@
 # Excepción de vigencia — se autoriza desde el front, no desde el celular
 
-**Decidido el 14-ago-2026 · Backend implementado y probado · Falta la UI web (Brando)**
+**Decidido el 14-ago-2026 · Backend y pantalla implementados y probados**
+
+> **La pantalla ya existe: `/autorizaciones/`.** Se hizo en el backend y no en
+> `srni-frontend/` para no depender del ciclo del front web ni pisar el trabajo
+> de Brando. Es HTML plano servido por Django, sin build y sin CDN —el filtro
+> institucional corta dominios externos—, y consume la misma API documentada
+> acá. Si más adelante el front web la incorpora, el contrato ya está.
 
 ---
 
@@ -97,6 +103,33 @@ El archivo es **opcional** a propósito: exigirlo dejaría fuera los casos que
 llegan por correo o por teléfono, y el radicado ya permite ir a buscar el
 documento. Lo obligatorio es el par radicado + motivo.
 
+### `GET|POST /api/habilitaciones/buscar/` — documento → personas
+
+Devuelve el `id` que pide el POST, que ningún otro endpoint daba: la búsqueda de
+víctimas no expone el id y el detalle exige `puede_caracterizar` (permiso que el
+supervisor no tiene).
+
+```
+GET  ?tipo_documento=CC&numero_documento=1115724047
+POST {"tipo_documento": "CC", "documentos": ["1115724047", "1030547250"]}
+```
+
+Acepta hasta 200 documentos. Cada resultado trae `motivo`, `ficha_vigente_hasta`,
+`requiere_excepcion` y `habilitacion_vigente` (si ya la tiene). Los documentos
+que no existen vuelven en `sin_coincidencia` — es lo que evita dar por cubierta
+a una persona del oficio que no está en el padrón.
+
+### `POST /api/habilitaciones/lote/` — autorizar a varias
+
+Mismo cuerpo que el individual pero con `victima_ids: [...]`. Un fallo ampara a
+un hogar entero; pedir que se repita el formulario veinte veces es cómo se
+terminan autorizando cosas a las apuradas.
+
+**No es atómico a propósito.** Lo que no se pudo autorizar vuelve en `omitidas`
+con su motivo (`YA_HABILITADA`, `EXCLUIDA_RUV`, `NO_EXISTE`) y el resto se
+autoriza igual. Responde `201` si se creó al menos una y `409` si no se creó
+ninguna — un `201` con cero creadas diría que quedó hecho cuando no se hizo nada.
+
 ### `GET /api/habilitaciones/` — listar
 
 Filtros: `?estado=VIGENTE|USADA|ANULADA`, `?ruta=`, `?victima=`.
@@ -115,12 +148,23 @@ Cada fila trae `victima_documento`, `victima_nombre`, `ruta_display`,
 `409` si ya estaba usada o anulada. **No borra**: una autorización otorgada y
 retirada es justamente lo que una auditoría necesita poder ver.
 
-### Pantalla sugerida
+### La pantalla — `/autorizaciones/`
 
-1. **Buscar la persona** por documento (`/api/victimas/buscar/`). Si responde
-   `FICHA_VIGENTE`, mostrar hasta cuándo y ofrecer autorizar.
-2. **Formulario**: ruta (3 opciones), radicado, motivo, archivo opcional.
-3. **Listado** de habilitaciones con su estado, para poder anular.
+Una sola página, tres bloques:
+
+1. **Buscar** — se pegan una o muchas cédulas (separadas por espacios, comas o
+   una por línea). Sale una tabla con la situación de cada persona y una casilla
+   solo en las que se puede autorizar. Las que ya tienen excepción, las excluidas
+   del RUV y las que ya pueden caracterizarse aparecen con su estado pero sin
+   casilla: ofrecer el botón donde el POST va a dar 409 hace que el error se
+   descubra después de llenar todo el formulario.
+2. **Autorizar** — ruta, radicado, motivo y archivo opcional, aplicados a todas
+   las seleccionadas de una vez.
+3. **Listado** — filtrable por estado, con el botón de anular en las vigentes.
+
+El token vive en memoria y no en `localStorage`: es un equipo de oficina
+compartido, y un token que sobrevive al cierre del navegador es una sesión de
+coordinación abierta para quien se siente después.
 
 ---
 
@@ -136,13 +180,34 @@ retirada es justamente lo que una auditoría necesita poder ver.
 | Se consume al finalizar la encuesta | ✅ |
 | La APK dejó de pedir la foto; ahora dice a quién solicitarla | ✅ |
 | `POST /api/encuestas/{id}/excepcion-vigencia/` responde `410` con la explicación | ✅ |
-| 998 pruebas automáticas en verde (883 backend + 115 móvil) | ✅ |
-| **UI web para autorizar** | ⬜ Brando |
-| **Build de APK con estos cambios** | ⬜ pendiente de decidir fecha |
+| Búsqueda por documento y autorización **en lote** | ✅ |
+| **Pantalla `/autorizaciones/`** — buscar, seleccionar, autorizar, anular | ✅ |
+| 1.008 pruebas automáticas en verde (893 backend + 115 móvil) | ✅ |
+| **Build de APK con estos cambios** (v1.2.0) | ⬜ pendiente de decidir fecha |
+| **Cuántas cuentas con permiso de autorizar** | ⬜ definición de operación |
+
+Verificado contra el servidor, no solo con pruebas: login, búsqueda de 3
+documentos (2 encontrados + 1 inexistente), autorización en lote de 2, y el
+intento repetido devolviendo `YA_HABILITADA` sin duplicar nada.
 
 ---
 
-## 5. Límites conocidos
+## 5. Cómo probarla
+
+En local, con la base de desarrollo ya migrada y sembrada:
+
+```
+http://127.0.0.1:8001/autorizaciones/     usuario QACOORD · SrniTest2026!
+```
+
+Hay dos personas de prueba con ficha vigente —`9990000001` y `9990000002`— y una
+excepción ya autorizada sobre ambas, para ver los dos estados. En producción la
+URL es `https://caracterizacion.unidadvictimas.gov.co/autorizaciones/` y se entra
+con el usuario real de SICAV.
+
+---
+
+## 6. Límites conocidos
 
 - **Una habilitación otorgada después de que arrancó la jornada no llega al
   celular hasta la sincronización siguiente.** Es la consecuencia de que

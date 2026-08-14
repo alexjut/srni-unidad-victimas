@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from django.views.generic import TemplateView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -92,6 +93,14 @@ urlpatterns = [
     # Excepciones de vigencia — las autoriza el front web, no la app de campo
     # (decidido el 14-ago-2026: el caracterizador no debe tener el soporte).
     path('api/habilitaciones/', include('apps.encuestas.urls_habilitaciones')),
+
+    # Pantalla de autorización para coordinación. Servida por el backend y no
+    # por `srni-frontend/` a propósito: se despliega con lo que ya está en
+    # produccion, no depende del ciclo del front web y no pisa su trabajo.
+    # Es HTML plano — la proteccion real está en la API, que exige el permiso.
+    path('autorizaciones/',
+         TemplateView.as_view(template_name='autorizaciones/index.html'),
+         name='autorizaciones'),
 
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),

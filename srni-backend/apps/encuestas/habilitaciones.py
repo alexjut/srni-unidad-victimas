@@ -28,6 +28,7 @@ la marca `ANULADA` con quién y por qué. Una autorización otorgada y retirada 
 justamente lo que una auditoría necesita poder ver.
 """
 import logging
+import re
 
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -128,6 +129,23 @@ class CrearHabilitacionSerializer(serializers.Serializer):
         return motivo
 
 
+class CrearHabilitacionLoteSerializer(CrearHabilitacionSerializer):
+    """
+    Igual que la individual pero sobre varias personas, con el MISMO soporte.
+
+    Hereda para que las reglas de radicado y motivo no se escriban dos veces: el
+    día que cambie el mínimo del motivo, cambia en los dos caminos o en ninguno.
+    """
+
+    victima_id = None            # se reemplaza por la lista
+    victima_ids = serializers.ListField(
+        child=serializers.UUIDField(), min_length=1, max_length=200)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('victima_id', None)
+
+
 class AnularHabilitacionSerializer(serializers.Serializer):
     motivo = serializers.CharField(max_length=2_000)
 
@@ -158,6 +176,10 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
     ve el resultado, en la búsqueda y en la precarga.
     """
 
+    #: Tope de documentos por búsqueda. Existe para que un pegado accidental de
+    #: media planilla no se lleve por delante la consulta ni la pantalla.
+    MAX_DOCUMENTOS_BUSQUEDA = 200
+
     serializer_class = HabilitacionSerializer
     permission_classes = [IsAuthenticated, PuedeAutorizarExcepciones]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
@@ -182,7 +204,6 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         from apps.victimas.models import Victima
-        from apps.victimas.repository.base import describir_elegibilidad
 
         serializer = CrearHabilitacionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -194,28 +215,47 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'detail': 'La víctima indicada no existe.'},
                             status=status.HTTP_404_NOT_FOUND)
 
+        habilitacion, problema = self._autorizar_una(victima, datos, request)
+        if problema is not None:
+            return Response(problema, status=status.HTTP_409_CONFLICT)
+
+        return Response(HabilitacionSerializer(habilitacion).data,
+                        status=status.HTTP_201_CREATED)
+
+    def _autorizar_una(self, victima, datos, request):
+        """
+        Autoriza sobre UNA persona. Devuelve `(habilitacion, problema)`.
+
+        Uno de los dos siempre es `None`. Está separado del `create` porque el
+        lote necesita exactamente estas reglas, y tenerlas dos veces significa
+        que el día que cambie una, el otro camino queda autorizando con las
+        reglas viejas sin que nada falle.
+        """
+        from apps.victimas.repository.base import describir_elegibilidad
+
         # Una excluida del RUV no se habilita por ninguna ruta: el manual prevé
         # la excepción para fichas vigentes, no para revertir una decisión del
         # RUV. Sin esta guarda, el front podría otorgar una habilitación que la
         # app después ignora, y nadie entendería por qué.
         if getattr(victima, 'estado_ruv', '') == 'EXCLUIDO':
-            return Response(
-                {'detail': 'Persona excluida del RUV — no elegible para '
-                           'caracterización. Ninguna ruta de excepción habilita '
-                           'este caso.'},
-                status=status.HTTP_409_CONFLICT)
-
-        # Se pasa `habilitacion=None` para preguntar por el estado REAL: si no,
-        # una habilitación ya existente haría ver a la persona como elegible y
-        # el bloque de abajo nunca detectaría la duplicada.
-        veredicto = describir_elegibilidad(victima, habilitacion=None)
+            return None, {
+                'detail': 'Persona excluida del RUV — no elegible para '
+                          'caracterización. Ninguna ruta de excepción habilita '
+                          'este caso.',
+                'motivo': 'EXCLUIDA_RUV',
+            }
 
         vigente = ExcepcionVigencia.vigente_para(victima.id)
         if vigente is not None:
-            return Response(
-                {'detail': 'Esta persona ya tiene una habilitación vigente.',
-                 'habilitacion': HabilitacionSerializer(vigente).data},
-                status=status.HTTP_409_CONFLICT)
+            return None, {
+                'detail': 'Esta persona ya tiene una habilitación vigente.',
+                'motivo': 'YA_HABILITADA',
+                'habilitacion': HabilitacionSerializer(vigente).data,
+            }
+
+        # Se pasa `habilitacion=None` para preguntar por el estado REAL: si no,
+        # una habilitación existente haría ver a la persona como elegible.
+        veredicto = describir_elegibilidad(victima, habilitacion=None)
 
         with transaction.atomic():
             soporte = datos.get('soporte')
@@ -254,8 +294,193 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
 
         logger.info('habilitacion de excepcion %s creada por %s sobre victima %s',
                     habilitacion.id, request.user, victima.id)
-        return Response(HabilitacionSerializer(habilitacion).data,
-                        status=status.HTTP_201_CREATED)
+        return habilitacion, None
+
+    @extend_schema(
+        tags=['Habilitaciones'],
+        request=CrearHabilitacionLoteSerializer,
+        description=(
+            'Autoriza la misma excepción sobre varias personas — un fallo que '
+            'ampara a un hogar entero. Devuelve el resultado persona por '
+            'persona: lo que no se pudo autorizar se informa, no se calla.'
+        ),
+    )
+    @action(detail=False, methods=['post'])
+    def lote(self, request):
+        """
+        Autoriza sobre varias personas con el mismo soporte.
+
+        **No es atómico a propósito.** Si una persona del oficio está excluida
+        del RUV o ya tenía habilitación, esa se salta y las demás se autorizan
+        igual. Hacerlo todo-o-nada obligaría a coordinación a depurar la lista a
+        mano hasta que pase entera, con la tutela vencida esperando.
+
+        Lo que no se pudo hacer vuelve en `omitidas`, con el motivo de cada una.
+        """
+        from apps.victimas.models import Victima
+
+        serializer = CrearHabilitacionLoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+
+        ids = list(dict.fromkeys(datos['victima_ids']))     # sin duplicados, en orden
+        victimas = {v.id: v for v in Victima.objects.filter(pk__in=ids)}
+
+        autorizadas, omitidas = [], []
+        for vid in ids:
+            victima = victimas.get(vid)
+            if victima is None:
+                omitidas.append({'victima_id': str(vid), 'motivo': 'NO_EXISTE',
+                                 'detail': 'La víctima indicada no existe.'})
+                continue
+            habilitacion, problema = self._autorizar_una(victima, datos, request)
+            if problema is not None:
+                omitidas.append(dict(problema, victima_id=str(vid)))
+            else:
+                autorizadas.append(HabilitacionSerializer(habilitacion).data)
+
+        # 201 solo si algo se creó. Con todas omitidas, un 201 le diría a quien
+        # autoriza que quedó hecho cuando no se hizo nada.
+        return Response(
+            {'autorizadas': autorizadas, 'omitidas': omitidas,
+             'total_autorizadas': len(autorizadas), 'total_omitidas': len(omitidas)},
+            status=(status.HTTP_201_CREATED if autorizadas
+                    else status.HTTP_409_CONFLICT))
+
+    @extend_schema(
+        tags=['Habilitaciones'],
+        description=(
+            'Busca por documento las personas sobre las que se puede autorizar '
+            'una excepción, con su situación actual. Devuelve el `id` que pide '
+            'el POST.'
+        ),
+    )
+    @action(detail=False, methods=['get', 'post'])
+    def buscar(self, request):
+        """
+        Documentos → personas, con la situación de cada una.
+
+        Existe porque quien autoriza tiene el **documento** en el oficio, no un
+        UUID interno, y ningún endpoint se lo daba: `/api/victimas/buscar/`
+        devuelve el DTO del repositorio, que a propósito no expone el id, y
+        `/api/victimas/{id}/` exige `puede_caracterizar` —permiso que el
+        SUPERVISOR no tiene—.
+
+        Acepta uno o varios documentos:
+
+            GET  ?tipo_documento=CC&numero_documento=1115724047
+            POST {"tipo_documento": "CC", "documentos": ["111...", "222..."]}
+
+        La lista no es un lujo: una tutela ampara a un hogar, y un auto de
+        seguimiento puede cubrir a varias personas. Pedirle a coordinación que
+        busque de a una y repita el formulario veinte veces es cómo se terminan
+        autorizando cosas a las apuradas.
+
+        Devuelve **todas** las coincidencias de cada documento, no la primera. En
+        el padrón hay 768.096 documentos compartidos por más de un registro y
+        ~7 % son personas distintas: quedarse con una sola sería autorizar sobre
+        quien no es, en silencio.
+
+        Los documentos que no existen vuelven en `sin_coincidencia`, porque
+        "no lo encontré" es justo lo que quien autoriza necesita saber para no
+        dar por hecho que quedó cubierto por el oficio.
+        """
+        from apps.victimas.models import Victima
+        from apps.victimas.repository.base import describir_elegibilidad, doc_hash
+
+        if request.method == 'POST':
+            tipo = (request.data.get('tipo_documento') or '').strip().upper()
+            crudos = request.data.get('documentos') or []
+            if isinstance(crudos, str):
+                crudos = re.split(r'[\s,;]+', crudos)
+        else:
+            tipo = (request.query_params.get('tipo_documento') or '').strip().upper()
+            crudos = [request.query_params.get('numero_documento') or '']
+
+        # Se deduplica conservando el orden en que los pegaron: quien revisa la
+        # lista contra el oficio la lee en ese orden.
+        documentos, vistos = [], set()
+        for d in crudos:
+            d = (str(d) or '').strip()
+            if d and d not in vistos:
+                vistos.add(d)
+                documentos.append(d)
+
+        if not tipo or not documentos:
+            return Response(
+                {'detail': 'Indique el tipo y al menos un número de documento.'},
+                status=status.HTTP_400_BAD_REQUEST)
+        if len(documentos) > self.MAX_DOCUMENTOS_BUSQUEDA:
+            return Response(
+                {'detail': f'Máximo {self.MAX_DOCUMENTOS_BUSQUEDA} documentos por '
+                           f'búsqueda. Llegaron {len(documentos)}.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        # Una consulta para todos los documentos y no una por cada uno: con 50
+        # cédulas serían 50 viajes a la base mientras alguien espera.
+        por_hash = {doc_hash(tipo, d): d for d in documentos}
+        victimas = (Victima.objects
+                    .filter(numero_documento_hash__in=list(por_hash.keys()))
+                    .select_related('tipo_documento'))
+
+        habilitaciones = self._habilitaciones_vigentes([v.id for v in victimas])
+
+        resultados, encontrados = [], set()
+        for v in victimas:
+            encontrados.add(por_hash.get(v.numero_documento_hash))
+            vigente = habilitaciones.get(v.id)
+            # `habilitacion=None` a propósito: se quiere la situación REAL. Si se
+            # dejara consultar sola, una persona ya habilitada aparecería como
+            # elegible y quien autoriza no vería que ya lo está.
+            veredicto = describir_elegibilidad(v, habilitacion=None)
+            resultados.append({
+                'id': str(v.id),
+                'nombre': ' '.join(p for p in [
+                    v.primer_nombre, v.segundo_nombre,
+                    v.primer_apellido, v.segundo_apellido] if p).strip(),
+                'tipo_documento': (v.tipo_documento.codigo
+                                   if v.tipo_documento_id else ''),
+                'numero_documento': v.numero_documento,
+                'fecha_nacimiento': v.fecha_nacimiento,
+                'estado_ruv': v.estado_ruv,
+                'motivo': veredicto.motivo,
+                'mensaje': veredicto.mensaje,
+                'ficha_vigente_hasta': veredicto.disponible_desde,
+                'requiere_excepcion': veredicto.motivo == 'FICHA_VIGENTE',
+                'habilitacion_vigente': (HabilitacionSerializer(vigente).data
+                                         if vigente else None),
+            })
+
+        LogAcceso.registrar(
+            accion='BUSQUEDA_RNI',
+            usuario=request.user,
+            ip=ip_de_request(request),
+            recurso='ExcepcionVigencia.buscar',
+            # Los números NO se registran: la auditoría guarda que se buscó, no a
+            # quién se buscó. Misma regla que el resto de las búsquedas.
+            detalle={'documentos': len(documentos), 'coincidencias': len(resultados)},
+        )
+
+        return Response({
+            'total': len(resultados),
+            'resultados': resultados,
+            'sin_coincidencia': [d for d in documentos if d not in encontrados],
+        })
+
+    @staticmethod
+    def _habilitaciones_vigentes(ids) -> dict:
+        """`{victima_id: habilitación vigente}` en una sola consulta."""
+        if not ids:
+            return {}
+        vigentes = (ExcepcionVigencia.objects
+                    .filter(victima_id__in=list(ids),
+                            estado=ExcepcionVigencia.VIGENTE)
+                    .select_related('autorizada_por')
+                    .order_by('victima_id', '-created_at'))
+        resultado = {}
+        for h in vigentes:
+            resultado.setdefault(h.victima_id, h)
+        return resultado
 
     @extend_schema(
         tags=['Habilitaciones'],

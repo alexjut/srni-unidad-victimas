@@ -72,6 +72,28 @@ def escenario(db):
     }
 
 
+@pytest.fixture
+def otra_victima(db, escenario):
+    """Segunda persona con ficha vigente — el caso del hogar amparado."""
+    import datetime
+
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import Victima
+    from apps.victimas.repository.base import doc_hash
+
+    return Victima.objects.create(
+        tipo_documento=TipoDocumento.objects.get(codigo='CC'),
+        numero_documento='1030547250',
+        numero_documento_hash=doc_hash('CC', '1030547250'),
+        primer_nombre='MARIA', primer_apellido='GOMEZ',
+        genero='F', estado_ruv='INCLUIDO',
+        habilitado_para_caracterizacion=False,
+        pertenencia_etnica='NINGUNA', discapacidad=False,
+        fecha_ult_caracterizacion=datetime.datetime(
+            2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc),
+    )
+
+
 def _payload(victima, **extra):
     datos = {
         'victima_id': str(victima.id),
@@ -273,6 +295,148 @@ def test_la_habilitacion_viaja_en_la_precarga_de_la_jornada(escenario, settings)
     fila = next(p for p in r.data['padron'] if p['documento'] == '1115724047')
     assert fila['habilitada_por_excepcion'] is True
     assert fila['excepcion_radicado'] == 'T-2026-451'
+
+
+# ── Buscar y autorizar en lote ───────────────────────────────────────────────
+#
+# Un fallo de tutela ampara a un hogar entero. Pedirle a coordinación que busque
+# de a una y repita el formulario veinte veces es cómo se terminan autorizando
+# cosas a las apuradas.
+
+def test_buscar_devuelve_el_id_que_pide_el_post(escenario):
+    """
+    Quien autoriza tiene el documento en el oficio, no un UUID. Ningún endpoint
+    se lo daba: /api/victimas/buscar/ no expone el id y /api/victimas/{id}/ pide
+    `puede_caracterizar`, que el SUPERVISOR no tiene.
+    """
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1115724047'})
+
+    assert r.status_code == 200
+    assert r.data['total'] == 1
+    fila = r.data['resultados'][0]
+    assert fila['id'] == str(escenario['victima'].id)
+    assert fila['requiere_excepcion'] is True
+    assert fila['habilitacion_vigente'] is None
+
+
+def test_buscar_avisa_de_los_documentos_que_no_estan(escenario):
+    """
+    "No lo encontré" es justo lo que quien autoriza necesita saber para no dar
+    por cubierta a una persona del oficio que no está en el padrón.
+    """
+    r = escenario['coordinador'].post(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'documentos': ['1115724047', '9999999999']},
+        format='json')
+
+    assert r.status_code == 200
+    assert r.data['total'] == 1
+    assert r.data['sin_coincidencia'] == ['9999999999']
+
+
+def test_buscar_marca_a_quien_ya_tiene_habilitacion(escenario):
+    """Sin esto, la pantalla ofreceria autorizar de nuevo y el POST daria 409."""
+    escenario['coordinador'].post(URL, _payload(escenario['victima']), format='json')
+
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1115724047'})
+
+    fila = r.data['resultados'][0]
+    assert fila['habilitacion_vigente']['radicado'] == 'T-2026-451'
+
+
+def test_el_encuestador_no_puede_ni_buscar_aca(escenario):
+    r = escenario['encuestador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1115724047'})
+    assert r.status_code == 403
+
+
+def test_autorizar_en_lote_sobre_varias_personas(escenario, otra_victima):
+    r = escenario['coordinador'].post(
+        f'{URL}lote/',
+        {'victima_ids': [str(escenario['victima'].id), str(otra_victima.id)],
+         'ruta': 'ACCIONES_CONSTITUCIONALES',
+         'radicado': 'T-2026-451',
+         'observacion': 'Fallo de tutela que ampara al hogar completo.'},
+        format='json')
+
+    assert r.status_code == 201, r.data
+    assert r.data['total_autorizadas'] == 2
+    assert r.data['total_omitidas'] == 0
+
+
+def test_el_lote_no_es_todo_o_nada(escenario, otra_victima):
+    """
+    Si una persona del oficio ya tenía habilitación, esa se salta y las demás se
+    autorizan igual. Todo-o-nada obligaría a depurar la lista a mano hasta que
+    pase entera, con la tutela vencida esperando.
+    """
+    escenario['coordinador'].post(URL, _payload(escenario['victima']), format='json')
+
+    r = escenario['coordinador'].post(
+        f'{URL}lote/',
+        {'victima_ids': [str(escenario['victima'].id), str(otra_victima.id)],
+         'ruta': 'ESPECIAL', 'radicado': 'T-2026-999',
+         'observacion': 'Auto de seguimiento sobre el mismo hogar.'},
+        format='json')
+
+    assert r.status_code == 201
+    assert r.data['total_autorizadas'] == 1
+    assert r.data['total_omitidas'] == 1
+    assert r.data['omitidas'][0]['motivo'] == 'YA_HABILITADA'
+
+
+def test_si_no_se_autorizo_ninguna_no_responde_201(escenario):
+    """
+    Un 201 con cero creadas le diria a quien autoriza que quedo hecho cuando no
+    se hizo nada.
+    """
+    escenario['coordinador'].post(URL, _payload(escenario['victima']), format='json')
+
+    r = escenario['coordinador'].post(
+        f'{URL}lote/',
+        {'victima_ids': [str(escenario['victima'].id)],
+         'ruta': 'ESPECIAL', 'radicado': 'T-2026-999',
+         'observacion': 'Auto de seguimiento sobre el mismo hogar.'},
+        format='json')
+
+    assert r.status_code == 409
+    assert r.data['total_autorizadas'] == 0
+
+
+def test_el_lote_exige_lo_mismo_que_la_individual(escenario, otra_victima):
+    """Hereda el serializer para que las reglas no se escriban dos veces."""
+    r = escenario['coordinador'].post(
+        f'{URL}lote/',
+        {'victima_ids': [str(otra_victima.id)], 'ruta': 'ESPECIAL',
+         'radicado': '', 'observacion': 'corto'},
+        format='json')
+
+    assert r.status_code == 400
+    assert 'radicado' in r.data
+
+
+def test_el_encuestador_no_puede_autorizar_en_lote(escenario, otra_victima):
+    r = escenario['encuestador'].post(
+        f'{URL}lote/',
+        {'victima_ids': [str(otra_victima.id)], 'ruta': 'ESPECIAL',
+         'radicado': 'T-1', 'observacion': 'Fallo de tutela del hogar.'},
+        format='json')
+    assert r.status_code == 403
+
+
+def test_la_pantalla_de_autorizacion_responde(escenario):
+    """
+    HTML plano servido por el backend: la protección real está en la API. Si
+    esta URL se cae, coordinación no tiene por dónde autorizar.
+    """
+    r = escenario['coordinador'].get('/autorizaciones/')
+    assert r.status_code == 200
+    assert b'Autorizar excepciones' in r.content
 
 
 def test_al_finalizar_la_encuesta_la_habilitacion_se_consume(escenario):
