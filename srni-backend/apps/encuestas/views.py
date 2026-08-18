@@ -297,6 +297,7 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         # caracterización cuelga del hogar, que es el mismo criterio con el que el
         # legacy calcula la fecha (MAX de GIC_HOGAR por miembro).
         marcados = self._marcar_caracterizadas(sesion)
+        habilitaciones_usadas = self._consumir_habilitaciones(sesion)
 
         LogAcceso.registrar(
             usuario=request.user,
@@ -307,7 +308,8 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             resultado='EXITO',
             detalle={'porcentaje_completado': pct_final, 'hogar_id': str(sesion.hogar_id),
-                     'victimas_marcadas': marcados},
+                     'victimas_marcadas': marcados,
+                     'habilitaciones_usadas': habilitaciones_usadas},
         )
 
         # Cerrar la encuesta es lo que dispara la escritura hacia el Oracle legacy.
@@ -356,6 +358,51 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             logger.exception(
                 'No se pudo marcar la fecha de caracterización de la sesión %s',
                 sesion.id)
+            return 0
+
+    @staticmethod
+    def _consumir_habilitaciones(sesion) -> int:
+        """
+        Consume las habilitaciones de excepción que esta caracterización usó.
+
+        Una habilitación es de un solo uso: si quedara vigente después de
+        usarse, esa persona tendría permiso permanente para saltarse la regla de
+        los dos años, que es justo lo que la regla existe para impedir.
+
+        Se consumen las de todo el hogar y no solo la del autorizado, por el
+        mismo criterio con el que se marcan las fechas: la caracterización
+        cuelga del hogar.
+
+        No falla la finalización si algo sale mal — la encuesta ya está
+        guardada—, pero sí queda en el log: una habilitación que no se consumió
+        es un permiso abierto, y alguien tiene que poder encontrarlo.
+        """
+        from django.utils import timezone
+
+        from apps.hogares.models import MiembroHogar
+
+        from .models import ExcepcionVigencia
+
+        try:
+            ids = set(
+                MiembroHogar.objects
+                .filter(hogar_id=sesion.hogar_id, victima_id__isnull=False)
+                .values_list('victima_id', flat=True)
+            )
+            autorizado_id = getattr(sesion.hogar, 'autorizado_id', None)
+            if autorizado_id:
+                ids.add(autorizado_id)
+            if not ids:
+                return 0
+            return (ExcepcionVigencia.objects
+                    .filter(victima_id__in=ids, estado=ExcepcionVigencia.VIGENTE)
+                    .update(estado=ExcepcionVigencia.USADA,
+                            usada_en_sesion=sesion,
+                            usada_at=timezone.now()))
+        except Exception:                                      # noqa: BLE001
+            logger.exception(
+                'No se pudieron consumir las habilitaciones de la sesión %s — '
+                'quedan VIGENTES y hay que revisarlas a mano', sesion.id)
             return 0
 
     @extend_schema(
@@ -494,66 +541,29 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             parser_classes=[MultiPartParser, FormParser])
     def excepcion_vigencia(self, request, pk=None):
         """
-        Registra el uso de una ruta que **omite la regla de vigencia**.
+        **Retirado el 14-ago-2026.** La excepción ya no se registra desde campo.
 
-        El Manual §5.1.1 autoriza tres rutas a caracterizar sobre una ficha
-        vigente: acciones constitucionales, modificación de núcleo familiar y
-        ruta especial. Este endpoint es lo que deja el rastro de que se usó una:
-        quién, sobre quién, cuándo, por qué ruta y con qué soporte.
+        Hasta esa fecha el encuestador elegía la ruta y adjuntaba una foto del
+        soporte desde el celular. La operación indicó que el caracterizador no
+        debe tener ese documento —le llega al nivel central por canal
+        institucional—, así que la autorización se mudó al front web:
 
-        Sin él, el modelo existía pero nadie podía escribirlo, así que en la
-        práctica la excepción no se podía usar desde la aplicación — que es
-        exactamente lo que reportó el territorio.
+            POST /api/habilitaciones/     (perfil con puede_autorizar_excepciones)
+
+        Responde 410 y no 404 a propósito: una APK anterior a la v1.2.0 que
+        siga instalada en un celular tiene que poder decirle al encuestador qué
+        cambió. Un 404 se lee como "falló la red" y manda a buscar señal.
+
+        (Este endpoint además estaba roto: escribía la auditoría con
+        `LogAcceso.objects.create(..., ip=...)`, y ese campo se llama
+        `ip_origen` mientras `detalle` es un JSONField. Toda llamada terminaba
+        en 500 antes de responder. No se detectó porque ninguna encuestadora
+        había entrado todavía.)
         """
-        from apps.victimas.models import Victima
-        from apps.victimas.repository.base import describir_elegibilidad
-
-        from .models import ExcepcionVigencia
-        from .serializers import ExcepcionVigenciaSerializer
-
-        sesion = self.get_object()
-        serializer = ExcepcionVigenciaSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        datos = serializer.validated_data
-
-        try:
-            victima = Victima.objects.get(pk=datos['victima_id'])
-        except Victima.DoesNotExist:
-            return Response({'detail': 'La víctima indicada no existe.'},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        # La razón se congela acá y no se referencia: al recaracterizar, la fecha
-        # de la víctima cambia y se perdería el motivo por el que se hizo la
-        # excepción. Lo que se audita es la situación al momento de saltarse el
-        # control, no la de después.
-        veredicto = describir_elegibilidad(victima)
-        soporte = datos['soporte']
-
-        excepcion = ExcepcionVigencia.objects.create(
-            sesion=sesion,
-            victima=victima,
-            ruta=datos['ruta'],
-            fecha_ult_caracterizacion=(
-                victima.fecha_ult_caracterizacion.date()
-                if getattr(victima.fecha_ult_caracterizacion, 'date', None)
-                else victima.fecha_ult_caracterizacion),
-            vigente_hasta=veredicto.disponible_desde,
-            soporte=soporte,
-            soporte_nombre=getattr(soporte, 'name', '')[:255],
-            observacion=datos.get('observacion', ''),
-            autorizada_por=request.user,
-        )
-
-        LogAcceso.objects.create(
-            usuario=request.user,
-            accion='EXCEPCION_VIGENCIA',
-            detalle=(f"Ruta {datos['ruta']} sobre víctima {victima.id} "
-                     f"(ficha vigente hasta {veredicto.disponible_desde})"),
-            ip=request.META.get('REMOTE_ADDR', ''),
-        )
-
         return Response(
-            {'id': str(excepcion.id), 'ruta': excepcion.ruta,
-             'vigente_hasta': excepcion.vigente_hasta,
-             'soporte_nombre': excepcion.soporte_nombre},
-            status=status.HTTP_201_CREATED)
+            {'detail': 'La excepción de vigencia ya no se registra desde la '
+                       'aplicación móvil. Solicítela a su coordinación: se '
+                       'autoriza desde la plataforma web y usted la verá '
+                       'habilitada al sincronizar.',
+             'flujo_actual': 'POST /api/habilitaciones/'},
+            status=status.HTTP_410_GONE)

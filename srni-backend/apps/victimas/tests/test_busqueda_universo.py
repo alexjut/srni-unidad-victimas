@@ -77,10 +77,15 @@ def test_con_ficha_vigente_avisa_y_no_la_da_por_elegible(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_una_ruta_de_excepcion_SI_la_habilita(monkeypatch):
+def test_la_ruta_de_excepcion_sola_ya_NO_la_habilita(monkeypatch):
     """
-    Manual §5.1.1: tres rutas omiten la vigencia. La persona se puede
-    caracterizar por esa vía, con soporte fotográfico.
+    Cambio del 14-ago-2026. Elegir una ruta que omite la vigencia dejó de
+    habilitar por sí solo: hace falta que la excepción esté autorizada desde el
+    front. Antes bastaba con elegirla en el celular y adjuntar una foto, y la
+    operación indicó que el caracterizador no debe tener ese documento.
+
+    El mensaje tiene que decir a dónde ir, no solo que no se puede: sin eso, en
+    campo esto se reporta como falla del sistema.
     """
     from apps.victimas import vigencia_legacy as VL
     monkeypatch.setattr(VL, "_consultar_legado",
@@ -90,7 +95,8 @@ def test_una_ruta_de_excepcion_SI_la_habilita(monkeypatch):
     r = DjangoVictimaRepository().buscar_por_documento(
         "CC", "1115724047", ruta="ACCIONES_CONSTITUCIONALES")
 
-    assert r.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
+    assert r.motivo == MotivoNoElegible.FICHA_VIGENTE
+    assert "plataforma web" in r.mensaje
 
 
 @pytest.mark.django_db

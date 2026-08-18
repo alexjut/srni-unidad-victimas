@@ -54,6 +54,21 @@ export const hogaresApi = {
   actualizar: (id: string, payload: Partial<CrearHogarPayload>) =>
     apiClient.patch<HogarDetalle>(`/api/hogares/${id}/`, payload),
 
+  /**
+   * Quita un integrante capturado por error (APK-004).
+   *
+   * Solo mientras el hogar no tenga una caracterización COMPLETADA — pasado ese
+   * punto el dato ya se reportó y el servidor responde 409 con el motivo.
+   */
+  quitarMiembro: (hogarId: string, miembroId: string) =>
+    apiClient.delete<void>(`/api/hogares/${hogarId}/miembros/${miembroId}/`),
+
+  /** Corrige datos de un integrante ya agregado (parentesco, rol, fechas). */
+  editarMiembro: (hogarId: string, miembroId: string,
+                  payload: Partial<AgregarMiembroPayload>) =>
+    apiClient.patch<MiembroHogarResumen>(
+      `/api/hogares/${hogarId}/miembros/${miembroId}/`, payload),
+
   agregarMiembro: (hogarId: string, payload: AgregarMiembroPayload) =>
     apiClient.post<MiembroHogarResumen>(
       `/api/hogares/${hogarId}/agregar-miembro/`,

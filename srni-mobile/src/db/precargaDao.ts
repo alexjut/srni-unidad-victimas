@@ -36,6 +36,16 @@ export interface PadronEntradaApi {
    * Opcional: un servidor viejo no lo manda y la app sigue funcionando.
    */
   clase_colision?: string | null;
+  /**
+   * La persona tiene ficha vigente PERO la coordinación autorizó actualizarla
+   * (excepción de vigencia, Manual §5.1.1). Se guarda en el dispositivo para que
+   * sirva sin señal: la autorización ocurre en la web y el encuestador está en
+   * territorio. Opcionales por la misma razón que `clase_colision`: contra un
+   * servidor anterior al 14-ago-2026 no vienen, y la app sigue funcionando.
+   */
+  habilitada_por_excepcion?: boolean;
+  excepcion_ruta?: string | null;
+  excepcion_radicado?: string | null;
 }
 
 export interface MunicipioParam {
@@ -71,6 +81,10 @@ export interface PadronRow {
   cons_persona: number | null;
   /** null = documento limpio. 'AMBIGUO' | 'NO_IDENTIFICANTE' — ver schema v10. */
   clase_colision: string | null;
+  /** Excepción de vigencia autorizada desde la web — ver schema v12. */
+  habilitada_por_excepcion: boolean;
+  excepcion_ruta: string | null;
+  excepcion_radicado: string | null;
 }
 
 interface PadronRowDb {
@@ -85,6 +99,9 @@ interface PadronRowDb {
   ya_caracterizada: number;
   cons_persona: number | null;
   clase_colision: string | null;
+  habilitada_por_excepcion: number | null;
+  excepcion_ruta: string | null;
+  excepcion_radicado: string | null;
 }
 
 function mapPadron(r: PadronRowDb): PadronRow {
@@ -100,6 +117,9 @@ function mapPadron(r: PadronRowDb): PadronRow {
     ya_caracterizada: r.ya_caracterizada === 1,
     cons_persona: r.cons_persona,
     clase_colision: r.clase_colision ?? null,
+    habilitada_por_excepcion: r.habilitada_por_excepcion === 1,
+    excepcion_ruta: r.excepcion_ruta ?? null,
+    excepcion_radicado: r.excepcion_radicado ?? null,
   };
 }
 
@@ -128,8 +148,9 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
       `INSERT INTO padron
          (documento_hash, tipo_documento, documento_display, nombre, ubicacion,
           cantidad_hechos, en_ruv, habilitada, ya_caracterizada, cons_persona,
-          clase_colision)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          clase_colision, habilitada_por_excepcion, excepcion_ruta,
+          excepcion_radicado)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     try {
       for (const p of payload.padron ?? []) {
@@ -146,6 +167,9 @@ export async function guardarPrecarga(payload: PrecargaPayload): Promise<void> {
           p.ya_caracterizada ? 1 : 0,
           p.cons_persona ?? null,
           p.clase_colision ?? null,
+          p.habilitada_por_excepcion ? 1 : 0,
+          p.excepcion_ruta ?? null,
+          p.excepcion_radicado ?? null,
         ]);
       }
     } finally {

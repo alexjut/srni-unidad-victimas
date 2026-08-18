@@ -217,32 +217,63 @@ def ruta_soporte_excepcion(instance, filename):
 
 class ExcepcionVigencia(models.Model):
     """
-    Rastro de una caracterización hecha sobre una persona con ficha vigente.
+    Habilitación para caracterizar a una persona que tiene ficha vigente.
 
     ─── Por qué existe ───────────────────────────────────────────────────────
     El Manual UARIV §5.1.1 (pág. 22) define tres rutas que **omiten la regla de
     vigencia**: acciones constitucionales, modificación de núcleo familiar y
-    ruta especial. Hasta ahora `ruta_entrevista` era solo una etiqueta y no
-    omitía nada, así que una tutela no habilitaba absolutamente nada —lo
+    ruta especial. Hasta agosto de 2026 `ruta_entrevista` era solo una etiqueta
+    y no omitía nada, así que una tutela no habilitaba absolutamente nada —lo
     contrario de para lo que existe la ruta— y esos casos se escalaban a
     soporte.
 
-    Al implementarlas hay que aceptar lo que son: **saltarse un control**. Y un
-    control que se salta sin dejar rastro deja de ser un control. Como la ruta
-    la elige el encuestador (no un perfil aparte), sin este registro la regla de
-    vigencia se volvería opcional en la práctica.
+    ─── Por qué se autoriza desde el front y no desde el celular ─────────────
+    La primera versión (6-ago) dejaba que el encuestador eligiera la ruta en
+    campo y adjuntara una **foto del soporte** desde el celular. Se cambió el
+    14-ago por indicación de la operación: **el caracterizador no debe tener el
+    documento**. El fallo, la tutela o el auto llegan por canal institucional al
+    nivel central, no a quien está parado frente a la víctima.
 
-    Por eso cada excepción queda con **quién**, **sobre quién**, **cuándo**,
-    **por qué ruta** y **con qué soporte** — la foto del fallo, la tutela o el
-    auto.
+    El efecto secundario es el que importa: quien autoriza el salto de un
+    control deja de ser quien lo ejecuta. Antes la excepción se registraba
+    *después* de usarla y el encuestador se autoautorizaba; ahora se otorga
+    *antes*, desde el front, por un perfil con
+    `puede_autorizar_excepciones`, y el celular solo la consume.
+
+    Por eso cada habilitación queda con **quién la autorizó**, **sobre quién**,
+    **cuándo**, **por qué ruta**, **con qué radicado** y **con qué motivo**. El
+    archivo de soporte sigue siendo posible —cargado desde el computador— pero
+    ya no es obligatorio: exigirlo dejaría fuera los casos que llegan por correo
+    o por teléfono.
+
+    ─── De un solo uso ──────────────────────────────────────────────────────
+    Se consume al finalizar la caracterización que la usó (`estado='USADA'`).
+    Una habilitación que quedara abierta sería un permiso permanente para
+    saltarse la vigencia de esa persona, que es exactamente lo que la regla
+    existe para impedir.
     """
+
+    VIGENTE = 'VIGENTE'
+    USADA = 'USADA'
+    ANULADA = 'ANULADA'
+    ESTADOS = [
+        (VIGENTE, 'Vigente — la persona puede caracterizarse'),
+        (USADA, 'Usada — ya se caracterizó con ella'),
+        (ANULADA, 'Anulada — se dejó sin efecto'),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    # Nace SIN sesión: la habilitación se otorga antes de que exista la
+    # encuesta, y muchas veces días antes. La sesión que la consumió queda en
+    # `usada_en_sesion`.
     sesion = models.ForeignKey(
         SesionEncuesta,
         on_delete=models.CASCADE,
         related_name='excepciones_vigencia',
+        null=True, blank=True,
+        help_text='Obsoleto — histórico de las excepciones registradas desde el '
+                  'celular antes del 14-ago-2026. Las nuevas nacen sin sesión.',
     )
     victima = models.ForeignKey(
         'victimas.Victima',
@@ -268,11 +299,22 @@ class ExcepcionVigencia(models.Model):
         help_text='Hasta cuándo estaba vigente esa ficha.',
     )
 
-    # El soporte. `expo-image-picker` en el móvil, igual que la constancia de
-    # tutor/cuidador de `hogares.MiembroHogar`.
+    # El radicado reemplaza a la foto como identificador del soporte. Es lo que
+    # permite ir a buscar el documento después: sin él, "hubo una tutela" no se
+    # puede verificar contra nada.
+    radicado = models.CharField(
+        max_length=100, blank=True,
+        help_text='Número de radicado del fallo, auto o solicitud que sustenta '
+                  'la excepción.',
+    )
+
+    # El archivo dejó de ser obligatorio el 14-ago-2026. Se conserva porque quien
+    # autoriza desde el computador sí suele tener el PDF, y adjuntarlo es mejor
+    # que no adjuntarlo. Lo que ya no se hace es tomarle una foto en campo.
     soporte = models.FileField(
         upload_to=ruta_soporte_excepcion, null=True, blank=True,
-        help_text='Foto del fallo, la tutela o el auto que acredita la excepción.',
+        help_text='Opcional — el documento que acredita la excepción, cargado '
+                  'desde el front. Ya no se captura en campo.',
     )
     soporte_nombre = models.CharField(
         max_length=255, blank=True,
@@ -280,14 +322,35 @@ class ExcepcionVigencia(models.Model):
     )
     observacion = models.TextField(
         blank=True,
-        help_text='Número de radicado del fallo, o lo que el encuestador anote.',
+        help_text='Motivo de la excepción, escrito por quien la autoriza.',
     )
+
+    estado = models.CharField(
+        max_length=10, choices=ESTADOS, default=VIGENTE, db_index=True,
+        help_text='Una habilitación se consume al usarse.',
+    )
+    usada_en_sesion = models.ForeignKey(
+        SesionEncuesta,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='habilitacion_consumida',
+        help_text='La sesión de encuesta que consumió esta habilitación.',
+    )
+    usada_at = models.DateTimeField(null=True, blank=True)
+
+    anulada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='excepciones_vigencia_anuladas',
+    )
+    anulada_at = models.DateTimeField(null=True, blank=True)
+    motivo_anulacion = models.TextField(blank=True)
 
     autorizada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, null=True,
         related_name='excepciones_vigencia',
-        help_text='Quién usó la ruta de excepción.',
+        help_text='Quién autorizó la excepción desde el front. Nunca el '
+                  'encuestador que la ejecuta.',
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -297,6 +360,10 @@ class ExcepcionVigencia(models.Model):
         indexes = [
             models.Index(fields=['victima', 'created_at']),
             models.Index(fields=['ruta']),
+            # El camino caliente: "¿esta persona tiene habilitación vigente?",
+            # que se pregunta en cada búsqueda y en cada precarga de jornada.
+            models.Index(fields=['victima', 'estado'],
+                         name='exc_vig_victima_estado_idx'),
         ]
         ordering = ['-created_at']
 
@@ -306,3 +373,54 @@ class ExcepcionVigencia(models.Model):
     @property
     def tiene_soporte(self) -> bool:
         return bool(self.soporte)
+
+    @property
+    def esta_vigente(self) -> bool:
+        return self.estado == self.VIGENTE
+
+    def marcar_usada(self, sesion=None):
+        """
+        La consume. Idempotente: llamarla dos veces no revive una anulada ni
+        pisa la sesión de la primera vez.
+        """
+        from django.utils import timezone
+
+        if self.estado != self.VIGENTE:
+            return False
+        self.estado = self.USADA
+        self.usada_en_sesion = sesion
+        self.usada_at = timezone.now()
+        self.save(update_fields=['estado', 'usada_en_sesion', 'usada_at'])
+        return True
+
+    def anular(self, usuario, motivo=''):
+        """
+        La deja sin efecto. No se borra: una habilitación otorgada y retirada es
+        justamente lo que una auditoría necesita poder ver.
+        """
+        from django.utils import timezone
+
+        if self.estado != self.VIGENTE:
+            return False
+        self.estado = self.ANULADA
+        self.anulada_por = usuario
+        self.anulada_at = timezone.now()
+        self.motivo_anulacion = motivo or ''
+        self.save(update_fields=['estado', 'anulada_por', 'anulada_at',
+                                 'motivo_anulacion'])
+        return True
+
+    @classmethod
+    def vigente_para(cls, victima_id):
+        """
+        La habilitación vigente de una persona, o `None`.
+
+        Se toma la más reciente: si por lo que sea hay dos, la última autorizada
+        es la que refleja la decisión actual.
+        """
+        if not victima_id:
+            return None
+        return (cls.objects
+                .filter(victima_id=victima_id, estado=cls.VIGENTE)
+                .order_by('-created_at')
+                .first())

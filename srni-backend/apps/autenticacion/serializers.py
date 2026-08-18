@@ -10,6 +10,11 @@ class PerfilSerializer(serializers.ModelSerializer):
             'codigo', 'nombre',
             'puede_buscar_rni', 'puede_caracterizar',
             'puede_ver_reportes', 'puede_administrar',
+            # 14-ago-2026 — lo necesita el panel web para decidir si muestra
+            # «Autorizaciones» en el menú. Sin exponerlo, el front tendría que
+            # adivinar por el código del perfil, y ahí es donde se cuelan los
+            # menús que aparecen para quien después recibe un 403.
+            'puede_autorizar_excepciones',
         ]
 
 

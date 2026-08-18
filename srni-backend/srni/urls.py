@@ -51,6 +51,7 @@ def api_root(request, format=None):
             },
             'hogares': request.build_absolute_uri('/api/hogares/'),
             'encuestas': request.build_absolute_uri('/api/encuestas/'),
+            'habilitaciones': request.build_absolute_uri('/api/habilitaciones/'),
             'ia': request.build_absolute_uri('/api/ia/'),
             'reportes': {
                 'produccion':        request.build_absolute_uri('/api/reportes/produccion/'),
@@ -87,6 +88,22 @@ urlpatterns = [
     # Módulos Sprint 3
     path('api/hogares/', include('apps.hogares.urls')),
     path('api/encuestas/', include('apps.encuestas.urls')),
+
+    # Excepciones de vigencia — las autoriza el front web, no la app de campo
+    # (decidido el 14-ago-2026: el caracterizador no debe tener el soporte).
+    path('api/habilitaciones/', include('apps.encuestas.urls_habilitaciones')),
+
+    # La pantalla de autorización de excepciones vivió acá un día, servida como
+    # HTML plano por Django. Se movió al panel web (`/autorizaciones` en la SPA)
+    # porque fuera de él se veía como otra aplicación: sin header, sin menú y
+    # sin footer, quien la abría perdía la navegación entera.
+    #
+    # No queda redirección: la ruta la atiende ahora el `location /` de nginx,
+    # que entrega la SPA. Dejar acá un `path` con el mismo prefijo se lo
+    # quitaría de vuelta al panel.
+    #
+    # La API (`/api/habilitaciones/`) no cambió — es la misma que consume el
+    # panel, y está probada.
 
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),

@@ -113,7 +113,10 @@ def test_ya_caracterizada_dice_cuando_hasta_cuando_y_como_seguir(catalogo):
     assert "14/03/2028" in r.mensaje                    # hasta cuándo (2 años)
     assert "no es una falla" in r.mensaje.lower()       # que NO es un error
     assert "constitucional" in r.mensaje.lower()        # cómo continuar
-    assert "foto" in r.mensaje.lower()                  # con qué soporte
+    # Y dónde: desde el 14-ago-2026 la excepción se autoriza en el front, no
+    # tomando una foto en campo. Sin esta parte el mensaje vuelve a ser un
+    # callejón, solo que en otra dirección.
+    assert "plataforma web" in r.mensaje.lower()
 
     # Y el motivo en código, que es lo que permite a la app ofrecer el botón.
     assert r.motivo == MotivoNoElegible.FICHA_VIGENTE

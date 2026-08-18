@@ -19,7 +19,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 
-import * as DocumentPicker from 'expo-document-picker';
 
 import { GovHeader } from '../../src/components/GovHeader';
 import { SelectorFecha } from '../../src/components/SelectorFecha';
@@ -266,30 +265,27 @@ function nombreCompleto(v: VictimaResumenFuente): string {
     .filter(Boolean).join(' ').trim();
 }
 
-// ── Rutas que OMITEN la regla de vigencia (Manual UARIV §5.1.1, pág. 22) ─────
-//
-// La ruta GENERAL no está acá a propósito: es la única que RESPETA los dos años,
-// y es el caso por defecto. Si estuviera en esta lista, la regla de vigencia
-// sería opcional en la práctica.
-const RUTAS_EXCEPCION = [
-  { valor: 'ACCIONES_CONSTITUCIONALES', etiqueta: 'Acción constitucional',
-    ayuda: 'Fallo, tutela o auto de seguimiento' },
-  { valor: 'MODIFICACION_NUCLEO', etiqueta: 'Modificación del núcleo familiar',
-    ayuda: 'Diferencias en la conformación del hogar' },
-  { valor: 'ESPECIAL', etiqueta: 'Ruta especial',
-    ayuda: 'Protección especial o urgencia manifiesta' },
-];
+// Acá estaba `RUTAS_EXCEPCION`, la lista que el encuestador elegía en el modal
+// de excepción. Las tres rutas siguen existiendo (Manual §5.1.1) pero ahora se
+// eligen en la plataforma web, al autorizar: el celular ya no decide por cuál
+// se levanta la vigencia, solo recibe que está levantada y con qué radicado.
 
 // ── Tarjeta: no habilitado ────────────────────────────────────────────────────
 
-function TarjetaNoHabilitado({ resultado, onUsarExcepcion }: {
+function TarjetaNoHabilitado({ resultado, onUsarExcepcion, reconsultando }: {
   resultado: ResultadoBusquedaFuente;
   onUsarExcepcion?: () => void;
+  reconsultando?: boolean;
 }) {
   const v = resultado.victima!;
   // Ficha vigente NO es un callejón: el manual autoriza tres rutas a omitir la
   // regla de los dos años. Antes acá terminaba el camino y el caso se escalaba
   // a soporte, que es lo contrario de para lo que existen esas rutas.
+  //
+  // Desde el 14-ago-2026 la salida ya no es adjuntar una foto acá: es pedirle a
+  // la coordinación que la autorice desde la plataforma web. El encuestador no
+  // tiene el fallo ni la tutela —le llegan a quien coordina—, así que el botón
+  // que le pedía el archivo le pedía algo que no puede dar.
   const puedeExcepcion = resultado.motivo === 'FICHA_VIGENTE' && !!onUsarExcepcion;
   return (
     <Surface style={[styles.tarjeta, styles.tarjetaNaranja]}>
@@ -299,6 +295,13 @@ function TarjetaNoHabilitado({ resultado, onUsarExcepcion }: {
           No habilitado para caracterización
         </Text>
       </View>
+      {/*
+        APK-007. El nombre faltaba justo acá, que es donde más se necesita: la
+        persona está enfrente y el encuestador tiene que confirmar que el
+        bloqueo es de ELLA y no de un homónimo antes de mandarla a coordinación.
+        La tarjeta de habilitada sí lo mostraba; esta no.
+      */}
+      <Text style={styles.nombreCompleto}>{nombreCompleto(v)}</Text>
       <Text style={styles.tarjetaMensaje}>{resultado.mensaje}</Text>
       <View style={styles.chipsFila}>
         <Chip
@@ -312,17 +315,21 @@ function TarjetaNoHabilitado({ resultado, onUsarExcepcion }: {
         <>
           <Divider style={{ marginVertical: SPACING.md }} />
           <Text style={styles.tarjetaMensaje}>
-            Si cuenta con un fallo, tutela o auto de seguimiento, puede
-            caracterizarla por una ruta de excepción adjuntando el soporte.
+            Si hay un fallo, tutela o auto de seguimiento, la excepción la
+            autoriza su coordinación desde la plataforma web. Repórtelo con el
+            número de radicado; cuando quede autorizada, aparecerá habilitada
+            acá.
           </Text>
           <Button
-            mode="contained"
-            icon="file-document-edit"
+            mode="outlined"
+            icon="refresh"
             onPress={onUsarExcepcion}
+            loading={reconsultando}
+            disabled={reconsultando}
             style={{ marginTop: SPACING.sm }}
-            buttonColor={GOV.azul}
+            textColor={GOV.azul}
           >
-            Caracterizar por ruta de excepción
+            Ya la autorizaron — volver a consultar
           </Button>
         </>
       )}
@@ -594,7 +601,12 @@ function resultadoDesdePadron(
     fecha_nacimiento: '',
     genero: 'ND',
     estado_ruv: p.en_ruv ? 'INCLUIDO' : 'NO_VERIFICADO',
-    habilitado_para_caracterizacion: p.habilitada && !p.ya_caracterizada,
+    // La excepción autorizada desde la web gana sobre "ya caracterizada": es
+    // exactamente el caso para el que existe —una persona con ficha vigente a
+    // la que hay que actualizarle la caracterización—. Sin este `||`, el dato
+    // llegaría al dispositivo, se guardaría, y la app seguiría bloqueando.
+    habilitado_para_caracterizacion:
+      (p.habilitada && !p.ya_caracterizada) || p.habilitada_por_excepcion,
     fecha_ult_caracterizacion: null,
     pertenencia_etnica: 'NINGUNA',
     pueblo_indigena: '',
@@ -615,9 +627,16 @@ function resultadoDesdePadron(
     encontrado: true,
     victima,
     fuente: 'OFFLINE (padrón)',
-    mensaje: p.ya_caracterizada
-      ? 'Persona YA CARACTERIZADA (datos offline).'
-      : 'Persona encontrada en el padrón offline.',
+    mensaje: p.habilitada_por_excepcion
+      // Se dice de dónde viene el permiso, no solo que puede continuar: el
+      // encuestador está pasando por encima de una ficha vigente y tiene que
+      // poder explicar por qué si alguien le pregunta.
+      ? `Habilitada por excepción autorizada${p.excepcion_radicado
+          ? ` (radicado ${p.excepcion_radicado})` : ''}. `
+        + 'Puede actualizar la caracterización.'
+      : p.ya_caracterizada
+        ? 'Persona YA CARACTERIZADA (datos offline).'
+        : 'Persona encontrada en el padrón offline.',
   };
 }
 
@@ -630,13 +649,8 @@ export default function BusquedaScreen() {
   const [cargando, setCargando] = useState(false);
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
   const [resultado, setResultado] = useState<ResultadoBusquedaFuente | null>(null);
-  // Ruta de excepción: se elige acá pero el soporte se envía mucho después,
-  // cuando ya existe la sesión a la que colgarlo (por eso va al store).
-  const [modalExcepcion, setModalExcepcion] = useState(false);
-  const [rutaElegida, setRutaElegida] = useState('');
-  const [soporteNombre, setSoporteNombre] = useState('');
-  const [soporteUri, setSoporteUri] = useState('');
-  const [errorExcepcion, setErrorExcepcion] = useState('');
+  // Excepción de vigencia: desde el 14-ago-2026 la autoriza la coordinación en
+  // la web, así que acá solo queda volver a consultar si ya está lista.
   const [verificandoExcepcion, setVerificandoExcepcion] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
   // Personas distintas que comparten el documento buscado. Mientras esta lista
@@ -882,65 +896,44 @@ export default function BusquedaScreen() {
     }
   }
 
-  /** Abre el selector de archivo para adjuntar el soporte de la excepción. */
-  async function adjuntarSoporte() {
-    try {
-      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-      if (res.canceled || !res.assets?.length) return;
-      setSoporteNombre(res.assets[0].name);
-      setSoporteUri(res.assets[0].uri);
-      setErrorExcepcion('');
-    } catch (err: any) {
-      reportarError({
-        nivel: 'warn',
-        mensaje: 'adjuntarSoporte falló: ' + (err?.message ?? String(err)),
-        pantalla: 'busqueda',
-      });
-      setErrorExcepcion('No se pudo adjuntar el archivo. Intente de nuevo.');
-    }
-  }
-
   /**
-   * Vuelve a preguntar al servidor, ahora diciendo POR QUÉ RUTA.
+   * Vuelve a preguntarle al servidor si la excepción ya fue autorizada.
    *
-   * No se habilita a la persona desde el cliente: se consulta de nuevo y manda
-   * lo que responda el servidor. Decidirlo acá dejaría la regla de vigencia en
-   * manos de la app, que es exactamente lo que hay que evitar.
+   * La autoriza la coordinación desde la plataforma web, así que entre el
+   * "no habilitada" que el encuestador acaba de ver y el "sí" pueden pasar
+   * minutos u horas. Este botón es el puente: sin él tendría que salir de la
+   * pantalla, buscar de nuevo y no sabría si vale la pena intentarlo.
+   *
+   * La habilitación NO se decide acá. Se pregunta y se muestra lo que responda
+   * el servidor: decidirlo en el cliente dejaría la regla de vigencia en manos
+   * de la app, que es exactamente lo que hay que evitar.
    */
-  async function confirmarExcepcion() {
-    if (!rutaElegida) {
-      setErrorExcepcion('Seleccione la ruta que corresponde al caso.');
-      return;
-    }
-    if (!soporteUri) {
-      // El soporte no es opcional: es lo que deja rastro de haberse saltado un
-      // control. Sin él, la regla de vigencia sería opcional en la práctica.
-      setErrorExcepcion('Adjunte el soporte (fallo, tutela o auto).');
+  async function reconsultarExcepcion() {
+    if (!estaOnline) {
+      // Sin señal no hay nada que reconsultar. La habilitación igual llega en la
+      // precarga de la jornada siguiente, y decirlo evita que el encuestador
+      // interprete el silencio como que la coordinación no la autorizó.
+      setErrorBusqueda(
+        'Sin conexión no se puede consultar. Si ya la autorizaron, aparecerá '
+        + 'habilitada al iniciar la próxima jornada con señal.');
       return;
     }
     setVerificandoExcepcion(true);
+    setErrorBusqueda(null);
     try {
-      const { data } = await victimasApi.consultarFuente(
-        tipoDoc, documento.trim(), rutaElegida);
-      if (!data.victima?.habilitado_para_caracterizacion) {
-        setErrorExcepcion(data.mensaje ||
-          'Esa ruta no habilita este caso. Verifique con su supervisor.');
-        return;
-      }
-      const store = useCaracterizacionStore.getState();
-      store.setRutaEntrevista(rutaElegida);
-      store.setSoporteExcepcion({
-        ruta: rutaElegida, uri: soporteUri, nombre: soporteNombre,
-      });
+      const { data } = await victimasApi.consultarFuente(tipoDoc, documento.trim());
       setResultado(data);
-      setModalExcepcion(false);
+      if (!data.victima?.habilitado_para_caracterizacion) {
+        setErrorBusqueda(data.mensaje
+          || 'Todavía no está autorizada. Confirme con su coordinación.');
+      }
     } catch (err: any) {
       reportarError({
         nivel: 'warn',
-        mensaje: 'confirmarExcepcion falló: ' + (err?.message ?? String(err)),
+        mensaje: 'reconsultarExcepcion falló: ' + (err?.message ?? String(err)),
         pantalla: 'busqueda',
       });
-      setErrorExcepcion('No se pudo verificar con el servidor. Revise la conexión.');
+      setErrorBusqueda('No se pudo consultar con el servidor. Revise la conexión.');
     } finally {
       setVerificandoExcepcion(false);
     }
@@ -1184,13 +1177,8 @@ export default function BusquedaScreen() {
       return (
         <TarjetaNoHabilitado
           resultado={resultado}
-          onUsarExcepcion={() => {
-            setRutaElegida('');
-            setSoporteNombre('');
-            setSoporteUri('');
-            setErrorExcepcion('');
-            setModalExcepcion(true);
-          }}
+          onUsarExcepcion={reconsultarExcepcion}
+          reconsultando={verificandoExcepcion}
         />
       );
     }
@@ -1355,76 +1343,12 @@ export default function BusquedaScreen() {
           {!cargando && renderTarjeta()}
         </ScrollView>
 
-        {/* ── Ruta de excepción a la regla de vigencia (Manual §5.1.1) ─────── */}
-        <Modal
-          visible={modalExcepcion}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setModalExcepcion(false)}
-        >
-          <View style={styles.excFondo}>
-            <Surface style={styles.excCaja}>
-              <Text style={styles.excTitulo}>Ruta de excepción</Text>
-              <Text style={styles.excAyuda}>
-                Esta persona tiene una caracterización vigente. Solo puede
-                caracterizarla por una de estas rutas, y debe adjuntar el soporte.
-              </Text>
-
-              {RUTAS_EXCEPCION.map((r) => (
-                <Pressable
-                  key={r.valor}
-                  onPress={() => { setRutaElegida(r.valor); setErrorExcepcion(''); }}
-                  style={[
-                    styles.opcionRuta,
-                    rutaElegida === r.valor && styles.opcionRutaActiva,
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={rutaElegida === r.valor ? 'radiobox-marked' : 'radiobox-blank'}
-                    size={22}
-                    color={rutaElegida === r.valor ? GOV.azul : GOV.textoS}
-                  />
-                  <View style={{ flex: 1, marginLeft: SPACING.sm }}>
-                    <Text style={styles.opcionRutaTitulo}>{r.etiqueta}</Text>
-                    <Text style={styles.opcionRutaAyuda}>{r.ayuda}</Text>
-                  </View>
-                </Pressable>
-              ))}
-
-              <Button
-                mode="outlined"
-                icon={soporteNombre ? 'check-circle' : 'paperclip'}
-                onPress={adjuntarSoporte}
-                style={{ marginTop: SPACING.md }}
-              >
-                {soporteNombre ? `Adjunto: ${soporteNombre}` : 'Adjuntar soporte'}
-              </Button>
-
-              {!!errorExcepcion && (
-                <HelperText type="error" visible>{errorExcepcion}</HelperText>
-              )}
-
-              <View style={styles.excBotones}>
-                <Button
-                  mode="text"
-                  onPress={() => setModalExcepcion(false)}
-                  disabled={verificandoExcepcion}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={confirmarExcepcion}
-                  loading={verificandoExcepcion}
-                  disabled={verificandoExcepcion}
-                  buttonColor={GOV.azul}
-                >
-                  Continuar
-                </Button>
-              </View>
-            </Surface>
-          </View>
-        </Modal>
+        {/*
+          Acá estaba el modal que pedía elegir la ruta de excepción y adjuntar
+          la foto del soporte. Se retiró el 14-ago-2026: la excepción la
+          autoriza la coordinación desde la plataforma web y el encuestador solo
+          vuelve a consultar. Ver `reconsultarExcepcion`.
+        */}
       </ImageBackground>
     </View>
   );

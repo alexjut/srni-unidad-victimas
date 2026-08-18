@@ -83,38 +83,15 @@ export const encuestasApi = {
     ),
 };
 
-/**
- * Registra el uso de una ruta que OMITE la regla de vigencia (Manual §5.1.1).
+/*
+ * Acá vivía `registrarExcepcionVigencia`, que subía por multipart la foto del
+ * fallo, la tutela o el auto desde el celular.
  *
- * Va aparte de `encuestasApi` porque es multipart: lleva la foto del fallo, la
- * tutela o el auto. El soporte no es opcional — un control que se salta sin
- * dejar rastro deja de ser un control, y la ruta la elige el encuestador.
+ * Se retiró el 14-ago-2026: el caracterizador no debe tener ese documento —le
+ * llega por canal institucional a quien coordina—. La excepción se autoriza
+ * antes, desde el front web (`POST /api/habilitaciones/`), y la app solo la
+ * consume: viaja en la precarga de la jornada como `habilitada_por_excepcion`.
+ *
+ * El endpoint viejo responde 410 y explica a dónde ir, para que una APK
+ * anterior a la v1.2.0 que siga instalada no muestre un error de red.
  */
-export async function registrarExcepcionVigencia(
-  sesionId: string,
-  datos: {
-    victima_id: string;
-    ruta: string;
-    soporte_uri: string;
-    soporte_nombre: string;
-    observacion?: string;
-  },
-) {
-  const form = new FormData();
-  form.append('victima_id', datos.victima_id);
-  form.append('ruta', datos.ruta);
-  form.append('observacion', datos.observacion ?? '');
-  // React Native arma el multipart con esta forma de objeto; `fetch`/axios no
-  // aceptan un Blob desde una uri local en Android.
-  form.append('soporte', {
-    uri: datos.soporte_uri,
-    name: datos.soporte_nombre || 'soporte.jpg',
-    type: 'image/jpeg',
-  } as unknown as Blob);
-
-  return apiClient.post<{ id: string; ruta: string; vigente_hasta: string }>(
-    `/api/encuestas/${sesionId}/excepcion-vigencia/`,
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
-  );
-}

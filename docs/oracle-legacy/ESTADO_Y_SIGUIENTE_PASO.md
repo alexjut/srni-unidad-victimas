@@ -1,15 +1,64 @@
 # Oracle legacy → SICAV — Estado y siguiente paso
 
 > **Traspaso de sesión.** Qué hicimos, dónde está todo, qué falta y **con qué empezar
-> la próxima vez**. **Fecha de corte: 2026-08-12** — lo más reciente arriba
-> (§0-undecies: el padrón dejó de afirmar lo que no sabe, y la decisión que desbloquea
-> lo que sigue).
+> la próxima vez**. **Fecha de corte: 2026-08-14** — lo más reciente arriba
+> (§0-duodecies: la excepción de vigencia se mudó al front).
 > **Worktree:** `feat/oracle-legacy-writer` en `D:\desarrollo\uv-oracle-writer`.
 > Lo hecho contra Oracle fue **solo lectura** (local + prod), excepto un único `DROP`
 > autorizado de una master table huérfana y el piloto de escritura del 28-jul
 > (§0-bis). Sobre **PostgreSQL de producción sí se escribe**: es donde vive el padrón
 > y el universo. El prompt para retomar está en §5 y quedó viejo — para el frente del
 > universo, arrancar por §0-undecies.
+
+---
+
+## 0-duodecies. 2026-08-14 — **LA EXCEPCIÓN DE VIGENCIA SE MUDÓ AL FRONT**
+
+Cambio pedido por la operación: **los caracterizadores no deben tener el
+documento de soporte**. El fallo, la tutela o el auto llegan por canal
+institucional al nivel central, no a quien está frente a la víctima.
+
+Hasta el 13-ago la APK le pedía al encuestador elegir la ruta y **tomar una foto
+del soporte**. O sea que quien ejecutaba el salto del control era el mismo que lo
+autorizaba, y encima con un documento que no tiene.
+
+Ahora la excepción se **autoriza antes**, desde la plataforma web, y el celular
+solo la consume. Todo está en
+[`excepcion_vigencia_desde_el_front.md`](../operacion/excepcion_vigencia_desde_el_front.md)
+—incluido el contrato de la API para Brando—. Lo que hay que saber acá:
+
+| | |
+|---|---|
+| Endpoint nuevo | `POST/GET /api/habilitaciones/` + `{id}/anular/` |
+| Quién autoriza | perfil con `puede_autorizar_excepciones` — COORDINADOR, SUPERVISOR, ADMINISTRADOR |
+| Qué exige | ruta + **radicado** + motivo. El archivo es opcional |
+| Cómo llega a campo | en la precarga de la jornada → **funciona sin señal** (schema móvil v12) |
+| Duración | de un solo uso: se consume al finalizar la encuesta |
+| La vía vieja | `POST /api/encuestas/{id}/excepcion-vigencia/` responde **410** con la explicación |
+| Pruebas | 883 backend + 115 móvil, todas en verde |
+
+### Tres cosas para no olvidar
+
+1. 🔴 **Falta la UI web (Brando).** El backend está completo y probado, pero
+   hasta que exista la pantalla **nadie puede autorizar nada** y las personas con
+   ficha vigente quedan bloqueadas sin salida. Es lo que desbloquea el frente.
+
+2. 🔴 **Hay 1 coordinador, 1 supervisor y 1 admin para 1.158 encuestadoras.**
+   Antes de arrancar en campo hay que decidir cuántas cuentas con permiso de
+   autorizar se necesitan y quién las tiene. Es definición de operación, no
+   pendiente técnico.
+
+3. **La ruta de excepción nunca funcionó en producción, ni la vieja.** El
+   endpoint del 6-ago escribía la auditoría con `LogAcceso.objects.create(...,
+   ip=...)` y ese campo se llama `ip_origen` —`detalle` además es `JSONField`—,
+   así que toda llamada moría en 500 antes de responder. No se detectó porque
+   ninguna encuestadora ha entrado nunca al sistema. Vale como recordatorio de
+   que **lo que no se ejecutó no está probado**, por más test unitario que tenga
+   alrededor.
+
+⚠️ **La APK en campo (v1.1.0) todavía tiene el botón de adjuntar soporte.** Hasta
+que se despliegue una versión nueva responde 410 con el texto que manda a
+coordinación —no como error de red—. Falta decidir cuándo se hace ese build.
 
 ---
 
