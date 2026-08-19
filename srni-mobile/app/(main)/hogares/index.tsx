@@ -151,9 +151,15 @@ export default function HogaresIndexScreen() {
     //      (pendiente/error) — funciona sin red y no rompe el flujo offline.
     for (const h of offlineRows) {
       if (h.id_servidor) {
-        if (servidorOk && !idsServidor.has(h.id_servidor)) {
-          try { await hogaresOfflineDao.eliminarPorIdLocal(h.id_local); } catch { /* no-op */ }
+        if (servidorOk) {
+          // Con red: el servidor es la autoridad. Si ya no lo devuelve → purgar.
+          if (!idsServidor.has(h.id_servidor)) {
+            try { await hogaresOfflineDao.eliminarPorIdLocal(h.id_local); } catch { /* no-op */ }
+          }
+          continue;
         }
+        // Sin red: mostrar la copia local para que el usuario vea sus hogares (APK-003).
+        offlineItems.push({ tipo: 'offline', data: h });
         continue;
       }
       offlineItems.push({ tipo: 'offline', data: h });
@@ -225,13 +231,15 @@ export default function HogaresIndexScreen() {
           />
         }
         ListEmptyComponent={
-          <EmptyState
-            icon="home-outline"
-            title="Sin hogares"
-            message="No hay hogares registrados aún. Crea el primero para comenzar la caracterización."
-            actionLabel="Nuevo hogar"
-            onAction={() => router.push('/(main)/hogares/nuevo')}
-          />
+          error
+            ? null  /* APK-003: no mostrar "Sin hogares" si el servidor falló — evita duplicados */
+            : <EmptyState
+                icon="home-outline"
+                title="Sin hogares"
+                message="No hay hogares registrados aún. Crea el primero para comenzar la caracterización."
+                actionLabel="Nuevo hogar"
+                onAction={() => router.push('/(main)/hogares/nuevo')}
+              />
         }
         renderItem={({ item }) =>
           item.tipo === 'offline'

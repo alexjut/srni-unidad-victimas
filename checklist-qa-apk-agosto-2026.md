@@ -27,10 +27,9 @@ Responsables: Brandon (mobile), Javier (backend)
 
 **Contexto:** Error intermitente. Con algunos documentos (Rubiela Diaz Triana, Sara Nicol Salazar Preciado) el boton "Conformar hogar" muestra "No se pudo registrar. Revisa la conexion" pese a tener red. Con otros documentos funciona bien. Origen probable: backend.
 
-- [ ] **2.1** (Brandon — Mobile) Mejorar diagnostico del error en `conformar.tsx`
-  - Archivo: `app/(main)/hogares/conformar.tsx`
-  - Actualmente muestra un mensaje generico. Cambiar para mostrar `err.response?.data?.detail` del backend, asi QA y soporte saben que paso realmente
-  - Incluir el status code en el mensaje de error para depuracion
+- [x] **2.1** (Brandon — Mobile) Mejorar diagnostico del error en `conformar.tsx`
+  - **YA RESUELTO por Javier** — `conformar.tsx` ya usa `interpretarError()` de `src/utils/errores.ts`
+  - Líneas 338 y 446-447 muestran mensajes legibles con código HTTP y diagnóstico
 - [ ] **2.2** (Javier — Backend) Investigar por que `POST /api/hogares/` falla con ciertos documentos
   - Probar con los documentos del informe
   - Puede ser validacion de victima, conflicto de hogar existente, o miembro ya asignado a otro hogar
@@ -45,11 +44,10 @@ Responsables: Brandon (mobile), Javier (backend)
 
 **Contexto:** En modo avion: Encuestas muestra "No se pudo cargar las sesiones", Hogares muestra "Sin hogares" pese a existir hogares ya conformados, y las sesiones en curso no se pueden abrir. La busqueda RNI sin conexion es comportamiento esperado (depende de servicio central).
 
-- [ ] **3.1** (Brandon — Mobile) Hogares: mostrar hogares offline cuando no hay red
-  - Archivo: `app/(main)/hogares/index.tsx:140-143`
-  - Ya existe logica para combinar `offlineItems` + `servidorItems`
-  - **Problema:** cuando el servidor falla, `servidorItems` queda vacio y el EmptyState "Sin hogares" se muestra junto al error, lo cual induce a crear hogares duplicados
-  - **Fix:** si hay hogares offline, NO mostrar EmptyState — solo el banner offline + las tarjetas offline
+- [x] **3.1** (Brandon — Mobile) Hogares: mostrar hogares offline cuando no hay red
+  - **CORREGIDO** — Dos cambios en `app/(main)/hogares/index.tsx`:
+  - 1) Cuando el servidor falla, los hogares sincronizados (con `id_servidor`) ahora se muestran como tarjetas offline en vez de saltarse
+  - 2) `ListEmptyComponent` devuelve `null` cuando hay error, para no mostrar "Sin hogares" + "Nuevo hogar" que induce duplicados
 - [ ] **3.2** (Brandon — Mobile) Encuestas: fallback a borradores locales offline
   - Archivo: `app/(main)/encuestas/index.tsx:44-54`
   - Actualmente solo consulta el API. Agregar: si `catch`, leer borradores de `borradoresDao` y mostrarlos como tarjetas "pendiente de sincronizar" (mismo patron que hogares offline)
