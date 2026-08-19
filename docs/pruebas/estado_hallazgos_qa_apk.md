@@ -195,12 +195,18 @@ antes de mandarla a coordinación.
 
 ## 8. Correcciones sobre el trabajo offline (19-ago)
 
-Al integrar el APK-003 se corrigieron **diez** defectos del propio arreglo. Los
-tres primeros salieron de leer el diff; los cinco siguientes, de una revisión
-adversarial de cinco frentes sobre el rango completo; los dos últimos, de una
-segunda pasada que buscaba regresiones introducidas por los arreglos mismos —
-y encontró una de las graves. Cada hallazgo pasó por dos verificadores
-independientes; ninguno pudo refutarse.
+Al integrar el APK-003 se corrigieron **doce** defectos del propio arreglo, en
+tres pasadas. La primera salió de leer el diff (3); la segunda, de una revisión
+adversarial de cinco frentes sobre el rango completo (5); la tercera y la cuarta
+buscaron regresiones introducidas por los arreglos mismos, y **las dos
+encontraron algo** (2 y 2). Cada hallazgo pasó por dos verificadores
+independientes con ángulos distintos; ninguno pudo refutarse.
+
+Que cada pasada encontrara menos —5, 2, 2— y que las dos últimas encontraran
+defectos *de los arreglos* dice algo que conviene anotar: en este flujo, un
+arreglo que se ve obvio en su propio archivo se rompe tres saltos más abajo. La
+cadena captura → SQLite → cola → servidor tiene demasiados estados como para
+razonarla de a un archivo por vez.
 
 Vale la pena decir por qué son todos la misma familia de error: el trabajo
 offline se construyó **mostrando** lo que hay en SQLite, pero las condiciones
@@ -298,10 +304,47 @@ y era grave:
 La misma pasada revisó los otros cuatro cambios y **no encontró defecto** en
 ellos.
 
-Sobre las pruebas: hay **9 de regresión** en
-`src/db/__tests__/borradoresDao.test.ts`, y se comprobaron por mutación —
-revirtiendo los tres arreglos del DAO a mano, 4 pruebas fallan. Móvil:
-**130 tests**, `tsc` limpio.
+### Y lo que encontró la tercera, sobre el arreglo de la segunda
+
+11. **Volver a cerrar lo ya cerrado envenenaba la cola del teléfono.** Al hacer
+    que el borrador `CERRADO_LOCAL` volviera a ser alcanzable (que es lo que
+    corresponde: es trabajo suyo), quedó alcanzable también el botón
+    **«Finalizar caracterización»** — `formulario/index.tsx` no leía el estado
+    del borrador. Un segundo toque encolaba un segundo FINALIZAR_SESION, el
+    servidor lo rechaza con **400 «La sesión ya está completada»**, y como los
+    4xx no se reintentan ese ítem quedaba en `error` **para siempre**.
+
+    Y eso no era cosmético. `contarPendientes()` cuenta los `error`, así que con
+    un solo ítem atascado:
+    - `purgarSincronizados()` no vuelve a correr nunca — el `.db` crece sin
+      techo;
+    - el logout **deja de borrar la PII capturada** de víctimas y hogares
+      (`authStore.ts:143` solo limpia todo si la cola quedó vacía);
+    - el indicador de sincronización queda en rojo permanente, así que ella no
+      puede distinguir lo que de verdad falta subir — y lo esperable es que
+      recapture.
+
+    Un teléfono así no se recuperaba sin reinstalar. Se arregló en dos capas:
+    - **`sincronizacion.ts`** — cerrar una sesión que ya estaba cerrada cuenta
+      como éxito, no como error. Y no se decide leyendo el texto del mensaje: se
+      le pregunta al servidor por el estado de la sesión. Cualquier otro 400
+      sigue su camino. Esto solo ya destraba todas las rutas, incluida la
+      carrera de recuperar señal con el FINALIZAR ya encolado.
+    - **`formulario/index.tsx`** — sobre una entrevista ya cerrada la pantalla
+      no ofrece el botón: muestra «Caracterización cerrada. Se enviará sola
+      cuando haya conexión». Puede revisar sus respuestas, no re-encolar el
+      cierre.
+
+12. **La migración v13 dejaba afuera el ítem en vuelo.** Reclasificaba mirando
+    `estado IN ('pendiente','error')`, pero un teléfono que se apagó con el
+    FINALIZAR en curso deja la fila en `'enviando'`, y `resetearBloqueados()`
+    corre *después* de la migración. Ahora los tres estados cuentan.
+
+Sobre las pruebas: **9 de regresión** en
+`src/db/__tests__/borradoresDao.test.ts` y **3** del cierre doble en
+`sincronizacion.test.ts`. Todas comprobadas **por mutación**: revirtiendo los
+arreglos a mano, fallan (4 y 1 respectivamente). Una prueba que no falla cuando
+el defecto vuelve no es una prueba. Móvil: **133 tests**, `tsc` limpio.
 
 ### Un hilo suelto que quedó a la vista
 

@@ -212,6 +212,12 @@ export default function FormularioIndexScreen() {
   // Borrador local que hila todo el flujo OFFLINE. Online (con sesionServerId)
   // no lo necesita: el capítulo resuelve su borrador por findBySesionId.
   const [borradorId, setBorradorId] = useState<string | null>(borradorIdParam ?? null);
+  // Estado del borrador resuelto. Interesa uno solo: CERRADO_LOCAL significa que
+  // la encuestadora ya cerró la entrevista y el FINALIZAR está esperando señal.
+  // Volver a ofrecerle «Finalizar» encolaría un segundo cierre que el servidor
+  // rechaza con 400 y deja un ítem en 'error' que nunca se limpia.
+  const [borradorEstado, setBorradorEstado] = useState<string | null>(null);
+  const cerradaSinEnviar = borradorEstado === 'CERRADO_LOCAL';
 
   const [capitulos, setCapitulos] = useState<CapituloRow[]>([]);
   const [meta, setMeta] = useState<InstrumentoMeta | null>(null);
@@ -311,6 +317,7 @@ export default function FormularioIndexScreen() {
         const borrador = await borradoresDao.findBySesionId(sesionServerId);
         if (borrador) {
           setBorradorId(borrador.id);
+          setBorradorEstado(borrador.estado);
           setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(borrador.id));
         }
       } else if (hogarId && instrumentoId) {
@@ -319,15 +326,18 @@ export default function FormularioIndexScreen() {
         // instrumento, o crear uno nuevo. Así todos los capítulos comparten el
         // mismo borrador y el progreso se lee localmente (sin servidor).
         let bid = borradorIdParam ?? null;
+        let fila = null;
         if (!bid) {
-          const existente = await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrumentoId);
-          bid = existente?.id ?? null;
+          fila = await borradoresDao.findBorradorOfflinePorHogarInstrumento(hogarId, instrumentoId);
+          bid = fila?.id ?? null;
         }
         if (!bid) {
-          const nuevo = await borradoresDao.crearBorrador(instrumentoId, hogarId);
-          bid = nuevo.id;
+          fila = await borradoresDao.crearBorrador(instrumentoId, hogarId);
+          bid = fila.id;
         }
+        if (!fila) fila = await borradoresDao.getBorrador(bid);
         setBorradorId(bid);
+        setBorradorEstado(fila?.estado ?? null);
         setRespuestasCompuesto(await borradoresDao.getRespuestaMapCompuesto(bid));
       }
     } catch (e) {
@@ -455,6 +465,9 @@ export default function FormularioIndexScreen() {
   }
 
   async function handleFinalizar() {
+    // Ya cerrada en el teléfono: no hay nada que finalizar de nuevo, solo que
+    // esperar a que la cola la suba.
+    if (cerradaSinEnviar) { setModalFinalizar(false); return; }
     const bid = borradorId ?? borradorIdParam ?? null;
     // Online (con sesión de servidor) intentamos cerrar directo. Offline, o si el
     // borrador aún no tiene sesión en el servidor, encolamos FINALIZAR_SESION: la
@@ -742,12 +755,25 @@ export default function FormularioIndexScreen() {
           // local) — sin esto no se podía cerrar la caracterización sin red.
           (sesionServerId || borradorId) ? (
             <View style={styles.footerFinalizar}>
-              <GovButton
-                label="Finalizar caracterización"
-                variant="secondary"
-                icon="check-circle-outline"
-                onPress={() => setModalFinalizar(true)}
-              />
+              {cerradaSinEnviar ? (
+                // Cerrada acá, todavía sin subir. Se avisa en vez de ofrecer el
+                // botón: puede revisar sus respuestas, pero volver a cerrarla
+                // encolaría un segundo FINALIZAR que el servidor rechaza y que
+                // envenena la cola de ese teléfono.
+                <View style={styles.avisoCerrada}>
+                  <MaterialCommunityIcons name="check-circle" size={18} color={GOV.verde} />
+                  <Text style={styles.avisoCerradaTxt}>
+                    Caracterización cerrada. Se enviará sola cuando haya conexión.
+                  </Text>
+                </View>
+              ) : (
+                <GovButton
+                  label="Finalizar caracterización"
+                  variant="secondary"
+                  icon="check-circle-outline"
+                  onPress={() => setModalFinalizar(true)}
+                />
+              )}
               {/* Anular requiere servidor (PATCH/finalizar online) → solo online. */}
               {sesionServerId ? (
                 <>
@@ -888,6 +914,16 @@ const styles = StyleSheet.create({
 
   lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
   footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
+  avisoCerrada: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: GOV.verdeTenue,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  avisoCerradaTxt: { ...FONT.caption, color: GOV.verde, flex: 1 },
   btnAnular: {
     flexDirection: 'row',
     alignItems: 'center',

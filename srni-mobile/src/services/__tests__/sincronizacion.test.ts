@@ -19,6 +19,7 @@ jest.mock('../../api/encuestas', () => ({
     crear: jest.fn(),
     responder: jest.fn(),
     finalizar: jest.fn(),
+    detalle: jest.fn(),
   },
 }));
 
@@ -349,5 +350,76 @@ describe('intentarSincronizar — FINALIZAR_SESION', () => {
     });
     expect(mockBorradores.marcarCompletado).toHaveBeenCalledWith('b-001');
     expect(mockCola.marcarEnviado).toHaveBeenCalledWith(item.id);
+  });
+
+  // ── Cerrar lo que ya estaba cerrado ────────────────────────────────────────
+  //
+  // Es un camino normal, no un caso raro: la encuestadora finaliza sin señal,
+  // reabre la entrevista para revisar un dato y vuelve a tocar Finalizar —que es
+  // la única forma que conoce de cerrar—, o simplemente recupera señal mientras
+  // el FINALIZAR ya estaba encolado.
+  //
+  // El backend responde 400 «La sesión ya está completada». Como los 4xx no se
+  // reintentan, ese ítem quedaba en 'error' PARA SIEMPRE, y eso no es cosmético:
+  // `contarPendientes()` cuenta los 'error', así que con uno solo atascado la
+  // purga del .db no vuelve a correr y el logout deja de borrar la PII capturada
+  // de víctimas y hogares. El teléfono no se recupera sin reinstalar.
+  function item400(detail: string) {
+    const err: any = new Error('Request failed with status code 400');
+    err.isAxiosError = true;
+    err.response = { status: 400, data: { detail } };
+    return err;
+  }
+
+  it('la sesión ya cerrada en el servidor cuenta como éxito, no como error', async () => {
+    const item = crearItem({
+      tipo: 'FINALIZAR_SESION',
+      payload: JSON.stringify({ borrador_id: 'b-002', sesion_id: 'sesion-002' }),
+    });
+    mockCola.obtenerPendientes.mockResolvedValue([item]);
+    mockCola.contarPendientes.mockResolvedValue(0);
+    mockEncuestasApi.finalizar.mockRejectedValue(item400('La sesión ya está completada.'));
+    mockEncuestasApi.detalle.mockResolvedValue({ data: { estado: 'COMPLETADA' } } as any);
+
+    await intentarSincronizar();
+
+    expect(mockBorradores.marcarCompletado).toHaveBeenCalledWith('b-002');
+    expect(mockCola.marcarEnviado).toHaveBeenCalledWith(item.id);
+    expect(mockCola.marcarError).not.toHaveBeenCalled();
+  });
+
+  it('no se decide leyendo el mensaje: si la sesión NO está cerrada, el 400 es error', async () => {
+    // La guarda pregunta por el estado real. Un 400 con cualquier otro motivo
+    // —o el mismo texto sobre una sesión que en realidad sigue abierta— tiene
+    // que seguir su camino y quedar registrado.
+    const item = crearItem({
+      tipo: 'FINALIZAR_SESION',
+      payload: JSON.stringify({ borrador_id: 'b-003', sesion_id: 'sesion-003' }),
+    });
+    mockCola.obtenerPendientes.mockResolvedValue([item]);
+    mockCola.contarPendientes.mockResolvedValue(0);
+    mockEncuestasApi.finalizar.mockRejectedValue(item400('Faltan respuestas obligatorias.'));
+    mockEncuestasApi.detalle.mockResolvedValue({ data: { estado: 'EN_PROGRESO' } } as any);
+
+    await intentarSincronizar();
+
+    expect(mockBorradores.marcarCompletado).not.toHaveBeenCalled();
+    expect(mockCola.marcarError).toHaveBeenCalled();
+  });
+
+  it('si no se puede confirmar el estado, el 400 sigue siendo error', async () => {
+    const item = crearItem({
+      tipo: 'FINALIZAR_SESION',
+      payload: JSON.stringify({ borrador_id: 'b-004', sesion_id: 'sesion-004' }),
+    });
+    mockCola.obtenerPendientes.mockResolvedValue([item]);
+    mockCola.contarPendientes.mockResolvedValue(0);
+    mockEncuestasApi.finalizar.mockRejectedValue(item400('La sesión ya está completada.'));
+    mockEncuestasApi.detalle.mockRejectedValue(new Error('sin red'));
+
+    await intentarSincronizar();
+
+    expect(mockBorradores.marcarCompletado).not.toHaveBeenCalled();
+    expect(mockCola.marcarError).toHaveBeenCalled();
   });
 });

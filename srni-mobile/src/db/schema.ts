@@ -576,7 +576,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
        WHERE estado = 'COMPLETADO'
          AND id IN (SELECT recurso_local_id FROM cola_sincronizacion
                      WHERE tipo = 'FINALIZAR_SESION'
-                       AND estado IN ('pendiente', 'error'));
+                       AND estado IN ('pendiente', 'error', 'enviando'));
     `);
   }
 

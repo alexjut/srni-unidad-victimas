@@ -306,9 +306,38 @@ async function procesarFinalizar(item: colaDao.ColaItem): Promise<void> {
     throw new DependenciaPendiente('sesion_id no disponible aún — esperando CREAR_SESION');
   }
 
-  await encuestasApi.finalizar(payload.sesion_id, {
-    observaciones: payload.observaciones,
-  });
+  try {
+    await encuestasApi.finalizar(payload.sesion_id, {
+      observaciones: payload.observaciones,
+    });
+  } catch (err: any) {
+    // Cerrar una sesión que YA estaba cerrada no es un fallo: es exactamente el
+    // estado que queríamos. El backend responde 400 «La sesión ya está
+    // completada», y como los 4xx no se reintentan, ese ítem quedaba en 'error'
+    // PARA SIEMPRE. Eso no solo ensucia la pantalla de sincronización:
+    // `contarPendientes()` cuenta los 'error', así que con uno solo atascado
+    // `purgarSincronizados()` no vuelve a correr nunca y —peor— el logout deja
+    // de borrar la PII capturada de víctimas y hogares (authStore.ts:143). Un
+    // teléfono envenenado así no se recupera sin reinstalar.
+    //
+    // Se llega ahí por caminos normales: la encuestadora finaliza sin señal,
+    // reabre la entrevista para revisar un dato y vuelve a tocar Finalizar
+    // —que es la única forma que conoce de cerrar—, o simplemente recupera
+    // señal mientras el FINALIZAR ya estaba en cola.
+    //
+    // No se decide leyendo el texto del mensaje: se le pregunta al servidor.
+    // Si la sesión está COMPLETADA, el cierre ocurrió y no hay nada que
+    // reintentar. Cualquier otro 400 sí es un problema real y sigue su camino.
+    if (err?.response?.status !== 400) throw err;
+    let yaCerrada = false;
+    try {
+      const { data } = await encuestasApi.detalle(payload.sesion_id);
+      yaCerrada = data?.estado === 'COMPLETADA';
+    } catch {
+      // No se pudo confirmar — se trata como el error original.
+    }
+    if (!yaCerrada) throw err;
+  }
 
   await borradoresDao.marcarCompletado(payload.borrador_id);
 }
