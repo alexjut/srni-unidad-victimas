@@ -33,10 +33,10 @@ Responsables: Brandon (mobile), Javier (backend)
 - [ ] **2.2** (Javier — Backend) Investigar por que `POST /api/hogares/` falla con ciertos documentos
   - Probar con los documentos del informe
   - Puede ser validacion de victima, conflicto de hogar existente, o miembro ya asignado a otro hogar
-- [ ] **2.3** (Brandon — Mobile) Fallback offline si el POST falla por red
-  - Archivo: `app/(main)/hogares/conformar.tsx`
-  - Verificar que el flujo offline (`hogaresOfflineDao.crearLocal()`) se activa cuando no hay red
-  - Si `err.response` es `undefined` (sin red), crear el hogar localmente en vez de mostrar error
+- [x] **2.3** (Brandon — Mobile) Fallback offline si el POST falla por red
+  - **YA RESUELTO por Javier** — `conformar.tsx` ya tiene fallback offline completo:
+  - Crear hogar: si la red falla (`!err.response`), cae a `crearOffline()` (línea 311)
+  - Agregar miembro: si la red falla o el hogar no existe en servidor, cae a `guardarOffline()` (línea 438)
 
 ---
 
