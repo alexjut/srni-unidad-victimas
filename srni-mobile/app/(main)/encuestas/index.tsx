@@ -49,6 +49,24 @@ type ItemLista =
   | { tipo: 'servidor'; data: SesionResumen }
   | { tipo: 'borrador'; data: BorradorRow; instrumentoNombre: string };
 
+/**
+ * A qué estado de sesión equivale un borrador local.
+ *
+ * El filtro de arriba viaja al servidor, así que hasta acá los borradores
+ * pasaban de largo: al tocar «Completadas» salían igual las entrevistas a
+ * medias, arriba de todo. El filtro dejaba de significar algo — y peor, invitaba
+ * a darlas por cerradas.
+ *
+ * Solo se distinguen dos: cerrada o no. Un borrador no sabe si el servidor la
+ * habría llamado INICIADA o EN_PROGRESO —eso depende de respuestas que aún no
+ * subieron—, así que se lo cuenta como EN_PROGRESO, que es lo que de verdad es.
+ */
+function estadoEquivalente(b: BorradorRow): 'COMPLETADA' | 'EN_PROGRESO' {
+  return b.estado === 'CERRADO_LOCAL' || b.estado === 'COMPLETADO'
+    ? 'COMPLETADA'
+    : 'EN_PROGRESO';
+}
+
 // ─── Tarjeta de borrador offline ──────────────────────────────────────────────
 
 function BorradorCard({ data, instrumentoNombre }: { data: BorradorRow; instrumentoNombre: string }) {
@@ -87,10 +105,15 @@ function BorradorCard({ data, instrumentoNombre }: { data: BorradorRow; instrume
    * cuando sí: `sesion_id` presente significa que la sesión ya existe en el
    * servidor. Es el mismo defecto que se corrigió en la tarjeta de hogares.
    */
+  // Tres situaciones distintas, tres etiquetas. Escrita fija decía «Pendiente
+  // sync» incluso de lo que ya estaba en el servidor.
+  const cerradaSinEnviar = data.estado === 'CERRADO_LOCAL';
   const guardado = !!data.sesion_id;
-  const etiqueta = guardado ? 'Guardado' : 'Pendiente sync';
-  const color    = guardado ? GOV.verde : GOV.naranja;
-  const colorBg  = guardado ? GOV.verdeTenue : GOV.naranjaTenue;
+  const etiqueta = cerradaSinEnviar ? 'Cerrada, sin enviar'
+                 : guardado         ? 'Guardado'
+                 :                    'Pendiente sync';
+  const color    = cerradaSinEnviar ? GOV.naranja : guardado ? GOV.verde : GOV.naranja;
+  const colorBg  = cerradaSinEnviar ? GOV.naranjaTenue : guardado ? GOV.verdeTenue : GOV.naranjaTenue;
 
   return (
     <Pressable
@@ -176,6 +199,9 @@ export default function EncuestasIndexScreen() {
       for (const b of borradores) {
         // Ya vinculado a una sesión que el servidor devolvió → esa tarjeta manda.
         if (b.sesion_id && sesionesServidor.has(b.sesion_id)) continue;
+        // El filtro tiene que valer también acá; si no, «Completadas» lista
+        // entrevistas a medias.
+        if (filtroEstado && estadoEquivalente(b) !== filtroEstado) continue;
         const nombre = (b.instrumento_id ? nombresMap.get(b.instrumento_id) : null) ?? 'Instrumento';
         borradorItems.push({ tipo: 'borrador', data: b, instrumentoNombre: nombre });
       }

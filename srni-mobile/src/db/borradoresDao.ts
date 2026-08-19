@@ -54,13 +54,19 @@ export async function getBorrador(id: string): Promise<BorradorRow | null> {
 /**
  * Borradores vivos, del más reciente al más viejo.
  *
- * Excluye COMPLETADO y NO 'SINCRONIZADO', que es lo que hacía antes. Ese estado
- * no quiere decir «ya subió todo»: lo pone `marcarSincronizado` apenas la cola
- * logra CREAR la sesión en el servidor, con las respuestas todavía en cola. Con
- * el filtro viejo, una entrevista con sesión creada y respuestas sin subir
- * desaparecía de la lista, y sin red tampoco tenía tarjeta de servidor: quedaba
- * invisible por los dos lados. COMPLETADO sí es el cierre real (lo escribe
- * `marcarCompletado` cuando el FINALIZAR llegó al servidor).
+ * El único estado que se excluye es COMPLETADO, y solo porque ahora significa
+ * una cosa sola: el servidor confirmó el cierre. Los otros dos filtros posibles
+ * eran ambos trampas, y las dos se probaron en campo:
+ *
+ *  · `estado != 'SINCRONIZADO'` escondía la entrevista con sesión ya creada
+ *    pero respuestas todavía en cola. Ese estado lo pone `marcarSincronizado`
+ *    apenas la cola logra CREAR la sesión — no quiere decir «ya subió todo».
+ *  · `estado != 'COMPLETADO'` escondía la entrevista finalizada SIN SEÑAL,
+ *    porque hasta la v1.2.1 `encolarFinalizar` escribía COMPLETADO antes de que
+ *    nada saliera del teléfono. Para eso está ahora CERRADO_LOCAL.
+ *
+ * En los dos casos lo que desaparecía era trabajo que la encuestadora acababa
+ * de capturar, sin red y sin tarjeta de servidor que lo respaldara.
  */
 export async function listarBorradores(): Promise<BorradorRow[]> {
   const db = await openDb();
@@ -171,10 +177,33 @@ export async function marcarSincronizado(
   );
 }
 
+/**
+ * El servidor confirmó el cierre de la encuesta. A partir de acá el borrador ya
+ * no es trabajo pendiente y `purgarSincronizados` puede borrarlo.
+ *
+ * OJO: no usar esto para «la encuestadora tocó Finalizar sin señal» — para eso
+ * está `marcarCerradoLocal`. Confundir las dos cosas fue exactamente el defecto
+ * que dejaba la entrevista finalizada en modo avión fuera de la lista.
+ */
 export async function marcarCompletado(borradorId: string): Promise<void> {
   const db = await openDb();
   await db.runAsync(
     "UPDATE borradores SET estado = 'COMPLETADO', updated_at = ? WHERE id = ?",
+    [new Date().toISOString(), borradorId],
+  );
+}
+
+/**
+ * La encuestadora cerró la entrevista pero todavía no salió del teléfono: el
+ * FINALIZAR_SESION quedó en la cola. Sigue siendo trabajo suyo pendiente, así
+ * que tiene que seguir viéndose en la lista y volver a encontrarse por
+ * hogar + instrumento. Cuando la cola logre cerrarla contra el servidor,
+ * `marcarCompletado` la pasa a COMPLETADO y recién ahí es purgable.
+ */
+export async function marcarCerradoLocal(borradorId: string): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    "UPDATE borradores SET estado = 'CERRADO_LOCAL', updated_at = ? WHERE id = ?",
     [new Date().toISOString(), borradorId],
   );
 }
@@ -214,7 +243,10 @@ export async function findBySesionId(sesionId: string): Promise<BorradorRow | nu
  *
  * Ahora el criterio es el que corresponde: el borrador vivo de ese hogar e
  * instrumento, esté vinculado o no. Solo se excluye COMPLETADO, que es el que
- * ya se cerró contra el servidor y `purgarSincronizados` va a borrar.
+ * el servidor ya confirmó cerrado y `purgarSincronizados` va a borrar. El
+ * CERRADO_LOCAL —finalizado sin señal, todavía en cola— SÍ se devuelve: si no,
+ * volver a entrar por ese hogar abriría un formulario en blanco al lado de las
+ * respuestas que ya están guardadas.
  * Si hay varios (no debería), devuelve el más reciente.
  */
 export async function findBorradorOfflinePorHogarInstrumento(

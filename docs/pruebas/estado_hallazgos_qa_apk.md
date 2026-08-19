@@ -195,10 +195,12 @@ antes de mandarla a coordinación.
 
 ## 8. Correcciones sobre el trabajo offline (19-ago)
 
-Al integrar el APK-003 se corrigieron **ocho** defectos del propio arreglo. Los
+Al integrar el APK-003 se corrigieron **diez** defectos del propio arreglo. Los
 tres primeros salieron de leer el diff; los cinco siguientes, de una revisión
-adversarial de cinco frentes sobre el rango completo, con dos verificadores
-independientes por hallazgo. Ninguno de los cinco pudo refutarse.
+adversarial de cinco frentes sobre el rango completo; los dos últimos, de una
+segunda pasada que buscaba regresiones introducidas por los arreglos mismos —
+y encontró una de las graves. Cada hallazgo pasó por dos verificadores
+independientes; ninguno pudo refutarse.
 
 Vale la pena decir por qué son todos la misma familia de error: el trabajo
 offline se construyó **mostrando** lo que hay en SQLite, pero las condiciones
@@ -260,9 +262,46 @@ perdió una entrevista es volver a levantarla con la víctima enfrente.
    con las respuestas todavía pendientes. Ahora excluye `COMPLETADO`, que sí es
    el cierre real.
 
-Se agregaron 5 pruebas de regresión sobre los dos filtros del DAO
-(`src/db/__tests__/borradoresDao.test.ts`): son exactamente el tipo de condición
-que vuelve a colarse. Móvil: **126 tests**, `tsc` limpio.
+### Lo que encontró la segunda pasada, sobre los arreglos mismos
+
+Una segunda revisión adversarial —esta vez buscando **regresiones que los
+arreglos acabaran de introducir**— encontró que el punto 8 estaba mal resuelto,
+y era grave:
+
+9. **`COMPLETADO` significaba dos cosas y yo elegí la equivocada.** El punto 8
+   cambió el filtro a `estado != 'COMPLETADO'` dando por hecho que ese estado
+   quería decir «el servidor confirmó el cierre». No: `encolarFinalizar`
+   (`formulario/index.tsx:486`) lo escribía **en la rama offline**, apenas se
+   encolaba el FINALIZAR y antes de que nada saliera del teléfono. O sea que la
+   encuestadora finalizaba una entrevista en modo avión, la app le decía «quedó
+   cerrada en el dispositivo», entraba a Encuestas y leía **«Sin sesiones»**. Y
+   si volvía a entrar por ese hogar,
+   `findBorradorOfflinePorHogarInstrumento` —que ahora también excluye
+   COMPLETADO— tampoco la encontraba: formulario en blanco y un segundo
+   CREAR_SESION en cola. La idempotencia del backend no protege ahí, porque
+   `create()` excluye las sesiones ya COMPLETADAS.
+
+   Se arregló separando el hecho en dos, que es lo que siempre fueron:
+   **`CERRADO_LOCAL`** (la encuestadora cerró, sigue en cola) y **`COMPLETADO`**
+   (el servidor confirmó). Los dos WHERE quedan correctos tal como estaban, y
+   `purgarSincronizados` sigue borrando solo lo realmente cerrado. Va con
+   **migración de esquema (v13)** que reclasifica las filas que ya quedaron mal
+   en los teléfonos de campo: se reconocen porque su FINALIZAR_SESION sigue en
+   la cola.
+
+10. **El filtro de estado no se aplicaba a los borradores.** Los
+    SegmentedButtons filtran en el servidor; como ahora los borradores se leen
+    siempre, al tocar «Completadas» salían arriba las entrevistas a medias. El
+    filtro dejaba de significar algo, y peor: invitaba a darlas por cerradas.
+    Ahora se aplica también localmente.
+
+La misma pasada revisó los otros cuatro cambios y **no encontró defecto** en
+ellos.
+
+Sobre las pruebas: hay **9 de regresión** en
+`src/db/__tests__/borradoresDao.test.ts`, y se comprobaron por mutación —
+revirtiendo los tres arreglos del DAO a mano, 4 pruebas fallan. Móvil:
+**130 tests**, `tsc` limpio.
 
 ### Un hilo suelto que quedó a la vista
 

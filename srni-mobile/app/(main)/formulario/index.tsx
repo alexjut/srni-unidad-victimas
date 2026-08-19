@@ -483,7 +483,11 @@ export default function FormularioIndexScreen() {
         sesion_id: sesionServerId ?? borrador?.sesion_id ?? null,
         observaciones: observ,
       });
-      await borradoresDao.marcarCompletado(bid);
+      // CERRADO_LOCAL, no COMPLETADO: acá todavía no salió nada del teléfono.
+      // Marcarlo como completado lo sacaba de `listarBorradores` y de
+      // `findBorradorOfflinePorHogarInstrumento`, o sea que la encuestadora
+      // finalizaba en modo avión y su entrevista desaparecía de la lista.
+      await borradoresDao.marcarCerradoLocal(bid);
       await refrescarContadores();
       return true;
     };

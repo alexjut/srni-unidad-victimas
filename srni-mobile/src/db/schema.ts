@@ -20,11 +20,14 @@
  *      caber (antes la segunda se perdía en silencio)
  * 11 → jornada con el mismo arreglo + cons_persona: traía el defecto gemelo y
  *      pisaba la persona que el encuestador acababa de elegir
+ * 12 → padron con la excepción de vigencia, para que sobreviva sin señal
+ * 13 → borradores finalizados sin red pasan de COMPLETADO a CERRADO_LOCAL:
+ *      COMPLETADO ahora significa solo «el servidor confirmó el cierre»
  */
 import * as SQLite from 'expo-sqlite';
 
 export const DB_NAME = 'srni_offline.db';
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 13;
 
 // ─── DDL base (idempotente) ───────────────────────────────────────────────────
 // Sprint 18 Fase F: las tablas del INSTRUMENTO ya no se crean aquí. Los
@@ -554,6 +557,27 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
         if (!/duplicate column/i.test(String(e?.message ?? e))) throw e;
       }
     }
+  }
+
+  if (currentVersion < 13) {
+    // Hasta la v1.2.1, finalizar una entrevista SIN SEÑAL escribía
+    // estado='COMPLETADO' apenas se encolaba el FINALIZAR, antes de que nada
+    // saliera del teléfono. Ese estado ahora significa una cosa sola —el
+    // servidor confirmó el cierre— y los teléfonos que ya venían de campo
+    // pueden traer filas mal clasificadas.
+    //
+    // Se reconocen porque su FINALIZAR_SESION sigue en la cola: eso prueba que
+    // el cierre nunca llegó al servidor. Sin esto, esa entrevista queda fuera
+    // de la lista de encuestas y `findBorradorOfflinePorHogarInstrumento` no la
+    // encuentra, que es justo el trabajo que no se puede perder.
+    await db.execAsync(`
+      UPDATE borradores
+         SET estado = 'CERRADO_LOCAL'
+       WHERE estado = 'COMPLETADO'
+         AND id IN (SELECT recurso_local_id FROM cola_sincronizacion
+                     WHERE tipo = 'FINALIZAR_SESION'
+                       AND estado IN ('pendiente', 'error'));
+    `);
   }
 
   if (currentVersion < SCHEMA_VERSION) {
