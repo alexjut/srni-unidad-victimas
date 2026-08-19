@@ -3,8 +3,9 @@
 import { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
-  Text, Chip, ProgressBar, ActivityIndicator, Divider,
+  Text, Chip, ActivityIndicator, Divider,
 } from 'react-native-paper';
+import { AnimatedProgressBar } from '../../../src/components/AnimatedProgressBar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
@@ -269,13 +270,19 @@ export default function SesionDetalleScreen() {
 
           {/* Barra de progreso */}
           <View style={styles.progresoRow}>
-            <ProgressBar
-              progress={sesion.porcentaje_completado / 100}
-              style={styles.barra}
-              color={colorEstado}
-            />
+            <View style={styles.barraWrap}>
+              <AnimatedProgressBar
+                progress={
+                  sesion.estado === 'COMPLETADA'
+                    ? 1
+                    : Math.max(0, Math.min(1, (sesion.porcentaje_completado ?? 0) / 100))
+                }
+                color={colorEstado}
+                height={8}
+              />
+            </View>
             <Text style={[styles.pct, { color: colorEstado }]}>
-              {sesion.porcentaje_completado}%
+              {sesion.estado === 'COMPLETADA' ? 100 : Math.max(0, Math.min(100, Math.round(sesion.porcentaje_completado ?? 0)))}%
             </Text>
           </View>
           <Text style={styles.respuestasMeta}>
@@ -427,10 +434,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  barra: {
+  barraWrap: {
     flex: 1,
-    height: 8,
-    borderRadius: 4,
     marginRight: SPACING.sm,
   },
   pct: {
