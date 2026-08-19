@@ -24,7 +24,7 @@ y con pruebas. Lo que dice «pendiente» no se ha tocado, y se dice por qué.
 | APK-002 | «No se pudo registrar» al conformar hogar | ✅ Resuelto | Javier |
 | APK-003 | Modo offline no funcionaba | ✅ Resuelto (hogares, encuestas, detalle) · ⚠️ falta comunicar el alcance | Brando + Javier |
 | APK-004 | No se podía editar ni eliminar integrante | ✅ Quitar (API + app) · ⬜ corregir en la app | Javier |
-| APK-005 | Sesión «Completada» con barra en 0 % | ✅ Resuelto | Brando (app) + Javier (API) |
+| APK-005 | Sesión «Completada» con barra en 0 % | ⚠️ Abierto: la causa es `recalcular_porcentaje` sin skip-logic (§6) | Javier |
 | APK-006 | Barras de progreso desbordan la tarjeta | ✅ Resuelto | Brando |
 | APK-007 | No mostraba el nombre en «No habilitado» | ✅ Resuelto · ⬜ falta verlo en dispositivo | Javier |
 | APK-008 … 013 | Autenticación, alerta de vigencia, exactitud RNI, captura Ruta General, validación de campos, diseño del mecanismo de excepción | ✅ Cumplidos según el propio informe | — |
@@ -161,13 +161,24 @@ tocar un integrante, abrir el modal con sus datos precargados. El checklist del
 **Resuelto.** Eran dos síntomas del mismo descuido: el valor del progreso se le
 pasaba crudo a la barra.
 
-- El backend ya recalcula al cerrar (`encuestas/views.py:279`,
-  `recalcular_porcentaje()`), pero la app igual fuerza **100 % cuando el estado
-  es `COMPLETADA`** — una sesión completada está completa por definición, y así
-  no depende de que el número haya viajado bien.
 - El valor se acota con `Math.max(0, Math.min(1, …))`. Sin eso, un porcentaje
   mayor que 100 dibujaba una barra **más ancha que su tarjeta**, que es el
-  APK-006.
+  APK-006. Ese clamp queda.
+- El arreglo original también forzaba **100 % cuando el estado era
+  `COMPLETADA`**. Eso se retiró el 19-ago: tapaba el síntoma y encima mentía.
+  El backend **no exige completitud para cerrar** (`finalizar` guarda el
+  porcentaje real junto a `COMPLETADA`) y la app tampoco bloquea el cierre, así
+  que una entrevista interrumpida a mitad —la víctima se retiró— se mostraba al
+  100 %. El panel web nunca aplicó ese override: la misma sesión se veía
+  distinta según quién la mirara.
+- **El APK-005 sigue abierto por el lado del backend**, y ahora se ve. La causa
+  de fondo es `SesionEncuesta.recalcular_porcentaje`
+  (`apps/encuestas/models.py:120-152`): divide por **todas** las obligatorias
+  del instrumento **sin evaluar skip-logic**, así que cuenta como faltantes
+  preguntas que la regla ocultó. Por eso una sesión legítimamente terminada se
+  guarda en 55 %, o en 0 % si respondió pocas. El móvil ya lo calcula bien con
+  `calcularProgresoOffline` (obligatorias *visibles*); falta llevar ese criterio
+  al servidor.
 - Se reemplazó el `ProgressBar` de react-native-paper por
   `src/components/AnimatedProgressBar.tsx`, con `overflow: 'hidden'` en el track.
   La animación usa `Animated` nativo con `useNativeDriver: false`, que es
@@ -184,8 +195,19 @@ antes de mandarla a coordinación.
 
 ## 8. Correcciones sobre el trabajo offline (19-ago)
 
-Tres cosas que quedaron mal en el arreglo del APK-003 y se corrigieron al
-integrarlo:
+Al integrar el APK-003 se corrigieron **ocho** defectos del propio arreglo. Los
+tres primeros salieron de leer el diff; los cinco siguientes, de una revisión
+adversarial de cinco frentes sobre el rango completo, con dos verificadores
+independientes por hallazgo. Ninguno de los cinco pudo refutarse.
+
+Vale la pena decir por qué son todos la misma familia de error: el trabajo
+offline se construyó **mostrando** lo que hay en SQLite, pero las condiciones
+que deciden qué mostrar y qué borrar se escribieron pensando en el camino con
+red. Cada vez que una de esas condiciones se equivocó, lo que desapareció fue
+trabajo ya capturado — y lo que sigue después de que una encuestadora cree que
+perdió una entrevista es volver a levantarla con la víctima enfrente.
+
+### Lo que se vio leyendo el diff
 
 1. **La tarjeta le mentía a la encuestadora.** Al empezar a mostrar los hogares
    sin red se los pintaba a todos con la tarjeta de «pendiente», que tiene
@@ -202,6 +224,54 @@ integrarlo:
    la app le pedía volver a elegir todo desde cero. Ahora va al formulario con
    `borradorId`, que es el hilo del flujo offline.
 
+### Lo que encontró la revisión adversarial
+
+4. **El borrador de ayer se partía en dos.**
+   `findBorradorOfflinePorHogarInstrumento` filtraba por `sesion_id IS NULL`
+   «para no colisionar con el camino online». Pero apenas la cola crea la sesión,
+   `marcarSincronizado` le pone el `sesion_id` al borrador: desde ese momento la
+   consulta ya no lo encontraba. Volver a entrar por ese hogar sin red creaba un
+   borrador **en blanco** —todos los capítulos en 0/N— y al sincronizar quedaban
+   dos filas con el mismo `sesion_id`; como `findBySesionId` usa `getFirstAsync`,
+   devolvía una cualquiera y **media entrevista dejaba de verse**. El WHERE ahora
+   busca el borrador vivo de ese hogar e instrumento, vinculado o no.
+   *Es el más grave de los ocho: es el único que esconde respuestas ya guardadas.*
+5. **La lista de hogares borraba copias locales de SQLite.** La reconciliación
+   trataba la respuesta del servidor como censo: si una fila ya sincronizada no
+   venía en ella, ejecutaba `eliminarPorIdLocal` — un DELETE definitivo. Pero esa
+   respuesta nunca fue un censo: es **una página de 20** (`PAGE_SIZE=20`, sin
+   seguir `next`) y encima filtrada por `?estado=`. Con 21 hogares, o tocando el
+   segmento «Activo» con un hogar en BORRADOR, la copia local se borraba sola —
+   justo la fila que hace posible la tarjeta offline. Se retiró la purga entera:
+   quien limpia es `purgarSincronizados()`, que solo corre con la cola vacía.
+6. **Los borradores solo se veían cuando el servidor fallaba.** La lectura de
+   SQLite estaba dentro de `if (!servidorOk)`. Un borrador que aún no subió no
+   está —por definición— en la respuesta del servidor, así que con señal la
+   entrevista capturada esa mañana no aparecía por ningún lado, sin mensaje; y si
+   su ítem de cola había quedado en `error`, era invisible de forma permanente.
+   Ahora se leen siempre y el dedupe por `sesion_id`, que era código muerto, pasa
+   a hacer su trabajo.
+7. **La misma mentira del punto 1, en encuestas.** La tarjeta de borrador tenía
+   «Pendiente sync» escrito fijo, también para lo ya subido. Ahora sale de
+   `sesion_id`: *Guardado* / *Pendiente sync*.
+8. **`listarBorradores` escondía lo que tenía sesión creada pero no subida.**
+   Excluía `estado != 'SINCRONIZADO'`, y ese estado **no** significa «ya subió
+   todo»: lo escribe `marcarSincronizado` cuando la cola logra crear la sesión,
+   con las respuestas todavía pendientes. Ahora excluye `COMPLETADO`, que sí es
+   el cierre real.
+
+Se agregaron 5 pruebas de regresión sobre los dos filtros del DAO
+(`src/db/__tests__/borradoresDao.test.ts`): son exactamente el tipo de condición
+que vuelve a colarse. Móvil: **126 tests**, `tsc` limpio.
+
+### Un hilo suelto que quedó a la vista
+
+`purgarSincronizados()` solo corre si la cola quedó **totalmente** vacía, y
+`contarPendientes()` cuenta `estado IN ('pendiente','error')`. O sea que **un
+solo ítem en `error` congela el mantenimiento del `.db` para toda la vida del
+dispositivo**: nunca más se purga nada. Está fuera del alcance de este rango,
+pero conviene mirarlo antes de que los teléfonos de campo lleven meses de uso.
+
 ---
 
 ## Qué falta, en orden
@@ -211,5 +281,7 @@ integrarlo:
 | 1 | Probar APK-001 E2E en dispositivo (buscar → autorizar en el panel → «Ya la autorizaron» → conformar → sesión) | Brando | build nuevo |
 | 2 | Verificar APK-003, APK-006 y APK-007 en dispositivo, en modo avión | Brando | build nuevo |
 | 3 | Pantalla de corrección de integrante (APK-004) | Brando | nada — la API está lista |
-| 4 | Documentar el alcance del modo offline y sus límites | Javier | nada |
-| 5 | Llevar la regla de recaracterización al manual de usuario | Javier | nada |
+| 4 | **APK-005 de fondo:** que `recalcular_porcentaje` evalúe skip-logic, como ya hace el móvil | Javier | nada |
+| 5 | Documentar el alcance del modo offline y sus límites | Javier | nada |
+| 6 | Llevar la regla de recaracterización al manual de usuario | Javier | nada |
+| 7 | Que un ítem en `error` no congele `purgarSincronizados()` para siempre | Javier | nada |

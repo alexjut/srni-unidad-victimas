@@ -51,10 +51,21 @@ export async function getBorrador(id: string): Promise<BorradorRow | null> {
   return db.getFirstAsync<BorradorRow>('SELECT * FROM borradores WHERE id = ?', [id]);
 }
 
+/**
+ * Borradores vivos, del más reciente al más viejo.
+ *
+ * Excluye COMPLETADO y NO 'SINCRONIZADO', que es lo que hacía antes. Ese estado
+ * no quiere decir «ya subió todo»: lo pone `marcarSincronizado` apenas la cola
+ * logra CREAR la sesión en el servidor, con las respuestas todavía en cola. Con
+ * el filtro viejo, una entrevista con sesión creada y respuestas sin subir
+ * desaparecía de la lista, y sin red tampoco tenía tarjeta de servidor: quedaba
+ * invisible por los dos lados. COMPLETADO sí es el cierre real (lo escribe
+ * `marcarCompletado` cuando el FINALIZAR llegó al servidor).
+ */
 export async function listarBorradores(): Promise<BorradorRow[]> {
   const db = await openDb();
   return db.getAllAsync<BorradorRow>(
-    "SELECT * FROM borradores WHERE estado != 'SINCRONIZADO' ORDER BY updated_at DESC",
+    "SELECT * FROM borradores WHERE estado != 'COMPLETADO' ORDER BY updated_at DESC",
   );
 }
 
@@ -186,13 +197,25 @@ export async function findBySesionId(sesionId: string): Promise<BorradorRow | nu
 }
 
 /**
- * Busca el borrador OFFLINE (aún sin sesion_id de servidor) de un hogar +
- * instrumento. Sirve para que el flujo offline gire sobre UN ÚNICO borrador:
- * la lista de capítulos lo resuelve una sola vez y se lo pasa a cada capítulo.
+ * Busca EL borrador de un hogar + instrumento. El flujo offline gira sobre uno
+ * solo: la lista de capítulos lo resuelve una vez y se lo pasa a cada capítulo.
  *
- * Se restringe a `sesion_id IS NULL` para no colisionar con borradores ya
- * sincronizados/vinculados a una sesión (camino online). Si hay varios
- * (no debería), devuelve el más reciente.
+ * Antes esto filtraba por `sesion_id IS NULL` para «no colisionar con el camino
+ * online», y ese filtro perdía trabajo. En cuanto la cola crea la sesión en el
+ * servidor, `marcarSincronizado` le pone el `sesion_id` al borrador — o sea que
+ * el borrador de la entrevista de ayer deja de cumplir la condición. Al volver
+ * a entrar por ese mismo hogar sin red, esta función no lo encontraba y el
+ * formulario creaba uno EN BLANCO: todos los capítulos en 0/N, con las
+ * respuestas viejas todavía en el `.db` pero colgando del otro borrador. Y al
+ * sincronizar quedaban dos filas con el mismo `sesion_id` —el backend responde
+ * con la misma sesión, es idempotente—, así que `findBySesionId` (que usa
+ * `getFirstAsync`) devolvía una cualquiera de las dos y la mitad de la
+ * entrevista dejaba de verse.
+ *
+ * Ahora el criterio es el que corresponde: el borrador vivo de ese hogar e
+ * instrumento, esté vinculado o no. Solo se excluye COMPLETADO, que es el que
+ * ya se cerró contra el servidor y `purgarSincronizados` va a borrar.
+ * Si hay varios (no debería), devuelve el más reciente.
  */
 export async function findBorradorOfflinePorHogarInstrumento(
   hogarId: string,
@@ -201,7 +224,7 @@ export async function findBorradorOfflinePorHogarInstrumento(
   const db = await openDb();
   return db.getFirstAsync<BorradorRow>(
     `SELECT * FROM borradores
-       WHERE sesion_id IS NULL AND hogar_id = ? AND instrumento_id = ?
+       WHERE hogar_id = ? AND instrumento_id = ? AND estado != 'COMPLETADO'
        ORDER BY updated_at DESC
        LIMIT 1`,
     [hogarId, instrumentoId],

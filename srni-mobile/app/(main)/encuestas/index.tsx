@@ -2,10 +2,15 @@
  * Lista de sesiones de encuesta del encuestador.
  * Muestra el progreso de cada sesión y permite continuar o ver detalles.
  *
- * APK-003: cuando no hay red, muestra borradores locales pendientes de
- * sincronizar en vez de "No se pudo cargar las sesiones" + EmptyState vacío.
+ * APK-003: la lista une DOS fuentes, siempre las dos —
+ *   · las sesiones del servidor, cuando responde;
+ *   · los borradores locales de SQLite, haya red o no.
+ * Un borrador que todavía no subió no existe en el servidor, así que si solo se
+ * leyera de allá la encuestadora no vería su propio trabajo del día. El chip de
+ * cada tarjeta dice cuál es cuál, y sale del dato (`sesion_id`), nunca escrito
+ * fijo.
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import {
   Text, Chip,
@@ -13,7 +18,7 @@ import {
 } from 'react-native-paper';
 import { AnimatedProgressBar } from '../../../src/components/AnimatedProgressBar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import {
@@ -76,19 +81,30 @@ function BorradorCard({ data, instrumentoNombre }: { data: BorradorRow; instrume
     });
   }
 
+  /**
+   * Lo que dice el chip tiene que salir del dato. Escrito fijo, «Pendiente
+   * sync» le decía a la encuestadora que su trabajo no había subido incluso
+   * cuando sí: `sesion_id` presente significa que la sesión ya existe en el
+   * servidor. Es el mismo defecto que se corrigió en la tarjeta de hogares.
+   */
+  const guardado = !!data.sesion_id;
+  const etiqueta = guardado ? 'Guardado' : 'Pendiente sync';
+  const color    = guardado ? GOV.verde : GOV.naranja;
+  const colorBg  = guardado ? GOV.verdeTenue : GOV.naranjaTenue;
+
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={continuar}
       accessibilityRole="button"
-      accessibilityLabel={`Borrador ${instrumentoNombre} — pendiente de sincronizar, tocar para continuar`}
+      accessibilityLabel={`${instrumentoNombre} — ${etiqueta}, tocar para continuar`}
     >
-      <View style={[styles.cardAccent, { backgroundColor: GOV.naranja }]} />
+      <View style={[styles.cardAccent, { backgroundColor: color }]} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
           <Text style={styles.instrumento} numberOfLines={1}>{instrumentoNombre}</Text>
-          <View style={[styles.estadoChip, { backgroundColor: GOV.naranjaTenue }]}>
-            <Text style={[styles.estadoTxt, { color: GOV.naranja }]}>Pendiente sync</Text>
+          <View style={[styles.estadoChip, { backgroundColor: colorBg }]}>
+            <Text style={[styles.estadoTxt, { color }]}>{etiqueta}</Text>
           </View>
         </View>
         {data.hogar_id ? (
@@ -137,22 +153,34 @@ export default function EncuestasIndexScreen() {
       if (estaOnline) setError('No se pudo cargar las sesiones.');
     }
 
-    // APK-003: leer borradores locales si el servidor falló
-    if (!servidorOk) {
-      try {
-        const borradores = await borradoresDao.listarBorradores();
-        const instrumentos = listaInstrumentosBundle();
-        const nombresMap = new Map(instrumentos.map((i) => [i.id, i.nombre]));
+    // Los borradores locales se leen SIEMPRE, haya red o no.
+    //
+    // Antes esto estaba dentro de `if (!servidorOk)`, y así solo se veían
+    // cuando el servidor fallaba — justo al revés de lo que hace falta. Un
+    // borrador que todavía no subió no está, por definición, en la respuesta
+    // del servidor: su sesión aún no existe allá. Con señal, la encuestadora
+    // que acababa de capturar una entrevista sin red entraba a Encuestas y no
+    // la veía por ningún lado, sin mensaje. Y si el ítem de cola había quedado
+    // en 'error', era invisible de forma permanente mientras hubiera señal. Lo
+    // que sigue después de creer que se perdió es volver a capturarla con la
+    // víctima enfrente.
+    //
+    // Con la lectura siempre activa, el `continue` de abajo pasa a ser el
+    // dedupe de verdad: antes era código muerto, porque solo corría cuando
+    // `sesionesServidor` estaba vacío.
+    try {
+      const borradores = await borradoresDao.listarBorradores();
+      const instrumentos = listaInstrumentosBundle();
+      const nombresMap = new Map(instrumentos.map((i) => [i.id, i.nombre]));
 
-        for (const b of borradores) {
-          // Si tiene sesion_id y el servidor respondió, ya está en servidorItems
-          if (b.sesion_id && sesionesServidor.has(b.sesion_id)) continue;
-          const nombre = (b.instrumento_id ? nombresMap.get(b.instrumento_id) : null) ?? 'Instrumento';
-          borradorItems.push({ tipo: 'borrador', data: b, instrumentoNombre: nombre });
-        }
-      } catch {
-        // SQLite no disponible — se queda vacío
+      for (const b of borradores) {
+        // Ya vinculado a una sesión que el servidor devolvió → esa tarjeta manda.
+        if (b.sesion_id && sesionesServidor.has(b.sesion_id)) continue;
+        const nombre = (b.instrumento_id ? nombresMap.get(b.instrumento_id) : null) ?? 'Instrumento';
+        borradorItems.push({ tipo: 'borrador', data: b, instrumentoNombre: nombre });
       }
+    } catch {
+      // SQLite no disponible — se queda vacío
     }
 
     setItems([...borradorItems, ...servidorItems]);
@@ -160,7 +188,14 @@ export default function EncuestasIndexScreen() {
     setRefrescando(false);
   }, [estaOnline, filtroEstado]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  // useFocusEffect y no useEffect: los tabs conservan la instancia montada, así
+  // que con useEffect un borrador recién capturado no aparecía al volver a esta
+  // pestaña, y al terminar una sincronización nada volvía a disparar la carga.
+  useFocusEffect(
+    useCallback(() => {
+      cargar();
+    }, [cargar]),
+  );
 
   if (cargando) {
     return (
@@ -240,19 +275,28 @@ export default function EncuestasIndexScreen() {
 
                 <Text style={styles.hogarId}>Hogar: {item.data.hogar.slice(0, 8)}…</Text>
 
+                {/* El porcentaje se muestra como viene, solo acotado a 0–100.
+                    Estuvo un tiempo forzado a 100 cuando el estado era
+                    COMPLETADA: eso tapaba el síntoma y de paso mentía, porque
+                    el backend NO exige completitud para cerrar una sesión
+                    (`finalizar` guarda el porcentaje real junto a COMPLETADA) y
+                    una entrevista interrumpida a mitad se cerraba mostrando
+                    100 %. El panel web nunca aplicó ese override, así que la
+                    misma sesión se veía distinta según quién la mirara.
+                    El número igual queda BAJO hasta que se arregle el backend:
+                    `recalcular_porcentaje` divide por TODAS las obligatorias
+                    del instrumento sin evaluar skip-logic, así que cuenta como
+                    faltantes preguntas que la regla ocultó. Esa es la causa de
+                    fondo del APK-005 y se arregla allá, no acá. */}
                 <View style={styles.progresoRow}>
                   <View style={styles.barraWrap}>
                     <AnimatedProgressBar
-                      progress={
-                        item.data.estado === 'COMPLETADA'
-                          ? 1
-                          : Math.max(0, Math.min(1, (item.data.porcentaje_completado ?? 0) / 100))
-                      }
+                      progress={Math.max(0, Math.min(1, (item.data.porcentaje_completado ?? 0) / 100))}
                       color={estadoColor}
                     />
                   </View>
                   <Text style={styles.pct}>
-                    {item.data.estado === 'COMPLETADA' ? 100 : Math.max(0, Math.min(100, Math.round(item.data.porcentaje_completado ?? 0)))}%
+                    {Math.max(0, Math.min(100, Math.round(item.data.porcentaje_completado ?? 0)))}%
                   </Text>
                 </View>
 

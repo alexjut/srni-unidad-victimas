@@ -268,21 +268,21 @@ export default function SesionDetalleScreen() {
 
           <Divider style={styles.divider} />
 
-          {/* Barra de progreso */}
+          {/* Barra de progreso — valor tal cual viene, solo acotado a 0–100.
+              Ver la nota en encuestas/index.tsx: forzar 100 % en COMPLETADA
+              mentía sobre entrevistas cerradas a mitad, y el número bajo que se
+              ve es un defecto de `recalcular_porcentaje` en el backend, que no
+              evalúa skip-logic. */}
           <View style={styles.progresoRow}>
             <View style={styles.barraWrap}>
               <AnimatedProgressBar
-                progress={
-                  sesion.estado === 'COMPLETADA'
-                    ? 1
-                    : Math.max(0, Math.min(1, (sesion.porcentaje_completado ?? 0) / 100))
-                }
+                progress={Math.max(0, Math.min(1, (sesion.porcentaje_completado ?? 0) / 100))}
                 color={colorEstado}
                 height={8}
               />
             </View>
             <Text style={[styles.pct, { color: colorEstado }]}>
-              {sesion.estado === 'COMPLETADA' ? 100 : Math.max(0, Math.min(100, Math.round(sesion.porcentaje_completado ?? 0)))}%
+              {Math.max(0, Math.min(100, Math.round(sesion.porcentaje_completado ?? 0)))}%
             </Text>
           </View>
           <Text style={styles.respuestasMeta}>

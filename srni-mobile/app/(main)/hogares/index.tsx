@@ -156,12 +156,10 @@ export default function HogaresIndexScreen() {
     // con polling cada 60 s y puede estar desincronizado al montar la pantalla.
     // El try/catch ya maneja el caso sin red.
     let servidorOk = false;
-    const idsServidor = new Set<string>();
     try {
       const res = await hogaresApi.listar(filtroEstado ? { estado: filtroEstado } : undefined);
       servidorOk = true;
       for (const h of res.data.results) {
-        idsServidor.add(h.id);
         servidorItems.push({ tipo: 'servidor', data: h });
       }
     } catch {
@@ -169,26 +167,28 @@ export default function HogaresIndexScreen() {
       // Sin red: silenciosamente solo mostramos los offline.
     }
 
-    // Reconciliación local ↔ servidor (arregla el "hogar fantasma"):
-    //  - Fila ya sincronizada (id_servidor != null): es autoridad del servidor.
-    //      · Si hay red y el servidor YA NO la devuelve → se borró en el backend
-    //        → purgar la copia local huérfana (no volver a mostrarla).
-    //      · Si no, NO se muestra como tarjeta offline (ya aparece como servidor).
-    //  - Fila aún sin sincronizar (id_servidor == null): mostrar como offline
-    //      (pendiente/error) — funciona sin red y no rompe el flujo offline.
+    // Reconciliación local ↔ servidor.
+    //
+    // Acá NO se borra nada de SQLite, y esa es la corrección importante. Antes
+    // esta pantalla asumía que la respuesta del servidor era el censo de
+    // hogares: si una fila local ya sincronizada no venía en `idsServidor`, la
+    // daba por borrada en el backend y hacía `eliminarPorIdLocal` — un DELETE
+    // definitivo.
+    //
+    // Pero `idsServidor` nunca fue un censo: es UNA página de 20
+    // (PageNumberPagination, PAGE_SIZE=20) y encima filtrada por
+    // `?estado=<filtroEstado>`. O sea que bastaba con tener 21 hogares, o con
+    // tocar el segmento "Activo" teniendo un hogar en BORRADOR, para que la
+    // copia local se borrara sola. Y lo que se borraba era justo la fila que
+    // hace posible la tarjeta offline de más abajo.
+    //
+    // El mantenimiento del .db no se pierde: `purgarSincronizados()` borra
+    // `hogares_offline WHERE estado_sync = 'enviado'`, y solo lo hace con la
+    // cola vacía, que es cuando de verdad se puede.
     for (const h of offlineRows) {
-      if (h.id_servidor) {
-        if (servidorOk) {
-          // Con red: el servidor es la autoridad. Si ya no lo devuelve → purgar.
-          if (!idsServidor.has(h.id_servidor)) {
-            try { await hogaresOfflineDao.eliminarPorIdLocal(h.id_local); } catch { /* no-op */ }
-          }
-          continue;
-        }
-        // Sin red: mostrar la copia local para que el usuario vea sus hogares (APK-003).
-        offlineItems.push({ tipo: 'offline', data: h });
-        continue;
-      }
+      // Con red, el hogar ya sincronizado se ve por su tarjeta de servidor;
+      // pintarlo además desde acá lo duplicaría.
+      if (h.id_servidor && servidorOk) continue;
       offlineItems.push({ tipo: 'offline', data: h });
     }
 
