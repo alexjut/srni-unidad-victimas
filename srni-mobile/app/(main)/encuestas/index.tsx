@@ -121,11 +121,17 @@ export default function EncuestasIndexScreen() {
 
                 <View style={styles.progresoRow}>
                   <ProgressBar
-                    progress={item.porcentaje_completado / 100}
+                    progress={
+                      item.estado === 'COMPLETADA'
+                        ? 1
+                        : Math.max(0, Math.min(1, (item.porcentaje_completado ?? 0) / 100))
+                    }
                     style={styles.barra}
                     color={estadoColor}
                   />
-                  <Text style={styles.pct}>{item.porcentaje_completado}%</Text>
+                  <Text style={styles.pct}>
+                    {item.estado === 'COMPLETADA' ? 100 : Math.max(0, Math.min(100, Math.round(item.porcentaje_completado ?? 0)))}%
+                  </Text>
                 </View>
 
                 <Text style={styles.fecha}>
@@ -167,8 +173,8 @@ const styles = StyleSheet.create({
   estadoChip: { borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
   estadoTxt: { fontSize: 10, fontWeight: '600' },
   hogarId: { fontFamily: 'monospace', ...FONT.caption, color: GOV.textoT, marginBottom: SPACING.sm },
-  progresoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  barra: { flex: 1, height: 5, borderRadius: 2, marginRight: SPACING.sm },
+  progresoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, overflow: 'hidden' },
+  barra: { flex: 1, height: 5, borderRadius: 2, marginRight: SPACING.sm, overflow: 'hidden' },
   pct: { ...FONT.caption, color: GOV.textoS, minWidth: 32, textAlign: 'right' },
   fecha: { ...FONT.caption, color: GOV.textoT },
   hint: { marginTop: SPACING.sm, ...FONT.small, color: GOV.textoS },
