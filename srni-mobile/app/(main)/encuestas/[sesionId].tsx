@@ -1,4 +1,5 @@
 // Detalle de una sesión de encuesta — GOV.CO design system.
+// APK-003: fallback offline — si el API falla, muestra el borrador local.
 import { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import {
@@ -7,11 +8,13 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
-import { activarPerfil } from '../../../src/services/instrumentos';
+import * as borradoresDao from '../../../src/db/borradoresDao';
+import { activarPerfil, codigoPorInstrumentoId, listaInstrumentosBundle } from '../../../src/services/instrumentos';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { GovButton } from '../../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
 import type { SesionDetalle } from '../../../src/types';
+import type { BorradorRow, RespuestaRow } from '../../../src/db/borradoresDao';
 
 const ESTADO_COLOR: Record<string, string> = {
   INICIADA:    GOV.azul,
@@ -33,20 +36,48 @@ function InfoFila({ label, valor }: { label: string; valor: string }) {
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
+/** Datos mínimos del borrador para mostrar offline. */
+interface BorradorOffline {
+  borrador: BorradorRow;
+  respuestas: RespuestaRow[];
+  instrumentoNombre: string;
+}
+
 export default function SesionDetalleScreen() {
   const { sesionId } = useLocalSearchParams<{ sesionId: string }>();
   const [sesion, setSesion] = useState<SesionDetalle | null>(null);
+  const [borradorOffline, setBorradorOffline] = useState<BorradorOffline | null>(null);
   const [cargando, setCargando] = useState(true);
   const [finalizando, setFinalizando] = useState(false);
   const [error, setError] = useState('');
 
-  function cargar() {
+  async function cargar() {
     if (!sesionId) return;
     setCargando(true);
-    encuestasApi.detalle(sesionId)
-      .then((res) => setSesion(res.data))
-      .catch(() => setError('No se pudo cargar la sesión.'))
-      .finally(() => setCargando(false));
+    setError('');
+    setBorradorOffline(null);
+
+    try {
+      const res = await encuestasApi.detalle(sesionId);
+      setSesion(res.data);
+    } catch {
+      // APK-003: fallback a borrador local
+      try {
+        const borrador = await borradoresDao.findBySesionId(sesionId);
+        if (borrador) {
+          const respuestas = await borradoresDao.getRespuestas(borrador.id);
+          const instrumentos = listaInstrumentosBundle();
+          const nombre = instrumentos.find((i) => i.id === borrador.instrumento_id)?.nombre ?? 'Instrumento';
+          setBorradorOffline({ borrador, respuestas, instrumentoNombre: nombre });
+        } else {
+          setError('No se pudo cargar la sesión y no hay borrador local.');
+        }
+      } catch {
+        setError('No se pudo cargar la sesión.');
+      }
+    } finally {
+      setCargando(false);
+    }
   }
 
   // Se recarga cada vez que la pantalla recupera el foco (p.ej. al volver del formulario).
@@ -91,13 +122,106 @@ export default function SesionDetalleScreen() {
 
   // ── Error ─────────────────────────────────────────────────────────────────────
 
-  if (error || !sesion) {
+  if (error && !borradorOffline) {
     return (
       <View style={styles.root}>
         <GovHeader title="Sesión de encuesta" onBack={() => router.back()} />
         <View style={styles.centrado}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
           <Text style={styles.errorTxt}>{error || 'Sesión no encontrada.'}</Text>
+          <GovButton label="Volver" variant="secondary" onPress={() => router.back()} />
+        </View>
+      </View>
+    );
+  }
+
+  // ── Borrador offline (APK-003) ──────────────────────────────────────────────
+
+  if (borradorOffline && !sesion) {
+    const { borrador, respuestas, instrumentoNombre } = borradorOffline;
+    return (
+      <View style={styles.root}>
+        <GovHeader
+          title={`Borrador ${borrador.id.slice(0, 8)}…`}
+          subtitle={instrumentoNombre}
+          onBack={() => router.back()}
+        />
+        <View style={styles.offlineBanner}>
+          <MaterialCommunityIcons name="wifi-off" size={14} color={GOV.naranja} />
+          <Text style={styles.offlineTxt}>Sin conexión — datos del borrador local</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.card}>
+            <View style={styles.estadoRow}>
+              <View style={[styles.estadoChip, { backgroundColor: GOV.naranjaTenue }]}>
+                <Text style={[styles.estadoTxt, { color: GOV.naranja }]}>Pendiente sync</Text>
+              </View>
+              <Text style={styles.fecha}>
+                {new Date(borrador.updated_at).toLocaleDateString('es-CO')}
+              </Text>
+            </View>
+            <InfoFila label="Instrumento" valor={instrumentoNombre} />
+            {borrador.hogar_id && <InfoFila label="Hogar" valor={`${borrador.hogar_id.slice(0, 8)}…`} />}
+            <Divider style={styles.divider} />
+            <Text style={styles.respuestasMeta}>
+              {respuestas.length} respuesta{respuestas.length !== 1 ? 's' : ''} guardada{respuestas.length !== 1 ? 's' : ''} localmente
+            </Text>
+          </View>
+
+          {/* Continuar formulario offline */}
+          <View style={styles.card}>
+            <Text style={styles.seccionTitulo}>Continuar</Text>
+            <GovButton
+              label={`Continuar formulario — ${instrumentoNombre}`}
+              icon="clipboard-text"
+              onPress={() => {
+                if (borrador.instrumento_id) {
+                  const codigo = codigoPorInstrumentoId(borrador.instrumento_id);
+                  if (codigo) try { activarPerfil(codigo); } catch {}
+                }
+                router.push({
+                  pathname: '/(main)/formulario',
+                  params: {
+                    sesionServerId: sesionId,
+                    instrumentoId: borrador.instrumento_id ?? '',
+                    hogarId: borrador.hogar_id ?? '',
+                  },
+                });
+              }}
+            />
+          </View>
+
+          {/* Respuestas locales */}
+          {respuestas.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.seccionTitulo}>
+                Respuestas locales ({respuestas.length})
+              </Text>
+              {respuestas.slice(0, 50).map((r) => (
+                <View key={r.id} style={styles.respuestaRow}>
+                  <Text style={styles.codigoPregunta}>{r.pregunta_id.slice(0, 8)}…</Text>
+                  <Text style={styles.valorRespuesta} numberOfLines={1}>{r.valor || '—'}</Text>
+                </View>
+              ))}
+              {respuestas.length > 50 && (
+                <Text style={styles.respuestasMeta}>
+                  … y {respuestas.length - 50} más
+                </Text>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  if (!sesion) {
+    return (
+      <View style={styles.root}>
+        <GovHeader title="Sesión de encuesta" onBack={() => router.back()} />
+        <View style={styles.centrado}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={GOV.rojo} />
+          <Text style={styles.errorTxt}>Sesión no encontrada.</Text>
           <GovButton label="Volver" variant="secondary" onPress={() => router.back()} />
         </View>
       </View>
@@ -241,6 +365,18 @@ const styles = StyleSheet.create({
     ...FONT.caption,
     color: GOV.azulOscuro,
   },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: GOV.naranjaTenue,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm,
+  },
+  offlineTxt: { ...FONT.caption, color: GOV.naranja, fontWeight: '600' },
   centrado: {
     flex: 1,
     justifyContent: 'center',

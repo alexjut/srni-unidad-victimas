@@ -54,9 +54,11 @@ Responsables: Brandon (mobile), Javier (backend)
   - 2) Resuelve nombres de instrumentos desde el bundle local (`listaInstrumentosBundle`)
   - 3) Banner naranja "Sin conexión — mostrando borradores locales" cuando offline
   - 4) EmptyState suprimido cuando hay error de servidor (mismo patrón que hogares)
-- [ ] **3.3** (Brandon — Mobile) Sesion detalle: leer borrador local si el API falla
-  - Archivo: `app/(main)/encuestas/[sesionId].tsx`
-  - Cuando el detalle falla offline, buscar el borrador local con `borradoresDao.getBorrador(sesionId)` y mostrar las respuestas guardadas localmente
+- [x] **3.3** (Brandon — Mobile) Sesion detalle: leer borrador local si el API falla
+  - **CORREGIDO** — `app/(main)/encuestas/[sesionId].tsx` ahora:
+  - 1) Cuando `encuestasApi.detalle()` falla, busca borrador con `borradoresDao.findBySesionId(sesionId)`
+  - 2) Muestra vista offline: banner naranja, nombre instrumento del bundle, conteo de respuestas locales, botón "Continuar formulario"
+  - 3) Lista hasta 50 respuestas locales como referencia
 - [ ] **3.4** (Brandon + Javier) Definir con el equipo si offline es requisito formal
   - Si lo es, documentar que funciona offline y que no
   - La busqueda RNI sin red es comportamiento esperado (ya lo dice el informe)
