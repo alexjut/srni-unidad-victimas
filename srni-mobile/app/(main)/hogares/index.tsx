@@ -68,22 +68,49 @@ function HogarServidorCard({ data }: { data: HogarResumen }) {
   );
 }
 
-// ─── Tarjeta de hogar (offline pendiente) ────────────────────────────────────
+// ─── Tarjeta de hogar (copia local) ──────────────────────────────────────────
 
+/**
+ * Tarjeta que se pinta desde SQLite. Cubre dos situaciones distintas y no debe
+ * confundirlas:
+ *
+ *   · `id_servidor == null` → el hogar todavía no subió. «Pendiente sync» es
+ *     verdad y el id que existe es el local.
+ *   · `id_servidor != null` → el hogar YA está en el servidor; lo estamos
+ *     pintando de acá solo porque ahora mismo no hay red (APK-003). Decirle
+ *     «Pendiente sync» a la encuestadora sería mentirle sobre su trabajo, y
+ *     mostrar el id local le daría al mismo hogar un código distinto según
+ *     hubiera señal o no. Se usa el id del servidor y se dice «Guardado».
+ */
 function HogarOfflineCard({ data }: { data: HogarOfflineRow }) {
+  const sincronizado = !!data.id_servidor;
+  const conError     = !sincronizado && data.estado_sync === 'error';
+
+  // El id del servidor manda apenas existe: es el mismo que ve el panel web y
+  // el que la tarjeta online muestra para este hogar.
+  const idVisible = data.id_servidor ?? data.id_local;
+
+  const color   = sincronizado ? GOV.verde : conError ? GOV.rojo : GOV.naranja;
+  const colorBg = sincronizado ? GOV.verdeTenue : conError ? GOV.rojoTenue : GOV.naranjaTenue;
+  const etiqueta = sincronizado ? 'Guardado' : conError ? 'Error de envío' : 'Pendiente sync';
+
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/(main)/caracterizar', params: { hogarId: data.id_local } })}
-      style={({ pressed }) => [styles.card, styles.cardOffline, pressed && styles.cardPressed]}
+      onPress={() => router.push({ pathname: '/(main)/caracterizar', params: { hogarId: idVisible } })}
+      style={({ pressed }) => [
+        styles.card,
+        !sincronizado && styles.cardOffline,
+        pressed && styles.cardPressed,
+      ]}
       accessibilityRole="button"
-      accessibilityLabel={`Hogar offline ${data.id_local.slice(0, 8)} — pendiente de sincronizar`}
+      accessibilityLabel={`Hogar ${idVisible.slice(0, 8)} — ${etiqueta}`}
     >
-      <View style={[styles.cardLeft, { backgroundColor: GOV.naranja }]} />
+      <View style={[styles.cardLeft, { backgroundColor: color }]} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardId} numberOfLines={1}>{data.id_local.slice(0, 8)}…</Text>
-          <View style={[styles.estadoChip, { backgroundColor: GOV.naranjaTenue }]}>
-            <Text style={[styles.estadoTxt, { color: GOV.naranja }]}>Pendiente sync</Text>
+          <Text style={styles.cardId} numberOfLines={1}>{idVisible.slice(0, 8)}…</Text>
+          <View style={[styles.estadoChip, { backgroundColor: colorBg }]}>
+            <Text style={[styles.estadoTxt, { color }]}>{etiqueta}</Text>
           </View>
         </View>
         <Text style={styles.municipio} numberOfLines={1}>
@@ -324,7 +351,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   cardOffline: {
-    // tocable: navega al flujo offline de caracterización con su id_local
+    // solo para el hogar que aún no subió: navega al flujo offline con su id_local
   },
   cardLeft: {
     width: 4,

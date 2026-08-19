@@ -16,7 +16,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { encuestasApi } from '../../../src/api/encuestas';
 import * as borradoresDao from '../../../src/db/borradoresDao';
-import { listaInstrumentosBundle } from '../../../src/services/instrumentos';
+import {
+  activarPerfil, codigoPorInstrumentoId, listaInstrumentosBundle,
+} from '../../../src/services/instrumentos';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { EmptyState } from '../../../src/components/EmptyState';
@@ -45,12 +47,41 @@ type ItemLista =
 // ─── Tarjeta de borrador offline ──────────────────────────────────────────────
 
 function BorradorCard({ data, instrumentoNombre }: { data: BorradorRow; instrumentoNombre: string }) {
+  /**
+   * Tocar un borrador tiene que CONTINUARLO. Antes iba a `/caracterizar`, que es
+   * el selector de instrumento: la encuestadora tocaba su trabajo a medias y la
+   * app le pedía volver a elegir instrumento y hogar desde cero, sin señal de
+   * que el borrador seguía ahí.
+   *
+   * Se va derecho al formulario con `borradorId`, que es el hilo del flujo
+   * offline — el mismo camino que ya usa la pantalla de detalle de sesión.
+   * `instrumentoId` va también porque sin red es lo único que le permite a
+   * `formulario/index` resolver el perfil (`codigoPorInstrumentoId`).
+   */
+  function continuar() {
+    if (data.instrumento_id) {
+      const codigo = codigoPorInstrumentoId(data.instrumento_id);
+      // Si el perfil no está en el bundle, el formulario lo dice con su propio
+      // mensaje; acá no se bloquea la navegación.
+      if (codigo) try { activarPerfil(codigo); } catch { /* no-op */ }
+    }
+    router.push({
+      pathname: '/(main)/formulario',
+      params: {
+        borradorId: data.id,
+        instrumentoId: data.instrumento_id ?? '',
+        hogarId: data.hogar_id ?? '',
+        ...(data.sesion_id ? { sesionServerId: data.sesion_id } : {}),
+      },
+    });
+  }
+
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() => router.push({ pathname: '/(main)/caracterizar', params: { hogarId: data.hogar_id ?? '' } })}
+      onPress={continuar}
       accessibilityRole="button"
-      accessibilityLabel={`Borrador ${instrumentoNombre} — pendiente de sincronizar`}
+      accessibilityLabel={`Borrador ${instrumentoNombre} — pendiente de sincronizar, tocar para continuar`}
     >
       <View style={[styles.cardAccent, { backgroundColor: GOV.naranja }]} />
       <View style={styles.cardBody}>
