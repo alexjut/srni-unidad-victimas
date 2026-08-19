@@ -48,9 +48,12 @@ Responsables: Brandon (mobile), Javier (backend)
   - **CORREGIDO** — Dos cambios en `app/(main)/hogares/index.tsx`:
   - 1) Cuando el servidor falla, los hogares sincronizados (con `id_servidor`) ahora se muestran como tarjetas offline en vez de saltarse
   - 2) `ListEmptyComponent` devuelve `null` cuando hay error, para no mostrar "Sin hogares" + "Nuevo hogar" que induce duplicados
-- [ ] **3.2** (Brandon — Mobile) Encuestas: fallback a borradores locales offline
-  - Archivo: `app/(main)/encuestas/index.tsx:44-54`
-  - Actualmente solo consulta el API. Agregar: si `catch`, leer borradores de `borradoresDao` y mostrarlos como tarjetas "pendiente de sincronizar" (mismo patron que hogares offline)
+- [x] **3.2** (Brandon — Mobile) Encuestas: fallback a borradores locales offline
+  - **CORREGIDO** — `app/(main)/encuestas/index.tsx` ahora:
+  - 1) Cuando el API falla, lee borradores de `borradoresDao.listarBorradores()` y los muestra como tarjetas con badge "Pendiente sync"
+  - 2) Resuelve nombres de instrumentos desde el bundle local (`listaInstrumentosBundle`)
+  - 3) Banner naranja "Sin conexión — mostrando borradores locales" cuando offline
+  - 4) EmptyState suprimido cuando hay error de servidor (mismo patrón que hogares)
 - [ ] **3.3** (Brandon — Mobile) Sesion detalle: leer borrador local si el API falla
   - Archivo: `app/(main)/encuestas/[sesionId].tsx`
   - Cuando el detalle falla offline, buscar el borrador local con `borradoresDao.getBorrador(sesionId)` y mostrar las respuestas guardadas localmente
