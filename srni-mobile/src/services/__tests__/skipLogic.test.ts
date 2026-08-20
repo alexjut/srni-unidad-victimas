@@ -277,6 +277,18 @@ describe('calcularVisibles — expresion_origen con ContextoVictima', () => {
     expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 2 }).visibles.has('P2')).toBe(true);
     expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 40 }).visibles.has('P2')).toBe(false);
   });
+
+  it('False con mayúscula vale el booleano, no la cadena', () => {
+    // El diccionario escribe las dos grafías: el territorial dice
+    // `respuesta == false` y el telefónico V8 dice `ruv_incluido == False`.
+    // Sin reconocer la mayúscula, 'False' caía a cadena y `false == 'False'`
+    // daba falso: la regla no disparaba nunca para quien NO está en el RUV,
+    // que es justo a quien apunta.
+    const reglas = reglaExpr('ruv_incluido == False or edad < 3');
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: false, edad: 40 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 2 }).visibles.has('P2')).toBe(true);
+    expect(calcularVisibles([pregunta('P2')], reglas, {}, { ruvIncluido: true, edad: 40 }).visibles.has('P2')).toBe(false);
+  });
 });
 
 describe('calcularVisibles — reglas combinadas sobre la misma pregunta', () => {

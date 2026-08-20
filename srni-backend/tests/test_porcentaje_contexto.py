@@ -323,6 +323,22 @@ class TestEvaluador:
     def test_casos(self, expr, ctx, esperado):
         assert evaluar_expresion_segura(expr, ctx, {}) is esperado
 
+    @pytest.mark.parametrize('expr, ctx, esperado', [
+        # La regla REAL del telefonico V8. Con `False` en mayuscula y con `or`.
+        ("ruv_incluido == False or edad < 3", {'ruv_incluido': False, 'edad': 30}, True),
+        ("ruv_incluido == False or edad < 3", {'ruv_incluido': True, 'edad': 2}, True),
+        ("ruv_incluido == False or edad < 3", {'ruv_incluido': True, 'edad': 30}, False),
+        # Una rama que no se puede evaluar no mata a la otra: la edad decide.
+        ("ruv_incluido == False or edad < 3", {'edad': 2}, True),
+        ("ruv_incluido == False or edad < 3", {'ruv_incluido': False}, True),
+        ("ruv_incluido == False or edad < 3", {}, False),
+        # En un AND, la rama desconocida si hace fallar la condicion entera.
+        ("sexo == '2' and edad >= 12", {'edad': 30}, False),
+        ("sexo == '2' and edad >= 12", {'sexo': '2'}, False),
+    ])
+    def test_or_y_literales_en_mayuscula(self, expr, ctx, esperado):
+        assert evaluar_expresion_segura(expr, ctx, {}) is esperado
+
     def test_una_respuesta_vacia_no_cuenta_como_distinta(self):
         """Espejo del móvil: respuesta sin capturar = desconocida, no ''."""
         assert evaluar_expresion_segura("D6 != '2'", {}, {'D6': ''}) is False

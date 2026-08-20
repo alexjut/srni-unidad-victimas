@@ -210,8 +210,12 @@ function _varContexto(
 
 function _parseValor(raw: string): number | string | boolean {
   if (/^'.*'$/.test(raw) || /^".*"$/.test(raw)) return raw.slice(1, -1);
-  if (raw === 'true') return true;
-  if (raw === 'false') return false;
+  // Las dos grafías: el diccionario escribe `respuesta == false` en un
+  // instrumento y `ruv_incluido == False` en otro. Sin la mayúscula, 'False'
+  // caía a string y `false == 'False'` daba falso — la regla no disparaba nunca
+  // para quien NO está en el RUV, que es justo a quien apunta.
+  if (raw === 'true' || raw === 'True') return true;
+  if (raw === 'false' || raw === 'False') return false;
   const n = Number(raw);
   return Number.isNaN(n) ? raw : n;
 }

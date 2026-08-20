@@ -58,10 +58,14 @@ class ValorDesconocido(Exception):
     """
 
 
-# `true`/`false`/`null` van en minúscula en las expresiones de los fixtures
-# —vienen del diccionario, no de Python—, así que el AST los ve como nombres.
-# Sin esto, `ruv_incluido == false` compararía contra un valor desconocido.
-_LITERALES = {'true': True, 'false': False, 'null': None, 'none': None}
+# Los booleanos de las expresiones vienen del diccionario, no de Python, y están
+# escritos de las dos formas: el territorial dice `respuesta == false` y el
+# telefónico dice `ruv_incluido == False`. El AST los ve como nombres, así que hay
+# que reconocer ambas grafías o la regla queda inevaluable.
+_LITERALES = {
+    'true': True, 'false': False, 'null': None, 'none': None,
+    'True': True, 'False': False, 'None': None,
+}
 
 
 def _safe_eval(node: ast.AST, ctx: dict):
@@ -100,7 +104,19 @@ def _safe_eval(node: ast.AST, ctx: dict):
         fn = _BOOL_OPS.get(type(node.op))
         if fn is None:
             raise ValueError(f'Operador booleano no permitido: {node.op}')
-        values = [_safe_eval(v, ctx) for v in node.values]
+        # Una rama que no se puede evaluar cuenta como falsa, pero NO invalida a
+        # las demás. Importa en un `or`: la regla real
+        # `ruv_incluido == False or edad < 3` (telefónico V8) tiene que poder
+        # dispararse por la edad aunque no se sepa el estado en el RUV. Si la
+        # excepción subiera hasta arriba mataría la expresión entera, y el móvil
+        # —que evalúa rama por rama— mostraría la pregunta mientras el backend no
+        # la contaría.
+        values = []
+        for v in node.values:
+            try:
+                values.append(_safe_eval(v, ctx))
+            except ValorDesconocido:
+                values.append(False)
         return fn(values)
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
         return not _safe_eval(node.operand, ctx)
