@@ -184,12 +184,34 @@ class SesionEncuesta(models.Model):
             )
         }
 
-        miembros = (
-            list(self.hogar.miembros.values_list('id', flat=True))
+        # Los datos demográficos vienen en la MISMA consulta: las reglas por
+        # expresión (`edad >= 18`, `sexo == '2'`) los necesitan, y traerlos
+        # después sería una consulta por integrante.
+        filas = (
+            list(self.hogar.miembros.values_list(
+                'id', 'genero', 'fecha_nacimiento', 'incluido_ruv',
+                'es_autorizado', 'victima__fecha_nacimiento',
+            ))
             if self.hogar_id else []
         )
-        if not miembros:
-            miembros = [None]
+        if not filas:
+            filas = [(None, '', None, False, True, None)]
+
+        datos_miembro = {
+            f[0]: {
+                'genero': f[1] or '',
+                # Para el autorizado, la fecha del padrón sirve de respaldo si el
+                # integrante se registró sin ella.
+                'fecha_nacimiento': f[2] or (f[5] if f[4] else None),
+                'incluido_ruv': bool(f[3]),
+            }
+            for f in filas
+        }
+        miembros = [f[0] for f in filas]
+        # Las preguntas HOGAR se evalúan con el contexto del AUTORIZADO, no del
+        # primero que devuelva la base: si no, el porcentaje del mismo hogar
+        # cambiaría según el orden de los integrantes.
+        autorizado = next((f[0] for f in filas if f[4]), miembros[0])
 
         def mapa_para(miembro_id):
             """codigo_externo → valor, en el contexto de un miembro.
@@ -205,12 +227,59 @@ class SesionEncuesta(models.Model):
                 for p in preguntas
             }
 
+        def contexto_para(miembro_id, mapa):
+            """edad / sexo / etnia / ruv_incluido de un integrante.
+
+            Mismo criterio que la pantalla de captura del móvil
+            (`construirContextoMiembro` en formulario/[temaId].tsx). Tiene que
+            ser el mismo: si el backend decidiera la visibilidad con otros datos,
+            exigiría preguntas que la app nunca mostró.
+
+            Lo que NO se hereda del padrón es deliberado y está documentado en
+            `docs/oracle-legacy/join_caracterizacion_roto.md`: el género de allí
+            acierta la mitad de las veces —el join empareja con otra persona— y
+            la etnia no se hereda nunca, se pregunta. Sin dato, la variable queda
+            desconocida y la regla no dispara, que es lo correcto: no afirma nada.
+            """
+            d = datos_miembro.get(miembro_id, {})
+            ctx = {}
+
+            # edad: la respondida (A6 fecha, B9 edad) manda sobre la registrada.
+            edad = None
+            b9 = (mapa.get('B9') or '').strip()
+            if b9:
+                try:
+                    edad = int(float(b9))
+                except (TypeError, ValueError):
+                    edad = None
+            if edad is None:
+                nacimiento = _fecha(mapa.get('A6')) or d.get('fecha_nacimiento')
+                edad = _edad(nacimiento)
+            if edad is not None:
+                ctx['edad'] = edad
+
+            # sexo: '1' hombre / '2' mujer. A8 lo captura el encuestador; si no
+            # está, cae al género del integrante.
+            sexo = (mapa.get('A8') or '').strip()
+            if not sexo:
+                genero = d.get('genero') or ''
+                sexo = {'M': '1', 'F': '2'}.get(genero, '')
+            if sexo:
+                ctx['sexo'] = sexo
+
+            ctx['etnia'] = 'ninguno'
+            ctx['ruv_incluido'] = bool(d.get('incluido_ruv'))
+            return ctx
+
         def cuenta(p):
             """¿Esta pregunta entra en el denominador?"""
             return p.obligatoria and not p.es_precargada
 
-        # ── HOGAR: una sola evaluación ────────────────────────────────────────
-        vis_hogar, _, _ = calcular_visibles(preguntas, reglas, mapa_para(miembros[0]))
+        # ── HOGAR: una sola evaluación, con el contexto del autorizado ────────
+        mapa_hogar = mapa_para(autorizado)
+        vis_hogar, _, _ = calcular_visibles(
+            preguntas, reglas, mapa_hogar, contexto_para(autorizado, mapa_hogar),
+        )
         total = 0
         respondidas = 0
         for p in preguntas:
@@ -222,7 +291,10 @@ class SesionEncuesta(models.Model):
 
         # ── PERSONA: una evaluación por miembro ───────────────────────────────
         for miembro_id in miembros:
-            vis, _, _ = calcular_visibles(preguntas, reglas, mapa_para(miembro_id))
+            mapa = mapa_para(miembro_id)
+            vis, _, _ = calcular_visibles(
+                preguntas, reglas, mapa, contexto_para(miembro_id, mapa),
+            )
             for p in preguntas:
                 if p.nivel != 'PERSONA' or not cuenta(p) or p.codigo_externo not in vis:
                     continue
@@ -509,3 +581,29 @@ class ExcepcionVigencia(models.Model):
                 .filter(victima_id=victima_id, estado=cls.VIGENTE)
                 .order_by('-created_at')
                 .first())
+
+
+# ─── Helpers de edad ─────────────────────────────────────────────────────────
+
+def _fecha(valor):
+    """Interpreta una fecha capturada como texto. Devuelve None si no es una."""
+    from datetime import date as _date
+    if not valor:
+        return None
+    if isinstance(valor, _date):
+        return valor
+    try:
+        return _date.fromisoformat(str(valor).strip()[:10])
+    except (TypeError, ValueError):
+        return None
+
+
+def _edad(nacimiento):
+    """Edad cumplida hoy, o None si no hay fecha utilizable."""
+    from datetime import date as _date
+    f = _fecha(nacimiento)
+    if f is None:
+        return None
+    hoy = _date.today()
+    edad = hoy.year - f.year - ((hoy.month, hoy.day) < (f.month, f.day))
+    return edad if 0 <= edad < 130 else None

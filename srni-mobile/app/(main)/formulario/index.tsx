@@ -368,7 +368,18 @@ export default function FormularioIndexScreen() {
     if (!hogarId) return;
     let activo = true;
     cargarMiembrosHogar(hogarId)
-      .then((ms) => { if (activo) setMiembrosRef(ms.map((m) => ({ id: m.id }))); })
+      // Van los datos demográficos, no solo el id: el progreso evalúa reglas por
+      // edad/sexo/RUV y con solo el id las daba todas por no cumplidas.
+      .then((ms) => {
+        if (!activo) return;
+        setMiembrosRef(ms.map((m) => ({
+          id: m.id,
+          genero: m.genero,
+          fecha_nacimiento: m.fecha_nacimiento,
+          incluido_ruv: m.incluido_ruv,
+          es_autorizado: m.es_autorizado,
+        })));
+      })
       .catch(() => { /* sin datos: queda vacío (miembro fantasma en el cálculo) */ });
     return () => { activo = false; };
   }, [hogarId]);

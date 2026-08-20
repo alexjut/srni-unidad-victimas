@@ -49,6 +49,21 @@ _BOOL_OPS = {
 }
 
 
+class ValorDesconocido(Exception):
+    """Una variable de la expresión no tiene valor conocido.
+
+    No es un error de programación: es «todavía no sé la edad de esta persona».
+    La expresión entera se resuelve como False, que es lo mismo que hace el
+    móvil (`_varContexto` devuelve undefined y `_evaluarExpresion` corta).
+    """
+
+
+# `true`/`false`/`null` van en minúscula en las expresiones de los fixtures
+# —vienen del diccionario, no de Python—, así que el AST los ve como nombres.
+# Sin esto, `ruv_incluido == false` compararía contra un valor desconocido.
+_LITERALES = {'true': True, 'false': False, 'null': None, 'none': None}
+
+
 def _safe_eval(node: ast.AST, ctx: dict):
     """Evalúa un nodo AST restringido a comparaciones y literales."""
     if isinstance(node, ast.Expression):
@@ -56,7 +71,19 @@ def _safe_eval(node: ast.AST, ctx: dict):
     if isinstance(node, ast.Constant):
         return node.value
     if isinstance(node, ast.Name):
-        return ctx.get(node.id, '')
+        if node.id in _LITERALES:
+            return _LITERALES[node.id]
+        # Ausente o vacío = desconocido. Antes esto devolvía '', y ese default
+        # silencioso decidía mal en la dirección peligrosa: `etnia != 'ninguno'`
+        # daba VERDADERO contra el vacío, así que preguntas del capítulo étnico
+        # quedaban exigidas a todo el mundo y ninguna sesión llegaba nunca al
+        # 100 %. Desconocido tiene que significar «no sé», no «distinto».
+        if node.id not in ctx:
+            raise ValorDesconocido(node.id)
+        valor = ctx[node.id]
+        if valor is None or (isinstance(valor, str) and not valor.strip()):
+            raise ValorDesconocido(node.id)
+        return valor
     if isinstance(node, ast.List):
         return [_safe_eval(el, ctx) for el in node.elts]
     if isinstance(node, ast.Compare):
@@ -90,10 +117,10 @@ def evaluar_expresion_segura(expresion: str, contexto: dict, respuestas: dict = 
     (ej. "etnia == 'indigena' and D6 == '2'"). Espejo de _evaluarExpresion (móvil).
     Convención: los valores del lado derecho van entre comillas ('2', 'true').
 
-    Ante cualquier problema devuelve False —variable ausente, tipos que no se
-    comparan, expresión mal escrita—. Es deliberado: una regla que no se puede
-    evaluar NO se dispara, así que en el peor caso la pregunta se comporta como
-    si su condición no se cumpliera, en vez de reventar la captura en campo.
+    Ante cualquier problema devuelve False —variable desconocida, tipos que no
+    se comparan, expresión mal escrita—. Es deliberado: una regla que no se
+    puede evaluar NO se dispara, así que en el peor caso la pregunta se comporta
+    como si su condición no se cumpliera, en vez de reventar la captura en campo.
     """
     try:
         tree = ast.parse(expresion, mode='eval')

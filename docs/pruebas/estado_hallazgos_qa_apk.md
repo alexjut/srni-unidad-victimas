@@ -203,13 +203,50 @@ Lo que cambió:
   que una regla cuyo origen esté en otro capítulo no se le dispara nunca. El
   criterio correcto es el del backend; queda anotado que el móvil converja.
 
-Se agregaron **14 pruebas**: 11 de comportamiento —verificadas por mutación,
-revirtiendo el arreglo fallan 4— y 3 de consultas. Estas últimas ya pagaron
-solas: destaparon un **N+1 de 79 consultas** en un método que corre en *cada
-respuesta guardada*. Lo causaba un `.only()` que dejaba `sesion_id` diferido, y
-el manager de la relación inversa lo releía con una consulta por fila. Con
-`values_list` quedó en 4 consultas, sin importar cuántos integrantes tenga el
-hogar.
+**Y el primer arreglo estaba a medias.** La revisión adversarial encontró que
+`recalcular_porcentaje` llamaba al motor **sin contexto**, así que las reglas
+por expresión —`edad >= 18`, `sexo == '2'`, `etnia != 'ninguno'`— no se
+evaluaban con datos reales. Se equivocaba en las dos direcciones, y las dos
+duelen:
+
+- `sexo == '2' and edad >= 12` (HABILITAR) no disparaba nunca → el bloque de
+  gestación/maternidad salía del denominador → **una entrevista sin ese bloque
+  entero cerraba en 100 %**.
+- `etnia != 'ninguno'` daba **verdadero** contra el vacío —porque la variable
+  ausente valía `''`, y `'' != 'ninguno'` es cierto— → preguntas del capítulo
+  étnico quedaban exigidas a todo el mundo, sin que nadie pudiera responderlas.
+  El APK-005 otra vez, por otra puerta.
+
+Se corrigió en tres frentes:
+
+1. **El evaluador distingue «no sé» de «vacío».** Una variable ausente o en
+   blanco ya no vale `''`: hace que la regla **no dispare**, que es lo que hace
+   el móvil (`_varContexto` devuelve `undefined`). De paso se reconocen los
+   literales `true`/`false`/`null` en minúscula, que vienen del diccionario y el
+   AST leía como nombres — sin eso `ruv_incluido == false` no se podía evaluar.
+2. **El porcentaje arma el contexto de cada integrante** (edad, sexo, etnia,
+   RUV) con el mismo criterio que la pantalla de captura, y en la misma consulta
+   que ya traía los integrantes. Las preguntas HOGAR se evalúan con el contexto
+   del **autorizado**, no del primero que devuelva la base: si no, el mismo
+   hogar daría dos porcentajes según el orden.
+3. **El móvil tenía el mismo agujero.** `calcularProgresoOffline` también
+   evaluaba sin contexto, así que la barra del hub sobreestimaba igual. Ahora
+   los tres —captura, hub y backend— deciden con el mismo criterio.
+
+También se arregló `ContextoPersonaSerializer`, que declaraba `incluido_ruv` y
+no `ruv_incluido` ni `etnia`: como un Serializer descarta lo que no declara, un
+cliente podía mandar esos datos y el motor no los veía nunca. Y se le quitaron
+los `default`, porque `edad = 0` no es «no sé la edad», es «tiene cero años».
+
+**Pruebas:** 35 nuevas de backend (11 de conteo, 3 de consultas, 21 de contexto)
+y 6 de móvil, todas verificadas **por mutación** — revirtiendo cada arreglo, las
+que tienen que fallar fallan. Backend **936**, móvil **139**, `tsc` limpio.
+
+Las 3 pruebas de consultas ya pagaron solas: destaparon un **N+1 de 79
+consultas** en un método que corre en *cada respuesta guardada*. Lo causaba un
+`.only()` que dejaba `sesion_id` diferido, y el manager de la relación inversa
+lo releía con una consulta por fila. Con `values_list` quedó en 4, sin importar
+cuántos integrantes tenga el hogar.
 - Se reemplazó el `ProgressBar` de react-native-paper por
   `src/components/AnimatedProgressBar.tsx`, con `overflow: 'hidden'` en el track.
   La animación usa `Animated` nativo con `useNativeDriver: false`, que es
@@ -394,7 +431,7 @@ pero conviene mirarlo antes de que los teléfonos de campo lleven meses de uso.
 | 1 | Probar APK-001 E2E en dispositivo (buscar → autorizar en el panel → «Ya la autorizaron» → conformar → sesión) | Brando | build nuevo |
 | 2 | Verificar APK-003, APK-006 y APK-007 en dispositivo, en modo avión | Brando | build nuevo |
 | 3 | Pantalla de corrección de integrante (APK-004) | Brando | nada — la API está lista |
-| 4 | Que el móvil arme el mapa de respuestas por instrumento y no por capítulo (converger con el backend, §6) | Javier | nada |
+| 4 | Que el móvil arme el mapa de respuestas por instrumento y no por capítulo — hoy una regla cuyo origen esté en otro capítulo no se le dispara (§6) | Javier | nada |
 | 5 | Documentar el alcance del modo offline y sus límites | Javier | nada |
 | 6 | Llevar la regla de recaracterización al manual de usuario | Javier | nada |
 | 7 | Que un ítem en `error` no congele `purgarSincronizados()` para siempre | Javier | nada |

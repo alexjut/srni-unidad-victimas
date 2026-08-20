@@ -144,3 +144,127 @@ describe('calcularProgresoOffline — no obligatorias no bloquean el total', () 
     expect(r.porCapitulo.C2.estado).toBe('pendiente'); // sin obligatorias → neutro
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reglas por expresión: edad, sexo, RUV
+//
+// Este bloque existe por un defecto que estuvo vivo en las DOS capas a la vez:
+// `calcularProgresoOffline` llamaba a `calcularVisibles` sin contexto, así que
+// ninguna regla demográfica se disparaba. El denominador dejaba fuera el bloque
+// de gestación/maternidad y la barra decía 100 % con la entrevista incompleta.
+//
+// El backend tenía el mismo agujero (`recalcular_porcentaje`). Los dos se
+// arreglaron juntos: tienen que decidir igual sobre los mismos datos, o el
+// panel y la APK informan distinto sobre la misma sesión.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('calcularProgresoOffline — reglas por expresión', () => {
+  const preguntas = [
+    preg('A1', { nivel: 'PERSONA' }),
+    preg('B2', { nivel: 'PERSONA' }),
+  ];
+  const capitulos = [cap('C1')];
+  const reglas = [regla({
+    expresion_origen: "sexo == '2' and edad >= 12",
+    pregunta_afectada_codigo: 'B2',
+    accion: 'HABILITAR',
+  })];
+
+  it('el bloque de gestación se le exige a ella y no a él', () => {
+    const miembros = [
+      { id: 'm1', genero: 'F', fecha_nacimiento: '1995-01-01' },
+      { id: 'm2', genero: 'M', fecha_nacimiento: '1990-01-01' },
+    ];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntas }), reglas, miembros, {
+      'id-A1|m1': 'x',
+      'id-A1|m2': 'x',
+    });
+    // A1 de cada uno (2) + B2 solo de ella (1) = 3. Respondidas: 2.
+    expect(r.obligVisibles).toBe(3);
+    expect(r.obligRespondidas).toBe(2);
+  });
+
+  it('a la menor de 12 no se le abre el bloque', () => {
+    const miembros = [{ id: 'm1', genero: 'F', fecha_nacimiento: '2020-01-01' }];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntas }), reglas, miembros, {
+      'id-A1|m1': 'x',
+    });
+    expect(r.obligVisibles).toBe(1);
+    expect(r.progreso).toBe(1);
+  });
+
+  it('sin género conocido la regla no dispara — no afirma nada', () => {
+    // El género del padrón no se hereda: acierta la mitad de las veces.
+    const miembros = [{ id: 'm1', genero: '', fecha_nacimiento: '1990-01-01' }];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntas }), reglas, miembros, {
+      'id-A1|m1': 'x',
+    });
+    expect(r.obligVisibles).toBe(1);
+  });
+
+  it('la edad respondida (B9) manda sobre la registrada', () => {
+    const preguntasB9 = [
+      preg('B9', { nivel: 'PERSONA' }),
+      preg('X1', { nivel: 'PERSONA' }),
+    ];
+    const reglasEdad = [regla({
+      expresion_origen: 'edad >= 18',
+      pregunta_afectada_codigo: 'X1',
+      accion: 'HABILITAR',
+    })];
+    // Registrada como menor, pero el encuestador capturó 40.
+    const miembros = [{ id: 'm1', genero: 'F', fecha_nacimiento: '2015-01-01' }];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntasB9 }), reglasEdad, miembros, {
+      'id-B9|m1': '40',
+    });
+    expect(r.obligVisibles).toBe(2);
+    expect(r.obligRespondidas).toBe(1);
+  });
+
+  it('etnia distinta de ninguno no exige el capítulo étnico', () => {
+    // La etnia se pregunta, no se hereda: el contexto la fija en 'ninguno'.
+    // Con la variable en blanco, `etnia != 'ninguno'` daba verdadero y la
+    // pregunta quedaba exigida a todo el mundo sin que nadie pudiera verla.
+    const preguntasEtnia = [preg('A1', { nivel: 'PERSONA' }), preg('C7', { nivel: 'PERSONA' })];
+    const reglasEtnia = [regla({
+      expresion_origen: "etnia != 'ninguno'",
+      pregunta_afectada_codigo: 'C7',
+      accion: 'HABILITAR',
+    })];
+    const miembros = [{ id: 'm1', genero: 'F', fecha_nacimiento: '1990-01-01' }];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntasEtnia }), reglasEtnia, miembros, {
+      'id-A1|m1': 'x',
+    });
+    expect(r.obligVisibles).toBe(1);
+    expect(r.progreso).toBe(1);
+  });
+
+  it('las preguntas HOGAR se evalúan con el contexto del autorizado', () => {
+    // Si se usara "el primero de la lista", el mismo hogar daría dos progresos
+    // distintos según el orden en que vinieran los integrantes.
+    const preguntasHogar = [preg('A1'), preg('H1')];
+    const reglasHogar = [regla({
+      expresion_origen: "sexo == '2'",
+      pregunta_afectada_codigo: 'H1',
+      accion: 'HABILITAR',
+    })];
+    const miembros = [
+      { id: 'm1', genero: 'M', fecha_nacimiento: '1990-01-01' },
+      { id: 'm2', genero: 'F', fecha_nacimiento: '1985-01-01', es_autorizado: true },
+    ];
+    const r = calcularProgresoOffline(capitulos, lookup({ C1: preguntasHogar }), reglasHogar, miembros, {
+      'id-A1|': 'x',
+    });
+    // La autorizada es mujer → H1 aplica y falta.
+    expect(r.obligVisibles).toBe(2);
+    expect(r.obligRespondidas).toBe(1);
+
+    // Invertir el orden no cambia nada.
+    const invertido = calcularProgresoOffline(
+      capitulos, lookup({ C1: preguntasHogar }), reglasHogar, [...miembros].reverse(),
+      { 'id-A1|': 'x' },
+    );
+    expect(invertido.obligVisibles).toBe(2);
+    expect(invertido.obligRespondidas).toBe(1);
+  });
+});

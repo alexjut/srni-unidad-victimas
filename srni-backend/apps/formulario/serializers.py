@@ -136,11 +136,33 @@ class RespuestaActualSerializer(serializers.Serializer):
 
 
 class ContextoPersonaSerializer(serializers.Serializer):
-    """Contexto de la persona/hogar para evaluar reglas de expresión (edad, sexo, RUV)."""
-    edad = serializers.IntegerField(required=False, default=0)
-    sexo = serializers.CharField(required=False, default="")
-    incluido_ruv = serializers.BooleanField(required=False, default=False)
-    tipo_persona = serializers.CharField(required=False, default="")
+    """Contexto de la persona para evaluar reglas de expresión.
+
+    Los nombres son los que aparecen EN LAS EXPRESIONES de los fixtures
+    (`edad >= 18`, `sexo == '2'`, `etnia != 'ninguno'`, `ruv_incluido == false`).
+    Antes faltaban `etnia` y `ruv_incluido`, y como un Serializer descarta lo que
+    no declara, un cliente podía mandarlos y el motor no los veía nunca: las
+    reglas étnicas y de RUV no se disparaban por este endpoint aunque el cliente
+    hiciera todo bien.
+
+    Ninguno lleva `default`. Un default como `edad = 0` no es «no sé la edad»:
+    es «tiene cero años», y con eso una regla `edad < 5` se dispararía para todo
+    el mundo. Ausente tiene que quedar ausente — el evaluador ya trata lo
+    desconocido como condición no cumplida.
+    """
+    edad = serializers.IntegerField(required=False)
+    sexo = serializers.CharField(required=False, allow_blank=True)
+    etnia = serializers.CharField(required=False, allow_blank=True)
+    ruv_incluido = serializers.BooleanField(required=False)
+    # Se mantienen por compatibilidad con clientes que ya los mandaban.
+    incluido_ruv = serializers.BooleanField(required=False)
+    tipo_persona = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        # `incluido_ruv` fue el nombre viejo; las expresiones dicen `ruv_incluido`.
+        if 'ruv_incluido' not in attrs and 'incluido_ruv' in attrs:
+            attrs['ruv_incluido'] = attrs['incluido_ruv']
+        return attrs
 
 
 class EvaluarSkipLogicSerializer(serializers.Serializer):
