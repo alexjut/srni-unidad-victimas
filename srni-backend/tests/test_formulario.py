@@ -21,7 +21,7 @@ from apps.formulario.models import (
     ReglaSkipLogic,
     AccionSkipChoices,
 )
-from apps.formulario.views import EvaluarSkipLogicView
+from apps.formulario.skiplogic import regla_activa
 
 
 # ─── Fixtures de usuario ───────────────────────────────────────────────────────
@@ -234,13 +234,13 @@ class TestSkipLogic:
         assert 'B2' not in resp.data['preguntas_visibles']
 
     def test_regla_activa_valor_exacto(self, instrumento, pregunta_genero, pregunta_embarazo):
-        """Test unitario de _regla_activa con valor exacto."""
+        """Test unitario de regla_activa (motor compartido) con valor exacto."""
         regla = ReglaSkipLogic.objects.get(
             pregunta_origen=pregunta_genero,
             pregunta_afectada=pregunta_embarazo,
         )
-        assert EvaluarSkipLogicView._regla_activa(regla, {'B1': 'F'}, {}) is True
-        assert EvaluarSkipLogicView._regla_activa(regla, {'B1': 'M'}, {}) is False
+        assert regla_activa(regla, {'B1': 'F'}, {}) is True
+        assert regla_activa(regla, {'B1': 'M'}, {}) is False
 
     def test_regla_activa_expresion_contexto(self, instrumento, capitulo):
         """Regla basada en expresión de contexto (edad, RUV)."""
@@ -255,5 +255,5 @@ class TestSkipLogic:
             pregunta_afectada=p_destino,
             accion=AccionSkipChoices.HABILITAR,
         )
-        assert EvaluarSkipLogicView._regla_activa(regla, {}, {'edad': 18}) is True
-        assert EvaluarSkipLogicView._regla_activa(regla, {}, {'edad': 10}) is False
+        assert regla_activa(regla, {}, {'edad': 18}) is True
+        assert regla_activa(regla, {}, {'edad': 10}) is False

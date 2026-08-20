@@ -119,37 +119,122 @@ class SesionEncuesta(models.Model):
 
     def recalcular_porcentaje(self) -> int:
         """
-        Calcula el porcentaje de preguntas obligatorias respondidas.
+        Porcentaje de obligatorias VISIBLES que están respondidas.
 
-        Sprint 21 — las preguntas tipo PERSONA cuentan N veces (una por cada
-        miembro del hogar). Las HOGAR cuentan una sola vez.
+        La palabra que faltaba era «visibles», y por eso este método fue el
+        APK-005: contaba TODAS las obligatorias del instrumento sin evaluar
+        skip-logic. Una obligatoria que una regla HABILITAR mantiene oculta no
+        se le puede mostrar a nadie, así que nunca se responde — pero engordaba
+        el denominador igual. Una entrevista legítimamente terminada se cerraba
+        en 55 %, o en 0 % si el instrumento tenía muchas condicionales, y en la
+        app se veía una sesión «Completada» con la barra vacía.
+
+        Se resolvió una vez en la app tapando el número (forzar 100 % si el
+        estado era COMPLETADA), y eso era peor: mentía sobre las entrevistas
+        que sí se cerraron a medias, y el panel web —que nunca aplicó ese
+        maquillaje— mostraba otra cosa sobre la misma sesión.
+
+        Cómo se cuenta ahora, que es lo mismo que hace el móvil en
+        `calcularProgresoOffline`:
+
+          · Denominador: obligatorias **visibles** con las respuestas actuales.
+            Se excluyen las precargadas — vienen del padrón, no las responde
+            nadie en la entrevista.
+          · HOGAR: una vez. Su visibilidad no depende del miembro.
+          · PERSONA: una vez POR MIEMBRO, y evaluando la visibilidad con las
+            respuestas de ESE miembro. La misma pregunta puede estar visible
+            para uno y oculta para otro; ese es justamente el punto de la
+            skip-logic por persona.
+          · Numerador: de esas mismas, las que tienen valor no vacío. Una
+            respuesta que quedó fuera de flujo no suma: si no cuenta abajo,
+            tampoco puede contar arriba.
+
+        Sin miembros todavía se asume 1 (el autorizado) para no dividir por
+        cero, igual que antes.
         """
-        from apps.formulario.models import Pregunta
+        from apps.formulario.models import Pregunta, ReglaSkipLogic
+        from apps.formulario.skiplogic import calcular_visibles
 
-        n_miembros = self.hogar.miembros.count() if self.hogar_id else 0
-        # Si el hogar no tiene miembros registrados todavía, asumimos 1
-        # (el autorizado) para no dividir por cero.
-        n_miembros = max(n_miembros, 1)
-
-        preg_hogar = Pregunta.objects.filter(
-            capitulo__instrumento=self.instrumento,
-            obligatoria=True, activa=True, nivel='HOGAR',
-        ).count()
-        preg_persona = Pregunta.objects.filter(
-            capitulo__instrumento=self.instrumento,
-            obligatoria=True, activa=True, nivel='PERSONA',
-        ).count()
-
-        total = preg_hogar + preg_persona * n_miembros
-        if total == 0:
+        preguntas = list(
+            Pregunta.objects.filter(
+                capitulo__instrumento=self.instrumento, activa=True,
+            ).order_by('capitulo_id', 'orden')
+        )
+        if not preguntas:
             return 0
 
-        respondidas = self.respuestas.filter(
-            pregunta__obligatoria=True,
-            pregunta__activa=True,
-        ).exclude(valor='').count()
+        reglas = list(
+            ReglaSkipLogic.objects.filter(instrumento=self.instrumento)
+            .select_related('pregunta_origen', 'pregunta_afectada')
+        )
 
-        return int((respondidas / total) * 100)
+        # (pregunta_id, miembro_id) → valor. miembro_id None = nivel HOGAR.
+        #
+        # values_list y no .only(): con .only() el manager de la relación inversa
+        # necesita `sesion_id` para cachear el objeto padre, y al estar diferido
+        # lo releía CON UNA CONSULTA POR RESPUESTA. Con 150 respuestas eran 79
+        # consultas en un método que corre en cada guardado. Acá no hace falta
+        # instanciar modelos: se necesitan tres escalares.
+        # El order_by() vacío saca el ORDER BY del Meta, que arrastraba un JOIN
+        # con formulario_pregunta para nada.
+        valores = {
+            (preg_id, miembro_id): valor
+            for preg_id, miembro_id, valor in self.respuestas.order_by().values_list(
+                'pregunta_id', 'miembro_id', 'valor',
+            )
+        }
+
+        miembros = (
+            list(self.hogar.miembros.values_list('id', flat=True))
+            if self.hogar_id else []
+        )
+        if not miembros:
+            miembros = [None]
+
+        def mapa_para(miembro_id):
+            """codigo_externo → valor, en el contexto de un miembro.
+
+            Cubre el instrumento COMPLETO y no solo el capítulo: una regla puede
+            tener su origen en otro capítulo, y con un mapa recortado esa regla
+            no se dispararía nunca.
+            """
+            return {
+                p.codigo_externo: valores.get(
+                    (p.pk, miembro_id if p.nivel == 'PERSONA' else None), ''
+                )
+                for p in preguntas
+            }
+
+        def cuenta(p):
+            """¿Esta pregunta entra en el denominador?"""
+            return p.obligatoria and not p.es_precargada
+
+        # ── HOGAR: una sola evaluación ────────────────────────────────────────
+        vis_hogar, _, _ = calcular_visibles(preguntas, reglas, mapa_para(miembros[0]))
+        total = 0
+        respondidas = 0
+        for p in preguntas:
+            if p.nivel != 'HOGAR' or not cuenta(p) or p.codigo_externo not in vis_hogar:
+                continue
+            total += 1
+            if (valores.get((p.pk, None), '') or '').strip():
+                respondidas += 1
+
+        # ── PERSONA: una evaluación por miembro ───────────────────────────────
+        for miembro_id in miembros:
+            vis, _, _ = calcular_visibles(preguntas, reglas, mapa_para(miembro_id))
+            for p in preguntas:
+                if p.nivel != 'PERSONA' or not cuenta(p) or p.codigo_externo not in vis:
+                    continue
+                total += 1
+                if (valores.get((p.pk, miembro_id), '') or '').strip():
+                    respondidas += 1
+
+        if total == 0:
+            return 0
+        # El clamp no es decorativo: sin él, un dato inconsistente podría
+        # devolver >100 y dibujar una barra más ancha que su tarjeta (APK-006).
+        return max(0, min(100, int((respondidas / total) * 100)))
 
 
 class RespuestaEncuesta(models.Model):

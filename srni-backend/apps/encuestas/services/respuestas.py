@@ -48,16 +48,23 @@ class ResultadoGuardarRespuesta:
 
 def _trigger_se_cumple(regla, valor: str) -> bool:
     """
-    Mirror de EvaluarSkipLogicView._regla_activa para el caso de origen por
-    respuesta directa (soporta selección única y múltiple).
+    ¿La regla se dispara con este valor de su pregunta origen?
+
+    Usa el desarmado de valores del motor compartido (`skiplogic`) en vez de
+    reimplementarlo: el multi-select guarda un array JSON y equivocarse acá
+    significaría borrar —o dejar de borrar— respuestas derivadas que el
+    encuestador ya capturó.
+
+    Las reglas por expresión de contexto no las gatilla un cambio de respuesta,
+    así que devuelven False.
     """
-    from apps.formulario.views import _valores_seleccionados
+    from apps.formulario.skiplogic import valores_seleccionados
 
     if regla.pregunta_origen_id is None:
-        return False  # reglas por expresión de contexto no las gatilla este cambio
+        return False
     if not regla.valor_trigger:
         return bool(valor)
-    seleccionados = _valores_seleccionados(valor)
+    seleccionados = valores_seleccionados(valor)
     triggers = [v.strip() for v in regla.valor_trigger.split(",")]
     return any(t in seleccionados for t in triggers)
 

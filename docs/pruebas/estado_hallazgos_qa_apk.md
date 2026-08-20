@@ -24,7 +24,7 @@ y con pruebas. Lo que dice «pendiente» no se ha tocado, y se dice por qué.
 | APK-002 | «No se pudo registrar» al conformar hogar | ✅ Resuelto | Javier |
 | APK-003 | Modo offline no funcionaba | ✅ Resuelto (hogares, encuestas, detalle) · ⚠️ falta comunicar el alcance | Brando + Javier |
 | APK-004 | No se podía editar ni eliminar integrante | ✅ Quitar (API + app) · ⬜ corregir en la app | Javier |
-| APK-005 | Sesión «Completada» con barra en 0 % | ⚠️ Abierto: la causa es `recalcular_porcentaje` sin skip-logic (§6) | Javier |
+| APK-005 | Sesión «Completada» con barra en 0 % | ✅ Resuelto de raíz en el backend (§6) | Javier |
 | APK-006 | Barras de progreso desbordan la tarjeta | ✅ Resuelto | Brando |
 | APK-007 | No mostraba el nombre en «No habilitado» | ✅ Resuelto · ⬜ falta verlo en dispositivo | Javier |
 | APK-008 … 013 | Autenticación, alerta de vigencia, exactitud RNI, captura Ruta General, validación de campos, diseño del mecanismo de excepción | ✅ Cumplidos según el propio informe | — |
@@ -171,14 +171,45 @@ pasaba crudo a la barra.
   que una entrevista interrumpida a mitad —la víctima se retiró— se mostraba al
   100 %. El panel web nunca aplicó ese override: la misma sesión se veía
   distinta según quién la mirara.
-- **El APK-005 sigue abierto por el lado del backend**, y ahora se ve. La causa
-  de fondo es `SesionEncuesta.recalcular_porcentaje`
-  (`apps/encuestas/models.py:120-152`): divide por **todas** las obligatorias
-  del instrumento **sin evaluar skip-logic**, así que cuenta como faltantes
-  preguntas que la regla ocultó. Por eso una sesión legítimamente terminada se
-  guarda en 55 %, o en 0 % si respondió pocas. El móvil ya lo calcula bien con
-  `calcularProgresoOffline` (obligatorias *visibles*); falta llevar ese criterio
-  al servidor.
+### La causa de fondo, resuelta en el backend (19-ago)
+
+La palabra que le faltaba a `SesionEncuesta.recalcular_porcentaje` era
+**«visibles»**: dividía por *todas* las obligatorias del instrumento sin evaluar
+skip-logic. Una obligatoria que una regla HABILITAR mantiene oculta no se le
+puede mostrar a nadie, así que nunca se responde — pero engordaba el denominador
+igual. Por eso una entrevista legítimamente terminada se cerraba en 55 %, o en
+0 % si el instrumento tenía muchas condicionales.
+
+Lo que cambió:
+
+- **El motor de skip-logic pasó a vivir en un solo lugar**
+  (`apps/formulario/skiplogic.py`). Antes estaba dentro de
+  `EvaluarSkipLogicView` y quien lo necesitaba se lo copiaba:
+  `services/respuestas.py` importaba dos helpers privados desde `views.py` y
+  reimplementaba el trigger, y `recalcular_porcentaje` no evaluaba nada. Ahora
+  la vista, el guardado de respuestas y el porcentaje usan **el mismo
+  criterio** — que es además el espejo de `skipLogic.ts` del móvil. Si la vista
+  tuviera el suyo y el modelo otro, el panel web y la APK podrían informar
+  distinto sobre la misma sesión.
+- **El conteo es el mismo que hace el móvil** en `calcularProgresoOffline`:
+  denominador = obligatorias *visibles* y no precargadas; HOGAR una vez;
+  PERSONA una vez por integrante y **evaluando la visibilidad con las
+  respuestas de ESE integrante** —la misma pregunta puede estar visible para
+  uno y oculta para otro, que es el punto de la skip-logic por persona—; y una
+  respuesta que quedó fuera de flujo no suma al numerador: si no cuenta abajo,
+  tampoco puede contar arriba.
+- **Una diferencia consciente con el móvil:** acá el mapa de respuestas cubre el
+  instrumento completo, no solo el capítulo. El móvil lo arma por capítulo, así
+  que una regla cuyo origen esté en otro capítulo no se le dispara nunca. El
+  criterio correcto es el del backend; queda anotado que el móvil converja.
+
+Se agregaron **14 pruebas**: 11 de comportamiento —verificadas por mutación,
+revirtiendo el arreglo fallan 4— y 3 de consultas. Estas últimas ya pagaron
+solas: destaparon un **N+1 de 79 consultas** en un método que corre en *cada
+respuesta guardada*. Lo causaba un `.only()` que dejaba `sesion_id` diferido, y
+el manager de la relación inversa lo releía con una consulta por fila. Con
+`values_list` quedó en 4 consultas, sin importar cuántos integrantes tenga el
+hogar.
 - Se reemplazó el `ProgressBar` de react-native-paper por
   `src/components/AnimatedProgressBar.tsx`, con `overflow: 'hidden'` en el track.
   La animación usa `Animated` nativo con `useNativeDriver: false`, que es
@@ -363,7 +394,7 @@ pero conviene mirarlo antes de que los teléfonos de campo lleven meses de uso.
 | 1 | Probar APK-001 E2E en dispositivo (buscar → autorizar en el panel → «Ya la autorizaron» → conformar → sesión) | Brando | build nuevo |
 | 2 | Verificar APK-003, APK-006 y APK-007 en dispositivo, en modo avión | Brando | build nuevo |
 | 3 | Pantalla de corrección de integrante (APK-004) | Brando | nada — la API está lista |
-| 4 | **APK-005 de fondo:** que `recalcular_porcentaje` evalúe skip-logic, como ya hace el móvil | Javier | nada |
+| 4 | Que el móvil arme el mapa de respuestas por instrumento y no por capítulo (converger con el backend, §6) | Javier | nada |
 | 5 | Documentar el alcance del modo offline y sus límites | Javier | nada |
 | 6 | Llevar la regla de recaracterización al manual de usuario | Javier | nada |
 | 7 | Que un ítem en `error` no congele `purgarSincronizados()` para siempre | Javier | nada |
