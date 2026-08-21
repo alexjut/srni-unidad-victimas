@@ -384,9 +384,18 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         Los documentos que no existen vuelven en `sin_coincidencia`, porque
         "no lo encontré" es justo lo que quien autoriza necesita saber para no
         dar por hecho que quedó cubierto por el oficio.
+
+        **Respaldo por número sin tipo.** 1.126.615 víctimas (14,5 % del padrón)
+        están cargadas SIN tipo de documento, y su hash de identidad se calculó
+        con el tipo vacío. Buscarlas por «CC + número» no las encuentra. Esta
+        pantalla decía «sin coincidencia» sobre personas que **sí** están en el
+        padrón, y quien autoriza no tenía forma de saber que el sistema le estaba
+        mintiendo. La búsqueda de la APK ya tenía este respaldo; acá faltaba.
         """
         from apps.victimas.models import Victima
-        from apps.victimas.repository.base import describir_elegibilidad, doc_hash
+        from apps.victimas.repository.base import (
+            describir_elegibilidad, doc_hash, num_hash,
+        )
 
         if request.method == 'POST':
             tipo = (request.data.get('tipo_documento') or '').strip().upper()
@@ -419,15 +428,34 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         # Una consulta para todos los documentos y no una por cada uno: con 50
         # cédulas serían 50 viajes a la base mientras alguien espera.
         por_hash = {doc_hash(tipo, d): d for d in documentos}
-        victimas = (Victima.objects
-                    .filter(numero_documento_hash__in=list(por_hash.keys()))
-                    .select_related('tipo_documento'))
+        victimas = list(Victima.objects
+                        .filter(numero_documento_hash__in=list(por_hash.keys()))
+                        .select_related('tipo_documento'))
+
+        # `documento` de cada fila hallada, para poder decir después cuáles
+        # quedaron sin coincidencia.
+        doc_de = {v.id: por_hash[v.numero_documento_hash] for v in victimas}
+
+        # Respaldo por número SIN tipo, solo para los que no aparecieron. Las
+        # 1.126.615 víctimas cargadas sin tipo tienen su hash calculado con el
+        # tipo vacío: por «CC + número» no salen nunca. Se consulta en un solo
+        # viaje más y únicamente si hace falta.
+        faltantes = [d for d in documentos if d not in doc_de.values()]
+        if faltantes:
+            por_num = {num_hash(d): d for d in faltantes}
+            respaldo = (Victima.objects
+                        .filter(numero_documento_hash_sin_tipo__in=list(por_num.keys()))
+                        .exclude(id__in=list(doc_de.keys()))
+                        .select_related('tipo_documento'))
+            for v in respaldo:
+                doc_de[v.id] = por_num.get(v.numero_documento_hash_sin_tipo)
+                victimas.append(v)
 
         habilitaciones = self._habilitaciones_vigentes([v.id for v in victimas])
 
         resultados, encontrados = [], set()
         for v in victimas:
-            encontrados.add(por_hash.get(v.numero_documento_hash))
+            encontrados.add(doc_de.get(v.id))
             vigente = habilitaciones.get(v.id)
             # `habilitacion=None` a propósito: se quiere la situación REAL. Si se
             # dejara consultar sola, una persona ya habilitada aparecería como
@@ -447,6 +475,11 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
                 'mensaje': veredicto.mensaje,
                 'ficha_vigente_hasta': veredicto.disponible_desde,
                 'requiere_excepcion': veredicto.motivo == 'FICHA_VIGENTE',
+                # Se encontró por número pero el tipo registrado es otro (o no
+                # tiene). Quien autoriza tiene que verlo antes de decidir: es el
+                # mismo aviso que la APK le da al encuestador en campo.
+                'coincide_solo_por_numero': (
+                    v.numero_documento_hash != doc_hash(tipo, doc_de.get(v.id) or '')),
                 'habilitacion_vigente': (HabilitacionSerializer(vigente).data
                                          if vigente else None),
             })

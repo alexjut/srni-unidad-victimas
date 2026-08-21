@@ -336,6 +336,53 @@ def test_buscar_avisa_de_los_documentos_que_no_estan(escenario):
     assert r.data['sin_coincidencia'] == ['9999999999']
 
 
+def test_buscar_encuentra_a_quien_esta_cargado_SIN_tipo_de_documento(escenario):
+    """
+    1.126.615 víctimas (14,5 % del padrón) están cargadas sin tipo de documento,
+    y su hash de identidad se calculó con el tipo vacío. Buscarlas por «CC +
+    número» no las encuentra.
+
+    Esta pantalla respondía «sin coincidencia» sobre personas que SÍ están en el
+    padrón, y quien autoriza no tenía forma de saber que el sistema le estaba
+    mintiendo: daba por no cubierta a alguien del oficio. La búsqueda de la APK
+    ya tenía este respaldo desde el 2-ago; acá faltaba.
+    """
+    import datetime
+    from apps.victimas.models import Victima
+
+    sin_tipo = Victima.objects.create(
+        tipo_documento=None, numero_documento='7694421',
+        primer_nombre='SIN', primer_apellido='TIPO',
+        genero='F', estado_ruv='INCLUIDO',
+        habilitado_para_caracterizacion=False,
+        pertenencia_etnica='NINGUNA', discapacidad=False,
+        fecha_ult_caracterizacion=datetime.datetime(
+            2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc),
+    )
+
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '7694421'})
+
+    assert r.status_code == 200
+    assert r.data['total'] == 1, 'la persona está en el padrón y no se encontró'
+    assert r.data['sin_coincidencia'] == []
+    fila = r.data['resultados'][0]
+    assert fila['id'] == str(sin_tipo.id)
+    # Y se avisa: coincide por número, pero el tipo registrado no es el buscado.
+    assert fila['coincide_solo_por_numero'] is True
+
+
+def test_buscar_no_marca_por_numero_a_quien_si_coincide_por_tipo(escenario):
+    """El aviso tiene que distinguir. Si el tipo coincide, no hay nada que verificar."""
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1115724047'})
+
+    assert r.status_code == 200
+    assert r.data['resultados'][0]['coincide_solo_por_numero'] is False
+
+
 def test_buscar_marca_a_quien_ya_tiene_habilitacion(escenario):
     """Sin esto, la pantalla ofreceria autorizar de nuevo y el POST daria 409."""
     escenario['coordinador'].post(URL, _payload(escenario['victima']), format='json')

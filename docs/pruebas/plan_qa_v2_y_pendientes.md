@@ -285,31 +285,17 @@ ventana — **la diferencia son exactamente las consultas que fallaron.**
 
 ---
 
-## 6. Pendiente de información — la tabla y el índice en MODELO
+## 6. Fuera de este plan — la tabla y el índice en MODELO
 
-El DBA avisó que **crearon una tabla y un índice en el Oracle de la UARIV,
-esquema `MODELO`**. No hay más detalle todavía.
+El DBA de la UARIV creó una tabla y un índice en el esquema **`MODELO`**. Lo
+hicieron ellos, por su cuenta.
 
-**Por qué importa y no es un dato menor:** `MODELO` es el esquema del que sale el
-padrón (`GIC_PERSONA` cruzada con el corte del RUV), y se llega a él por el
-dblink `CONSULTAMODELO110`. Un cambio ahí puede tocar:
+**Decisión (21-ago): no entra en este plan.** Se revisa cuando arranque el
+trabajo de mejora de la base de datos. Queda anotado en el registro de defectos
+del legacy — [`defectos_bd_legacy.md`](../oracle-legacy/defectos_bd_legacy.md) —
+que es donde vive lo que se ataca post-migración.
 
-- **La carga del padrón** — si la tabla nueva reemplaza o complementa una fuente
-  que hoy leemos, `cargar_padron_oracle` puede quedar desactualizado.
-- **El rendimiento** — un índice nuevo puede ser justamente lo que necesitábamos,
-  o puede cambiar el plan de ejecución de las consultas que ya afinamos.
-- **La gobernanza** — hay que confirmar si el cambio es en `MODELO` (de ellos) o
-  toca `RNIENTREVISTA` (nuestro esquema en el `.9`).
-
-**Qué hay que pedir para poder analizarlo:**
-
-| | |
-|---|---|
-| Nombre de la tabla y del índice | — |
-| El DDL (`CREATE TABLE` / `CREATE INDEX`) | o al menos columnas y tipo de índice |
-| Sobre qué tabla va el índice | y sobre qué columnas |
-| Para qué lo crearon | ¿lo pidió alguien del proyecto, o es de ellos? |
-| Desde cuándo existe | para cruzarlo con cualquier cambio de rendimiento que hayamos visto |
-
-Mientras no llegue eso, **no hay nada que analizar y no conviene suponer**.
-Queda anotado como punto abierto.
+Lo que habrá que pedirles cuando se retome: nombre de la tabla y del índice, el
+DDL, sobre qué columnas va, para qué lo crearon y desde cuándo existe. Importa
+porque `MODELO` es de donde sale el padrón y un índice nuevo puede cambiar el
+plan de ejecución de las consultas de carga que ya afinamos.
