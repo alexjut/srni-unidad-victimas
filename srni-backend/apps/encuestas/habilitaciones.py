@@ -47,6 +47,15 @@ from apps.victimas.homologacion import RUTAS_QUE_OMITEN_VIGENCIA
 
 from .models import ExcepcionVigencia
 
+#: El universo trae el género escrito ('Mujer', 'Hombre'), no el código del
+#: dominio. Lo que no se reconoce queda 'ND' —no se adivina—, y el encuestador
+#: lo captura en campo.
+_GENERO_UNIVERSO = {
+    'mujer': 'F', 'femenino': 'F', 'f': 'F',
+    'hombre': 'M', 'masculino': 'M', 'm': 'M',
+    'no binario': 'NB', 'intersexual': 'NB',
+}
+
 logger = logging.getLogger(__name__)
 
 
@@ -94,7 +103,11 @@ class CrearHabilitacionSerializer(serializers.Serializer):
     contra nada después.
     """
 
-    victima_id = serializers.UUIDField()
+    # Uno de los dos, no los dos. `universo_id` es para quien está en el corte
+    # del RUV pero todavía no tiene ficha en el padrón operativo: al autorizar
+    # se le crea, con los datos del propio corte. Ver `_materializar_del_universo`.
+    victima_id = serializers.UUIDField(required=False)
+    universo_id = serializers.UUIDField(required=False)
     ruta = serializers.CharField(max_length=30)
     radicado = serializers.CharField(max_length=100)
     observacion = serializers.CharField(max_length=2_000)
@@ -128,6 +141,14 @@ class CrearHabilitacionSerializer(serializers.Serializer):
             )
         return motivo
 
+    def validate(self, attrs):
+        if not attrs.get('victima_id') and not attrs.get('universo_id'):
+            raise serializers.ValidationError(
+                'Indique a quién se autoriza: `victima_id` si ya tiene ficha en '
+                'el padrón, o `universo_id` si viene del corte del RUV.'
+            )
+        return attrs
+
 
 class CrearHabilitacionLoteSerializer(CrearHabilitacionSerializer):
     """
@@ -138,12 +159,23 @@ class CrearHabilitacionLoteSerializer(CrearHabilitacionSerializer):
     """
 
     victima_id = None            # se reemplaza por la lista
+    universo_id = None
     victima_ids = serializers.ListField(
-        child=serializers.UUIDField(), min_length=1, max_length=200)
+        child=serializers.UUIDField(), max_length=200, required=False, default=list)
+    universo_ids = serializers.ListField(
+        child=serializers.UUIDField(), max_length=200, required=False, default=list)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields.pop('victima_id', None)
+        self.fields.pop('universo_id', None)
+
+    def validate(self, attrs):
+        if not attrs.get('victima_ids') and not attrs.get('universo_ids'):
+            raise serializers.ValidationError(
+                'Indique al menos una persona: `victima_ids`, `universo_ids`, o ambas.'
+            )
+        return attrs
 
 
 class AnularHabilitacionSerializer(serializers.Serializer):
@@ -209,11 +241,9 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         datos = serializer.validated_data
 
-        try:
-            victima = Victima.objects.get(pk=datos['victima_id'])
-        except Victima.DoesNotExist:
-            return Response({'detail': 'La víctima indicada no existe.'},
-                            status=status.HTTP_404_NOT_FOUND)
+        victima, problema = self._resolver_persona(datos, request)
+        if problema is not None:
+            return Response(problema, status=status.HTTP_404_NOT_FOUND)
 
         habilitacion, problema = self._autorizar_una(victima, datos, request)
         if problema is not None:
@@ -221,6 +251,92 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(HabilitacionSerializer(habilitacion).data,
                         status=status.HTTP_201_CREATED)
+
+    def _materializar_del_universo(self, universo_id, request):
+        """Crea la ficha en el padrón a partir del corte del RUV.
+
+        Devuelve `(victima, problema)`; uno de los dos siempre es `None`.
+
+        **Por qué `estado_ruv='INCLUIDO'`.** `PersonaUniverso` ES el corte oficial
+        del RUV: estar ahí es estar incluida. No se usa `NO_VERIFICADO` —el
+        estado que existe para el alta manual— porque ahí el dato lo teclea un
+        encuestador y no se comprobó contra nada; acá viene del snapshot de la
+        Unidad. Decisión de Javier, 21-ago.
+
+        **Por qué solo al autorizar.** Buscar no crea nada. Coordinación puede
+        pegar 200 documentos de un oficio para ver la situación de cada uno, y
+        eso no puede dejar 200 fichas nuevas en el padrón.
+        """
+        from apps.victimas.models import PersonaUniverso, Victima
+        from apps.parametricas.models import TipoDocumento
+
+        try:
+            p = PersonaUniverso.objects.get(pk=universo_id)
+        except PersonaUniverso.DoesNotExist:
+            return None, {'detail': 'La persona indicada no existe en el corte del RUV.',
+                          'motivo': 'NO_EXISTE_EN_UNIVERSO'}
+
+        # Si ya se materializó antes —dos autorizaciones sobre la misma persona,
+        # o el padrón se recargó— se reusa. Crear otra sería duplicarla.
+        if p.victima_id:
+            return Victima.objects.filter(pk=p.victima_id).first(), None
+        ya = Victima.objects.filter(
+            numero_documento_hash_sin_tipo=p.numero_documento_hash_sin_tipo).first()
+        if ya is not None:
+            PersonaUniverso.objects.filter(pk=p.pk).update(victima=ya)
+            return ya, None
+
+        tipo_doc = None
+        if p.tipo_documento:
+            tipo_doc = TipoDocumento.objects.filter(codigo=p.tipo_documento).first()
+
+        with transaction.atomic():
+            victima = Victima.objects.create(
+                tipo_documento=tipo_doc,
+                numero_documento=p.numero_documento,
+                primer_nombre=p.primer_nombre or '',
+                segundo_nombre=p.segundo_nombre or '',
+                primer_apellido=p.primer_apellido or '',
+                segundo_apellido=p.segundo_apellido or '',
+                fecha_nacimiento=str(p.fecha_nacimiento) if p.fecha_nacimiento else '',
+                genero=_GENERO_UNIVERSO.get((p.genero or '').strip().lower(), 'ND'),
+                estado_ruv='INCLUIDO',
+                fuente_origen='RUV',
+                habilitado_para_caracterizacion=False,
+                pertenencia_etnica='NINGUNA',
+                discapacidad=bool(p.discapacidad),
+                tipo_discapacidad=p.tipo_discapacidad or '',
+                cons_persona=p.cons_persona_universo,
+                fecha_ult_caracterizacion=p.fecha_ult_caracterizacion,
+                creado_por=request.user,
+            )
+            PersonaUniverso.objects.filter(pk=p.pk).update(victima=victima)
+
+            LogAcceso.registrar(
+                accion='REGISTRAR_VICTIMA',
+                usuario=request.user,
+                ip=ip_de_request(request),
+                recurso='Victima',
+                recurso_id=victima.id,
+                detalle={'origen': 'UNIVERSO', 'universo_id': str(p.id),
+                         'motivo': 'materializada para autorizar excepcion'},
+            )
+
+        logger.info('victima %s materializada del universo %s por %s',
+                    victima.id, p.id, request.user)
+        return victima, None
+
+    def _resolver_persona(self, datos, request):
+        """La persona sobre la que se autoriza, venga del padrón o del universo."""
+        from apps.victimas.models import Victima
+
+        if datos.get('universo_id'):
+            return self._materializar_del_universo(datos['universo_id'], request)
+        victima = Victima.objects.filter(pk=datos['victima_id']).first()
+        if victima is None:
+            return None, {'detail': 'La víctima indicada no existe.',
+                          'motivo': 'NO_EXISTE'}
+        return victima, None
 
     def _autorizar_una(self, victima, datos, request):
         """
@@ -324,9 +440,23 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         datos = serializer.validated_data
 
         ids = list(dict.fromkeys(datos['victima_ids']))     # sin duplicados, en orden
+        # Los del universo llegan aparte: no tienen ficha todavía y se les crea
+        # una por una al autorizar.
+        ids_universo = list(dict.fromkeys(datos.get('universo_ids') or []))
         victimas = {v.id: v for v in Victima.objects.filter(pk__in=ids)}
 
         autorizadas, omitidas = [], []
+        for uid in ids_universo:
+            victima, problema = self._materializar_del_universo(uid, request)
+            if problema is not None:
+                omitidas.append(dict(problema, universo_id=str(uid)))
+                continue
+            habilitacion, problema = self._autorizar_una(victima, datos, request)
+            if problema is not None:
+                omitidas.append(dict(problema, universo_id=str(uid)))
+            else:
+                autorizadas.append(HabilitacionSerializer(habilitacion).data)
+
         for vid in ids:
             victima = victimas.get(vid)
             if victima is None:
@@ -494,9 +624,66 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
             detalle={'documentos': len(documentos), 'coincidencias': len(resultados)},
         )
 
+        # Lo que el padrón operativo no tiene, se busca en el corte del RUV.
+        #
+        # El padrón son 5,9 M de fichas; el universo, 12 M de personas. Una
+        # víctima puede estar en el corte del RUV —con nombre, documento y fecha
+        # de nacimiento— y no tener ficha, y hasta hoy la pantalla le decía a
+        # coordinación «sin coincidencia»: la daba por no cubierta por el oficio
+        # aunque la Unidad la reconozca como víctima.
+        #
+        # No se le crea la ficha por buscarla. Se le crea al AUTORIZAR, que es
+        # cuando alguien decidió algo sobre ella. Buscar 200 documentos no puede
+        # dejar 200 filas nuevas en el padrón.
+        faltan = [d for d in documentos if d not in encontrados]
+        del_universo = []
+        if faltan:
+            from apps.victimas.models import PersonaUniverso
+
+            por_hash_u = {doc_hash(tipo, d): d for d in faltan}
+            por_num_u = {num_hash(d): d for d in faltan}
+            personas = (PersonaUniverso.objects
+                        .filter(numero_documento_hash__in=list(por_hash_u.keys()))
+                        .union(PersonaUniverso.objects.filter(
+                            numero_documento_hash_sin_tipo__in=list(por_num_u.keys())))
+                        )
+            vistos_u = set()
+            for p in personas:
+                doc = (por_hash_u.get(p.numero_documento_hash)
+                       or por_num_u.get(p.numero_documento_hash_sin_tipo))
+                if p.id in vistos_u:
+                    continue
+                vistos_u.add(p.id)
+                encontrados.add(doc)
+                del_universo.append({
+                    'id': None,
+                    'universo_id': str(p.id),
+                    'origen': 'UNIVERSO',
+                    'nombre': ' '.join(x for x in [
+                        p.primer_nombre, p.segundo_nombre,
+                        p.primer_apellido, p.segundo_apellido] if x).strip(),
+                    'tipo_documento': p.tipo_documento or '',
+                    'numero_documento': p.numero_documento,
+                    'fecha_nacimiento': p.fecha_nacimiento,
+                    'estado_ruv': 'INCLUIDO',
+                    'motivo': 'SIN_FICHA_EN_PADRON',
+                    'mensaje': ('Está en el corte del RUV pero no tiene ficha en el '
+                                'padrón. Al autorizar se le crea con estos datos.'),
+                    'ficha_vigente_hasta': None,
+                    'requiere_excepcion': True,
+                    'habilitacion_vigente': None,
+                    'coincide_solo_por_numero': (
+                        p.numero_documento_hash != doc_hash(tipo, doc or '')),
+                })
+
+        for r in resultados:
+            r.setdefault('origen', 'PADRON')
+            r.setdefault('universo_id', None)
+
+        todos = resultados + del_universo
         return Response({
-            'total': len(resultados),
-            'resultados': resultados,
+            'total': len(todos),
+            'resultados': todos,
             'sin_coincidencia': [d for d in documentos if d not in encontrados],
         })
 

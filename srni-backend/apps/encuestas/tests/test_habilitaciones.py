@@ -525,3 +525,143 @@ def test_al_finalizar_la_encuesta_la_habilitacion_se_consume(escenario):
     habilitacion = ExcepcionVigencia.objects.get(victima=escenario['victima'])
     assert habilitacion.estado == ExcepcionVigencia.USADA
     assert habilitacion.usada_en_sesion_id == sesion.id
+
+# ── Quien está en el corte del RUV pero no tiene ficha en el padrón ──────────
+#
+# El caso que destapó Javier el 21-ago: buscó un documento para autorizar una
+# recaracterización y la pantalla respondió «sin coincidencia en el padrón». La
+# persona SÍ se había caracterizado —el corte trae la fecha— pero no tenía fila
+# en `Victima`, y `ExcepcionVigencia.victima` es una FK con PROTECT: no había
+# dónde colgar la habilitación.
+#
+# Decisión de Javier: se muestra marcada, y la ficha se crea al AUTORIZAR, no al
+# buscar. Con `estado_ruv='INCLUIDO'`, porque el universo ES el corte oficial
+# del RUV: estar ahí es estar incluida.
+
+
+@pytest.fixture
+def en_el_universo(db):
+    """Una víctima que está en el corte del RUV y no en el padrón operativo."""
+    import datetime
+    from apps.victimas.models import PersonaUniverso
+    from apps.victimas.repository.base import doc_hash, num_hash
+
+    return PersonaUniverso.objects.create(
+        cons_persona_universo=23664117,
+        tipo_documento='CC', numero_documento='1140164081',
+        numero_documento_hash=doc_hash('CC', '1140164081'),
+        numero_documento_hash_sin_tipo=num_hash('1140164081'),
+        primer_nombre='MAILY', primer_apellido='LIZARAZO',
+        segundo_apellido='GELVES',
+        genero='Mujer', pertenencia_etnica='Negro(a) o Afrocolombiano(a)',
+        discapacidad=False, ciclo_vital='entre 29 y 59', num_hechos=1,
+        corte='TEMP_UNIV_TEST', fecha_corte=datetime.date(2026, 7, 1),
+        es_preferida=True,
+        fecha_nacimiento=datetime.date(1986, 12, 10),
+        fecha_ult_caracterizacion=datetime.datetime(
+            2026, 7, 28, 19, 14, tzinfo=datetime.timezone.utc),
+    )
+
+
+def test_buscar_encuentra_a_quien_solo_esta_en_el_corte_del_RUV(escenario, en_el_universo):
+    """Antes decía «sin coincidencia» y coordinación la daba por no cubierta."""
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1140164081'})
+
+    assert r.status_code == 200
+    assert r.data['sin_coincidencia'] == []
+    assert r.data['total'] == 1
+    fila = r.data['resultados'][0]
+    assert fila['origen'] == 'UNIVERSO'
+    assert fila['id'] is None                       # todavía no hay ficha
+    assert fila['universo_id'] == str(en_el_universo.id)
+    assert fila['requiere_excepcion'] is True
+    assert 'no tiene ficha' in fila['mensaje']
+
+
+def test_buscar_NO_crea_la_ficha(escenario, en_el_universo):
+    """
+    Coordinación pega 200 documentos de un oficio para ver la situación de cada
+    uno. Eso no puede dejar 200 fichas nuevas en el padrón.
+    """
+    from apps.victimas.models import Victima
+
+    antes = Victima.objects.count()
+    escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': '1140164081'})
+
+    assert Victima.objects.count() == antes
+
+
+def test_autorizar_a_quien_viene_del_universo_le_crea_la_ficha(escenario, en_el_universo):
+    """El momento en que alguien decidió algo sobre ella es el que crea la ficha."""
+    from apps.victimas.models import PersonaUniverso, Victima
+
+    r = escenario['coordinador'].post('/api/habilitaciones/', {
+        'universo_id': str(en_el_universo.id),
+        'ruta': 'ACCIONES_CONSTITUCIONALES',
+        'radicado': 'T-2026-0001',
+        'observacion': 'Fallo de tutela que ordena actualizar la caracterización.',
+    }, format='json')
+
+    assert r.status_code == 201, r.content
+
+    victima = Victima.objects.get(numero_documento_hash=en_el_universo.numero_documento_hash)
+    # El universo ES el corte del RUV: estar ahí es estar incluida.
+    assert victima.estado_ruv == 'INCLUIDO'
+    assert victima.fuente_origen == 'RUV'
+    # Los datos salen del corte, no los teclea nadie.
+    assert victima.primer_nombre == 'MAILY'
+    assert victima.genero == 'F'                    # 'Mujer' del universo
+    assert str(victima.fecha_nacimiento) == '1986-12-10'
+    # Y queda enlazada, para no volver a crearla.
+    assert PersonaUniverso.objects.get(pk=en_el_universo.pk).victima_id == victima.id
+
+
+def test_autorizar_dos_veces_no_duplica_la_ficha(escenario, en_el_universo):
+    """
+    La segunda autorización debe chocar contra «ya tiene una habilitación
+    vigente», no crear una segunda ficha de la misma persona.
+    """
+    from apps.victimas.models import Victima
+
+    datos = {
+        'universo_id': str(en_el_universo.id),
+        'ruta': 'ACCIONES_CONSTITUCIONALES',
+        'radicado': 'T-2026-0001',
+        'observacion': 'Fallo de tutela que ordena actualizar la caracterización.',
+    }
+    r1 = escenario['coordinador'].post('/api/habilitaciones/', datos, format='json')
+    assert r1.status_code == 201
+
+    n = Victima.objects.count()
+    r2 = escenario['coordinador'].post('/api/habilitaciones/', datos, format='json')
+
+    assert r2.status_code == 409
+    assert r2.data['motivo'] == 'YA_HABILITADA'
+    assert Victima.objects.count() == n
+
+
+def test_el_lote_tambien_acepta_gente_del_universo(escenario, en_el_universo):
+    """Una tutela ampara a un hogar, y el hogar puede tener gente de las dos."""
+    r = escenario['coordinador'].post('/api/habilitaciones/lote/', {
+        'victima_ids': [str(escenario['victima'].id)],
+        'universo_ids': [str(en_el_universo.id)],
+        'ruta': 'ACCIONES_CONSTITUCIONALES',
+        'radicado': 'T-2026-0002',
+        'observacion': 'Fallo que ampara al hogar completo.',
+    }, format='json')
+
+    assert r.status_code == 201, r.content
+    assert r.data['total_autorizadas'] == 2
+    assert r.data['total_omitidas'] == 0
+
+
+def test_no_se_autoriza_sin_decir_a_quien(escenario):
+    r = escenario['coordinador'].post('/api/habilitaciones/', {
+        'ruta': 'ACCIONES_CONSTITUCIONALES', 'radicado': 'T-1',
+        'observacion': 'Un motivo suficientemente largo.',
+    }, format='json')
+    assert r.status_code == 400
