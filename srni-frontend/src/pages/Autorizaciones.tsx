@@ -21,6 +21,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Alert from '@/components/ui/Alert';
+import Badge from '@/components/ui/Badge';
 
 const TIPOS_DOC = ['CC', 'TI', 'CE', 'RC', 'PA', 'PEP'].map((v) => ({ value: v, label: v }));
 
@@ -103,6 +104,16 @@ export default function AutorizacionesPage() {
       .finally(() => setBuscando(false));
   }
 
+  /**
+   * Clave de la fila. No se puede usar `id` a secas: quien viene del corte del
+   * RUV todavía no tiene ficha en el padrón y llega con `id: null`. Se marca el
+   * origen en la clave para poder separarlos al enviar — el backend los recibe
+   * en dos listas distintas porque a unos hay que crearles la ficha.
+   */
+  function claveDe(p: PersonaBuscada): string {
+    return p.origen === 'UNIVERSO' ? `u:${p.universo_id}` : `p:${p.id}`;
+  }
+
   /** Solo tiene sentido marcar a quien tiene ficha vigente y no está habilitada. */
   const autorizables = (resultado?.resultados ?? [])
     .filter((p) => p.requiere_excepcion && !p.habilitacion_vigente);
@@ -134,7 +145,10 @@ export default function AutorizacionesPage() {
 
     setAutorizando(true);
     habilitacionesApi.autorizar({
-      victima_ids: [...marcadas],
+      // Dos listas: a los del corte del RUV el backend les crea la ficha al
+      // autorizar, y por eso no pueden ir mezclados con los que ya la tienen.
+      victima_ids: [...marcadas].filter((k) => k.startsWith('p:')).map((k) => k.slice(2)),
+      universo_ids: [...marcadas].filter((k) => k.startsWith('u:')).map((k) => k.slice(2)),
       ruta,
       radicado: radicado.trim(),
       observacion: motivo.trim(),
@@ -207,8 +221,8 @@ export default function AutorizacionesPage() {
           <input
             type="checkbox"
             className="h-4 w-4 accent-gov-azul cursor-pointer"
-            checked={marcadas.has(p.id)}
-            onChange={() => alternar(p.id)}
+            checked={marcadas.has(claveDe(p))}
+            onChange={() => alternar(claveDe(p))}
             aria-label={`Autorizar a ${p.nombre}`}
           />
         ) : null
@@ -219,10 +233,32 @@ export default function AutorizacionesPage() {
       header: 'Persona',
       render: (p) => (
         <div>
-          <p className="font-medium text-gray-800">{p.nombre || '(sin nombre)'}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-gray-800">{p.nombre || '(sin nombre)'}</p>
+            {p.origen === 'UNIVERSO' && (
+              <Badge variant="azul">Del RUV · sin ficha</Badge>
+            )}
+          </div>
           <p className="text-xs text-gray-500 font-mono">
-            {p.tipo_documento} {p.numero_documento}
+            {p.tipo_documento || '—'} {p.numero_documento}
+            {p.fecha_nacimiento ? ` · ${p.fecha_nacimiento}` : ''}
           </p>
+          {/* 1,04 M de víctimas están cargadas sin tipo de documento. Cuando la
+              coincidencia es solo por número, quien autoriza tiene que mirar la
+              identidad antes de decidir — es el mismo aviso que la app le da al
+              encuestador en campo. */}
+          {p.coincide_solo_por_numero && (
+            <p className="mt-1 text-xs text-gov-naranja">
+              Coincide por número, pero el tipo de documento registrado no es{' '}
+              {tipoDoc}. <strong>VERIFIQUE la identidad.</strong>
+            </p>
+          )}
+          {p.origen === 'UNIVERSO' && (
+            <p className="mt-1 text-xs text-gray-500">
+              Está en el corte del RUV pero no tiene ficha en el padrón. Al
+              autorizar se le crea con estos datos.
+            </p>
+          )}
         </div>
       ),
     },
@@ -356,7 +392,7 @@ export default function AutorizacionesPage() {
           <Table
             columns={columnasResultados}
             data={resultado.resultados}
-            keyExtractor={(p) => p.id}
+            keyExtractor={(p) => claveDe(p)}
             emptyIcon={Search}
             emptyTitulo="Ninguno de esos documentos está en el padrón"
           />

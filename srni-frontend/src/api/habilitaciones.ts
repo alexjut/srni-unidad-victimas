@@ -47,7 +47,15 @@ export interface Habilitacion {
 
 /** Una persona encontrada por documento, con su situación actual. */
 export interface PersonaBuscada {
-  id: string;
+  /**
+   * El id de la ficha en el padrón. Es `null` cuando la persona viene del corte
+   * del RUV y todavía no tiene ficha: ahí manda `universo_id`, y la ficha se
+   * crea al autorizar.
+   */
+  id: string | null;
+  universo_id: string | null;
+  /** De dónde salió la fila. `UNIVERSO` = está en el RUV, sin ficha todavía. */
+  origen: 'PADRON' | 'UNIVERSO';
   nombre: string;
   tipo_documento: string;
   numero_documento: string;
@@ -59,6 +67,12 @@ export interface PersonaBuscada {
   /** true = tiene ficha vigente y se le puede autorizar la excepción. */
   requiere_excepcion: boolean;
   habilitacion_vigente: Habilitacion | null;
+  /**
+   * Se encontró por número, pero el tipo de documento registrado es otro (o no
+   * tiene). Hay que verificar la identidad antes de autorizar: 1,04 M de
+   * víctimas están cargadas sin tipo.
+   */
+  coincide_solo_por_numero?: boolean;
 }
 
 export interface ResultadoBusqueda {
@@ -70,7 +84,9 @@ export interface ResultadoBusqueda {
 
 export interface ResultadoLote {
   autorizadas: Habilitacion[];
-  omitidas: Array<{ victima_id: string; motivo: string; detail?: string }>;
+  omitidas: Array<{
+    victima_id?: string; universo_id?: string; motivo: string; detail?: string;
+  }>;
   total_autorizadas: number;
   total_omitidas: number;
 }
@@ -95,6 +111,8 @@ export const habilitacionesApi = {
    */
   autorizar: (datos: {
     victima_ids: string[];
+    /** Los del corte del RUV, que todavía no tienen ficha en el padrón. */
+    universo_ids?: string[];
     ruta: string;
     radicado: string;
     observacion: string;
@@ -102,6 +120,7 @@ export const habilitacionesApi = {
   }) => {
     const fd = new FormData();
     datos.victima_ids.forEach((id) => fd.append('victima_ids', id));
+    (datos.universo_ids ?? []).forEach((id) => fd.append('universo_ids', id));
     fd.append('ruta', datos.ruta);
     fd.append('radicado', datos.radicado);
     fd.append('observacion', datos.observacion);
