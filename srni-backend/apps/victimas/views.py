@@ -443,28 +443,66 @@ class RegistrarDesdeFuenteView(APIView):
         ip = _ip_de_request(request)
         ua = request.META.get('HTTP_USER_AGENT', '')
 
-        # 1. Resolver TipoDocumento
+        # 1. Resolver TipoDocumento. Vacío es un valor legítimo, no un error: hay
+        #    1,1 M de víctimas cargadas sin tipo y su identidad se guarda así.
         from apps.parametricas.models import TipoDocumento, Municipio
-        try:
-            tipo_doc = TipoDocumento.objects.get(codigo=data['tipo_documento'])
-        except TipoDocumento.DoesNotExist:
-            return Response(
-                {'detail': f"Tipo de documento '{data['tipo_documento']}' no existe en el catálogo."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        codigo_tipo = (data.get('tipo_documento') or '').strip()
+        tipo_doc = None
+        if codigo_tipo:
+            try:
+                tipo_doc = TipoDocumento.objects.get(codigo=codigo_tipo)
+            except TipoDocumento.DoesNotExist:
+                return Response(
+                    {'detail': f"Tipo de documento '{codigo_tipo}' no existe en el catálogo."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         # 2. Calcular hash del número de documento (misma definición que la búsqueda:
         #    si el upsert hashea distinto que el buscador, se crean duplicados)
-        hash_doc = doc_hash(data['tipo_documento'], data['numero_documento'])
+        hash_doc = doc_hash(codigo_tipo, data['numero_documento'])
 
-        # 3. Buscar registro existente o preparar uno nuevo
-        try:
-            victima = Victima.objects.get(
-                numero_documento_hash=hash_doc,
-                tipo_documento=tipo_doc,
+        # 3. Buscar el registro existente, con el MISMO criterio que la búsqueda.
+        #
+        #    Antes esto era un `.get()` por (hash, tipo) que solo atrapaba
+        #    DoesNotExist. Dos agujeros, los dos vistos en campo:
+        #
+        #    · **500 con documento repetido.** No hay unicidad sobre ese par —el
+        #      padrón tiene 768.096 documentos compartidos por más de una fila, a
+        #      propósito— y `MultipleObjectsReturned` subía como error 500. En la
+        #      app eso se leía como «Revisa la conexión».
+        #    · **No encontraba a quien está cargado sin tipo**, y creaba un
+        #      DUPLICADO de una persona que ya estaba en el padrón.
+        #
+        #    El criterio de identidad vive en el repositorio y es uno solo: si la
+        #    búsqueda y el registro decidieran distinto sobre la misma persona, se
+        #    crearían filas nuevas de gente que ya está.
+        candidatas = list(Victima.objects.filter(numero_documento_hash=hash_doc))
+        if not candidatas:
+            candidatas = list(Victima.objects.filter(
+                numero_documento_hash_sin_tipo=num_hash(data['numero_documento'])))
+
+        if len(candidatas) > 1:
+            candidatas = DjangoVictimaRepository._resolver_colision(candidatas)
+
+        if len(candidatas) > 1:
+            # El veredicto dice que son personas DISTINTAS. Elegir una acá sería
+            # colgarle el hogar a quien no es, en silencio. Se devuelve el
+            # conflicto para que el encuestador confirme con la persona presente,
+            # que es lo que ya hace la pantalla de búsqueda.
+            return Response(
+                {
+                    'detail': ('Este documento corresponde a más de una persona. '
+                               'CONFIRME la identidad antes de continuar.'),
+                    'ambiguo': True,
+                    'coincidencias': len(candidatas),
+                },
+                status=status.HTTP_409_CONFLICT,
             )
+
+        if candidatas:
+            victima = candidatas[0]
             created = False
-        except Victima.DoesNotExist:
+        else:
             victima = Victima(
                 tipo_documento=tipo_doc,
                 numero_documento=data['numero_documento'],

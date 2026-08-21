@@ -572,3 +572,132 @@ def test_un_documento_de_relleno_no_lleva_datos_de_nadie(catalogo, settings, tmp
 
     assert filas == [("", None, "NO_IDENTIFICANTE")]   # una marca, sin datos
     assert m["documentos_no_identificantes"] == 1
+
+# ── 4. /registrar-desde-fuente/ — el APK-002 ─────────────────────────────────
+#
+# Este endpoint es el que la app llama justo antes de conformar el hogar, y era
+# el único de los tres que NO tenía prueba. Por eso el defecto pasó dos rondas de
+# QA: la búsqueda encontraba a la persona y el registro la rechazaba.
+#
+# QA (IGED-QA-C003 v2) lo acotó sin verlo por dentro, con un experimento de
+# control: «con una persona dada de alta manual funciona; con una del padrón,
+# falla». Las cuatro pruebas de acá son los cuatro caminos que fallaban.
+
+
+def _payload(**extra):
+    """Lo que manda la app: exactamente lo que el propio backend le devolvió."""
+    base = {
+        "tipo_documento": "CC",
+        "numero_documento": "1030547250",
+        "primer_nombre": "MARIA",
+        "primer_apellido": "GOMEZ",
+        "genero": "F",
+        "estado_ruv": "INCLUIDO",
+    }
+    base.update(extra)
+    return base
+
+
+def test_registrar_con_documento_repetido_no_revienta(catalogo, client_auth):
+    """
+    Era un 500: `Victima.objects.get()` con `MultipleObjectsReturned` sin atrapar,
+    sobre 768.096 documentos que el padrón tiene repetidos a propósito. En el
+    teléfono ese 500 se leía como «No se pudo registrar. Revisa la conexión».
+    """
+    _crear_victima(catalogo, documento="1030547250", nombre="MARIA", apellido="GOMEZ")
+    _crear_victima(catalogo, documento="1030547250", nombre="ROSA", apellido="PEREZ")
+
+    resp = client_auth.post(
+        "/api/victimas/registrar-desde-fuente/", _payload(), format="json")
+
+    assert resp.status_code != 500, "el documento repetido volvía a reventar"
+    # Sin veredicto de colisión son dos personas distintas: hay que confirmar,
+    # no elegir una en silencio y colgarle el hogar a quien no es.
+    assert resp.status_code == 409
+    assert resp.json()["ambiguo"] is True
+
+
+def test_registrar_a_quien_esta_cargado_SIN_tipo_de_documento(catalogo, client_auth):
+    """
+    El caso que QA aprobó como APK-015 y que acá moría en 400: la app avisa
+    «coincide por número pero el tipo registrado no es CC», el encuestador
+    confirma, y al registrar el serializer rechazaba el tipo vacío.
+
+    La persona se podía ENCONTRAR pero no registrar.
+    """
+    from apps.victimas.models import Victima
+
+    ya_esta = _crear_victima(
+        catalogo, documento="7694421", nombre="SIN", apellido="TIPO",
+        tipo_documento=None,
+    )
+
+    resp = client_auth.post(
+        "/api/victimas/registrar-desde-fuente/",
+        _payload(tipo_documento="", numero_documento="7694421",
+                 primer_nombre="SIN", primer_apellido="TIPO"),
+        format="json",
+    )
+
+    assert resp.status_code == 200, resp.content
+    # Y no se creó un duplicado de alguien que ya estaba en el padrón.
+    assert resp.json()["created"] is False
+    assert resp.json()["victima_id"] == str(ya_esta.id)
+    assert Victima.objects.filter(numero_documento_hash_sin_tipo=ya_esta
+                                  .numero_documento_hash_sin_tipo).count() == 1
+
+
+def test_registrar_con_genero_vacio_no_es_un_error(catalogo, client_auth):
+    """
+    El DTO emite `victima.genero or ""`, así que una fila del padrón sin género
+    mandaba "" y el ChoiceField respondía «"" no es una elección válida». El
+    backend producía un payload que su propio serializer rechazaba.
+
+    Vacío es «no lo sé», y eso ya tiene nombre en el dominio: ND.
+    """
+    from apps.victimas.models import Victima
+
+    resp = client_auth.post(
+        "/api/victimas/registrar-desde-fuente/",
+        _payload(numero_documento="80831650", genero=""),
+        format="json",
+    )
+
+    assert resp.status_code in (200, 201), resp.content
+    assert Victima.objects.get(id=resp.json()["victima_id"]).genero == "ND"
+
+
+def test_registrar_con_estado_ruv_vacio_no_lo_declara_fuera_del_RUV(
+    catalogo, client_auth
+):
+    """
+    Mismo patrón, y este es el peligroso: vacío NO es «no está en el RUV», es que
+    no se resolvió contra el padrón. Declararlo `NO_INCLUIDO` le pone a la
+    persona un estado que nadie comprobó, y ese estado viaja al hogar y a los
+    reportes.
+    """
+    from apps.victimas.models import Victima
+
+    resp = client_auth.post(
+        "/api/victimas/registrar-desde-fuente/",
+        _payload(numero_documento="1105468957", estado_ruv=""),
+        format="json",
+    )
+
+    assert resp.status_code in (200, 201), resp.content
+    assert Victima.objects.get(id=resp.json()["victima_id"]).estado_ruv == "NO_VERIFICADO"
+
+
+def test_registrar_a_una_persona_normal_sigue_funcionando(catalogo, client_auth):
+    """La red de seguridad: el camino que sí andaba no se rompió."""
+    _crear_victima(catalogo, documento="1140164081", nombre="ANA", apellido="RUIZ")
+
+    resp = client_auth.post(
+        "/api/victimas/registrar-desde-fuente/",
+        _payload(numero_documento="1140164081", primer_nombre="ANA",
+                 primer_apellido="RUIZ"),
+        format="json",
+    )
+
+    assert resp.status_code == 200, resp.content
+    assert resp.json()["created"] is False

@@ -202,7 +202,12 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     Usado para crear/actualizar la Victima local antes de conformar el hogar.
     """
     cons_persona = serializers.IntegerField(allow_null=True, required=False)
-    tipo_documento = serializers.CharField(max_length=10)
+    # `allow_blank`: 1.126.615 víctimas (14,5 % del padrón) están cargadas SIN
+    # tipo de documento porque la fuente no lo trae, y el DTO las devuelve con
+    # `tipo_documento=""`. Exigirlo acá hacía que la app pudiera ENCONTRAR a esa
+    # persona —la búsqueda cae al respaldo por número— pero no registrarla: 400,
+    # que en campo se lee como «Revisa la conexión». Es el hallazgo APK-002.
+    tipo_documento = serializers.CharField(max_length=10, allow_blank=True, default='')
     numero_documento = serializers.CharField(max_length=20)
     primer_nombre = serializers.CharField(max_length=100)
     segundo_nombre = serializers.CharField(max_length=100, allow_blank=True, default='')
@@ -214,10 +219,16 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
     # RUV, nunca fue caracterizada, y era justamente a quien esto vino a
     # habilitar. Cuando falta, la captura el encuestador en campo.
     fecha_nacimiento = serializers.DateField(allow_null=True, required=False)
-    genero = serializers.ChoiceField(choices=['M', 'F', 'NB', 'ND'], default='ND')
+    # `allow_blank` + normalización a 'ND': el DTO emite `victima.genero or ""`,
+    # así que una fila del padrón sin género mandaba "" y el ChoiceField lo
+    # rechazaba con «"" no es una elección válida». El backend producía un
+    # payload que su propio serializer no aceptaba.
+    genero = serializers.ChoiceField(
+        choices=['M', 'F', 'NB', 'ND'], default='ND', allow_blank=True)
     # Default 'NO_VERIFICADO', no 'NO_INCLUIDO': si el cliente no manda el estado
     # es porque no lo resolvió contra el padrón — y "no lo sé" no es "no está".
-    estado_ruv = serializers.CharField(max_length=15, default='NO_VERIFICADO')
+    estado_ruv = serializers.CharField(
+        max_length=15, default='NO_VERIFICADO', allow_blank=True)
     habilitado_para_caracterizacion = serializers.BooleanField(default=True)
     # `allow_blank`: el universo trae la etnia vacía cuando la fuente no la
     # registró, y "no consta" no es "NINGUNA" — colapsarlas borraría de las
@@ -233,6 +244,11 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
         help_text='Código DIVIPOLA 5 dígitos del municipio de residencia.',
     )
     fuente_origen = serializers.CharField(max_length=20, default='RUV')
+
+    def validate_genero(self, value):
+        """Vacío es «no lo sé», y eso ya tiene nombre en el dominio: ND."""
+        return value or 'ND'
+
 
     # Valores que mandan APKs ya desplegadas y que NO existen en el dominio del
     # modelo. Se aceptan y se traducen en vez de rechazarse con 400: en campo hay
@@ -252,7 +268,15 @@ class RegistrarDesdeFuenteSerializer(serializers.Serializer):
 
     def validate_estado_ruv(self, value):
         # Antes era un CharField suelto: cualquier cadena entraba a la BD.
-        valor = (value or '').strip().upper()
+        #
+        # Vacío se normaliza a NO_VERIFICADO y no se rechaza: el DTO emite
+        # `victima.estado_ruv or ""`, así que una fila del padrón sin estado
+        # llegaba con "" y moría en 400 — que en el teléfono se leía como
+        # «Revisa la conexión» (APK-002). Y vacío NO es «no está en el RUV»: es
+        # que no se resolvió contra el padrón. Declararlo NO_INCLUIDO le pondría
+        # a la persona un estado que nadie comprobó, y ese estado viaja al hogar
+        # y a los reportes.
+        valor = (value or '').strip().upper() or 'NO_VERIFICADO'
         validos = {c for c, _ in Victima.ESTADO_RUV}
         if valor not in validos:
             raise serializers.ValidationError(
