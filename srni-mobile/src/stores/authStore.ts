@@ -13,6 +13,10 @@ import * as colaDao from '../db/colaDao';
 import * as filtroUniverso from '../services/filtroUniverso';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
+// Perfil del usuario cacheado en el keychain. Permite rehidratar la sesión al
+// arrancar SIN red: sin esto, cargarPerfil() no tenía de dónde sacar el usuario
+// cuando `me()` fallaba por falta de señal, y terminaba borrando los tokens.
+const KEY_PERFIL = 'perfil_cache';
 
 interface AuthState {
   usuario: UsuarioMe | null;
@@ -61,6 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       } catch { /* silencioso — la biometría es opcional */ }
 
       const { data: me } = await authApi.me();
+      await SecureStore.setItemAsync(KEY_PERFIL, JSON.stringify(me));
       set({ usuario: me, cargando: false });
 
       // Fase 0 offline: precargar el padrón/jornada/paramétricas en segundo
@@ -104,6 +109,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       await SecureStore.setItemAsync('refresh_token', data.refresh);
 
       const { data: me } = await authApi.me();
+      await SecureStore.setItemAsync(KEY_PERFIL, JSON.stringify(me));
       set({ usuario: me, cargando: false });
 
       // Fase 0 offline: refrescar la precarga tras re-autenticación biométrica
@@ -133,6 +139,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (!biometricoActivo) {
         await SecureStore.deleteItemAsync('refresh_token');
         await SecureStore.deleteItemAsync(KEY_BIOMETRICO);
+        await SecureStore.deleteItemAsync(KEY_PERFIL);
       }
       // Privacidad: borrar el almacén offline al cerrar sesión. Si NO hay nada
       // pendiente de sincronizar, se borra TODO (incluida la PII capturada de
@@ -163,12 +170,35 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     try {
       const { data } = await authApi.me();
+      await SecureStore.setItemAsync(KEY_PERFIL, JSON.stringify(data));
       set({ usuario: data, perfilCargado: true });
-    } catch {
-      // Token expirado y refresh también falló → limpiar
-      await SecureStore.deleteItemAsync('access_token');
-      await SecureStore.deleteItemAsync('refresh_token');
-      set({ usuario: null, perfilCargado: true });
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      // Solo un rechazo de credenciales (401/403) invalida la sesión. El
+      // interceptor del cliente ya intentó refrescar el token antes de llegar
+      // acá, así que un 401 acá significa que el refresh TAMBIÉN falló.
+      if (status === 401 || status === 403) {
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await SecureStore.deleteItemAsync(KEY_PERFIL);
+        set({ usuario: null, perfilCargado: true });
+        return;
+      }
+      // Sin respuesta (sin red / timeout) o error del servidor (5xx): NO se
+      // cierra la sesión. Se rehidrata el perfil del caché para que la app
+      // siga usable sin señal — sacar a la encuestadora del sistema en pleno
+      // campo, y encima borrarle el token, era pérdida de jornada.
+      try {
+        const cache = await SecureStore.getItemAsync(KEY_PERFIL);
+        if (cache) {
+          set({ usuario: JSON.parse(cache) as UsuarioMe, perfilCargado: true });
+          return;
+        }
+      } catch { /* caché corrupto: cae al cierre de abajo */ }
+      // Sin caché (primer arranque sin red tras instalar): se conserva el
+      // token para el próximo arranque con señal, pero sin perfil no hay a
+      // quién mostrar. perfilCargado marca que el intento terminó.
+      set({ perfilCargado: true });
     }
   },
 

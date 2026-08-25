@@ -13,6 +13,34 @@
 
 ---
 
+## Actualización — 25-ago-2026 (qué se cerró desde el plan)
+
+El plan de arriba es del 21-ago. Desde entonces se ejecutó una tanda. Estado real
+al 25-ago, verificado contra el código y las pruebas (backend **976** passed,
+móvil **148** passed):
+
+| # del plan | Qué era | Estado 25-ago |
+|---|---|---|
+| 0 / 1 | Autorizar a quien está solo en el universo + respaldo por número sin tipo | ✅ **Hecho** — materialización al autorizar (`_materializar_del_universo`) y búsqueda por `numero_documento_hash_sin_tipo`. Verificado contra producción. |
+| 2 | Upsert de `registrar-desde-fuente` (500 duplicado / 400 tipo vacío / género-estado) | ✅ **Hecho** — `_resolver_colision`, tipo vacío por hash, homologación. (APK-002 backend) |
+| 3 | Test de regresión del upsert | ✅ **Hecho** |
+| 4 | Abrir la app sin red borra la sesión | ✅ **Hecho** — `cargarPerfil` distingue 401/403 de sin-red/5xx; perfil cacheado en keychain; 6 tests, verificado por mutación. |
+| 5 | `obtenerToken()` en la precarga (el filtro del universo nunca bajaba) | ✅ **Hecho** — lee de SecureStore; 2 tests, verificado por mutación. |
+| 6 | `interpretarError` en los catch de `busqueda.tsx` | ✅ **Hecho** — búsqueda, conformar hogar y alta manual muestran el mensaje del servidor + código HTTP; el detalle va al reporte. |
+| 12 | Comando de backfill de `porcentaje_completado` | ✅ **Hecho** — `manage.py backfill_porcentaje` (por lotes, idempotente, `--dry-run`); 3 tests. **Falta CORRERLO en producción** antes del próximo reporte. |
+| H-024/H-010/H-011/H-025/H-027 | Hallazgos WEB v2 | ✅ **Hecho** y con el frontend de Brando ya integrado a `main`. |
+
+**Lo que sigue abierto** (del plan): #7 corregir `MOVIL_VERSION` en prod (dice
+1.0.0), #8 aviso de versión en el login, #9 medir APK-019 en el servidor, #10
+reporte de errores real en prod, #11 curar obligatorias de Asistencia, #13
+pantalla de editar integrante, #16 `deploy-apk.sh` escribe la versión. Y **todo
+lo de la APK necesita build nuevo + reprueba en dispositivo**.
+
+**Correr en producción, pendiente:** `backfill_porcentaje` (#12) — avisar a Brando
+que el número del panel va a moverse de golpe.
+
+---
+
 ## 0. Lo urgente — no se puede autorizar a quien está solo en el universo
 
 Se intentó autorizar una excepción para el documento `1115724047` desde el panel

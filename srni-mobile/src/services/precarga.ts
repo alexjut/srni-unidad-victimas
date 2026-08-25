@@ -9,6 +9,7 @@
  * Es NO bloqueante: si la precarga falla, el login NO debe fallar. El estado
  * se expone via getEstadoPrecarga() para que la UI lo refleje si lo desea.
  */
+import * as SecureStore from 'expo-secure-store';
 import apiClient from '../api/client';
 import * as precargaDao from '../db/precargaDao';
 import type { PrecargaPayload } from '../db/precargaDao';
@@ -94,11 +95,23 @@ async function descargarFiltroUniverso(data: PrecargaPayload): Promise<void> {
   }
 }
 
-/** El Bearer del usuario, que el endpoint del filtro exige. */
+/**
+ * El Bearer del usuario, que el endpoint del filtro exige.
+ *
+ * Se lee de SecureStore, que es la MISMA fuente que usa el interceptor del
+ * api client en cada request (`api/client.ts`). El bug anterior lo buscaba en
+ * `defaults.headers.common.Authorization`, que el cliente nunca setea —inyecta
+ * el token por request, no en los defaults—, así que siempre devolvía '' y el
+ * filtro del universo no se descargaba en ningún teléfono. Se deja el header
+ * como respaldo por si alguna vez se poblara.
+ */
 async function obtenerToken(): Promise<string> {
   try {
-    const mod = await import('../api/client');
-    const cabecera = (mod.default.defaults.headers.common?.Authorization ?? '') as string;
+    const guardado = await SecureStore.getItemAsync('access_token');
+    if (guardado) return guardado;
+  } catch { /* cae al respaldo por header */ }
+  try {
+    const cabecera = (apiClient.defaults.headers.common?.Authorization ?? '') as string;
     return cabecera.replace(/^Bearer\s+/i, '');
   } catch {
     return '';

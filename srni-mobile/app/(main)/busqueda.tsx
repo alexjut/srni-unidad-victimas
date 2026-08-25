@@ -36,6 +36,7 @@ import type { PadronRow } from '../../src/db/precargaDao';
 import * as victimasOfflineDao from '../../src/db/victimasOfflineDao';
 import * as colaDao from '../../src/db/colaDao';
 import { reportarError } from '../../src/services/errorReporter';
+import { interpretarError } from '../../src/utils/errores';
 import * as filtroUniverso from '../../src/services/filtroUniverso';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
@@ -842,11 +843,22 @@ export default function BusquedaScreen() {
       }
       // Sprint 17: ya NO se cargan instrumentos aquí. El selector vive en el hub
       // de caracterizaciones tras conformar el hogar (flujo cosido Sprint 14).
-    } catch {
+    } catch (err) {
       // El server falló aunque creíamos estar online → fallback al padrón local.
       const ok = await buscarOffline();
       if (!ok) {
-        setErrorBusqueda('Error al consultar el RNI. Verifique la conexión.');
+        // APK-019: no todo fallo es "de red". interpretarError distingue sin-red
+        // de un 400/429/500/502 y agrega el código HTTP, para que la foto de QA
+        // sea un diagnóstico y no siempre el mismo texto.
+        const info = interpretarError(err, 'Error al consultar el RNI. Verifique la conexión.');
+        setErrorBusqueda(info.mensaje);
+        if (!info.sinRed) {
+          reportarError({
+            nivel: 'warn',
+            mensaje: 'consultarFuente falló: ' + info.diagnostico,
+            pantalla: 'busqueda',
+          });
+        }
       }
     } finally {
       setCargando(false);
@@ -883,14 +895,17 @@ export default function BusquedaScreen() {
       }
       router.push('/(main)/hogares/conformar');
     } catch (err: any) {
-      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      // APK-002: si el servidor respondió (p.ej. 409 "el hogar es de otro
+      // encuestador"), ese texto ya viene redactado para campo y hay que
+      // mostrarlo; solo el detalle técnico va al reporte, no a la pantalla.
+      const info = interpretarError(err, 'No se pudo registrar. Revisa la conexión e intenta de nuevo.');
       reportarError({
         nivel: 'warn',
-        mensaje: 'conformarHogar — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        mensaje: 'conformarHogar — registrarDesdeFuente falló: ' + info.diagnostico,
         stack: err?.stack,
         pantalla: 'busqueda',
       });
-      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
+      setErrorBusqueda(info.mensaje);
     } finally {
       setCargandoRegistro(false);
     }
@@ -997,14 +1012,16 @@ export default function BusquedaScreen() {
       }
       setAltaManualRegistrada(true);
     } catch (err: any) {
-      // No mostramos el mensaje técnico de axios al encuestador; lo enviamos a reportarError.
+      // Igual que conformarHogar: mostramos el mensaje del servidor cuando lo
+      // hubo (APK-002); el detalle técnico va al reporte, no a la pantalla.
+      const info = interpretarError(err, 'No se pudo registrar. Revisa la conexión e intenta de nuevo.');
       reportarError({
         nivel: 'warn',
-        mensaje: 'registrarAltaManual — registrarDesdeFuente falló: ' + (err?.message ?? String(err)),
+        mensaje: 'registrarAltaManual — registrarDesdeFuente falló: ' + info.diagnostico,
         stack: err?.stack,
         pantalla: 'busqueda',
       });
-      setErrorBusqueda('No se pudo registrar. Revisa la conexión e intenta de nuevo.');
+      setErrorBusqueda(info.mensaje);
     } finally {
       setCargandoRegistro(false);
     }
