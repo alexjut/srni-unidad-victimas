@@ -65,8 +65,8 @@ export default function EncuestasPage() {
       const params: Record<string, string | number> = { page: pag };
       if (filtroEstado) params.estado = filtroEstado;
       const { data } = await encuestasApi.listar(params);
-      setSesiones(data.results);
-      setTotal(data.count);
+      setSesiones(data.results ?? []);
+      setTotal(data.count ?? data.results?.length ?? 0);
     } catch {
       setError('No se pudieron cargar las encuestas.');
     } finally {
