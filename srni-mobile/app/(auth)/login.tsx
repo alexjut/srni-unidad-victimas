@@ -23,6 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../src/stores/authStore';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
@@ -451,6 +452,11 @@ export default function LoginScreen() {
           <Text style={styles.pie}>
             Sistema protegido — Ley 1581 de 2012 · Datos de víctimas confidenciales
           </Text>
+          {/* Versión visible: QA reporta exactamente qué binario probó y se
+              acaba la ambigüedad de "¿cuál 1.2.x fue?". */}
+          <Text style={styles.pieVersion}>
+            v{Constants.expoConfig?.version ?? '—'}
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -667,5 +673,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingHorizontal: SPACING.md,
     lineHeight: 16,
+  },
+  pieVersion: {
+    ...FONT.caption,
+    color: 'rgba(255,255,255,0.55)',
+    textAlign: 'center',
+    marginTop: 6,
+    letterSpacing: 0.4,
   },
 });
