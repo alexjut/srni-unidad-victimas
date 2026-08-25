@@ -9,7 +9,7 @@
  * se autoriza, y el soporte que las cubre a todas.
  */
 import { useEffect, useState } from 'react';
-import { FileCheck, Search, ShieldCheck } from 'lucide-react';
+import { FileCheck, Search, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   habilitacionesApi, RUTAS_EXCEPCION, ESTADOS_HABILITACION,
@@ -19,26 +19,16 @@ import PageHeader from '@/components/ui/PageHeader';
 import Table, { type Column } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
+import Dropdown from '@/components/ui/Dropdown';
 import Alert from '@/components/ui/Alert';
-import Badge from '@/components/ui/Badge';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 
 const TIPOS_DOC = ['CC', 'TI', 'CE', 'RC', 'PA', 'PEP'].map((v) => ({ value: v, label: v }));
 
-/**
- * Base del chip de estado.
- *
- * Se escribe con utilidades y no con una clase `.badge`: el proyecto solo
- * define variantes con color fijo (`.badge-verde`, `.badge-rojo`…) y no una
- * base neutra, así que `badge` a secas no aplicaría nada. Es el mismo patrón
- * que usa la página de Auditoría.
- */
-const CHIP = 'inline-block text-xs font-medium px-2 py-0.5 rounded-md';
-
-const ESTADO_BADGE: Record<string, string> = {
-  VIGENTE: 'bg-gov-verdeTenue text-gov-verde',
-  USADA:   'bg-gray-100 text-gray-600',
-  ANULADA: 'bg-gov-rojoTenue text-gov-rojo',
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  VIGENTE: 'verde',
+  USADA:   'gris',
+  ANULADA: 'rojo',
 };
 
 function fecha(iso: string | null): string {
@@ -143,6 +133,12 @@ export default function AutorizacionesPage() {
       if (s.has(id)) s.delete(id); else s.add(id);
       return s;
     });
+  }
+
+  function limpiarBusqueda() {
+    setDocumentos('');
+    setResultado(null);
+    setMarcadas(new Set());
   }
 
   function autorizar(e: React.FormEvent) {
@@ -288,7 +284,7 @@ export default function AutorizacionesPage() {
         if (p.habilitacion_vigente) {
           return (
             <div>
-              <span className={`${CHIP} ${ESTADO_BADGE.VIGENTE}`}>Ya habilitada</span>
+              <Badge variant="verde">Ya habilitada</Badge>
               <p className="text-xs text-gray-500 mt-1">
                 radicado {p.habilitacion_vigente.radicado || '—'} · por{' '}
                 {p.habilitacion_vigente.autorizada_por_codigo || '—'}
@@ -299,7 +295,7 @@ export default function AutorizacionesPage() {
         if (p.motivo === 'FICHA_VIGENTE') {
           return (
             <div>
-              <span className={`${CHIP} bg-gov-naranjaTenue text-gov-naranja`}>Ficha vigente</span>
+              <Badge variant="naranja">Ficha vigente</Badge>
               <p className="text-xs text-gray-500 mt-1">
                 hasta el {fecha(p.ficha_vigente_hasta)}
               </p>
@@ -309,7 +305,7 @@ export default function AutorizacionesPage() {
         if (p.motivo === 'EXCLUIDA_RUV') {
           return (
             <div>
-              <span className={`${CHIP} ${ESTADO_BADGE.ANULADA}`}>Excluida del RUV</span>
+              <Badge variant="rojo">Excluida del RUV</Badge>
               <p className="text-xs text-gray-500 mt-1">ninguna ruta la habilita</p>
             </div>
           );
@@ -317,12 +313,12 @@ export default function AutorizacionesPage() {
         if (p.motivo === 'ELEGIBLE') {
           return (
             <div>
-              <span className={`${CHIP} ${ESTADO_BADGE.VIGENTE}`}>Ya puede caracterizarse</span>
+              <Badge variant="verde">Ya puede caracterizarse</Badge>
               <p className="text-xs text-gray-500 mt-1">no necesita excepción</p>
             </div>
           );
         }
-        return <span className={`${CHIP} bg-gray-100 text-gray-600`}>{p.motivo}</span>;
+        return <Badge variant="gris">{p.motivo}</Badge>;
       },
     },
   ];
@@ -343,7 +339,7 @@ export default function AutorizacionesPage() {
     {
       key: 'estado',
       header: 'Estado',
-      render: (h) => <span className={`${CHIP} ${ESTADO_BADGE[h.estado] ?? ''}`}>{h.estado}</span>,
+      render: (h) => <Badge variant={ESTADO_BADGE[h.estado] ?? 'gris'}>{h.estado}</Badge>,
     },
     { key: 'autorizo', header: 'Autorizó', render: (h) => <span className="font-mono text-xs">{h.autorizada_por_codigo || '—'}</span> },
     { key: 'fecha', header: 'Fecha', render: (h) => <span className="text-sm">{fecha(h.created_at)}</span> },
@@ -361,14 +357,14 @@ export default function AutorizacionesPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       <PageHeader
         titulo="Autorizar excepciones de vigencia"
         subtitulo="Habilita la actualización de una caracterización vigente cuando hay un fallo, tutela o auto que lo ordena."
       />
 
       {/* 1. Buscar */}
-      <div className="card p-5 mb-5">
+      <div className="card shadow-soft mb-5 animate-fade-in-up">
         <h3 className="font-semibold text-gray-800 mb-1">1. Buscar a las personas</h3>
         <p className="text-sm text-gray-500 mb-4">
           Una cédula o muchas — un fallo suele amparar a un hogar entero. Sepárelas
@@ -376,30 +372,42 @@ export default function AutorizacionesPage() {
         </p>
         <form onSubmit={buscar} className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="sm:w-28">
-            <Select label="Tipo" options={TIPOS_DOC} value={tipoDoc}
-                    onChange={(e) => setTipoDoc(e.target.value)} />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Números de documento
-            </label>
-            <textarea
-              className="input min-h-[76px]"
-              value={documentos}
-              onChange={(e) => setDocumentos(e.target.value)}
-              placeholder={'1115724047\n1030547250'}
+            <Dropdown
+              label="Tipo"
+              options={TIPOS_DOC}
+              value={tipoDoc}
+              onChange={setTipoDoc}
             />
           </div>
-          <Button type="submit" icon={Search} loading={buscando}
-                  disabled={buscando || !documentos.trim()}>
-            Buscar
-          </Button>
+          <div className="flex-1">
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+              Números de documento
+            </label>
+            <input
+              type="text"
+              className="input font-mono"
+              value={documentos}
+              onChange={(e) => setDocumentos(e.target.value)}
+              placeholder="1115724047, 1030547250"
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="submit" icon={Search} loading={buscando}
+                    disabled={buscando || !documentos.trim()}>
+              Buscar
+            </Button>
+            {documentos.trim() && (
+              <Button variant="ghost" icon={X} onClick={limpiarBusqueda} type="button">
+                Limpiar
+              </Button>
+            )}
+          </div>
         </form>
       </div>
 
       {/* Resultados */}
       {resultado && (
-        <div className="mb-5">
+        <div className="mb-5 animate-fade-in-up">
           {resultado.sin_coincidencia.length > 0 && (
             <Alert variant="error" className="mb-3">
               Sin coincidencia en el padrón:{' '}
@@ -426,7 +434,7 @@ export default function AutorizacionesPage() {
 
       {/* 2. Autorizar */}
       {autorizables.length > 0 && (
-        <div className="card p-5 mb-5">
+        <div className="card shadow-soft mb-5 animate-fade-in-up">
           <h3 className="font-semibold text-gray-800 mb-1">2. Autorizar la excepción</h3>
           <p className="text-sm text-gray-500 mb-4">
             {marcadas.size === 0
@@ -439,14 +447,20 @@ export default function AutorizacionesPage() {
           {errorForm && <Alert variant="error" className="mb-4">{errorForm}</Alert>}
 
           <form onSubmit={autorizar} className="space-y-4">
-            <Select label="Ruta que omite la vigencia" options={RUTAS_EXCEPCION}
-                    value={ruta} onChange={(e) => setRuta(e.target.value)} />
+            <Dropdown
+              label="Ruta que omite la vigencia"
+              options={RUTAS_EXCEPCION}
+              value={ruta}
+              onChange={setRuta}
+            />
 
             <Input label="Radicado del soporte" value={radicado} placeholder="T-2026-451"
                    onChange={(e) => setRadicado(e.target.value)} />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Motivo</label>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Motivo
+              </label>
               <textarea
                 className="input min-h-[80px]"
                 value={motivo}
@@ -456,8 +470,8 @@ export default function AutorizacionesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Documento de soporte <span className="text-gray-400">(opcional)</span>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                Documento de soporte <span className="text-gray-400 normal-case">(opcional)</span>
               </label>
               <input
                 type="file"
@@ -479,7 +493,7 @@ export default function AutorizacionesPage() {
       )}
 
       {/* 3. Listado */}
-      <div className="card p-5">
+      <div className="card shadow-soft animate-fade-in-up">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div>
             <h3 className="font-semibold text-gray-800 mb-1">Excepciones autorizadas</h3>
@@ -488,11 +502,11 @@ export default function AutorizacionesPage() {
             </p>
           </div>
           <div className="sm:w-52">
-            <Select
+            <Dropdown
               label="Estado"
               options={[{ value: '', label: 'Todas' }, ...ESTADOS_HABILITACION]}
               value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
+              onChange={setFiltroEstado}
             />
           </div>
         </div>
