@@ -27,6 +27,11 @@ x-backend-env: &backend_env
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
   GEMINI_API_KEY: ${GEMINI_API_KEY}
+  # Versión de la APK que anuncia GET /api/movil/version/ (rec. 6 de QA). Sin
+  # declararla aquí, ponerla en el .env no sirve: el contenedor no la ve —el
+  # endpoint respondía 1.0.0 mientras la app iba en 1.2.x y QA perdió una ronda.
+  MOVIL_VERSION: ${MOVIL_VERSION:-1.0.0}
+  MOVIL_VERSION_CODE: ${MOVIL_VERSION_CODE:-1}
   # De dónde salen las personas al buscar por documento:
   #   DJANGO → el padrón cargado en nuestra base (lo real)
   #   MOCK   → datos de prueba (ENC001, documentos 999…)
