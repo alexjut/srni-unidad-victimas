@@ -580,6 +580,83 @@ def test_buscar_encuentra_a_quien_solo_esta_en_el_corte_del_RUV(escenario, en_el
     assert 'no tiene ficha' in fila['mensaje']
 
 
+def test_buscar_colapsa_el_documento_repetido_de_la_misma_persona(escenario):
+    """
+    H-025 — buscar un documento que en el padron tiene DOS filas de la MISMA
+    persona devolvia dos filas casi identicas, y el panel mostraba una fila
+    duplicada. En el padron real hay 768.096 documentos repetidos y el 92% es la
+    misma persona cargada dos veces por el Oracle de origen. Se colapsan a una,
+    con el mismo criterio de la busqueda de victimas (ColisionDocumento).
+    """
+    import datetime
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import Victima, ColisionDocumento
+    from apps.victimas.repository.base import doc_hash
+
+    tipo = TipoDocumento.objects.get(codigo='CC')
+    doc = '1006119380'
+    h = doc_hash('CC', doc)
+    comun = dict(
+        tipo_documento=tipo, numero_documento=doc,
+        numero_documento_hash=h, primer_nombre='CARLA', primer_apellido='DIAZ',
+        genero='F', estado_ruv='INCLUIDO', habilitado_para_caracterizacion=False,
+        pertenencia_etnica='NINGUNA', discapacidad=False,
+        fecha_nacimiento='1990-05-05',
+        fecha_ult_caracterizacion=datetime.datetime(
+            2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc),
+    )
+    v1 = Victima.objects.create(**comun)
+    Victima.objects.create(**comun)   # misma persona, segunda fila del Oracle
+
+    # El veredicto: una sola persona, y la preferida es la primera fila.
+    ColisionDocumento.objects.create(
+        doc_hash=h, clase='DUPLICADO_FUENTE', filas=2, personas=1,
+        victima_preferida=v1)
+
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': doc})
+
+    assert r.status_code == 200
+    docs = [x for x in r.data['resultados'] if x['numero_documento'] == doc]
+    assert len(docs) == 1, 'el documento repetido de la misma persona salio duplicado (H-025)'
+    assert docs[0]['id'] == str(v1.id)   # la fila preferida
+
+
+def test_buscar_mantiene_separadas_a_personas_distintas(escenario):
+    """El reverso de H-025: si de verdad son personas distintas (el ~7%), se
+    muestran las dos, porque ahi quien autoriza SI tiene que elegir."""
+    import datetime
+    from apps.parametricas.models import TipoDocumento
+    from apps.victimas.models import Victima, ColisionDocumento
+    from apps.victimas.repository.base import doc_hash
+
+    tipo = TipoDocumento.objects.get(codigo='CC')
+    doc = '1030283098'
+    h = doc_hash('CC', doc)
+    def fila(nombre, nac):
+        return Victima.objects.create(
+            tipo_documento=tipo, numero_documento=doc,
+            numero_documento_hash=h, primer_nombre=nombre, primer_apellido='X',
+            genero='F', estado_ruv='INCLUIDO', habilitado_para_caracterizacion=False,
+            pertenencia_etnica='NINGUNA', discapacidad=False, fecha_nacimiento=nac,
+            fecha_ult_caracterizacion=datetime.datetime(
+                2026, 3, 14, 10, 0, tzinfo=datetime.timezone.utc))
+    fila('MARIA', '1980-01-01')
+    fila('ROSA', '1995-09-09')
+    # Ambiguo: personas distintas, sin preferida.
+    ColisionDocumento.objects.create(
+        doc_hash=h, clase='AMBIGUO', filas=2, personas=2, victima_preferida=None)
+
+    r = escenario['coordinador'].get(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'numero_documento': doc})
+
+    assert r.status_code == 200
+    docs = [x for x in r.data['resultados'] if x['numero_documento'] == doc]
+    assert len(docs) == 2, 'personas distintas con el mismo documento deben verse ambas'
+
+
 def test_buscar_universo_usa_el_indice_y_no_escanea_12M(escenario, en_el_universo):
     """
     H-024 — regresión de rendimiento. La búsqueda del universo filtraba por

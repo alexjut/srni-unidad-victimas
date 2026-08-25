@@ -26,7 +26,7 @@ from apps.auditoria.red import ip_de_request
 from apps.formulario.models import Pregunta
 from apps.hogares.models import MiembroHogar
 from apps.sincronizacion.tasks import encolar_hogar
-from srni.pagination import CursorTimePagination
+from srni.pagination import DefaultPageNumberPagination
 from .models import SesionEncuesta, RespuestaEncuesta
 from .filters import SesionEncuestaFilterSet
 
@@ -91,7 +91,13 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
     Solo los encuestadores con puede_caracterizar pueden operar este endpoint.
     """
     permission_classes = [IsAuthenticated, PuedeConsultarOperacion]
-    pagination_class = CursorTimePagination
+    # Paginación por número de página, no por cursor. El panel de supervisión
+    # está escrito para eso —manda ?page= y lee `count` para mostrar «página N
+    # de M»— y el cursor no devuelve `count`: por eso el listado mostraba
+    # «undefined sesión(es)» y «Página 1 de NaN» (H-010/H-011), y además el
+    # botón «siguiente» nunca avanzaba porque el cursor ignora ?page=. La APK
+    # solo lee `results`, así que no le afecta.
+    pagination_class = DefaultPageNumberPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = SesionEncuestaFilterSet
     ordering_fields = [

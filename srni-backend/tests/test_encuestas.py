@@ -130,6 +130,31 @@ def client_enc(encuestador):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
+class TestPaginacionListado:
+    """H-010 / H-011 — el listado de encuestas del panel.
+
+    Usaba paginacion por cursor, que NO devuelve 'count'. El panel lee
+    data.count para el subtitulo y el total de paginas, asi que mostraba
+    'undefined sesion(es) registradas' y 'Pagina 1 de NaN'. Debe paginar por
+    numero de pagina y devolver count."""
+
+    def test_el_listado_devuelve_count_para_el_panel(self, client_enc, sesion):
+        r = client_enc.get('/api/encuestas/')
+        assert r.status_code == 200
+        # Sin count, el panel renderiza 'undefined' y 'NaN'.
+        assert 'count' in r.data, 'el listado debe devolver count (H-010/H-011)'
+        assert isinstance(r.data['count'], int)
+        assert r.data['count'] >= 1
+        assert 'results' in r.data
+
+    def test_el_listado_pagina_por_numero_de_pagina(self, client_enc, sesion):
+        # ?page= debe ser respetado (el cursor lo ignoraba, la paginacion nunca
+        # avanzaba). page=1 responde 200; una pagina fuera de rango, 404.
+        assert client_enc.get('/api/encuestas/?page=1').status_code == 200
+        assert client_enc.get('/api/encuestas/?page=999').status_code == 404
+
+
+@pytest.mark.django_db
 class TestCrearSesion:
     def test_crear_sesion_exitosa(self, client_enc, hogar, instrumento):
         r = client_enc.post('/api/encuestas/', {

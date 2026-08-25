@@ -581,6 +581,22 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
                 doc_de[v.id] = por_num.get(v.numero_documento_hash_sin_tipo)
                 victimas.append(v)
 
+        # Colapsar los registros que son LA MISMA persona (H-025).
+        #
+        # El padrón tiene 768.096 documentos compartidos por más de una fila, y
+        # el 92 % de esos son la misma persona cargada dos veces por el Oracle de
+        # origen, no personas distintas. Sin esto, buscar ese documento devolvía
+        # dos filas casi idénticas y el panel mostraba una «fila duplicada».
+        #
+        # Se reutiliza el mismo criterio que la búsqueda de víctimas
+        # (`ColisionDocumento`, ya calculado): si el veredicto dice que son la
+        # misma persona se deja la fila más completa; solo se mantienen separadas
+        # las que de verdad son personas distintas (el ~7 %), porque ahí quien
+        # autoriza SÍ tiene que elegir. La reducción vive en el repositorio para
+        # que el panel y la APK decidan igual sobre la misma persona.
+        from apps.victimas.repository import DjangoVictimaRepository
+        victimas = DjangoVictimaRepository._resolver_colision(victimas)
+
         habilitaciones = self._habilitaciones_vigentes([v.id for v in victimas])
 
         resultados, encontrados = [], set()
