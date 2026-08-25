@@ -2,11 +2,12 @@
 
 > **Para:** Jorge (QA) · **De:** Javier Aguilar (desarrollo SRNI) · **Fecha:** 25-ago-2026
 >
-> ⚠️ **No enviar todavía.** Este correo debe salir **después** de: desplegar el
-> backend con los arreglos, correr `backfill_porcentaje` en producción, reconstruir
-> el panel con el merge de Brando, publicar la **APK 1.2.3** y corregir
-> `MOVIL_VERSION` en el `.env` de producción. Enviarlo antes sería invitar a
-> reprobar sobre lo que aún no está en el aire.
+> ✅ **Listo para enviar.** El despliegue quedó completo y verificado en producción
+> el 25-ago 20:10 (por el dominio `caracterizacion.unidadvictimas.gov.co`):
+> backend con los arreglos, `backfill_porcentaje` corrido, panel reconstruido con
+> el merge de Brando (`tsc` limpio), **APK 1.2.3** publicada y descargable
+> (78.761.973 bytes), y `/api/movil/version/` respondiendo **1.2.3**. Todo lo que
+> el correo afirma está en el aire.
 
 ---
 
