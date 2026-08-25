@@ -580,6 +580,57 @@ def test_buscar_encuentra_a_quien_solo_esta_en_el_corte_del_RUV(escenario, en_el
     assert 'no tiene ficha' in fila['mensaje']
 
 
+def test_buscar_universo_usa_el_indice_y_no_escanea_12M(escenario, en_el_universo):
+    """
+    H-024 — regresión de rendimiento. La búsqueda del universo filtraba por
+    `numero_documento_hash`, que NO tiene índice en PersonaUniverso (12 M filas):
+    un table scan de ~5,8 s medido en producción que, con el timeout de 15 s del
+    cliente, hacía fallar la pantalla de forma intermitente («No se pudo buscar»).
+
+    El resultado es el mismo con o sin índice, así que esto no se puede probar por
+    comportamiento: se prueba sobre el SQL. La búsqueda del universo debe filtrar
+    SOLO por `numero_documento_hash_sin_tipo` (indexado), nunca por el hash
+    completo.
+    """
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    with CaptureQueriesContext(connection) as ctx:
+        escenario['coordinador'].get(
+            '/api/habilitaciones/buscar/',
+            {'tipo_documento': 'CC', 'numero_documento': '1140164081'})
+
+    import re
+
+    sql_universo = " ".join(
+        q['sql'] for q in ctx.captured_queries
+        if 'personauniverso' in q['sql'].lower())
+
+    assert sql_universo, 'se esperaba al menos una consulta a PersonaUniverso'
+    # Se mira el FILTRO (columna seguida de IN), no el SELECT: el nombre de la
+    # columna aparece igual en la lista de columnas del SELECT. El campo sin
+    # indice NO debe usarse como filtro; el indexado SI.
+    filtra_sin_indice = re.search(r'numero_documento_hash"\s+IN', sql_universo)
+    filtra_indexado = re.search(r'numero_documento_hash_sin_tipo"\s+IN', sql_universo)
+    assert not filtra_sin_indice, 'la busqueda del universo escanea el campo SIN indice (H-024)'
+    assert filtra_indexado, 'la busqueda del universo debe filtrar por el campo indexado'
+
+
+def test_buscar_dos_del_universo_no_cuelga_ni_duplica(escenario, en_el_universo, otra_victima):
+    """Dos documentos sin ficha pero en el universo: aparecen los que estén, sin
+    duplicar y sin quedar en «sin coincidencia» los encontrados."""
+    r = escenario['coordinador'].post(
+        '/api/habilitaciones/buscar/',
+        {'tipo_documento': 'CC', 'documentos': ['1140164081', '9999999999']},
+        format='json')
+
+    assert r.status_code == 200
+    delu = [x for x in r.data['resultados'] if x['origen'] == 'UNIVERSO']
+    ids = [x['universo_id'] for x in delu]
+    assert len(ids) == len(set(ids)), 'una persona del universo salió duplicada'
+    assert '9999999999' in r.data['sin_coincidencia']
+
+
 def test_buscar_NO_crea_la_ficha(escenario, en_el_universo):
     """
     Coordinación pega 200 documentos de un oficio para ver la situación de cada

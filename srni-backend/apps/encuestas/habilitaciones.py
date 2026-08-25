@@ -640,20 +640,30 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         if faltan:
             from apps.victimas.models import PersonaUniverso
 
-            por_hash_u = {doc_hash(tipo, d): d for d in faltan}
+            # SOLO por `numero_documento_hash_sin_tipo`, y no por el hash completo.
+            #
+            # PersonaUniverso tiene 12 M de filas. `numero_documento_hash` NO está
+            # indexado (solo lo está el compuesto por hash-sin-tipo), así que
+            # filtrar por él era un table scan de ~6 s medido en producción. Con
+            # el timeout de 15 s del cliente + el WAF, la consulta se pasaba de
+            # forma intermitente y el panel mostraba «No se pudo buscar»: es el
+            # hallazgo H-024 del QA, y lo introdujo este mismo bloque.
+            #
+            # Buscar por número solo es además lo correcto: el universo puede
+            # tener a la persona con un tipo de documento distinto —o sin tipo—,
+            # y ese caso se avisa abajo con `coincide_solo_por_numero`. Es el
+            # mismo criterio del respaldo por número de la búsqueda de víctimas.
             por_num_u = {num_hash(d): d for d in faltan}
-            personas = (PersonaUniverso.objects
-                        .filter(numero_documento_hash__in=list(por_hash_u.keys()))
-                        .union(PersonaUniverso.objects.filter(
-                            numero_documento_hash_sin_tipo__in=list(por_num_u.keys())))
-                        )
+            personas = PersonaUniverso.objects.filter(
+                numero_documento_hash_sin_tipo__in=list(por_num_u.keys()))
             vistos_u = set()
             for p in personas:
-                doc = (por_hash_u.get(p.numero_documento_hash)
-                       or por_num_u.get(p.numero_documento_hash_sin_tipo))
-                if p.id in vistos_u:
+                doc = por_num_u.get(p.numero_documento_hash_sin_tipo)
+                # Una misma persona puede aparecer en varios cortes del universo:
+                # nos quedamos con la primera y no la duplicamos.
+                if doc in vistos_u:
                     continue
-                vistos_u.add(p.id)
+                vistos_u.add(doc)
                 encontrados.add(doc)
                 del_universo.append({
                     'id': None,
