@@ -1,0 +1,65 @@
+c23c781 2026-08-25 fix(vigencia): la excepcion autorizada ahora SI desbloquea la APK en linea
+e20085a 2026-08-25 fix(qa-web): H-027 — el aviso de busqueda ya no miente ni se duplica
+d949ec2 2026-08-25 fix(qa-web): H-010/H-011 paginacion de encuestas y H-025 duplicado de la misma persona
+cebefe9 2026-08-25 fix(autorizaciones): H-024 — la busqueda escaneaba 12 M de filas sin indice
+0e0399a 2026-08-21 fix(autorizaciones): la pantalla ahora sí muestra a quien viene del corte del RUV
+2397754 2026-08-21 fix(victimas): APK-002 — el backend rechazaba el payload que el mismo producia
+074adf4 2026-08-21 fix(autorizaciones): la pantalla decia "sin coincidencia" de gente que SI esta
+a31d3ea 2026-08-21 docs(qa): plan del informe v2, el bloqueo de autorizaciones y lo que falta
+b578bc3 2026-08-21 docs(entregables): diapositivas del avance 14-ago a 21-ago
+ff861c5 2026-08-19 fix(skip-logic): "ruv_incluido == False or edad < 3" no disparaba en el backend
+3fe431f 2026-08-19 fix(skip-logic): las reglas por edad y sexo no se evaluaban con datos reales
+3dfcd61 2026-08-19 fix(encuestas): al porcentaje le faltaba la palabra "visibles" — APK-005 de raiz
+2812ffc 2026-08-19 fix(apk): cerrar dos veces la misma encuesta dejaba el telefono envenenado
+421ce61 2026-08-19 fix(apk): "COMPLETADO" significaba dos cosas y la app perdia la entrevista
+ddc1c77 2026-08-19 fix(apk): cinco formas de perder trabajo capturado en el camino sin red
+b7e4ed1 2026-08-19 fix(apk): la tarjeta offline decia "Pendiente sync" de un hogar ya guardado
+5a740f9 2026-08-19 Check list QA
+9a88a0e 2026-08-19 fix(encuestas): barras de progreso animadas y fix desborde del contenedor
+d6c8c09 2026-08-19 fix(hogares): marcar como resuelto el fallback offline en conformar hogar cuando falla el POST por red
+573f8e8 2026-08-19 fix(encuestas): implementar fallback a borradores locales en detalle de sesión cuando el API falla
+8bbd5c4 2026-08-19 fix(encuestas): implementar fallback a borradores locales cuando el API falla y mostrar banner de conexión
+cf30ee8 2026-08-19 fix(hogares): mejorar manejo de hogares offline y evitar duplicados en caso de error del servidor
+fdcd8bf 2026-08-19 fix(encuestas): actualizar la barra de progreso para mostrar el 100 % en sesiones completadas y limitar el valor del progreso
+ce429d3 2026-08-14 fix(qa): APK-002, APK-004 y APK-007 del informe de calidad
+240e480 2026-08-14 fix(autorizaciones): la pantalla no era alcanzable — cae en la SPA
+277fdea 2026-08-12 fix(precarga): el en_ruv que ve la APK tambien sale del universo
+ac65d5c 2026-08-12 fix(padron): FLAG_EN_RUV sale del universo del RUV, no del join roto
+33fbafa 2026-08-11 docs(operacion): usuarios y perfiles — el login es codigo_usuario, no el nombre
+09bea2a 2026-08-11 fix(migracion): el VACUUM por lote hacia la 0021 inviable — 8 horas proyectadas
+e4bf372 2026-08-11 fix(migraciones): separar el UPDATE de 5,9 M, que no cabia en el disco
+0568f74 2026-08-11 fix(padron): dejar de decidir con los campos que vienen del join roto
+197a124 2026-08-11 docs(oracle): CONS_PERONA es un contador de filas, no identifica a nadie
+a1063a4 2026-08-11 fix(universo): el alta de quien viene del RUV moria en 400, y parecia falta de senal
+c572c65 2026-08-06 fix(infra): Postgres tenia 64 MB de /dev/shm — reventaba el mantenimiento
+f8a2f84 2026-08-05 fix(padron): el reset de la fase 2 reescribia 12 M de filas, y el disco no da
+c9e7c9c 2026-08-05 docs(informe-julio): evidencia FISICA en cada carpeta, no descripciones
+3770047 2026-08-05 fix(genero): Intersexual caia al default en silencio, y un valor nuevo tambien
+90834af 2026-08-05 fix(padron): seis defectos que la revision adversarial encontro antes de la carga
+1fd2209 2026-08-04 fix(rutas): cablear la ruta — la logica estaba escrita pero nadie se la pasaba
+81e7db4 2026-08-04 feat(hechos): el catalogo del RUV, que es un TERCER catalogo y tampoco cruza por numero
+911a528 2026-08-03 fix(api): el resumen decia 'total 18' y el desglose sumaba 3
+ac4ef53 2026-08-03 fix(legacy): 3.284 hogares ANULADOS se presentaban como trabajo recuperable
+0fd4ef2 2026-08-03 fix(legacy): una fila ilegible tumbaba la importacion de los 1.150 encuestadores
+9ff2cc1 2026-08-03 fix(usuarios): la N tilde rota en 6 logins dejaba 131 caracterizaciones sin autor
+3b3c617 2026-08-03 fix(legacy): las fechas del legacy entraban con cinco horas de mas
+e440f5d 2026-08-03 fix(oracle): CERRADA son 62 hogares en toda la base — y el caso de Pandi, diagnosticado
+abd65c4 2026-08-02 docs(oracle): que se cableo el 3-ago, de donde tienen que salir los hechos, y una correccion
+374ee44 2026-08-02 docs(traspaso): cierre del 2-ago — la cadena de escritura al legacy esta completa
+01abdcb 2026-08-02 fix(ui): un documento de relleno ya no se ve como "error de conexion" ni como "no esta en el padron"
+7897f49 2026-08-02 fix(oracle): no cerrar un hogar al que le faltan respuestas
+2e2fc0d 2026-08-02 fix(oracle): una respuesta sin puente ya no tumba el hogar entero
+6124d8d 2026-08-02 fix(oracle): las preguntas abiertas ya se pueden escribir (256 en total)
+afd520f 2026-08-02 fix(oracle): la guarda que impide fundir dos caracterizaciones en un hogar
+6b71d68 2026-08-02 fix(oracle): cinco valores fuera de dominio que hacian invisible el dato
+165319b 2026-08-02 fix(oracle): GIC_PERSONA recibia personas SIN nombre ni documento
+3126e5e 2026-08-02 fix(500 en produccion): el WAF manda la IP con puerto y tumbaba la busqueda
+a58685d 2026-08-02 fix: 17 defectos que encontro la revision adversarial del codigo de duplicados
+b30767d 2026-08-02 fix(identidad): tres agujeros por los que se colaba el borrado silencioso
+88f9a1b 2026-08-02 fix(precarga): la jornada tambien viaja clasificada
+4b88856 2026-08-02 fix(busqueda): un documento repetido ya no da 500 — devuelve los candidatos
+f1ef52e 2026-08-01 docs(oti): borrador de las 5 preguntas de identidad, listo para enviar
+8462c49 2026-08-01 feat(alta-manual): NO_VERIFICADO — no estar en el padron no es no estar en el RUV
+9a35c18 2026-08-01 fix(padron): el COPY usaba la API de psycopg2 y el proyecto usa psycopg3
+13b21d7 2026-08-01 fix(instrumento): restaura metadata de ASISTENCIA que el generador borro
+5182ae9 2026-08-01 fix(precarga): pedia el padron ENTERO al login (5,9 M) y dejaba la APK colgada

@@ -1,0 +1,27 @@
+a31d3ea 2026-08-21 docs(qa): plan del informe v2, el bloqueo de autorizaciones y lo que falta
+b578bc3 2026-08-21 docs(entregables): diapositivas del avance 14-ago a 21-ago
+c064fd2 2026-08-19 chore(apk): version 1.2.2 para la build con el porcentaje corregido
+ff861c5 2026-08-19 fix(skip-logic): "ruv_incluido == False or edad < 3" no disparaba en el backend
+3fe431f 2026-08-19 fix(skip-logic): las reglas por edad y sexo no se evaluaban con datos reales
+3dfcd61 2026-08-19 fix(encuestas): al porcentaje le faltaba la palabra "visibles" — APK-005 de raiz
+ddc1c77 2026-08-19 fix(apk): cinco formas de perder trabajo capturado en el camino sin red
+b7e4ed1 2026-08-19 fix(apk): la tarjeta offline decia "Pendiente sync" de un hogar ya guardado
+de83ecd 2026-08-14 chore(auditoria): la migracion que faltaba por las acciones nuevas
+e64646c 2026-08-14 docs(entregables): diapositivas del avance quincenal 29-jul a 13-ago
+7b6e822 2026-08-11 perf(victimas): la 0021 actualiza por ctid y no por clave primaria
+0568f74 2026-08-11 fix(padron): dejar de decidir con los campos que vienen del join roto
+c645faf 2026-08-11 chore(apk): version 1.1.0 para la build que lleva el universo al celular
+9f34bd9 2026-08-06 docs(peti): monitoreo del proyecto con corte 30-jun-2026
+bd40f7a 2026-08-06 perf(padron): el enlace se hace en la base, no descifrando 12 M de filas
+c9e7c9c 2026-08-05 docs(informe-julio): evidencia FISICA en cada carpeta, no descripciones
+0cd4ccb 2026-08-05 feat(padron): DDL del universo de victimas — y el id que NO se puede pisar
+117fb02 2026-08-03 feat(legacy): 111 caracterizaciones completas que ningun reporte cuenta
+1d75f22 2026-08-03 feat(legacy): que cada encuestador vea en SICAV lo que hizo en la aplicacion vieja
+bef810b 2026-08-03 feat(oracle): diagnosticar por que una encuesta caracterizada no aparece
+abd65c4 2026-08-02 docs(oracle): que se cableo el 3-ago, de donde tienen que salir los hechos, y una correccion
+59ea0e5 2026-08-02 feat(oracle): los pasos CAPITULO y CIERRE — los que hacen existir el hogar para los reportes
+6b71d68 2026-08-02 fix(oracle): cinco valores fuera de dominio que hacian invisible el dato
+4aff447 2026-08-02 feat(sync): marca de agua para traer las novedades del legacy en segundos
+a58685d 2026-08-02 fix: 17 defectos que encontro la revision adversarial del codigo de duplicados
+9a94f18 2026-08-01 docs: traspaso al 1-ago — el padron real esta cargado
+13b21d7 2026-08-01 fix(instrumento): restaura metadata de ASISTENCIA que el generador borro

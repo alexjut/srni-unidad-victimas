@@ -1,0 +1,519 @@
+<title>SICAV Móvil · Offline, Sincronización e IA</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SICAV Móvil · Documento de avance técnico
+   Operación sin conexión · Sincronización · Inteligencia artificial
+   Marca institucional: amarillo #ffcc03, tinta cálida, formato documento.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ink:        #17160f;
+  --ink-2:      #403d33;
+  --ink-3:      #6f6b5c;
+  --surface:    #ffffff;
+  --panel:      #f6f4ec;
+  --panel-2:    #efece0;
+  --line:       #ddd8c8;
+  --line-soft:  #ebe7d9;
+  --marca:      #ffcc03;
+  --marca-ink:  #7a5c00;
+  --ok:         #1f6b3a;
+  --ok-bg:      #e9f2ea;
+  --alerta:     #9c5a00;
+  --alerta-bg:  #f9efdb;
+  --grave:      #a81f1a;
+  --grave-bg:   #f8e6e3;
+  --display: "Segoe UI Variable Display", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --body:    "Segoe UI Variable Text", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:    Consolas, "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:#f4f1e4; --ink-2:#c3bfae; --ink-3:#8f8a78;
+    --surface:#14130b; --panel:#1e1d13; --panel-2:#29271a;
+    --line:#38361f; --line-soft:#26241a;
+    --marca:#ffcc03; --marca-ink:#ffdf6b;
+    --ok:#78c48d; --ok-bg:#16281c; --alerta:#e0a44a; --alerta-bg:#2c2113;
+    --grave:#ef8279; --grave-bg:#2e1614;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:#f4f1e4; --ink-2:#c3bfae; --ink-3:#8f8a78;
+  --surface:#14130b; --panel:#1e1d13; --panel-2:#29271a;
+  --line:#38361f; --line-soft:#26241a;
+  --marca:#ffcc03; --marca-ink:#ffdf6b;
+  --ok:#78c48d; --ok-bg:#16281c; --alerta:#e0a44a; --alerta-bg:#2c2113;
+  --grave:#ef8279; --grave-bg:#2e1614;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* La hoja: ancho de lectura, márgenes de documento */
+.hoja {
+  max-width: 46rem;
+  margin: 0 auto;
+  background: var(--surface);
+  padding: 4.5rem 4rem 4rem;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-height: 100vh;
+}
+
+/* ── Portada ── */
+.portada {
+  border-top: 0.4rem solid var(--marca);
+  padding-top: 2.2rem;
+  margin-bottom: 3.2rem;
+}
+.portada .sello {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.portada h1 {
+  font-family: var(--display);
+  font-size: 2.5rem;
+  line-height: 1.08;
+  letter-spacing: -0.024em;
+  font-weight: 800;
+  margin: 1.1rem 0 0.9rem;
+  text-wrap: balance;
+}
+.portada .sub {
+  font-size: 1.12rem;
+  color: var(--ink-2);
+  max-width: 34rem;
+}
+.portada .meta {
+  margin-top: 1.6rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 2.2rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+.portada .meta b { color: var(--marca-ink); font-weight: 700; }
+
+/* ── Tipografía de cuerpo ── */
+h2 {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  margin: 3rem 0 0.4rem;
+  padding-top: 1.6rem;
+  border-top: 2px solid var(--ink);
+  text-wrap: balance;
+}
+h2 .num {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--marca-ink);
+  font-weight: 700;
+  display: block;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+h3 {
+  font-family: var(--display);
+  font-size: 1.18rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  margin: 1.9rem 0 0.5rem;
+}
+h3 .est { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; vertical-align: middle; margin-left: 0.5em; }
+p { margin: 0 0 0.9rem; }
+strong { font-weight: 700; color: var(--ink); }
+em { font-style: normal; color: var(--marca-ink); font-weight: 600; }
+a { color: var(--marca-ink); }
+
+.lead {
+  font-size: 1.14rem;
+  color: var(--ink-2);
+  border-left: 0.28rem solid var(--marca);
+  padding-left: 1.1rem;
+  margin: 1.4rem 0 1.6rem;
+}
+
+/* ── Chips de estado ── */
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.12em 0.55em;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.chip.ok    { color: var(--ok);    background: var(--ok-bg); }
+.chip.pend  { color: var(--alerta); background: var(--alerta-bg); }
+.chip.plan  { color: var(--ink-3); background: var(--panel); }
+
+/* ── Listas ── */
+ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+li { margin-bottom: 0.4rem; }
+ul.limpia { list-style: none; padding-left: 0; }
+ul.limpia > li {
+  padding-left: 1.3rem;
+  position: relative;
+}
+ul.limpia > li::before {
+  content: "";
+  position: absolute; left: 0; top: 0.62em;
+  width: 0.42em; height: 0.42em;
+  background: var(--marca);
+}
+
+/* ── Panel de nota / estado real ── */
+.nota {
+  background: var(--panel);
+  border-left: 0.28rem solid var(--line);
+  padding: 1rem 1.2rem;
+  margin: 1.4rem 0;
+  font-size: 0.96rem;
+  border-radius: 0 3px 3px 0;
+}
+.nota.franco { border-left-color: var(--alerta); background: var(--alerta-bg); }
+.nota .rot {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.nota p:last-child { margin-bottom: 0; }
+
+/* ── Cifras ── */
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.9rem;
+  margin: 1.6rem 0;
+}
+.tile {
+  border-top: 0.2rem solid var(--marca);
+  background: var(--panel);
+  padding: 0.85rem 0.95rem;
+}
+.tile .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  display: block;
+}
+.tile .l { font-size: 0.82rem; color: var(--ink-2); line-height: 1.35; margin-top: 0.3rem; display: block; }
+
+/* ── Tabla ── */
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 1.2rem 0; }
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 0 0.7rem 0.5rem;
+  border-bottom: 2px solid var(--ink);
+}
+td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-2); }
+td strong { color: var(--ink); }
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--panel);
+  padding: 0.08em 0.35em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+/* ── Diagrama de flujo simple (texto) ── */
+.flujo {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1rem 1.2rem;
+  margin: 1.3rem 0;
+  color: var(--ink-2);
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ── Pie de página ── */
+.pie {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 2px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+.pie b { color: var(--ink-2); }
+
+/* ── Impresión / PDF ── */
+@page { size: A4; margin: 16mm 15mm; }
+@media print {
+  body { background: #fff; font-size: 10.5pt; line-height: 1.5; }
+  .hoja { max-width: none; border: none; padding: 0; min-height: 0; }
+  .portada { border-top-color: #ffcc03; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h2 { break-after: avoid; page-break-after: avoid; }
+  h3 { break-after: avoid; page-break-after: avoid; }
+  .nota, .flujo, table, .cifras { break-inside: avoid; page-break-inside: avoid; }
+  .tile, .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: var(--marca-ink); text-decoration: none; }
+}
+</style>
+
+<div class="hoja">
+
+<header class="portada">
+  <div class="sello">Unidad para las Víctimas · PRY-0662064 · SICAV Móvil</div>
+  <h1>Operación sin conexión, sincronización e inteligencia artificial</h1>
+  <p class="sub">Documento de avance técnico sobre tres capacidades del Sistema de
+  Caracterización de Víctimas móvil: qué resuelve cada una, cómo funciona, y en qué
+  punto está de verdad.</p>
+  <div class="meta">
+    <span><b>Corte</b> · 21 de agosto de 2026</span>
+    <span><b>Alcance</b> · offline · sincronización · IA</span>
+    <span><b>Base</b> · medido contra el código y las pruebas del repositorio</span>
+  </div>
+</header>
+
+<p class="lead">Este documento distingue tres estados en cada capacidad, y no los mezcla:
+lo que <strong>opera y está probado</strong>, lo que está <strong>construido y falta
+verificar en dispositivo</strong>, y lo que está <strong>en diseño</strong>. Un avance
+honesto sobre su madurez real es más útil a la supervisión que un «todo listo» que no
+resista la primera prueba en campo.</p>
+
+<table>
+  <tr><th>Estado</th><th>Qué significa</th></tr>
+  <tr><td><span class="chip ok">Operativo</span></td><td>Funciona y está respaldado por pruebas automáticas o verificación directa.</td></tr>
+  <tr><td><span class="chip pend">En verificación</span></td><td>Construido de extremo a extremo; su lógica está probada, pero falta confirmarlo en un teléfono real contra producción.</td></tr>
+  <tr><td><span class="chip plan">En diseño</span></td><td>Definido y con andamiaje, pero la funcionalidad todavía no existe.</td></tr>
+</table>
+
+<div class="cifras">
+  <div class="tile"><span class="v">8</span><span class="l">instrumentos empaquetados en el teléfono</span></div>
+  <div class="tile"><span class="v">1.640</span><span class="l">preguntas · 92 capítulos, disponibles sin señal</span></div>
+  <div class="tile"><span class="v">12,68 M</span><span class="l">personas que el filtro del universo puede reconocer</span></div>
+  <div class="tile"><span class="v">≈ 22 MB</span><span class="l">tamaño de ese filtro en el dispositivo</span></div>
+</div>
+
+
+<!-- ═══════════════════ 1. OFFLINE ═══════════════════ -->
+<h2><span class="num">Capacidad 01</span>Operación sin conexión</h2>
+
+<p>El territorio donde se caracteriza a las víctimas muchas veces no tiene señal. La
+aplicación está diseñada para que una jornada completa —buscar a la persona, armar el
+hogar y responder el instrumento— ocurra <strong>íntegramente en el dispositivo</strong>,
+y que el trabajo suba cuando la conexión vuelva. Lo que sigue es cómo se logra y qué
+falta para darlo por cerrado.</p>
+
+<h3>Padrón de búsqueda en el teléfono <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>Al iniciar sesión con red, la aplicación descarga un archivo de búsqueda y lo guarda
+localmente. Con él, el encuestador consulta un documento sin señal y sabe si la persona
+ya tiene ficha, si es elegible para caracterizar y qué registra el RUV. El documento
+<strong>nunca se guarda en claro</strong>: se almacena su hash y en pantalla solo se ven
+los últimos cuatro dígitos. El archivo lo arma el servidor por lotes, indexado por hash,
+para no cargar millones de filas en memoria.</p>
+
+<h3>Filtro del universo — reconocer sin descargar datos <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>El padrón de búsqueda cubre a quien ya tiene ficha. Pero hay millones de víctimas
+reconocidas por el RUV que nunca fueron entrevistadas: en una prueba de campo, de 68
+cédulas del territorio, <strong>33 estaban en el RUV sin entrevista</strong> y la
+aplicación respondía —falsamente— «no está». Para eso existe el filtro del universo: una
+estructura probabilística que reconoce a <strong>12,68 millones de personas</strong> en
+unos <strong>22 MB</strong>, sin descargar sus datos, solo para habilitar el alta manual
+sin señal.</p>
+<p>La garantía del filtro es que <em>nunca da falsos negativos</em>: si dice que no está,
+no está. A cambio, aproximadamente una de cada mil consultas ajenas da un falso positivo,
+por eso un acierto se trata como «candidato a alta manual», nunca como identificación. La
+matemática de esa estructura está <strong>probada</strong>: 27 pruebas confirman que el
+cálculo en el teléfono es idéntico al del servidor, con vectores de referencia FIPS.</p>
+
+<div class="nota franco">
+  <span class="rot">Estado real — franqueza con la supervisión</span>
+  <p>La lógica del filtro está probada, pero <strong>su descarga al dispositivo todavía no
+  opera</strong>: el paso que lo baja lee la credencial de un lugar que en la práctica
+  queda vacío, y la descarga se aborta en silencio. En términos simples: <em>la
+  matemática está lista, la bajada al teléfono no</em>. Es un arreglo de pocas líneas, ya
+  identificado, y es el primer pendiente de este frente. Hasta resolverlo, el
+  reconocimiento del universo de 12,68 M no está disponible en campo.</p>
+</div>
+
+<h3>Captura del hogar y del instrumento en el dispositivo <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>Los hogares que se arman sin red se guardan localmente con una referencia opaca al
+titular —sin nombre ni documento en claro— y un estado de sincronización. Las respuestas
+del instrumento se guardan como borrador, distinguiendo lo que es del hogar de lo que es
+de cada integrante, que es lo que hace funcionar los capítulos étnico y de salud. El
+cierre de sesión protege el trabajo: si hay algo sin subir, no borra nada; si todo subió,
+limpia el almacén local para no dejar datos personales al siguiente usuario.</p>
+
+
+<!-- ═══════════════════ 2. SINCRONIZACIÓN ═══════════════════ -->
+<h2><span class="num">Capacidad 02</span>Sincronización</h2>
+
+<p>Es el frente más maduro de los tres. Todo lo que se captura sin señal se guarda como
+una <strong>cola de tareas</strong> dentro del teléfono, y esa cola se vacía sola cuando
+vuelve la conexión, en el orden correcto y sin perder nada.</p>
+
+<div class="flujo">Sin señal                    Al reconectar                  En el servidor
+─────────                    ────────────                  ─────────────
+registrar víctima      →     la cola se drena en      →     PostgreSQL
+crear hogar                  orden, remapeando los           │
+agregar integrantes          id locales a los del            ▼
+crear sesión                 servidor a medida que      procedures GIC_*
+responder capítulos          cada paso se confirma       (Oracle legado)
+cerrar encuesta</div>
+
+<h3>Orden, dependencias y reintentos <span class="est"><span class="chip ok">Operativo · probado en pruebas unitarias</span></span></h3>
+<p>La cola respeta las dependencias: una respuesta no puede subir antes de que exista su
+sesión en el servidor, así que cada paso espera a que el anterior devuelva su
+identificador y reescribe los que hacían referencia al id local. El manejo de fallos
+distingue tres situaciones: un error de datos (4xx) no se reintenta, un error del servidor
+(5xx) se reintenta con espera creciente —hasta seis intentos, de 30 segundos a media
+hora—, y una caída de red no gasta intentos, solo difiere. Todo esto está respaldado por
+<strong>16 pruebas automáticas</strong> que pasan.</p>
+
+<div class="nota">
+  <span class="rot">Matiz importante</span>
+  <p>Esas 16 pruebas usan un servidor <strong>simulado</strong>: validan la lógica de la
+  cola, no el viaje real contra producción. La verificación de extremo a extremo en un
+  teléfono real está pendiente, y es lo que convertiría este frente de «probado en
+  laboratorio» a «probado en campo».</p>
+</div>
+
+<h3>Detección de conexión <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>La aplicación detecta el regreso de la señal por tres vías: el sistema operativo avisa
+del cambio de red, una consulta de salud al servidor cada minuto, y el evento de volver
+al primer plano. Apenas hay conexión confirmada, dispara el vaciado de la cola.</p>
+
+<h3>Escritura hacia el sistema legado (Oracle) <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>Una vez el trabajo llega al servidor, una tarea en segundo plano lo escribe hacia el
+Oracle de la Unidad, <strong>siempre por los procedimientos oficiales</strong> —nunca con
+inserción directa— y verificando cada escritura con una consulta posterior, porque esos
+procedimientos confirman éxito aunque hayan fallado. La infraestructura está construida y
+hubo un piloto exitoso de un hogar en producción el 28 de julio.</p>
+
+<div class="nota franco">
+  <span class="rot">Estado real</span>
+  <p>La escritura automática hacia Oracle está <strong>apagada por configuración</strong>
+  de forma predeterminada: se enciende con variables del servidor. El documento no puede
+  afirmar que hoy esté corriendo de forma continua en producción. Además hay una traba
+  identificada: si una sola tarea queda en error, la limpieza de datos ya sincronizados se
+  congela, y —más importante— <strong>el cierre de sesión deja de borrar los datos
+  personales del teléfono</strong>. La recuperación existe pero es manual. Por tocar
+  protección de datos, es un pendiente prioritario.</p>
+</div>
+
+
+<!-- ═══════════════════ 3. IA ═══════════════════ -->
+<h2><span class="num">Capacidad 03</span>Inteligencia artificial</h2>
+
+<p>Conviene ser preciso sobre qué es y qué no es esta capacidad, porque es la más fácil de
+sobredimensionar. La IA del sistema es un <strong>asistente de captura</strong>: toma una
+respuesta de la entrevista <em>ya en texto</em> y sugiere qué valor escribir en cada campo
+del formulario. No es un chatbot, no busca información, y no decide: el encuestador
+siempre revisa y acepta, edita o descarta cada sugerencia.</p>
+
+<h3>Arquitectura: el teléfono nunca habla con Google <span class="est"><span class="chip pend">En verificación</span></span></h3>
+<p>Toda petición de IA pasa por el servidor de la Unidad, que es quien tiene la clave y
+llama al modelo (Gemini). La aplicación nunca contacta a Google directamente. Esto permite
+auditar cada llamada, cortarla o cambiar de proveedor sin tocar los teléfonos. El modelo
+se usa con temperatura mínima —respuestas deterministas— y una instrucción estricta que
+lo obliga a devolver solo el valor del campo, o vacío si no hay certeza, y le prohíbe
+inventar datos. Si la clave falta o el modelo falla, el sistema responde con un error
+controlado y la captura sigue en modo manual.</p>
+
+<h3>Consentimiento y trazabilidad <span class="est"><span class="chip ok">Operativo</span></span></h3>
+<p>Antes de usar la IA, el encuestador debe leer un aviso y aceptar explícitamente. Es
+crítico porque se trata de víctimas del conflicto. El consentimiento queda registrado con
+una firma digital, ligado al encuestador y a la sesión; sin él, la IA no responde. Cada
+llamada al modelo queda en el registro de auditoría, y <strong>no se almacena el audio ni
+el texto de la entrevista</strong> —solo un hash irreversible— ni se envía al modelo la
+identidad estructurada de la víctima ni dato alguno del padrón. Esto está respaldado por
+<strong>25 pruebas</strong> (13 en el servidor, 12 en la aplicación).</p>
+
+<div class="nota franco">
+  <span class="rot">Dos cosas que la supervisión debe saber, sin rodeos</span>
+  <p><strong>1. La transcripción de voz todavía no existe.</strong> Hoy el asistente
+  trabaja sobre texto: en el flujo usable, el encuestador escribe o pega la transcripción;
+  el botón de micrófono es una simulación. El reconocimiento de voz real está en diseño,
+  no construido.</p>
+  <p><strong>2. El texto del consentimiento debe corregirse antes de cualquier uso en
+  campo.</strong> Ese aviso afirma a la víctima que «el audio se transcribe en el
+  dispositivo» — una capacidad que aún no existe. Prometer algo inexistente en un
+  consentimiento firmado ante víctimas es inaceptable y hay que alinear el texto con lo que
+  el sistema realmente hace antes de activarlo.</p>
+  <p>Y una precisión de privacidad: aunque no se almacena, <strong>el texto libre de la
+  entrevista sí viaja al modelo</strong> en el momento de la consulta, y ese texto puede
+  contener datos personales dichos de viva voz. Es una decisión que la Unidad debe tomar
+  con los ojos abiertos.</p>
+</div>
+
+
+<!-- ═══════════════════ 4. HOJA DE RUTA ═══════════════════ -->
+<h2><span class="num">Cierre</span>Estado general y lo que sigue</h2>
+
+<table>
+  <tr><th>Capacidad</th><th>Dónde está</th><th>Lo primero que falta</th></tr>
+  <tr>
+    <td><strong>Offline</strong></td>
+    <td>Arquitectura construida; la matemática del filtro probada (27/27). Sin verificación en dispositivo.</td>
+    <td>Habilitar la descarga del filtro del universo (arreglo de pocas líneas) y que reabrir sin señal no cierre la sesión.</td>
+  </tr>
+  <tr>
+    <td><strong>Sincronización</strong></td>
+    <td>El frente más maduro. Cola, orden, remapeo y reintentos probados (16/16, con simulación).</td>
+    <td>Verificar de extremo a extremo contra producción; resolver la traba que deja datos personales en el teléfono; confirmar la escritura continua a Oracle.</td>
+  </tr>
+  <tr>
+    <td><strong>Inteligencia artificial</strong></td>
+    <td>Asistente de mapeo texto→campo, con consentimiento y auditoría sólidos (25 pruebas, con modelo simulado). Apagado por defecto.</td>
+    <td>Corregir el texto del consentimiento; probar contra el modelo real; construir la transcripción de voz o retirar su mención.</td>
+  </tr>
+</table>
+
+<p>La lectura de conjunto es que el sistema tiene <strong>una arquitectura sólida y bien
+probada en su lógica</strong> en los tres frentes, y que el trabajo que queda es
+mayormente de <strong>verificación en campo y de encender lo que está construido</strong>,
+no de rediseño. Los pendientes están identificados con precisión y ninguno es de fondo.</p>
+
+<footer class="pie">
+  <p><b>SICAV Móvil · PRY-0662064</b> — Unidad para la Atención y Reparación Integral a las
+  Víctimas. Documento técnico de avance, corte 21 de agosto de 2026.</p>
+  <p>Todas las afirmaciones de este documento están medidas contra el código y las pruebas
+  del repositorio del proyecto. Los estados «operativo / en verificación / en diseño»
+  reflejan el nivel de madurez real de cada componente, no una proyección.</p>
+</footer>
+
+</div>

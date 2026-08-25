@@ -1,0 +1,30 @@
+commit 10bc0b99ed4ed73dcd346a5fbcd3e3d587da9c40
+Author: Javier Alexander Aguilar Castro <ingaguilarsistemas@gmail.com>
+Date:   Fri Aug 21 11:00:30 2026 -0500
+
+    feat(auth): comando para cargar claves desde CSV, hasheadas con Argon2
+    
+    Contexto — el legacy (.NET/IIS + Oracle) guarda las claves como SHA-512 con una
+    sal que vive en el binario de la app; el Oracle solo compara texto contra texto
+    (GIC_SP_AUTENTICA_USUARIO). Ese formato no se puede recalcular sin la sal, y
+    aunque se pudiera no conviene: SHA-512 es rapidisimo de crackear. El sistema
+    nuevo usa Argon2id, que ya esta configurado (PASSWORD_HASHERS).
+    
+    Como ninguna de las 1.158 encuestadoras ha entrado nunca (last_login=None), no
+    hay nada que preservar: se asignan claves nuevas y punto. Decidido asi para no
+    arrastrar el esquema inseguro del legacy.
+    
+    El comando lee un CSV `codigo_usuario,clave` y hace set_password (Argon2) sobre
+    usuarios que YA existen. No crea usuarios. Idempotente. Detalles:
+    
+      · --dry-run dice que haria sin escribir nada
+      · valida cada clave con los validadores de Django (min 10, comunes, etc.);
+        --sin-validar lo salta
+      · resuelve TODO antes de escribir: si una clave no pasa, se entera antes de
+        haber cambiado la mitad
+      · tolera coma o punto y coma, encabezado opcional, BOM; reporta inexistentes,
+        repetidos y debiles sin frenar a los demas
+      · avisa al terminar que hay que borrar el CSV (claves en texto plano)
+    
+    El operador corre el comando en el servidor con SU archivo; las claves nunca
+    pasan por otro lado. 9 tests. Backend 966 passed, 1 xfailed.

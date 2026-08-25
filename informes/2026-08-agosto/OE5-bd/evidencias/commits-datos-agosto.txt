@@ -1,0 +1,94 @@
+c23c781 2026-08-25 fix(vigencia): la excepcion autorizada ahora SI desbloquea la APK en linea
+d949ec2 2026-08-25 fix(qa-web): H-010/H-011 paginacion de encuestas y H-025 duplicado de la misma persona
+cebefe9 2026-08-25 fix(autorizaciones): H-024 — la busqueda escaneaba 12 M de filas sin indice
+10bc0b9 2026-08-21 feat(auth): comando para cargar claves desde CSV, hasheadas con Argon2
+0e0399a 2026-08-21 fix(autorizaciones): la pantalla ahora sí muestra a quien viene del corte del RUV
+f1a2522 2026-08-21 feat(autorizaciones): se puede autorizar a quien esta en el RUV y no en el padron
+2397754 2026-08-21 fix(victimas): APK-002 — el backend rechazaba el payload que el mismo producia
+074adf4 2026-08-21 fix(autorizaciones): la pantalla decia "sin coincidencia" de gente que SI esta
+a31d3ea 2026-08-21 docs(qa): plan del informe v2, el bloqueo de autorizaciones y lo que falta
+3fe431f 2026-08-19 fix(skip-logic): las reglas por edad y sexo no se evaluaban con datos reales
+ddc1c77 2026-08-19 fix(apk): cinco formas de perder trabajo capturado en el camino sin red
+cf30ee8 2026-08-19 fix(hogares): mejorar manejo de hogares offline y evitar duplicados en caso de error del servidor
+771cadb 2026-08-14 feat(autorizaciones): pantalla propia para autorizar excepciones, con lote
+e5085eb 2026-08-14 chore(apk): version 1.2.0 para la build sin foto del soporte
+63ee8ba 2026-08-14 feat(apk): el celular deja de pedir la foto y consume la habilitacion
+277fdea 2026-08-12 fix(precarga): el en_ruv que ve la APK tambien sale del universo
+ac65d5c 2026-08-12 fix(padron): FLAG_EN_RUV sale del universo del RUV, no del join roto
+41f7e22 2026-08-12 infra(postgres): respaldo fisico semanal con rotacion de 3, sobre systemd
+47497da 2026-08-12 docs(traspaso): estado al 12-ago — con que se retoma es la decision, no el padron
+66a6699 2026-08-12 docs(victimas): la 0021 corrio entera, y el ctid no acelero nada
+7b6e822 2026-08-11 perf(victimas): la 0021 actualiza por ctid y no por clave primaria
+959197c 2026-08-11 docs: corregir el informe que daba por inexistente una tabla que si existe
+ce2d2da 2026-08-11 infra(compose): la base de datos vive en /datos, no en el disco raiz
+09bea2a 2026-08-11 fix(migracion): el VACUUM por lote hacia la 0021 inviable — 8 horas proyectadas
+e4bf372 2026-08-11 fix(migraciones): separar el UPDATE de 5,9 M, que no cabia en el disco
+0568f74 2026-08-11 fix(padron): dejar de decidir con los campos que vienen del join roto
+118d1be 2026-08-11 docs(infra): runbook del traslado de la BD al disco /datos
+6d5bbbc 2026-08-11 feat(victimas): el estado RUV ahora dice de donde sale, y deja de afirmar lo que nadie verifico
+197a124 2026-08-11 docs(oracle): CONS_PERONA es un contador de filas, no identifica a nadie
+c645faf 2026-08-11 chore(apk): version 1.1.0 para la build que lleva el universo al celular
+d34fa01 2026-08-11 feat(offline): el universo del RUV cabe en el celular — filtro de Bloom de 21,7 MiB
+a1063a4 2026-08-11 fix(universo): el alta de quien viene del RUV moria en 400, y parecia falta de senal
+eb02003 2026-08-06 feat(caracterizacion): quien viene del universo ya se puede caracterizar
+08f5eea 2026-08-06 feat(busqueda): la busqueda online ya encuentra a las 12 M del universo
+fbb7cfe 2026-08-06 docs(traspaso): el 6-ago — el universo cargado y las tres fases, una por una
+bd40f7a 2026-08-06 perf(padron): el enlace se hace en la base, no descifrando 12 M de filas
+c572c65 2026-08-06 fix(infra): Postgres tenia 64 MB de /dev/shm — reventaba el mantenimiento
+f4a18e4 2026-08-06 perf(padron): la fase 2 recorria la tabla tres veces — ahora una
+a422ed6 2026-08-05 perf(padron): podar 6 indices sin uso — 2,2 GB y un 35 % mas rapido, en caliente
+480928a 2026-08-05 docs(infra): el disco no da para la migracion — analisis medido y escalamiento a Oscar
+f8a2f84 2026-08-05 fix(padron): el reset de la fase 2 reescribia 12 M de filas, y el disco no da
+c9e7c9c 2026-08-05 docs(informe-julio): evidencia FISICA en cada carpeta, no descripciones
+3770047 2026-08-05 fix(genero): Intersexual caia al default en silencio, y un valor nuevo tambien
+90834af 2026-08-05 fix(padron): seis defectos que la revision adversarial encontro antes de la carga
+ecd12df 2026-08-05 feat(padron): comando de carga del universo — en dos fases, sin perder filas
+0cd4ccb 2026-08-05 feat(padron): DDL del universo de victimas — y el id que NO se puede pisar
+a5bdfbd 2026-08-04 feat(rutas): las rutas de entrevista ahora SI omiten la vigencia, como manda el manual
+f615997 2026-08-04 feat(busqueda): decir POR QUE, en codigo y no solo en prosa
+b4ad74d 2026-08-04 docs(diagnostico): por que "no se pudo caracterizar" — y el manual dice que TRES rutas omiten la vigencia
+9a0e645 2026-08-04 docs(pruebas): el guion, afinado con lo que devuelve la base de verdad
+fa6fe99 2026-08-04 feat(hechos): leer los hechos de una persona desde el RUV, sin adivinar
+0c6db4f 2026-08-04 docs(acceso): la UARIV ya tiene servicio de autenticacion, y corre al lado de SICAV
+7edc7c8 2026-08-03 feat(usuarios): crear cuentas SICAV de los encuestadores ACTIVOS, con identidad de Vivanto
+3b3c617 2026-08-03 fix(legacy): las fechas del legacy entraban con cinco horas de mas
+1d75f22 2026-08-03 feat(legacy): que cada encuestador vea en SICAV lo que hizo en la aplicacion vieja
+e440f5d 2026-08-03 fix(oracle): CERRADA son 62 hogares en toda la base — y el caso de Pandi, diagnosticado
+8fd0265 2026-08-03 feat(oracle): traer los encuestadores del legacy (GIC_USUARIO) y medir la autoria rota
+bef810b 2026-08-03 feat(oracle): diagnosticar por que una encuesta caracterizada no aparece
+4149364 2026-08-03 docs(gestion): borrador de correo — estado de SICAV, pruebas funcionales del 4-ago y la pregunta por los hechos
+abd65c4 2026-08-02 docs(oracle): que se cableo el 3-ago, de donde tienen que salir los hechos, y una correccion
+5db37f5 2026-08-02 feat(oracle): validadores, hechos y marca de encuestado — los diez pasos ya estan cableados
+374ee44 2026-08-02 docs(traspaso): cierre del 2-ago — la cadena de escritura al legacy esta completa
+01abdcb 2026-08-02 fix(ui): un documento de relleno ya no se ve como "error de conexion" ni como "no esta en el padron"
+7897f49 2026-08-02 fix(oracle): no cerrar un hogar al que le faltan respuestas
+59ea0e5 2026-08-02 feat(oracle): los pasos CAPITULO y CIERRE — los que hacen existir el hogar para los reportes
+2e2fc0d 2026-08-02 fix(oracle): una respuesta sin puente ya no tumba el hogar entero
+6124d8d 2026-08-02 fix(oracle): las preguntas abiertas ya se pueden escribir (256 en total)
+afd520f 2026-08-02 fix(oracle): la guarda que impide fundir dos caracterizaciones en un hogar
+6b71d68 2026-08-02 fix(oracle): cinco valores fuera de dominio que hacian invisible el dato
+b4dd65e 2026-08-02 docs(legacy): que exige el Oracle para que salgan los reportes, y el plan del 3-ago
+165319b 2026-08-02 fix(oracle): GIC_PERSONA recibia personas SIN nombre ni documento
+401adaf 2026-08-02 feat(sync): tarea de novedades cada 15 min, con interruptor propio
+4aff447 2026-08-02 feat(sync): marca de agua para traer las novedades del legacy en segundos
+3126e5e 2026-08-02 fix(500 en produccion): el WAF manda la IP con puerto y tumbaba la busqueda
+fe9a5d6 2026-08-02 chore(padron): verificador del archivo descargable + cifras finales del traspaso
+ee82eb5 2026-08-02 docs(traspaso): desplegado, clasificado y verificado contra produccion
+bc867cb 2026-08-02 docs(pruebas): guion funcional para la sesion de manana
+a58685d 2026-08-02 fix: 17 defectos que encontro la revision adversarial del codigo de duplicados
+b30767d 2026-08-02 fix(identidad): tres agujeros por los que se colaba el borrado silencioso
+88f9a1b 2026-08-02 fix(precarga): la jornada tambien viaja clasificada
+b1b546f 2026-08-02 docs+tasks: la decision sobre documentos repetidos, y encadenarla a la recarga
+fbc18ea 2026-08-02 feat(apk): el padron offline deja de perder a la segunda persona de un documento
+51b7b26 2026-08-02 feat(identidad): clasificar los documentos repetidos en vez de colapsarlos a ciegas
+e8a7350 2026-08-02 docs(traspaso): desplegado, probado contra prod, y el 500 que salio en la prueba
+4b88856 2026-08-02 fix(busqueda): un documento repetido ya no da 500 — devuelve los candidatos
+308df48 2026-08-02 docs(traspaso): el padron termino, y por que todavia no sirve para campo
+d84ac78 2026-08-01 perf(padron): escribir solo las fechas que cambian, no las 3,3 M cada vez
+f1ef52e 2026-08-01 docs(oti): borrador de las 5 preguntas de identidad, listo para enviar
+8462c49 2026-08-01 feat(alta-manual): NO_VERIFICADO — no estar en el padron no es no estar en el RUV
+9a94f18 2026-08-01 docs: traspaso al 1-ago — el padron real esta cargado
+9a35c18 2026-08-01 fix(padron): el COPY usaba la API de psycopg2 y el proyecto usa psycopg3
+e34e0ee 2026-08-01 feat(programado): celery beat para recargar el padron y reintentar Oracle
+5182ae9 2026-08-01 fix(precarga): pedia el padron ENTERO al login (5,9 M) y dejaba la APK colgada
+1aeb173 2026-08-01 perf(padron): las fechas se aplican con COPY, no fila a fila (25 h -> minutos)

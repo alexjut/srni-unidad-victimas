@@ -1,0 +1,27 @@
+e20085a 2026-08-25 fix(qa-web): H-027 — el aviso de busqueda ya no miente ni se duplica
+10bc0b9 2026-08-21 feat(auth): comando para cargar claves desde CSV, hasheadas con Argon2
+0e0399a 2026-08-21 fix(autorizaciones): la pantalla ahora sí muestra a quien viene del corte del RUV
+2812ffc 2026-08-19 fix(apk): cerrar dos veces la misma encuesta dejaba el telefono envenenado
+e64646c 2026-08-14 docs(entregables): diapositivas del avance quincenal 29-jul a 13-ago
+7b6e822 2026-08-11 perf(victimas): la 0021 actualiza por ctid y no por clave primaria
+2196cd3 2026-08-11 docs(entregables): tres documentos gerenciales del avance a 11-ago
+33fbafa 2026-08-11 docs(operacion): usuarios y perfiles — el login es codigo_usuario, no el nombre
+9f34bd9 2026-08-06 docs(peti): monitoreo del proyecto con corte 30-jun-2026
+fbb7cfe 2026-08-06 docs(traspaso): el 6-ago — el universo cargado y las tres fases, una por una
+bd40f7a 2026-08-06 perf(padron): el enlace se hace en la base, no descifrando 12 M de filas
+8a80566 2026-08-05 docs(infra): la cifra recuperable de Docker, medida — 6,6 GB y no 5
+480928a 2026-08-05 docs(infra): el disco no da para la migracion — analisis medido y escalamiento a Oscar
+c9e7c9c 2026-08-05 docs(informe-julio): evidencia FISICA en cada carpeta, no descripciones
+9a0e645 2026-08-04 docs(pruebas): el guion, afinado con lo que devuelve la base de verdad
+19dfda9 2026-08-04 docs(acceso): la politica de Vivanto, medida — no caducan las claves
+0c6db4f 2026-08-04 docs(acceso): la UARIV ya tiene servicio de autenticacion, y corre al lado de SICAV
+7edc7c8 2026-08-03 feat(usuarios): crear cuentas SICAV de los encuestadores ACTIVOS, con identidad de Vivanto
+1d75f22 2026-08-03 feat(legacy): que cada encuestador vea en SICAV lo que hizo en la aplicacion vieja
+bef810b 2026-08-03 feat(oracle): diagnosticar por que una encuesta caracterizada no aparece
+165319b 2026-08-02 fix(oracle): GIC_PERSONA recibia personas SIN nombre ni documento
+fe9a5d6 2026-08-02 chore(padron): verificador del archivo descargable + cifras finales del traspaso
+b30767d 2026-08-02 fix(identidad): tres agujeros por los que se colaba el borrado silencioso
+308df48 2026-08-02 docs(traspaso): el padron termino, y por que todavia no sirve para campo
+d84ac78 2026-08-01 perf(padron): escribir solo las fechas que cambian, no las 3,3 M cada vez
+f1ef52e 2026-08-01 docs(oti): borrador de las 5 preguntas de identidad, listo para enviar
+8462c49 2026-08-01 feat(alta-manual): NO_VERIFICADO — no estar en el padron no es no estar en el RUV

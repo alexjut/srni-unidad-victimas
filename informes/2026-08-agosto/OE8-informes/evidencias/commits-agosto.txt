@@ -1,0 +1,142 @@
+c23c781 2026-08-25 Javier Alexander Aguilar Castro fix(vigencia): la excepcion autorizada ahora SI desbloquea la APK en linea
+e20085a 2026-08-25 Javier Alexander Aguilar Castro fix(qa-web): H-027 — el aviso de busqueda ya no miente ni se duplica
+d949ec2 2026-08-25 Javier Alexander Aguilar Castro fix(qa-web): H-010/H-011 paginacion de encuestas y H-025 duplicado de la misma persona
+cebefe9 2026-08-25 Javier Alexander Aguilar Castro fix(autorizaciones): H-024 — la busqueda escaneaba 12 M de filas sin indice
+10bc0b9 2026-08-21 Javier Alexander Aguilar Castro feat(auth): comando para cargar claves desde CSV, hasheadas con Argon2
+0e0399a 2026-08-21 Javier Alexander Aguilar Castro fix(autorizaciones): la pantalla ahora sí muestra a quien viene del corte del RUV
+f1a2522 2026-08-21 Javier Alexander Aguilar Castro feat(autorizaciones): se puede autorizar a quien esta en el RUV y no en el padron
+2397754 2026-08-21 Javier Alexander Aguilar Castro fix(victimas): APK-002 — el backend rechazaba el payload que el mismo producia
+074adf4 2026-08-21 Javier Alexander Aguilar Castro fix(autorizaciones): la pantalla decia "sin coincidencia" de gente que SI esta
+a31d3ea 2026-08-21 Javier Alexander Aguilar Castro docs(qa): plan del informe v2, el bloqueo de autorizaciones y lo que falta
+b578bc3 2026-08-21 Javier Alexander Aguilar Castro docs(entregables): diapositivas del avance 14-ago a 21-ago
+c064fd2 2026-08-19 Javier Alexander Aguilar Castro chore(apk): version 1.2.2 para la build con el porcentaje corregido
+ff861c5 2026-08-19 Javier Alexander Aguilar Castro fix(skip-logic): "ruv_incluido == False or edad < 3" no disparaba en el backend
+3fe431f 2026-08-19 Javier Alexander Aguilar Castro fix(skip-logic): las reglas por edad y sexo no se evaluaban con datos reales
+3dfcd61 2026-08-19 Javier Alexander Aguilar Castro fix(encuestas): al porcentaje le faltaba la palabra "visibles" — APK-005 de raiz
+2812ffc 2026-08-19 Javier Alexander Aguilar Castro fix(apk): cerrar dos veces la misma encuesta dejaba el telefono envenenado
+421ce61 2026-08-19 Javier Alexander Aguilar Castro fix(apk): "COMPLETADO" significaba dos cosas y la app perdia la entrevista
+ddc1c77 2026-08-19 Javier Alexander Aguilar Castro fix(apk): cinco formas de perder trabajo capturado en el camino sin red
+b7e4ed1 2026-08-19 Javier Alexander Aguilar Castro fix(apk): la tarjeta offline decia "Pendiente sync" de un hogar ya guardado
+5a740f9 2026-08-19 mwlware Check list QA
+9a88a0e 2026-08-19 mwlware fix(encuestas): barras de progreso animadas y fix desborde del contenedor
+d6c8c09 2026-08-19 mwlware fix(hogares): marcar como resuelto el fallback offline en conformar hogar cuando falla el POST por red
+573f8e8 2026-08-19 mwlware fix(encuestas): implementar fallback a borradores locales en detalle de sesión cuando el API falla
+8bbd5c4 2026-08-19 mwlware fix(encuestas): implementar fallback a borradores locales cuando el API falla y mostrar banner de conexión
+cf30ee8 2026-08-19 mwlware fix(hogares): mejorar manejo de hogares offline y evitar duplicados en caso de error del servidor
+fdcd8bf 2026-08-19 mwlware fix(encuestas): actualizar la barra de progreso para mostrar el 100 % en sesiones completadas y limitar el valor del progreso
+e33b208 2026-08-18 mwlware Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+de83ecd 2026-08-14 Javier Alexander Aguilar Castro chore(auditoria): la migracion que faltaba por las acciones nuevas
+ce429d3 2026-08-14 Javier Alexander Aguilar Castro fix(qa): APK-002, APK-004 y APK-007 del informe de calidad
+3a9c1c2 2026-08-14 Javier Alexander Aguilar Castro refactor(autorizaciones): la pantalla vive dentro del panel, no aparte
+ccc40dc 2026-08-14 Javier Alexander Aguilar Castro feat(panel): "Autorizaciones" en el menu, solo para quien puede autorizar
+240e480 2026-08-14 Javier Alexander Aguilar Castro fix(autorizaciones): la pantalla no era alcanzable — cae en la SPA
+771cadb 2026-08-14 Javier Alexander Aguilar Castro feat(autorizaciones): pantalla propia para autorizar excepciones, con lote
+e5085eb 2026-08-14 Javier Alexander Aguilar Castro chore(apk): version 1.2.0 para la build sin foto del soporte
+e64646c 2026-08-14 Javier Alexander Aguilar Castro docs(entregables): diapositivas del avance quincenal 29-jul a 13-ago
+9e6d67e 2026-08-14 Javier Alexander Aguilar Castro docs(vigencia): contrato para el front web y estado al 14-ago
+63ee8ba 2026-08-14 Javier Alexander Aguilar Castro feat(apk): el celular deja de pedir la foto y consume la habilitacion
+2ecf39c 2026-08-14 Javier Alexander Aguilar Castro feat(vigencia): la excepcion la autoriza el front, no el encuestador en campo
+4c76922 2026-08-14 mwlware Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+277fdea 2026-08-12 Javier Alexander Aguilar Castro fix(precarga): el en_ruv que ve la APK tambien sale del universo
+ac65d5c 2026-08-12 Javier Alexander Aguilar Castro fix(padron): FLAG_EN_RUV sale del universo del RUV, no del join roto
+41f7e22 2026-08-12 Javier Alexander Aguilar Castro infra(postgres): respaldo fisico semanal con rotacion de 3, sobre systemd
+47497da 2026-08-12 Javier Alexander Aguilar Castro docs(traspaso): estado al 12-ago — con que se retoma es la decision, no el padron
+66a6699 2026-08-12 Javier Alexander Aguilar Castro docs(victimas): la 0021 corrio entera, y el ctid no acelero nada
+7b6e822 2026-08-11 Javier Alexander Aguilar Castro perf(victimas): la 0021 actualiza por ctid y no por clave primaria
+2196cd3 2026-08-11 Javier Alexander Aguilar Castro docs(entregables): tres documentos gerenciales del avance a 11-ago
+959197c 2026-08-11 Javier Alexander Aguilar Castro docs: corregir el informe que daba por inexistente una tabla que si existe
+c6abeb2 2026-08-11 Javier Alexander Aguilar Castro docs(operacion): las credenciales de campo las asigna Javier al confirmar la fecha de inicio
+33fbafa 2026-08-11 Javier Alexander Aguilar Castro docs(operacion): usuarios y perfiles — el login es codigo_usuario, no el nombre
+ce2d2da 2026-08-11 Javier Alexander Aguilar Castro infra(compose): la base de datos vive en /datos, no en el disco raiz
+09bea2a 2026-08-11 Javier Alexander Aguilar Castro fix(migracion): el VACUUM por lote hacia la 0021 inviable — 8 horas proyectadas
+e4bf372 2026-08-11 Javier Alexander Aguilar Castro fix(migraciones): separar el UPDATE de 5,9 M, que no cabia en el disco
+0568f74 2026-08-11 Javier Alexander Aguilar Castro fix(padron): dejar de decidir con los campos que vienen del join roto
+118d1be 2026-08-11 Javier Alexander Aguilar Castro docs(infra): runbook del traslado de la BD al disco /datos
+6d5bbbc 2026-08-11 Javier Alexander Aguilar Castro feat(victimas): el estado RUV ahora dice de donde sale, y deja de afirmar lo que nadie verifico
+197a124 2026-08-11 Javier Alexander Aguilar Castro docs(oracle): CONS_PERONA es un contador de filas, no identifica a nadie
+c645faf 2026-08-11 Javier Alexander Aguilar Castro chore(apk): version 1.1.0 para la build que lleva el universo al celular
+d34fa01 2026-08-11 Javier Alexander Aguilar Castro feat(offline): el universo del RUV cabe en el celular — filtro de Bloom de 21,7 MiB
+a1063a4 2026-08-11 Javier Alexander Aguilar Castro fix(universo): el alta de quien viene del RUV moria en 400, y parecia falta de senal
+b7a4ebb 2026-08-10 mwlware Fusionar la rama de seguimiento remoto 'origin/main' en frontend
+efa03cb 2026-08-06 Javier Alexander Aguilar Castro feat(apk): ficha vigente deja de ser un callejon — ruta de excepcion en la busqueda
+0d02414 2026-08-06 Javier Alexander Aguilar Castro feat(apk): el cliente ya sabe pedir la ruta de excepcion y mandar el soporte
+eb02003 2026-08-06 Javier Alexander Aguilar Castro feat(caracterizacion): quien viene del universo ya se puede caracterizar
+08f5eea 2026-08-06 Javier Alexander Aguilar Castro feat(busqueda): la busqueda online ya encuentra a las 12 M del universo
+9f34bd9 2026-08-06 Javier Alexander Aguilar Castro docs(peti): monitoreo del proyecto con corte 30-jun-2026
+fbb7cfe 2026-08-06 Javier Alexander Aguilar Castro docs(traspaso): el 6-ago — el universo cargado y las tres fases, una por una
+bd40f7a 2026-08-06 Javier Alexander Aguilar Castro perf(padron): el enlace se hace en la base, no descifrando 12 M de filas
+c572c65 2026-08-06 Javier Alexander Aguilar Castro fix(infra): Postgres tenia 64 MB de /dev/shm — reventaba el mantenimiento
+f4a18e4 2026-08-06 Javier Alexander Aguilar Castro perf(padron): la fase 2 recorria la tabla tres veces — ahora una
+8a80566 2026-08-05 Javier Alexander Aguilar Castro docs(infra): la cifra recuperable de Docker, medida — 6,6 GB y no 5
+a422ed6 2026-08-05 Javier Alexander Aguilar Castro perf(padron): podar 6 indices sin uso — 2,2 GB y un 35 % mas rapido, en caliente
+480928a 2026-08-05 Javier Alexander Aguilar Castro docs(infra): el disco no da para la migracion — analisis medido y escalamiento a Oscar
+f8a2f84 2026-08-05 Javier Alexander Aguilar Castro fix(padron): el reset de la fase 2 reescribia 12 M de filas, y el disco no da
+41a36ae 2026-08-05 Javier Alexander Aguilar Castro docs(vigencia): la regla de 2 anios es real y no se deroga — corrijo lo que deje escrito
+c9e7c9c 2026-08-05 Javier Alexander Aguilar Castro docs(informe-julio): evidencia FISICA en cada carpeta, no descripciones
+3770047 2026-08-05 Javier Alexander Aguilar Castro fix(genero): Intersexual caia al default en silencio, y un valor nuevo tambien
+90834af 2026-08-05 Javier Alexander Aguilar Castro fix(padron): seis defectos que la revision adversarial encontro antes de la carga
+ecd12df 2026-08-05 Javier Alexander Aguilar Castro feat(padron): comando de carga del universo — en dos fases, sin perder filas
+0cd4ccb 2026-08-05 Javier Alexander Aguilar Castro feat(padron): DDL del universo de victimas — y el id que NO se puede pisar
+1fd2209 2026-08-04 Javier Alexander Aguilar Castro fix(rutas): cablear la ruta — la logica estaba escrita pero nadie se la pasaba
+a5bdfbd 2026-08-04 Javier Alexander Aguilar Castro feat(rutas): las rutas de entrevista ahora SI omiten la vigencia, como manda el manual
+f615997 2026-08-04 Javier Alexander Aguilar Castro feat(busqueda): decir POR QUE, en codigo y no solo en prosa
+b4ad74d 2026-08-04 Javier Alexander Aguilar Castro docs(diagnostico): por que "no se pudo caracterizar" — y el manual dice que TRES rutas omiten la vigencia
+9a0e645 2026-08-04 Javier Alexander Aguilar Castro docs(pruebas): el guion, afinado con lo que devuelve la base de verdad
+1edd235 2026-08-04 Javier Alexander Aguilar Castro docs(pruebas): guion de la sesion funcional del 4-ago, bloque por bloque
+f75da53 2026-08-04 Javier Alexander Aguilar Castro feat(hechos): poblar HechoVictima desde el RUV, e idempotente de verdad
+fa6fe99 2026-08-04 Javier Alexander Aguilar Castro feat(hechos): leer los hechos de una persona desde el RUV, sin adivinar
+1a7926c 2026-08-04 Javier Alexander Aguilar Castro docs(hechos): cae el pendiente 5a — ya sabemos de donde salen los hechos
+81e7db4 2026-08-04 Javier Alexander Aguilar Castro feat(hechos): el catalogo del RUV, que es un TERCER catalogo y tampoco cruza por numero
+19dfda9 2026-08-04 Javier Alexander Aguilar Castro docs(acceso): la politica de Vivanto, medida — no caducan las claves
+92ece99 2026-08-04 Javier Alexander Aguilar Castro docs(gestion): consulta a OTI que decide como entran los 1.150 encuestadores
+0c6db4f 2026-08-04 Javier Alexander Aguilar Castro docs(acceso): la UARIV ya tiene servicio de autenticacion, y corre al lado de SICAV
+8d844e3 2026-08-04 Javier Alexander Aguilar Castro docs(traspaso): el 3-ago por la tarde — 1.150 encuestadores ven su trabajo en SICAV
+911a528 2026-08-03 Javier Alexander Aguilar Castro fix(api): el resumen decia 'total 18' y el desglose sumaba 3
+ac4ef53 2026-08-03 Javier Alexander Aguilar Castro fix(legacy): 3.284 hogares ANULADOS se presentaban como trabajo recuperable
+0fd4ef2 2026-08-03 Javier Alexander Aguilar Castro fix(legacy): una fila ilegible tumbaba la importacion de los 1.150 encuestadores
+9ff2cc1 2026-08-03 Javier Alexander Aguilar Castro fix(usuarios): la N tilde rota en 6 logins dejaba 131 caracterizaciones sin autor
+7edc7c8 2026-08-03 Javier Alexander Aguilar Castro feat(usuarios): crear cuentas SICAV de los encuestadores ACTIVOS, con identidad de Vivanto
+1b346d7 2026-08-03 mwlware feat(víctima): añadir el estado «No verificado» a las opciones de la insignia del RUV
+117fb02 2026-08-03 Javier Alexander Aguilar Castro feat(legacy): 111 caracterizaciones completas que ningun reporte cuenta
+3b3c617 2026-08-03 Javier Alexander Aguilar Castro fix(legacy): las fechas del legacy entraban con cinco horas de mas
+1d75f22 2026-08-03 Javier Alexander Aguilar Castro feat(legacy): que cada encuestador vea en SICAV lo que hizo en la aplicacion vieja
+e440f5d 2026-08-03 Javier Alexander Aguilar Castro fix(oracle): CERRADA son 62 hogares en toda la base — y el caso de Pandi, diagnosticado
+8fd0265 2026-08-03 Javier Alexander Aguilar Castro feat(oracle): traer los encuestadores del legacy (GIC_USUARIO) y medir la autoria rota
+bef810b 2026-08-03 Javier Alexander Aguilar Castro feat(oracle): diagnosticar por que una encuesta caracterizada no aparece
+4149364 2026-08-03 Javier Alexander Aguilar Castro docs(gestion): borrador de correo — estado de SICAV, pruebas funcionales del 4-ago y la pregunta por los hechos
+abd65c4 2026-08-02 Javier Alexander Aguilar Castro docs(oracle): que se cableo el 3-ago, de donde tienen que salir los hechos, y una correccion
+5db37f5 2026-08-02 Javier Alexander Aguilar Castro feat(oracle): validadores, hechos y marca de encuestado — los diez pasos ya estan cableados
+374ee44 2026-08-02 Javier Alexander Aguilar Castro docs(traspaso): cierre del 2-ago — la cadena de escritura al legacy esta completa
+01abdcb 2026-08-02 Javier Alexander Aguilar Castro fix(ui): un documento de relleno ya no se ve como "error de conexion" ni como "no esta en el padron"
+7897f49 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): no cerrar un hogar al que le faltan respuestas
+59ea0e5 2026-08-02 Javier Alexander Aguilar Castro feat(oracle): los pasos CAPITULO y CIERRE — los que hacen existir el hogar para los reportes
+2e2fc0d 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): una respuesta sin puente ya no tumba el hogar entero
+6124d8d 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): las preguntas abiertas ya se pueden escribir (256 en total)
+afd520f 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): la guarda que impide fundir dos caracterizaciones en un hogar
+6b71d68 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): cinco valores fuera de dominio que hacian invisible el dato
+b4dd65e 2026-08-02 Javier Alexander Aguilar Castro docs(legacy): que exige el Oracle para que salgan los reportes, y el plan del 3-ago
+165319b 2026-08-02 Javier Alexander Aguilar Castro fix(oracle): GIC_PERSONA recibia personas SIN nombre ni documento
+401adaf 2026-08-02 Javier Alexander Aguilar Castro feat(sync): tarea de novedades cada 15 min, con interruptor propio
+4aff447 2026-08-02 Javier Alexander Aguilar Castro feat(sync): marca de agua para traer las novedades del legacy en segundos
+3126e5e 2026-08-02 Javier Alexander Aguilar Castro fix(500 en produccion): el WAF manda la IP con puerto y tumbaba la busqueda
+fe9a5d6 2026-08-02 Javier Alexander Aguilar Castro chore(padron): verificador del archivo descargable + cifras finales del traspaso
+ee82eb5 2026-08-02 Javier Alexander Aguilar Castro docs(traspaso): desplegado, clasificado y verificado contra produccion
+bc867cb 2026-08-02 Javier Alexander Aguilar Castro docs(pruebas): guion funcional para la sesion de manana
+a58685d 2026-08-02 Javier Alexander Aguilar Castro fix: 17 defectos que encontro la revision adversarial del codigo de duplicados
+b30767d 2026-08-02 Javier Alexander Aguilar Castro fix(identidad): tres agujeros por los que se colaba el borrado silencioso
+88f9a1b 2026-08-02 Javier Alexander Aguilar Castro fix(precarga): la jornada tambien viaja clasificada
+b1b546f 2026-08-02 Javier Alexander Aguilar Castro docs+tasks: la decision sobre documentos repetidos, y encadenarla a la recarga
+fbc18ea 2026-08-02 Javier Alexander Aguilar Castro feat(apk): el padron offline deja de perder a la segunda persona de un documento
+51b7b26 2026-08-02 Javier Alexander Aguilar Castro feat(identidad): clasificar los documentos repetidos en vez de colapsarlos a ciegas
+e8a7350 2026-08-02 Javier Alexander Aguilar Castro docs(traspaso): desplegado, probado contra prod, y el 500 que salio en la prueba
+4b88856 2026-08-02 Javier Alexander Aguilar Castro fix(busqueda): un documento repetido ya no da 500 — devuelve los candidatos
+308df48 2026-08-02 Javier Alexander Aguilar Castro docs(traspaso): el padron termino, y por que todavia no sirve para campo
+d84ac78 2026-08-01 Javier Alexander Aguilar Castro perf(padron): escribir solo las fechas que cambian, no las 3,3 M cada vez
+f1ef52e 2026-08-01 Javier Alexander Aguilar Castro docs(oti): borrador de las 5 preguntas de identidad, listo para enviar
+8462c49 2026-08-01 Javier Alexander Aguilar Castro feat(alta-manual): NO_VERIFICADO — no estar en el padron no es no estar en el RUV
+9a94f18 2026-08-01 Javier Alexander Aguilar Castro docs: traspaso al 1-ago — el padron real esta cargado
+9a35c18 2026-08-01 Javier Alexander Aguilar Castro fix(padron): el COPY usaba la API de psycopg2 y el proyecto usa psycopg3
+e34e0ee 2026-08-01 Javier Alexander Aguilar Castro feat(programado): celery beat para recargar el padron y reintentar Oracle
+13b21d7 2026-08-01 Javier Alexander Aguilar Castro fix(instrumento): restaura metadata de ASISTENCIA que el generador borro
+5182ae9 2026-08-01 Javier Alexander Aguilar Castro fix(precarga): pedia el padron ENTERO al login (5,9 M) y dejaba la APK colgada
+1aeb173 2026-08-01 Javier Alexander Aguilar Castro perf(padron): las fechas se aplican con COPY, no fila a fila (25 h -> minutos)
