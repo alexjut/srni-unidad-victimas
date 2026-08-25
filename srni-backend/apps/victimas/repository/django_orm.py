@@ -35,6 +35,7 @@ from .base import (
     ResultadoBusqueda,
     VictimaRepository,
     VictimaResumen,
+    _buscar_habilitacion,
     describir_elegibilidad,
     doc_hash,
     num_hash,
@@ -86,7 +87,14 @@ class DjangoVictimaRepository(VictimaRepository):
             fecha_nacimiento=_a_fecha(victima.fecha_nacimiento),
             genero=victima.genero or "",
             estado_ruv=victima.estado_ruv or "",
-            habilitado_para_caracterizacion=victima.habilitado_para_caracterizacion,
+            # Una excepción vigente HABILITA a caracterizar ahora, aunque el flag
+            # crudo de la BD siga en False (ficha vigente por tiempo). El DTO es
+            # «¿puede caracterizarse ahora?», no el valor de la columna, así que
+            # se refleja acá. Sin esto, la APK —que decide por este campo— dejaba
+            # a la persona autorizada bloqueada en línea: se autorizaba en el
+            # panel y el celular seguía diciendo «No habilitado».
+            habilitado_para_caracterizacion=(
+                victima.habilitado_para_caracterizacion or habilitacion is not None),
             fecha_ult_caracterizacion=victima.fecha_ult_caracterizacion,
             pertenencia_etnica=victima.pertenencia_etnica or "",
             pueblo_indigena=victima.pueblo_indigena or "",
@@ -363,7 +371,14 @@ class DjangoVictimaRepository(VictimaRepository):
         if otras:
             aviso += (f"Hay {len(otras) + 1} registros con este documento. "
                       f"CONFIRME cuál corresponde antes de caracterizar. ")
-        resumen = self._a_resumen(victima)
+
+        # La habilitación se resuelve UNA vez y se comparte entre el resumen (para
+        # que `habilitado_para_caracterizacion` la refleje) y el veredicto (para
+        # que no se consulte de nuevo). Antes el resumen se armaba sin ella y la
+        # APK, que decide por ese campo, dejaba bloqueada en línea a la persona
+        # recién autorizada.
+        habilitacion = _buscar_habilitacion(victima)
+        resumen = self._a_resumen(victima, habilitacion=habilitacion)
 
         # Se devuelve `encontrado=True` aunque no sea elegible: el encuestador
         # necesita ver a quién tiene enfrente y POR QUÉ no puede caracterizarla.
@@ -371,7 +386,7 @@ class DjangoVictimaRepository(VictimaRepository):
         #
         # El veredicto lo arma `describir_elegibilidad` — el MISMO que usa
         # `estado_habilitacion` más abajo, para que no puedan volver a divergir.
-        veredicto = describir_elegibilidad(victima, ruta=ruta)
+        veredicto = describir_elegibilidad(victima, ruta=ruta, habilitacion=habilitacion)
 
         # El aviso va PRIMERO: que haya que verificar la identidad importa más que el
         # estado en el RUV — si es otra persona, lo del RUV ni aplica.

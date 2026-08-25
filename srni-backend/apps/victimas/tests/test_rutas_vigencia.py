@@ -280,6 +280,14 @@ def test_el_repositorio_bloquea_hasta_que_la_excepcion_este_autorizada(
     assert autorizada.motivo == MotivoNoElegible.ELEGIBLE_POR_EXCEPCION
     assert 'T-2026-451' in autorizada.mensaje
 
+    # El defecto que encontro el trazado E2E: el motivo cambiaba, pero
+    # habilitado_para_caracterizacion seguia en False, y la APK decide por ESE
+    # campo -> la persona autorizada quedaba bloqueada en linea. El DTO debe
+    # reflejar que si puede caracterizarse ahora.
+    assert autorizada.victima.habilitado_para_caracterizacion is True, (
+        'la excepcion vigente debe habilitar en el DTO que lee la APK')
+    assert autorizada.victima.habilitada_por_excepcion is True
+
 
 def test_una_habilitacion_ya_usada_no_vuelve_a_habilitar(victima_con_ficha_vigente):
     """
