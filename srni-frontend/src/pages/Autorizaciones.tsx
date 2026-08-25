@@ -100,7 +100,26 @@ export default function AutorizacionesPage() {
     setMarcadas(new Set());
     habilitacionesApi.buscar(tipoDoc, lista)
       .then(({ data }) => setResultado(data))
-      .catch((err) => toast.error(mensajeError(err, 'No se pudo buscar.')))
+      .catch((err) => {
+        // H-027 — que el aviso diga algo útil y no se duplique. El interceptor
+        // global (client.ts) ya muestra un toast para red/timeout, 500 y 403;
+        // repetir acá daba dos avisos contradictorios para el mismo evento. Solo
+        // se agrega mensaje propio cuando el servidor respondió algo que el
+        // interceptor no cubre (un 4xx con detalle), o para orientar al usuario
+        // cuando la búsqueda se corta por tiempo con muchos documentos.
+        const res = (err as { response?: { status?: number } })?.response;
+        if (!res) {
+          // Sin respuesta: red o corte por tiempo. El interceptor ya avisó; solo
+          // se orienta si la consulta era grande.
+          if (lista.length > 1) {
+            toast.info('La búsqueda tardó demasiado. Intenta con menos documentos a la vez.');
+          }
+          return;
+        }
+        if (res.status && res.status >= 500) return;   // ya avisó el interceptor
+        if (res.status === 403) return;                // ya avisó el interceptor
+        toast.error(mensajeError(err, 'No se pudo buscar.'));
+      })
       .finally(() => setBuscando(false));
   }
 
