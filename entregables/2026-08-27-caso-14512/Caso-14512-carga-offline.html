@@ -1,0 +1,1332 @@
+<title>Por qué se detuvo la carga OFFLINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600;700&display=swap">
+
+<style>
+:root{
+  --paper:#F2F5F4;
+  --surface:#FFFFFF;
+  --surface-2:#E9EEED;
+  --ink:#12201F;
+  --ink-soft:#4A5D5C;
+  --ink-faint:#718483;
+  --line:#D2DCDA;
+  --line-soft:#E3EAE9;
+  --accent:#125E60;
+  --accent-soft:#D9EAE9;
+  --crit:#A6321C;
+  --crit-soft:#F6E2DC;
+  --ok:#2C6748;
+  --ok-soft:#DCEBE2;
+  --warn:#8A5B12;
+  --warn-soft:#F5E8D2;
+  --code-bg:#EDF1F0;
+  --shadow:0 1px 2px rgba(18,32,31,.05), 0 8px 24px -18px rgba(18,32,31,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1516;
+    --surface:#141F20;
+    --surface-2:#1B2829;
+    --ink:#E4EDEB;
+    --ink-soft:#A5B8B6;
+    --ink-faint:#7B8F8D;
+    --line:#2A3A3A;
+    --line-soft:#223031;
+    --accent:#5FB8B4;
+    --accent-soft:#14322F;
+    --crit:#E8836A;
+    --crit-soft:#3A1C15;
+    --ok:#6FBF92;
+    --ok-soft:#153126;
+    --warn:#D9A659;
+    --warn-soft:#33270F;
+    --code-bg:#111B1C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1516;
+  --surface:#141F20;
+  --surface-2:#1B2829;
+  --ink:#E4EDEB;
+  --ink-soft:#A5B8B6;
+  --ink-faint:#7B8F8D;
+  --line:#2A3A3A;
+  --line-soft:#223031;
+  --accent:#5FB8B4;
+  --accent-soft:#14322F;
+  --crit:#E8836A;
+  --crit-soft:#3A1C15;
+  --ok:#6FBF92;
+  --ok-soft:#153126;
+  --warn:#D9A659;
+  --warn-soft:#33270F;
+  --code-bg:#111B1C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 28px 96px}
+.measure{max-width:68ch}
+
+/* ---------- encabezado ---------- */
+header.doc{
+  padding:72px 0 40px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:8px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);font-weight:600;margin:0 0 20px;
+  display:flex;flex-wrap:wrap;gap:10px 18px;
+}
+h1{
+  font-family:"IBM Plex Serif",Georgia,serif;
+  font-weight:700;font-size:clamp(2.1rem,5.2vw,3.35rem);
+  line-height:1.08;letter-spacing:-.02em;margin:0 0 22px;
+  text-wrap:balance;max-width:19ch;
+}
+.standfirst{
+  font-size:1.16rem;line-height:1.55;color:var(--ink-soft);
+  max-width:62ch;margin:0 0 32px;
+}
+.meta{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:18px 28px;font-size:13.5px;padding-top:8px;
+}
+.meta div{display:flex;flex-direction:column;gap:3px}
+.meta dt{
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
+}
+.meta dd{margin:0;color:var(--ink);font-weight:500}
+
+/* ---------- veredicto ---------- */
+.verdict{
+  margin:44px 0 8px;padding:30px 32px;
+  background:var(--crit-soft);
+  border-left:4px solid var(--crit);
+  border-radius:0 6px 6px 0;
+}
+.verdict .tag{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--crit);
+  display:block;margin-bottom:12px;
+}
+.verdict p{margin:0;font-size:1.18rem;line-height:1.5;max-width:60ch}
+.verdict p + p{margin-top:14px;font-size:1rem;color:var(--ink-soft)}
+
+/* ---------- secciones ---------- */
+section{padding-top:60px}
+h2{
+  font-family:"IBM Plex Serif",Georgia,serif;
+  font-size:1.72rem;font-weight:700;letter-spacing:-.012em;
+  margin:0 0 6px;text-wrap:balance;
+}
+.h2rule{height:1px;background:var(--line);margin:16px 0 28px}
+h3{
+  font-size:1.06rem;font-weight:600;margin:36px 0 10px;
+  letter-spacing:-.005em;
+}
+h4{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
+  margin:28px 0 10px;
+}
+p{margin:0 0 16px;max-width:68ch}
+ul,ol{margin:0 0 18px;padding-left:22px;max-width:68ch}
+li{margin-bottom:9px}
+li::marker{color:var(--accent)}
+strong{font-weight:600}
+a{color:var(--accent)}
+code{
+  font-family:"IBM Plex Mono",monospace;font-size:.87em;
+  background:var(--code-bg);padding:1.5px 5px;border-radius:3px;
+  border:1px solid var(--line-soft);
+}
+
+/* ---------- bloques de código ---------- */
+.code{
+  background:var(--code-bg);border:1px solid var(--line);
+  border-radius:6px;margin:0 0 22px;overflow:hidden;
+}
+.code .cap{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+  padding:9px 16px;border-bottom:1px solid var(--line);
+  background:var(--surface-2);
+}
+.code pre{
+  margin:0;padding:16px;overflow-x:auto;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.62;
+}
+.code pre .c{color:var(--ink-faint)}
+.code pre .k{color:var(--accent);font-weight:500}
+.code pre .bad{color:var(--crit);font-weight:600}
+.code pre .note{color:var(--warn);font-weight:500}
+
+/* ---------- tablas ---------- */
+.tablewrap{overflow-x:auto;margin:0 0 22px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint);
+  background:var(--surface-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace}
+td.mono,th.mono{font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+
+/* ---------- píldoras de estado ---------- */
+.pill{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:.08em;
+  padding:2px 8px;border-radius:3px;white-space:nowrap;
+}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.bad{background:var(--crit-soft);color:var(--crit)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.neutral{background:var(--surface-2);color:var(--ink-faint)}
+
+/* ---------- diagrama del flujo ---------- */
+.flow{display:flex;flex-direction:column;gap:0;margin:8px 0 26px}
+.stage{
+  display:grid;grid-template-columns:74px 1fr;gap:18px;
+  padding:14px 16px;border:1px solid var(--line);
+  background:var(--surface);border-radius:6px;
+}
+.stage + .connector{margin:0 0 0 36px}
+.connector{
+  width:2px;height:16px;background:var(--line);margin-left:36px;
+}
+.connector.broken{
+  background:repeating-linear-gradient(to bottom,var(--crit) 0 4px,transparent 4px 8px);
+  height:22px;
+}
+.stage .when{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  color:var(--accent);padding-top:2px;
+}
+.stage .what strong{display:block;font-size:14.5px;margin-bottom:3px}
+.stage .what span{font-size:13.5px;color:var(--ink-soft);display:block}
+.stage .what code{font-size:12px}
+.stage.broken{
+  border-color:var(--crit);border-width:2px;
+  background:var(--crit-soft);
+}
+.stage.broken .when{color:var(--crit)}
+.stage.manual{border-style:dashed;background:var(--surface-2)}
+.stage .badge{
+  float:right;margin-left:12px;
+}
+
+/* ---------- tira de corridas ---------- */
+.runstrip{
+  display:flex;gap:3px;flex-wrap:wrap;margin:0 0 10px;
+  padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:6px;
+}
+.runstrip .cell{
+  width:26px;height:38px;border-radius:3px;
+  display:flex;align-items:flex-end;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;
+  padding-bottom:3px;color:#fff;
+}
+.cell.s{background:var(--ok)}
+.cell.f{background:var(--crit)}
+.cell.st{background:var(--warn)}
+.legend{
+  display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--ink-soft);margin:0 0 24px;
+  font-family:"IBM Plex Mono",monospace;
+}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+/* ---------- tarjetas de cifras ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;margin:0 0 24px;
+}
+.stat{
+  padding:18px 18px 16px;background:var(--surface);
+  border:1px solid var(--line);border-radius:6px;
+  border-top:3px solid var(--accent);
+}
+.stat.crit{border-top-color:var(--crit)}
+.stat .n{
+  font-family:"IBM Plex Mono",monospace;font-size:1.72rem;font-weight:600;
+  letter-spacing:-.02em;display:block;line-height:1.1;font-variant-numeric:tabular-nums;
+}
+.stat.crit .n{color:var(--crit)}
+.stat .l{font-size:13px;color:var(--ink-soft);display:block;margin-top:7px;line-height:1.4}
+
+/* ---------- caja de nota ---------- */
+.note-box{
+  padding:20px 24px;border:1px solid var(--line);
+  background:var(--surface);border-radius:6px;margin:0 0 22px;
+  border-left:3px solid var(--accent);
+}
+.note-box.warn{border-left-color:var(--warn)}
+.note-box p:last-child{margin-bottom:0}
+.note-box h4{margin-top:0}
+
+/* ---------- recomendaciones ---------- */
+.rec{
+  display:grid;grid-template-columns:auto 1fr;gap:16px;
+  padding:18px 0;border-bottom:1px solid var(--line-soft);
+}
+.rec:last-child{border-bottom:none}
+.rec .idx{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  color:var(--accent);padding-top:3px;min-width:28px;
+}
+.rec .body strong{display:block;margin-bottom:5px;font-size:15px}
+.rec .body p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+.rec .body .who{
+  display:inline-block;margin-top:9px;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+
+footer.doc{
+  margin-top:72px;padding-top:26px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-faint);
+}
+footer.doc p{max-width:70ch}
+
+@media (max-width:640px){
+  .wrap{padding:0 18px 64px}
+  header.doc{padding-top:44px}
+  .stage{grid-template-columns:1fr;gap:6px}
+  .connector,.stage + .connector{margin-left:14px}
+}
+@media print{
+  body{background:#fff;font-size:11.5px}
+  .wrap{max-width:100%;padding:0}
+  section{padding-top:26px;break-inside:auto}
+  h2{break-after:avoid}
+  .code,.tablewrap,.stat,.stage,.note-box,.runstrip{break-inside:avoid}
+  header.doc{padding-top:0}
+}
+</style>
+
+<div class="wrap">
+
+<header class="doc">
+  <p class="eyebrow">
+    <span>Caso 14512 · IM-918826-5-14512</span>
+    <span>Portal Vivanto — Caracterización OFFLINE</span>
+  </p>
+  <h1>Por qué se detuvo la carga OFFLINE</h1>
+  <p class="standfirst">
+    La cadena que lleva las encuestas capturadas sin conexión desde el FTP hasta las
+    tablas de caracterización está cortada desde el 16 de agosto de 2026. Este documento
+    identifica el eslabón exacto, muestra el error que devuelve todas las noches, explica
+    con detalle qué hace ese proceso, y separa lo que se puede reparar hoy de lo que exige
+    una decisión de fondo. Incluye además la validación del informe del 12 de agosto sobre
+    la transferencia entre servidores.
+  </p>
+  <dl class="meta">
+    <div><dt>Elaborado por</dt><dd>Javier Alexander Aguilar Castro</dd></div>
+    <div><dt>Sobre el informe de</dt><dd>Jorge L. Cardona Gregory</dd></div>
+    <div><dt>Fecha</dt><dd>27 de agosto de 2026</dd></div>
+    <div><dt>Método</dt><dd>Consultas de solo lectura en producción</dd></div>
+  </dl>
+</header>
+
+<div class="verdict">
+  <span class="tag">Hallazgo principal</span>
+  <p>
+    El proceso que toma los JSON de <code>/EncuestasACargar1</code> y los carga a la base
+    <strong>existe, es automático y funcionó hasta el 14 de agosto</strong>. Desde el 16 de
+    agosto falla todas las noches en menos de cuatro segundos con
+    <code>ORA-29283: la ruta de acceso o el archivo no existen</code>.
+  </p>
+  <p>
+    No es un paso manual pendiente, no depende de que alguien lo ejecute, y no es el job
+    que aparece deshabilitado desde 2024. Es un job encendido, en otro servidor, que perdió
+    acceso a su carpeta de trabajo tras un reinicio de la base.
+  </p>
+</div>
+
+<section>
+  <h2>Dos jobs con el mismo nombre en dos servidores</h2>
+  <div class="h2rule"></div>
+  <p>
+    El origen de la confusión es concreto y fácil de reproducir: <code>JOB_PCD_FN_FTP_PC_IJ</code>
+    existe en los dos servidores, con nombre idéntico y comportamiento opuesto.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Servidor</th><th>Esquema</th><th>Estado</th><th>Programación</th><th class="num">Corridas</th><th class="num">Fallos</th><th>Última</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">30.0.1.9 · ENTREVISTARN</td>
+          <td class="mono">RNIENTREVISTA</td>
+          <td><span class="pill neutral">DISABLED</span></td>
+          <td class="mono">sin intervalo</td>
+          <td class="num">2</td><td class="num">2</td>
+          <td class="mono">2024-09-19</td>
+        </tr>
+        <tr>
+          <td class="mono">BD-MODELO-19C · «el 65»</td>
+          <td class="mono">RNIENTREVISTA</td>
+          <td><span class="pill ok">ENABLED</span></td>
+          <td class="mono">Daily · 18:20</td>
+          <td class="num">1.092</td><td class="num">28</td>
+          <td class="mono">2026-08-26 18:20</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    La copia del <code>.9</code> corrió dos veces en su vida y falló las dos: nunca fue el
+    mecanismo de producción. <strong>La copia del 65 es la real</strong>, lleva 1.092
+    ejecuciones y es la que estampa las 18:20 que aparecen en todas las filas de
+    <code>DATA_JSON</code> desde 2021.
+  </p>
+  <div class="note-box">
+    <h4>Cómo verificarlo</h4>
+    <p>
+      Desde el <code>.9</code>, el 65 se consulta por el dblink <code>DBL_RNIENTREVISTA</code>
+      (apunta al host <code>MODELO</code>). Cualquier inventario de jobs hecho sobre
+      <code>ALL_SCHEDULER_JOBS</code> sin el dblink describe únicamente el <code>.9</code>.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>El flujo completo, eslabón por eslabón</h2>
+  <div class="h2rule"></div>
+  <p>
+    Ocho pasos entre el celular del encuestador y las tablas que alimentan los reportes.
+    Solo uno está roto; los siete restantes corrieron con normalidad anoche.
+  </p>
+
+  <div class="flow">
+    <div class="stage">
+      <div class="when">—</div>
+      <div class="what">
+        <strong>La APK sube al FTP</strong>
+        <span>El dispositivo deposita el <code>.txt</code> de cada encuesta cerrada en <code>/Encuestas</code>.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage manual">
+      <div class="when">manual</div>
+      <div class="what">
+        <span class="badge pill warn">Sin automatizar</span>
+        <strong>Alguien copia a <code>/EncuestasACargar1</code></strong>
+        <span>Único paso humano del flujo. Es frágil, pero <em>no</em> es la causa de este corte.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage broken">
+      <div class="when">18:20</div>
+      <div class="what">
+        <span class="badge pill bad">Falla desde 16-ago</span>
+        <strong><code>JOB_PCD_FN_FTP_PC_IJ</code> · en el 65</strong>
+        <span>Descarga de <code>/EncuestasACargar1</code> a <code>F:\Encuestas</code> y carga a <code>DATA_JSON</code> del 65.</span>
+      </div>
+    </div>
+    <div class="connector broken"></div>
+
+    <div class="stage">
+      <div class="when">20:15</div>
+      <div class="what">
+        <span class="badge pill ok">Sano</span>
+        <strong><code>JOB_IMP_65_FT_IMPORT_JSON</code></strong>
+        <span>Trae por dblink lo que hay en el 65 hacia <code>RNIENTREVISTA.DATA_JSON</code> del <code>.9</code>.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage">
+      <div class="when">20:30</div>
+      <div class="what">
+        <span class="badge pill ok">Sano</span>
+        <strong><code>ENTREVISTA.JOB_FT_IMPORT_JSON</code></strong>
+        <span>Mueve los datos al esquema <code>ENTREVISTA</code>, que es el que lee el procesamiento.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage">
+      <div class="when">20:45</div>
+      <div class="what">
+        <span class="badge pill ok">Sano</span>
+        <strong><code>SP_ADD_ENCUESTAS_MOVIL</code></strong>
+        <span>Convierte el JSON en filas de <code>GIC_ENCUESTA_MOVIL</code>. Descarta en silencio lo capturado hace más de 30 días.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage">
+      <div class="when">22:30</div>
+      <div class="what">
+        <span class="badge pill ok">Sano</span>
+        <strong><code>SP_INSERT_ENCUESTAS_MOVIL</code></strong>
+        <span>Escribe en <code>GIC_HOGAR</code>, <code>GIC_PERSONA</code>, <code>GIC_MIEMBROS_HOGAR</code> y <code>GIC_N_RESPUESTASENCUESTA_C</code>.</span>
+      </div>
+    </div>
+    <div class="connector"></div>
+
+    <div class="stage">
+      <div class="when">23:30<br>01:30</div>
+      <div class="what">
+        <span class="badge pill ok">Sano</span>
+        <strong>Migración a 65 e histórico</strong>
+        <span><code>SP_MIGRAR_ENCUESTAS_A_65</code> y <code>SP_MIGRAR_ENCUESTAS_A_HISTORICO</code>. El segundo deja los hogares en <code>MIGRADOAHISTORICO</code>.</span>
+      </div>
+    </div>
+  </div>
+
+  <p>
+    Los cinco jobs de aguas abajo corrieron el 26 de agosto en su horario. <strong>Están
+    sanos y esperando datos que no llegan.</strong>
+  </p>
+</section>
+
+<section>
+  <h2>Qué hace exactamente el proceso que falla</h2>
+  <div class="h2rule"></div>
+  <p>
+    <code>PCD_FN_FTP_PC_IJ</code> son once líneas que encadenan tres operaciones muy
+    distintas. Conviene leerlas completas, porque cada una tiene su propio modo de fallar.
+  </p>
+
+  <div class="code">
+    <div class="cap">RNIENTREVISTA.PCD_FN_FTP_PC_IJ — en el 65</div>
+<pre><span class="k">PROCEDURE</span> PCD_FN_FTP_PC_IJ <span class="k">AS</span>
+
+RSULTADO <span class="k">VARCHAR2</span>(500);
+<span class="k">begin</span>
+    <span class="c">-- Call the function</span>
+    RSULTADO := FN_EXEC_FTP_JSFULL_WRAP(<span class="k">'PRUEBA'</span>);   <span class="note">← paso 1: FTP → disco</span>
+    dbms_output.put_line(RSULTADO);                 <span class="bad">← el resultado nunca se verifica</span>
+    insertar_json ;                                 <span class="note">← paso 2: disco → DATA_JSON</span>
+    <span class="c">-- Call the procedure</span>
+    SAVE_SUPPORTS;                                  <span class="note">← paso 3: soportes</span>
+<span class="k">end</span>;</pre>
+  </div>
+
+  <h3>Paso 1 — Descargar del FTP al disco del 65</h3>
+  <p>
+    <code>FN_EXEC_FTP_JSFULL_WRAP</code> no es PL/SQL: es una envoltura sobre una clase Java
+    cargada dentro de la base. Su cuerpo es una sola línea activa, con las alternativas
+    históricas comentadas encima.
+  </p>
+  <div class="code">
+    <div class="cap">RNIENTREVISTA.FN_EXEC_FTP_JSFULL_WRAP</div>
+<pre><span class="k">FUNCTION</span> FN_EXEC_FTP_JSFULL_WRAP (NOMBRE <span class="k">NVARCHAR2</span>)
+<span class="k">RETURN VARCHAR2 AS LANGUAGE JAVA NAME</span>
+<span class="c">--'FTPJS1.ftp.iniciarProceso(...)'; -- descargar de ftp y cargar en db</span>
+  <span class="k">'pkgFTPdowloadfiles.ftp.iniciarProceso(...)'</span>; <span class="c">-- solo descargar de ftp al server</span></pre>
+  </div>
+  <p>
+    La clase que queda activa es <code>pkgFTPdowloadfiles</code>, cuyo fuente Java
+    (<code>FTPDOWLOADFILES</code>, 545 líneas) declara la carpeta remota sin ambigüedad:
+  </p>
+  <div class="code">
+    <div class="cap">FTPDOWLOADFILES — línea 85</div>
+<pre><span class="k">String</span> remotePath = <span class="k">"/EncuestasACargar1"</span>;</pre>
+  </div>
+  <p>
+    Es la carpeta correcta: la misma en la que se depositan los archivos manualmente. El Java
+    se conecta a <code>ftp.unidadvictimas.gov.co</code>, lista ese directorio, descarga los
+    archivos a <code>F:\Encuestas</code> en el 65 y deja allí un índice llamado
+    <code>nombreencuestas.txt</code> con el listado.
+  </p>
+  <div class="note-box warn">
+    <h4>Punto ciego número 1</h4>
+    <p>
+      La función devuelve un texto con el resultado de la descarga. Ese texto se guarda en
+      <code>RSULTADO</code> y se envía a <code>dbms_output</code>, que en una ejecución
+      programada <strong>no lo lee nadie</strong>. Si la descarga falla, el procedimiento
+      continúa como si nada. No hay forma de enterarse por esta vía.
+    </p>
+  </div>
+
+  <h3>Paso 2 — Del disco a <code>DATA_JSON</code></h3>
+  <p>
+    <code>insertar_json</code> es el corazón del proceso y donde se produce el error visible.
+    Son cuarenta y cinco líneas sin una sola cláusula de manejo de excepciones.
+  </p>
+  <div class="code">
+    <div class="cap">RNIENTREVISTA.insertar_json — cuerpo completo, anotado</div>
+<pre><span class="k">procedure</span> insertar_json <span class="k">is</span>
+l_clob clob;  V1 <span class="k">VARCHAR2</span>(32767);  V0 <span class="k">VARCHAR2</span>(32767);
+F1 UTL_FILE.FILE_TYPE;  F0 UTL_FILE.FILE_TYPE;
+<span class="k">BEGIN</span>
+F0 := UTL_FILE.FOPEN(<span class="k">'ENCUESTAS_DIR'</span>,<span class="k">'nombreencuestas.txt'</span>,<span class="k">'R'</span>,32767);  <span class="bad">← ORA-29283 AQUÍ</span>
+   <span class="k">loop</span> <span class="k">BEGIN</span>
+     UTL_FILE.GET_LINE(F0,V0);
+     <span class="k">INSERT INTO</span> ENCUESTAStxt <span class="k">VALUES</span>(V0);  <span class="c">-- bitácora del listado</span>
+     <span class="k">COMMIT</span>;
+     F1 := UTL_FILE.FOPEN(<span class="k">'ENCUESTAS_DIR'</span>,<span class="k">SUBSTR</span>(V0,50),<span class="k">'R'</span>,32767); <span class="note">← nombre por posición fija</span>
+     <span class="k">EXCEPTION WHEN</span> No_Data_Found <span class="k">THEN EXIT</span>; <span class="k">END</span>;
+
+      <span class="k">Loop</span>
+          <span class="k">BEGIN</span>
+          UTL_FILE.GET_LINE(F1,V1);
+          l_clob := l_clob || <span class="k">convert</span>(V1, <span class="k">'WE8MSWIN1252'</span>, <span class="k">'utf8'</span>); <span class="note">← conversión de juego de caracteres</span>
+          <span class="k">EXCEPTION WHEN</span> No_Data_Found <span class="k">THEN EXIT</span>; <span class="k">END</span>;
+      <span class="k">end loop</span>;
+      <span class="k">IF</span> UTL_FILE.IS_OPEN(F1) <span class="k">THEN</span>
+           <span class="k">insert into</span> data_json <span class="k">values</span>(0,<span class="k">SUBSTR</span>(V0,50),l_clob,sysdate,0);
+           <span class="k">commit</span>;
+           l_clob := <span class="k">''</span>;
+      <span class="k">end if</span>;
+      UTL_FILE.FCLOSE(F1);
+      UTL_FILE.fremove (<span class="k">'ENCUESTAS_DIR'</span>, <span class="k">SUBSTR</span>(V0,50));  <span class="bad">← borra el archivo tras leerlo</span>
+   <span class="k">end loop</span>;
+   UTL_FILE.FCLOSE(F0);
+<span class="k">END</span>;</pre>
+  </div>
+  <p>
+    El detalle que explica el resto del documento: <code>nombreencuestas.txt</code> no es una
+    lista de nombres, sino la <strong>salida cruda de un <code>ls -l</code> del FTP</strong>.
+    Por eso el nombre del archivo se extrae con <code>SUBSTR(V0,50)</code>, es decir, a partir
+    del carácter 50 de la línea. Así se ve una fila real, guardada en <code>ENCUESTASTXT</code>:
+  </p>
+  <div class="code">
+    <div class="cap">Una línea de nombreencuestas.txt, tal como queda registrada</div>
+<pre>-rw-r--r-- 1 ftp ftp    116790 Oct 05 19:25 YKDURANGOG_25_09_2023_10_51_41949259166.txt
+                                             <span class="note">└─ desde aquí (carácter 50) se lee el nombre</span></pre>
+  </div>
+
+  <h3>Paso 3 — Soportes</h3>
+  <p>
+    <code>SAVE_SUPPORTS</code> procesa las imágenes de soporte hacia
+    <code>F:\Encuestas\Soportes</code>. Al estar después de <code>insertar_json</code> en la
+    misma secuencia sin protección, <strong>nunca llega a ejecutarse cuando el paso 2
+    falla</strong>.
+  </p>
+
+  <h4>Los directorios que usa</h4>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Objeto Oracle</th><th>Ruta en el 65</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">ENCUESTAS_DIR</td><td class="mono">F:\Encuestas</td><td>Descarga y lectura de encuestas</td></tr>
+        <tr><td class="mono">ENCUESTAS_DIR_SOPORTES</td><td class="mono">F:\Encuestas\Soportes</td><td>Imágenes de soporte</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <code>BD-MODELO-19C</code> es un Oracle 19c sobre <strong>Windows</strong>. La unidad
+    <code>F:</code> es la pieza que hoy no responde.
+  </p>
+</section>
+
+<section>
+  <h2>La evidencia del corte</h2>
+  <div class="h2rule"></div>
+  <p>
+    A diferencia de los jobs del <code>.9</code> —que tienen el registro de ejecución
+    apagado—, los del 65 <strong>sí registran cada corrida</strong>. Ahí estaba la respuesta
+    desde el primer día.
+  </p>
+
+  <h4>Corridas del job, del 28 de julio a hoy</h4>
+  <div class="runstrip">
+    <div class="cell s" title="28-jul SUCCEEDED">28</div>
+    <div class="cell f" title="29-jul FAILED">29</div>
+    <div class="cell f" title="30-jul FAILED">30</div>
+    <div class="cell f" title="31-jul FAILED">31</div>
+    <div class="cell f" title="01-ago FAILED">01</div>
+    <div class="cell f" title="02-ago FAILED">02</div>
+    <div class="cell f" title="03-ago FAILED">03</div>
+    <div class="cell s" title="04-ago SUCCEEDED">04</div>
+    <div class="cell s" title="05-ago SUCCEEDED">05</div>
+    <div class="cell s" title="06-ago SUCCEEDED">06</div>
+    <div class="cell s" title="07-ago SUCCEEDED">07</div>
+    <div class="cell s" title="08-ago SUCCEEDED">08</div>
+    <div class="cell s" title="09-ago SUCCEEDED">09</div>
+    <div class="cell s" title="10-ago SUCCEEDED">10</div>
+    <div class="cell s" title="11-ago SUCCEEDED">11</div>
+    <div class="cell s" title="12-ago SUCCEEDED">12</div>
+    <div class="cell s" title="13-ago SUCCEEDED">13</div>
+    <div class="cell s" title="14-ago SUCCEEDED">14</div>
+    <div class="cell st" title="16-ago STOPPED — shutdown de la base">16</div>
+    <div class="cell f" title="17-ago FAILED">17</div>
+    <div class="cell f" title="18-ago FAILED">18</div>
+    <div class="cell f" title="19-ago FAILED">19</div>
+    <div class="cell f" title="20-ago FAILED">20</div>
+    <div class="cell f" title="21-ago FAILED">21</div>
+    <div class="cell f" title="22-ago FAILED">22</div>
+    <div class="cell f" title="23-ago FAILED">23</div>
+    <div class="cell f" title="24-ago FAILED">24</div>
+    <div class="cell f" title="25-ago FAILED">25</div>
+    <div class="cell f" title="26-ago FAILED">26</div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--ok)"></i> SUCCEEDED</span>
+    <span><i style="background:var(--crit)"></i> FAILED</span>
+    <span><i style="background:var(--warn)"></i> STOPPED</span>
+  </div>
+
+  <p>
+    La duración separa dos modos de falla completamente distintos, y esa diferencia es la
+    que permite ubicar el problema:
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Periodo</th><th>Estado</th><th>Duración</th><th class="num">Archivos cargados</th><th>Interpretación</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">29-jul → 03-ago</td>
+          <td><span class="pill bad">FAILED</span></td>
+          <td class="mono">1 a 8 min</td>
+          <td class="num">16 a 21 por día</td>
+          <td>Descargó y cargó, y abortó a mitad del lote</td>
+        </tr>
+        <tr>
+          <td class="mono">04-ago → 14-ago</td>
+          <td><span class="pill ok">SUCCEEDED</span></td>
+          <td class="mono">~3 min</td>
+          <td class="num">2 a 6 por día</td>
+          <td>Funcionamiento normal</td>
+        </tr>
+        <tr>
+          <td class="mono">16-ago 07:03</td>
+          <td><span class="pill warn">STOPPED</span></td>
+          <td class="mono">10 h 16 min</td>
+          <td class="num">4</td>
+          <td>Ejecución manual, cortada por un apagado de la base</td>
+        </tr>
+        <tr>
+          <td class="mono">17-ago → 26-ago</td>
+          <td><span class="pill bad">FAILED</span></td>
+          <td class="mono"><strong>0 a 4 seg</strong></td>
+          <td class="num"><strong>0</strong></td>
+          <td>Muere antes de intentar nada</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code">
+    <div class="cap">Error devuelto todas las noches desde el 16 de agosto</div>
+<pre><span class="bad">ORA-29283: operación de archivo no válida: la ruta de acceso o el archivo no existen [29434]</span>
+ORA-06512: en <span class="k">"SYS.UTL_FILE"</span>, línea 536</pre>
+  </div>
+
+  <p>
+    <code>UTL_FILE</code> solo aparece en el paso 2. Y una corrida de <strong>cero
+    segundos</strong> —registrada el 22 de agosto— significa que ni siquiera hubo un intento
+    de conexión al FTP: cuando el proceso funcionaba tardaba tres minutos.
+  </p>
+</section>
+
+<section>
+  <h2>Qué pasó el 16 de agosto</h2>
+  <div class="h2rule"></div>
+  <p>
+    La secuencia está completa en el registro del scheduler del 65:
+  </p>
+  <ol>
+    <li>A las <strong>07:03</strong> alguien lanzó el proceso a mano, fuera de su horario.</li>
+    <li>Corrió <strong>10 horas y 16 minutos</strong> y cargó 4 archivos —los últimos que
+      entraron a la base: <code>MCGIRALDOGI</code>, <code>LNGUZMANQ</code>,
+      <code>KINDABURD</code> y <code>ALMAZOE</code>.</li>
+    <li>Terminó con <code>ORA-01014: ORACLE shutdown in progress</code>. <strong>La base se
+      estaba apagando.</strong></li>
+    <li>A las <strong>18:20</strong> de ese mismo día, la corrida programada ya falló con
+      <code>ORA-29283</code>, y desde entonces falla todos los días en segundos.</li>
+  </ol>
+  <p>
+    El diagnóstico más probable —y el más frecuente en Oracle sobre Windows— es que
+    <code>F:</code> sea una unidad de red o un recurso compartido que
+    <strong>no sobrevive al reinicio del servicio</strong>: la cuenta con la que arranca
+    Oracle pierde el mapeo y la carpeta deja de existir para la base, aunque siga existiendo
+    para cualquier persona que entre al servidor. La instancia registra un arranque posterior
+    el 22 de agosto a las 21:08, lo que confirma que hubo más de un reinicio en el periodo.
+  </p>
+  <div class="note-box warn">
+    <h4>Lo que falta confirmar, y no se puede desde la base</h4>
+    <p>
+      Quedan dos hipótesis compatibles con la evidencia, y se distinguen con una revisión de
+      sistema operativo, no con SQL:
+    </p>
+    <ul>
+      <li>En <code>BD-MODELO-19C</code>: ¿existe <code>F:\Encuestas</code> y la ve la cuenta
+        de servicio de Oracle?</li>
+      <li>En el FTP: ¿hay archivos en <code>/EncuestasACargar1</code> en este momento?</li>
+    </ul>
+    <p>
+      Si <code>F:</code> está caída, se restaura el acceso y todo lo represado entra en la
+      corrida siguiente. Si <code>F:</code> está bien y el FTP está vacío, el corte es más
+      arriba: nadie está copiando de <code>/Encuestas</code> a <code>/EncuestasACargar1</code>,
+      o la APK dejó de subir.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>¿Se puede resolver?</h2>
+  <div class="h2rule"></div>
+  <p>
+    Sí, y la reparación es pequeña. Lo que sigue es el alcance real de cada capa, verificado
+    consultando privilegios y permisos efectivos en producción.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Capa</th><th>¿Está a nuestro alcance?</th><th>Comprobación</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Jobs del <code>.9</code></td>
+          <td><span class="pill ok">Sí</span></td>
+          <td>El usuario tiene <code>CREATE ANY JOB</code>, <code>ALTER SYSTEM</code> y privilegios equivalentes a DBA</td>
+        </tr>
+        <tr>
+          <td>Lectura del 65</td>
+          <td><span class="pill ok">Sí</span></td>
+          <td>Por <code>DBL_RNIENTREVISTA</code> se consultan jobs, código y tablas</td>
+        </tr>
+        <tr>
+          <td>Salida de red al FTP</td>
+          <td><span class="pill ok">Concedida</span></td>
+          <td><code>CHECK_PRIVILEGE</code> sobre <code>ftp.unidadvictimas.gov.co</code> devuelve permiso</td>
+        </tr>
+        <tr>
+          <td>Carpeta <code>F:\Encuestas</code> en el 65</td>
+          <td><span class="pill bad">No</span></td>
+          <td>Es sistema operativo del 65. Requiere al administrador de ese servidor</td>
+        </tr>
+        <tr>
+          <td>Contenido del FTP</td>
+          <td><span class="pill bad">No</span></td>
+          <td>Requiere acceso al servidor FTP</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <strong>La reparación en sí no es de base de datos ni de código: es restablecer el acceso
+    a <code>F:\Encuestas</code> en el 65.</strong> Es trabajo de media hora para quien
+    administre ese servidor. No hace falta modificar procedimientos, ni reactivar jobs
+    deshabilitados, ni recompilar nada.
+  </p>
+  <p>
+    Una vez restablecido, la verificación es inmediata: al día siguiente a las 18:25 el job
+    debe aparecer en <code>SUCCEEDED</code> y <code>DATA_JSON</code> debe haber recibido
+    filas. Si eso ocurre, el resto de la cadena entrega solo, esa misma noche.
+  </p>
+</section>
+
+<section>
+  <h2>Lo que ya se perdió</h2>
+  <div class="h2rule"></div>
+  <p>
+    Reparar el acceso detiene la pérdida, pero no recupera lo anterior. Estas cifras salen de
+    consultas directas y ninguna había sido reportada antes.
+  </p>
+  <div class="stats">
+    <div class="stat crit">
+      <span class="n">56</span>
+      <span class="l">Encuestas de abril y mayo ingeridas apenas en julio: quedaron fuera de la ventana de 30 días y nunca se convertirán en caracterizaciones</span>
+    </div>
+    <div class="stat crit">
+      <span class="n">912</span>
+      <span class="l">Archivos en <code>ENTREVISTA.DATA_JSON</code> sin procesar, todos anteriores a septiembre de 2025</span>
+    </div>
+    <div class="stat crit">
+      <span class="n">2.237</span>
+      <span class="l">Archivos en <code>DATA_JSON_FAIL</code> acumulados entre 2021 y 2025, que nadie ha revisado</span>
+    </div>
+    <div class="stat">
+      <span class="n">×8</span>
+      <span class="l">Veces que se reinsertó cada archivo: nada marca un archivo como consumido en el 65</span>
+    </div>
+  </div>
+
+  <h3>La ventana de 30 días</h3>
+  <p>
+    <code>SP_ADD_ENCUESTAS_MOVIL</code> filtra con
+    <code>WHERE usu_fechacreacion &gt;= SYSDATE - 30</code>. Un archivo que quede represado
+    más de un mes entra a la base y <strong>jamás se procesa, sin error y sin traza</strong>.
+    Es el mecanismo por el que se perdieron las 56 encuestas de abril y mayo: estuvieron dos
+    y tres meses en el FTP antes de ser recogidas.
+  </p>
+  <p>
+    Esto tiene consecuencia inmediata sobre cualquier plan de recuperación: <strong>volver a
+    subir archivos antiguos al FTP produciría cero filas, en silencio</strong>, y todos
+    concluirían que la recuperación funcionó.
+  </p>
+
+  <h3>La reinserción múltiple</h3>
+  <p>
+    Entre el 22 y el 28 de julio, los mismos 57 archivos entraron a <code>DATA_JSON</code>
+    del 65 <strong>ocho días seguidos</strong>. El proceso no lleva registro de lo ya
+    consumido: los archivos solo dejan de reingresar cuando una persona los borra del FTP.
+    Los cuatro nombres repetidos que el informe de QA identificó del 12 al 16 de agosto son
+    la cola de este mismo fenómeno.
+  </p>
+
+  <h3>El canal offline lleva meses sin entregar</h3>
+  <p>
+    Conviene poner el corte en escala. El estado <code>CERRADA_APP_MOVIL</code> en
+    <code>GIC_HOGAR</code> vale <strong>106 hogares</strong>, exactamente el mismo número
+    medido en mayo, julio y agosto de 2026, mientras la base creció decenas de miles de
+    hogares. En el mismo periodo, la operación en línea registra entre
+    <strong>400 y 590 hogares por día</strong> y de 130 a 180 encuestadores activos.
+  </p>
+  <p>
+    Es decir: <strong>la caracterización no se detuvo. Se detuvo el canal sin conexión</strong>,
+    y su deterioro es anterior a agosto.
+  </p>
+</section>
+
+<section>
+  <h2>El segundo informe: la transferencia 65 → 9</h2>
+  <div class="h2rule"></div>
+  <p>
+    El informe del 12 de agosto reporta una pérdida silenciosa del 24,5 % entre
+    <code>DATA_JSON</code> del 65 y del 9, y la atribuye a colisiones de <code>ID</code>
+    entre secuencias independientes. Se validó punto por punto contra producción.
+    <strong>La medición se reproduce; la causa raíz no se sostiene</strong>, y en el camino
+    aparecieron dos filtros de descarte que no estaban identificados.
+  </p>
+
+  <h3>La medición es correcta y reproducible</h3>
+  <p>
+    Ejecutando su consulta sobre la misma ventana (13 de julio a 12 de agosto) se obtiene
+    <strong>539 / 404 / 135</strong>, prácticamente idéntico a sus 535 / 404 / 131. El método
+    es sólido.
+  </p>
+
+  <h3>Pero el denominador está inflado por la reinserción</h3>
+  <p>
+    Esas 539 filas <strong>no son 539 archivos</strong>. Son 88 archivos distintos, repetidos
+    por el ciclo de reinserción diaria descrito antes:
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Veces que aparece el archivo en el 65</th><th class="num">Archivos</th></tr></thead>
+      <tbody>
+        <tr><td>1 vez</td><td class="num">5</td></tr>
+        <tr><td>2 veces</td><td class="num">4</td></tr>
+        <tr><td>4 veces</td><td class="num">1</td></tr>
+        <tr><td>5 veces</td><td class="num">12</td></tr>
+        <tr><td>6 veces</td><td class="num">27</td></tr>
+        <tr><td>7 veces</td><td class="num">12</td></tr>
+        <tr><td><strong>8 veces</strong></td><td class="num"><strong>27</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Contando archivos distintos, el recorrido real de esa ventana es:</p>
+  <div class="stats">
+    <div class="stat"><span class="n">88</span><span class="l">Archivos distintos enviados desde el 65</span></div>
+    <div class="stat"><span class="n">77</span><span class="l">Llegaron a <code>RNIENTREVISTA.DATA_JSON</code> del 9</span></div>
+    <div class="stat crit"><span class="n">57</span><span class="l">Llegaron a <code>ENTREVISTA.DATA_JSON</code>, que es la que alimenta el procesamiento</span></div>
+  </div>
+  <p>
+    Es decir <strong>31 archivos perdidos, no 131</strong>: once en el salto 65 → 9 y veinte
+    más en el salto interno entre esquemas. La proporción es incluso peor que la reportada
+    —35 % en vez de 24,5 %— pero sobre un volumen mucho menor.
+  </p>
+
+  <h3>La colisión de ID no es la causa</h3>
+  <p>
+    Los hechos que sustentan la hipótesis son ciertos: los <code>ID</code> 40735 y 40755 del
+    65 están ocupados en el 9 por archivos de 2024, y <code>DATA_JSON</code> no tiene clave
+    primaria ni única sobre <code>ID</code>. Pero el código muestra que ese <code>ID</code>
+    nunca se usa.
+  </p>
+  <div class="code">
+    <div class="cap">IMP_65_FT_IMPORT_JSON — el INSERT no incluye la columna ID</div>
+<pre><span class="k">INSERT INTO</span> rnientrevista.data_json (
+    nombre_archivo, valor, fecha_inserccion_registro, procesado)   <span class="note">← sin ID</span>
+<span class="k">VALUES</span> (vnombre_archivo, vcolum_clob, vfecha_inserccion_registro, 1);</pre>
+  </div>
+  <div class="code">
+    <div class="cap">Y un disparador reasigna el ID en cada inserción</div>
+<pre><span class="k">TRIGGER</span> TG_data_json_id_seq
+<span class="k">BEFORE INSERT ON</span> rnientrevista.data_json <span class="k">FOR EACH ROW</span>
+<span class="k">BEGIN</span>
+  :new.id := rnientrevista.data_json_id_seq.nextval;   <span class="note">← siempre secuencia local</span>
+<span class="k">END</span>;</pre>
+  </div>
+  <p>
+    El <code>ID</code> del 9 <strong>siempre</strong> lo pone la secuencia local, sin importar
+    qué traiga el origen. Las coincidencias son casualidad: dos secuencias independientes que
+    en cinco años llegaron a rangos parecidos.
+  </p>
+  <div class="note-box">
+    <h4>La prueba que lo cierra</h4>
+    <p>
+      De los <strong>11 archivos que se perdieron</strong>, los 11 tenían su <code>ID</code> de
+      origen ocupado en el 9. Pero de los <strong>77 que sí llegaron</strong>, los 77
+      <em>también</em> lo tenían ocupado. Si la colisión fuera la causa, no habría llegado
+      ninguno.
+    </p>
+  </div>
+
+  <h3>El descarte por nombre está en los dos procedimientos</h3>
+  <p>
+    El informe lo ubica solo en <code>FT_IMPORT_JSON</code>. También está, con la misma forma,
+    en <code>IMP_65_FT_IMPORT_JSON</code>:
+  </p>
+  <div class="code">
+    <div class="cap">IMP_65_FT_IMPORT_JSON — validación por nombre</div>
+<pre><span class="k">SELECT COUNT</span>(*) <span class="k">INTO</span> v_count <span class="k">FROM</span> rnientrevista.data_json l
+ <span class="k">WHERE</span> l.nombre_archivo = vnombre_archivo;
+
+<span class="k">IF</span> v_count = 0 <span class="k">THEN</span>   <span class="k">INSERT</span> ... ;   v_update := 1;
+<span class="k">ELSE</span>                 v_update := 3;   <span class="note">← "ya existía": ni inserta ni avisa</span>
+<span class="k">END IF</span>;</pre>
+  </div>
+  <p>
+    Esto resuelve además una incógnita abierta: <code>PROCESADO = 3</code> significa
+    «descartado porque el nombre ya existía». Hay 307 filas así en el 65 y 219 en el 9.
+  </p>
+
+  <h3>Dos filtros de descarte que no estaban identificados</h3>
+  <p>
+    El cursor de <code>FT_IMPORT_JSON</code> —el paso interno del servidor 9— trae dos
+    condiciones adicionales que eliminan filas <strong>sin pasar siquiera por el manejo de
+    errores</strong>, de modo que no dejan rastro ni en <code>DATA_JSON_FAIL</code>:
+  </p>
+  <div class="code">
+    <div class="cap">ENTREVISTA.FT_IMPORT_JSON — el cursor</div>
+<pre><span class="k">FROM</span> rnientrevista.data_json t
+<span class="k">WHERE</span> t.fecha_inserccion_registro &gt;= <span class="k">SYSDATE</span> - 200   <span class="bad">← ventana de 200 días</span>
+  <span class="k">AND</span> t.valor <span class="k">IS JSON</span>                              <span class="bad">← si no parsea, nunca se selecciona</span>
+  <span class="k">AND</span> <span class="k">NVL</span>(t.procesado,0) = 0</pre>
+  </div>
+  <ul>
+    <li>
+      <strong><code>IS JSON</code></strong> — un archivo cuyo contenido no sea JSON válido
+      queda en <code>PROCESADO = 0</code> para siempre. Es especialmente relevante porque
+      <code>insertar_json</code> aplica
+      <code>convert(V1,'WE8MSWIN1252','utf8')</code>, que altera cualquier carácter fuera de
+      Latin-1, y porque el cifrado AES entró al flujo el 23 de julio de 2026.
+    </li>
+    <li>
+      <strong>Ventana de 200 días</strong> — lo más antiguo se abandona. Hay 22 filas
+      represadas en <code>PROCESADO = 0</code>, la más vieja del 28 de octubre de 2025, ya
+      fuera de esa ventana.
+    </li>
+  </ul>
+
+  <h3>El CLOB no viaja bien por el dblink</h3>
+  <p>
+    <code>IMP_65_FT_IMPORT_JSON</code> materializa el CLOB remoto con una subconsulta escalar
+    —el propio código lo comenta como «Materializar CLOB localmente»—. Al intentar
+    reproducirlo, Oracle responde:
+  </p>
+  <div class="code">
+    <div class="cap">Al operar sobre el CLOB remoto</div>
+<pre><span class="bad">ORA-22992: cannot use LOB locators selected from remote tables</span></pre>
+  </div>
+  <p>
+    Es la operación más frágil de todo el traslado y es la mejor candidata para explicar los
+    once archivos que quedaron marcados como transferidos sin existir en ninguna tabla. No se
+    aisló fila por fila: se deja señalado como el punto a instrumentar.
+  </p>
+
+  <h3>Sobre la ausencia de restricciones</h3>
+  <p>
+    La consulta a <code>ALL_CONSTRAINTS</code> con <code>CONSTRAINT_TYPE IN ('P','U')</code>
+    devuelve vacío, y eso es correcto. Pero <strong>sí existe unicidad</strong>, implementada
+    como índice y no como restricción, por lo que esa consulta nunca la muestra:
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Índice</th><th>Tabla</th><th>Expresión</th><th>Creado</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">UX_DATA_JSON_NOMBRE</td><td class="mono">ENTREVISTA.DATA_JSON</td><td class="mono">NOMBRE_ARCHIVO</td><td class="mono">2026-05-19</td></tr>
+        <tr><td class="mono">UK_DATA_JSON_2026</td><td class="mono">RNIENTREVISTA.DATA_JSON</td><td class="mono">CASE WHEN nombre LIKE '%_2026%'</td><td class="mono">2026-05-19</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    El segundo es llamativo: impone unicidad <strong>solo sobre los archivos de 2026</strong>.
+    Ambos se crearon el mismo día en que se reescribió <code>IMP_65_FT_IMPORT_JSON</code> y se
+    creó <code>DATA_JSON_ERROR_LOG</code> —que sigue con cero filas—.
+  </p>
+
+  <div class="note-box warn">
+    <h4>Qué queda abierto</h4>
+    <p>
+      Los once archivos perdidos no están en <code>ENTREVISTA.DATA_JSON</code>, ni en
+      <code>DATA_JSON_FAIL</code>, ni en <code>GIC_ENCUESTA_MOVIL</code>. Desaparecieron sin
+      dejar registro, y <code>DATA_JSON_ERROR_LOG</code> —que debía capturarlos— está vacía.
+      Aislar la falla exacta requiere instrumentar una corrida controlada del traslado, con
+      registro por fila. Es el trabajo que sigue.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>Cómo mejorarlo</h2>
+  <div class="h2rule"></div>
+  <p>
+    Ordenado por urgencia y por costo. Los cuatro primeros puntos son de días; los tres
+    últimos son decisiones de fondo.
+  </p>
+
+  <div class="rec">
+    <div class="idx">01</div>
+    <div class="body">
+      <strong>Restablecer <code>F:\Encuestas</code> en el 65</strong>
+      <p>
+        Verificar que la carpeta existe y que la cuenta de servicio de Oracle la ve. Si es
+        una unidad mapeada, reemplazarla por una ruta UNC persistente para que sobreviva a
+        los reinicios. Es la reparación del incidente.
+      </p>
+      <span class="who">Administrador del servidor 65</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">02</div>
+    <div class="body">
+      <strong>Dejar de borrar <code>/EncuestasACargar1</code> a las 24 horas</strong>
+      <p>
+        Es la recomendación del informe de QA y es correcta: esa ventana nunca garantizó que
+        el archivo se hubiera procesado. Conservar todo hasta que exista una confirmación de
+        carga verificable.
+      </p>
+      <span class="who">Operación</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">03</div>
+    <div class="body">
+      <strong>Alarma sobre el registro de corridas del 65</strong>
+      <p>
+        Este job lleva once días fallando en un segundo y la evidencia estaba disponible
+        desde la primera noche. Una consulta diaria a
+        <code>ALL_SCHEDULER_JOB_RUN_DETAILS</code> con aviso por correo convierte once días
+        de pérdida en una hora.
+      </p>
+      <span class="who">Base de datos</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">04</div>
+    <div class="body">
+      <strong>Encender el registro de los jobs del <code>.9</code></strong>
+      <p>
+        Los cinco jobs de la cadena en el <code>.9</code> tienen <code>LOGGING_LEVEL = OFF</code>.
+        No existe historial de ejecución: el <code>FAILURE_COUNT</code> que se consulta es un
+        contador acumulado desde 2021, no una bitácora. Encenderlo es un cambio reversible y
+        sin riesgo, y es lo que permitiría auditar la cadena completa.
+      </p>
+      <span class="who">Base de datos</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">05</div>
+    <div class="body">
+      <strong>Que <code>insertar_json</code> no pierda el lote entero por un archivo</strong>
+      <p>
+        Hoy no tiene manejo de excepciones: el primer archivo que falle aborta el
+        procesamiento de todos los demás. Y como borra cada archivo apenas lo lee, lo ya
+        procesado desaparece y lo pendiente queda sin tocar. Un bloque por archivo, con
+        registro del que falló en <code>DATA_JSON_ERROR_LOG</code> —que existe desde mayo de
+        2026 y sigue con cero filas—, resuelve las dos cosas.
+      </p>
+      <span class="who">Desarrollo del legacy</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">06</div>
+    <div class="body">
+      <strong>Dejar de identificar los archivos por su posición en un <code>ls -l</code></strong>
+      <p>
+        <code>SUBSTR(V0,50)</code> depende del ancho de la columna de tamaño, que
+        <code>ls</code> calcula según el archivo más grande del listado. Un archivo
+        suficientemente grande desplaza todos los nombres y hace fallar el lote completo.
+        Conviene listar el directorio local en lugar de interpretar la salida del FTP.
+      </p>
+      <span class="who">Desarrollo del legacy</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">07</div>
+    <div class="body">
+      <strong>Revisar la ventana de 30 días y el control de duplicados</strong>
+      <p>
+        La ventana descarta en silencio todo lo capturado hace más de un mes; debería ser un
+        parámetro, no una constante, y lo que quede fuera debería registrarse. En paralelo,
+        el control de duplicados por nombre de archivo —dos índices únicos añadidos en mayo
+        de 2026— convierte una colisión de nombres en un lote perdido, porque no hay manejo
+        de excepciones que lo absorba.
+      </p>
+      <span class="who">Desarrollo del legacy · decisión funcional</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">08</div>
+    <div class="body">
+      <strong>Instrumentar el traslado 65 → 9 fila por fila</strong>
+      <p>
+        Es el único punto donde hoy no sabemos qué pasa: once archivos marcados como
+        transferidos no existen en ninguna tabla y <code>DATA_JSON_ERROR_LOG</code> está
+        vacía. Una corrida controlada que registre cada fila —incluidos los descartes por
+        <code>IS JSON</code> y por ventana de 200 días, que hoy no pasan por el manejo de
+        errores— aislaría la falla en una sesión.
+      </p>
+      <span class="who">Base de datos · prioritario</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">09</div>
+    <div class="body">
+      <strong>Que ningún descarte sea silencioso</strong>
+      <p>
+        Hoy hay al menos cuatro formas de que un archivo desaparezca sin dejar rastro: nombre
+        repetido (<code>PROCESADO = 3</code>), contenido que no parsea como JSON, antigüedad
+        mayor a 200 días, y captura de más de 30 días en el procesamiento posterior. Ninguna
+        genera alerta. Cada una debería dejar una fila con su motivo, y esas filas deberían
+        reportarse a la operación, no quedarse en la base.
+      </p>
+      <span class="who">Desarrollo del legacy</span>
+    </div>
+  </div>
+
+  <div class="rec">
+    <div class="idx">10</div>
+    <div class="body">
+      <strong>Sustituir el eslabón por un cargador con bitácora</strong>
+      <p>
+        A mediano plazo, el paso FTP → base no debería vivir como Java dentro de Oracle
+        leyendo la salida de un <code>ls</code>. Un cargador externo que registre qué hizo
+        con cada archivo, que no borre el origen hasta confirmar la escritura y que verifique
+        con una consulta lo que acaba de insertar, elimina de un golpe los seis modos de
+        falla descritos aquí.
+      </p>
+      <span class="who">Arquitectura</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Precisiones sobre el informe de QA</h2>
+  <div class="h2rule"></div>
+  <p>
+    El informe del 26 de agosto identificó correctamente que la cadena estaba cortada, fechó
+    el corte con precisión y documentó el método de forma reproducible, que es lo que permitió
+    llegar hasta acá. Tres precisiones sobre el diagnóstico:
+  </p>
+  <ul>
+    <li>
+      <strong>El job señalado no es el que falla.</strong> El
+      <code>JOB_PCD_FN_FTP_PC_IJ</code> deshabilitado desde 2024 es una copia inactiva en el
+      <code>.9</code>. El homónimo del 65 está encendido y es el que opera. El inventario de
+      jobs se hizo sobre <code>ALL_SCHEDULER_JOBS</code> sin dblink, que solo describe el
+      <code>.9</code>.
+    </li>
+    <li>
+      <strong>El paso 3 sí está automatizado.</strong> No requiere que nadie lo ejecute a
+      mano. La ejecución manual del 16 de agosto fue puntual, y de hecho coincidió con el
+      apagado de la base que originó el corte.
+    </li>
+    <li>
+      <strong>«El resto de la cadena funciona» es cierto, pero no por la razón indicada.</strong>
+      Un <code>FAILURE_COUNT</code> bajo no acredita salud en esta base: los procedimientos
+      confirman internamente y capturan las excepciones sin relanzarlas, de modo que un job
+      puede terminar en <code>SUCCEEDED</code> sin haber escrito una fila. Lo que sí acredita
+      salud es el cruce entre corridas y filas efectivamente insertadas, que es como se ubicó
+      el corte.
+    </li>
+  </ul>
+  <p>
+    Sobre las once encuestas de Venadillo: antes de darlas por perdidas conviene barrer toda
+    la ruta de preparación —<code>DATA_JSON</code>, <code>GIC_ENCUESTA_MOVIL</code>,
+    <code>GIC_PERSONAS_ENCUESTA</code>, <code>DATA_JSON_FAIL</code>, los históricos— y no solo
+    <code>GIC_PERSONA</code>. Hay estados de hogar que contienen trabajo de campo terminado y
+    que ningún reporte muestra; si las encuestas están ahí, se recuperan sin volver al
+    municipio.
+  </p>
+</section>
+
+<section>
+  <h2>Cómo reproducir este diagnóstico</h2>
+  <div class="h2rule"></div>
+  <p>
+    Todas las consultas son de solo lectura y se ejecutan desde el <code>.9</code>. El sufijo
+    <code>@DBL_RNIENTREVISTA</code> las dirige al 65.
+  </p>
+  <div class="code">
+    <div class="cap">1 · El job real y su programación</div>
+<pre><span class="k">SELECT</span> owner, job_name, enabled, state, repeat_interval,
+       last_start_date, run_count, failure_count
+<span class="k">FROM</span>   all_scheduler_jobs@DBL_RNIENTREVISTA
+<span class="k">WHERE</span>  job_name = <span class="k">'JOB_PCD_FN_FTP_PC_IJ'</span>;</pre>
+  </div>
+  <div class="code">
+    <div class="cap">2 · Corridas y error exacto</div>
+<pre><span class="k">SELECT</span> status, actual_start_date, run_duration, error#,
+       <span class="k">SUBSTR</span>(additional_info,1,200)
+<span class="k">FROM</span>   all_scheduler_job_run_details@DBL_RNIENTREVISTA
+<span class="k">WHERE</span>  job_name = <span class="k">'JOB_PCD_FN_FTP_PC_IJ'</span>
+<span class="k">ORDER BY</span> actual_start_date <span class="k">DESC</span>;</pre>
+  </div>
+  <div class="code">
+    <div class="cap">3 · Cruce entre corridas y filas realmente cargadas</div>
+<pre><span class="k">SELECT</span> <span class="k">TO_CHAR</span>(d.actual_start_date,<span class="k">'YYYY-MM-DD'</span>) dia, d.status, d.run_duration,
+       (<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> rnientrevista.data_json@DBL_RNIENTREVISTA j
+         <span class="k">WHERE</span> <span class="k">TRUNC</span>(j.fecha_inserccion_registro) = <span class="k">TRUNC</span>(d.actual_start_date)) filas
+<span class="k">FROM</span>   all_scheduler_job_run_details@DBL_RNIENTREVISTA d
+<span class="k">WHERE</span>  d.job_name = <span class="k">'JOB_PCD_FN_FTP_PC_IJ'</span>
+<span class="k">ORDER BY</span> d.actual_start_date <span class="k">DESC</span>;</pre>
+  </div>
+  <div class="code">
+    <div class="cap">4 · Estado de lo pendiente y de lo fallido</div>
+<pre><span class="k">SELECT</span> procesado, <span class="k">COUNT</span>(*), <span class="k">MIN</span>(fecha_inserccion_registro), <span class="k">MAX</span>(fecha_inserccion_registro)
+<span class="k">FROM</span>   entrevista.data_json <span class="k">GROUP BY</span> procesado;
+
+<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> entrevista.data_json_fail;
+<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> rnientrevista.data_json_error_log;</pre>
+  </div>
+  <div class="code">
+    <div class="cap">5 · El código, tal como está hoy en producción</div>
+<pre><span class="k">SELECT</span> line, text <span class="k">FROM</span> all_source@DBL_RNIENTREVISTA
+<span class="k">WHERE</span>  name <span class="k">IN</span> (<span class="k">'PCD_FN_FTP_PC_IJ'</span>,<span class="k">'INSERTAR_JSON'</span>,<span class="k">'FN_EXEC_FTP_JSFULL_WRAP'</span>)
+<span class="k">ORDER BY</span> name, line;</pre>
+  </div>
+</section>
+
+<footer class="doc">
+  <p>
+    Documento elaborado a partir de consultas <code>SELECT</code> ejecutadas el 27 de agosto
+    de 2026 contra <code>RNIENTREVISTA@30.0.1.9/ENTREVISTARN</code> y, por el dblink
+    <code>DBL_RNIENTREVISTA</code>, contra <code>BD-MODELO-19C</code>. No se modificó ningún
+    dato, procedimiento ni job. Las dos verificaciones pendientes —la carpeta
+    <code>F:\Encuestas</code> en el 65 y el contenido de <code>/EncuestasACargar1</code>—
+    corresponden al sistema operativo y al servidor FTP, fuera del alcance de una consulta
+    a la base.
+  </p>
+</footer>
+
+</div>
