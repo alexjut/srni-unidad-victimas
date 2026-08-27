@@ -16,10 +16,10 @@ y el **Panel de Control** web.
 
 - **3 sesiones**, jornada de la mañana (8:00 a.m. – 12:00 m.), dictadas por
   **Jorge** (calidad), **Javier Aguilar** (APK) y **Brandon** (panel).
-  - **Sesión 1 · Día 1** — Equipo de la Subdirección Red Nacional de Información.
-  - **Sesión 2 · Día 3** — Enlaces territoriales, Grupo A (Caribe, Antioquia y
+  - **Sesión 1 · martes 1 de septiembre** — Equipo de la Subdirección Red Nacional de Información.
+  - **Sesión 2 · jueves 3 de septiembre** — Enlaces territoriales, Grupo A (Caribe, Antioquia y
     Nororiente): **16 participantes**.
-  - **Sesión 3 · Día 8** — Enlaces territoriales, Grupo B (Centro, Suroccidente y
+  - **Sesión 3 · martes 8 de septiembre** — Enlaces territoriales, Grupo B (Centro, Suroccidente y
     Orinoquía): **14 participantes**.
 - **Temario** en dos bloques por sesión: **Bloque A — APK** (instalación,
   búsqueda, excepción de vigencia, hogar, instrumento, offline, sincronización) y
