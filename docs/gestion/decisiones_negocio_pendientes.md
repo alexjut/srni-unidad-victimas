@@ -155,3 +155,58 @@ Los dos catálogos tienen 14 hechos, pero el de Oracle está congelado en 2015 y
 
 *Marca tus decisiones (o me las dices) y las aplico en una pasada: fixture → cargar_perfil →
 exportar_a_mobile + las entradas de crosswalk que correspondan. Todo sigue DRY-RUN.*
+
+---
+
+## 6. Cuántas cuentas pueden autorizar excepciones de vigencia (1-sep-2026)
+
+**Estado:** 🟠 abierta · decisión de operación, no técnica.
+
+### El dato, medido en producción el 1-sep-2026
+
+| Perfil | Buscar RNI | Caracterizar | Reportes | Administrar | **Autorizar excepciones** | Usuarios activos |
+|---|:--:|:--:|:--:|:--:|:--:|---:|
+| ADMINISTRADOR | ✔ | ✔ | ✔ | ✔ | **✔** | 1 |
+| COORDINADOR | ✔ | ✔ | ✔ | — | **✔** | 1 |
+| SUPERVISOR | ✔ | — | ✔ | — | **✔** | 1 |
+| DOCUMENTADOR | ✔ | — | ✔ | — | — | 1 |
+| ENCUESTADOR | ✔ | ✔ | — | — | — | **1.157** |
+| | | | | | **3 cuentas** | **1.161** |
+
+**Tres personas pueden autorizar una excepción para 1.157 encuestadores.** Y las tres son
+cuentas nominales, no un rol con varios titulares.
+
+### Por qué importa
+
+La excepción de vigencia es de un solo uso y se consume al finalizar la encuesta. Si una
+encuestadora en campo se topa con una ficha vigente, la caracterización **se detiene** hasta
+que una de esas tres personas la autorice desde el panel. Con 1.157 encuestadores en 21
+direcciones territoriales, el cuello es previsible: no es un problema de software, es de
+disponibilidad humana.
+
+### La pregunta que hay que responder
+
+1. **¿Cuántas cuentas con permiso de autorizar se necesitan**, y en qué nivel: nacional,
+   por dirección territorial, o por grupo de trabajo?
+2. **¿Quién las tiene?** Hoy son tres cuentas nominales; si una persona sale de vacaciones,
+   su capacidad de autorizar se va con ella.
+3. **¿Hay un tiempo de respuesta esperado?** Una encuestadora en zona rural de difícil acceso
+   no puede esperar dos días con la visita en curso.
+
+### Un hallazgo colateral: separación de funciones
+
+El permiso `PuedeAutorizarExcepciones` se creó con un criterio explícito, escrito en el
+código: *«quien autoriza el salto de un control no puede ser el mismo que lo ejecuta en
+campo»*. Por eso `caracterizar` no satisface ese permiso.
+
+**El perfil COORDINADOR tiene los dos**: `caracterizar` y `autorizar_excepciones`. Puede
+autorizarse a sí mismo una excepción y ejecutarla. No es un defecto de código —el código hace
+lo que le pidieron— sino una configuración de perfil que contradice el criterio con el que se
+diseñó el control.
+
+Quedó marcado como `xfail` en `apps/autenticacion/tests/test_matriz_permisos.py`: el día que
+se separen las funciones, la prueba pasa sola y avisa. Mientras tanto deja constancia de que
+el estado actual es conocido y no accidental.
+
+**Decide:** Javier con la Subdirección. No requiere desarrollo salvo que se decida crear
+perfiles nuevos.

@@ -809,6 +809,13 @@ Se recibio informe de QA con 23 hallazgos (3 criticos, 13 medios, 4 bajos). A la
 
 H-003, H-005, H-006, H-015, H-016, H-018 — solicitada ampliacion a QA.
 
+> **Actualizacion 2026-09-01.** Revisado el repositorio completo: de estos seis no existe
+> ninguna descripcion, pantalla, rol ni paso de reproduccion. Se reitero la solicitud a QA
+> por escrito (`docs/gestion/correo_qa_hallazgos_sin_detalle.md`), proponiendo como
+> alternativa darlos por superados por el informe v2 —cuyos doce hallazgos ya estan
+> cerrados— con constancia de que se cierran por falta de detalle y no por verificacion.
+> Si no hay respuesta en una semana, se cierran asi.
+
 ### Semaforización actualizada
 
 | Severidad | Total | Corregidos frontend | Pendiente backend | Sin accion |

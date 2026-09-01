@@ -14,10 +14,10 @@ son el jueves 3 y el martes 8.
 
 | Componente | Suites | Pruebas | Resultado | Duración |
 |---|---:|---:|---|---:|
-| **Backend** (Django 5.2) | 59 archivos | **976** | ✅ pasan · 1 xfail · 0 fallos | 70 s |
+| **Backend** (Django 5.2) | 60 archivos | **1.037** | ✅ pasan · 2 xfail · 0 fallos | 104 s |
 | **App móvil** (Expo/RN) | 12 | **148** | ✅ pasan · 0 fallos | 8 s |
 | **Panel web** (React) | 3 archivos | — | ⚠️ no ejecutable en esta máquina | — |
-| **Total verificado** | | **1.124** | **0 fallos** | |
+| **Total verificado** | | **1.185** | **0 fallos** | |
 
 El panel web no tiene dependencias instaladas localmente (`node_modules` vacío): sus tres
 archivos de prueba no se pudieron correr desde aquí. Es el frente de Brandon y se verifica en
@@ -69,11 +69,11 @@ el padrón.
 
 | Pendiente | Naturaleza |
 |---|---|
-| **Matriz de validación de permisos sin diligenciar** — 4 roles, 17 pantallas, ninguna comprobada | Verificación |
-| **Seis hallazgos de QA v1 sin descripción** (H-003, H-005, H-006, H-015, H-016, H-018) — se pidió ampliación y nunca llegó | Bloqueado por QA |
-| Cobertura de pruebas mínima: 3 archivos para 5.921 líneas | Desarrollo |
+| ~~Matriz de validación de permisos sin diligenciar~~ | ✅ **Resuelto 1-sep** — automatizada: 61 comprobaciones sobre los 5 perfiles reales |
+| **Seis hallazgos de QA v1 sin descripción** (H-003, H-005, H-006, H-015, H-016, H-018) | 🟠 Escalado por escrito el 1-sep; si no hay respuesta en una semana se cierran como superados por el v2 |
+| Cobertura de pruebas del panel: 3 archivos para 5.921 líneas (el control de acceso ya está cubierto desde el backend) | Desarrollo · Brandon |
 | Dependencias no instaladas para correr sus pruebas fuera del entorno de Brandon | Entorno |
-| **Cuántas cuentas con permiso de autorizar** se necesitan para 1.158 encuestadoras — hoy hay 1 coordinador, 1 supervisor y 1 admin | **Definición de operación** |
+| **Cuántas cuentas con permiso de autorizar** — medido: **3 cuentas para 1.157 encuestadores**. Ficha de decisión en `decisiones_negocio_pendientes.md` §6 | **Definición de operación** |
 | `H-022` (admin de Django mezcla idiomas) · usuario `QATEST01` sin eliminar · responsive sin revisar | Menores |
 
 > **Verificado el 1-sep:** el «bug conocido» del 403 para el Supervisor **ya no existe**
