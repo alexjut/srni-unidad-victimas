@@ -64,7 +64,7 @@ td.mono,.mono{ font-variant-numeric:tabular-nums; }
 .pill{ display:inline-block; font-size:9.6px; font-weight:800; padding:2px 7px; border-radius:20px; background:var(--marca); color:var(--marca-ink); letter-spacing:.03em; }
 
 /* ── Facilitadores ── */
-.facs{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:8px 0; }
+.facs{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0; }
 .fac{ border-left:3px solid var(--marca); background:var(--panel); padding:8px 11px; border-radius:0 8px 8px 0; }
 .fac b{ font-size:12px; } .fac span{ display:block; font-size:10.5px; color:var(--ink-3); }
 
@@ -94,6 +94,13 @@ table,.ses,.bloque,.cronograma,.facs{ break-inside:avoid; }
 tr{ break-inside:avoid; }
 
 .pie{ margin-top:14px; padding-top:8px; border-top:1px solid var(--line); font-size:9.8px; color:var(--ink-3); display:flex; justify-content:space-between; }
+
+.creditos{ margin:14px 0 6px; padding:10px 13px; border-left:3px solid var(--marca);
+           background:var(--panel); border-radius:0 8px 8px 0; font-size:10.8px;
+           color:var(--ink-2); line-height:1.6; }
+.creditos > b:first-child{ display:block; font-family:var(--display); font-size:11.6px;
+           color:var(--ink); margin-bottom:4px; }
+.creditos span{ display:block; margin-top:5px; color:var(--ink-3); font-style:italic; }
 </style>
 </head>
 <body>
@@ -102,9 +109,9 @@ tr{ break-inside:avoid; }
 <div class="cabecera">
   <div class="eyebrow">Subdirección Red Nacional de Información · UARIV</div>
   <h1>Plan de Capacitación<br>SICAV Móvil (APK) y Panel de Control</h1>
-  <div class="sub">Sistema de Caracterización de Víctimas — SRNI · Contrato 2226-2026</div>
+  <div class="sub">Sistema de Caracterización de Víctimas — SRNI</div>
   <div class="meta-portada">
-    <div><b>Facilitadores:</b> Jorge (Calidad/QA) · Javier Aguilar (Arquitectura y desarrollo) · Brandon (Panel web)</div>
+    <div style="grid-column:1 / -1"><b>Facilitadores:</b> Alexandra María López Sevillano (Dirección técnica SRNI) · Jorge Cardona Gregory (Calidad/QA) · Javier Aguilar Castro (Caracterización — arquitectura y desarrollo) · Brandon Esteven Niño Quiroga (Panel web)</div>
     <div><b>Modalidad:</b> Virtual asistida · jornada de la mañana (8:00 a.m. – 12:00 m.)</div>
     <div><b>Sesiones:</b> 3 · 1, 3 y 8 de septiembre de 2026</div>
     <div><b>Dirigido a:</b> Equipo SRNI y 30 enlaces de las direcciones territoriales</div>
@@ -149,9 +156,10 @@ Subdirección Red Nacional de Información.</div>
 
 <h3>Facilitadores y responsabilidades</h3>
 <div class="facs">
-  <div class="fac"><b>Javier A. Aguilar</b><span>Arquitectura y desarrollo. Conduce la APK: búsqueda, hogar, instrumento, offline y sincronización.</span></div>
-  <div class="fac"><b>Brandon</b><span>Panel de Control (web): acceso, autorizaciones, hogares, encuestas y reportes.</span></div>
-  <div class="fac"><b>Jorge</b><span>Calidad. Buenas prácticas, manejo de incidencias, versión del aplicativo y cierre.</span></div>
+  <div class="fac"><b>Alexandra María López Sevillano</b><span>Dirección técnica de la Red Nacional de Información. Apertura, encuadre institucional y validación de los contenidos.</span></div>
+  <div class="fac"><b>Javier Alexander Aguilar Castro</b><span>Referente de caracterización — arquitectura y desarrollo. Conduce la APK: búsqueda, hogar, instrumento, offline y sincronización.</span></div>
+  <div class="fac"><b>Brandon Esteven Niño Quiroga</b><span>Panel de Control (web): acceso, autorizaciones, hogares, encuestas y reportes.</span></div>
+  <div class="fac"><b>Jorge Cardona Gregory</b><span>Calidad. Buenas prácticas, manejo de incidencias, versión del aplicativo y cierre.</span></div>
 </div>
 
 <h2><span class="n">3.</span> Agenda de la jornada (aplica a las tres sesiones)</h2>
@@ -221,28 +229,37 @@ Subdirección Red Nacional de Información.</div>
 <div class="page-break"></div>
 
 <h2><span class="n">6.</span> Participantes — Sesión 1 · Martes 1 de septiembre · Equipo SRNI</h2>
-<p class="lead">Equipo técnico y funcional de la Subdirección. Es la jornada de alistamiento:
-los mismos que dictan las sesiones territoriales recorren primero la herramienta completa.</p>
+<p class="lead">Es la jornada de alistamiento: el equipo que construyó las dos herramientas
+y que dicta las sesiones territoriales recorre primero el recorrido completo, en el mismo
+formato en que lo verán los enlaces.</p>
 <table>
-  <thead><tr><th>#</th><th>Rol en el proyecto</th><th>Nombre</th><th>De qué responde en la jornada</th><th>Correo</th></tr></thead>
+  <thead><tr><th>#</th><th>Rol</th><th>Nombre</th><th>De qué responde en la jornada</th><th>Correo</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td>Arquitectura y desarrollo — backend, móvil e infraestructura</td>
+    <tr><td>1</td><td>Dirección técnica — Red Nacional de Información</td>
+        <td>Alexandra María López Sevillano</td>
+        <td>Apertura, encuadre institucional y validación de contenidos</td>
+        <td class="correo">[pendiente — correo institucional]</td></tr>
+    <tr><td>2</td><td>Referente de caracterización — arquitectura y desarrollo (backend, móvil e infraestructura)</td>
         <td>Javier Alexander Aguilar Castro</td>
         <td>Conduce el Bloque A (aplicación móvil)</td>
         <td class="correo">ingaguilarsistemas@gmail.com</td></tr>
-    <tr><td>2</td><td>Desarrollo frontend — Panel de Control</td>
-        <td>Brandon</td>
+    <tr><td>3</td><td>Desarrollo frontend — Panel de Control</td>
+        <td>Brandon Esteven Niño Quiroga</td>
         <td>Conduce el Bloque B (panel web)</td>
         <td class="correo">[pendiente — correo institucional]</td></tr>
-    <tr><td>3</td><td>Documentación</td>
-        <td>Karen</td>
-        <td>Material de apoyo, manuales y registro de la jornada</td>
-        <td class="correo">[pendiente — correo institucional]</td></tr>
     <tr><td>4</td><td>Calidad / QA</td>
-        <td>Jorge L. Cardona Gregory</td>
+        <td>Jorge Cardona Gregory</td>
         <td>Buenas prácticas, manejo de incidencias y cierre</td>
         <td class="correo">[pendiente — correo institucional]</td></tr>
-    <tr><td>5</td><td>Supervisión SRNI</td>
+    <tr><td>5</td><td>Documentación</td>
+        <td>Karen Liseth Serna González</td>
+        <td>Material de apoyo, manuales y registro de la jornada</td>
+        <td class="correo">[pendiente — correo institucional]</td></tr>
+    <tr><td>6</td><td>Seguridad de la información</td>
+        <td>Nixon [apellidos pendientes]</td>
+        <td>Tratamiento de datos personales y buenas prácticas de seguridad</td>
+        <td class="correo">[pendiente — correo institucional]</td></tr>
+    <tr><td>7</td><td>Supervisión SRNI</td>
         <td>Oscar Andrés Manosalva García</td>
         <td>Acompañamiento y aprobación</td>
         <td class="correo">[pendiente — correo institucional]</td></tr>
@@ -301,9 +318,23 @@ identifica a cada persona por su correo institucional.</p>
 </table>
 
 <div class="nota"><b>Sesión 1 · Martes 1 de septiembre — Equipo de la Subdirección Red Nacional de Información.</b>
-La primera jornada es para el equipo interno SRNI (referentes técnicos y funcionales de la
-Subdirección). El listado nominal de asistentes lo confirma la Subdirección; los facilitadores
-son Javier, Brandon y Jorge.</div>
+La primera jornada es la de alistamiento del equipo interno: el listado nominal está en la
+sección 6. Es también el ensayo del formato con el que se dictan las dos jornadas
+territoriales.</div>
+
+
+<div class="creditos">
+  <b>Equipo que hizo posible el sistema.</b>
+  <b>Alexandra María López Sevillano</b> — dirección técnica de la Red Nacional de Información ·
+  <b>Javier Alexander Aguilar Castro</b> — referente de caracterización, arquitectura y desarrollo ·
+  <b>Brandon Esteven Niño Quiroga</b> — desarrollo del Panel de Control ·
+  <b>Jorge Cardona Gregory</b> — calidad y aseguramiento ·
+  <b>Karen Liseth Serna González</b> — documentación ·
+  <b>Nixon</b> — seguridad de la información ·
+  <b>Oscar Andrés Manosalva García</b> — supervisión.
+  <span>SICAV Móvil y el Panel de Control no son un producto comprado: los construyó este
+  equipo dentro de la Subdirección.</span>
+</div>
 
 <div class="pie">
   <span>Subdirección Red Nacional de Información · Unidad para las Víctimas</span>
