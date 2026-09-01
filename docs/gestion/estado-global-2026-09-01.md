@@ -69,8 +69,22 @@ el padrón.
 
 | Pendiente | Naturaleza |
 |---|---|
+| **Matriz de validación de permisos sin diligenciar** — 4 roles, 17 pantallas, ninguna comprobada | Verificación |
+| **Seis hallazgos de QA v1 sin descripción** (H-003, H-005, H-006, H-015, H-016, H-018) — se pidió ampliación y nunca llegó | Bloqueado por QA |
+| Cobertura de pruebas mínima: 3 archivos para 5.921 líneas | Desarrollo |
 | Dependencias no instaladas para correr sus pruebas fuera del entorno de Brandon | Entorno |
 | **Cuántas cuentas con permiso de autorizar** se necesitan para 1.158 encuestadoras — hoy hay 1 coordinador, 1 supervisor y 1 admin | **Definición de operación** |
+| `H-022` (admin de Django mezcla idiomas) · usuario `QATEST01` sin eliminar · responsive sin revisar | Menores |
+
+> **Verificado el 1-sep:** el «bug conocido» del 403 para el Supervisor **ya no existe**
+> —`PuedeConsultarOperacion` da lectura a supervisión y reserva la escritura a campo—, y
+> `backfill_porcentaje` resultó ser un **no-op**: producción tiene 4 sesiones y ninguna
+> cambiaría. Ambos estaban documentados como pendientes y no lo eran.
+
+> **El dato que enmarca todo el frente web:** producción tiene **7 hogares y 4 sesiones**.
+> El panel está construido y es correcto, pero **no se ha ejercitado con datos reales**
+> porque ninguna encuestadora ha entrado todavía. El riesgo no es lo que muestra: es que
+> nada se ha probado a volumen.
 
 ### 3.3 Backend y datos
 

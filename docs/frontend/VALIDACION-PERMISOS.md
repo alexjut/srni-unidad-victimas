@@ -1,8 +1,10 @@
 # Validacion de permisos — SRNI Panel Web
 
-> Archivo personal. No commitear.
-> Fecha de los cambios validados: 2026-07-02
+> Matriz de validación de permisos por rol. **Sin diligenciar** — las columnas
+> «Resultado real» siguen vacías y los cuatro usuarios en `PENDIENTE`.
+> Última revisión del documento: **2026-09-01**.
 > Frontend: http://localhost:5173 | Backend: http://localhost:8001
+> En producción: https://caracterizacion.unidadvictimas.gov.co
 
 ## Como usar este archivo
 
@@ -60,13 +62,19 @@
 | 4 | /supervision carga | Ir a `/supervision` | Carga con datos de encuestadores | |
 | 5 | /auditoria bloqueada | Entrar a `http://localhost:5173/auditoria` | Pantalla "Acceso restringido" | |
 | 6 | /usuarios bloqueada | Entrar a `http://localhost:5173/usuarios` | Pantalla "Acceso restringido" | |
-| 7 | Hogares — ver que pasa | Ir a `/hogares` | Carga tabla (o error 403 del backend — bug conocido) | |
-| 8 | Encuestas — ver que pasa | Ir a `/encuestas` | Carga tabla (o error 403 del backend — bug conocido) | |
+| 7 | Hogares carga en solo lectura | Ir a `/hogares` | Carga la tabla; no debe permitir crear ni editar | |
+| 8 | Encuestas carga en solo lectura | Ir a `/encuestas` | Carga la tabla; no debe permitir crear ni editar | |
+| 9 | Reportes carga | Ir a `/reportes` | Carga con datos | |
 
-> BUG CONOCIDO: el backend devuelve 403 en Hogares, Encuestas, Victimas detalle y Reportes
-> para el Supervisor porque usa el flag `puede_caracterizar` que el Supervisor no tiene.
-> El frontend muestra la pagina pero las llamadas API fallan. Esto es pendiente con Javier.
-> Anotar en resultado si aparece error o tabla vacia.
+> ✅ **CORREGIDO (verificado el 2026-09-01).** El 403 que este documento reportaba para el
+> Supervisor en Hogares, Encuestas y Reportes **ya no ocurre**. El backend dejó de exigir
+> `puede_caracterizar` para lectura: existe la clase `PuedeConsultarOperacion`
+> (`apps/autenticacion/permissions.py`), que permite **lectura** a los roles de campo,
+> supervisión y administración, y reserva la **escritura** a quien puede caracterizar.
+> Está aplicada en `hogares/views.py`, `encuestas/views.py` y `reportes/views.py`.
+>
+> Lo que esta validación debe comprobar ahora es lo contrario de antes: que el Supervisor
+> **sí ve** esas tres pantallas y que **no puede escribir** en ellas.
 
 ---
 
