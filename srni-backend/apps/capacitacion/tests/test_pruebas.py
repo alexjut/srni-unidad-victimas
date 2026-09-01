@@ -72,10 +72,8 @@ def test_responder_califica_en_el_servidor_y_devuelve_el_detalle(prueba, pregunt
     assert r.status_code == 201
     assert r.data['puntaje'] == 1 and r.data['total'] == 2
     assert r.data['porcentaje'] == 50
-    fallada = [d for d in r.data['detalle'] if not d['acerto']][0]
-    assert fallada['explicacion']          # la explicación solo va donde falló
-    acertada = [d for d in r.data['detalle'] if d['acerto']][0]
-    assert acertada['explicacion'] == ''
+    # La explicación viaja en TODAS: el cuestionario enseña, no califica.
+    assert all(d['explicacion'] for d in r.data['detalle'])
 
 
 def test_no_se_puede_presentar_dos_veces(prueba, preguntas):

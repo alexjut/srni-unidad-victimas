@@ -123,8 +123,11 @@ class ResponderPruebaView(APIView):
                 'marcada': marcada,
                 'correcta': p.correcta,
                 'acerto': acerto,
-                # La explicación solo tiene sentido donde falló.
-                'explicacion': '' if acerto else p.explicacion,
+                # La explicación va en TODAS, no solo en las falladas: el
+                # cuestionario es una herramienta de aprendizaje, no una
+                # calificación, y quien acertó también se lleva el porqué.
+                # No hay riesgo de filtración: solo se envía después de responder.
+                'explicacion': p.explicacion,
             })
 
         try:

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2288%22>&#128221;</text></svg>">
-<title>Prueba de capacitación — SICAV Móvil</title>
+<title>¿Qué tanto sabemos ya? — SICAV Móvil</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
@@ -70,19 +70,23 @@ button.sec{background:var(--panel2);color:var(--ink2)}
 .puntaje .n{font-size:3.6rem;font-weight:800;line-height:1;letter-spacing:-.03em;
   font-variant-numeric:tabular-nums}
 .puntaje .de{color:var(--ink3);font-size:1rem;margin-top:4px}
-.nivel{display:inline-block;margin-top:14px;padding:6px 16px;border-radius:99px;
-  font-weight:800;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase}
-.nivel.APROPIADO,.nivel.SUFICIENTE{background:var(--okBg);color:var(--ok)}
-.nivel.BASICO{background:#fdf1dd;color:#8a5b12}
-.nivel.INSUFICIENTE{background:var(--malBg);color:var(--mal)}
+.mensaje{margin-top:12px;font-size:1.02rem;color:var(--ink2);max-width:44ch;
+  margin-left:auto;margin-right:auto;line-height:1.5}
+.mensaje b{color:var(--ink)}
 
 .revision{margin-top:26px;border-top:1px solid var(--line);padding-top:20px}
 .revision h2{font-size:1.05rem;margin:0 0 4px}
 .revision .intro{color:var(--ink3);font-size:.9rem;margin:0 0 16px}
-.fallo{border-left:4px solid var(--mal);background:var(--malBg);border-radius:0 10px 10px 0;
-  padding:14px 16px;margin-bottom:12px}
-.fallo .q{font-weight:700;margin:0 0 6px;font-size:.95rem}
-.fallo .e{margin:0;font-size:.9rem;color:var(--ink2)}
+.item{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;
+  background:var(--surface)}
+.item.ok{border-left:4px solid var(--ok);background:#f7fbf8}
+.item.rev{border-left:4px solid var(--marcaInk);background:#fffdf3}
+.item .tag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;padding:2px 9px;border-radius:99px;margin-bottom:8px}
+.item.ok .tag{background:var(--okBg);color:var(--ok)}
+.item.rev .tag{background:#fdf1dd;color:#8a5b12}
+.item .q{font-weight:700;margin:0 0 6px;font-size:.95rem}
+.item .e{margin:0;font-size:.9rem;color:var(--ink2)}
 .aviso{background:var(--azulBg);border:1px solid #c5d8ea;border-left:4px solid var(--azul);
   border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:18px}
 .aviso p{margin:0;font-size:.92rem;color:var(--ink2)}
@@ -99,25 +103,29 @@ button.sec{background:var(--panel2);color:var(--ink2)}
 
 <header>
   <p class="eyebrow">Subdirección Red Nacional de Información — UARIV</p>
-  <h1 id="titulo">Prueba de capacitación</h1>
-  <p class="sub" id="subtitulo">SICAV Móvil y Panel de Control</p>
+  <h1 id="titulo">¿Qué tanto sabemos ya?</h1>
+  <p class="sub" id="subtitulo">Un repaso rápido antes de la jornada · SICAV Móvil</p>
 </header>
 
 <!-- 1. Identificación -->
 <section id="paso-id" class="card">
   <div class="aviso">
-    <p><b>Se responde una sola vez.</b> Son 15 preguntas de selección múltiple y toma unos
-    diez minutos. Al terminar verá su resultado y en qué falló.</p>
+    <p><b>Esto no es un examen y nadie lo califica.</b> Nos sirve para saber por dónde
+    iniciar y a qué temas dedicarle tiempo. No hay nota, no queda en su hoja de vida y no se
+    comparte con su jefe.</p>
+    <p style="margin-top:10px">Son <b>15 preguntas</b> y toma unos diez minutos. Si no sabe
+    alguna, responda lo que le parezca: justamente eso es lo que necesitamos saber.
+    <b>Al final le explicamos las que no acierte</b>, así que va a salir sabiendo más que al entrar.</p>
   </div>
   <div id="err-id" class="err oculto"></div>
   <label for="correo">Correo institucional</label>
   <input id="correo" type="email" autocomplete="email" placeholder="nombre.apellido@unidadvictimas.gov.co">
-  <p class="hint">Es su identificación: no necesita usuario ni contraseña del sistema.</p>
+  <p class="hint">Solo para no repetirle el cuestionario. No necesita usuario ni contraseña.</p>
   <label for="nombre">Nombre completo</label>
   <input id="nombre" type="text" autocomplete="name" placeholder="Nombre y apellidos">
   <label for="territorial">Dirección territorial</label>
   <input id="territorial" type="text" placeholder="Ej: Antioquia, Cauca, Central…">
-  <button id="btn-empezar">Comenzar la prueba</button>
+  <button id="btn-empezar">Empecemos</button>
 </section>
 
 <!-- 2. Preguntas -->
@@ -136,7 +144,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
   <div class="puntaje">
     <div class="n" id="r-puntaje">—</div>
     <div class="de" id="r-de"></div>
-    <span class="nivel" id="r-nivel"></span>
+    <p class="mensaje" id="r-mensaje"></p>
   </div>
   <div id="r-revision" class="revision"></div>
 </section>
@@ -173,8 +181,11 @@ button.sec{background:var(--panel2);color:var(--ink2)}
     .then(function (r) { if (!r.ok) throw new Error('no disponible'); return r.json(); })
     .then(function (d) {
       preguntas = d.preguntas || [];
-      $('titulo').textContent = d.momento === 'POST' ? 'Post-test' : 'Pre-test';
-      $('subtitulo').textContent = d.titulo || 'SICAV Móvil y Panel de Control';
+      var esPost = d.momento === 'POST';
+      $('titulo').textContent = esPost ? '¿Qué nos llevamos?' : '¿Qué tanto sabemos ya?';
+      $('subtitulo').textContent = esPost
+        ? 'Un repaso al cierre de la jornada · SICAV Móvil'
+        : 'Un repaso rápido antes de la jornada · SICAV Móvil';
       if (!d.abierta) {
         $('btn-empezar').disabled = true;
         error('Esta prueba ya está cerrada.');
@@ -192,7 +203,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
       return error('Escriba un correo válido.');
     }
-    if (nombre.length < 3) { return error('Escriba su nombre completo.'); }
+    if (nombre.length < 3) { return error('Escriba su nombre para saludarlo.'); }
 
     $('err-id').classList.add('oculto');
     $('btn-empezar').disabled = true;
@@ -202,11 +213,11 @@ button.sec{background:var(--panel2);color:var(--ink2)}
       .then(function (r) { return r.json(); })
       .then(function (e) {
         $('btn-empezar').disabled = false;
-        $('btn-empezar').textContent = 'Comenzar la prueba';
+        $('btn-empezar').textContent = 'Empecemos';
         if (e.presentada) {
           mostrarResultado({
             puntaje: e.puntaje, total: e.total,
-            porcentaje: e.porcentaje, nivel: e.nivel, detalle: null
+            porcentaje: e.porcentaje, detalle: null
           }, true);
           return;
         }
@@ -218,7 +229,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
       })
       .catch(function () {
         $('btn-empezar').disabled = false;
-        $('btn-empezar').textContent = 'Comenzar la prueba';
+        $('btn-empezar').textContent = 'Empecemos';
         error('No se pudo verificar. Intente de nuevo.');
       });
   });
@@ -252,7 +263,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
 
     $('btn-siguiente').disabled = !marcadas[p.id];
     $('btn-siguiente').textContent =
-      actual === preguntas.length - 1 ? 'Terminar y ver mi resultado' : 'Siguiente';
+      actual === preguntas.length - 1 ? 'Terminar y ver las respuestas' : 'Siguiente';
   }
 
   $('btn-siguiente').addEventListener('click', function () {
@@ -263,7 +274,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
   // ── Enviar ───────────────────────────────────────────────────────────────
   function enviar() {
     var btn = $('btn-siguiente');
-    btn.disabled = true; btn.textContent = 'Calificando…';
+    btn.disabled = true; btn.textContent = 'Un momento…';
     fetch(API + '/responder/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -278,7 +289,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
         if (!res.ok) {
           if (res.d && res.d.ya_presentada) {
             ver('paso-id');
-            error('Este correo ya presentó la prueba.');
+            error('Con ese correo ya respondimos el cuestionario. Abajo está lo que contestó.');
             return;
           }
           throw new Error('rechazado');
@@ -287,55 +298,67 @@ button.sec{background:var(--panel2);color:var(--ink2)}
       })
       .catch(function () {
         btn.disabled = false;
-        btn.textContent = 'Terminar y ver mi resultado';
+        btn.textContent = 'Terminar y ver las respuestas';
         alert('No se pudo enviar. Verifique su conexión e intente de nuevo.');
       });
   }
 
   // ── Resultado ────────────────────────────────────────────────────────────
   function mostrarResultado(r, yaEstaba) {
-    $('r-puntaje').textContent = r.puntaje + '/' + r.total;
-    $('r-de').textContent = r.porcentaje + '% de respuestas correctas';
-    var n = $('r-nivel');
-    n.textContent = ({
-      APROPIADO: 'Apropiado', SUFICIENTE: 'Suficiente',
-      BASICO: 'Básico', INSUFICIENTE: 'Insuficiente'
-    })[r.nivel] || r.nivel;
-    n.className = 'nivel ' + r.nivel;
+    $('r-puntaje').textContent = r.puntaje + ' de ' + r.total;
+
+    // El mensaje habla de aprender, no de calificar. El nivel se guarda para el
+    // equipo, pero al participante no se le pone una etiqueta encima.
+    var p = r.porcentaje, msg;
+    if (p >= 87)      msg = '<b>Ya trae muy buena base.</b> En la jornada afinamos detalles y practicamos en el equipo.';
+    else if (p >= 67) msg = '<b>Va bien encaminado.</b> Hay un par de temas que vamos a repasar juntos en la jornada.';
+    else if (p >= 47) msg = '<b>Justo para eso es la jornada.</b> Estos temas los vemos completos, con la app en la mano.';
+    else              msg = '<b>Perfecto, para eso nos reunimos.</b> Lo vemos todo desde el principio, sin afanes.';
+    $('r-de').innerHTML = '';
+    var m = document.getElementById('r-mensaje');
+    m.innerHTML = msg;
 
     var rev = $('r-revision');
     rev.textContent = '';
 
     if (yaEstaba) {
-      var p = document.createElement('p');
-      p.className = 'intro';
-      p.textContent = 'Usted ya había presentado esta prueba. Este es el resultado que quedó registrado.';
-      rev.appendChild(p);
-    } else if (r.detalle) {
-      var fallos = r.detalle.filter(function (d) { return !d.acerto; });
-      var h = document.createElement('h2');
-      var intro = document.createElement('p');
-      intro.className = 'intro';
-      if (!fallos.length) {
-        h.textContent = 'Respondió todo correctamente';
-        intro.textContent = 'No hay nada que repasar. Gracias por participar.';
-        rev.appendChild(h); rev.appendChild(intro);
-      } else {
-        h.textContent = 'Para repasar (' + fallos.length + ')';
-        intro.textContent = 'Estas son las preguntas que no acertó, con la explicación.';
-        rev.appendChild(h); rev.appendChild(intro);
-        fallos.forEach(function (f) {
-          var box = document.createElement('div');
-          box.className = 'fallo';
-          var q = document.createElement('p');
-          q.className = 'q'; q.textContent = f.orden + '. ' + f.enunciado;
-          var e = document.createElement('p');
-          e.className = 'e'; e.textContent = f.explicacion || ('Respuesta correcta: ' + f.correcta);
-          box.appendChild(q); box.appendChild(e);
-          rev.appendChild(box);
-        });
-      }
+      var pp = document.createElement('p');
+      pp.className = 'intro';
+      pp.textContent = 'Ya habíamos respondido este cuestionario. Nos vemos en la jornada.';
+      rev.appendChild(pp);
+      ver('paso-fin');
+      return;
     }
+
+    if (!r.detalle) { ver('paso-fin'); return; }
+
+    var h = document.createElement('h2');
+    h.textContent = 'Las 15, explicadas';
+    var intro = document.createElement('p');
+    intro.className = 'intro';
+    intro.textContent = 'Acá queda el repaso de la jornada. Lo importante son las marcadas para repasar.';
+    rev.appendChild(h); rev.appendChild(intro);
+
+    r.detalle.forEach(function (d) {
+      var box = document.createElement('div');
+      box.className = 'item ' + (d.acerto ? 'ok' : 'rev');
+      var tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = d.acerto ? 'La tenía' : 'Para repasar';
+      var q = document.createElement('p');
+      q.className = 'q'; q.textContent = d.orden + '. ' + d.enunciado;
+      var e = document.createElement('p');
+      e.className = 'e'; e.textContent = d.explicacion || ('Respuesta correcta: ' + d.correcta);
+      box.appendChild(tag); box.appendChild(q); box.appendChild(e);
+      rev.appendChild(box);
+    });
+
+    var cierre = document.createElement('p');
+    cierre.className = 'intro';
+    cierre.style.marginTop = '18px';
+    cierre.textContent = 'Gracias por responder. Con esto sabemos por dónde arrancar.';
+    rev.appendChild(cierre);
+
     ver('paso-fin');
   }
 })();
