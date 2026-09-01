@@ -1,9 +1,14 @@
 # Manual de Uso — SICAV Móvil (App de caracterización)
 
-**Versión:** 1.1
-**Fecha:** 2026-07-05
+**Versión del manual:** 1.2
+**Fecha:** 2026-09-01
 **Dirigido a:** Encuestadores de caracterización UARIV
-**Aplicación:** SICAV Móvil — Android
+**Aplicación:** SICAV Móvil — Android **1.2.3**
+
+> **Qué cambió frente a la versión 1.1.** Se documenta la **regla de vigencia de dos
+> años** y la **excepción** que la levanta (secciones 2 y 4), se explica la **lógica de
+> saltos** del formulario (sección 4, paso 5) y se indica cómo **confirmar la versión
+> instalada**. Si su manual dice 1.1, está desactualizado.
 
 ---
 
@@ -14,6 +19,9 @@
   La app no permite auto-registro.
 - Conexión a internet para iniciar sesión y sincronizar. **La entrevista puede
   realizarse sin conexión** (ver sección 9).
+- La **versión instalada** debe ser la **1.2.3** o superior. Se lee en la propia
+  pantalla de ingreso, bajo el formulario. Si ve una versión anterior, descargue de
+  nuevo la aplicación desde el enlace institucional antes de salir a campo.
 
 ## 2. Inicio de sesión
 
@@ -29,6 +37,10 @@
 > **¿Olvidó su contraseña?** No existe recuperación desde la app: contacte al
 > administrador del sistema. El cambio de contraseña se realiza por el panel
 > web del SRNI.
+
+> **Confirme la versión antes de salir a campo.** En la parte inferior de la pantalla
+> de ingreso aparece la versión instalada. Cuando reporte una incidencia, incluya ese
+> número: sin él no se puede saber si el problema ya está corregido.
 
 ## 3. Pantalla de inicio
 
@@ -63,12 +75,47 @@ Ubicación de atención → Responder capítulos → Finalizar sesión
      Si la persona ya tiene hogar registrado, la app le ofrece **Ver hogar
      registrado** para continuar con sus caracterizaciones.
    - **No habilitada (tarjeta naranja):** la persona existe pero no puede ser
-     caracterizada; se muestra el motivo. No hay acciones disponibles.
+     caracterizada en este momento; la tarjeta indica el motivo y muestra su
+     nombre. El motivo más frecuente es la **ficha vigente** — ver más abajo,
+     «La regla de los dos años».
    - **No encontrada (tarjeta gris):** puede registrarla con **Agregar como
      víctima no incluida** — diligencie nombres, apellidos, fecha de
      nacimiento y género, y toque **Agregar víctima**.
 
 > La búsqueda requiere conexión a internet.
+
+#### La regla de los dos años, y cómo se levanta
+
+Una persona **no puede volver a caracterizarse antes de dos años** desde su última
+caracterización. Es una regla de la entidad, no una limitación técnica: evita duplicar
+el esfuerzo de campo y mantener información redundante.
+
+Cuando la persona tiene una caracterización vigente, la búsqueda la muestra en naranja
+como **«No habilitado — ficha vigente»**.
+
+**Qué NO debe hacer el encuestador.** No intente rodear el bloqueo, no use el documento
+de otra persona y no registre a la persona como «víctima no incluida» para saltarse el
+control. La caracterización quedaría duplicada y con datos incorrectos.
+
+**Qué SÍ debe hacer.** Existen casos legítimos en los que corresponde volver a
+caracterizar aunque la ficha esté vigente: un fallo judicial, una tutela o un auto que
+lo ordene. En esos casos:
+
+1. **Reporte el caso a su coordinación**, indicando el documento de la persona y el
+   motivo.
+2. **La autorización la otorga coordinación desde el Panel de Control**, con el
+   radicado del soporte y el motivo. El documento de respaldo (el fallo, la tutela, el
+   auto) **no lo maneja el encuestador**: llega por canal institucional al nivel
+   central. Usted no necesita tenerlo ni fotografiarlo.
+3. Una vez autorizada, vuelva a buscar a la persona en la aplicación y toque
+   **«Ya la autorizaron»**. La caracterización continúa con normalidad.
+
+> **La autorización es de un solo uso** y se consume al finalizar esa encuesta. Si más
+> adelante la misma persona requiere otra excepción, hay que solicitarla de nuevo.
+
+> **Funciona sin señal.** Las autorizaciones otorgadas antes de salir viajan al teléfono
+> en la precarga de la jornada, así que la excepción se puede usar en campo aunque no
+> haya conexión.
 
 ### Paso 2 — Conformar el hogar
 
@@ -212,5 +259,26 @@ La app está diseñada para campo con señal intermitente:
 | La app pide ingresar de nuevo | Sesión expirada | Ingrese normalmente; su trabajo local no se pierde |
 | No aparece el botón de huella | Biometría no activada, no configurada en el teléfono, o primer ingreso | Configure la huella/rostro en los ajustes del teléfono e ingrese una vez marcando "Activar ingreso con huella o rostro" |
 | Un capítulo muestra "Faltan N" tras responder | Preguntas obligatorias por **cada miembro** del hogar | Revise la sección de cada integrante |
+| **Falta una pregunta** que usted esperaba ver | Una regla del formulario la oculta porque no aplica según lo ya respondido | Es el comportamiento esperado. Revise las respuestas anteriores del capítulo antes de reportarlo |
+| **"No habilitado — ficha vigente"** | La persona se caracterizó hace menos de dos años | Ver «La regla de los dos años» en la sección 4. Si hay orden judicial, la excepción la autoriza coordinación desde el panel |
+| El botón **"Ya la autorizaron"** no aparece | La autorización aún no se ha registrado en el panel, o no bajó al teléfono | Confirme con coordinación que quedó registrada; con señal, vuelva a consultar |
+
+## 12. Cómo reportar un problema
+
+Un reporte sirve si permite reproducir lo que usted vio. Incluya:
+
+1. **La versión de la aplicación** — la lee en la pantalla de ingreso.
+2. **En qué pantalla** ocurrió y **qué hizo justo antes**.
+3. **Qué esperaba** y **qué pasó**.
+4. Si hay mensaje de error, el texto completo.
+
+> **No incluya datos de la persona entrevistada** —documento, nombres, dirección— en el
+> reporte. Basta con el código del hogar si lo tiene. La información de las víctimas está
+> protegida por la **Ley 1581 de 2012** y no debe salir por canales de soporte.
 
 **Soporte técnico:** `[COMPLETAR — canal de soporte interno UARIV]`
+
+> ⚠️ **Este dato falta y bloquea la publicación del manual.** Debe definirlo la
+> Subdirección Red Nacional de Información: a qué correo, teléfono o mesa de servicios
+> reporta un encuestador en campo. Sin él, el manual no puede entregarse a los enlaces
+> territoriales ni imprimirse la tarjeta de bolsillo.

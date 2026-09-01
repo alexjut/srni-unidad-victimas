@@ -517,48 +517,58 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
   del manual, no supuestos.
 </p>
 
+<div class="caja ok">
+  <p><b>Actualizado el 1 de septiembre.</b> El manual pasó a la <b>versión 1.2</b> e incorpora
+  la regla de vigencia de dos años y su excepción, la confirmación de la versión instalada, el
+  refuerzo sobre la lógica de saltos, una sección nueva de cómo reportar un problema y la
+  referencia a la Ley 1581 de 2012. <b>Queda un solo bloqueante: el canal de soporte.</b></p>
+</div>
+
 <div class="caja alerta">
-  <p><b>Conclusión.</b> El manual describe correctamente el flujo básico de captura, pero
-  <b>quedó atrás respecto de la aplicación</b>: no cubre tres temas que sí están en el
-  temario de la capacitación. <b>Requiere una actualización a v1.2 antes de la Sesión 1</b>
-  del 1 de septiembre, o los participantes se llevarán un material que no coincide con lo
-  que van a ver en pantalla.</p>
+  <p><b>Bloqueante para publicar.</b> El manual sigue con
+  <code>[COMPLETAR — canal de soporte interno UARIV]</code> y, además,
+  <b>no está publicado en ningún lado</b>: la página de descarga del servidor solo ofrece el
+  APK, y lo que se sirve como «manual» es el <b>Manual Funcional</b>, dirigido a perfiles de
+  prueba y calidad, no al encuestador. Los treinta enlaces territoriales no tienen hoy de
+  dónde descargar su manual.</p>
 </div>
 
 <table>
-  <thead><tr><th style="width:30px">#</th><th style="width:190px">Hallazgo</th><th>Detalle</th><th style="width:78px">Prioridad</th></tr></thead>
+  <thead><tr><th style="width:30px">#</th><th style="width:190px">Hallazgo</th><th>Detalle</th><th style="width:88px">Estado</th></tr></thead>
   <tbody>
-    <tr><td class="c">1</td><td><b>No cubre la excepción de vigencia</b></td>
-      <td>Cero menciones a «vigencia» o «excepción» en todo el documento. Es un tema completo del temario (Bloque A y Bloque B) y cambia el trabajo del encuestador en campo.</td><td><b>Alta</b></td></tr>
-    <tr><td class="c">2</td><td><b>No explica la regla de los dos años</b></td>
-      <td>El encuestador se va a encontrar el estado «No habilitado» sin que el manual le diga por qué ni qué hacer.</td><td><b>Alta</b></td></tr>
-    <tr><td class="c">3</td><td><b>Versión desactualizada</b></td>
-      <td>Manual v1.1 del 5 de julio; la APK va en 1.2.3. El manual tampoco menciona que la versión es visible en la pantalla de ingreso —dato que el temario sí enseña—.</td><td><b>Alta</b></td></tr>
-    <tr><td class="c">4</td><td>Canal de soporte sin definir</td>
-      <td>La última línea dice literalmente <code>[COMPLETAR — canal de soporte interno UARIV]</code>. Sin esto, el manual no puede publicarse a los enlaces territoriales.</td><td><b>Alta</b></td></tr>
-    <tr><td class="c">5</td><td>No explica la lógica de saltos</td>
-      <td>Sin menciones a saltos o skip-logic. Es la causa más frecuente de «me falta una pregunta» reportado como falla.</td><td>Media</td></tr>
-    <tr><td class="c">6</td><td>No documenta los estados de la búsqueda</td>
-      <td>No aparece el estado «sin verificar en RUV» ni el concepto de padrón, que el temario sí desarrolla.</td><td>Media</td></tr>
-    <tr><td class="c">7</td><td>No cubre el alta manual</td>
-      <td>Qué hacer cuando la persona no aparece en la búsqueda no está documentado. Es el Caso 3 de la práctica.</td><td>Media</td></tr>
-    <tr><td class="c">8</td><td>No cubre la captura grupal</td>
-      <td>Funcionalidad disponible y no documentada.</td><td>Media</td></tr>
-    <tr><td class="c">9</td><td>No cita la norma de datos personales</td>
-      <td>La sección de seguridad no menciona la Ley 1581 de 2012, que sí se enseña en el bloque de buenas prácticas.</td><td>Baja</td></tr>
+    <tr><td class="c">1</td><td><s>No cubre la excepción de vigencia</s></td>
+      <td><b>Corregido en v1.2.</b> Sección nueva «La regla de los dos años, y cómo se levanta», con el flujo completo y la aclaración de que el encuestador no maneja el soporte.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
+    <tr><td class="c">2</td><td><s>No explica la regla de los dos años</s></td>
+      <td><b>Corregido en v1.2.</b> Incluye qué no debe hacer el encuestador y qué sí.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
+    <tr><td class="c">3</td><td><s>Versión desactualizada</s></td>
+      <td><b>Corregido en v1.2.</b> Manual 1.2 para la app 1.2.3, con nota de qué cambió y cómo confirmar la versión instalada desde la pantalla de ingreso.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
+    <tr><td class="c">4</td><td><b>Canal de soporte sin definir</b></td>
+      <td>Sigue en <code>[COMPLETAR]</code>. Lo define la Subdirección. <b>Bloquea la publicación del manual y la impresión de la pieza 7.</b></td><td><b>Abierta</b></td></tr>
+    <tr><td class="c">5</td><td><b>Manual no publicado</b></td>
+      <td><b>Hallazgo nuevo (1-sep).</b> La página de descarga solo ofrece el APK; el «manual» servido es el Funcional, no el de uso. Falta publicar el Manual de Uso donde el encuestador pueda bajarlo.</td><td><b>Alta</b></td></tr>
+    <tr><td class="c">6</td><td><s>No explica la lógica de saltos</s></td>
+      <td><b>Reforzado en v1.2.</b> Ya se mencionaba en el paso 5; se agregó a la guía de problemas, que es donde se consulta cuando «falta una pregunta».</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
+    <tr><td class="c">7</td><td>No documenta el estado «sin verificar en RUV»</td>
+      <td>Pendiente para una v1.3.</td><td>Media</td></tr>
+    <tr><td class="c">8</td><td><s>No cubre el alta manual</s></td>
+      <td><b>Corrección de esta revisión:</b> sí lo cubre, con otro nombre — «Agregar como víctima no incluida», en el paso 1. El hallazgo original era incorrecto.</td><td><span class="pill" style="background:var(--panel-2);color:var(--ink-3)">Sin lugar</span></td></tr>
+    <tr><td class="c">9</td><td>No cubre la captura grupal</td>
+      <td>Pendiente para una v1.3.</td><td>Media</td></tr>
+    <tr><td class="c">10</td><td><s>No cita la norma de datos personales</s></td>
+      <td><b>Corregido en v1.2.</b> La sección nueva de reporte de problemas invoca la Ley 1581 de 2012 y prohíbe incluir datos de la persona entrevistada.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
   </tbody>
 </table>
 
-<h3>Qué se propone</h3>
+<h3>Qué falta</h3>
 <ol>
-  <li><b>Actualizar a v1.2 antes del 1 de septiembre</b> incorporando los hallazgos 1, 2, 3 y 4
-    —los cuatro de prioridad alta—. Es una jornada de trabajo.</li>
   <li><b>Definir el canal de soporte</b> con la Subdirección. Es una decisión de la entidad,
-    no técnica, y bloquea la publicación del manual.</li>
-  <li>Incorporar los hallazgos 5 a 9 en una v1.3 posterior a las tres sesiones, alimentada
+    no técnica, y bloquea la publicación del manual y la impresión de la pieza 7.</li>
+  <li><b>Publicar el Manual de Uso</b> donde el encuestador pueda descargarlo. Hoy no existe
+    esa ruta: la página de descarga solo entrega el APK.</li>
+  <li>Incorporar los hallazgos 7 y 9 en una v1.3 posterior a las tres sesiones, alimentada
     además con las preguntas que queden registradas en la sección 5 del Anexo D.</li>
-  <li>Entregar a los participantes <b>el manual actualizado</b>, no el vigente. Un material
-    que no coincide con la pantalla genera más incidencias de las que evita.</li>
+  <li>Entregar a los participantes <b>la versión 1.2</b>. Un material que no coincide con la
+    pantalla genera más incidencias de las que evita.</li>
 </ol>
 <p class="nota">
   El <b>Manual Funcional</b> (431 líneas, con recorrido pantalla por pantalla, matriz offline

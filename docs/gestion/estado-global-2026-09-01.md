@@ -31,15 +31,20 @@ su entorno. **No es un fallo: es una comprobación no realizada**, y así debe r
 |---|---|---|---|
 | 1 | **Suspender la eliminación diaria** de archivos del FTP | Operación | 🔴 Cada día que pasa se borra la captura de ese día |
 | 2 | **Restablecer `F:\Encuestas`** en el servidor de Modelo | Administrador de ese servidor | 🔴 El proceso lleva 16 días fallando |
-| 3 | **Correo del tablero GAVE** | Nosotros — enviar | 🔴 **El plazo era el 31 de agosto: venció ayer** |
-| 4 | **Correo de la pregunta campesinado** | Nosotros — enviar | 🔴 Pedían respuesta el 28 antes del mediodía |
-| 5 | **Correo gerencial del caso 14512** | Nosotros — enviar | 🟠 Listo, sin enviar |
+| 3 | ~~Correo del tablero GAVE~~ | — | ✅ **Enviado el 1-sep** |
+| 4 | ~~Correo de la pregunta campesinado~~ | — | ✅ **Enviado el 1-sep** |
+| 5 | ~~Correo gerencial del caso 14512~~ | — | ✅ **Enviado el 1-sep** — quedan a la espera las dos instrucciones que pide |
 | 6 | **Manual de Uso v1.2** | Nosotros | 🟠 4 hallazgos de prioridad alta, antes de la Sesión 2 |
 | 7 | **Canal de soporte interno** | Subdirección | 🟠 Bloquea el manual *y* la pieza gráfica 7 |
 | 8 | **Verificación de dispositivos** de los 30 enlaces | Operación / nosotros | 🟠 72 h antes de cada sesión |
 
-**Los tres correos están redactados y commiteados.** Lo único que falta es enviarlos, y dos de
-ellos ya pasaron su plazo. Es lo más barato de resolver y lo que más cuesta si no se hace.
+**Los cuatro correos se enviaron el 1 de septiembre** (los tres anteriores más la solicitud a
+QA por los seis hallazgos sin descripción). Con eso, lo urgente que queda ya no depende de
+redactar nada: depende de que respondan.
+
+**Medido el 1-sep, antes de enviarlos:** el proceso de carga del FTP seguía fallando todas
+las noches —incluida la del 31 de agosto— en un segundo, y `DATA_JSON` del 65 llevaba
+**catorce días sin recibir un solo archivo**. La cadena acumula **16 días caída**.
 
 ---
 
