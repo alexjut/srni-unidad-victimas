@@ -102,7 +102,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
 <div class="wrap">
 
 <header>
-  <p class="eyebrow">Subdirección Red Nacional de Información — UARIV</p>
+  <p class="eyebrow">Subdirección Red Nacional de Información — Unidad para las Víctimas</p>
   <h1 id="titulo">¿Qué tanto sabemos ya?</h1>
   <p class="sub" id="subtitulo">Un repaso rápido antes de la jornada · SICAV Móvil</p>
 </header>
@@ -111,9 +111,9 @@ button.sec{background:var(--panel2);color:var(--ink2)}
 <section id="paso-id" class="card">
   <div class="aviso">
     <p><b>Esto no es un examen y nadie lo califica.</b> Nos sirve para saber por dónde
-    iniciar y a qué temas dedicarle tiempo. No hay nota, no queda en su hoja de vida y no se
-    comparte con su jefe.</p>
-    <p style="margin-top:10px">Son <b>15 preguntas</b> y toma unos diez minutos. Si no sabe
+    iniciar y a qué temas dedicarles tiempo. No hay nota, no queda en su hoja de vida y no se
+    comparte con su jefe inmediato.</p>
+    <p style="margin-top:10px">Son <b>15 preguntas</b> y le tomará unos diez minutos. Si no sabe
     alguna, responda lo que le parezca: justamente eso es lo que necesitamos saber.
     <b>Al final le explicamos las que no acierte</b>, así que va a salir sabiendo más que al entrar.</p>
   </div>
@@ -124,7 +124,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
   <label for="nombre">Nombre completo</label>
   <input id="nombre" type="text" autocomplete="name" placeholder="Nombre y apellidos">
   <label for="territorial">Dirección territorial</label>
-  <input id="territorial" type="text" placeholder="Ej: Antioquia, Cauca, Central…">
+  <input id="territorial" type="text" placeholder="Ej.: Antioquia, Cauca, Central…">
   <button id="btn-empezar">Empecemos</button>
 </section>
 
@@ -188,7 +188,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
         : 'Un repaso rápido antes de la jornada · SICAV Móvil';
       if (!d.abierta) {
         $('btn-empezar').disabled = true;
-        error('Esta prueba ya está cerrada.');
+        error('Este cuestionario ya está cerrado.');
       }
     })
     .catch(function () {
@@ -203,7 +203,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
       return error('Escriba un correo válido.');
     }
-    if (nombre.length < 3) { return error('Escriba su nombre para saludarlo.'); }
+    if (nombre.length < 3) { return error('Escriba su nombre completo, por favor.'); }
 
     $('err-id').classList.add('oculto');
     $('btn-empezar').disabled = true;
@@ -289,7 +289,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
         if (!res.ok) {
           if (res.d && res.d.ya_presentada) {
             ver('paso-id');
-            error('Con ese correo ya respondimos el cuestionario. Abajo está lo que contestó.');
+            error('Con ese correo ya hay una respuesta registrada. Abajo está lo que usted contestó.');
             return;
           }
           throw new Error('rechazado');
@@ -324,7 +324,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
     if (yaEstaba) {
       var pp = document.createElement('p');
       pp.className = 'intro';
-      pp.textContent = 'Ya habíamos respondido este cuestionario. Nos vemos en la jornada.';
+      pp.textContent = 'Usted ya respondió este cuestionario. Nos vemos en la jornada.';
       rev.appendChild(pp);
       ver('paso-fin');
       return;
@@ -336,7 +336,7 @@ button.sec{background:var(--panel2);color:var(--ink2)}
     h.textContent = 'Las 15, explicadas';
     var intro = document.createElement('p');
     intro.className = 'intro';
-    intro.textContent = 'Acá queda el repaso de la jornada. Lo importante son las marcadas para repasar.';
+    intro.textContent = 'Aquí queda el repaso de la jornada. Lo importante son las preguntas marcadas para repasar.';
     rev.appendChild(h); rev.appendChild(intro);
 
     r.detalle.forEach(function (d) {

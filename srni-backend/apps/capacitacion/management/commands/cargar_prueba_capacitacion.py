@@ -20,88 +20,120 @@ from apps.capacitacion.models import PreguntaPrueba, Prueba
 
 PAREJA = 'capacitacion-2026-09'
 
-# (enunciado, [opciones], correcta, explicación que se muestra si falla)
+# (enunciado, [opciones], correcta, explicación)
+#
+# Tres criterios al escribirlas, aprendidos corrigiendo la primera versión:
+#
+# 1. La clave va repartida entre las cuatro letras (3 A · 4 B · 4 C · 4 D). En la
+#    versión anterior once de quince eran B y ninguna era D: marcar «todo B» daba
+#    11/15 y el instrumento no medía nada.
+# 2. La opción correcta no puede ser sistemáticamente la más larga ni la única que
+#    «suena a procedimiento». Antes lo era en las mismas once.
+# 3. Los rótulos son los que el encuestador ve en pantalla, verificados contra el
+#    código de la aplicación —«Registrar y caracterizar», «Alta manual», «✓ Al día»—
+#    y no los nombres internos con que hablamos entre nosotros.
 PREGUNTAS = [
-    ("Para ingresar a SICAV Móvil, el usuario escribe:",
-     ["Su nombre completo", "Su código de usuario institucional",
-      "Su número de cédula", "Su correo electrónico"], "B",
-     "Se ingresa con el código de usuario institucional, no con el nombre ni la cédula."),
+    ("Para ingresar a SICAV Móvil se escribe:",
+     ["Su número de cédula", "Su correo electrónico institucional",
+      "Su código de usuario", "Su nombre completo"], "C",
+     "Se ingresa con el código de usuario, que es como está rotulado el campo en la "
+     "pantalla de ingreso. No es la cédula ni el correo."),
 
-    ("La versión de la aplicación instalada se puede confirmar:",
-     ["Solo desde la Play Store", "En la pantalla de inicio de sesión",
-      "Llamando a soporte", "No es posible confirmarla"], "B",
-     "La versión aparece en la propia pantalla de ingreso. Inclúyala siempre al reportar una incidencia."),
+    ("La versión de la aplicación instalada se confirma:",
+     ["En la pantalla de ingreso", "Únicamente desde la Play Store",
+      "Llamando a soporte técnico", "No es posible confirmarla"], "A",
+     "Aparece en la propia pantalla de ingreso. Inclúyala siempre que reporte una incidencia."),
 
-    ("La regla de vigencia establece que no se puede volver a caracterizar a una persona antes de:",
-     ["Seis meses", "Un año", "Dos años", "Cinco años"], "C",
-     "Son dos años. Es una regla de la entidad para no duplicar el esfuerzo de campo."),
+    ("La regla de vigencia impide volver a caracterizar a una persona hasta que pasen, "
+     "desde su última caracterización:",
+     ["Seis meses", "Un año", "Cinco años", "Dos años"], "D",
+     "Son dos años, contados desde la última caracterización. Es una regla de la entidad "
+     "para no repetir el esfuerzo de campo."),
 
-    ("Cuando una persona tiene ficha vigente y aun así debe caracterizarse, la excepción se autoriza desde:",
-     ["La propia APK, tomando una foto del soporte",
-      "El Panel de Control, por un perfil con permiso de autorizar",
-      "Cualquier encuestador desde su celular", "Un correo a la mesa de ayuda"], "B",
-     "La autoriza coordinación desde el panel. El encuestador no maneja el soporte documental: llega por canal institucional al nivel central."),
+    ("Cuando una persona tiene ficha vigente y aun así debe caracterizarse, la excepción "
+     "la autoriza:",
+     ["El encuestador, con una foto del soporte",
+      "El coordinador, de manera verbal en campo",
+      "Un perfil con permiso de autorización, desde el panel",
+      "El canal de soporte, por correo electrónico"], "C",
+     "La autoriza la coordinación desde el Panel de Control. El encuestador no maneja el "
+     "soporte documental: llega por canal institucional al nivel central."),
 
-    ("Para registrar una excepción de vigencia en el panel se exige obligatoriamente:",
-     ["Únicamente el número de documento", "Ruta, radicado y motivo",
-      "Solo el archivo de soporte escaneado", "La autorización verbal del coordinador"], "B",
-     "Ruta, radicado y motivo son obligatorios. El archivo es opcional."),
+    ("Para registrar una excepción de vigencia, el panel exige:",
+     ["Solo el número de documento", "Ruta, radicado y motivo",
+      "Solo el archivo de soporte escaneado", "Radicado y autorización verbal"], "B",
+     "Ruta, radicado y motivo son obligatorios; el archivo de soporte es opcional."),
 
     ("Una excepción de vigencia autorizada:",
-     ["Queda activa de forma permanente para esa persona",
-      "Es de un solo uso y se consume al finalizar la encuesta",
-      "Dura 30 días calendario", "Se puede reutilizar en otro hogar"], "B",
-     "Es de un solo uso. Si más adelante la misma persona requiere otra, hay que solicitarla de nuevo."),
+     ["Es de un solo uso y se consume al terminar",
+      "Queda activa de forma permanente para esa persona",
+      "Se puede reutilizar en otro hogar", "Dura treinta días calendario"], "A",
+     "Es de un solo uso. Si más adelante la misma persona requiere otra, hay que "
+     "solicitarla de nuevo."),
 
-    ("La información que permite trabajar sin señal se descarga al dispositivo:",
-     ["Al iniciar sesión (precarga de la jornada)", "Cada vez que se abre un capítulo",
-      "Solo cuando el encuestador la solicita", "No se descarga: siempre se requiere conexión"], "A",
+    ("La información que permite trabajar sin señal se descarga al teléfono:",
+     ["Al iniciar sesión, en la precarga de la jornada",
+      "Cada vez que se abre un capítulo nuevo",
+      "Solo cuando el encuestador la solicita",
+      "Nunca: siempre se requiere conexión"], "A",
      "Se precarga al iniciar sesión. Por eso conviene entrar con señal antes de salir a campo."),
 
-    ("Si el encuestador pierde la señal a mitad de una caracterización:",
-     ["Se pierde lo diligenciado y debe empezar de nuevo",
-      "Puede continuar; lo capturado queda en la cola de sincronización",
-      "La app se cierra automáticamente", "Debe llamar a soporte antes de continuar"], "B",
+    ("Si se pierde la señal a mitad de una caracterización:",
+     ["Se pierde lo diligenciado y se empieza de nuevo",
+      "Se puede continuar; lo capturado queda en la cola",
+      "La aplicación se cierra automáticamente",
+      "Hay que llamar a soporte antes de continuar"], "B",
      "Puede continuar. Lo capturado queda en la cola y sube cuando vuelve la señal."),
 
-    ("Una caracterización se considera efectivamente entregada al sistema cuando:",
-     ["Se responde el último capítulo", "Aparece el mensaje de guardado en el celular",
-      "La cola de sincronización queda en cero y la sesión figura sincronizada",
-      "Se cierra la aplicación"], "C",
-     "Responder el último capítulo no basta: la jornada no se cierra hasta que la cola esté en cero."),
+    ("Una caracterización quedó efectivamente entregada al sistema cuando:",
+     ["Se respondió el último capítulo", "Apareció el mensaje de guardado",
+      "El indicador de sincronización muestra «✓ Al día»",
+      "Se cerró la aplicación"], "C",
+     "Responder el último capítulo no basta: hasta que el indicador no diga «✓ Al día», "
+     "la información sigue solo en el teléfono."),
 
     ("El instrumento territorial vigente (V8) está organizado en:",
-     ["5 capítulos", "9 capítulos", "14 capítulos", "21 capítulos"], "C",
+     ["5 capítulos", "9 capítulos", "21 capítulos", "14 capítulos"], "D",
      "Son 14 capítulos y 363 preguntas."),
 
-    ("Una pregunta de nivel PERSONA significa que:",
+    ("Una pregunta de nivel PERSONA:",
      ["Se responde una sola vez para todo el hogar",
       "Se responde una vez por cada integrante del hogar",
-      "Solo la responde el jefe de hogar", "Es opcional"], "B",
-     "Se responde por cada integrante. En un hogar de 3 personas, un capítulo de 8 preguntas son 24 respuestas."),
+      "Solo la responde el jefe de hogar",
+      "Se responde una vez por cada hogar visitado"], "B",
+     "Se responde por cada integrante. En un hogar de tres personas, un capítulo con ocho "
+     "preguntas de nivel persona genera 24 respuestas."),
 
-    ("La lógica de saltos (skip-logic) hace que:",
-     ["Se pueda saltar cualquier pregunta a criterio del encuestador",
-      "Algunas preguntas se muestren u oculten según respuestas anteriores",
-      "El formulario avance solo cada 5 minutos", "Se repita el capítulo si hay un error"], "B",
-     "Si falta una pregunta que esperaba ver, lo más probable es que una regla la esté ocultando: revise lo respondido antes de reportarlo."),
+    ("La lógica de saltos del formulario hace que:",
+     ["El encuestador pueda omitir cualquier pregunta",
+      "El formulario avance automáticamente cada cinco minutos",
+      "El capítulo se repita cuando hay un error",
+      "Algunas preguntas se muestren u oculten según lo respondido"], "D",
+     "Si falta una pregunta que esperaba ver, lo más probable es que una regla la esté "
+     "ocultando: revise lo respondido antes de reportarlo."),
 
-    ("Si la persona a caracterizar no aparece en la búsqueda:",
-     ["No se le puede caracterizar bajo ninguna circunstancia",
-      "Se registra por alta manual siguiendo el procedimiento definido",
-      "Se usa el documento de un familiar", "Se deja el campo en blanco"], "B",
-     "Se usa «Agregar como víctima no incluida». Nunca el documento de otra persona."),
+    ("Si la persona no aparece en la búsqueda, en la tarjeta gris se usa:",
+     ["El documento de un familiar cercano",
+      "El botón «Registrar y caracterizar»",
+      "El campo de documento en blanco",
+      "Ninguna: no se la puede caracterizar"], "B",
+     "«Registrar y caracterizar» abre el formulario «Alta manual»: nombres, apellidos, "
+     "fecha de nacimiento y género. Nunca use el documento de otra persona."),
 
-    ("La norma que rige el tratamiento de los datos personales que se capturan es:",
-     ["Ley 1448 de 2011 únicamente", "Ley 1581 de 2012 (Habeas Data)",
-      "Decreto 1084 de 2015", "No aplica norma específica"], "B",
-     "Ley 1581 de 2012. Por eso los reportes de incidencia no deben incluir datos de la persona entrevistada."),
+    ("El tratamiento de los datos personales que se capturan se rige por:",
+     ["La Ley 1448 de 2011, únicamente", "El Decreto 1084 de 2015",
+      "La Ley 1581 de 2012, de protección de datos",
+      "Ninguna norma específica"], "C",
+     "Ley 1581 de 2012. Por eso los reportes de incidencia no deben incluir datos de la "
+     "persona entrevistada."),
 
-    ("Frente a un comportamiento inesperado de la aplicación, lo correcto es:",
-     ["Desinstalar y reinstalar sin avisar",
-      "Reportarlo por el canal definido, indicando versión, pantalla y qué se hizo antes",
-      "Continuar y no mencionarlo", "Prestar el celular a otro compañero para que lo intente"], "B",
-     "Un reporte sirve si permite reproducir: versión, pantalla, pasos previos y qué se esperaba."),
+    ("Frente a un comportamiento inesperado de la aplicación:",
+     ["Se desinstala y se reinstala sin avisar",
+      "Se continúa y no se menciona",
+      "Se le presta el celular a un compañero",
+      "Se reporta indicando versión, pantalla y pasos previos"], "D",
+     "Un reporte sirve si permite reproducir el problema: versión, pantalla, pasos previos "
+     "y qué se esperaba que pasara."),
 ]
 
 CLAVES = ['A', 'B', 'C', 'D']

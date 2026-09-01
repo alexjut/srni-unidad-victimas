@@ -78,9 +78,9 @@ Ubicación de atención → Responder capítulos → Finalizar sesión
      caracterizada en este momento; la tarjeta indica el motivo y muestra su
      nombre. El motivo más frecuente es la **ficha vigente** — ver más abajo,
      «La regla de los dos años».
-   - **No encontrada (tarjeta gris):** puede registrarla con **Agregar como
-     víctima no incluida** — diligencie nombres, apellidos, fecha de
-     nacimiento y género, y toque **Agregar víctima**.
+   - **No encontrada (tarjeta gris):** toque **Registrar y caracterizar**.
+     Se abre el formulario **Alta manual**: diligencie nombres, apellidos,
+     fecha de nacimiento y género, y toque **Agregar víctima**.
 
 > La búsqueda requiere conexión a internet.
 
@@ -94,7 +94,7 @@ Cuando la persona tiene una caracterización vigente, la búsqueda la muestra en
 como **«No habilitado — ficha vigente»**.
 
 **Qué NO debe hacer el encuestador.** No intente rodear el bloqueo, no use el documento
-de otra persona y no registre a la persona como «víctima no incluida» para saltarse el
+de otra persona y no use el **Alta manual** para saltarse el
 control. La caracterización quedaría duplicada y con datos incorrectos.
 
 **Qué SÍ debe hacer.** Existen casos legítimos en los que corresponde volver a
@@ -166,7 +166,7 @@ capítulo (Sin iniciar / Faltan N / Completado). Antes de empezar, elija el
 En modo manual, dentro de un capítulo:
 
 - Las preguntas se responden según su tipo (texto, número, fecha, lista,
-  selección múltiple). Algunas preguntas aparecen u se ocultan según
+  selección múltiple). Algunas preguntas aparecen o se ocultan según
   respuestas anteriores — es el comportamiento esperado del formulario.
 - Las preguntas de nivel **persona** se repiten por cada integrante del hogar,
   agrupadas en una sección por integrante dentro del capítulo.
