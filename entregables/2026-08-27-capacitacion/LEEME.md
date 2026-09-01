@@ -47,8 +47,9 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 
 ## Pendiente de confirmar
 
-- **Listado nominal** de asistentes de la Sesión 1 (equipo SRNI) — para replicarles el
-  formato del Anexo H.
+- **Correos institucionales** de Brandon, Karen, Jorge Cardona y la supervisión. Sus
+  cuentas en el sistema tienen direcciones de desarrollo (`@srni.dev`, `@srni.local`), y el
+  cuestionario de la jornada identifica a cada persona por su correo institucional.
 - **Canal de soporte interno UARIV.** Bloquea dos cosas a la vez: la publicación del
   Manual de Uso (sigue con `[COMPLETAR]`) y la impresión de la pieza gráfica 7.
 - **Actualización del Manual de Uso a v1.2** antes del 1 de septiembre, con los cuatro
