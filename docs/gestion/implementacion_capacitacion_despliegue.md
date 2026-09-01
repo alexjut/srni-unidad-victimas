@@ -18,7 +18,7 @@ En el proyecto conviven dos nombres que designan cosas distintas, y conviene no 
 
 Este documento usa **SICAV Móvil** para la app de campo y **SRNI** para el sistema en su conjunto.
 
-> ⚠️ **PENDIENTE CONFIRMAR (branding).** El brief indicaba `#ffcc03` + fuente **Nunito Sans** como identidad visual.
+> ✅ **RESUELTO (2026-09-01).** Identidad confirmada y en uso: `APP_NAME='SICAV Móvil'`, amarillo institucional `#ffcc03` y tipografía **Nunito Sans**. Vive en la app móvil (`marca.ts`) y en los entregables documentales.
 > - El color `#ffcc03` existe **literalmente** en `marca.ts` (comentado "amarillo institucional"), pero el amarillo GOV.CO real que pinta el tema móvil es `#FFCD00` (`srni-mobile/src/theme/govTheme.ts`, `GOV.amarillo`, usado como `secondary`).
 > - **Nunito Sans NO aparece en el código** de ninguno de los tres repos. El móvil usa la tipografía por defecto de `react-native-paper` (Material Design 3, sin `fontFamily` custom); el panel web referencia `'Work Sans, system-ui, sans-serif'` (`srni-frontend/src/main.tsx`). La afirmación "Nunito Sans" debe corregirse o eliminarse.
 
@@ -208,14 +208,14 @@ Fuente: `apps/*/management/commands/`.
 | Dispositivo de campo | Android 8+ (según manual de uso) |
 | Build móvil | Cuenta EAS/Expo + `EXPO_TOKEN`; build en la nube de Expo (~10–15 min) |
 
-> ⚠️ **PENDIENTE CONFIRMAR (repositorio de víctimas).** El repositorio de víctimas es **MOCK** (datos ficticios) en la fase actual; la integración con Oracle/RNI real es trabajo posterior.
+> ✅ **RESUELTO (2026-09-01).** Ya **no** es MOCK: `VICTIMA_REPOSITORY=DJANGO` en producción, con el padrón real cargado (5.926.004 personas) y el universo del RUV (12.009.492). La escritura hacia Oracle por los procedures `GIC_*` tuvo su piloto verificado en producción el 28-jul-2026.
 > **Actualización 2026-07-24:** por primera vez se validó, contra una **réplica local** (Docker con la estructura real de RNIENTREVISTA), la ruta de escritura de una caracterización vía los **procedures oficiales `GIC_*`** (Escalón 1, end-to-end, verificado por SELECT). La escritura contra el **Oracle real/producción sigue pendiente** de un entorno de **Pruebas de OTI** con geografía real.
 
 ---
 
 # 2. Forma de capacitación
 
-> ⚠️ **PENDIENTE CONFIRMAR (plan formal).** No existe en el repo un **plan de capacitación** formalizado (cronograma, listas de asistencia, evaluaciones). Lo que **sí existe** son los **materiales base** listados abajo. Las duraciones y la modalidad propuestas son una **recomendación** del documentador y deben validarse con Oscar (supervisor UARIV) y Javier.
+> ✅ **RESUELTO (2026-09-01).** El plan formal existe y está en ejecución: `entregables/2026-08-27-capacitacion/` — tres sesiones (1, 3 y 8 de septiembre), cronograma, temario, metodología, rosters nominales y **ocho anexos** (pre/post-test, banco de 32 preguntas por capítulo, tres casos de estudio, plantilla de documentación, revisión del manual, encuesta de calidad, piezas gráficas y verificación de dispositivos).
 
 ## 2.1 Materiales disponibles (verificados en el repo)
 
@@ -274,7 +274,9 @@ Duración sugerida: **medio día (4 h)**.
 - **QA / Documental:** checklist de tareas cubiertas en el panel + un caso de reporte de defecto (QA) o de exportación/consulta (documental).
 - **Registro:** dejar constancia de asistencia y de resultado por participante.
 
-> ⚠️ **PENDIENTE CONFIRMAR:** número de encuestadores a capacitar, calendario, sedes/Direcciones Territoriales involucradas (hay 21 DT documentadas), y quién dicta la capacitación. Datos no presentes en el repo.
+> ✅ **RESUELTO (2026-09-01).** **30 enlaces territoriales** en dos grupos (16 + 14) más el equipo de la Subdirección, en tres jornadas de 4 h (8:00 a.m.–12:00 m.) los días **1, 3 y 8 de septiembre de 2026**. Dictan Javier (APK), Brandon (panel) y Jorge (calidad). Rosters nominales completos en el plan.
+>
+> ⚠️ **Sigue abierto:** el listado nominal del equipo de la Subdirección para la Sesión 1.
 
 ---
 
@@ -315,7 +317,7 @@ Fuente: `infra/deploy/docker-compose.caracterizacion.yml` (`name: caracterizacio
 - **Cadena de borde:** `FortiWeb (WAF, 443) → 30.0.1.109:80 → NPM → cz_nginx:80` (documentada en el compose).
 - **Dominio `caracterizacion.unidadvictimas.gov.co`:** DNS interno (LISA.uariv.local) → A → 30.0.1.109; el server block ya está provisionado en NPM.
 
-> ⚠️ **PENDIENTE CONFIRMAR (TLS público).** Falta que OTI publique registro A/CNAME público (zona padre en Azure DNS), exponga `:443` y emita el certificado TLS. Mientras tanto el acceso de prueba es por IP:8090 (túnel SSH) o por túnel ngrok. **Nota:** el filtro web institucional bloquea `*.ngrok.app` (403 Web Filter); probar por datos móviles.
+> ✅ **RESUELTO (2026-09-01).** El dominio institucional está operativo: **`caracterizacion.unidadvictimas.gov.co`**, publicado vía **FortiWeb (WAF) 443 → 30.0.1.109:80 → NPM → `cz_nginx`**. Sirve el panel y la descarga del APK. El acceso por `IP:8090` queda como respaldo dentro de la intranet. Ver `docs/arquitectura/arquitectura-produccion-2026-08-31.html`.
 
 ## 3.4 Variables de entorno de despliegue
 
