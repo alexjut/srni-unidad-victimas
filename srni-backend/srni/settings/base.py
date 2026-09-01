@@ -50,6 +50,7 @@ LOCAL_APPS = [
     'apps.reportes',
     'apps.ia',
     'apps.movil',
+    'apps.capacitacion',
 ]
 
 # 'unfold' (+ contrib) debe ir ANTES de django.contrib.admin (que vive en DJANGO_APPS).

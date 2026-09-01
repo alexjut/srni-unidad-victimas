@@ -121,6 +121,10 @@ urlpatterns = [
     # Distribución móvil — versión y descarga auditada de la APK
     path('api/movil/', include('apps.movil.urls')),
 
+    # Pruebas de capacitación (pre/post-test). La ruta de la prueba es pública:
+    # los participantes aún no tienen credenciales del sistema.
+    path('api/capacitacion/', include('apps.capacitacion.urls')),
+
     # Administración de usuarios (panel web — solo administradores)
     path('api/usuarios/', include('apps.autenticacion.urls_admin')),
 
