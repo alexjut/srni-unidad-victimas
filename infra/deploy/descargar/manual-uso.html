@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2288%22>&#128214;</text></svg>">
+<title>Manual de Uso — SICAV Móvil</title>
+<style>
+
+  :root{
+    --ground:#f7f9fc; --surface:#ffffff; --ink:#12233b; --ink-soft:#33475f;
+    --muted:#5c6f89; --line:#e3e9f2; --line-soft:#eef2f8;
+    --azul:#3366cc; --azul-oscuro:#1b3a6b; --azul-tenue:#eaf0fb;
+    --amarillo:#ffcc03; --amarillo-ink:#3d2f00;
+    --verde:#1f9d57; --verde-bg:#e7f6ee;
+    --naranja:#d9821a; --naranja-bg:#fdf1e2;
+    --rojo:#cf3d3d; --rojo-bg:#fcebeb;
+    --gris:#6b7a90; --gris-bg:#eef1f6;
+    --radius:12px; --maxw:74ch;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:"SFMono-Regular","Cascadia Code",Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--amarillo);color:var(--amarillo-ink)}
+
+  /* ---------- Top bar ---------- */
+  .franja{height:5px;background:var(--amarillo)}
+  header.top{position:sticky;top:0;z-index:20;background:var(--azul-oscuro);color:#fff;
+    border-bottom:1px solid rgba(255,255,255,.08)}
+  .top-inner{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:14px}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .govco{font-weight:800;letter-spacing:.06em;font-size:13px;
+    background:var(--amarillo);color:var(--amarillo-ink);padding:2px 7px;border-radius:5px}
+  .brand h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em}
+  .brand .sub{font-size:12.5px;color:#b9c6dd;font-weight:400}
+  .top .meta{margin-left:auto;font-size:12px;color:#9fb0cc;text-align:right;line-height:1.4}
+  .top .meta b{color:#fff;font-weight:600}
+
+  /* ---------- Shell ---------- */
+  .shell{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:264px minmax(0,1fr);
+    gap:40px;padding:0 22px}
+  /* ---------- Sidebar nav ---------- */
+  nav.toc{position:sticky;top:76px;align-self:start;height:calc(100vh - 96px);overflow-y:auto;
+    padding:26px 0 40px;font-size:13.5px}
+  nav.toc .grp{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+    font-weight:700;margin:22px 0 8px}
+  nav.toc a{display:block;color:var(--ink-soft);text-decoration:none;padding:5px 12px 5px 12px;
+    border-left:2px solid transparent;border-radius:0 6px 6px 0;transition:background .12s,color .12s}
+  nav.toc a:hover{background:var(--azul-tenue);color:var(--azul-oscuro)}
+  nav.toc a.on{border-left-color:var(--azul);color:var(--azul-oscuro);background:var(--azul-tenue);font-weight:600}
+  nav.toc a .n{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:7px}
+
+  /* ---------- Main ---------- */
+  main{padding:34px 0 90px;min-width:0}
+  .lede{max-width:var(--maxw)}
+  section{max-width:var(--maxw);margin:0 0 8px;padding:30px 0 6px;scroll-margin-top:80px}
+  section+section{border-top:1px solid var(--line)}
+  h2{font-size:25px;line-height:1.15;letter-spacing:-.02em;margin:.2em 0 .5em;text-wrap:balance;color:var(--azul-oscuro)}
+  h2 .k{display:inline-block;font-size:13px;font-variant-numeric:tabular-nums;color:#fff;
+    background:var(--azul);border-radius:7px;padding:2px 9px;margin-right:11px;vertical-align:middle;font-weight:700}
+  h3{font-size:17.5px;letter-spacing:-.01em;margin:1.7em 0 .5em;color:var(--ink)}
+  h3 .scr{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}
+  p{margin:.6em 0;max-width:var(--maxw)}
+  a{color:var(--azul)}
+  strong{font-weight:650;color:var(--ink)}
+  .q{background:var(--line-soft);border:1px solid var(--line);border-radius:5px;
+    padding:.06em .38em;font-weight:600;font-size:.94em;white-space:nowrap}
+  code{font-family:var(--mono);font-size:.86em;background:var(--line-soft);
+    border:1px solid var(--line);border-radius:5px;padding:.08em .36em}
+
+  ul,ol{margin:.5em 0 .9em;padding-left:1.25em;max-width:var(--maxw)}
+  li{margin:.32em 0}
+  li::marker{color:var(--azul)}
+
+  /* ---------- Chips (estados de la app) ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin:.5em 0}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;
+    padding:3px 10px;border-radius:999px;line-height:1.3;border:1px solid transparent}
+  .chip::before{content:"";width:7px;height:7px;border-radius:50%}
+  .c-verde{background:var(--verde-bg);color:#136c3c}.c-verde::before{background:var(--verde)}
+  .c-naranja{background:var(--naranja-bg);color:#95560a}.c-naranja::before{background:var(--naranja)}
+  .c-rojo{background:var(--rojo-bg);color:#992a2a}.c-rojo::before{background:var(--rojo)}
+  .c-azul{background:var(--azul-tenue);color:var(--azul-oscuro)}.c-azul::before{background:var(--azul)}
+  .c-gris{background:var(--gris-bg);color:#4a5668}.c-gris::before{background:var(--gris)}
+
+  /* ---------- Callouts ---------- */
+  .box{border-radius:var(--radius);padding:15px 18px;margin:16px 0;max-width:var(--maxw);
+    border:1px solid var(--line);background:var(--surface);font-size:14.7px}
+  .box .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;
+    display:block;margin-bottom:5px}
+  .box p{margin:.3em 0}
+  .box.oro{background:linear-gradient(180deg,#fffdf3,#fffbe9);border-color:#f0dc8a}
+  .box.oro .lbl{color:#8a6d00}
+  .box.info{background:var(--azul-tenue);border-color:#c9d9f5}
+  .box.info .lbl{color:var(--azul-oscuro)}
+  .box.warn{background:var(--rojo-bg);border-color:#f0c4c4}
+  .box.warn .lbl{color:#992a2a}
+
+  /* ---------- Tables ---------- */
+  .tw{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:var(--radius);max-width:var(--maxw)}
+  table{border-collapse:collapse;width:100%;font-size:14px;background:var(--surface)}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{background:#f2f5fa;color:var(--azul-oscuro);font-size:11.5px;text-transform:uppercase;
+    letter-spacing:.05em;font-weight:700;position:sticky;top:0}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafcff}
+  td .yes{color:var(--verde);font-weight:700}
+  td .no{color:var(--rojo);font-weight:700}
+  td .dep{color:var(--naranja);font-weight:700}
+
+  /* ---------- Screen cards ---------- */
+  .screen{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin:16px 0;max-width:var(--maxw)}
+  .screen h3{margin-top:.2em}
+  .purpose{color:var(--ink-soft);font-size:14.5px;border-left:3px solid var(--azul);
+    padding-left:12px;margin:.4em 0 .8em}
+  .kv{font-size:14px}
+
+  /* ---------- Flow diagram ---------- */
+  pre.flow{background:var(--azul-oscuro);color:#dfe8f7;border-radius:var(--radius);
+    padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.75;
+    max-width:var(--maxw);margin:16px 0}
+  pre.flow .hl{color:var(--amarillo)}
+
+  /* ---------- Checklist ---------- */
+  .check{list-style:none;padding-left:0}
+  .check li{position:relative;padding-left:30px;margin:.4em 0}
+  .check li::before{content:"";position:absolute;left:0;top:4px;width:16px;height:16px;
+    border:2px solid var(--azul);border-radius:4px;background:var(--surface)}
+
+  /* ---------- Footer ---------- */
+  footer{max-width:var(--maxw);margin:40px 0 0;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13px}
+
+  a:focus-visible,nav.toc a:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:4px}
+
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr;gap:0}
+    nav.toc{position:static;height:auto;overflow:visible;border-bottom:1px solid var(--line);
+      display:flex;flex-wrap:wrap;gap:2px 4px;padding:12px 0}
+    nav.toc .grp{width:100%;margin:8px 0 2px}
+    nav.toc a{border-left:none;border-radius:6px}
+    nav.toc a.on{border-left:none}
+    .top .meta{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  @media print{header.top{position:static}nav.toc{display:none}.shell{grid-template-columns:1fr}
+    section{break-inside:avoid}}
+  html{scroll-behavior:smooth}
+
+  .tabla-wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <span class="govco">GOV.CO</span>
+      <h1>Manual de Uso — SICAV Móvil</h1>
+      <span class="sub">Para encuestadores de caracterización</span>
+    </div>
+    <div class="meta">Manual <b>v1.2</b> &middot; Aplicación <b>1.2.3</b><br>Unidad para las Víctimas — SRNI</div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc">
+    <a href="#sec0">Requisitos previos</a>
+    <a href="#sec1">Inicio de sesión</a>
+    <a href="#sec2">Pantalla de inicio</a>
+    <a href="#sec3">Flujo completo de una caracterización</a>
+    <a href="#sec4">Asistente de voz con IA (opcional)</a>
+    <a href="#sec5">Hogares</a>
+    <a href="#sec6">Encuestas (sesiones)</a>
+    <a href="#sec7">Mis reportes</a>
+    <a href="#sec8">Trabajo sin conexión (modo offline)</a>
+    <a href="#sec9">Cierre de sesión y seguridad</a>
+    <a href="#sec10">Solución de problemas frecuentes</a>
+    <a href="#sec11">Cómo reportar un problema</a>
+    <a href="/descargar/" style="margin-top:14px;font-weight:600">&larr; Volver a la descarga</a>
+  </nav>
+  <main>
+<blockquote>
+<p><strong>Qué cambió frente a la versión 1.1.</strong> Se documenta la <strong>regla de vigencia de dos años</strong> y la <strong>excepción</strong> que la levanta (secciones 2 y 4), se explica la <strong>lógica de saltos</strong> del formulario (sección 4, paso 5) y se indica cómo <strong>confirmar la versión instalada</strong>. Si su manual dice 1.1, está desactualizado.</p>
+</blockquote>
+<h2 id="sec0">1. Requisitos previos</h2>
+<ul>
+<li>Teléfono Android 8 o superior.</li>
+<li><strong>Código de usuario y contraseña</strong> asignados por el administrador del SRNI. La app no permite auto-registro.</li>
+<li>Conexión a internet para iniciar sesión y sincronizar. <strong>La entrevista puede realizarse sin conexión</strong> (ver sección 9).</li>
+<li>La <strong>versión instalada</strong> debe ser la <strong>1.2.3</strong> o superior. Se lee en la propia pantalla de ingreso, bajo el formulario. Si ve una versión anterior, descargue de nuevo la aplicación desde el enlace institucional antes de salir a campo.</li>
+</ul>
+<h2 id="sec1">2. Inicio de sesión</h2>
+<ol>
+<li>Abra la app. Verá la pantalla de ingreso con la franja institucional GOV.CO.</li>
+<li>Digite su <strong>código de usuario</strong> y su <strong>contraseña</strong> (el ícono de ojo muestra/oculta la contraseña).</li>
+<li>Toque <strong>Ingresar</strong>.</li>
+<li>Si su teléfono tiene huella o rostro configurado, marque <strong>Activar ingreso con huella o rostro</strong> al iniciar sesión. En los siguientes ingresos aparecerá el botón <strong>Huella digital</strong> para entrar sin digitar la contraseña. La biometría se valida solo en su teléfono.</li>
+</ol>
+<blockquote>
+<p><strong>¿Olvidó su contraseña?</strong> No existe recuperación desde la app: contacte al administrador del sistema. El cambio de contraseña se realiza por el panel web del SRNI.</p>
+</blockquote>
+<blockquote>
+<p><strong>Confirme la versión antes de salir a campo.</strong> En la parte inferior de la pantalla de ingreso aparece la versión instalada. Cuando reporte una incidencia, incluya ese número: sin él no se puede saber si el problema ya está corregido.</p>
+</blockquote>
+<h2 id="sec2">3. Pantalla de inicio</h2>
+<p>Tras ingresar verá <strong>"Hola, {su nombre}"</strong> con:</p>
+<ul>
+<li><strong>Indicador de sincronización</strong> (esquina superior): <code>✓ Al día</code>, <code>N pendiente(s)</code> (toque para sincronizar), <code>Sin conexión</code> o <code>N error(es)</code>.</li>
+<li><strong>Crear hogar y entrevista</strong> — acceso directo al flujo completo.</li>
+<li><strong>Acciones:</strong> Búsqueda RNI · Hogares · Caracterizaciones.</li>
+<li><strong>Sistema:</strong> Mis reportes · Estado de sincronización.</li>
+<li><strong>Cerrar sesión</strong> (al final).</li>
+</ul>
+<p>Las opciones visibles dependen de los permisos de su perfil.</p>
+<h2 id="sec3">4. Flujo completo de una caracterización</h2>
+<p>```</p>
+<p>Búsqueda RNI → Conformar hogar → Elegir instrumento → Ubicación de atención → Responder capítulos → Finalizar sesión</p>
+<p>```</p>
+<h3 id="sec4">Paso 1 — Buscar a la persona (Búsqueda RNI)</h3>
+<ol>
+<li>Entre a <strong>Búsqueda RNI</strong> (o a "Crear hogar y entrevista").</li>
+<li>Seleccione el <strong>tipo de documento</strong> (CC, TI, RC, CE, PA) y digite el <strong>número de documento</strong>.</li>
+<li>Elija la <strong>ruta de entrevista</strong>: General, Acciones constitucionales, Modificación de núcleo o Especial.</li>
+<li>Toque <strong>Consultar RNI</strong>. Resultados posibles:</li>
+</ol>
+<ul>
+<li><strong>Persona habilitada (tarjeta verde):</strong> verá nombre, estado RUV, pertenencia étnica, discapacidad y municipio. Toque <strong>Conformar hogar</strong>. Si la persona ya tiene hogar registrado, la app le ofrece <strong>Ver hogar registrado</strong> para continuar con sus caracterizaciones.</li>
+<li><strong>No habilitada (tarjeta naranja):</strong> la persona existe pero no puede ser caracterizada en este momento; la tarjeta indica el motivo y muestra su nombre. El motivo más frecuente es la <strong>ficha vigente</strong> — ver más abajo, «La regla de los dos años».</li>
+<li><strong>No encontrada (tarjeta gris):</strong> puede registrarla con <strong>Agregar como víctima no incluida</strong> — diligencie nombres, apellidos, fecha de nacimiento y género, y toque <strong>Agregar víctima</strong>.</li>
+</ul>
+<blockquote>
+<p>La búsqueda requiere conexión a internet.</p>
+</blockquote>
+<h4 id="sec4">La regla de los dos años, y cómo se levanta</h4>
+<p>Una persona <strong>no puede volver a caracterizarse antes de dos años</strong> desde su última caracterización. Es una regla de la entidad, no una limitación técnica: evita duplicar el esfuerzo de campo y mantener información redundante.</p>
+<p>Cuando la persona tiene una caracterización vigente, la búsqueda la muestra en naranja como <strong>«No habilitado — ficha vigente»</strong>.</p>
+<p><strong>Qué NO debe hacer el encuestador.</strong> No intente rodear el bloqueo, no use el documento de otra persona y no registre a la persona como «víctima no incluida» para saltarse el control. La caracterización quedaría duplicada y con datos incorrectos.</p>
+<p><strong>Qué SÍ debe hacer.</strong> Existen casos legítimos en los que corresponde volver a caracterizar aunque la ficha esté vigente: un fallo judicial, una tutela o un auto que lo ordene. En esos casos:</p>
+<ol>
+<li><strong>Reporte el caso a su coordinación</strong>, indicando el documento de la persona y el motivo.</li>
+<li><strong>La autorización la otorga coordinación desde el Panel de Control</strong>, con el radicado del soporte y el motivo. El documento de respaldo (el fallo, la tutela, el auto) <strong>no lo maneja el encuestador</strong>: llega por canal institucional al nivel central. Usted no necesita tenerlo ni fotografiarlo.</li>
+<li>Una vez autorizada, vuelva a buscar a la persona en la aplicación y toque <strong>«Ya la autorizaron»</strong>. La caracterización continúa con normalidad.</li>
+</ol>
+<blockquote>
+<p><strong>La autorización es de un solo uso</strong> y se consume al finalizar esa encuesta. Si más adelante la misma persona requiere otra excepción, hay que solicitarla de nuevo.</p>
+</blockquote>
+<blockquote>
+<p><strong>Funciona sin señal.</strong> Las autorizaciones otorgadas antes de salir viajan al teléfono en la precarga de la jornada, así que la excepción se puede usar en campo aunque no haya conexión.</p>
+</blockquote>
+<h3 id="sec4">Paso 2 — Conformar el hogar</h3>
+<ol>
+<li>La persona buscada queda registrada automáticamente como <strong>★ AUTORIZADO</strong> (primer integrante del hogar).</li>
+<li>Para cada integrante adicional diligencie: tipo y número de documento, nombres y apellidos, fecha de nacimiento y <strong>rol</strong> (miembro, tutor o cuidador permanente). El <strong>parentesco</strong> y el <strong>género</strong> ya no se piden aquí: se registran durante la entrevista, en el Capítulo B (Datos básicos). Si elige <strong>tutor</strong> o <strong>cuidador permanente</strong>, la app le exigirá <strong>adjuntar la constancia</strong> que acredita ese rol antes de continuar. Toque <strong>Agregar al hogar</strong> y repita.</li>
+<li>Al terminar, toque <strong>Continuar a caracterizaciones</strong>.</li>
+</ol>
+<blockquote>
+<p>Regla del sistema: una persona solo puede ser autorizada de <strong>un</strong> hogar activo a la vez. Si intenta crear un segundo hogar para la misma persona, la app le mostrará el hogar ya existente.</p>
+</blockquote>
+<h3 id="sec4">Paso 3 — Elegir el instrumento</h3>
+<ol>
+<li>Seleccione el instrumento de caracterización (Territorial, Telefónico, Urbano étnico, Rural étnico, etc.). Cada tarjeta muestra versión y número de capítulos.</li>
+<li>Si entró desde un hogar, toque <strong>Iniciar caracterización</strong>. Si no, la app le pedirá <strong>seleccionar el hogar</strong> en el paso 2 del asistente.</li>
+</ol>
+<h3 id="sec4">Paso 4 — Ubicación de atención</h3>
+<p>Registre dónde se realiza la entrevista, en cascada:</p>
+<ol>
+<li><strong>Dirección Territorial</strong> (si es "No presencial", solo pedirá el punto).</li>
+<li><strong>Departamento</strong> y <strong>Municipio</strong> de atención.</li>
+<li><strong>Punto de atención</strong>.</li>
+</ol>
+<p>Toque <strong>Continuar al formulario</strong>. Si está sin conexión puede tocar <strong>Omitir por ahora</strong> y completar la ubicación después.</p>
+<h3 id="sec4">Paso 5 — Responder los capítulos</h3>
+<p>La pantalla de capítulos muestra el progreso global y el estado de cada capítulo (Sin iniciar / Faltan N / Completado). Antes de empezar, elija el <strong>modo de trabajo</strong>:</p>
+<ul>
+<li><strong>Manual:</strong> responde cada pregunta directamente.</li>
+<li><strong>Asistido por IA:</strong> transcribe la entrevista oral y la IA sugiere respuestas (ver sección 5).</li>
+</ul>
+<p>En modo manual, dentro de un capítulo:</p>
+<ul>
+<li>Las preguntas se responden según su tipo (texto, número, fecha, lista, selección múltiple). Algunas preguntas aparecen u se ocultan según respuestas anteriores — es el comportamiento esperado del formulario.</li>
+<li>Las preguntas de nivel <strong>persona</strong> se repiten por cada integrante del hogar, agrupadas en una sección por integrante dentro del capítulo.</li>
+<li><strong>Las respuestas se guardan automáticamente</strong> en el teléfono mientras escribe. Al salir con <strong>Guardar y volver</strong>, se envían al servidor (o quedan en cola si no hay señal).</li>
+</ul>
+<h3 id="sec4">Paso 6 — Finalizar la sesión</h3>
+<ol>
+<li>Cuando los capítulos obligatorios estén completos, toque <strong>Finalizar caracterización</strong> en la pantalla de capítulos.</li>
+<li>Agregue observaciones (opcional) y confirme. La sesión queda <strong>COMPLETADA</strong> y no podrá modificarse.</li>
+<li>Si necesita anular una entrevista, use <strong>Anular entrevista</strong> (pide doble confirmación y es definitivo).</li>
+</ol>
+<h2 id="sec4">5. Asistente de voz con IA (opcional)</h2>
+<ol>
+<li>En la pantalla de capítulos, toque <strong>Asistido por IA</strong>.</li>
+<li>La primera vez verá la pantalla de <strong>Consentimiento — Asistente IA</strong>: léala y marque la casilla de aceptación; luego toque <strong>Activar asistente de voz</strong>. Puntos clave: <strong>nunca se almacena audio</strong>, solo el texto transcrito viaja al servidor, la clave de la IA vive en el servidor y la IA solo <strong>sugiere</strong> — usted decide.</li>
+<li>Al abrir un capítulo en este modo verá el área <strong>Transcripción de la entrevista</strong>: escriba o pegue allí el texto de la entrevista y toque <strong>Procesar con IA</strong>.</li>
+<li>En la pantalla de <strong>Revisión IA</strong> verá cada sugerencia con su nivel de confianza (alta/media/baja) y el razonamiento. Para cada una puede <strong>Aceptar</strong>, <strong>Editar</strong> o <strong>Ignorar</strong>.</li>
+<li>Toque <strong>Confirmar y cerrar</strong> para guardar solo las respuestas aceptadas.</li>
+</ol>
+<h2 id="sec5">6. Hogares</h2>
+<ul>
+<li><strong>Hogares</strong> lista sus unidades familiares con filtros (Todos / Borrador / Activo). Toque un hogar para ver su detalle y sus caracterizaciones.</li>
+<li>Los hogares creados sin conexión aparecen con la marca <strong>"Pendiente sync"</strong> hasta que se sincronicen.</li>
+<li>El botón <strong>+ Nuevo hogar</strong> permite crear un hogar directamente.</li>
+</ul>
+<h2 id="sec6">7. Encuestas (sesiones)</h2>
+<p><strong>Caracterizaciones</strong> lista sus sesiones con estado (Iniciada, En curso, Completada) y porcentaje de avance. Toque una sesión en curso para continuar exactamente donde quedó.</p>
+<h2 id="sec7">8. Mis reportes</h2>
+<p>Muestra su producción por período (semana / mes / todo): sesiones completadas y en progreso, hogares caracterizados, respuestas registradas, promedio de avance y desglose por instrumento. Puede <strong>Exportar CSV</strong>.</p>
+<h2 id="sec8">9. Trabajo sin conexión (modo offline)</h2>
+<p>La app está diseñada para campo con señal intermitente:</p>
+<ul>
+<li><strong>Qué funciona sin señal:</strong> responder capítulos de una sesión ya iniciada, crear hogares (quedan "Pendiente sync") y revisar datos locales.</li>
+<li><strong>Qué requiere señal:</strong> iniciar sesión, búsqueda RNI, crear la sesión de encuesta, reportes y finalizar sesión (se encola si no hay red).</li>
+<li>Todo lo capturado sin señal entra a una <strong>cola de sincronización</strong> que se envía automáticamente al recuperar conexión, con reintentos automáticos.</li>
+<li>En <strong>Estado de sincronización</strong> puede ver cada elemento de la cola, forzar <strong>Sincronizar</strong>, <strong>Reintentar errores</strong> y <strong>Limpiar enviados</strong>.</li>
+</ul>
+<blockquote>
+<p><strong>Recomendación:</strong> antes de salir a campo, inicie sesión y verifique el indicador <code>✓ Al día</code>. Al volver a zona con señal, abra la app y confirme que el indicador regrese a <code>✓ Al día</code> (así garantiza que no queda información solo en el teléfono).</p>
+</blockquote>
+<h2 id="sec9">10. Cierre de sesión y seguridad</h2>
+<ul>
+<li>Use <strong>Cerrar sesión</strong> al terminar la jornada; esto elimina las credenciales del teléfono.</li>
+<li>La sesión expira automáticamente por seguridad; si la app le pide ingresar de nuevo, es el comportamiento normal.</li>
+<li>No comparta su usuario: <strong>toda acción queda registrada en auditoría</strong> a su nombre.</li>
+<li>Si pierde el teléfono, informe de inmediato al administrador para revocar el acceso. Los datos locales no contienen documentos ni nombres de víctimas en forma permanente y las credenciales están en el almacén seguro del sistema.</li>
+</ul>
+<h2 id="sec10">11. Solución de problemas frecuentes</h2>
+<div class="tabla-wrap"><table><thead><tr><th>Síntoma</th><th>Causa probable</th><th>Qué hacer</th></tr></thead><tbody>
+<tr><td>"Sin conexión" permanente con señal</td><td>El servidor no es alcanzable</td><td>Verifique datos móviles/WiFi; reintente desde Estado de sincronización</td></tr>
+<tr><td>Botón "Consultar RNI" deshabilitado</td><td>No ha digitado el número de documento</td><td>Escriba el número de documento; el botón se habilita automáticamente</td></tr>
+<tr><td>Elementos con "error" en la cola</td><td>Reintentos agotados</td><td>Toque <strong>Reintentar errores</strong>; si persiste, reporte el detalle del error al soporte</td></tr>
+<tr><td>La app pide ingresar de nuevo</td><td>Sesión expirada</td><td>Ingrese normalmente; su trabajo local no se pierde</td></tr>
+<tr><td>No aparece el botón de huella</td><td>Biometría no activada, no configurada en el teléfono, o primer ingreso</td><td>Configure la huella/rostro en los ajustes del teléfono e ingrese una vez marcando "Activar ingreso con huella o rostro"</td></tr>
+<tr><td>Un capítulo muestra "Faltan N" tras responder</td><td>Preguntas obligatorias por <strong>cada miembro</strong> del hogar</td><td>Revise la sección de cada integrante</td></tr>
+<tr><td><strong>Falta una pregunta</strong> que usted esperaba ver</td><td>Una regla del formulario la oculta porque no aplica según lo ya respondido</td><td>Es el comportamiento esperado. Revise las respuestas anteriores del capítulo antes de reportarlo</td></tr>
+<tr><td><strong>"No habilitado — ficha vigente"</strong></td><td>La persona se caracterizó hace menos de dos años</td><td>Ver «La regla de los dos años» en la sección 4. Si hay orden judicial, la excepción la autoriza coordinación desde el panel</td></tr>
+<tr><td>El botón <strong>"Ya la autorizaron"</strong> no aparece</td><td>La autorización aún no se ha registrado en el panel, o no bajó al teléfono</td><td>Confirme con coordinación que quedó registrada; con señal, vuelva a consultar</td></tr>
+</tbody></table></div>
+<h2 id="sec11">12. Cómo reportar un problema</h2>
+<p>Un reporte sirve si permite reproducir lo que usted vio. Incluya:</p>
+<ol>
+<li><strong>La versión de la aplicación</strong> — la lee en la pantalla de ingreso.</li>
+<li><strong>En qué pantalla</strong> ocurrió y <strong>qué hizo justo antes</strong>.</li>
+<li><strong>Qué esperaba</strong> y <strong>qué pasó</strong>.</li>
+<li>Si hay mensaje de error, el texto completo.</li>
+</ol>
+<blockquote>
+<p><strong>No incluya datos de la persona entrevistada</strong> —documento, nombres, dirección— en el reporte. Basta con el código del hogar si lo tiene. La información de las víctimas está protegida por la <strong>Ley 1581 de 2012</strong> y no debe salir por canales de soporte.</p>
+</blockquote>
+<p><strong>Soporte técnico:</strong> <code>[COMPLETAR — canal de soporte interno UARIV]</code></p>
+<blockquote>
+<p>⚠️ <strong>Este dato falta y bloquea la publicación del manual.</strong> Debe definirlo la Subdirección Red Nacional de Información: a qué correo, teléfono o mesa de servicios reporta un encuestador en campo. Sin él, el manual no puede entregarse a los enlaces territoriales ni imprimirse la tarjeta de bolsillo.</p>
+</blockquote>
+  </main>
+</div>
+</body>
+</html>
