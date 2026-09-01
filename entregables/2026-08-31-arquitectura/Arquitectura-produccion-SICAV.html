@@ -1,0 +1,449 @@
+<meta charset="utf-8">
+<title>Arquitectura de producción SICAV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ink:#17160f; --ink-2:#403d33; --ink-3:#6f6b5c;
+  --surface:#ffffff; --panel:#f6f4ec; --panel-2:#efece0;
+  --line:#ddd8c8; --line-soft:#ebe7d9;
+  --marca:#ffcc03; --marca-ink:#7a5c00;
+  --azul:#0b3b6f; --azul-bg:#eaf1f8;
+  --ok:#1f6b3a; --ok-bg:#e9f2ea;
+  --ajeno:#6f6b5c; --ajeno-bg:#f2f0e8;
+  --display:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#f2efe2; --ink-2:#c2bda9; --ink-3:#8e8975;
+    --surface:#131208; --panel:#1d1c12; --panel-2:#272518;
+    --line:#3a3722; --line-soft:#26241a;
+    --marca:#ffcc03; --marca-ink:#ffdf6b;
+    --azul:#8ab4dd; --azul-bg:#13212e;
+    --ok:#78c48d; --ok-bg:#16281c;
+    --ajeno:#8e8975; --ajeno-bg:#1f1e14;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#f2efe2; --ink-2:#c2bda9; --ink-3:#8e8975;
+  --surface:#131208; --panel:#1d1c12; --panel-2:#272518;
+  --line:#3a3722; --line-soft:#26241a;
+  --marca:#ffcc03; --marca-ink:#ffdf6b;
+  --azul:#8ab4dd; --azul-bg:#13212e;
+  --ok:#78c48d; --ok-bg:#16281c;
+  --ajeno:#8e8975; --ajeno-bg:#1f1e14;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);
+  font-family:var(--display);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.hoja{max-width:1000px;margin:0 auto;padding:0 30px 80px}
+.marca-bar{height:8px;background:linear-gradient(90deg,var(--marca) 0%,var(--marca) 62%,#ffe07a 100%);border-radius:4px;margin-top:26px}
+.cabecera{margin-top:16px;padding-bottom:16px;border-bottom:2px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--marca-ink);font-weight:600;margin:0 0 10px}
+h1{font-family:var(--display);font-size:clamp(1.9rem,4.4vw,2.7rem);line-height:1.1;
+  letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+.sub{color:var(--ink-3);font-size:1.02rem;margin:0;max-width:62ch}
+h2{font-family:var(--display);font-size:1.32rem;margin:38px 0 6px;padding-bottom:5px;
+  border-bottom:1.5px solid var(--marca);text-wrap:balance}
+h3{font-size:1rem;color:var(--azul);margin:22px 0 6px}
+p{margin:8px 0;color:var(--ink-2);max-width:70ch}
+ul{margin:8px 0;padding-left:20px;color:var(--ink-2);max-width:70ch}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.87em;background:var(--panel-2);
+  padding:1.5px 5px;border-radius:3px;border:1px solid var(--line-soft)}
+strong{font-weight:700;color:var(--ink)}
+
+/* ficha del servidor */
+.ficha{background:var(--panel);border:1.5px solid var(--line);border-left:5px solid var(--marca);
+  border-radius:0 8px 8px 0;padding:20px 24px;margin:24px 0}
+.ficha dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:14px 26px;margin:0}
+.ficha div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ficha dt{font-family:var(--mono);font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-3)}
+.ficha dd{margin:0;font-weight:700;font-size:1.02rem;word-break:break-word}
+.ficha dd.mono{font-family:var(--mono);font-size:.98rem}
+
+figure{margin:20px 0 8px;padding:0}
+figure svg{width:100%;height:auto;display:block;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 0}
+figcaption{font-size:.86rem;color:var(--ink-3);margin-top:8px;max-width:74ch}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;margin:14px 0;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.6px}
+th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{background:var(--panel);font-family:var(--mono);font-size:10.4px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.mono{font-family:var(--mono);font-size:12.6px}
+td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.pill.nuestro{background:var(--ok-bg);color:var(--ok)}
+.pill.ajeno{background:var(--ajeno-bg);color:var(--ajeno)}
+.pill.ext{background:var(--azul-bg);color:var(--azul)}
+
+.aviso{background:var(--azul-bg);border:1px solid var(--line);border-left:4px solid var(--azul);
+  border-radius:0 6px 6px 0;padding:14px 18px;margin:18px 0}
+.aviso p:last-child{margin-bottom:0}
+.aviso p:first-child{margin-top:0}
+.nota{font-size:.86rem;color:var(--ink-3)}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:.84rem;color:var(--ink-3)}
+@media print{
+  .hoja{max-width:100%;padding:0}
+  h2{break-after:avoid} figure,.tablewrap,.ficha,.aviso{break-inside:avoid}
+  body{font-size:11.5px}
+}
+</style>
+
+<div class="hoja">
+<div class="marca-bar"></div>
+<div class="cabecera">
+  <p class="eyebrow">Subdirección Red Nacional de Información — UARIV · PRY-0662064</p>
+  <h1>Arquitectura de producción SICAV</h1>
+  <p class="sub">Servidor, cadena de publicación, componentes desplegados e integraciones
+  del Sistema de Caracterización de Víctimas. Estado al 31 de agosto de 2026.</p>
+</div>
+
+<h2>El servidor de producción</h2>
+
+<div class="ficha">
+  <dl>
+    <div><dt>Dirección IP</dt><dd class="mono">30.0.1.109</dd></div>
+    <div><dt>Nombre de host</dt><dd class="mono">Docker</dd></div>
+    <div><dt>Dominio público</dt><dd class="mono">caracterizacion.unidadvictimas.gov.co</dd></div>
+    <div><dt>Sistema operativo</dt><dd>Ubuntu 25.10</dd></div>
+    <div><dt>Recursos</dt><dd>4 vCPU · 15 GB RAM</dd></div>
+    <div><dt>Acceso administrativo</dt><dd class="mono">admin_rni · llave SSH</dd></div>
+    <div><dt>Red</dt><dd>Intranet UARIV · requiere VPN</dd></div>
+    <div><dt>Orquestación</dt><dd>Docker Compose · stack <code>caracterizacion</code></dd></div>
+  </dl>
+</div>
+
+<p>
+  Es un servidor <strong>compartido</strong>: además del sistema de caracterización aloja otros
+  servicios de la entidad. Nuestro stack está aislado en su propia red de Docker y sus
+  contenedores llevan el prefijo <code>cz_</code> para distinguirlos sin ambigüedad.
+</p>
+
+<h2>Cómo llega una petición</h2>
+
+<figure>
+<svg viewBox="0 0 1000 430" role="img" aria-label="Ruta de una petición: desde el dispositivo móvil o el navegador, por HTTPS al WAF FortiWeb, de ahí al puerto 80 del servidor 30.0.1.109, al Nginx Proxy Manager, al contenedor cz_nginx y finalmente al backend, que consulta PostgreSQL y Redis.">
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5" font-family="system-ui, sans-serif">
+
+    <!-- clientes -->
+    <rect x="14" y="96" width="132" height="52" rx="5" fill="none"/>
+    <text x="80" y="118" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">SICAV Móvil</text>
+    <text x="80" y="136" text-anchor="middle" font-size="11" fill="currentColor" stroke="none" opacity=".72">Android · campo</text>
+
+    <rect x="14" y="186" width="132" height="52" rx="5" fill="none"/>
+    <text x="80" y="208" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">Panel de Control</text>
+    <text x="80" y="226" text-anchor="middle" font-size="11" fill="currentColor" stroke="none" opacity=".72">navegador</text>
+
+    <!-- a WAF -->
+    <path d="M 150 122 L 196 122 L 196 155" marker-end="url(#f)"/>
+    <path d="M 150 212 L 196 212 L 196 179" marker-end="url(#f)"/>
+    <text x="176" y="112" font-size="10.5" fill="currentColor" stroke="none" opacity=".8">HTTPS 443</text>
+
+    <!-- WAF -->
+    <rect x="206" y="140" width="118" height="56" rx="5" fill="none" stroke-width="2"/>
+    <text x="265" y="163" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">FortiWeb</text>
+    <text x="265" y="181" text-anchor="middle" font-size="11" fill="currentColor" stroke="none" opacity=".72">WAF · TLS</text>
+
+    <path d="M 328 168 L 372 168" marker-end="url(#f)"/>
+    <text x="350" y="158" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".8">:80</text>
+
+    <!-- servidor -->
+    <rect x="378" y="30" width="608" height="312" rx="8" fill="none" stroke-dasharray="5 4" opacity=".55"/>
+    <text x="394" y="52" font-size="12" font-weight="700" fill="currentColor" stroke="none" opacity=".8">Servidor 30.0.1.109</text>
+
+    <!-- NPM -->
+    <rect x="398" y="142" width="112" height="56" rx="5" fill="none"/>
+    <text x="454" y="165" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor" stroke="none">NPM</text>
+    <text x="454" y="182" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".72">proxy inverso</text>
+
+    <path d="M 514 170 L 552 170" marker-end="url(#f)"/>
+
+    <!-- stack cz -->
+    <rect x="558" y="76" width="412" height="322" rx="6" fill="none" opacity=".45"/>
+    <text x="574" y="96" font-size="11.5" font-weight="700" fill="#7a5c00" stroke="none">stack caracterizacion · cz_*</text>
+
+    <rect x="574" y="142" width="112" height="56" rx="5" fill="none" stroke="#7a5c00" stroke-width="2"/>
+    <text x="630" y="165" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor" stroke="none">cz_nginx</text>
+    <text x="630" y="182" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".72">SPA + rutas</text>
+
+    <path d="M 690 170 L 726 170" marker-end="url(#f)"/>
+    <text x="708" y="161" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".8">/api</text>
+
+    <rect x="732" y="142" width="118" height="56" rx="5" fill="none" stroke="#7a5c00" stroke-width="2"/>
+    <text x="791" y="165" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor" stroke="none">cz_backend</text>
+    <text x="791" y="182" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".72">Django · :8001</text>
+
+    <!-- datos -->
+    <path d="M 854 158 L 890 130" marker-end="url(#f)"/>
+    <path d="M 854 184 L 890 212" marker-end="url(#f)"/>
+
+    <rect x="896" y="104" width="66" height="48" rx="5" fill="none"/>
+    <text x="929" y="124" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" stroke="none">Postgres</text>
+    <text x="929" y="139" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">16</text>
+
+    <rect x="896" y="190" width="66" height="48" rx="5" fill="none"/>
+    <text x="929" y="210" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" stroke="none">Redis</text>
+    <text x="929" y="225" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">7</text>
+
+    <!-- celery -->
+    <path d="M 791 202 L 791 268" marker-end="url(#f)" stroke-dasharray="4 3"/>
+    <text x="800" y="240" font-size="10" fill="currentColor" stroke="none" opacity=".8">encola</text>
+
+    <rect x="600" y="272" width="330" height="52" rx="5" fill="none" stroke-dasharray="4 3"/>
+    <text x="765" y="293" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" stroke="none">cz_celery · cz_celery_padron · cz_beat</text>
+    <text x="765" y="311" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".72">tareas en segundo plano y programadas</text>
+
+    <!-- salida a oracle -->
+    <path d="M 600 298 L 466 298 L 466 354" marker-end="url(#f)"/>
+    <text x="480" y="292" font-size="10.5" fill="currentColor" stroke="none" opacity=".8">sale del servidor</text>
+
+    <rect x="382" y="360" width="168" height="50" rx="5" fill="none" stroke-width="2"/>
+    <text x="466" y="380" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor" stroke="none">Oracle 30.0.1.9</text>
+    <text x="466" y="397" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">ENTREVISTARN · otro servidor</text>
+  </g>
+</svg>
+<figcaption><strong>La ruta completa.</strong> El tráfico público entra cifrado por el WAF
+institucional, que lo entrega en claro al puerto 80 del servidor; allí el proxy inverso lo
+enruta al contenedor <code>cz_nginx</code>, que sirve el panel web y reenvía <code>/api</code>
+al backend. Dentro de la intranet existe además un acceso directo por <code>:8090</code> que
+no pasa por el WAF, usado como respaldo. Las flechas punteadas son procesos que no atienden
+peticiones del usuario; el Oracle de la UARIV es un servidor distinto.</figcaption>
+</figure>
+
+<div class="aviso">
+  <p><strong>Mismo origen, sin CORS.</strong> El panel web y la API se sirven desde el mismo
+  host y puerto a través de <code>cz_nginx</code>. El frontend usa rutas relativas
+  (<code>/api</code>), de modo que en producción no hay origen cruzado entre panel y API.</p>
+</div>
+
+<h2>Los contenedores</h2>
+
+<h3>Del sistema de caracterización</h3>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Contenedor</th><th>Imagen</th><th>Función</th><th>Puerto</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">cz_nginx</td><td class="mono">nginx:1.25-alpine</td>
+        <td>Sirve el panel web compilado y enruta <code>/api</code>, <code>/admin</code>, <code>/static</code>, <code>/movil</code> (descarga del APK) y <code>/descargar</code></td>
+        <td class="mono">8090 → 80</td></tr>
+    <tr><td class="mono">cz_backend</td><td class="mono">srni-caracterizacion-backend</td>
+        <td>API REST y panel de administración. Django 5.2 sobre gunicorn</td><td class="mono">8001 interno</td></tr>
+    <tr><td class="mono">cz_postgres</td><td class="mono">postgres:16-alpine</td>
+        <td>Base de datos operativa. Sin puerto publicado al host</td><td class="mono">—</td></tr>
+    <tr><td class="mono">cz_redis</td><td class="mono">redis:7-alpine</td>
+        <td>Caché y cola de tareas, con contraseña</td><td class="mono">—</td></tr>
+    <tr><td class="mono">cz_celery</td><td class="mono">srni-caracterizacion-backend</td>
+        <td>Trabajador de tareas en segundo plano</td><td class="mono">—</td></tr>
+    <tr><td class="mono">cz_celery_padron</td><td class="mono">srni-caracterizacion-backend</td>
+        <td>Trabajador dedicado a la carga del padrón (tareas largas)</td><td class="mono">—</td></tr>
+    <tr><td class="mono">cz_beat</td><td class="mono">srni-caracterizacion-backend</td>
+        <td>Planificador de tareas programadas</td><td class="mono">—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Del entorno, en el mismo servidor</h3>
+<p class="nota">No forman parte del sistema de caracterización y no se intervienen. Se listan
+porque comparten host, disco y capacidad, y porque el proxy inverso es compartido.</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Contenedor</th><th>De qué es</th><th>Relación con nosotros</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">nginx-proxy-manager</td><td>Proxy inverso y TLS de la entidad</td>
+        <td><span class="pill ext">Compartido</span> Enruta el dominio hacia <code>cz_nginx</code></td></tr>
+    <tr><td class="mono">uariv-auth-api · uariv-auth-ui</td><td>Servicio de autenticación de la entidad</td>
+        <td><span class="pill ajeno">Ajeno</span></td></tr>
+    <tr><td class="mono">sidi-api · sidi-ui</td><td>Sistema SIDI</td>
+        <td><span class="pill ajeno">Ajeno</span></td></tr>
+    <tr><td class="mono">catalogo-si-backend · catalogo-si-frontend</td><td>Catálogo de sistemas de información</td>
+        <td><span class="pill ajeno">Ajeno</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Almacenamiento y red</h2>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Volumen</th><th>Qué guarda</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">cz_pgdata_datos</td><td>Datos de PostgreSQL. Reubicado a un disco dedicado por capacidad</td></tr>
+    <tr><td class="mono">cz_media</td><td>Archivos generados, incluido el padrón descargable que consume la aplicación móvil</td></tr>
+    <tr><td class="mono">cz_static</td><td>Archivos estáticos del backend y del panel</td></tr>
+    <tr><td class="mono">cz_redisdata</td><td>Persistencia de Redis</td></tr>
+    <tr><td class="mono">cz_beatdata</td><td>Estado del planificador de tareas</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  El stack corre en su propia red de Docker (<code>cz_net</code>) y se conecta además a la red
+  del proxy inverso de la entidad para poder recibir el tráfico del dominio. Esa separación es
+  la que permite desplegar, detener o reconstruir el sistema de caracterización
+  <strong>sin afectar a los demás servicios del servidor</strong>.
+</p>
+
+<h2>Integraciones externas</h2>
+
+<figure>
+<svg viewBox="0 0 1000 300" role="img" aria-label="El backend se conecta al Oracle de producción 30.0.1.9 esquema ENTREVISTARN, y desde ese Oracle, por enlaces de base de datos, se alcanzan el servidor Modelo, VIVANTO, el RUV y Fuentes.">
+  <defs>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="currentColor" stroke-width="1.5" font-family="system-ui, sans-serif">
+
+    <rect x="18" y="112" width="176" height="66" rx="6" fill="none" stroke="#7a5c00" stroke-width="2"/>
+    <text x="106" y="140" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">cz_backend · cz_celery</text>
+    <text x="106" y="160" text-anchor="middle" font-size="11" fill="currentColor" stroke="none" opacity=".72">30.0.1.109</text>
+
+    <path d="M 198 145 L 288 145" marker-end="url(#g)"/>
+    <text x="243" y="134" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".82">oracledb</text>
+    <text x="243" y="163" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".7">lectura + procedures</text>
+
+    <rect x="294" y="104" width="192" height="82" rx="6" fill="none" stroke-width="2"/>
+    <text x="390" y="132" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">Oracle 30.0.1.9</text>
+    <text x="390" y="150" text-anchor="middle" font-size="11" fill="currentColor" stroke="none" opacity=".78">ENTREVISTARN</text>
+    <text x="390" y="169" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".62">esquema RNIENTREVISTA</text>
+
+    <text x="560" y="42" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".78">enlaces de base de datos (dblink)</text>
+
+    <path d="M 490 128 L 560 128 L 560 74 L 626 74" marker-end="url(#g)" stroke-dasharray="4 3"/>
+    <path d="M 490 140 L 590 140 L 590 128 L 626 128" marker-end="url(#g)" stroke-dasharray="4 3"/>
+    <path d="M 490 152 L 590 152 L 590 182 L 626 182" marker-end="url(#g)" stroke-dasharray="4 3"/>
+    <path d="M 490 164 L 560 164 L 560 236 L 626 236" marker-end="url(#g)" stroke-dasharray="4 3"/>
+
+    <rect x="632" y="52" width="180" height="44" rx="5" fill="none"/>
+    <text x="722" y="70" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor" stroke="none">MODELO</text>
+    <text x="722" y="86" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">BD-MODELO-19C · «el 65»</text>
+
+    <rect x="632" y="106" width="180" height="44" rx="5" fill="none"/>
+    <text x="722" y="124" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor" stroke="none">VIVANTO</text>
+    <text x="722" y="140" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">usuarios y padrón</text>
+
+    <rect x="632" y="160" width="180" height="44" rx="5" fill="none"/>
+    <text x="722" y="178" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor" stroke="none">RUV</text>
+    <text x="722" y="194" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">registro de víctimas</text>
+
+    <rect x="632" y="214" width="180" height="44" rx="5" fill="none"/>
+    <text x="722" y="232" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor" stroke="none">FUENTES</text>
+    <text x="722" y="248" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" opacity=".72">universo de víctimas</text>
+
+    <text x="900" y="130" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".68">no accesibles</text>
+    <text x="900" y="146" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".68">directamente</text>
+    <text x="900" y="162" text-anchor="middle" font-size="10.5" fill="currentColor" stroke="none" opacity=".68">desde el .109</text>
+  </g>
+</svg>
+<figcaption><strong>Todo pasa por un solo punto.</strong> El backend se conecta únicamente al
+Oracle de producción; los demás sistemas de la entidad se alcanzan desde allí mediante enlaces
+de base de datos. Eso significa que la conectividad del servidor de aplicaciones depende de un
+único destino, y que cualquier corte en ese Oracle deja sin alcance a los cuatro sistemas
+externos a la vez.</figcaption>
+</figure>
+
+<h2>La operación de campo</h2>
+<p>
+  La aplicación móvil no es un cliente delgado: opera <strong>con y sin conexión</strong>. Al
+  iniciar sesión descarga al dispositivo lo que necesita para trabajar la jornada —el padrón
+  consultable, el instrumento vigente y las autorizaciones ya otorgadas—, y a partir de ahí
+  la captura continúa aunque no haya señal. Lo capturado queda en una base local del teléfono
+  y sube en una cola de sincronización cuando la señal vuelve.
+</p>
+<p>
+  Por eso el indicador de que una caracterización llegó al sistema no es haber respondido el
+  último capítulo, sino que <strong>la cola de sincronización quede vacía</strong>.
+</p>
+
+<h2>Tareas programadas</h2>
+<p>
+  Tres tareas periódicas viven en <code>cz_beat</code> y están <strong>apagadas por
+  defecto</strong>: encenderlas lee y escribe bases de producción, de modo que es una decisión
+  operativa explícita y no un efecto de desplegar. Sus horarios se leen de la configuración del
+  servidor, no del código, y se cambian sin reconstruir la imagen.
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Tarea</th><th>Cuándo</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td>Recarga del padrón</td><td>Primer sábado del mes, noche</td>
+        <td>Reconstruye el padrón completo y el archivo que descarga la aplicación</td></tr>
+    <tr><td>Refresco de fechas</td><td>Diaria, madrugada</td>
+        <td>Mantiene vigente la regla de recaracterización frente a lo que el sistema anterior registra cada día</td></tr>
+    <tr><td>Reintento de sincronización</td><td>Cada 15 minutos</td>
+        <td>Reencola los hogares que quedaron sin escribirse en Oracle</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Publicación de la aplicación móvil</h2>
+<p>
+  El APK no se distribuye por tienda: se compila en la nube de Expo y el archivo resultante se
+  publica en el propio servidor, bajo la ruta <code>/movil/</code> de <code>cz_nginx</code>. El
+  encuestador lo descarga desde el enlace institucional y la versión instalada queda visible en
+  la pantalla de ingreso, para poder confirmar en campo qué versión está usando.
+</p>
+
+<h2>Lo solicitado y lo que quedó</h2>
+<p>
+  El servidor se pidió formalmente en junio de 2026, mediante solicitud de aprovisionamiento
+  dirigida a la Supervisión y a Infraestructura. Contrastar aquella solicitud con lo que hoy
+  está en operación deja ver tres diferencias que conviene tener presentes.
+</p>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Característica</th><th>Solicitado · junio 2026</th><th>En operación · agosto 2026</th></tr></thead>
+  <tbody>
+    <tr><td>Sistema operativo</td><td>Ubuntu 22.04 LTS o Debian 12</td><td>Ubuntu 25.10</td></tr>
+    <tr><td>CPU</td><td>4 vCPU</td><td>4 vCPU <span class="pill nuestro">Cumple</span></td></tr>
+    <tr><td>Memoria</td><td>8 GB</td><td>15 GB <span class="pill nuestro">Supera</span></td></tr>
+    <tr><td>Almacenamiento</td><td>100 GB SSD dedicados</td><td>Disco compartido, con volumen dedicado añadido después para la base de datos</td></tr>
+    <tr><td>Publicación</td><td>443/TCP con certificado institucional</td><td>443 mediante el WAF de la entidad, que termina el TLS</td></tr>
+    <tr><td>Acceso administrativo</td><td>SSH por llave pública</td><td>SSH por llave, sobre VPN <span class="pill nuestro">Cumple</span></td></tr>
+    <tr><td>Base de datos</td><td>PostgreSQL 15</td><td>PostgreSQL 16</td></tr>
+    <tr><td><strong>Servidor dedicado</strong></td><td>Implícito en la solicitud</td><td><strong>Compartido</strong> con otros servicios de la entidad</td></tr>
+    <tr><td><strong>Respaldos</strong></td><td>Snapshot diario o respaldo de la base</td><td><strong>Sin confirmar</strong></td></tr>
+    <tr><td>Acceso a Oracle</td><td>Declarado como no requerido en esa fase</td><td>Integrado después, por solicitud independiente, como se anticipó</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  <strong>Las dos diferencias que importan.</strong> La primera es que el servidor resultó
+  <strong>compartido</strong> y no dedicado: explica la presión sobre el disco y obliga a que
+  cualquier intervención considere los demás servicios alojados. La segunda es que
+  <strong>los respaldos siguen sin confirmarse</strong>; se pidieron en la solicitud original y
+  no hay constancia de que estén operando. Es el punto abierto más relevante de esta
+  arquitectura, y no es técnico: es de gestión con Infraestructura.
+</p>
+
+<div class="aviso">
+  <p><strong>Verificación pendiente.</strong> Los datos de esta ficha se tomaron de la
+  configuración versionada del despliegue y de la última inspección directa del servidor, del
+  27 de agosto de 2026. La confirmación en vivo de recursos, versiones y contenedores activos
+  requiere conexión por VPN, no disponible al momento de redactar. Conviene revalidarla antes
+  de usar este documento como línea base formal.</p>
+</div>
+
+<footer>
+  <strong>Arquitectura de producción — Sistema de Caracterización de Víctimas (SICAV / SRNI).</strong>
+  Subdirección Red Nacional de Información · UARIV · PRY-0662064 · Contrato 2226-2026 ·
+  31 de agosto de 2026.
+</footer>
+
+</div>
