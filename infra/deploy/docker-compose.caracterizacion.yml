@@ -32,6 +32,10 @@ x-backend-env: &backend_env
   # endpoint respondía 1.0.0 mientras la app iba en 1.2.x y QA perdió una ronda.
   MOVIL_VERSION: ${MOVIL_VERSION:-1.0.0}
   MOVIL_VERSION_CODE: ${MOVIL_VERSION_CODE:-1}
+  # Dirección pública de descarga que anuncia GET /api/movil/version/. Se declara
+  # porque detrás del WAF no se puede deducir: FortiWeb termina el TLS y reenvía
+  # en claro al :80, y la respuesta salía con `http://` aunque se entrara por HTTPS.
+  MOVIL_URL_BASE: ${MOVIL_URL_BASE:-https://caracterizacion.unidadvictimas.gov.co}
   # De dónde salen las personas al buscar por documento:
   #   DJANGO → el padrón cargado en nuestra base (lo real)
   #   MOCK   → datos de prueba (ENC001, documentos 999…)

@@ -211,6 +211,13 @@ MOVIL_VERSION = config('MOVIL_VERSION', default='1.0.0')
 MOVIL_VERSION_CODE = config('MOVIL_VERSION_CODE', default=1, cast=int)
 MOVIL_ACTUALIZACION_OBLIGATORIA = config('MOVIL_ACTUALIZACION_OBLIGATORIA', default=False, cast=bool)
 
+# Dirección pública desde la que se descarga la APK, tal como la ve el celular.
+# Detrás del WAF de la entidad no se puede deducir: FortiWeb termina el TLS y
+# reenvía en claro al :80, así que Django ve una petición HTTP aunque el usuario
+# haya entrado por HTTPS, y `build_absolute_uri` devolvía `http://…`. Si queda
+# vacía se reconstruye desde la petición (ver apps/movil/views.py).
+MOVIL_URL_BASE = config('MOVIL_URL_BASE', default='')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',

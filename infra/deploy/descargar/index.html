@@ -57,10 +57,10 @@
     <div class="pasos">
       <h2>Cómo instalar</h2>
       <ol>
-        <li>Escaneá el QR con la cámara del celular (o tocá «Descargar APK»).</li>
-        <li>Cuando Android lo pida, permití «Instalar apps de fuentes desconocidas».</li>
-        <li>Abrí el archivo descargado e instalá la app.</li>
-        <li>Ingresá con tu usuario asignado.</li>
+        <li>Escanee el QR con la cámara del celular, o toque «Descargar APK».</li>
+        <li>Cuando Android lo pida, permita «Instalar aplicaciones de fuentes desconocidas».</li>
+        <li>Abra el archivo descargado e instale la aplicación.</li>
+        <li>Ingrese con su <b>código de usuario</b> —no es la cédula ni el correo— y verifique que la pantalla muestre la versión instalada.</li>
       </ol>
     </div>
 
@@ -78,7 +78,7 @@
       cont.innerHTML = '';
       new QRCode(cont, { text: apkUrl, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
     } catch (e) {
-      cont.innerHTML = '<span style="color:#5b6470;font-size:.85rem">Usá el botón «Descargar APK» de abajo.</span>';
+      cont.innerHTML = '<span style="color:#5b6470;font-size:.85rem">Use el botón «Descargar APK» de abajo.</span>';
     }
   </script>
 </body>
