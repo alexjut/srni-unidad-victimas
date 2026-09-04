@@ -341,7 +341,7 @@ parrafo(tf, "La semana tuvo dos mitades. En la primera se midió el estado real 
             "la aplicación descargable.", 13.5, INK2, BODY, primero=True, space_after=0,
         line_spacing=1.3)
 tiles(s, [("1.185", "pruebas automáticas en verde, 0 fallos: 1.037 del backend y 148 de la aplicación"),
-          ("15", "preguntas del pre-test, publicadas y calificando en el servidor"),
+          ("10", "preguntas del pre-test: cinco minutos, publicadas y calificando en el servidor"),
           ("61", "comprobaciones de permisos que antes eran una lista de chequeo a mano"),
           ("4", "correos pendientes enviados el 1 de septiembre")],
       2.86, h=1.62)
@@ -367,7 +367,7 @@ s = nueva(prs)
 eyebrow(s, "Avance 1", "Capacitación · Medir la jornada, no solo dictarla")
 titulo(s, "Un cuestionario que califica solo y dice cuánto se aprendió", size=28)
 tf = caja(s, ML, 1.78, W * 0.9, 0.6)
-parrafo(tf, "Quince preguntas, el **mismo cuestionario** al inicio y al cierre. Lo que importa "
+parrafo(tf, "Diez preguntas —cinco minutos—, el **mismo cuestionario** al inicio y al cierre. Lo que importa "
             "no es el puntaje final aislado: es la diferencia entre los dos, persona por persona.",
         13.5, INK2, BODY, primero=True, space_after=0, line_spacing=1.3)
 lista(s, ML, 2.62, W * 0.95,
@@ -412,7 +412,7 @@ FILAS = [("**Aplicación SICAV Móvil 1.2.3** — con código QR y pasos de inst
           "Los 30 enlaces territoriales", "Publicada", CHIP_OK),
          ("**Manual de Uso v1.2** — para encuestadores",
           "Encuestadores y enlaces", "Publicado", CHIP_OK),
-         ("**Pre-test** — 15 preguntas, califica en el servidor",
+         ("**Pre-test** — 10 preguntas, 5 minutos, califica en el servidor",
           "Antes de cada jornada", "Abierto", CHIP_OK),
          ("**Post-test** — el mismo cuestionario",
           "Al cierre de cada jornada", "Abierto", CHIP_OK)]
@@ -447,15 +447,17 @@ panel(s, ML, 1.92, W * 0.48, 3.15, "El problema",
       ["En la primera versión, **once de las quince respuestas correctas eran la B** y ninguna "
        "era la D. Quien marcara «todo B» sin leer sacaba **11 sobre 15**: nivel «suficiente», "
        "habilitado para operar.",
-       "Peor aún, la correcta era casi siempre la opción más larga y la única que «sonaba a "
-       "procedimiento». El instrumento premiaba el olfato, no el conocimiento."],
+       "Corregida la clave, apareció la misma fuga por otra vía: la correcta era **la opción más "
+       "larga en 7 de cada 10**. Marcar «la más larga» seguía aprobando."],
       tipo="problema")
 panel(s, ML + W * 0.52, 1.92, W * 0.48, 3.15, "La solución",
-      ["Se repartió la clave entre las cuatro letras —**3 A · 4 B · 4 C · 4 D**— y se "
-       "reescribieron los distractores para que ninguno se delate por su forma.",
+      ["Clave repartida entre las cuatro letras y distractores alargados hasta que **la correcta "
+       "no es la más larga en ninguna**. Hoy la letra que más se repite da 3 sobre 10: responder "
+       "a ciegas no aprueba.",
        "Los rótulos se verificaron **contra el código de la aplicación** —«Registrar y "
-       "caracterizar», «Alta manual», «✓ Al día»— y no contra los nombres internos con que "
-       "hablamos entre nosotros, que el encuestador nunca ve en pantalla."],
+       "caracterizar», «✓ Al día»— y no contra los nombres internos con que hablamos entre "
+       "nosotros.",
+       "Y por pedido de la Subdirección quedó en **10 preguntas, cinco minutos**."],
       tipo="solucion")
 remate(s, "Un examen mal armado no es inofensivo: habría certificado como habilitados a personas "
           "que no lo están, y con constancia escrita.", 5.35, 0.95)
@@ -538,7 +540,7 @@ panel(s, ML, 1.92, W * 0.48, 3.05, "El problema",
       tipo="problema")
 panel(s, ML + W * 0.52, 1.92, W * 0.48, 3.05, "La solución",
       ["Solicitar la creación o corrección de las seis cuentas con dominio "
-       "`@unidadvictimas.gov.co` antes del **8 de septiembre**.",
+       "`@unidadvictimas.gov.co` antes del **10 de septiembre**.",
        "Es la única condición de la Sesión 1 que no está en nuestras manos, y es de trámite: no "
        "bloquea nada más del proyecto."],
       tipo="solucion")
@@ -560,7 +562,7 @@ lista(s, ML, 2.55, W * 0.95,
        "un fallo, y así se reporta.",
        "**Las cuatro direcciones publicadas** — verificadas contra el dominio institucional "
        "después del despliegue, no antes.",
-       "**Las 15 preguntas** — comparadas una a una, en orden y opciones, entre el anexo impreso "
+       "**Las 10 preguntas** — comparadas una a una, en orden y opciones, entre el anexo impreso "
        "y lo que sirve el servidor.",
        "**Las veinte noches del proceso de carga** — leídas hoy del registro de ejecuciones del "
        "propio motor de base de datos, con la fecha y el error de cada corrida."],
@@ -572,20 +574,20 @@ pie(s, SEM, 13)
 # 14 · Lo que sigue
 s = nueva(prs)
 eyebrow(s, "Lo que sigue", "Fechas y decisiones")
-titulo(s, "La capacitación queda en los tres martes de septiembre", size=28)
+titulo(s, "La capacitación queda el 10, el 15 y el 18 de septiembre", size=28)
 fila(s, 1.78, [("Acción", 0.55, PP_ALIGN.LEFT), ("De quién depende", 0.45, PP_ALIGN.LEFT)],
      alto=0.3, cabecera=True)
 SIG = [("**Restablecer la carpeta de trabajo** del proceso de carga",
         "Administrador de ese servidor", "20 noches", CHIP_GRAVE),
        ("**Suspender la eliminación diaria** de archivos del FTP",
         "Operación", "Hoy", CHIP_GRAVE),
-       ("**Sesión 1** · equipo de la Subdirección", "Equipo", "Martes 8", CHIP_OK),
+       ("**Sesión 1** · equipo de la Subdirección", "Equipo", "Jueves 10", CHIP_OK),
        ("**Sesión 2** · enlaces territoriales, Grupo A (16)",
         "Equipo · convocatoria", "Martes 15", CHIP_OK),
        ("**Sesión 3** · enlaces territoriales, Grupo B (14)",
-        "Equipo · convocatoria", "Martes 22", CHIP_OK),
+        "Equipo · convocatoria", "Viernes 18", CHIP_OK),
        ("Correos institucionales de seis integrantes del equipo",
-        "Administración", "Antes del 8", CHIP_PEND),
+        "Administración", "Antes del 10", CHIP_PEND),
        ("Canal de soporte interno para los encuestadores",
         "Subdirección", "Bloquea el manual", CHIP_PEND)]
 for i, (a, b, c, ch) in enumerate(SIG):

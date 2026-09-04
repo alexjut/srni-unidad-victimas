@@ -21,7 +21,7 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 
 | | Anexo | Cuándo se usa |
 |---|---|---|
-| A | Pre-test y post-test — 15 preguntas, mismo cuestionario en los dos momentos, con clave y escala. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`); el anexo es la copia de control | 8:00 a.m. y 11:40 a.m. |
+| A | Pre-test y post-test — **10 preguntas, 5 minutos**, mismo cuestionario en los dos momentos, con clave y escala sobre 10. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`); el anexo es la copia de control | 8:00 a.m. y 11:40 a.m. |
 | B | Banco de 32 preguntas por capítulo + tabla de referencia Hogar/Persona | Bloque A y refuerzo |
 | C | Tres casos de estudio: hogar offline · ficha vigente (APK + panel) · alta manual e incidencia | Práctica guiada |
 | D | Plantilla de documentación de la experiencia (6 secciones) | Cierre de cada sesión |
@@ -34,10 +34,10 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 
 - **3 sesiones**, jornada de la mañana (8:00 a.m. – 12:00 m.), dictadas por
   **Jorge** (calidad), **Javier Aguilar** (APK) y **Brandon** (panel).
-  - **Sesión 1 · martes 8 de septiembre** — Equipo de la Subdirección Red Nacional de Información.
+  - **Sesión 1 · jueves 10 de septiembre** — Equipo de la Subdirección Red Nacional de Información.
   - **Sesión 2 · martes 15 de septiembre** — Enlaces territoriales, Grupo A (Caribe, Antioquia y
     Nororiente): **16 participantes**.
-  - **Sesión 3 · martes 22 de septiembre** — Enlaces territoriales, Grupo B (Centro, Suroccidente y
+  - **Sesión 3 · viernes 18 de septiembre** — Enlaces territoriales, Grupo B (Centro, Suroccidente y
     Orinoquía): **14 participantes**.
 - **Temario** en dos bloques por sesión: **Bloque A — APK** (instalación,
   búsqueda, excepción de vigencia, hogar, instrumento, offline, sincronización) y

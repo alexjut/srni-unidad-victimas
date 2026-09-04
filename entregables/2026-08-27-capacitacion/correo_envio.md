@@ -7,7 +7,7 @@
 
 ---
 
-**Asunto:** Plan de capacitación SICAV Móvil y Panel de Control — fechas 8, 15 y 22 de septiembre, descarga del APK y pre-test
+**Asunto:** Plan de capacitación SICAV Móvil y Panel de Control — fechas 10, 15 y 18 de septiembre, descarga del APK y pre-test
 
 Buen día, ingeniero Oscar.
 
@@ -16,15 +16,15 @@ caracterización —la aplicación móvil **SICAV Móvil** y el **Panel de Contr
 junto con sus **anexos**, para su **análisis, corrección y aprobación** antes de la
 convocatoria formal.
 
-El plan contempla **tres sesiones**, todas los martes en la mañana
-(8:00 a.m. – 12:00 m.):
+El plan contempla **tres sesiones** en la mañana (8:00 a.m. – 12:00 m.), en las fechas que
+indicó el ingeniero Alejandro Fernández:
 
-- **Sesión 1 — martes 8 de septiembre:** equipo de la Subdirección Red Nacional de
+- **Sesión 1 — jueves 10 de septiembre:** equipo de la Subdirección Red Nacional de
   Información. Es la jornada de alistamiento: el equipo hace primero el recorrido
   completo, en el mismo formato en que lo verán los enlaces.
 - **Sesión 2 — martes 15 de septiembre:** enlaces territoriales, Grupo A (Caribe,
   Antioquia, Nororiente, Chocó y Magdalena Medio) — 16 participantes.
-- **Sesión 3 — martes 22 de septiembre:** enlaces territoriales, Grupo B (Centro,
+- **Sesión 3 — viernes 18 de septiembre:** enlaces territoriales, Grupo B (Centro,
   Suroccidente, Orinoquía y Eje Cafetero) — 14 participantes.
 
 El temario cubre, para cada sesión, la operación completa de la **APK** (instalación,
@@ -65,10 +65,10 @@ antes de cada sesión, precisamente para llegar sin sorpresas.
 ## El pre-test ya está publicado y funcionando
 
 Para medir si la capacitación sirve de algo —y no solo dejar constancia de que se
-hizo— montamos un cuestionario de **15 preguntas** que se aplica **dos veces**: al
-inicio de la jornada y al cierre. Es el **mismo cuestionario** en los dos momentos, a
-propósito: lo que interesa no es el puntaje final aislado sino la **diferencia** entre
-los dos, participante por participante.
+hizo— montamos un cuestionario corto, de **10 preguntas y unos cinco minutos**, que se
+aplica **dos veces**: al inicio de la jornada y al cierre. Es el **mismo cuestionario** en
+los dos momentos, a propósito: lo que interesa no es el puntaje final aislado sino la
+**diferencia** entre los dos, participante por participante.
 
 Ya está publicado y califica solo, en el servidor:
 
@@ -82,19 +82,20 @@ inmediato su puntaje y en qué falló. La clave de respuestas no viaja al navega
 calificación se hace en el servidor, y los resultados consolidados quedan en el Panel de
 Control.
 
-Lo invito a **responderlo usted mismo antes de aprobar el plan** —toma unos diez
-minutos—: es la forma más rápida de revisar si las preguntas miden lo que deben medir.
+Lo invito a **responderlo usted mismo antes de aprobar el plan** —son cinco minutos—:
+es la forma más rápida de revisar si las preguntas miden lo que deben medir.
 El contenido completo, con la clave y la escala de calificación, está en el **Anexo A**
 de los anexos adjuntos.
 
 ## Puntos por confirmar
 
-1. Las **fechas** propuestas (martes 8, 15 y 22 de septiembre) y la conformación de los
-   dos grupos territoriales.
+1. La conformación de los **dos grupos territoriales**. Las fechas —jueves 10, martes 15 y
+   viernes 18— ya vienen dadas por el ingeniero Alejandro Fernández.
 2. Los **correos institucionales** de seis de los siete integrantes del equipo SRNI:
    sus cuentas en el sistema figuran con direcciones del ambiente de desarrollo
    (`@srni.dev`, `@srni.local`). Se necesitan con dominio `@unidadvictimas.gov.co`
-   porque el pre-test y el post-test identifican a cada persona por ese correo.
+   **antes del jueves 10**, porque el pre-test y el post-test identifican a cada persona
+   por ese correo y es lo que permite medir la ganancia de la jornada.
 3. El **canal de soporte interno** al que deben escribir los enlaces cuando algo falle
    en campo. Es el único dato que sigue pendiente dentro del Manual de Uso v1.2 y
    bloquea la impresión de una de las piezas gráficas de la convocatoria.

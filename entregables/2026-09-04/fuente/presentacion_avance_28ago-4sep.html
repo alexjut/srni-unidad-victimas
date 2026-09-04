@@ -495,7 +495,7 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
     capacitar: un cuestionario que califica solo, el manual publicado y la aplicación descargable.</p>
     <div class="cifras">
       <div class="tile"><span class="v">1.185</span><span class="l">pruebas automáticas en verde, 0 fallos: 1.037 del backend y 148 de la aplicación</span></div>
-      <div class="tile"><span class="v">15</span><span class="l">preguntas del pre-test, publicadas y calificando en el servidor</span></div>
+      <div class="tile"><span class="v">10</span><span class="l">preguntas del pre-test: cinco minutos, publicadas y calificando en el servidor</span></div>
       <div class="tile"><span class="v">61</span><span class="l">comprobaciones de permisos que antes eran una lista de chequeo a mano</span></div>
       <div class="tile"><span class="v">4</span><span class="l">correos pendientes enviados el 1 de septiembre</span></div>
     </div>
@@ -517,7 +517,7 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
   <div class="eyebrow"><b>Avance 1</b> · Capacitación · Medir la jornada, no solo dictarla</div>
   <div class="cuerpo">
     <h2>Un cuestionario que califica solo y dice cuánto se aprendió</h2>
-    <p class="bajada">Quince preguntas, el <strong>mismo cuestionario</strong> al inicio y al cierre.
+    <p class="bajada">Diez preguntas —cinco minutos—, el <strong>mismo cuestionario</strong> al inicio y al cierre.
     Lo que importa no es el puntaje final aislado: es la diferencia entre los dos, persona por persona.</p>
     <ul class="lista compacta">
       <li><strong>Se responde en línea</strong>, sin usuario ni contraseña. Cada quien se identifica
@@ -578,7 +578,7 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
             <td><span class="chip ok">Publicada</span></td><td>Los 30 enlaces territoriales</td></tr>
         <tr><td><strong>Manual de Uso v1.2</strong> — para encuestadores</td>
             <td><span class="chip ok">Publicado</span></td><td>Encuestadores y enlaces</td></tr>
-        <tr><td><strong>Pre-test</strong> — 15 preguntas, califica en el servidor</td>
+        <tr><td><strong>Pre-test</strong> — 10 preguntas, 5 minutos, califica en el servidor</td>
             <td><span class="chip ok">Abierto</span></td><td>Antes de cada jornada</td></tr>
         <tr><td><strong>Post-test</strong> — el mismo cuestionario</td>
             <td><span class="chip ok">Abierto</span></td><td>Al cierre de cada jornada</td></tr>
@@ -610,16 +610,18 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
         <p>En la primera versión, <strong>once de las quince respuestas correctas eran la B</strong>
         y ninguna era la D. Quien marcara «todo B» sin leer sacaba <strong>11 sobre 15</strong>:
         nivel «suficiente», habilitado para operar.</p>
-        <p>Peor aún, la correcta era casi siempre la opción más larga y la única que «sonaba a
-        procedimiento». El instrumento premiaba el olfato, no el conocimiento.</p>
+        <p>Corregida la clave, apareció la misma fuga por otra vía: la correcta era <strong>la
+        opción más larga en 7 de cada 10</strong>. Marcar «la más larga» seguía aprobando.</p>
       </div>
       <div class="panel solucion">
         <div class="rotulo">La solución</div>
-        <p>Se repartió la clave entre las cuatro letras —<strong>3 A · 4 B · 4 C · 4 D</strong>— y se
-        reescribieron los distractores para que ninguno se delate por su forma.</p>
-        <p>Además, los rótulos se verificaron <strong>contra el código de la aplicación</strong>
-        —«Registrar y caracterizar», «Alta manual», «✓ Al día»— y no contra los nombres internos con
-        que hablamos entre nosotros, que el encuestador nunca ve en pantalla.</p>
+        <p>Clave repartida entre las cuatro letras y distractores alargados hasta que
+        <strong>la correcta no es la más larga en ninguna</strong> de las preguntas. Hoy la letra
+        que más se repite da 3 sobre 10: responder a ciegas no aprueba.</p>
+        <p>Los rótulos se verificaron <strong>contra el código de la aplicación</strong> —«Registrar
+        y caracterizar», «✓ Al día»— y no contra los nombres internos con que hablamos entre
+        nosotros, que el encuestador nunca ve en pantalla.</p>
+        <p>Y por pedido de la Subdirección quedó en <strong>10 preguntas, cinco minutos</strong>.</p>
       </div>
     </div>
     <div class="remate">Un examen mal armado no es un examen inofensivo: habría certificado como
@@ -730,7 +732,7 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
       <div class="panel solucion">
         <div class="rotulo">La solución</div>
         <p>Solicitar la creación o corrección de las seis cuentas con dominio
-        <code>@unidadvictimas.gov.co</code> antes del <strong>8 de septiembre</strong>.</p>
+        <code>@unidadvictimas.gov.co</code> antes del <strong>10 de septiembre</strong>.</p>
         <p>Es la única condición de la Sesión 1 que no está en nuestras manos, y es de trámite:
         no bloquea nada más del proyecto.</p>
       </div>
@@ -753,8 +755,8 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
       entorno: es una comprobación no realizada, no un fallo, y así se reporta.</li>
       <li><strong>Las cuatro direcciones publicadas</strong> — verificadas contra el dominio
       institucional después del despliegue, no antes.</li>
-      <li><strong>Las 15 preguntas</strong> — comparadas una a una, en orden y opciones, entre el
-      anexo impreso y lo que sirve el servidor.</li>
+      <li><strong>Las 10 preguntas</strong> — comparadas una a una, en orden y opciones, entre el
+      anexo impreso y lo que sirve el servidor, después de recargarlas.</li>
       <li><strong>Las veinte noches del proceso de carga</strong> — leídas hoy del registro de
       ejecuciones del propio motor de base de datos, con la fecha y el error de cada corrida.</li>
     </ul>
@@ -767,7 +769,7 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
 <section class="diapo" aria-label="Lo que sigue">
   <div class="eyebrow"><b>Lo que sigue</b> · Fechas y decisiones</div>
   <div class="cuerpo">
-    <h2>La capacitación queda en los tres martes de septiembre</h2>
+    <h2>La capacitación queda el 10, el 15 y el 18 de septiembre</h2>
     <table>
       <thead><tr><th>Acción</th><th>De quién depende</th><th>Cuándo</th></tr></thead>
       <tbody>
@@ -776,13 +778,13 @@ td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabu
         <tr><td><strong>Suspender la eliminación diaria</strong> de archivos del FTP</td>
             <td>Operación</td><td><span class="chip riesgo">Hoy</span></td></tr>
         <tr><td><strong>Sesión 1</strong> · equipo de la Subdirección</td>
-            <td>Equipo</td><td><span class="chip ok">Martes 8</span></td></tr>
+            <td>Equipo</td><td><span class="chip ok">Jueves 10</span></td></tr>
         <tr><td><strong>Sesión 2</strong> · enlaces territoriales, Grupo A (16)</td>
             <td>Equipo · convocatoria</td><td><span class="chip ok">Martes 15</span></td></tr>
         <tr><td><strong>Sesión 3</strong> · enlaces territoriales, Grupo B (14)</td>
-            <td>Equipo · convocatoria</td><td><span class="chip ok">Martes 22</span></td></tr>
+            <td>Equipo · convocatoria</td><td><span class="chip ok">Viernes 18</span></td></tr>
         <tr><td>Correos institucionales de seis integrantes del equipo</td>
-            <td>Administración</td><td><span class="chip pend">Antes del 8</span></td></tr>
+            <td>Administración</td><td><span class="chip pend">Antes del 10</span></td></tr>
         <tr><td>Canal de soporte interno para los encuestadores</td>
             <td>Subdirección</td><td><span class="chip pend">Bloquea el manual</span></td></tr>
         <tr><td>Verificación de dispositivos de los 30 enlaces</td>
