@@ -4,6 +4,7 @@
 > **Para:** Oscar Andrés Manosalva García (Supervisión SRNI)
 > **CC:** Alexandra María López Sevillano (Dirección técnica RNI) · Jorge Cardona Gregory (Calidad) · Brandon Esteven Niño Quiroga (Panel web)
 > **Adjuntos:** `plan_capacitacion.pdf` · `anexos_capacitacion.pdf`
+> **Fecha:** 4 de septiembre de 2026
 
 ---
 

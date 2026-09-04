@@ -1,12 +1,23 @@
 # Estado global del proyecto — 1 de septiembre de 2026
 
 > **Para qué sirve este documento.** Es la foto de dónde está cada frente y qué lo
-> desbloquea. Se escribió tras correr la batería completa de pruebas y revisar la
-> documentación del repositorio. Reemplaza como referencia rápida a los estados parciales
-> anteriores.
+> desbloquea al **1 de septiembre**. Se escribió tras correr la batería completa de pruebas y
+> revisar la documentación del repositorio.
 
-**Hoy se dicta la Sesión 1 de capacitación** (equipo de la Subdirección). Las sesiones 2 y 3
-son el jueves 3 y el martes 8.
+> ⚠️ **Foto con fecha: no leer sus plazos como vigentes.** Al 4 de septiembre hay cuatro
+> cosas que ya no son como aquí se cuentan:
+>
+> - **Las fechas de capacitación cambiaron dos veces.** Ya no son el 1, el 3 y el 8: son
+>   **jueves 10, martes 15 y viernes 18 de septiembre**, según indicó el ingeniero Alejandro
+>   Fernández. La Sesión 1 no se dictó el 1 de septiembre.
+> - **El Manual de Uso v1.2 ya está publicado** (numeral 6 de «lo urgente») y con los cuatro
+>   hallazgos de prioridad alta atendidos. Se descubrió además que no estaba publicado en
+>   ninguna parte, y se corrigió.
+> - **La cadena del FTP empeoró.** Aquí se cuentan 16 días; medido el 4 de septiembre son
+>   **20 noches consecutivas** sin cargar, con la última carga buena el 14 de agosto.
+> - **El pre-test bajó de 15 preguntas a 10** (cinco minutos), a solicitud de la jornada.
+>
+> El resto —pruebas, pendientes por frente, riesgos— sigue vigente.
 
 ---
 
