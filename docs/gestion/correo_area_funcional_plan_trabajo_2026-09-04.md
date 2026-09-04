@@ -1,20 +1,22 @@
-# Correo — Plan de trabajo con el área funcional, del 4 al 18 de septiembre
+# Correo — Plan de trabajo hasta las jornadas, del 4 al 18 de septiembre
 
-**Estado:** listo para enviar — **confirmar destinatarios antes** (ver notas)
-**Para:** Área funcional — Subdirección Red Nacional de Información
-**CC:** Alejandro Fernández · Alexandra López (Dirección técnica RNI) · Oscar Manosalva (Supervisión SRNI) · Jorge Cardona (Calidad) · Brandon Niño (Panel web)
-**Asunto:** Capacitación SICAV Móvil — cómo trabajamos del 4 al 18 de septiembre y qué necesitamos de ustedes
+**Estado:** listo para enviar
+**Para:** Alexandra María López Sevillano — Dirección técnica, Red Nacional de Información
+**CC:** Alejandro Fernández · Oscar Manosalva (Supervisión SRNI) · Jorge Cardona (Calidad) · Brandon Niño (Panel web)
+**Asunto:** Capacitación SICAV Móvil — plan de trabajo del 4 al 18 de septiembre y lo que necesitamos del área funcional
 **Adjuntos:** `plan_capacitacion.pdf` · `anexos_capacitacion.pdf`
 **Fecha:** 4 de septiembre de 2026
 
 ---
 
-Buen día a todas y todos.
+Ingeniera Alexandra, buen día.
 
 Con las tres jornadas confirmadas para el **jueves 10, el martes 15 y el viernes 18 de
-septiembre**, les comparto cómo proponemos trabajar estos días y, sobre todo, **qué
+septiembre**, le comparto cómo proponemos trabajar estos días y, sobre todo, **qué
 necesitamos del área funcional y para cuándo**. La idea es que nadie se entere de un
 pendiente el día de la jornada.
+
+Le agradezco hacer llegar los puntos del numeral 3 a quien corresponda dentro del área.
 
 ## 1. El corazón del trabajo de estos días: el pre-test y el post-test
 
@@ -39,12 +41,12 @@ dispositivo—, y al enviar cada persona ve su resultado y la explicación de lo
 | Post-test | `caracterizacion.unidadvictimas.gov.co/descargar/prueba.html?t=post` |
 
 Las diez preguntas están en el **Anexo A** del documento adjunto, con su clave y la escala de
-calificación. **Les pedimos que las revisen**: son ustedes quienes conocen la operación y
-quienes mejor pueden decir si estas preguntas miden lo que un encuestador tiene que saber
-antes de salir a campo. Cinco minutos de su tiempo aquí valen más que cualquier ajuste
-posterior.
+calificación. **Le pido que las revisen desde lo funcional**: son ustedes quienes conocen la
+operación y quienes mejor pueden decir si estas preguntas miden lo que un encuestador tiene
+que saber antes de salir a campo. Cinco minutos de revisión aquí valen más que cualquier
+ajuste posterior.
 
-Dos cosas que ya corregimos y que conviene que sepan, porque hablan de cómo estamos
+Dos cosas que ya corregimos y que conviene que sepa, porque hablan de cómo estamos
 trabajando el instrumento:
 
 - En la primera versión, **once de quince respuestas correctas eran la letra B**. Marcar
@@ -84,26 +86,26 @@ direcciones territoriales conectadas.
 | 2 | **Revisión de las diez preguntas** del Anexo A | **Lunes 7** | Son ustedes quienes saben si miden lo que hay que saber en campo |
 | 3 | **Confirmación de los listados** por grupo territorial (16 y 14) | **Lunes 7** | La convocatoria sale con esos nombres |
 | 4 | **Canal de soporte interno** al que escriben los enlaces cuando algo falle en campo | Cuanto antes | Es el único dato en blanco del Manual de Uso y bloquea una pieza gráfica |
-| 5 | **Quién abre cada jornada** y con qué encuadre institucional | Miércoles 9 | Son los primeros quince minutos de cada sesión |
+| 5 | **Quién abre cada jornada** y con qué encuadre institucional | Miércoles 9 | Son los primeros quince minutos de cada sesión. En el plan quedó a su nombre; confirmar si se mantiene |
 
 ## 4. Un punto del calendario que conviene resolver ya
 
 La verificación de dispositivos del **Grupo B** —que debe hacerse 72 horas antes del viernes
 18— cae **el martes 15, el mismo día de la Sesión 2**. Proponemos **adelantarla al viernes
-11** y enviar las dos convocatorias territoriales juntas ese día. Si les parece bien, lo
+11** y enviar las dos convocatorias territoriales juntas ese día. Si le parece bien, lo
 dejamos así.
 
-## 5. Lo que ya está listo y no requiere nada de ustedes
+## 5. Lo que ya está listo y no requiere nada del área
 
 - **La aplicación**, versión 1.2.3, descargable con código QR y pasos de instalación.
 - **El Manual de Uso v1.2** para encuestadores, publicado.
-- **El pre-test y el post-test**, publicados y calificando.
+- **El pre-test y el post-test**, publicados y calificando, cada uno con su botón en la página.
 - **El plan y los ocho anexos**, adjuntos.
 
 Todo en `caracterizacion.unidadvictimas.gov.co/descargar/`.
 
 Quedo atento a sus comentarios, en especial sobre las diez preguntas y sobre el ajuste del
-punto 4.
+numeral 4.
 
 Cordialmente,
 
@@ -115,11 +117,11 @@ Subdirección Red Nacional de Información · PRY-0662064
 
 ## Notas para el remitente (no enviar)
 
-**Falta la lista de destinatarios.** El encabezado dice «Área funcional — Subdirección Red
-Nacional de Información» como marcador. Hay que reemplazarlo por los nombres reales antes de
-enviar: no tengo cómo saber quiénes componen el área funcional para este frente. Los que
-aparecen en correos anteriores del proyecto y podrían corresponder son Natalia Grisales,
-Dora Vivas, Fabián Agudelo y Jorge Bernal, pero **eso hay que confirmarlo, no asumirlo**.
+**Va dirigido a Alexandra, que reparte.** El correo la trata como punto de entrada al área
+funcional y le pide explícitamente hacer llegar el numeral 3 a quien corresponda. Si prefiere
+escribirle directamente a cada persona, los nombres que aparecen en correos anteriores del
+proyecto son Natalia Grisales, Dora Vivas, Fabián Agudelo y Jorge Bernal — pero eso hay que
+confirmarlo, no asumirlo.
 
 **El correo pide trabajo, así que conviene que llegue el viernes.** Los puntos 2 y 3 tienen
 plazo el lunes 7. Si el correo sale el lunes, esos plazos nacen vencidos.
