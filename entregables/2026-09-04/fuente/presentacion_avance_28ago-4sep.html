@@ -1,0 +1,872 @@
+<title>Avance SICAV Móvil · 28 ago-4 sep</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SICAV Móvil · Avance semanal 28-ago → 4-sep-2026
+   Sistema de marca del proyecto: amarillo institucional #ffcc03,
+   tinta cálida, geometría recta (documento, no tarjeta).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Tinta y superficies — neutros con sesgo cálido hacia el acento */
+  --ink:        #17160f;
+  --ink-2:      #4a473b;
+  --ink-3:      #7c7869;
+  --surface:    #fbfaf6;
+  --panel:      #f2efe4;
+  --panel-2:    #e8e4d5;
+  --line:       #dcd8c7;
+  --line-soft:  #ebe7d9;
+
+  /* Acento institucional */
+  --marca:      #ffcc03;
+  --marca-ink:  #7a5c00;
+
+  /* Estado — reservados, nunca usados como color de serie */
+  --ok:         #1f6b3a;
+  --ok-bg:      #e6f0e6;
+  --alerta:     #9c5a00;
+  --alerta-bg:  #f7ecd7;
+  --grave:      #a81f1a;
+  --grave-bg:   #f8e5e2;
+
+  /* Marcas de datos */
+  --mark-antes: #c9c4b0;
+  --mark-ahora: #ffcc03;
+
+  --display: "Segoe UI Variable Display", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --body:    "Segoe UI Variable Text", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:    Consolas, "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:       #f4f1e4;
+    --ink-2:     #b9b4a2;
+    --ink-3:     #8a8574;
+    --surface:   #131309;
+    --panel:     #1e1d13;
+    --panel-2:   #29271a;
+    --line:      #38361f;
+    --line-soft: #26241a;
+    --marca:     #ffcc03;
+    --marca-ink: #ffdf6b;
+    --ok:        #78c48d;
+    --ok-bg:     #16281c;
+    --alerta:    #e0a44a;
+    --alerta-bg: #2c2113;
+    --grave:     #ef8279;
+    --grave-bg:  #2e1614;
+    --mark-antes:#514d3c;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:       #f4f1e4;
+  --ink-2:     #b9b4a2;
+  --ink-3:     #8a8574;
+  --surface:   #131309;
+  --panel:     #1e1d13;
+  --panel-2:   #29271a;
+  --line:      #38361f;
+  --line-soft: #26241a;
+  --marca:     #ffcc03;
+  --marca-ink: #ffdf6b;
+  --ok:        #78c48d;
+  --ok-bg:     #16281c;
+  --alerta:    #e0a44a;
+  --alerta-bg: #2c2113;
+  --grave:     #ef8279;
+  --grave-bg:  #2e1614;
+  --mark-antes:#514d3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Escenario: la diapositiva es 16:9 y todo su interior escala en em ── */
+
+.escenario {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 1rem 1rem 0.6rem;
+  background: var(--surface);
+}
+
+.diapo {
+  display: none;
+  position: relative;
+  width: min(100% , calc((100vh - 5.5rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  font-size: calc(min(100vw - 2rem, (100vh - 5.5rem) * 16 / 9) / 58);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2.1em 2.5em 1.9em;
+  overflow: hidden;
+}
+.diapo.activa { display: flex; flex-direction: column; }
+
+/* Filete de marca superior */
+.diapo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.32em;
+  background: var(--marca);
+}
+
+/* ── Tipografía ── */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin: 0 0 0.9em;
+  flex: none;
+}
+.eyebrow b { color: var(--marca-ink); font-weight: 700; }
+
+h1 {
+  font-family: var(--display);
+  font-size: 3.5em;
+  line-height: 1.02;
+  letter-spacing: -0.026em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--display);
+  font-size: 2em;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+  margin: 0 0 0.42em;
+  text-wrap: balance;
+}
+h3 {
+  font-family: var(--display);
+  font-size: 1.02em;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  font-weight: 700;
+  margin: 0 0 0.5em;
+}
+p { margin: 0 0 0.7em; line-height: 1.5; font-size: 1em; color: var(--ink-2); }
+p.bajada { font-size: 1.12em; color: var(--ink-2); max-width: 46em; }
+strong { color: var(--ink); font-weight: 700; }
+em { font-style: normal; color: var(--marca-ink); font-weight: 600; }
+
+.cuerpo { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.95em; min-height: 0; }
+.cuerpo.arriba { justify-content: flex-start; }
+
+/* ── Portada ── */
+
+.portada { justify-content: space-between; }
+.portada .sello {
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.portada h1 { font-size: 4.1em; max-width: 15em; }
+.portada .periodo {
+  font-family: var(--mono);
+  font-size: 1.05em;
+  color: var(--ink);
+  margin-top: 0.9em;
+  padding-top: 0.8em;
+  border-top: 0.14em solid var(--marca);
+  display: inline-block;
+}
+.portada .pieportada {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2em;
+  font-size: 0.82em;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+
+/* ── Divisor de sección ── */
+
+.divisor { justify-content: center; background: var(--panel); }
+.divisor .num {
+  font-family: var(--mono);
+  font-size: 7em;
+  line-height: 0.85;
+  font-weight: 700;
+  color: var(--marca);
+  letter-spacing: -0.03em;
+}
+.divisor h1 { font-size: 3.2em; margin-top: 0.18em; }
+.divisor p { font-size: 1.1em; max-width: 34em; margin-top: 0.5em; }
+.divisor .pie { margin-top: auto; }
+
+/* ── Cifras (stat tiles) ── */
+
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9em; }
+.cifras.tres { grid-template-columns: repeat(3, 1fr); }
+.tile {
+  border-top: 0.22em solid var(--marca);
+  background: var(--panel);
+  padding: 0.95em 1em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.tile .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.05em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.tile .l { font-size: 0.8em; color: var(--ink-2); line-height: 1.35; }
+.tile.sobria { border-top-color: var(--line); }
+
+/* ── El motivo: de → a ── */
+
+.deltas { display: flex; flex-direction: column; gap: 0.55em; }
+.delta {
+  display: grid;
+  grid-template-columns: 1.35fr auto auto auto;
+  align-items: baseline;
+  gap: 0.9em;
+  padding: 0.62em 0.9em;
+  background: var(--panel);
+  border-left: 0.28em solid var(--marca);
+}
+.delta .que { font-size: 0.95em; color: var(--ink-2); }
+.delta .antes {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  font-size: 1.05em;
+}
+.delta .flecha { color: var(--marca-ink); font-weight: 700; }
+.delta .ahora {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── Barras comparativas (una medida, dos estados, ambos rotulados) ── */
+
+.barras { display: flex; flex-direction: column; gap: 0.5em; }
+.barra { display: grid; grid-template-columns: 6.5em 1fr 6em; align-items: center; gap: 0.8em; }
+.barra .rot { font-size: 0.82em; color: var(--ink-2); font-family: var(--mono); }
+.barra .pista { height: 1.5em; background: var(--line-soft); position: relative; }
+.barra .mark {
+  display: block; height: 100%;
+  border-radius: 0 0.25em 0.25em 0;
+  background: var(--mark-antes);
+}
+.barra .mark.ahora { background: var(--mark-ahora); }
+.barra .val {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95em;
+  font-weight: 700;
+  text-align: right;
+}
+.pie-barras { font-size: 0.78em; color: var(--ink-3); margin-top: 0.2em; }
+
+/* ── Paneles problema / solución ── */
+
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1em; align-items: stretch; }
+.par.ancho-der { grid-template-columns: 0.85fr 1.15fr; }
+.panel {
+  background: var(--panel);
+  border-left: 0.28em solid var(--line);
+  padding: 1.05em 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  min-width: 0;
+}
+.panel.problema { border-left-color: var(--grave); background: var(--grave-bg); }
+.panel.solucion { border-left-color: var(--marca); }
+.panel .rotulo {
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.15em;
+}
+.panel p { font-size: 0.92em; margin: 0 0 0.45em; }
+.panel p:last-child { margin-bottom: 0; }
+
+/* ── Listas ── */
+
+ul.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5em; }
+ul.lista li {
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: var(--ink-2);
+  padding-left: 1.15em;
+  position: relative;
+}
+ul.lista li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.55em;
+  width: 0.42em; height: 0.42em;
+  background: var(--marca);
+}
+ul.lista.compacta li { font-size: 0.88em; }
+
+/* ── Tabla ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.82em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 0 0.7em 0.5em;
+  border-bottom: 0.12em solid var(--ink);
+}
+td { padding: 0.55em 0.7em; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-2); }
+td strong { color: var(--ink); }
+td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ── Chips de estado (con etiqueta, nunca color solo) ── */
+
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.16em 0.6em;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.pend { color: var(--alerta); background: var(--alerta-bg); }
+.chip.riesgo { color: var(--grave); background: var(--grave-bg); }
+
+/* ── Cita / remate ── */
+
+.remate {
+  border-left: 0.28em solid var(--marca);
+  padding: 0.8em 0 0.8em 1.1em;
+  font-family: var(--display);
+  font-size: 1.28em;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.nota { font-size: 0.82em; color: var(--ink-3); line-height: 1.45; }
+
+/* ── Pie de diapositiva ── */
+
+.pie {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+  margin-top: 1em;
+  padding-top: 0.7em;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── Controles ── */
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+.controles button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+.controles button:hover { background: var(--panel-2); }
+.controles button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+.controles .contador { font-variant-numeric: tabular-nums; min-width: 4.5rem; text-align: center; }
+.controles .pista-prog { width: 12rem; height: 3px; background: var(--line); }
+.controles .pista-prog span { display: block; height: 100%; background: var(--marca); transition: width 0.2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .controles .pista-prog span { transition: none; }
+}
+
+/* ── Pantallas angostas: se suelta el 16:9 y la diapositiva fluye ── */
+
+@media (max-width: 760px) {
+  .diapo {
+    width: 100%;
+    aspect-ratio: auto;
+    min-height: 70vh;
+    font-size: 13px;
+    padding: 1.8em 1.4em 1.4em;
+    overflow-y: auto;
+  }
+  .cifras, .cifras.tres { grid-template-columns: repeat(2, 1fr); }
+  .par, .par.ancho-der { grid-template-columns: 1fr; }
+  .delta { grid-template-columns: 1fr auto; row-gap: 0.2em; }
+  .portada h1, h1 { font-size: 2.4em; }
+  .divisor .num { font-size: 4.5em; }
+}
+
+/* ── Impresión / exportación a PDF: una diapositiva por página ── */
+
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  .controles { display: none; }
+  .escenario { display: block; padding: 0; min-height: 0; }
+  .diapo {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    font-size: 13pt;
+    border: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .diapo:last-child { break-after: auto; page-break-after: auto; }
+  .divisor { background: var(--panel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+}
+</style>
+<div class="escenario">
+<main id="deck">
+
+<section class="diapo portada activa" aria-label="Portada">
+  <div class="sello">Unidad para las Víctimas · PRY-0662064</div>
+  <div>
+    <h1>La capacitación dejó de ser un acto que se dicta y pasó a ser algo que se mide.</h1>
+    <div class="periodo">Avance semanal · 28 ago → 4 sep 2026</div>
+  </div>
+  <div class="pieportada">
+    <span>SICAV Móvil · Sistema de Caracterización de Víctimas</span>
+    <span>14 cambios versionados · 1.185 pruebas en verde · 0 fallos</span>
+  </div>
+</section>
+
+<section class="diapo" aria-label="El periodo en cifras">
+  <div class="eyebrow"><b>Resumen</b> · El periodo en cifras</div>
+  <div class="cuerpo">
+    <h2>Se cerró el alistamiento de la capacitación y se auditó el propio proyecto</h2>
+    <p class="bajada">La semana tuvo dos mitades. En la primera se midió el estado real de cada frente
+    —incluidos cinco pendientes que ya no lo eran—. En la segunda se construyó lo que faltaba para
+    capacitar: un cuestionario que califica solo, el manual publicado y la aplicación descargable.</p>
+    <div class="cifras">
+      <div class="tile"><span class="v">1.185</span><span class="l">pruebas automáticas en verde, 0 fallos: 1.037 del backend y 148 de la aplicación</span></div>
+      <div class="tile"><span class="v">15</span><span class="l">preguntas del pre-test, publicadas y calificando en el servidor</span></div>
+      <div class="tile"><span class="v">61</span><span class="l">comprobaciones de permisos que antes eran una lista de chequeo a mano</span></div>
+      <div class="tile"><span class="v">4</span><span class="l">correos pendientes enviados el 1 de septiembre</span></div>
+    </div>
+    <div class="remate">Cuatro de las cinco dificultades de la semana las encontramos nosotros
+    revisando nuestro propio trabajo, no un informe externo.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>02 / 15</span></div>
+</section>
+
+<section class="diapo divisor" aria-label="Sección: avances">
+  <div class="num">01</div>
+  <h1>Avances</h1>
+  <p>Tres frentes: el instrumento para medir la capacitación, la auditoría del estado real
+  del proyecto, y lo que quedó corriendo en producción.</p>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>03 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Avance 1: el pre-test y el post-test">
+  <div class="eyebrow"><b>Avance 1</b> · Capacitación · Medir la jornada, no solo dictarla</div>
+  <div class="cuerpo">
+    <h2>Un cuestionario que califica solo y dice cuánto se aprendió</h2>
+    <p class="bajada">Quince preguntas, el <strong>mismo cuestionario</strong> al inicio y al cierre.
+    Lo que importa no es el puntaje final aislado: es la diferencia entre los dos, persona por persona.</p>
+    <ul class="lista compacta">
+      <li><strong>Se responde en línea</strong>, sin usuario ni contraseña. Cada quien se identifica
+      con su correo institucional, que es lo que empareja el pre con el post.</li>
+      <li><strong>Califica el servidor, no el navegador.</strong> La clave de respuestas nunca viaja
+      al dispositivo, así que el cuestionario no se puede leer por adelantado.</li>
+      <li><strong>Devuelve el resultado al instante</strong>, con la explicación de cada error: el
+      participante aprende en el momento en que se equivoca.</li>
+      <li><strong>Las preguntas salen del sistema real</strong> —la regla de los dos años, quién
+      autoriza la excepción, los 14 capítulos, el indicador «✓ Al día»—, no de un temario genérico.</li>
+    </ul>
+    <div class="remate">Sin esto, de una capacitación solo queda la lista de asistencia.
+    Con esto queda una medición de cuánto subió cada persona.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>04 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Avance 2: el estado global medido">
+  <div class="eyebrow"><b>Avance 2</b> · Auditoría interna · El estado real de cada frente</div>
+  <div class="cuerpo">
+    <h2>Se corrió todo y se revisó todo, incluidos los pendientes</h2>
+    <p class="bajada">Se ejecutó la batería completa y se contrastó la documentación contra el
+    sistema. Aparecieron pendientes que ya estaban resueltos y otros que nadie había medido.</p>
+    <div class="deltas">
+      <div class="delta">
+        <span class="que"><strong>Matriz de permisos</strong> · era una lista de chequeo que había que recorrer a mano, y nunca se diligenció</span>
+        <span class="antes">manual</span><span class="flecha">→</span><span class="ahora">61 pruebas</span>
+      </div>
+      <div class="delta">
+        <span class="que"><strong>Batería del backend</strong> · las pruebas anteriores cubrían tres perfiles; ahora cubren los cinco reales</span>
+        <span class="antes">976</span><span class="flecha">→</span><span class="ahora">1.037</span>
+      </div>
+    </div>
+    <ul class="lista compacta">
+      <li><strong>Cinco pendientes cerrados por comprobación</strong>, no por olvido: entre ellos, el
+      «bug del 403 para el Supervisor», que ya no existía, y un ajuste de datos que resultó no
+      cambiar nada en producción.</li>
+      <li><strong>Un hallazgo colateral:</strong> el perfil COORDINADOR puede caracterizar
+      <em>y</em> autorizar excepciones a la vez, lo que contradice el criterio con el que se creó
+      ese permiso. Quedó registrado como decisión de operación.</li>
+      <li><strong>Medido, no supuesto:</strong> hay <strong>3 cuentas</strong> con permiso de
+      autorizar para <strong>1.157 encuestadores</strong>.</li>
+    </ul>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>05 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Avance 3: lo que quedó corriendo">
+  <div class="eyebrow"><b>Avance 3</b> · Producción · Lo que quedó publicado y funcionando</div>
+  <div class="cuerpo">
+    <h2>Todo lo que los treinta enlaces necesitan, ya está en línea</h2>
+    <p class="bajada">Cuatro direcciones publicadas y verificadas en el dominio institucional.
+    No hay nada que enviar por adjunto ni por memoria.</p>
+    <table>
+      <thead><tr><th>Qué</th><th>Estado</th><th>Para quién</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Aplicación SICAV Móvil 1.2.3</strong> — con código QR y pasos de instalación</td>
+            <td><span class="chip ok">Publicada</span></td><td>Los 30 enlaces territoriales</td></tr>
+        <tr><td><strong>Manual de Uso v1.2</strong> — para encuestadores</td>
+            <td><span class="chip ok">Publicado</span></td><td>Encuestadores y enlaces</td></tr>
+        <tr><td><strong>Pre-test</strong> — 15 preguntas, califica en el servidor</td>
+            <td><span class="chip ok">Abierto</span></td><td>Antes de cada jornada</td></tr>
+        <tr><td><strong>Post-test</strong> — el mismo cuestionario</td>
+            <td><span class="chip ok">Abierto</span></td><td>Al cierre de cada jornada</td></tr>
+      </tbody>
+    </table>
+    <p class="pie-barras">El Manual de Uso pasó a la versión 1.2 con los cuatro hallazgos de prioridad
+    alta de la revisión: la regla de los dos años y cómo se levanta, cómo confirmar la versión
+    instalada, cómo reportar un problema sin incluir datos de la persona entrevistada, y tres casos
+    nuevos en la guía de problemas.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>06 / 15</span></div>
+</section>
+
+<section class="diapo divisor" aria-label="Sección: dificultades y soluciones">
+  <div class="num">02</div>
+  <h1>Dificultades y soluciones</h1>
+  <p>Cinco. Cuatro salieron de revisar nuestro propio trabajo antes de que llegaran a nadie.
+  La quinta lleva veinte noches y no depende de nosotros.</p>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>07 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Dificultad 1: el cuestionario no medía nada">
+  <div class="eyebrow"><b>Dificultad 1</b> · Pre-test · Encontrada antes de aplicarla a nadie</div>
+  <div class="cuerpo">
+    <h2>El cuestionario no medía nada: bastaba marcar «todo B»</h2>
+    <div class="par">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>En la primera versión, <strong>once de las quince respuestas correctas eran la B</strong>
+        y ninguna era la D. Quien marcara «todo B» sin leer sacaba <strong>11 sobre 15</strong>:
+        nivel «suficiente», habilitado para operar.</p>
+        <p>Peor aún, la correcta era casi siempre la opción más larga y la única que «sonaba a
+        procedimiento». El instrumento premiaba el olfato, no el conocimiento.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p>Se repartió la clave entre las cuatro letras —<strong>3 A · 4 B · 4 C · 4 D</strong>— y se
+        reescribieron los distractores para que ninguno se delate por su forma.</p>
+        <p>Además, los rótulos se verificaron <strong>contra el código de la aplicación</strong>
+        —«Registrar y caracterizar», «Alta manual», «✓ Al día»— y no contra los nombres internos con
+        que hablamos entre nosotros, que el encuestador nunca ve en pantalla.</p>
+      </div>
+    </div>
+    <div class="remate">Un examen mal armado no es un examen inofensivo: habría certificado como
+    habilitados a personas que no lo están, y con constancia escrita.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>08 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Dificultad 2: el manual no estaba publicado">
+  <div class="eyebrow"><b>Dificultad 2</b> · Manual de Uso · Hallada al revisar el anexo</div>
+  <div class="cuerpo">
+    <h2>El manual existía, estaba bien escrito y no estaba en ninguna parte</h2>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>La revisión del manual daba por hecho que estaba publicado. No lo estaba: la página de
+        descarga solo ofrecía la aplicación.</p>
+        <p>Lo que sí se servía como «manual» era el <strong>Manual Funcional</strong>, escrito para
+        perfiles de prueba y soporte. <strong>Los treinta enlaces no tenían de dónde bajar el suyo.</strong></p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p>Se publicó el <strong>Manual de Uso v1.2</strong> como página propia, separado y
+        claramente rotulado frente al Funcional, en la misma pantalla donde se descarga la aplicación.</p>
+        <p>De paso, la revisión corrigió un hallazgo suyo propio: se había anotado que «el manual no
+        cubre el alta manual», y sí la cubre —bajo otro nombre—. <em>El registro quedó con esa
+        corrección, no reescrito.</em></p>
+      </div>
+    </div>
+    <p class="pie-barras">La revisión se hizo para encontrar defectos en el contenido del manual y
+    terminó encontrando uno de distribución, que era más grave: un manual impecable que nadie puede
+    abrir no cumple ninguna función.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>09 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Dificultad 3: la direccion de descarga">
+  <div class="eyebrow"><b>Dificultad 3</b> · Distribución de la aplicación · Detrás del cortafuegos</div>
+  <div class="cuerpo">
+    <h2>La dirección para descargar la app dependía de quién preguntara</h2>
+    <div class="par">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>El servicio que le dice a la aplicación de dónde bajar su actualización
+        <strong>construía la dirección a partir de la pregunta</strong>, no de una configuración.</p>
+        <p>Consultado desde el propio servidor respondía <code>http://localhost/…</code>, y desde
+        internet devolvía <code>http://</code> en vez de <code>https://</code>: el cortafuegos
+        institucional atiende el cifrado y entrega la petición en claro, así que el sistema creía
+        que nadie estaba usando HTTPS.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p>La dirección pública pasó a ser <strong>una configuración explícita</strong>, declarada
+        donde se despliega, y ya no se deduce de nada.</p>
+        <p>Si algún día esa configuración faltara, el sistema reconstruye la dirección respetando lo
+        que anuncie el cortafuegos. Quedaron <strong>cinco pruebas automáticas</strong> que fijan el
+        comportamiento en los tres escenarios.</p>
+      </div>
+    </div>
+    <div class="remate">Es el mismo engaño del intermediario que ya nos había costado los registros
+    de auditoría: lo que le llega al sistema no es lo que el usuario envió.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>10 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Dificultad 4: la cadena del FTP">
+  <div class="eyebrow"><b>Dificultad 4</b> · Caso 14512 · Medido de nuevo hoy, 4 de septiembre</div>
+  <div class="cuerpo">
+    <h2>Veinte noches seguidas sin cargar una sola encuesta</h2>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El problema — sigue abierto</div>
+        <p>El proceso que sube al sistema las encuestas capturadas sin conexión corre todas las
+        noches a las 18:20. <strong>Su última carga exitosa fue el 14 de agosto.</strong></p>
+        <p>Desde entonces falla <strong>todas las noches, en un segundo</strong>, siempre con el
+        mismo error: perdió el acceso a su carpeta de trabajo tras un reinicio. Anoche volvió a
+        fallar.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">Qué hace falta — y de quién depende</div>
+        <p><strong>Restablecer la carpeta</strong> en el servidor donde vive el proceso. No es un
+        cambio de programa: es un permiso de acceso. <em>Administrador de ese servidor.</em></p>
+        <p><strong>Suspender la eliminación diaria</strong> de los archivos del FTP. Hoy se borran a
+        las 24 horas, sin comprobar que hayan entrado. <em>Operación.</em></p>
+        <p>Ambas se escalaron por escrito el 1 de septiembre.</p>
+      </div>
+    </div>
+    <p class="pie-barras"><strong>Medición de hoy:</strong> 30 ejecuciones en los últimos 30 días —
+    10 correctas hasta el 14 de agosto y <strong>20 fallidas seguidas</strong> desde entonces. Cada
+    noche que pasa se borra la captura de ese día antes de que alcance a cargarse.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>11 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Dificultad 5: los correos del equipo">
+  <div class="eyebrow"><b>Dificultad 5</b> · Capacitación · Bloquea la medición, no la jornada</div>
+  <div class="cuerpo">
+    <h2>El cuestionario identifica por correo, y seis del equipo no tienen el institucional</h2>
+    <div class="par">
+      <div class="panel problema">
+        <div class="rotulo">El problema</div>
+        <p>Seis de los siete integrantes del equipo figuran en el sistema con direcciones del
+        ambiente de desarrollo —<code>@srni.dev</code>, <code>@srni.local</code>—.</p>
+        <p>El correo es lo que empareja el pre-test con el post-test. Sin el institucional,
+        <strong>la jornada se puede dictar pero no se puede medir la ganancia</strong> de esas
+        personas.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">La solución</div>
+        <p>Solicitar la creación o corrección de las seis cuentas con dominio
+        <code>@unidadvictimas.gov.co</code> antes del <strong>8 de septiembre</strong>.</p>
+        <p>Es la única condición de la Sesión 1 que no está en nuestras manos, y es de trámite:
+        no bloquea nada más del proyecto.</p>
+      </div>
+    </div>
+    <div class="remate">Se detectó al construir el cuestionario, no el día de la jornada.
+    Corregirlo ahora cuesta un correo; el martes habría costado la medición completa.</div>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>12 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Verificación">
+  <div class="eyebrow"><b>Verificación</b> · Cómo se comprobó cada cosa</div>
+  <div class="cuerpo">
+    <h2>Nada de esto es una estimación</h2>
+    <p class="bajada">Cada cifra de esta presentación tiene detrás una ejecución o una consulta,
+    hecha en el periodo y repetible por un tercero.</p>
+    <ul class="lista">
+      <li><strong>1.185 pruebas automáticas</strong> — batería completa del backend y de la
+      aplicación móvil, corrida de punta a punta. El panel web no se pudo correr desde nuestro
+      entorno: es una comprobación no realizada, no un fallo, y así se reporta.</li>
+      <li><strong>Las cuatro direcciones publicadas</strong> — verificadas contra el dominio
+      institucional después del despliegue, no antes.</li>
+      <li><strong>Las 15 preguntas</strong> — comparadas una a una, en orden y opciones, entre el
+      anexo impreso y lo que sirve el servidor.</li>
+      <li><strong>Las veinte noches del proceso de carga</strong> — leídas hoy del registro de
+      ejecuciones del propio motor de base de datos, con la fecha y el error de cada corrida.</li>
+    </ul>
+    <p class="nota">Las consultas son de solo lectura. No se modificó ningún dato, procedimiento ni
+    trabajo programado del sistema legacy.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>13 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Lo que sigue">
+  <div class="eyebrow"><b>Lo que sigue</b> · Fechas y decisiones</div>
+  <div class="cuerpo">
+    <h2>La capacitación queda en los tres martes de septiembre</h2>
+    <table>
+      <thead><tr><th>Acción</th><th>De quién depende</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Restablecer la carpeta de trabajo</strong> del proceso de carga</td>
+            <td>Administrador de ese servidor</td><td><span class="chip riesgo">20 noches</span></td></tr>
+        <tr><td><strong>Suspender la eliminación diaria</strong> de archivos del FTP</td>
+            <td>Operación</td><td><span class="chip riesgo">Hoy</span></td></tr>
+        <tr><td><strong>Sesión 1</strong> · equipo de la Subdirección</td>
+            <td>Equipo</td><td><span class="chip ok">Martes 8</span></td></tr>
+        <tr><td><strong>Sesión 2</strong> · enlaces territoriales, Grupo A (16)</td>
+            <td>Equipo · convocatoria</td><td><span class="chip ok">Martes 15</span></td></tr>
+        <tr><td><strong>Sesión 3</strong> · enlaces territoriales, Grupo B (14)</td>
+            <td>Equipo · convocatoria</td><td><span class="chip ok">Martes 22</span></td></tr>
+        <tr><td>Correos institucionales de seis integrantes del equipo</td>
+            <td>Administración</td><td><span class="chip pend">Antes del 8</span></td></tr>
+        <tr><td>Canal de soporte interno para los encuestadores</td>
+            <td>Subdirección</td><td><span class="chip pend">Bloquea el manual</span></td></tr>
+        <tr><td>Verificación de dispositivos de los 30 enlaces</td>
+            <td>Operación · nosotros</td><td><span class="chip pend">72 h antes</span></td></tr>
+      </tbody>
+    </table>
+    <p class="pie-barras">Las dos primeras filas son las urgentes y ninguna es técnica nuestra: una
+    es un permiso de carpeta y la otra es una instrucción a la operación. Llevan escaladas desde el
+    1 de septiembre.</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>14 / 15</span></div>
+</section>
+
+<section class="diapo" aria-label="Cierre">
+  <div class="eyebrow"><b>Cierre</b> · 28 ago → 4 sep 2026</div>
+  <div class="cuerpo">
+    <h2>La capacitación quedó lista, y con forma de medirla</h2>
+    <div class="cifras">
+      <div class="tile"><span class="v">1.185</span><span class="l">pruebas en verde, 0 fallos</span></div>
+      <div class="tile"><span class="v">4</span><span class="l">recursos publicados: app, manual, pre-test y post-test</span></div>
+      <div class="tile"><span class="v">5</span><span class="l">dificultades resueltas o escaladas, cuatro halladas por nosotros</span></div>
+      <div class="tile"><span class="v">20</span><span class="l">noches del proceso de carga sin operar, escaladas y sin respuesta</span></div>
+    </div>
+    <div class="remate">Cuatro de las cinco dificultades aparecieron porque revisamos nuestro propio
+    trabajo antes de entregarlo. La quinta lleva veinte noches esperando una decisión que no es nuestra.</div>
+    <p class="nota">Alexandra López · Dirección técnica RNI &nbsp;·&nbsp; Javier Aguilar · Arquitectura y desarrollo
+    &nbsp;·&nbsp; Brandon Niño · Panel de Control &nbsp;·&nbsp; Jorge Cardona · Calidad
+    &nbsp;·&nbsp; Karen Serna · Documentación &nbsp;·&nbsp; Nixon · Seguridad
+    &nbsp;·&nbsp; Oscar Manosalva · Supervisión &nbsp;·&nbsp; PRY-0662064</p>
+  </div>
+  <div class="pie"><span>SICAV Móvil · Avance semanal</span><span>15 / 15</span></div>
+</section>
+
+</main>
+
+<nav class="controles" aria-label="Navegación de la presentación">
+  <button type="button" id="ant" aria-label="Diapositiva anterior">◀ Anterior</button>
+  <span class="contador" id="contador">01 / 15</span>
+  <button type="button" id="sig" aria-label="Diapositiva siguiente">Siguiente ▶</button>
+  <span class="pista-prog" aria-hidden="true"><span id="prog" style="width:6.6%"></span></span>
+</nav>
+</div>
+
+<script>
+(function () {
+  var diapos = Array.prototype.slice.call(document.querySelectorAll('.diapo'));
+  var contador = document.getElementById('contador');
+  var prog = document.getElementById('prog');
+  var actual = 0;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function mostrar(i) {
+    actual = Math.max(0, Math.min(diapos.length - 1, i));
+    diapos.forEach(function (d, n) { d.classList.toggle('activa', n === actual); });
+    contador.textContent = pad(actual + 1) + ' / ' + diapos.length;
+    prog.style.width = ((actual + 1) / diapos.length * 100).toFixed(1) + '%';
+  }
+
+  document.getElementById('ant').addEventListener('click', function () { mostrar(actual - 1); });
+  document.getElementById('sig').addEventListener('click', function () { mostrar(actual + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { mostrar(actual + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { mostrar(actual - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { mostrar(0); e.preventDefault(); }
+    else if (e.key === 'End') { mostrar(diapos.length - 1); e.preventDefault(); }
+  });
+
+  var x0 = null;
+  document.addEventListener('touchstart', function (e) { x0 = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 55) { mostrar(actual + (dx < 0 ? 1 : -1)); }
+    x0 = null;
+  }, { passive: true });
+
+  function desdeHash() {
+    var n = parseInt((location.hash || '').replace('#', ''), 10);
+    return isNaN(n) ? 0 : n - 1;
+  }
+  window.addEventListener('hashchange', function () { mostrar(desdeHash()); });
+
+  mostrar(desdeHash());
+})();
+</script>
