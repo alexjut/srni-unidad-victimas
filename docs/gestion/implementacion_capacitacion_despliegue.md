@@ -215,7 +215,7 @@ Fuente: `apps/*/management/commands/`.
 
 # 2. Forma de capacitación
 
-> ✅ **RESUELTO (2026-09-01).** El plan formal existe y está en ejecución: `entregables/2026-08-27-capacitacion/` — tres sesiones (1, 3 y 8 de septiembre), cronograma, temario, metodología, rosters nominales y **ocho anexos** (pre/post-test, banco de 32 preguntas por capítulo, tres casos de estudio, plantilla de documentación, revisión del manual, encuesta de calidad, piezas gráficas y verificación de dispositivos).
+> ✅ **RESUELTO (2026-09-01).** El plan formal existe y está en ejecución: `entregables/2026-08-27-capacitacion/` — tres sesiones (**15, 24 y 29 de septiembre**, tras dos reprogramaciones), cronograma, temario, metodología, rosters nominales y **ocho anexos** (pre/post-test, banco de 32 preguntas por capítulo, tres casos de estudio, plantilla de documentación, revisión del manual, encuesta de calidad, piezas gráficas y verificación de dispositivos).
 
 ## 2.1 Materiales disponibles (verificados en el repo)
 
@@ -274,7 +274,7 @@ Duración sugerida: **medio día (4 h)**.
 - **QA / Documental:** checklist de tareas cubiertas en el panel + un caso de reporte de defecto (QA) o de exportación/consulta (documental).
 - **Registro:** dejar constancia de asistencia y de resultado por participante.
 
-> ✅ **RESUELTO (2026-09-01).** **30 enlaces territoriales** en dos grupos (16 + 14) más el equipo de la Subdirección, en tres jornadas de 4 h (8:00 a.m.–12:00 m.) los días **1, 3 y 8 de septiembre de 2026**. Dictan Javier (APK), Brandon (panel) y Jorge (calidad). Rosters nominales completos en el plan.
+> ✅ **RESUELTO (2026-09-01).** **30 enlaces territoriales** en dos grupos (16 + 14) más el equipo de la Subdirección, en tres jornadas de 4 h (8:00 a.m.–12:00 m.) los días **15, 24 y 29 de septiembre de 2026** — la del 15 en modalidad híbrida, con 15 puestos presenciales; las otras dos, virtuales. Dictan Javier Alexander Aguilar Castro (APK), Brandon Esteven Niño Quiroga (panel) y Jorge Cardona Gregory (calidad), con la apertura de Alexandra María López Sevillano. Rosters nominales completos en el plan.
 >
 > ⚠️ **Sigue abierto:** el listado nominal del equipo de la Subdirección para la Sesión 1.
 

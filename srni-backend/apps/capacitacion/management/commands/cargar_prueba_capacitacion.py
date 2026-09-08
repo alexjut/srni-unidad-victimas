@@ -41,11 +41,17 @@ PAREJA = 'capacitacion-2026-09'
 #    dejaron fuera las de dato memorístico o de procedimiento del panel. Las cinco
 #    retiradas siguen en el banco del Anexo B para refuerzo.
 PREGUNTAS = [
-    ("Para ingresar a SICAV Móvil se escribe:",
-     ["Su código de usuario", "Su número de cédula",
-      "Su correo electrónico institucional", "Su nombre completo"], "A",
-     "Se ingresa con el código de usuario, que es como está rotulado el campo en la "
-     "pantalla de ingreso. No es la cédula ni el correo."),
+    # El proyecto no reparte códigos propios: cada persona entra con el usuario que
+    # ya tiene en la entidad. La versión anterior de esta pregunta daba por correcta
+    # «su código de usuario», que mandaba a los participantes a buscar una
+    # credencial que nadie les iba a entregar.
+    ("En la pantalla de ingreso de SICAV Móvil, lo que usted escribe en el primer campo es:",
+     ["Su usuario institucional, el mismo de la entidad", "Su número de cédula",
+      "Su correo institucional completo, con @unidadvictimas.gov.co",
+      "Su nombre completo, como aparece en la cédula"], "A",
+     "Se ingresa con el usuario institucional —el mismo de la entidad, sin el "
+     "@unidadvictimas.gov.co—. El campo está rotulado «Código de usuario», pero lo que "
+     "va allí es ese usuario: no es la cédula, ni el correo completo, ni el nombre."),
 
     ("La regla de vigencia impide volver a caracterizar a una persona hasta que pasen, "
      "desde su última caracterización:",
@@ -92,13 +98,17 @@ PREGUNTAS = [
      "Se responde por cada integrante. En un hogar de tres personas, un capítulo con ocho "
      "preguntas de nivel persona genera 24 respuestas."),
 
-    ("La lógica de saltos del formulario hace que:",
-     ["El encuestador pueda omitir cualquier pregunta que no le aplique",
-      "El formulario avance automáticamente cada cinco minutos",
-      "El capítulo se repita desde el principio cuando hay un error",
-      "Algunas preguntas se muestren u oculten según lo respondido"], "D",
-     "Si falta una pregunta que esperaba ver, lo más probable es que una regla la esté "
-     "ocultando: revise lo respondido antes de reportarlo."),
+    # Antes se preguntaba «la lógica de saltos del formulario hace que…», con la
+    # respuesta redactada en el mismo lenguaje técnico del enunciado. Se cambió por
+    # la situación concreta en que el encuestador se topa con esto en campo.
+    ("Está respondiendo un capítulo y una pregunta que esperaba ver no aparece. "
+     "Lo más probable es que:",
+     ["La aplicación tenga un error y convenga reinstalarla",
+      "Esa pregunta aparezca al final, en un capítulo aparte",
+      "Se haya perdido la conexión y por eso esa pregunta no alcanzó a cargar",
+      "No aplique para esta persona, según lo que usted ya respondió"], "D",
+     "El formulario muestra u oculta preguntas según lo que usted ya respondió. Si falta "
+     "una que esperaba ver, revise sus respuestas anteriores antes de reportarlo."),
 
     ("Si la persona no aparece en la búsqueda, en la tarjeta gris se usa:",
      ["El botón «Registrar y caracterizar»",

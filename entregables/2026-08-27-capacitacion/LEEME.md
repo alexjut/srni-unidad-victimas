@@ -21,35 +21,39 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 
 | | Anexo | Cuándo se usa |
 |---|---|---|
-| A | Pre-test y post-test — **10 preguntas, 5 minutos**, mismo cuestionario en los dos momentos, con clave y escala sobre 10. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`); el anexo es la copia de control | 8:00 a.m. y 11:40 a.m. |
+| A | Pre-test y post-test — **10 preguntas, 5 minutos**, mismo cuestionario en los dos momentos, con la escala sobre 10. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`). **El anexo ya no reproduce las preguntas**: circula antes de la jornada y publicarlas anulaba la medición | 8:15 a.m. y 11:00 a.m. |
 | B | Banco de 32 preguntas por capítulo + tabla de referencia Hogar/Persona | Bloque A y refuerzo |
 | C | Tres casos de estudio: hogar offline · ficha vigente (APK + panel) · alta manual e incidencia | Práctica guiada |
 | D | Plantilla de documentación de la experiencia (6 secciones) | Cierre de cada sesión |
 | E | Revisión del Manual de Usuario — 9 hallazgos verificados | Antes de la Sesión 1 |
-| F | Encuesta de calidad (10 ítems Likert) + 4 preguntas abiertas | 11:50 a.m. |
+| F | Encuesta de calidad (10 ítems Likert) + 4 preguntas abiertas | 11:15 a.m. |
 | G | Especificación de las 7 piezas gráficas | Antes de convocar |
 | H | Verificación de dispositivos y credenciales — formato con los 30 participantes | 72 horas antes |
 
 ## Estructura del plan
 
 - **3 sesiones**, jornada de la mañana (8:00 a.m. – 12:00 m.), dictadas por
-  **Jorge** (calidad), **Javier Aguilar** (APK) y **Brandon** (panel).
-  - **Sesión 1 · jueves 10 de septiembre** — Equipo de la Subdirección Red Nacional de Información.
-  - **Sesión 2 · martes 15 de septiembre** — Enlaces territoriales, Grupo A (Caribe, Antioquia y
-    Nororiente): **16 participantes**.
-  - **Sesión 3 · viernes 18 de septiembre** — Enlaces territoriales, Grupo B (Centro, Suroccidente y
-    Orinoquía): **14 participantes**.
+  **Jorge Cardona Gregory** (calidad), **Javier Alexander Aguilar Castro** (APK) y
+  **Brandon Esteven Niño Quiroga** (panel), con la apertura de
+  **Alexandra María López Sevillano**.
+  - **Sesión 1 · martes 15 de septiembre · híbrida** — Equipo de la Subdirección Red Nacional
+    de Información. **15 puestos presenciales**; la sede se confirma en la convocatoria.
+  - **Sesión 2 · jueves 24 de septiembre · virtual** — Enlaces territoriales, Grupo A (Caribe,
+    Antioquia y Nororiente): **16 participantes**.
+  - **Sesión 3 · martes 29 de septiembre · virtual** — Enlaces territoriales, Grupo B (Centro,
+    Suroccidente y Orinoquía): **14 participantes**.
 - **Temario** en dos bloques por sesión: **Bloque A — APK** (instalación,
   búsqueda, excepción de vigencia, hogar, instrumento, offline, sincronización) y
   **Bloque B — Panel de Control** (acceso, autorizaciones, hogares/encuestas,
   reportes, auditoría).
-- Agenda horaria, metodología, requisitos y los dos rosters completos con correo.
+- Agenda horaria (bienvenida 8:00 · pre-test 8:15 · Bloque A 8:30 · receso 9:30 ·
+  Bloque B 9:45 · cierre de calidad 10:45 · post-test 11:00 · preguntas 11:15),
+  metodología, requisitos y los rosters completos con correo.
 
 ## Pendiente de confirmar
 
-- **Correos institucionales** de Brandon, Karen, Jorge Cardona y la supervisión. Sus
-  cuentas en el sistema tienen direcciones de desarrollo (`@srni.dev`, `@srni.local`), y el
-  cuestionario de la jornada identifica a cada persona por su correo institucional.
+- **La sede de la sesión híbrida** del 15 de septiembre y quiénes ocupan los 15 puestos
+  presenciales.
 - **Canal de soporte interno UARIV.** El Manual de Uso v1.2 ya está publicado, pero el dato
   del canal sigue con `[COMPLETAR]` dentro del manual y bloquea la impresión de la pieza
   gráfica 7.
@@ -57,6 +61,68 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
   (`caracterizacion.unidadvictimas.gov.co/descargar/prueba.html?t=pre`), que debe salir con
   al menos 72 horas de anticipación a cada sesión.
 - **Verificación de dispositivos** de los 30 enlaces (Anexo H), 72 horas antes de cada sesión.
+
+## Qué cambió el 8 de septiembre de 2026
+
+- **Fechas y modalidad:** de 10/15/18 a **15, 24 y 29 de septiembre**; la Sesión 1 pasa a
+  **híbrida** con 15 puestos presenciales y las otras dos quedan virtuales.
+- **Agenda reordenada:** la bienvenida abre la jornada y el pre-test pasa después de ella;
+  los dos bloques quedan de una hora y el cierre gana 45 minutos de preguntas.
+- **Nombres completos** en agenda, temario y responsables: el documento se presenta a
+  audiencia institucional.
+- **La supervisión cambia de persona.** Quien ocupaba esa fila ya no está en la
+  Subdirección y sale del listado y de los créditos. En su lugar, el listado incluye a
+  **María Elena Silva Fandiño**, subdirectora encargada, con su nombre, su cargo y su
+  correo (<mariaele.silva@unidadvictimas.gov.co>) y nada más: llegó después de que el
+  sistema se construyera, así que no se le atribuye ningún rol en la jornada ni figura en
+  los créditos del equipo que lo desarrolló.
+- **Los seis correos institucionales** quedaron confirmados y registrados, y
+  **Nixon Alonso Duarte Acosta** aparece con nombre completo.
+- **El Anexo A ya no imprime el cuestionario ni la clave.** Conserva la escala de
+  calificación y cómo se lee el resultado.
+- **Dos preguntas corregidas** en el pre/post-test (ver abajo).
+
+## El cuestionario en línea
+
+Las preguntas viven en
+`srni-backend/apps/capacitacion/management/commands/cargar_prueba_capacitacion.py`, no en
+este entregable. Tras editarlas hay que recargarlas en el servidor:
+
+```bash
+docker exec cz_backend python manage.py cargar_prueba_capacitacion --reemplazar
+```
+
+> `--reemplazar` borra las respuestas de las preguntas anteriores. Hacerlo **antes** de que
+> alguien responda el pre-test; después, cambiar el cuestionario invalida la comparación
+> pre/post de quien ya lo contestó.
+
+> ⚠️ **La imagen del backend en producción trae el comando viejo, el de quince preguntas.**
+> El código va horneado en la imagen, así que ejecutar el comando tal cual **revierte el
+> cuestionario a la versión anterior**: pasó el 8 de septiembre de 2026 y se corrigió en el
+> momento. Mientras la imagen no se reconstruya, hay que copiar el archivo antes de
+> ejecutarlo:
+>
+> ```bash
+> scp -i ~/.ssh/id_srni_servidor \
+>   srni-backend/apps/capacitacion/management/commands/cargar_prueba_capacitacion.py \
+>   admin_rni@30.0.1.109:/tmp/
+> ssh -i ~/.ssh/id_srni_servidor admin_rni@30.0.1.109 \
+>   "docker cp /tmp/cargar_prueba_capacitacion.py cz_backend:/app/apps/capacitacion/management/commands/ && \
+>    docker exec cz_backend python manage.py cargar_prueba_capacitacion --reemplazar"
+> ```
+>
+> El `docker cp` no sobrevive a recrear el contenedor. La corrección de fondo es hornear la
+> imagen en el próximo despliegue del backend.
+
+Cambios del 8 de septiembre:
+
+- **Pregunta 1** — daba por correcta «su código de usuario». El proyecto no entrega
+  códigos propios: se ingresa con el **usuario institucional**. Se reescribió el enunciado
+  y las cuatro opciones, y la explicación aclara que el campo de la pantalla sigue
+  rotulado «Código de usuario».
+- **Pregunta 8** — «la lógica de saltos del formulario hace que…» estaba redactada en el
+  mismo lenguaje técnico de la respuesta. Se cambió por la situación concreta de campo:
+  una pregunta que se esperaba ver y no aparece.
 
 ## Regenerar el PDF
 
