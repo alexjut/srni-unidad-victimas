@@ -1,0 +1,897 @@
+<title>La base de datos de SICAV en producción · 7 sep 2026</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   SICAV Móvil · Avance semanal 21-ago → 28-ago-2026
+   Sistema de marca del proyecto: amarillo institucional #ffcc03,
+   tinta cálida, geometría recta (documento, no tarjeta).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Tinta y superficies — neutros con sesgo cálido hacia el acento */
+  --ink:        #17160f;
+  --ink-2:      #4a473b;
+  --ink-3:      #7c7869;
+  --surface:    #fbfaf6;
+  --panel:      #f2efe4;
+  --panel-2:    #e8e4d5;
+  --line:       #dcd8c7;
+  --line-soft:  #ebe7d9;
+
+  /* Acento institucional */
+  --marca:      #ffcc03;
+  --marca-ink:  #7a5c00;
+
+  /* Estado — reservados, nunca usados como color de serie */
+  --ok:         #1f6b3a;
+  --ok-bg:      #e6f0e6;
+  --alerta:     #9c5a00;
+  --alerta-bg:  #f7ecd7;
+  --grave:      #a81f1a;
+  --grave-bg:   #f8e5e2;
+
+  /* Marcas de datos */
+  --mark-antes: #c9c4b0;
+  --mark-ahora: #ffcc03;
+
+  --display: "Segoe UI Variable Display", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --body:    "Segoe UI Variable Text", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:    Consolas, "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:       #f4f1e4;
+    --ink-2:     #b9b4a2;
+    --ink-3:     #8a8574;
+    --surface:   #131309;
+    --panel:     #1e1d13;
+    --panel-2:   #29271a;
+    --line:      #38361f;
+    --line-soft: #26241a;
+    --marca:     #ffcc03;
+    --marca-ink: #ffdf6b;
+    --ok:        #78c48d;
+    --ok-bg:     #16281c;
+    --alerta:    #e0a44a;
+    --alerta-bg: #2c2113;
+    --grave:     #ef8279;
+    --grave-bg:  #2e1614;
+    --mark-antes:#514d3c;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:       #f4f1e4;
+  --ink-2:     #b9b4a2;
+  --ink-3:     #8a8574;
+  --surface:   #131309;
+  --panel:     #1e1d13;
+  --panel-2:   #29271a;
+  --line:      #38361f;
+  --line-soft: #26241a;
+  --marca:     #ffcc03;
+  --marca-ink: #ffdf6b;
+  --ok:        #78c48d;
+  --ok-bg:     #16281c;
+  --alerta:    #e0a44a;
+  --alerta-bg: #2c2113;
+  --grave:     #ef8279;
+  --grave-bg:  #2e1614;
+  --mark-antes:#514d3c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Escenario: la diapositiva es 16:9 y todo su interior escala en em ── */
+
+.escenario {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 1rem 1rem 0.6rem;
+  background: var(--surface);
+}
+
+.diapo {
+  display: none;
+  position: relative;
+  width: min(100% , calc((100vh - 5.5rem) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  font-size: calc(min(100vw - 2rem, (100vh - 5.5rem) * 16 / 9) / 58);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 1.85em 2.4em 1.5em;
+  overflow: hidden;
+}
+.diapo.activa { display: flex; flex-direction: column; }
+
+/* Filete de marca superior */
+.diapo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.32em;
+  background: var(--marca);
+}
+
+/* ── Tipografía ── */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  margin: 0 0 0.9em;
+  flex: none;
+}
+.eyebrow b { color: var(--marca-ink); font-weight: 700; }
+
+h1 {
+  font-family: var(--display);
+  font-size: 3.5em;
+  line-height: 1.02;
+  letter-spacing: -0.026em;
+  font-weight: 700;
+  margin: 0;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--display);
+  font-size: 1.9em;
+  line-height: 1.07;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+  margin: 0 0 0.42em;
+  text-wrap: balance;
+}
+h3 {
+  font-family: var(--display);
+  font-size: 1.02em;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  font-weight: 700;
+  margin: 0 0 0.5em;
+}
+p { margin: 0 0 0.7em; line-height: 1.5; font-size: 1em; color: var(--ink-2); }
+p.bajada { font-size: 1.12em; color: var(--ink-2); max-width: 46em; }
+strong { color: var(--ink); font-weight: 700; }
+em { font-style: normal; color: var(--marca-ink); font-weight: 600; }
+
+.cuerpo { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.72em; min-height: 0; }
+.cuerpo.arriba { justify-content: flex-start; }
+
+/* ── Portada ── */
+
+.portada { justify-content: space-between; }
+.portada .sello {
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.portada h1 { font-size: 4.1em; max-width: 15em; }
+.portada .periodo {
+  font-family: var(--mono);
+  font-size: 1.05em;
+  color: var(--ink);
+  margin-top: 0.9em;
+  padding-top: 0.8em;
+  border-top: 0.14em solid var(--marca);
+  display: inline-block;
+}
+.portada .pieportada {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2em;
+  font-size: 0.82em;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+
+/* ── Divisor de sección ── */
+
+.divisor { justify-content: center; background: var(--panel); }
+.divisor .num {
+  font-family: var(--mono);
+  font-size: 7em;
+  line-height: 0.85;
+  font-weight: 700;
+  color: var(--marca);
+  letter-spacing: -0.03em;
+}
+.divisor h1 { font-size: 3.2em; margin-top: 0.18em; }
+.divisor p { font-size: 1.1em; max-width: 34em; margin-top: 0.5em; }
+.divisor .pie { margin-top: auto; }
+
+/* ── Cifras (stat tiles) ── */
+
+.cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9em; }
+.cifras.tres { grid-template-columns: repeat(3, 1fr); }
+.tile {
+  border-top: 0.22em solid var(--marca);
+  background: var(--panel);
+  padding: 0.95em 1em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.tile .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.05em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.tile .l { font-size: 0.8em; color: var(--ink-2); line-height: 1.35; }
+.tile.sobria { border-top-color: var(--line); }
+
+/* ── El motivo: de → a ── */
+
+.deltas { display: flex; flex-direction: column; gap: 0.55em; }
+.delta {
+  display: grid;
+  grid-template-columns: 1.35fr auto auto auto;
+  align-items: baseline;
+  gap: 0.9em;
+  padding: 0.62em 0.9em;
+  background: var(--panel);
+  border-left: 0.28em solid var(--marca);
+}
+.delta .que { font-size: 0.95em; color: var(--ink-2); }
+.delta .antes {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  font-size: 1.05em;
+}
+.delta .flecha { color: var(--marca-ink); font-weight: 700; }
+.delta .ahora {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── Barras comparativas (una medida, dos estados, ambos rotulados) ── */
+
+.barras { display: flex; flex-direction: column; gap: 0.5em; }
+.barra { display: grid; grid-template-columns: 6.5em 1fr 6em; align-items: center; gap: 0.8em; }
+.barra .rot { font-size: 0.82em; color: var(--ink-2); font-family: var(--mono); }
+.barra .pista { height: 1.5em; background: var(--line-soft); position: relative; }
+.barra .mark {
+  display: block; height: 100%;
+  border-radius: 0 0.25em 0.25em 0;
+  background: var(--mark-antes);
+}
+.barra .mark.ahora { background: var(--mark-ahora); }
+.barra .val {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95em;
+  font-weight: 700;
+  text-align: right;
+}
+.pie-barras { font-size: 0.78em; color: var(--ink-3); margin-top: 0.2em; }
+
+/* ── Paneles problema / solución ── */
+
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; align-items: stretch; }
+.par.ancho-der { grid-template-columns: 0.85fr 1.15fr; }
+.panel {
+  background: var(--panel);
+  border-left: 0.28em solid var(--line);
+  padding: 0.95em 1.15em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  min-width: 0;
+}
+.panel.problema { border-left-color: var(--grave); background: var(--grave-bg); }
+.panel.solucion { border-left-color: var(--marca); }
+.panel .rotulo {
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.15em;
+}
+.panel p { font-size: 0.92em; margin: 0 0 0.45em; }
+.panel p:last-child { margin-bottom: 0; }
+
+/* ── Listas ── */
+
+ul.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5em; }
+ul.lista li {
+  font-size: 0.95em;
+  line-height: 1.45;
+  color: var(--ink-2);
+  padding-left: 1.15em;
+  position: relative;
+}
+ul.lista li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.55em;
+  width: 0.42em; height: 0.42em;
+  background: var(--marca);
+}
+ul.lista.compacta li { font-size: 0.88em; }
+
+/* ── Tabla ── */
+
+table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.82em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: 0 0.7em 0.5em;
+  border-bottom: 0.12em solid var(--ink);
+}
+td { padding: 0.55em 0.7em; border-bottom: 1px solid var(--line-soft); vertical-align: top; color: var(--ink-2); }
+td strong { color: var(--ink); }
+td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ── Chips de estado (con etiqueta, nunca color solo) ── */
+
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.16em 0.6em;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.pend { color: var(--alerta); background: var(--alerta-bg); }
+.chip.riesgo { color: var(--grave); background: var(--grave-bg); }
+
+/* ── Cita / remate ── */
+
+.remate {
+  border-left: 0.28em solid var(--marca);
+  padding: 0.8em 0 0.8em 1.1em;
+  font-family: var(--display);
+  font-size: 1.28em;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.nota { font-size: 0.82em; color: var(--ink-3); line-height: 1.45; }
+
+/* ── Pie de diapositiva ── */
+
+.pie {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1em;
+  margin-top: 0.75em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ── Controles ── */
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+.controles button {
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+.controles button:hover { background: var(--panel-2); }
+.controles button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+.controles .contador { font-variant-numeric: tabular-nums; min-width: 4.5rem; text-align: center; }
+.controles .pista-prog { width: 12rem; height: 3px; background: var(--line); }
+.controles .pista-prog span { display: block; height: 100%; background: var(--marca); transition: width 0.2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .controles .pista-prog span { transition: none; }
+}
+
+/* ── Cadena de eslabones (el recorrido del dato) ── */
+
+.cadena {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35em;
+  flex-wrap: wrap;
+}
+.eslabon {
+  flex: 1 1 0;
+  min-width: 6.5em;
+  background: var(--panel);
+  border-top: 0.22em solid var(--marca);
+  padding: 0.7em 0.75em 0.75em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18em;
+}
+.eslabon .n {
+  font-family: var(--mono);
+  font-size: 0.68em;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.eslabon b { font-size: 0.95em; line-height: 1.2; color: var(--ink); }
+.eslabon .d { font-size: 0.76em; line-height: 1.35; color: var(--ink-2); }
+.eslabon.roto {
+  border-top-color: var(--grave);
+  background: var(--grave-bg);
+}
+.eslabon.roto .d { color: var(--grave); }
+.eslabon.sobrio { border-top-color: var(--line); }
+.cadena .flecha-c {
+  align-self: center;
+  font-family: var(--mono);
+  color: var(--marca-ink);
+  font-weight: 700;
+  font-size: 1.1em;
+  flex: none;
+}
+
+/* ── Capas: rótulo a la izquierda, contenido a la derecha ── */
+
+.capas { display: flex; flex-direction: column; gap: 0.45em; }
+.capa {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  gap: 1em;
+  align-items: baseline;
+  padding: 0.55em 0.9em;
+  background: var(--panel);
+  border-left: 0.28em solid var(--marca);
+}
+.capa .rot {
+  font-family: var(--mono);
+  font-size: 0.74em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--marca-ink);
+  font-weight: 700;
+}
+.capa .txt { font-size: 0.88em; line-height: 1.45; color: var(--ink-2); }
+.capas.compacta { gap: 0.36em; }
+.capas.compacta .capa { padding: 0.42em 0.85em; grid-template-columns: 9em 1fr; }
+.capas.compacta .txt { font-size: 0.83em; line-height: 1.4; }
+
+.capa.sobria { border-left-color: var(--line); }
+.capa.sobria .rot { color: var(--ink-3); }
+.capa.riesgo { border-left-color: var(--grave); background: var(--grave-bg); }
+.capa.riesgo .rot { color: var(--grave); }
+
+/* ── Tabla muy densa ── */
+
+table.densa { font-size: 0.8em; }
+table.densa td { padding: 0.38em 0.6em; }
+table.densa th { padding: 0 0.6em 0.4em; }
+
+/* ── Dos columnas de texto corrido ── */
+
+.dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1em; align-items: start; }
+.dos-col.izq-ancha { grid-template-columns: 1.25fr 0.75fr; }
+
+/* ── Pantallas angostas: se suelta el 16:9 y la diapositiva fluye ── */
+
+@media (max-width: 760px) {
+  .diapo {
+    width: 100%;
+    aspect-ratio: auto;
+    min-height: 70vh;
+    font-size: 13px;
+    padding: 1.8em 1.4em 1.4em;
+    overflow-y: auto;
+  }
+  .cifras, .cifras.tres { grid-template-columns: repeat(2, 1fr); }
+  .par, .par.ancho-der, .dos-col, .dos-col.izq-ancha { grid-template-columns: 1fr; }
+  .capa { grid-template-columns: 1fr; gap: 0.15em; }
+  .cadena .flecha-c { display: none; }
+  .eslabon { flex-basis: 45%; }
+  .delta { grid-template-columns: 1fr auto; row-gap: 0.2em; }
+  .portada h1, h1 { font-size: 2.4em; }
+  .divisor .num { font-size: 4.5em; }
+}
+
+/* ── Impresión / exportación a PDF: una diapositiva por página ── */
+
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  .controles { display: none; }
+  .escenario { display: block; padding: 0; min-height: 0; }
+  .diapo {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    font-size: 13pt;
+    border: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .diapo:last-child { break-after: auto; page-break-after: auto; }
+  .diapo, .tile, .panel, .delta, .capa, .eslabon, .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .divisor { background: var(--panel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+}
+</style>
+<div class="escenario">
+<main id="deck">
+
+<section class="diapo activa portada" aria-label="Portada">
+  <div class="sello">Unidad para las Víctimas · Subdirección Red Nacional de Información · PRY-0662064</div>
+  <div>
+    <h1>La base de datos de SICAV, tal como está hoy en producción</h1>
+    <div class="periodo">Estado a 7 de septiembre de 2026</div>
+  </div>
+  <div class="pieportada">
+    <span>SICAV · Sistema de Caracterización de Víctimas</span>
+    <span>PostgreSQL 16 · 37 tablas · 17,9 millones de registros de identidad</span>
+  </div>
+</section>
+
+<section class="diapo" aria-label="La base en cifras">
+  <div class="eyebrow"><b>Resumen</b> · Qué hay hoy en la base de producción</div>
+  <div class="cuerpo">
+    <h2>Una base que ya carga el padrón real, y que casi no ha sido usada todavía</h2>
+    <p class="bajada">Los datos de referencia están cargados y verificados. Lo que aún no
+    ocurre es la operación: la base tiene millones de personas y apenas siete hogares
+    caracterizados.</p>
+    <div class="cifras">
+      <div class="tile"><span class="v">5.926.004</span><span class="l">víctimas en el padrón operativo que consulta la aplicación</span></div>
+      <div class="tile"><span class="v">12.009.492</span><span class="l">personas en el universo del RUV, como corte de referencia</span></div>
+      <div class="tile"><span class="v">37</span><span class="l">tablas de aplicación, agrupadas en seis bloques funcionales</span></div>
+      <div class="tile"><span class="v">≈ 34 GB</span><span class="l">ocupa hoy la base en su disco dedicado del servidor</span></div>
+    </div>
+    <div class="remate">La base ya no opera con datos ficticios. Desde agosto responde con el
+    padrón real de la entidad, y cada persona que devuelve existe en el registro.</div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>02 / 14</span></div>
+</section>
+
+<section class="diapo divisor" aria-label="Sección: dónde vive y qué guarda">
+  <div class="num">01</div>
+  <h1>Dónde vive y qué guarda</h1>
+  <p>El servidor, los contenedores y los seis bloques de información que sostienen
+  la caracterización de punta a punta.</p>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>03 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Dónde vive la base">
+  <div class="eyebrow"><b>Infraestructura</b> · Servidor 30.0.1.109 · intranet UARIV</div>
+  <div class="cuerpo">
+    <h2>Vive dentro de la entidad, en un servidor al que solo se llega por la VPN</h2>
+    <div class="par ancho-der">
+      <div class="panel solucion">
+        <div class="rotulo">El servidor</div>
+        <p><strong>30.0.1.109</strong> · Ubuntu · 4 vCPU · 15 GB de memoria.
+        Acceso administrativo por llave SSH sobre VPN institucional.</p>
+        <p>El sistema se publica en <strong>caracterizacion.unidadvictimas.gov.co</strong>,
+        que entra cifrado por el WAF de la entidad. La base <em>no</em> se publica: no tiene
+        puerto abierto al servidor ni a la red.</p>
+        <p class="nota">Es un servidor <strong>compartido</strong> con otros sistemas de la
+        entidad. Nuestro conjunto está aislado en su propia red de contenedores.</p>
+      </div>
+      <div class="panel">
+        <div class="rotulo">Cómo está desplegada</div>
+        <table class="densa">
+          <tr><td><strong>Motor</strong></td><td>PostgreSQL 16, en el contenedor <code>cz_postgres</code></td></tr>
+          <tr><td><strong>Alcance</strong></td><td>Solo desde los contenedores del sistema; sin puerto publicado</td></tr>
+          <tr><td><strong>Almacenamiento</strong></td><td>Volumen <code>cz_pgdata_datos</code>, trasladado en agosto a un disco dedicado de 251 GB por presión de capacidad</td></tr>
+          <tr><td><strong>Quién escribe</strong></td><td>El backend (Django) y tres trabajadores en segundo plano</td></tr>
+          <tr><td><strong>Usuario de aplicación</strong></td><td>Permisos mínimos: sin poder modificar ni borrar la auditoría</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>04 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Qué guarda">
+  <div class="eyebrow"><b>Contenido</b> · Los seis bloques de la base</div>
+  <div class="cuerpo">
+    <h2>Seis bloques: quién es la víctima, qué se le pregunta y qué respondió</h2>
+    <div class="capas compacta">
+      <div class="capa"><span class="rot">Identidad</span><span class="txt"><strong>5.926.004</strong> víctimas del padrón operativo y <strong>12.009.492</strong> del universo del RUV, con el registro de documentos repetidos y de cada carga.</span></div>
+      <div class="capa"><span class="rot">Instrumento</span><span class="txt">Nueve parametrizaciones vigentes: <strong>106 capítulos</strong>, <strong>1.959 preguntas</strong>, 6.021 opciones y 1.043 reglas de flujo que deciden qué se pregunta y qué se salta.</span></div>
+      <div class="capa"><span class="rot">Captura</span><span class="txt">Hogares, miembros, sesiones de entrevista y <em>cada respuesta</em>, distinguiendo lo que es del hogar de lo que es de cada persona.</span></div>
+      <div class="capa"><span class="rot">Paramétricas</span><span class="txt">DIVIPOLA del DANE —33 departamentos y 1.102 municipios—, veredas, resguardos, comunidades negras, direcciones territoriales y puntos de atención.</span></div>
+      <div class="capa"><span class="rot">Acceso</span><span class="txt"><strong>1.161 usuarios</strong> en cinco perfiles, con la contraseña protegida por Argon2, y la bitácora de quién consultó qué.</span></div>
+      <div class="capa"><span class="rot">Puente al legado</span><span class="txt">Qué se escribió en el Oracle de la entidad, en qué paso va cada hogar y con qué resultado quedó verificado.</span></div>
+    </div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>05 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Las tablas que pesan">
+  <div class="eyebrow"><b>Volumen</b> · Dónde están los 34 GB</div>
+  <div class="cuerpo">
+    <h2>Cinco tablas explican prácticamente todo el tamaño de la base</h2>
+    <table>
+      <thead><tr><th>Tabla</th><th style="text-align:right">Registros</th><th style="text-align:right">Datos</th><th style="text-align:right">Índices</th><th>Qué es</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Padrón operativo</strong></td><td class="num">5.916.880</td><td class="num">9.199 MB</td><td class="num">5.915 MB</td><td>A quién se puede caracterizar</td></tr>
+        <tr><td><strong>Universo del RUV</strong></td><td class="num">12.009.492</td><td class="num">9,2 GB</td><td class="num">9,5 GB</td><td>Corte de referencia del registro</td></tr>
+        <tr><td>Documentos repetidos</td><td class="num">768.096</td><td class="num">217 MB</td><td class="num">360 MB</td><td>El 92 % es la misma persona, no una colisión</td></tr>
+        <tr><td>Caracterizaciones del legado</td><td class="num">222.094</td><td class="num">39 MB</td><td class="num">73 MB</td><td>Fechas para la regla de recaracterización</td></tr>
+        <tr><td>Todo lo demás</td><td class="num">—</td><td class="num">≈ 15 MB</td><td class="num">—</td><td>Instrumento, usuarios, captura, auditoría</td></tr>
+      </tbody>
+    </table>
+    <p class="nota"><strong>Los índices pesan casi tanto como los datos.</strong> La medición del
+    5 de agosto encontró <strong>5,8 GB de índices con cero usos</strong> —creados por defecto
+    sobre valores donde no aportan nada—. Podarlos está identificado y cuantificado: es la
+    diferencia entre operar con margen de disco y operar sin él.</p>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>06 / 14</span></div>
+</section>
+
+<section class="diapo divisor" aria-label="Sección: cómo protege y cómo se usa">
+  <div class="num">02</div>
+  <h1>Cómo protege el dato y cómo circula</h1>
+  <p>Qué se cifra, cómo se busca sin descifrar, y el recorrido completo de una
+  caracterización hasta el Oracle de la entidad.</p>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>07 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Protección del dato personal">
+  <div class="eyebrow"><b>Seguridad</b> · Cinco medidas sobre la base</div>
+  <div class="cuerpo">
+    <h2>El nombre y el documento quedan cifrados, y aun así se puede buscar por documento</h2>
+    <div class="par">
+      <div class="panel solucion">
+        <div class="rotulo">Lo que protege el dato</div>
+        <p><strong>Cifrado en la columna.</strong> Nombres, documento y fecha de nacimiento se
+        guardan cifrados con AES; leer el archivo de la base no revela a nadie.</p>
+        <p><strong>Búsqueda por huella.</strong> Junto al dato cifrado se guarda una huella
+        SHA-256 del documento: buscar compara huellas, <em>sin descifrar el padrón</em>.</p>
+        <p><strong>Contraseñas con Argon2</strong>: no son reversibles ni para quien administre
+        la base.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">Lo que deja constancia</div>
+        <p><strong>Auditoría inmutable.</strong> Cada consulta y cada respuesta queda
+        registrada, y al usuario de la aplicación se le <em>revocó</em> el permiso de modificar
+        o borrar esa bitácora.</p>
+        <p><strong>La base no está expuesta.</strong> Solo la alcanzan los contenedores del
+        propio sistema.</p>
+        <p class="nota">Pendiente declarado: la huella que usa el teléfono aún no lleva sal
+        criptográfica.</p>
+      </div>
+    </div>
+    <div class="remate">Antes, el padrón entero viajaba legible dentro del archivo de
+    instalación del teléfono.</div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>08 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="El ciclo del dato">
+  <div class="eyebrow"><b>Recorrido</b> · De la jornada al reporte</div>
+  <div class="cuerpo">
+    <h2>El dato hace cuatro paradas, y solo la primera y la tercera necesitan señal</h2>
+    <div class="cadena">
+      <div class="eslabon"><span class="n">01 · CON SEÑAL</span><b>Arranque</b><span class="d">Al entrar, el teléfono descarga el instrumento vigente, las paramétricas y el padrón consultable.</span></div>
+      <div class="flecha-c">→</div>
+      <div class="eslabon"><span class="n">02 · SIN SEÑAL</span><b>Campo</b><span class="d">Se busca a la persona, se arma el hogar y se responde. Todo queda en una base local del teléfono.</span></div>
+      <div class="flecha-c">→</div>
+      <div class="eslabon"><span class="n">03 · CON SEÑAL</span><b>Sincronización</b><span class="d">La cola sube lo capturado a PostgreSQL en orden de dependencia, y desde allí se escribe al Oracle.</span></div>
+      <div class="flecha-c">→</div>
+      <div class="eslabon"><span class="n">04</span><b>Reportes</b><span class="d">Producción por encuestador, supervisión y tablero. Se calculan al vuelo sobre las respuestas.</span></div>
+    </div>
+    <div class="par">
+      <div class="panel">
+        <div class="rotulo">Por qué importa el orden</div>
+        <p>La cola respeta las dependencias —primero la víctima, luego el hogar, luego los
+        miembros, luego las respuestas— y reintenta con espera creciente. Si el teléfono se
+        apaga a mitad, al arrancar reconcilia lo que quedó suelto.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">El indicador que hay que mirar</div>
+        <p>Que una caracterización llegó al sistema <strong>no</strong> se comprueba viendo el
+        último capítulo respondido, sino viendo que <em>la cola de sincronización quede
+        vacía</em>. Es lo que hay que enseñar en campo.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>09 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="La escritura hacia Oracle">
+  <div class="eyebrow"><b>Integración</b> · Del sistema nuevo al Oracle de la entidad</div>
+  <div class="cuerpo">
+    <h2>Nada se inserta a mano en el Oracle: todo pasa por los procedimientos oficiales</h2>
+    <p class="bajada">Ocho procedimientos oficiales de la propia entidad, en orden de
+    dependencia: hogar, personas, miembros, respuestas y cascada territorial.</p>
+    <div class="par ancho-der">
+      <div class="panel problema">
+        <div class="rotulo">El riesgo que obligó a verificar</div>
+        <p>Esos procedimientos <strong>confirman por dentro y se tragan sus errores</strong>:
+        devuelven éxito aunque no hayan escrito nada. Por eso «llamé al procedimiento» no
+        cuenta como escrito.</p>
+      </div>
+      <div class="panel solucion">
+        <div class="rotulo">Cómo se resolvió</div>
+        <p>Después de cada paso se comprueba con una consulta que la fila quedó, y el
+        resultado se guarda como evidencia: qué se escribió, cuándo y con qué estado. Un paso
+        puede quedar marcado <em>ejecutado sin verificar</em> — la información que el sistema
+        anterior nunca dio.</p>
+        <p><strong>Piloto verificado en producción el 28 de julio</strong>: un hogar
+        completo, 11 de 11 escrituras confirmadas.</p>
+      </div>
+    </div>
+    <p class="nota">Hoy el disparo automático está <strong>apagado</strong> a propósito:
+    encenderlo escribe en la base de la entidad y debe ser una instrucción explícita.</p>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>10 / 14</span></div>
+</section>
+
+<section class="diapo divisor" aria-label="Sección: estado y decisiones">
+  <div class="num">03</div>
+  <h1>Estado real y lo que está abierto</h1>
+  <p>Lo que hoy contiene la base en operación, los cuatro frentes abiertos
+  y las decisiones que no dependen de desarrollo.</p>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>11 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Estado de la operación">
+  <div class="eyebrow"><b>Operación</b> · Lo que la base ha visto hasta hoy</div>
+  <div class="cuerpo">
+    <h2>Todo está construido; lo que falta es que entre la operación</h2>
+    <div class="cifras">
+      <div class="tile"><span class="v">1.161</span><span class="l">usuarios creados, de los cuales 1.158 son encuestadoras</span></div>
+      <div class="tile"><span class="v">0</span><span class="l">encuestadoras que hayan iniciado sesión alguna vez</span></div>
+      <div class="tile"><span class="v">7</span><span class="l">hogares caracterizados en producción</span></div>
+      <div class="tile"><span class="v">4</span><span class="l">sesiones de entrevista registradas</span></div>
+    </div>
+    <div class="par">
+      <div class="panel">
+        <div class="rotulo">Qué significa</div>
+        <p>Las cuentas existen, están activas y con el perfil correcto. Lo que no está
+        verificado es que las credenciales repartidas coincidan con lo que quedó en la base.
+        La asignación se hará contra una fecha de inicio conocida, no antes.</p>
+      </div>
+      <div class="panel problema">
+        <div class="rotulo">El riesgo que esto deja</div>
+        <p>La base es correcta, pero <strong>no se ha ejercitado a volumen</strong>. Lo que
+        conviene prever no es lo que hoy muestra, sino lo que aparecerá el primer día en que
+        mil encuestadoras sincronicen a la vez.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>12 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Lo que está abierto">
+  <div class="eyebrow"><b>Frentes abiertos</b> · Cuatro, en orden de gravedad</div>
+  <div class="cuerpo">
+    <h2>Cuatro puntos abiertos, y el más grave no es técnico</h2>
+    <div class="capas compacta">
+      <div class="capa riesgo"><span class="rot">Respaldos</span><span class="txt"><strong>No hay constancia de que la base se respalde.</strong> Se solicitó en junio junto con el servidor y sigue sin confirmarse: 5,9 millones de personas y 12 millones de registros de universo. Es gestión con Infraestructura, no desarrollo.</span></div>
+      <div class="capa riesgo"><span class="rot">Padrón heredado</span><span class="txt">Género, etnia, discapacidad y estado en el RUV <strong>provienen de otra persona</strong>: la unión se hizo con un campo del sistema anterior que resultó ser un contador de filas. Ya está aislado y marcado; corregirlo exige recargar con la llave correcta.</span></div>
+      <div class="capa riesgo"><span class="rot">Padrón offline</span><span class="txt">El teléfono <strong>conoce 5.000 personas, no 5,9 millones</strong>: nunca descarga el archivo completo. Trabajar sin señal es la razón de ser de la aplicación.</span></div>
+      <div class="capa"><span class="rot">Capacidad</span><span class="txt">Servidor compartido, con un volumen dedicado añadido para la base. Hay <strong>5,8 GB de índices sin uso</strong> identificados para podar.</span></div>
+    </div>
+    <div class="remate">Tres de los cuatro son trabajo nuestro y están acotados. El primero
+    —los respaldos— lleva abierto desde junio y solo se cierra con una respuesta.</div>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>13 / 14</span></div>
+</section>
+
+<section class="diapo" aria-label="Cierre y decisiones">
+  <div class="eyebrow"><b>Cierre</b> · Lo que se necesita decidir</div>
+  <div class="cuerpo">
+    <h2>Tres decisiones, ninguna de desarrollo</h2>
+    <table>
+      <thead><tr><th>#</th><th>Decisión</th><th>De quién depende</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td><strong>Constancia de que la base se respalda</strong>, o autorización para configurarlo nosotros</td><td>Infraestructura · abierto desde junio</td></tr>
+        <tr><td class="num">2</td><td><strong>Encender la escritura automática hacia Oracle</strong>, hoy apagada a propósito</td><td>Instrucción operativa</td></tr>
+        <tr><td class="num">3</td><td><strong>Fecha de inicio en campo</strong>, para asignar las credenciales de las 1.158 encuestadoras contra un día conocido</td><td>Operación</td></tr>
+      </tbody>
+    </table>
+    <div class="remate">La base ya sostiene el padrón real y ya escribió en el Oracle de la
+    entidad. Lo que falta para que rinda no es construir más: es respaldarla, encenderla
+    y usarla.</div>
+    <p class="nota"><strong>Procedencia de las cifras.</strong> Padrón, universo, instrumento y
+    operación: medidos el 1 de septiembre de 2026. Volumen en disco e índices sin uso: medidos
+    el 5 y el 11 de agosto. Usuarios y perfiles: 11 de agosto. Arquitectura del servidor:
+    inspección del 27 de agosto. <em>No fue posible revalidar en vivo el día de esta
+    presentación por indisponibilidad de la VPN.</em></p>
+  </div>
+  <div class="pie"><span>Base de datos SICAV · Producción</span><span>14 / 14</span></div>
+</section>
+</main>
+
+<nav class="controles" aria-label="Navegación de la presentación">
+  <button type="button" id="ant" aria-label="Diapositiva anterior">◀ Anterior</button>
+  <span class="contador" id="contador">01 / 14</span>
+  <button type="button" id="sig" aria-label="Diapositiva siguiente">Siguiente ▶</button>
+  <span class="pista-prog" aria-hidden="true"><span id="prog" style="width:7.1%"></span></span>
+</nav>
+</div>
+
+<script>
+(function () {
+  var diapos = Array.prototype.slice.call(document.querySelectorAll('.diapo'));
+  var contador = document.getElementById('contador');
+  var prog = document.getElementById('prog');
+  var actual = 0;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function mostrar(i) {
+    actual = Math.max(0, Math.min(diapos.length - 1, i));
+    diapos.forEach(function (d, n) { d.classList.toggle('activa', n === actual); });
+    contador.textContent = pad(actual + 1) + ' / ' + diapos.length;
+    prog.style.width = ((actual + 1) / diapos.length * 100).toFixed(1) + '%';
+  }
+
+  document.getElementById('ant').addEventListener('click', function () { mostrar(actual - 1); });
+  document.getElementById('sig').addEventListener('click', function () { mostrar(actual + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { mostrar(actual + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { mostrar(actual - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { mostrar(0); e.preventDefault(); }
+    else if (e.key === 'End') { mostrar(diapos.length - 1); e.preventDefault(); }
+  });
+
+  var x0 = null;
+  document.addEventListener('touchstart', function (e) { x0 = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 55) { mostrar(actual + (dx < 0 ? 1 : -1)); }
+    x0 = null;
+  }, { passive: true });
+
+  function desdeHash() {
+    var n = parseInt((location.hash || '').replace('#', ''), 10);
+    return isNaN(n) ? 0 : n - 1;
+  }
+  window.addEventListener('hashchange', function () { mostrar(desdeHash()); });
+
+  mostrar(desdeHash());
+})();
+</script>
