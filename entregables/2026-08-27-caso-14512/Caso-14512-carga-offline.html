@@ -473,7 +473,7 @@ footer.doc p{max-width:70ch}
       <div class="what">
         <span class="badge pill ok">Sano</span>
         <strong><code>SP_ADD_ENCUESTAS_MOVIL</code></strong>
-        <span>Convierte el JSON en filas de <code>GIC_ENCUESTA_MOVIL</code>. Descarta en silencio lo capturado hace más de 30 días.</span>
+        <span>Convierte el JSON en filas de <code>GIC_ENCUESTA_MOVIL</code>. Descarta en silencio lo capturado hace más de 120 días.</span>
       </div>
     </div>
     <div class="connector"></div>
@@ -762,22 +762,48 @@ ORA-06512: en <span class="k">"SYS.UTL_FILE"</span>, línea 536</pre>
     para cualquier persona que entre al servidor. La instancia registra un arranque posterior
     el 22 de agosto a las 21:08, lo que confirma que hubo más de un reinicio en el periodo.
   </p>
-  <div class="note-box warn">
-    <h4>Lo que falta confirmar, y no se puede desde la base</h4>
+  <div class="note-box">
+    <h4>Confirmado por la operación: sí hay archivos en el FTP</h4>
     <p>
-      Quedan dos hipótesis compatibles con la evidencia, y se distinguen con una revisión de
-      sistema operativo, no con SQL:
+      La tarea manual se sigue haciendo: <strong>todos los días se copian los archivos de
+      <code>/Encuestas</code> a <code>/EncuestasACargar1</code>, y al día siguiente se
+      eliminan a mano</strong>.
     </p>
-    <ul>
-      <li>En <code>BD-MODELO-19C</code>: ¿existe <code>F:\Encuestas</code> y la ve la cuenta
-        de servicio de Oracle?</li>
-      <li>En el FTP: ¿hay archivos en <code>/EncuestasACargar1</code> en este momento?</li>
-    </ul>
     <p>
-      Si <code>F:</code> está caída, se restaura el acceso y todo lo represado entra en la
-      corrida siguiente. Si <code>F:</code> está bien y el FTP está vacío, el corte es más
-      arriba: nadie está copiando de <code>/Encuestas</code> a <code>/EncuestasACargar1</code>,
-      o la APK dejó de subir.
+      Esto <b>descarta la segunda hipótesis</b> y deja una sola en pie. Si hubiera archivos
+      para bajar y la conexión funcionara, la corrida tomaría los tres minutos habituales; en
+      cambio muere en uno. El punto de falla es la carpeta local
+      <code>F:\Encuestas</code> del servidor 65, no el FTP ni la tarea manual.
+    </p>
+  </div>
+
+  <div class="verdict" style="margin-top:18px">
+    <span class="tag">Pérdida activa — requiere acción hoy</span>
+    <p>
+      La combinación es destructiva: el proceso falla todas las noches desde el 16 de agosto,
+      y al día siguiente alguien borra a mano los archivos que ese proceso nunca llegó a
+      leer.
+    </p>
+    <p>
+      <strong>Cada día que pasa se está eliminando la captura de ese día sin que haya entrado
+      nunca a la base.</strong> No es una pérdida histórica: está ocurriendo ahora. Suspender
+      la eliminación manual es la medida más urgente de todo este informe, y no depende de
+      ningún cambio técnico —es una instrucción a la operación—.
+    </p>
+  </div>
+
+  <div class="note-box ok" style="border-left-color:var(--ok)">
+    <h4>Lo represado sí se puede recuperar</h4>
+    <p>
+      Existe una copia de respaldo de los archivos del FTP. Con las ventanas vigentes de 120
+      y 90 días —ampliadas en la intervención de julio, ver más adelante— <strong>volver a
+      cargar esos archivos en <code>/EncuestasACargar1</code> sí produce caracterizaciones</strong>,
+      a diferencia de lo que ocurriría bajo la ventana anterior de 30 días.
+    </p>
+    <p>
+      Dos condiciones: que la carpeta <code>F:\Encuestas</code> esté restablecida antes de
+      volver a subirlos —de lo contrario se pierden igual—, y que se haga pronto. Para
+      capturas de mediados de julio el plazo vence alrededor del <b>12 de octubre de 2026</b>.
     </p>
   </div>
 </section>
@@ -844,7 +870,7 @@ ORA-06512: en <span class="k">"SYS.UTL_FILE"</span>, línea 536</pre>
   <div class="stats">
     <div class="stat crit">
       <span class="n">56</span>
-      <span class="l">Encuestas de abril y mayo ingeridas apenas en julio: quedaron fuera de la ventana de 30 días y nunca se convertirán en caracterizaciones</span>
+      <span class="l">Encuestas de abril y mayo que permanecieron dos y tres meses en el FTP antes de ser recogidas, apenas en julio</span>
     </div>
     <div class="stat crit">
       <span class="n">912</span>
@@ -860,19 +886,50 @@ ORA-06512: en <span class="k">"SYS.UTL_FILE"</span>, línea 536</pre>
     </div>
   </div>
 
-  <h3>La ventana de 30 días</h3>
+  <h3>Las ventanas de tiempo: hay dos, y son más amplias de lo que se creía</h3>
   <p>
-    <code>SP_ADD_ENCUESTAS_MOVIL</code> filtra con
-    <code>WHERE usu_fechacreacion &gt;= SYSDATE - 30</code>. Un archivo que quede represado
-    más de un mes entra a la base y <strong>jamás se procesa, sin error y sin traza</strong>.
-    Es el mecanismo por el que se perdieron las 56 encuestas de abril y mayo: estuvieron dos
-    y tres meses en el FTP antes de ser recogidas.
+    El procesamiento descarta en silencio lo que llega demasiado tarde. Verificado sobre el
+    código vigente en producción —ambos procedimientos fueron recompilados el 22 y el 23 de
+    julio de 2026, y en esa intervención <strong>las ventanas se ampliaron</strong>:
   </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Procedimiento</th><th>Filtro vigente</th><th>Ventana</th><th>Antes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">SP_ADD_ENCUESTAS_MOVIL</td>
+          <td class="mono">usu_fechacreacion &gt;= SYSDATE - 120</td>
+          <td><b>120 días</b></td>
+          <td>30 días</td>
+        </tr>
+        <tr>
+          <td class="mono">SP_INSERT_ENCUESTAS_MOVIL</td>
+          <td class="mono">FECHA_ESTADO BETWEEN TRUNC(SYSDATE)-90 AND TRUNC(SYSDATE)</td>
+          <td><b>90 días</b></td>
+          <td>solo el día en curso</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <p>
-    Esto tiene consecuencia inmediata sobre cualquier plan de recuperación: <strong>volver a
-    subir archivos antiguos al FTP produciría cero filas, en silencio</strong>, y todos
-    concluirían que la recuperación funcionó.
+    La línea anterior sigue comentada en el código del segundo procedimiento
+    (<code>= TRUNC(SYSDATE)</code>), lo que confirma que hasta esa fecha <strong>solo se
+    procesaba lo capturado el mismo día</strong>. La ampliación de julio es una mejora real y
+    cambia por completo lo que se puede recuperar.
   </p>
+  <div class="note-box ok" style="border-left-color:var(--ok)">
+    <h4>Consecuencia para la recuperación</h4>
+    <p>
+      Con 120 y 90 días de ventana, <strong>los archivos de julio todavía son recuperables</strong>.
+      Al 27 de agosto el corte hacia atrás es el <b>29 de abril</b> (creación) y el
+      <b>29 de mayo</b> (estado). La restricción que primero se cumple es la de 90 días: para
+      una captura del 14 de julio, el plazo vence alrededor del <b>12 de octubre de 2026</b>.
+    </p>
+    <p>
+      <b>Es una ventana que se cierra sola.</b> Cada semana que pasa, un tramo de lo represado
+      deja de ser recuperable por la vía normal.
+    </p>
+  </div>
 
   <h3>La reinserción múltiple</h3>
   <p>
