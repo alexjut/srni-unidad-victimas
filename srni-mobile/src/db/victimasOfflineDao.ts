@@ -80,3 +80,60 @@ export async function marcarError(idLocal: string): Promise<void> {
     [new Date().toISOString(), idLocal],
   );
 }
+
+/**
+ * La víctima registrada a mano en este teléfono que tenga este documento, o null.
+ *
+ * ─── Por qué hace falta ───────────────────────────────────────────────────
+ * Corrige un defecto reportado el 11-sep-2026: sin señal, un alta manual quedaba
+ * **invisible para la siguiente búsqueda**. `buscarOffline` consulta el padrón
+ * precargado y el filtro del universo, y esta tabla solo se escribía, nunca se
+ * leía. Buscar otra vez el mismo documento respondía «no está en el padrón» y
+ * ofrecía darla de alta de nuevo: la encuestadora reescribía todo y quedaba un
+ * SEGUNDO registro de la misma persona encolado para sincronizar.
+ *
+ * Es el caso que encaja literalmente con «obliga al usuario a ingresarlos
+ * nuevamente», y además ensuciaba el padrón con duplicados.
+ *
+ * ─── Por qué se compara el par completo ───────────────────────────────────
+ * Tipo y número juntos: el mismo número puede existir como cédula y como tarjeta
+ * de identidad de dos personas distintas, y devolver la equivocada le entregaría
+ * al encuestador los datos de otra persona sin que se entere.
+ *
+ * Se recorre en JavaScript en vez de con un WHERE porque el documento vive dentro
+ * de `payload_json` y no como columna. Son las altas manuales pendientes de UN
+ * teléfono —decenas, no miles—, así que no vale la pena una migración de esquema
+ * por esto.
+ */
+export async function buscarPorDocumento(
+  tipoDocumento: string,
+  numeroDocumento: string,
+): Promise<{ row: VictimaOfflineRow; victima: VictimaResumenFuente } | null> {
+  const db = await openDb();
+  const tipo = (tipoDocumento ?? '').trim().toUpperCase();
+  const numero = (numeroDocumento ?? '').trim();
+  if (!numero) return null;
+
+  const filas = await db.getAllAsync<VictimaOfflineRow>(
+    // Las más recientes primero: si por lo que sea hay dos, la última capturada
+    // es la que refleja lo que el encuestador acabó de confirmar con la persona.
+    'SELECT * FROM victimas_offline ORDER BY created_at DESC',
+  );
+
+  for (const row of filas) {
+    try {
+      const victima = JSON.parse(row.payload_json) as VictimaResumenFuente;
+      if (
+        (victima.numero_documento ?? '').trim() === numero &&
+        (victima.tipo_documento ?? '').trim().toUpperCase() === tipo
+      ) {
+        return { row, victima };
+      }
+    } catch {
+      // Payload corrupto: se omite. Una fila ilegible no puede impedir encontrar
+      // las demás, y el alta se puede repetir — que es peor que esto, pero no
+      // tanto como no poder buscar a nadie.
+    }
+  }
+  return null;
+}

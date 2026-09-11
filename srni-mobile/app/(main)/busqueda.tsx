@@ -731,6 +731,36 @@ export default function BusquedaScreen() {
   async function buscarOffline(): Promise<boolean> {
     try {
       const doc = documento.trim();
+
+      // PRIMERO lo que se capturó en ESTE teléfono. Una persona dada de alta a
+      // mano sin señal no está en el padrón precargado ni tiene por qué estar, y
+      // hasta el 11-sep-2026 esta pantalla no la miraba: buscar otra vez el mismo
+      // documento respondía «no está en el padrón» y ofrecía registrarla de nuevo.
+      // La encuestadora reescribía todo y quedaba un SEGUNDO registro encolado.
+      //
+      // Va antes del padrón porque si la persona está en las dos partes, la que
+      // vale es la que se acabó de capturar con ella enfrente.
+      const local = await victimasOfflineDao.buscarPorDocumento(tipoDoc, doc);
+      if (local) {
+        useCaracterizacionStore.getState().setVictimaFuente(local.victima);
+        useCaracterizacionStore.getState().setVictimaLocalId(local.row.id_local);
+        setAltaManualRegistrada(true);
+        // `encontrado: false` con `altaManualRegistrada` es lo que pinta la tarjeta
+        // «Registrada para caracterización» y el botón de conformar hogar. Sin
+        // poner el resultado la pantalla se quedaría en blanco: la tarjeta se
+        // elige por `resultado`, no por el estado del alta.
+        setResultado({
+          encontrado: false,
+          victima: null,
+          motivo: 'NO_EN_PADRON',
+          fuente: 'OFFLINE (registrada en este dispositivo)',
+          mensaje:
+            'Ya la registró en este dispositivo y está pendiente de sincronizar. ' +
+            'No hace falta volver a capturar sus datos: continúe con el hogar.',
+        } as ResultadoBusquedaFuente);
+        return true;
+      }
+
       const r = await precargaDao.buscarCandidatosEnPadron(doc);
 
       // Documento de relleno ('99', '0'): no identifica a nadie. No es "no está"

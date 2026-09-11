@@ -298,6 +298,30 @@ const PREGUNTAS_CALCULADAS = new Set(['B9', 'B10']);
  */
 const PREGUNTAS_RUV_READONLY = new Set(['H_V', 'Ocur_HV']);
 
+/**
+ * ¿Esta pregunta se muestra en solo lectura?
+ *
+ * Las del RUV lo son **solo si el RUV trajo el dato**. Es la corrección de un
+ * defecto reportado el 11-sep-2026 por el equipo de caracterización: en una
+ * persona que NO está incluida en el RUV no hay hecho victimizante que precargar,
+ * así que el campo quedaba vacío Y bloqueado — visible, obligatorio de mirar, e
+ * imposible de llenar. Es el único de los tres defectos de ese reporte que es
+ * específico de quien no está en el RUV.
+ *
+ * Se nota en Asistencia humanitaria, donde H_V y Ocur_HV no vienen marcadas como
+ * precargadas y por lo tanto se muestran. En Territorial sí lo están y la lista
+ * visible las filtra antes, así que ahí nunca se vio.
+ *
+ * Las calculadas (años cumplidos, grupo etario) siguen siendo solo lectura
+ * siempre: esas se derivan de la fecha de nacimiento y no hay caso en que el
+ * encuestador deba escribirlas a mano.
+ */
+function esSoloLectura(codigo: string, valor: string): boolean {
+  if (PREGUNTAS_CALCULADAS.has(codigo)) return true;
+  if (PREGUNTAS_RUV_READONLY.has(codigo)) return !!valor.trim();
+  return false;
+}
+
 interface ItemLista {
   // 'pregunta'         → HOGAR: respuesta única para todo el hogar.
   // 'pregunta-persona' → PERSONA: una fila por miembro dentro de la tarjeta.
@@ -1218,7 +1242,11 @@ export default function CapituloScreen() {
                 opciones={opciones[p.id] ?? []}
                 miembros={miembros}
                 respuestas={respuestas}
-                soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
+                // Sin `soloLectura` fijo: lo decide cada fila con SU valor. Una
+                // pregunta del RUV puede venir precargada para un integrante y
+                // vacía para otro —un hijo que no está en el RUV—, y bloquear la
+                // fila vacía porque la de al lado tiene dato la deja imposible de
+                // llenar. Ver `esSoloLectura`.
                 aplicabilidad={aplicabilidad}
                 onChange={setRespuesta}
               />
@@ -1237,7 +1265,7 @@ export default function CapituloScreen() {
               total={item.totalGlobal ?? 0}
               opciones={opciones[p.id] ?? []}
               valor={valor}
-              soloLectura={PREGUNTAS_RUV_READONLY.has(p.codigo_externo) || PREGUNTAS_CALCULADAS.has(p.codigo_externo)}
+              soloLectura={esSoloLectura(p.codigo_externo, valor)}
               onChange={(v) => setRespuesta(p.id, v, null)}
               iaActivo={iaActivo}
               onTextoIA={(texto) => handleTextoTranscrito(p.id, texto)}
@@ -1680,7 +1708,7 @@ function PreguntaPersonaItemBase({
               valor={valor}
               aplica={ap.aplica}
               motivo={ap.motivo}
-              soloLectura={soloLectura}
+              soloLectura={soloLectura ?? esSoloLectura(pregunta.codigo_externo, valor)}
               onChange={(v) => onChange(pregunta.id, v, m.id)}
             />
           );
