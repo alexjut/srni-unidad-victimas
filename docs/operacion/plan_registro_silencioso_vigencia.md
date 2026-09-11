@@ -197,6 +197,27 @@ hoy convierte esa vuelta atrás en volver a construirlo.
 | 2 | Consulta de recaracterizaciones para el informe de control | Después de encender |
 | 3 | Prueba de la escritura al Oracle del sistema anterior con la segunda caracterización del mismo hogar | En paralelo |
 | 4 | Ajuste del Manual de Uso y del material de capacitación | Antes de la siguiente jornada |
+| 5 | **Definir la novedad de composición del hogar** — decisión del proceso | Pendiente de que la operación diga cómo |
+
+### Sobre el punto 5, que va a aparecer en campo el primer día
+
+Al recaracterizar un hogar que ya tiene una caracterización **completada**, el
+encuestador puede **agregar** integrantes pero **no quitar ni corregir** los que ya
+se reportaron: `editar_miembro` responde 409 —«Este hogar ya tiene una
+caracterización completada»— y eso es correcto, porque borrar a un integrante
+cambiaría un dato ya entregado.
+
+El problema es que la familia sí cambia entre una caracterización y otra: alguien
+murió, alguien se fue, nació un niño. Y **hoy no hay figura para registrar eso.**
+El propio código lo dice: «quitar es borrar, y solo acá… esto atiende un caso muy
+concreto: el integrante nunca debió existir. Es distinto de *esta persona ya no vive
+en el hogar*, que sí es un hecho histórico y pide una novedad hacia el legado — eso
+queda pendiente de definir».
+
+**No se inventa acá.** Cómo se registra que alguien dejó de pertenecer al hogar es
+una definición misional con consecuencias en el reporte y en la escritura al sistema
+anterior. Queda advertido en el correo del 11-sep, numeral 5, para que el proceso lo
+defina.
 
 ### Sobre el punto 3, que es el único con trabajo de verdad detrás
 
