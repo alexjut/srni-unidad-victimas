@@ -28,6 +28,9 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
     victima_hash = serializers.CharField(
         source='victima.numero_documento_hash', read_only=True, default=None
     )
+    motivo_retiro_display = serializers.CharField(
+        source='get_motivo_retiro_display', read_only=True, default=''
+    )
 
     class Meta:
         model = MiembroHogar
@@ -50,12 +53,21 @@ class MiembroHogarSerializer(serializers.ModelSerializer):
             'tiene_discapacidad', 'tipo_discapacidad', 'tiene_enfermedad_ruinosa',
             # Constancia tutor/cuidador (se sube por la acción subir-constancia)
             'constancia', 'constancia_nombre', 'constancia_subida_en',
+            # Retiro del hogar — la novedad. Va en los dos serializers de salida
+            # porque la aplicación decide con esto a quién le pregunta en la
+            # entrevista: un integrante retirado se muestra, pero no se interroga.
+            'retirado_en', 'motivo_retiro', 'motivo_retiro_display',
+            'observacion_retiro', 'retirado_at',
             'created_at',
         ]
         read_only_fields = [
             'id', 'created_at',
             'rol_display', 'parentesco_display', 'genero_display',
             'estado_inclusion_display', 'victima_hash',
+            # El retiro se registra por su acción dedicada, nunca por escritura
+            # directa: exige motivo y fecha, y deja quién y cuándo lo registró.
+            'retirado_en', 'motivo_retiro', 'motivo_retiro_display',
+            'observacion_retiro', 'retirado_at',
             'tipo_persona', 'incluido_ruv',  # calculados en save()
             # El archivo se gestiona por la acción dedicada, no por escritura directa
             'constancia', 'constancia_nombre', 'constancia_subida_en',
@@ -79,6 +91,9 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
     )
     victima_hash = serializers.CharField(
         source='victima.numero_documento_hash', read_only=True, default=None
+    )
+    motivo_retiro_display = serializers.CharField(
+        source='get_motivo_retiro_display', read_only=True, default=''
     )
 
     # Sprint 21 — nombre_completo derivado: si el miembro tiene nombre propio
@@ -209,6 +224,11 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
             'tipo_persona',
             'incluido_ruv', 'tiene_discapacidad',
             'victima', 'victima_hash',
+            # El retiro viaja también acá, y es lo que la APK usa para decidir a
+            # quién le pregunta: un integrante retirado se sigue viendo —para que
+            # nadie crea que se perdió— pero sus filas de preguntas quedan
+            # inactivas con el motivo a la vista.
+            'retirado_en', 'motivo_retiro', 'motivo_retiro_display',
         ]
 
 
@@ -312,3 +332,48 @@ class CambiarAutorizadoSerializer(serializers.Serializer):
     victima_id = serializers.UUIDField(
         help_text='UUID de la Victima que pasará a ser el nuevo autorizado del hogar.'
     )
+
+
+class RetirarMiembroSerializer(serializers.Serializer):
+    """
+    Entrada de POST /hogares/{id}/miembros/{mid}/retirar/
+
+    Registra que una persona dejó de pertenecer al hogar. **No borra nada.**
+
+    ─── Por qué el motivo y la fecha son obligatorios ────────────────────────
+    Sin motivo, «se retiró» no se distingue de «lo borraron por error», y esa
+    diferencia es la que se va a necesitar el día que alguien revise por qué un
+    hogar pasó de cinco a tres personas. Sin fecha no se puede saber si la
+    persona pertenecía al hogar en la caracterización anterior, que es
+    justamente lo que permite que esa entrevista siga siendo válida.
+
+    La fecha es la del HECHO, no la de hoy. Una familia informa en septiembre un
+    fallecimiento de marzo, y ese es el caso corriente.
+    """
+
+    motivo = serializers.ChoiceField(choices=MiembroHogar.RETIRO)
+    fecha = serializers.DateField(
+        help_text='Fecha desde la cual la persona ya no pertenece al hogar. '
+                  'Es la del hecho, no la de hoy.',
+    )
+    observacion = serializers.CharField(
+        max_length=2_000, required=False, allow_blank=True, default='',
+    )
+
+    def validate_fecha(self, value):
+        from django.utils import timezone
+
+        hoy = timezone.localdate()
+        if value > hoy:
+            raise serializers.ValidationError(
+                'La fecha no puede ser futura: se registra un hecho que ya ocurrió.'
+            )
+        return value
+
+    def validate(self, attrs):
+        # 'OTRO' sin explicación no dice nada, y es el que más se va a usar.
+        if attrs.get('motivo') == 'OTRO' and not (attrs.get('observacion') or '').strip():
+            raise serializers.ValidationError({
+                'observacion': 'Con el motivo "Otro" hay que explicar cuál es.',
+            })
+        return attrs

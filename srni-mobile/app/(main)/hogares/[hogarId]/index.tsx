@@ -14,10 +14,11 @@
  */
 import { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator, Modal, Portal, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { hogaresApi } from '../../../../src/api/hogares';
+import { hogaresApi, MOTIVOS_RETIRO } from '../../../../src/api/hogares';
+import type { MotivoRetiro } from '../../../../src/api/hogares';
 import { victimasApi } from '../../../../src/api/victimas';
 import { useCaracterizacionStore } from '../../../../src/stores/caracterizacionStore';
 import { GovHeader } from '../../../../src/components/GovHeader';
@@ -60,12 +61,17 @@ const filaStyles = StyleSheet.create({
 
 // ─── Ítem de miembro ──────────────────────────────────────────────────────────
 
-function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
+function MiembroItem({ miembro, onRetirar, onReincorporar }: {
+  miembro: MiembroHogarResumen;
+  onRetirar?: (m: MiembroHogarResumen) => void;
+  onReincorporar?: (m: MiembroHogarResumen) => void;
+}) {
   const esAutorizado = miembro.es_autorizado;
   const incluido = miembro.estado_inclusion === 'INCLUIDO';
+  const retirado = !!miembro.retirado_en;
 
   return (
-    <View style={miembroStyles.root}>
+    <View style={[miembroStyles.root, retirado && miembroStyles.rootRetirado]}>
       {/* Ícono con fondo según autorizado */}
       <View style={[miembroStyles.iconWrap, esAutorizado && miembroStyles.iconWrapAutorizado]}>
         <MaterialCommunityIcons
@@ -116,12 +122,187 @@ function MiembroItem({ miembro }: { miembro: MiembroHogarResumen }) {
             <Text style={miembroStyles.dato}>n. {miembro.fecha_nacimiento}</Text>
           )}
         </View>
+
+        {/*
+          El retiro se MUESTRA, no se esconde. Ocultar al integrante retirado
+          haria creer que se perdio un dato -ese susto ya se vivio en campo- y
+          dejaria sin explicacion por que el hogar paso de cinco personas a tres.
+        */}
+        {retirado && (
+          <View style={miembroStyles.retiroCaja}>
+            <MaterialCommunityIcons name="account-off-outline" size={12} color={GOV.naranja} />
+            <Text style={miembroStyles.retiroTxt}>
+              {(miembro.motivo_retiro_display || 'Retirado')} · desde {miembro.retirado_en}
+            </Text>
+          </View>
+        )}
+
+        {/*
+          Al autorizado no se le ofrece: es el titular del hogar. Si es el quien
+          dejo de pertenecer, primero hay que cambiar el autorizado.
+        */}
+        {!esAutorizado && (retirado ? onReincorporar : onRetirar) && (
+          <Pressable
+            onPress={() => (retirado ? onReincorporar!(miembro) : onRetirar!(miembro))}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={retirado
+              ? `Deshacer el retiro de ${miembro.nombre_completo || 'este integrante'}`
+              : `Retirar del hogar a ${miembro.nombre_completo || 'este integrante'}`}
+          >
+            <Text style={[miembroStyles.accion, retirado && miembroStyles.accionDeshacer]}>
+              {retirado ? 'Deshacer retiro' : 'Retirar del hogar'}
+            </Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
 
+// --- Modal de retiro --------------------------------------------------------
+
+/**
+ * Pide el motivo y la FECHA DEL HECHO.
+ *
+ * La fecha no es la de hoy, y por eso se pregunta: una familia informa en
+ * septiembre un fallecimiento de marzo, y ese es el caso corriente. Con la fecha
+ * de hoy, la caracterizacion anterior quedaria diciendo que la persona
+ * pertenecia al hogar cuando ya no era cierto.
+ */
+function ModalRetiro({ miembro, visible, guardando, onCancelar, onConfirmar }: {
+  miembro: MiembroHogarResumen | null;
+  visible: boolean;
+  guardando: boolean;
+  onCancelar: () => void;
+  onConfirmar: (motivo: MotivoRetiro, fecha: string, observacion: string) => void;
+}) {
+  const [motivo, setMotivo] = useState<MotivoRetiro | null>(null);
+  const [fecha, setFecha] = useState('');
+  const [observacion, setObservacion] = useState('');
+
+  useEffect(() => {
+    if (visible) { setMotivo(null); setFecha(''); setObservacion(''); }
+  }, [visible]);
+
+  const fechaValida = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(fecha);
+  // 'Otro' sin explicacion no dice nada, y es el motivo que mas se va a usar.
+  const faltaDetalle = motivo === 'OTRO' && !observacion.trim();
+  const puede = !!motivo && fechaValida && !faltaDetalle && !guardando;
+
+  return (
+    <Portal>
+      <Modal visible={visible} onDismiss={onCancelar} contentContainerStyle={modalStyles.caja}>
+        <Text style={modalStyles.titulo}>Retirar del hogar</Text>
+        <Text style={modalStyles.nombre}>
+          {(miembro?.nombre_completo || '').trim() || 'Integrante sin nombre'}
+        </Text>
+        <Text style={modalStyles.ayuda}>
+          No se borra ni se pierde nada: la caracterizacion anterior queda igual.
+          Solo se registra que esta persona ya no hace parte del hogar.
+        </Text>
+
+        <Text style={modalStyles.label}>Por que</Text>
+        {MOTIVOS_RETIRO.map((op) => (
+          <Pressable
+            key={op.valor}
+            onPress={() => setMotivo(op.valor)}
+            style={[modalStyles.opcion, motivo === op.valor && modalStyles.opcionActiva]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: motivo === op.valor }}
+          >
+            <MaterialCommunityIcons
+              name={motivo === op.valor ? 'radiobox-marked' : 'radiobox-blank'}
+              size={18}
+              color={motivo === op.valor ? GOV.azul : GOV.textoT}
+            />
+            <Text style={[modalStyles.opcionTxt, motivo === op.valor && modalStyles.opcionTxtActiva]}>
+              {op.etiqueta}
+            </Text>
+          </Pressable>
+        ))}
+
+        <TextInput
+          mode="outlined"
+          label="Desde cuando (AAAA-MM-DD)"
+          placeholder="2026-03-15"
+          value={fecha}
+          onChangeText={setFecha}
+          style={modalStyles.input}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
+        />
+        <Text style={modalStyles.pista}>
+          La fecha del hecho, no la de hoy. Preguntesela a la familia.
+        </Text>
+
+        <TextInput
+          mode="outlined"
+          label={motivo === 'OTRO' ? 'Explique el motivo *' : 'Observacion (opcional)'}
+          value={observacion}
+          onChangeText={setObservacion}
+          multiline
+          numberOfLines={2}
+          style={modalStyles.input}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
+        />
+
+        <View style={modalStyles.botones}>
+          <View style={modalStyles.boton}>
+            <GovButton label="Cancelar" variant="secondary" onPress={onCancelar} />
+          </View>
+          <View style={modalStyles.boton}>
+            <GovButton
+              label="Retirar"
+              loading={guardando}
+              disabled={!puede}
+              onPress={() => { if (puede) onConfirmar(motivo!, fecha, observacion); }}
+            />
+          </View>
+        </View>
+      </Modal>
+    </Portal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  caja: {
+    backgroundColor: GOV.superficie,
+    marginHorizontal: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  titulo: { ...FONT.h3, color: GOV.naranja, marginBottom: 2 },
+  nombre: { ...FONT.small, color: GOV.textoP, fontWeight: '600', marginBottom: SPACING.xs },
+  ayuda: { ...FONT.caption, color: GOV.textoS, marginBottom: SPACING.md },
+  label: { ...FONT.label, color: GOV.textoS, marginBottom: SPACING.xs },
+  opcion: {
+    flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
+    paddingVertical: 6, paddingHorizontal: SPACING.xs, borderRadius: RADIUS.sm,
+  },
+  opcionActiva: { backgroundColor: GOV.fondoApp },
+  opcionTxt: { ...FONT.small, color: GOV.textoP },
+  opcionTxtActiva: { fontWeight: '600', color: GOV.azulOscuro },
+  input: { marginTop: SPACING.sm, backgroundColor: GOV.superficie },
+  pista: { ...FONT.caption, color: GOV.textoT, marginTop: 2 },
+  botones: { flexDirection: 'row', gap: SPACING.xs, marginTop: SPACING.md },
+  boton: { flex: 1 },
+});
+
 const miembroStyles = StyleSheet.create({
+  // El retirado se atenua, pero no al punto de no poder leerlo: tiene que
+  // seguir siendo consultable, porque es el que explica el cambio del hogar.
+  rootRetirado: { opacity: 0.62 },
+  retiroCaja: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4,
+  },
+  retiroTxt: { ...FONT.caption, color: GOV.naranja, fontWeight: '600', flexShrink: 1 },
+  accion: {
+    ...FONT.caption, color: GOV.naranja, fontWeight: '700',
+    marginTop: 6, textDecorationLine: 'underline',
+  },
+  accionDeshacer: { color: GOV.azul },
   root: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -227,6 +408,73 @@ export default function HogarDetalleScreen() {
   const [grupoFamiliar, setGrupoFamiliar] = useState<VictimaResumenFuente[]>([]);
   const [cargandoGrupo, setCargandoGrupo] = useState(false);
   const [miembrosAgregados, setMiembrosAgregados] = useState<Set<string>>(new Set());
+
+  // ── Retiro de un integrante ───────────────────────────────────────────────
+  //
+  // Es la salida para la familia que cambio entre una caracterizacion y la
+  // siguiente. No borra: registra la novedad con su fecha, y por eso funciona
+  // aunque el hogar ya tenga una caracterizacion completada.
+  const [miembroARetirar, setMiembroARetirar] = useState<MiembroHogarResumen | null>(null);
+  const [retirando, setRetirando] = useState(false);
+
+  /**
+   * Reemplaza UN integrante en el hogar que ya esta en pantalla.
+   *
+   * Se hace asi y no recargando el detalle completo: recargar pierde el scroll
+   * -en un hogar de seis integrantes el encuestador vuelve arriba cada vez- y
+   * dispara de nuevo la consulta del grupo familiar, que no cambio.
+   */
+  function reemplazarMiembro(actualizado: MiembroHogarResumen) {
+    setHogar((prev) => (prev
+      ? { ...prev, miembros: prev.miembros.map((x) => (x.id === actualizado.id ? actualizado : x)) }
+      : prev));
+  }
+
+  async function confirmarRetiro(motivo: MotivoRetiro, fecha: string, observacion: string) {
+    if (!hogarId || !miembroARetirar) return;
+    setRetirando(true);
+    try {
+      const { data } = await hogaresApi.retirarMiembro(hogarId, miembroARetirar.id, {
+        motivo, fecha, observacion,
+      });
+      reemplazarMiembro(data);
+      setMiembroARetirar(null);
+    } catch (err: any) {
+      // El detalle del servidor cuando lo hay: dice POR QUE no se pudo, y es lo
+      // unico que le permite al encuestador hacer algo distinto.
+      const detalle = err?.response?.data?.detail
+        || err?.response?.data?.fecha?.[0]
+        || err?.response?.data?.observacion?.[0];
+      Alert.alert(
+        'No se pudo retirar',
+        detalle || 'Revise la conexion e intente de nuevo. El integrante sigue en el hogar.',
+      );
+    } finally {
+      setRetirando(false);
+    }
+  }
+
+  function reincorporar(miembro: MiembroHogarResumen) {
+    if (!hogarId) return;
+    Alert.alert(
+      'Deshacer el retiro',
+      `${(miembro.nombre_completo || 'Este integrante').trim()} volvera a hacer parte del hogar.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Deshacer',
+          onPress: async () => {
+            try {
+              const { data } = await hogaresApi.reincorporarMiembro(hogarId, miembro.id);
+              reemplazarMiembro(data);
+            } catch {
+              Alert.alert('No se pudo deshacer', 'Revise la conexion e intente de nuevo.');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   useEffect(() => {
     if (!hogarId) {
@@ -387,7 +635,14 @@ export default function HogarDetalleScreen() {
           {hogar.miembros.length === 0 ? (
             <Text style={styles.sinMiembros}>No se han registrado integrantes aún.</Text>
           ) : (
-            hogar.miembros.map((m) => <MiembroItem key={m.id} miembro={m} />)
+            hogar.miembros.map((m) => (
+              <MiembroItem
+                key={m.id}
+                miembro={m}
+                onRetirar={setMiembroARetirar}
+                onReincorporar={reincorporar}
+              />
+            ))
           )}
         </SeccionCard>
 
@@ -480,6 +735,14 @@ export default function HogarDetalleScreen() {
         )}
 
       </ScrollView>
+
+      <ModalRetiro
+        miembro={miembroARetirar}
+        visible={miembroARetirar !== null}
+        guardando={retirando}
+        onCancelar={() => setMiembroARetirar(null)}
+        onConfirmar={confirmarRetiro}
+      />
     </View>
   );
 }

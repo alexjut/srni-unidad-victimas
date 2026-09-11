@@ -102,9 +102,17 @@ def test_al_autorizado_no_se_le_toca(escenario):
 
 def test_no_se_quita_de_un_hogar_ya_caracterizado(escenario):
     """
-    La guarda que acota la operación. Con una encuesta COMPLETADA, ese
-    integrante forma parte de algo ya reportado y borrarlo cambiaría un dato
-    entregado — eso es una novedad hacia el legado, no una corrección de captura.
+    La guarda que acota el BORRADO, y sigue en pie. Con una encuesta COMPLETADA,
+    ese integrante forma parte de algo ya reportado y borrarlo cambiaría un dato
+    entregado.
+
+    Lo que cambió el 11-sep-2026 es el mensaje, y el cambio importa: antes decía
+    «solicite el ajuste a su coordinación», un proceso que **no existe**, así que
+    el encuestador quedaba sin nada que hacer. Ahora señala la salida que sí
+    existe —retirar del hogar, que registra la novedad sin borrar nada— y que se
+    volvió indispensable cuando la recaracterización pasó a ser el caso corriente.
+
+    Ver `test_retiro_miembro.py` para el otro lado de esta misma decisión.
     """
     from apps.encuestas.models import SesionEncuesta
     from apps.formulario.models import Instrumento
@@ -118,7 +126,9 @@ def test_no_se_quita_de_un_hogar_ya_caracterizado(escenario):
     r = escenario['cliente'].delete(url(escenario['hogar'], escenario['miembro']))
 
     assert r.status_code == 409
-    assert 'coordinación' in r.data['detail']
+    # El mensaje tiene que ofrecer una salida real, no un trámite inexistente.
+    assert 'retirar' in r.data['detail'].lower()
+    assert 'coordinación' not in r.data['detail']
 
 
 def test_una_sesion_a_medias_no_bloquea_la_correccion(escenario):

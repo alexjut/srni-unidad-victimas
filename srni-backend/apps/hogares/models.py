@@ -300,6 +300,69 @@ class MiembroHogar(models.Model):
         help_text='Momento en que se subió la constancia.',
     )
 
+    # ── Retiro del hogar — la novedad, no un borrado ────────────────────────
+    #
+    # ─── Por qué hace falta ───────────────────────────────────────────────
+    # Entre una caracterización y la siguiente la familia cambia: alguien
+    # muere, alguien se va, alguien deja de convivir. Hasta el 11-sep-2026 el
+    # sistema solo sabía **borrar** un integrante, y solo antes de la primera
+    # caracterización completada — porque borrar a alguien ya reportado
+    # alteraría un dato entregado, y eso está bien impedido.
+    #
+    # El resultado era que al recaracterizar no había forma de decir que la
+    # persona ya no pertenece al hogar. Con el control de vigencia retirado,
+    # la recaracterización pasó a ser el caso corriente y eso dejaba al
+    # encuestador sin salida frente a una familia que sí cambió.
+    #
+    # ─── Por qué NO se borra la fila ──────────────────────────────────────
+    # Son dos hechos distintos y confundirlos destruye información:
+    #
+    #   · «nunca debió estar» → error de captura → se borra (`DELETE`, y solo
+    #     mientras no haya caracterización completada);
+    #   · «ya no pertenece al hogar desde tal fecha» → hecho histórico → se
+    #     retira, y la fila SE QUEDA.
+    #
+    # La fila tiene que quedarse porque las respuestas de la caracterización
+    # anterior apuntan a ella. Borrarla dejaría esa entrevista hablando de un
+    # integrante que el sistema ya no conoce, y el dato reportado dejaría de
+    # poder explicarse.
+    RETIRO = [
+        ('FALLECIMIENTO',      'Falleció'),
+        ('CAMBIO_RESIDENCIA',  'Cambió de residencia'),
+        ('NO_CONVIVE',         'Ya no convive con el hogar'),
+        ('OTRO',               'Otro motivo'),
+    ]
+
+    #: **Cuándo ocurrió el hecho**, según lo que informa la familia. Es la fecha
+    #: que determina si este integrante hacía parte del hogar en una
+    #: caracterización concreta.
+    retirado_en = models.DateField(
+        null=True, blank=True, db_index=True,
+        help_text='Fecha desde la cual la persona ya no pertenece al hogar. '
+                  'Vacío = sigue perteneciendo.',
+    )
+    motivo_retiro = models.CharField(
+        max_length=20, choices=RETIRO, blank=True, default='',
+        help_text='Por qué dejó de pertenecer al hogar.',
+    )
+    observacion_retiro = models.TextField(
+        blank=True, default='',
+        help_text='Detalle del retiro, escrito por el encuestador.',
+    )
+    retirado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='miembros_retirados',
+        help_text='Quién registró el retiro.',
+    )
+    #: **Cuándo se registró**, que es distinto de cuándo ocurrió. Separarlos es
+    #: lo que permite ver un retiro informado con seis meses de retraso; con una
+    #: sola fecha, ese caso se vuelve invisible.
+    retirado_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Momento en que el sistema registró el retiro.',
+    )
+
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -316,6 +379,10 @@ class MiembroHogar(models.Model):
             models.Index(fields=['hogar', 'es_autorizado']),
             models.Index(fields=['hogar', 'rol']),
             models.Index(fields=['estado_inclusion']),
+            # «¿Quiénes conforman este hogar hoy?» — la consulta que hace la
+            # conformación y la que arma el formulario en cada entrevista.
+            models.Index(fields=['hogar', 'retirado_en'],
+                         name='miembro_hogar_retiro_idx'),
         ]
         constraints = [
             UniqueConstraint(
@@ -340,6 +407,76 @@ class MiembroHogar(models.Model):
             self.tipo_persona = '5004'
         super().save(*args, **kwargs)
 
+    @property
+    def esta_retirado(self) -> bool:
+        """Ya no pertenece al hogar. La fila sigue existiendo: es el histórico."""
+        return self.retirado_en is not None
+
+    def pertenecia_al(self, momento) -> bool:
+        """
+        ¿Este integrante hacía parte del hogar en ese momento?
+
+        Es lo que permite que una caracterización vieja siga mostrando a quien
+        sí estaba, y que la nueva no pregunte por quien ya se fue. Sin esta
+        distinción habría que elegir entre falsear la entrevista anterior o
+        preguntarle al encuestador por alguien que ya no está.
+
+        Un retiro sin fecha —no debería ocurrir, pero el campo es opcional— se
+        trata como vigente desde siempre: es lo prudente, porque la alternativa
+        es borrar a alguien de una entrevista ya reportada por un dato incompleto.
+        """
+        if self.retirado_en is None:
+            return True
+        if momento is None:
+            return False
+        fecha = momento.date() if hasattr(momento, 'date') else momento
+        # Se retiró EN esa fecha: ese día ya no pertenecía.
+        return fecha < self.retirado_en
+
+    def retirar(self, *, usuario, motivo, fecha, observacion=''):
+        """
+        Registra que la persona dejó de pertenecer al hogar. No borra nada.
+
+        Idempotente: volver a retirar a alguien ya retirado no pisa la fecha
+        original, que es el dato que importa. La app reintenta cuando la red se
+        corta, así que esto llega dos veces con normalidad.
+        """
+        from django.utils import timezone
+
+        if self.retirado_en is not None:
+            return False
+        self.retirado_en = fecha
+        self.motivo_retiro = motivo
+        self.observacion_retiro = observacion or ''
+        self.retirado_por = usuario
+        self.retirado_at = timezone.now()
+        self.save(update_fields=['retirado_en', 'motivo_retiro',
+                                 'observacion_retiro', 'retirado_por',
+                                 'retirado_at'])
+        return True
+
+    def reincorporar(self):
+        """
+        Deshace un retiro. Existe porque un retiro registrado por error no puede
+        quedar para siempre: el encuestador se equivoca de fila, y sin esto la
+        única salida sería pedirle un ajuste a soporte.
+
+        Limpia los cinco campos: dejar el motivo de un retiro deshecho haría
+        creer, meses después, que la persona se fue y volvió.
+        """
+        if self.retirado_en is None:
+            return False
+        self.retirado_en = None
+        self.motivo_retiro = ''
+        self.observacion_retiro = ''
+        self.retirado_por = None
+        self.retirado_at = None
+        self.save(update_fields=['retirado_en', 'motivo_retiro',
+                                 'observacion_retiro', 'retirado_por',
+                                 'retirado_at'])
+        return True
+
     def __str__(self):
         rol_display = '★ AUTORIZADO' if self.es_autorizado else self.get_rol_display()
-        return f'{rol_display} — Hogar {self.hogar_id}'
+        retiro = f' (retirado {self.retirado_en:%Y-%m-%d})' if self.retirado_en else ''
+        return f'{rol_display} — Hogar {self.hogar_id}{retiro}'

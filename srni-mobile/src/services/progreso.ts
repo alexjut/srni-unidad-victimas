@@ -33,6 +33,14 @@ export interface MiembroRef {
   fecha_nacimiento?: string | null;
   incluido_ruv?: boolean;
   es_autorizado?: boolean;
+  /**
+   * Fecha desde la que ya no pertenece al hogar, o null/undefined si pertenece.
+   *
+   * Cuenta acá porque si no, sus preguntas obligatorias siguen sumando al
+   * denominador y la caracterización **nunca llega al 100 %**: el encuestador
+   * vería una barra atascada sin ninguna pregunta pendiente que contestar.
+   */
+  retirado_en?: string | null;
 }
 
 export interface ProgresoGlobal {
@@ -118,7 +126,13 @@ export function calcularProgresoOffline(
   const porCapitulo: Record<string, ProgresoCapitulo> = {};
   // Al menos un "miembro fantasma" para que las preguntas PERSONA cuenten
   // aunque aún no se hayan capturado integrantes (espejo de Math.max(N, 1)).
-  const efectivos: MiembroRef[] = miembros.length > 0 ? miembros : [{ id: '' }];
+  // Los retirados no entran al cálculo: sus preguntas no se hacen, así que
+  // tampoco pueden contar como pendientes. El fantasma se conserva para que las
+  // preguntas PERSONA cuenten aunque todavía no haya integrantes capturados —y
+  // ahora también si TODOS los que hay están retirados, que es posible en un
+  // hogar que se disolvió—.
+  const activos = miembros.filter((m) => !m.retirado_en);
+  const efectivos: MiembroRef[] = activos.length > 0 ? activos : [{ id: '' }];
 
   let gVis = 0;
   let gResp = 0;

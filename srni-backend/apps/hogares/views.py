@@ -23,7 +23,7 @@ from .filters import HogarFilterSet
 from .serializers import (
     HogarListSerializer, HogarDetalleSerializer,
     AgregarMiembroSerializer, MiembroHogarSerializer,
-    CambiarAutorizadoSerializer,
+    CambiarAutorizadoSerializer, RetirarMiembroSerializer,
 )
 
 
@@ -278,10 +278,12 @@ class HogarViewSet(viewsets.ModelViewSet):
         return Response(MiembroHogarSerializer(miembros, many=True).data)
 
     @extend_schema(
-        summary='Corregir o quitar un integrante agregado por error',
+        summary='Corregir un integrante, o quitar uno agregado por error',
         description=(
-            'PATCH corrige los datos del integrante; DELETE lo quita del hogar. '
-            'Solo mientras el hogar NO tenga una caracterización completada.'
+            'PATCH corrige los datos del integrante. DELETE lo quita del hogar, y '
+            'solo mientras NO haya una caracterización completada: después de eso, '
+            'para registrar que la persona ya no pertenece al hogar se usa la '
+            'acción "retirar", que no borra nada.'
         ),
         tags=['Hogares'],
         responses={200: MiembroHogarSerializer},
@@ -294,16 +296,22 @@ class HogarViewSet(viewsets.ModelViewSet):
         ni quitarlo, ni en la app ni en la API. Quien se equivocaba al capturar
         quedaba con el error adentro del hogar para siempre.
 
-        ─── Quitar es BORRAR, y solo acá ────────────────────────────────────
-        Se borra la fila en vez de marcarla con un estado, porque esto atiende
-        un caso muy concreto: **el integrante nunca debió existir**. Es distinto
-        de «esta persona ya no vive en el hogar», que sí es un hecho histórico y
-        pide una novedad hacia el legado — eso queda pendiente de definir, y por
-        eso la operación está acotada.
+        ─── Tres operaciones distintas, y conviene no confundirlas ──────────
+        · **DELETE — «nunca debió existir».** Borra la fila. Solo mientras no
+          haya caracterización completada: después, el integrante forma parte de
+          algo ya reportado y borrarlo cambiaría un dato entregado.
+        · **PATCH — «el dato está mal».** Corrige nombre, documento, parentesco.
+          Se permite SIEMPRE, incluso después de una caracterización completada,
+          y queda en auditoría. Bloquearlo dejaba el error adentro para siempre,
+          y un apellido mal escrito no se arregla solo con el tiempo.
+        · **`retirar` — «ya no pertenece al hogar».** Es un hecho histórico, no
+          un error, y tiene su propia acción: no borra, registra la novedad con
+          su fecha. Ver `retirar_miembro`.
 
-        La guarda es esa acotación: si el hogar ya tiene una encuesta
-        COMPLETADA, el integrante forma parte de algo que ya se reportó y
-        borrarlo cambiaría un dato entregado. Ahí se responde 409.
+        Hasta el 11-sep-2026 las tres caían en la misma guarda y el único camino
+        que quedaba era «solicite el ajuste a su coordinación», que no existe
+        como proceso. Con el control de vigencia retirado la recaracterización
+        pasó a ser el caso corriente, y con ella las familias que cambiaron.
 
         Al autorizado no se le toca: es el titular del hogar y quitarlo dejaría
         un hogar sin dueño. Para cambiarlo existe `cambiar-autorizado`.
@@ -317,11 +325,17 @@ class HogarViewSet(viewsets.ModelViewSet):
                            'es el titular del hogar. Use "cambiar autorizado".'},
                 status=status.HTTP_409_CONFLICT)
 
-        if hogar.sesiones.filter(estado='COMPLETADA').exists():
+        # Solo el BORRADO queda acotado. Corregir un dato mal capturado se
+        # permite siempre: el mensaje que estaba acá mandaba a un proceso que no
+        # existe, y el error se quedaba adentro.
+        if (request.method == 'DELETE'
+                and hogar.sesiones.filter(estado='COMPLETADA').exists()):
             return Response(
-                {'detail': 'Este hogar ya tiene una caracterización completada. '
-                           'No se pueden quitar ni corregir integrantes de un dato '
-                           'ya reportado; solicite el ajuste a su coordinación.'},
+                {'detail': 'Este hogar ya tiene una caracterización completada, así '
+                           'que no se puede borrar a un integrante ya reportado. Si '
+                           'la persona dejó de pertenecer al hogar, use "Retirar del '
+                           'hogar": queda registrada la novedad con su fecha y no se '
+                           'altera la caracterización anterior.'},
                 status=status.HTTP_409_CONFLICT)
 
         if request.method == 'DELETE':
@@ -353,6 +367,115 @@ class HogarViewSet(viewsets.ModelViewSet):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             resultado='EXITO',
             detalle={'hogar_id': str(hogar.id), 'campos': list(request.data.keys())},
+        )
+        return Response(MiembroHogarSerializer(miembro).data)
+
+    @extend_schema(
+        summary='Retirar un integrante del hogar (novedad, no borrado)',
+        description=(
+            'Registra que la persona dejó de pertenecer al hogar desde una fecha. '
+            'NO borra la fila ni altera la caracterización anterior. Exige motivo y '
+            'fecha del hecho.'
+        ),
+        tags=['Hogares'],
+        request=RetirarMiembroSerializer,
+        responses={200: MiembroHogarSerializer},
+    )
+    @action(detail=True, methods=['post'],
+            url_path=r'miembros/(?P<miembro_id>[^/.]+)/retirar')
+    def retirar_miembro(self, request, pk=None, miembro_id=None):
+        """
+        La familia cambió entre una caracterización y la siguiente.
+
+        ─── Por qué no alcanzaba con borrar ─────────────────────────────────
+        Borrar la fila haría dos daños a la vez: las respuestas de la
+        caracterización anterior quedarían apuntando a un integrante que el
+        sistema ya no conoce, y se perdería el hecho —cuándo y por qué se fue—
+        que es justamente lo que la recaracterización viene a registrar.
+
+        Acá la fila SE QUEDA. Lo que se agrega es la fecha desde la cual la
+        persona ya no pertenece al hogar. Con eso, cada entrevista puede decir
+        quiénes eran el hogar en SU momento: la anterior sigue siendo válida y la
+        nueva no pregunta por quien ya no está.
+
+        ─── Se permite con caracterizaciones completadas, y es el punto ──────
+        Es exactamente el caso para el que existe. La guarda que sí se conserva
+        es la del borrado, en `editar_miembro`.
+
+        El autorizado no se retira: es el titular del hogar. Si es él quien dejó
+        de pertenecer, lo que corresponde es cambiar el autorizado.
+        """
+        hogar = self.get_object()
+        miembro = get_object_or_404(MiembroHogar, pk=miembro_id, hogar=hogar)
+
+        if miembro.es_autorizado:
+            return Response(
+                {'detail': 'No se puede retirar a la persona autorizada: es el '
+                           'titular del hogar. Si dejó de pertenecer, cambie primero '
+                           'el autorizado y luego retírela.'},
+                status=status.HTTP_409_CONFLICT)
+
+        serializer = RetirarMiembroSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+
+        # `retirar` es idempotente: no pisa la fecha del primer retiro. La app
+        # reintenta cuando la red se corta, así que esto llega dos veces con
+        # normalidad y no puede quedar en error.
+        cambio = miembro.retirar(
+            usuario=request.user,
+            motivo=datos['motivo'],
+            fecha=datos['fecha'],
+            observacion=datos.get('observacion', ''),
+        )
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='RETIRAR_MIEMBRO',
+            recurso='MiembroHogar',
+            recurso_id=str(miembro.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'hogar_id': str(hogar.id), 'motivo': datos['motivo'],
+                     'fecha': str(datos['fecha']), 'ya_estaba_retirado': not cambio},
+        )
+        return Response(MiembroHogarSerializer(miembro).data)
+
+    @extend_schema(
+        summary='Deshacer el retiro de un integrante',
+        description='Devuelve al integrante al hogar. Para un retiro registrado por error.',
+        tags=['Hogares'],
+        responses={200: MiembroHogarSerializer},
+    )
+    @action(detail=True, methods=['post'],
+            url_path=r'miembros/(?P<miembro_id>[^/.]+)/reincorporar')
+    def reincorporar_miembro(self, request, pk=None, miembro_id=None):
+        """
+        Deshace un retiro.
+
+        Existe porque el encuestador se equivoca de fila, y un retiro registrado
+        por error no puede quedar para siempre: sin esto la única salida sería
+        pedir un ajuste a soporte, que es el callejón que este trabajo vino a
+        cerrar. Queda en auditoría, con quién lo deshizo.
+        """
+        hogar = self.get_object()
+        miembro = get_object_or_404(MiembroHogar, pk=miembro_id, hogar=hogar)
+
+        retiro_previo = {'fecha': str(miembro.retirado_en or ''),
+                         'motivo': miembro.motivo_retiro}
+        cambio = miembro.reincorporar()
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='REINCORPORAR_MIEMBRO',
+            recurso='MiembroHogar',
+            recurso_id=str(miembro.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'hogar_id': str(hogar.id), 'retiro_deshecho': retiro_previo,
+                     'no_estaba_retirado': not cambio},
         )
         return Response(MiembroHogarSerializer(miembro).data)
 

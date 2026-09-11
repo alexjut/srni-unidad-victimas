@@ -77,4 +77,42 @@ export const hogaresApi = {
 
   listarMiembros: (hogarId: string) =>
     apiClient.get<MiembroHogarResumen[]>(`/api/hogares/${hogarId}/miembros/`),
+
+  /**
+   * Registra que un integrante ya no pertenece al hogar. NO lo borra.
+   *
+   * Es la salida para la familia que cambió entre una caracterización y la
+   * siguiente: alguien murió, alguien se fue. Se permite aunque el hogar ya
+   * tenga una caracterización completada —es precisamente el caso para el que
+   * existe— porque la fila se conserva y la entrevista anterior no se altera.
+   *
+   * `fecha` es la del HECHO, no la de hoy: la familia informa en septiembre un
+   * fallecimiento de marzo. El servidor rechaza fechas futuras.
+   */
+  retirarMiembro: (hogarId: string, miembroId: string, payload: RetirarMiembroPayload) =>
+    apiClient.post<MiembroHogarResumen>(
+      `/api/hogares/${hogarId}/miembros/${miembroId}/retirar/`, payload),
+
+  /** Deshace un retiro registrado por error. */
+  reincorporarMiembro: (hogarId: string, miembroId: string) =>
+    apiClient.post<MiembroHogarResumen>(
+      `/api/hogares/${hogarId}/miembros/${miembroId}/reincorporar/`, {}),
 };
+
+export type MotivoRetiro = 'FALLECIMIENTO' | 'CAMBIO_RESIDENCIA' | 'NO_CONVIVE' | 'OTRO';
+
+export interface RetirarMiembroPayload {
+  motivo: MotivoRetiro;
+  /** ISO date (YYYY-MM-DD). La del hecho; no puede ser futura. */
+  fecha: string;
+  /** Obligatoria cuando el motivo es 'OTRO'. */
+  observacion?: string;
+}
+
+/** Las etiquetas del selector, en el mismo orden que las define el backend. */
+export const MOTIVOS_RETIRO: Array<{ valor: MotivoRetiro; etiqueta: string }> = [
+  { valor: 'FALLECIMIENTO', etiqueta: 'Falleció' },
+  { valor: 'CAMBIO_RESIDENCIA', etiqueta: 'Cambió de residencia' },
+  { valor: 'NO_CONVIVE', etiqueta: 'Ya no convive con el hogar' },
+  { valor: 'OTRO', etiqueta: 'Otro motivo' },
+];

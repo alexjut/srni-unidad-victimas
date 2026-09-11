@@ -165,6 +165,22 @@ export interface MiembroHogarResumen {
   parentesco_display: string;
   genero: 'M' | 'F' | 'NB' | 'ND';
   fecha_nacimiento: string | null;   // ISO date — NO indexado en backend
+  /**
+   * Retiro del hogar (backend del 11-sep-2026). `null` = sigue perteneciendo.
+   *
+   * Es la fecha del HECHO, no la del registro: la familia informa en septiembre
+   * un fallecimiento de marzo, y ese es el caso corriente.
+   *
+   * El integrante retirado **se sigue mostrando** —para que nadie crea que se
+   * perdió— pero sus filas de preguntas quedan inactivas con el motivo a la
+   * vista, y no cuentan para el avance. Ver `esSoloLectura` y `progreso.ts`.
+   *
+   * Opcional porque una APK nueva puede estar hablando con un backend anterior,
+   * y porque los resúmenes reconstruidos de la caché sin conexión no lo traen.
+   */
+  retirado_en?: string | null;
+  motivo_retiro?: string;
+  motivo_retiro_display?: string;
   /** Rol funcional en el hogar */
   rol: RolMiembro;
   rol_display: string;

@@ -757,10 +757,34 @@ export default function CapituloScreen() {
   }, [preguntas, miembros, personaPorMiembro]);
 
   // Helper de render: aplicabilidad de una pregunta para un miembro concreto.
+  //
+  // El retiro del hogar gana sobre la lógica de saltos, y va primero porque es de
+  // otra naturaleza: no es que la pregunta no aplique a esta persona, es que esta
+  // persona ya no es parte del hogar que se está caracterizando.
+  //
+  // Se marca inaplicable en vez de esconder la fila. Ocultarla haría creer que se
+  // perdió un integrante —y ese susto ya se vivió en campo con otros defectos—;
+  // así queda a la vista, en gris, con el motivo. Y como el cálculo del avance de
+  // este capítulo usa esta misma función, sus obligatorias dejan de contar sin
+  // ningún cambio adicional: sin eso, la barra nunca llegaría al 100 % y no habría
+  // ninguna pregunta pendiente que contestar para desatascarla.
+  const retiroPorMiembro = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const x of miembros) {
+      if (!x.retirado_en) continue;
+      const motivo = x.motivo_retiro_display || 'retirado del hogar';
+      m.set(x.id, `${motivo} — ya no pertenece al hogar desde el ${x.retirado_en}`);
+    }
+    return m;
+  }, [miembros]);
+
   const aplicabilidad = useCallback(
-    (codigoExterno: string, miembroId: string): AplicabilidadMiembro =>
-      personaPorMiembro.get(miembroId)?.get(codigoExterno) ?? { aplica: false, motivo: 'no aplica' },
-    [personaPorMiembro],
+    (codigoExterno: string, miembroId: string): AplicabilidadMiembro => {
+      const retiro = retiroPorMiembro.get(miembroId);
+      if (retiro) return { aplica: false, motivo: retiro };
+      return personaPorMiembro.get(miembroId)?.get(codigoExterno) ?? { aplica: false, motivo: 'no aplica' };
+    },
+    [personaPorMiembro, retiroPorMiembro],
   );
 
   // ── Construcción de la lista (agrupada) ──────────────────────────────────────
