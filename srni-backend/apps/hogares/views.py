@@ -3,6 +3,7 @@ Views de Hogares SRNI.
 Requieren permiso puede_caracterizar para todas las operaciones.
 """
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import viewsets, status
@@ -30,6 +31,23 @@ def _ip(request) -> str:
     # Ver apps/auditoria/red.py: el WAF manda `IP:puerto` y sin limpiarlo el
     # INSERT de auditoría falla y la petición responde 500.
     return ip_de_request(request)
+
+
+def _bloqueo_vigencia_activo() -> bool:
+    """
+    ¿Sigue en pie la regla de los dos años? (`settings.VIGENCIA`).
+
+    Acá importa por una razón indirecta pero decisiva: mientras el control esté
+    activo, encontrarse el hogar de otro encuestador es un caso raro —la vigencia
+    ya frenaba antes de llegar—. Retirado el control es el caso corriente, y el
+    hogar pasa a ser el de la familia y no la propiedad de quien lo creó.
+
+    Se delega en el repositorio de víctimas para que la condición viva en un solo
+    lugar: dos lecturas del mismo interruptor terminarían divergiendo.
+    """
+    from apps.victimas.repository.base import _bloqueo_vigencia_activo as _fuente
+
+    return _fuente()
 
 
 @extend_schema_view(
@@ -70,10 +88,36 @@ class HogarViewSet(viewsets.ModelViewSet):
         )
 
         # Admin y supervisión (ver_reportes) ven todos los hogares; el
-        # encuestador de campo solo los que él creó.
-        if not (user.puede('administrar') or user.puede('ver_reportes')):
-            qs = qs.filter(creado_por=user)
-        return qs
+        # encuestador de campo solo los suyos.
+        if user.puede('administrar') or user.puede('ver_reportes'):
+            return qs
+
+        # «Suyos» son los que creó **y** aquellos sobre los que caracterizó. Lo
+        # segundo se agregó con el retiro del control de vigencia: si el hogar lo
+        # conformó un compañero, la entrevista sigue siendo de quien la hizo, y un
+        # encuestador que no puede volver a abrir su propia entrevista no puede
+        # corregir nada de lo que capturó.
+        propios = Q(creado_por=user) | Q(sesiones__encuestador=user)
+
+        if self.action == 'list':
+            # El listado NO se abre. Ver un hogar por estar trabajándolo no es lo
+            # mismo que poder navegar los hogares de todo el país: son 2,5 millones
+            # de fichas con datos personales de víctimas.
+            return qs.filter(propios).distinct()
+
+        # Acceso por id (abrir, agregar integrante, crear la sesión). Con el
+        # control de vigencia retirado, el encuestador tiene que poder continuar
+        # sobre el hogar que ya existe, sea de quien sea: es el hogar de la persona
+        # que tiene enfrente. Filtrarlo por dueño devolvería 404 justo después de
+        # que `create` le entregó el id, y el flujo moriría sin explicación —el
+        # bloqueo nuevo que el retiro de la vigencia vino a evitar—.
+        #
+        # Sigue siendo acceso por identificador conocido, no exploración: ese id
+        # solo se obtiene conformando el hogar de la persona atendida.
+        if not _bloqueo_vigencia_activo():
+            return qs.exclude(estado='ARCHIVADO')
+
+        return qs.filter(propios).distinct()
 
     def get_serializer_class(self):
         if self.action in ('list',):
@@ -120,14 +164,21 @@ class HogarViewSet(viewsets.ModelViewSet):
             Hogar no archivado idempotente que el usuario PUEDE ver.
 
             - Admin: cualquier hogar no archivado de la víctima.
-            - No-admin: solo si es propio (creado_por = request.user). Si NO hay
+            - Con el control de vigencia retirado: cualquiera, de quien sea. **El
+              hogar es la familia, no la entrevista**, y el encuestador que está
+              parado frente a la persona tiene que poder continuar sobre el hogar
+              que ya existe. No se le reasigna la propiedad: `creado_por` no se
+              toca —quitárselo al primero le borraría de «mis encuestas» un trabajo
+              que sí hizo— y la autoría de cada caracterización vive en su sesión,
+              que es donde siempre debió estar.
+            - Con el control activo (el default): solo si es propio. Si NO hay
               propio pero SÍ existe uno ajeno, devuelve el ajeno marcado para que
               el caller responda 409 en lugar de exponer un id inaccesible.
 
             Retorna (hogar, es_propio).
             """
             base = _no_archivados()
-            if es_admin:
+            if es_admin or not _bloqueo_vigencia_activo():
                 return base.first(), True
             propio = base.filter(creado_por=request.user).first()
             if propio:

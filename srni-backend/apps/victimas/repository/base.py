@@ -275,6 +275,15 @@ class MotivoNoElegible:
     #: (Manual §5.1.1). **Exige soporte**: es saltarse un control, y sin rastro
     #: la regla de vigencia se vuelve opcional en la práctica.
     ELEGIBLE_POR_EXCEPCION = 'ELEGIBLE_POR_EXCEPCION'
+    #: Tiene ficha vigente **y da igual**: el control de vigencia está retirado
+    #: por configuración (`settings.VIGENCIA['BLOQUEO_ACTIVO'] = False`).
+    #:
+    #: Es un motivo aparte de `ELEGIBLE` a propósito. Decir solo "elegible"
+    #: perdería el único dato que importa después: que esta persona SÍ tenía
+    #: ficha vigente cuando se la recaracterizó. Ese es el dato con el que se
+    #: escribe `RecaracterizacionVigente` al cerrar la encuesta, y el que permite
+    #: responder cuántas recaracterizaciones se hicieron sobre ficha vigente.
+    ELEGIBLE_SIN_CONTROL_VIGENCIA = 'ELEGIBLE_SIN_CONTROL_VIGENCIA'
     #: No está en el padrón de SICAV. **No significa "no es víctima"**: el padrón
     #: se armó desde el legacy, así que hay víctimas del RUV que no están acá.
     NO_EN_PADRON = 'NO_EN_PADRON'
@@ -302,7 +311,21 @@ class Elegibilidad:
     @property
     def elegible(self) -> bool:
         return self.motivo in (MotivoNoElegible.ELEGIBLE,
-                               MotivoNoElegible.ELEGIBLE_POR_EXCEPCION)
+                               MotivoNoElegible.ELEGIBLE_POR_EXCEPCION,
+                               MotivoNoElegible.ELEGIBLE_SIN_CONTROL_VIGENCIA)
+
+    @property
+    def sobre_ficha_vigente(self) -> bool:
+        """
+        La persona tenía ficha vigente y se la va a caracterizar de todos modos.
+
+        Cubre los dos caminos por los que eso puede pasar —una habilitación
+        otorgada, o el control retirado— porque para el registro son el mismo
+        hecho: una recaracterización sobre una ficha que no había vencido.
+        `disponible_desde` trae hasta cuándo estaba vigente.
+        """
+        return self.motivo in (MotivoNoElegible.ELEGIBLE_POR_EXCEPCION,
+                               MotivoNoElegible.ELEGIBLE_SIN_CONTROL_VIGENCIA)
 
     @property
     def por_excepcion(self) -> bool:
@@ -394,6 +417,25 @@ def describir_elegibilidad(victima, hoy=None, *, ruta=None,
         disponible = fecha.replace(month=3, day=1,
                                    year=fecha.year + ANIOS_VIGENCIA_CARACTERIZACION)
 
+    # ── El control de vigencia, retirado por configuración ──────────────────
+    # Se evalúa ANTES de buscar la habilitación, por dos razones: con el control
+    # retirado ya nadie otorga habilitaciones, así que la consulta sería inútil
+    # en el camino más caliente de la aplicación; y el mensaje que corresponde es
+    # otro —no hay autorizante ni radicado que citar—.
+    #
+    # El veredicto NO es `ELEGIBLE` a secas: se conserva `ELEGIBLE_SIN_CONTROL_
+    # VIGENCIA` y `disponible_desde` porque son los dos datos con los que se
+    # escribe el registro al cerrar la encuesta. Perderlos aquí sería perder para
+    # siempre la única constancia de que la ficha estaba vigente.
+    if not _bloqueo_vigencia_activo():
+        return Elegibilidad(
+            MotivoNoElegible.ELEGIBLE_SIN_CONTROL_VIGENCIA,
+            f'Esta persona fue caracterizada el {fecha:%d/%m/%Y} y su entrevista '
+            f'estaba vigente hasta el {disponible:%d/%m/%Y}. Puede actualizar la '
+            f'caracterización: el control de vigencia está retirado.',
+            disponible_desde=disponible,
+        )
+
     # La excepción del manual: tres rutas omiten la vigencia. Pero la ruta sola
     # no habilita — tiene que haber una habilitación otorgada desde el front.
     if habilitacion is _SIN_CONSULTAR:
@@ -439,6 +481,53 @@ def describir_elegibilidad(victima, hoy=None, *, ruta=None,
         f'el radicado del soporte.',
         disponible_desde=disponible,
     )
+
+
+def _bloqueo_vigencia_activo() -> bool:
+    """
+    ¿Sigue en pie la regla de los dos años?
+
+    Se lee del entorno en cada llamada y no se memoriza en un módulo: apagar el
+    control tiene que surtir efecto recreando el contenedor, sin necesidad de
+    reconstruir la imagen ni de recordar qué proceso quedó con el valor viejo.
+
+    El default es `True` —el control activo— para que un despliegue nunca retire
+    por su cuenta un control del Manual. Ver `settings.VIGENCIA`.
+    """
+    from django.conf import settings
+
+    return bool(getattr(settings, 'VIGENCIA', {}).get('BLOQUEO_ACTIVO', True))
+
+
+def elegible_por_retiro_del_control(victima) -> bool:
+    """
+    ¿Esta persona pasa a ser caracterizable **solo** porque se retiró el control?
+
+    Sirve para los caminos que entregan fichas en bloque y no pueden armar un
+    veredicto por persona: el listado del padrón y, sobre todo, **la precarga de
+    la jornada**, que es el padrón que la APK consulta SIN SEÑAL.
+
+    Eso último es lo que hace que esta función importe. Con el control retirado en
+    el servidor pero la precarga diciendo `habilitada=False`, el celular seguiría
+    bloqueando en campo —donde no hay red para preguntar de nuevo— y el retiro no
+    se notaría justo donde se pidió. Resolverlo acá y no en la app tiene una
+    ventaja concreta: **funciona con las APK ya instaladas**, sin build nueva cada
+    vez que el interruptor se mueva.
+
+    Replica el árbol de `describir_elegibilidad` para este caso, y por eso pide las
+    tres condiciones en vez de devolver `True` a secas:
+
+    · el control tiene que estar retirado;
+    · con fecha de caracterización — sin ella el bloqueo es `BLOQUEADA_SIN_MOTIVO`,
+      un dato roto que hay que seguir viendo y no una regla que se levanta;
+    · no excluida del RUV — eso es una decisión jurídica sobre la condición de
+      víctima, no un control de frescura, y ninguna ruta la habilitaba tampoco.
+    """
+    if victima is None or _bloqueo_vigencia_activo():
+        return False
+    if getattr(victima, 'estado_ruv', '') == 'EXCLUIDO':
+        return False
+    return bool(getattr(victima, 'fecha_ult_caracterizacion', None))
 
 
 def _buscar_habilitacion(victima):

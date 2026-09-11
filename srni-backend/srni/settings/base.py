@@ -548,3 +548,33 @@ ORACLE_SYNC = {
     'AUTOMATICA': config('ORACLE_SYNC_AUTOMATICA', default=False, cast=bool),
     'DESTINO':    config('ORACLE_SYNC_DESTINO', default=''),   # 'local' | 'produccion'
 }
+
+# --- Control de vigencia de la caracterización ----------------------------
+# Interruptor de la regla de los dos años (Manual de Usuario §5.1.1).
+#
+# `BLOQUEO_ACTIVO=True` es el comportamiento histórico y el default: quien tiene
+# ficha vigente no se recaracteriza salvo que exista una habilitación otorgada
+# desde el panel (`encuestas.ExcepcionVigencia`).
+#
+# `BLOQUEO_ACTIVO=False` retira el bloqueo: cualquier persona del padrón puede
+# caracterizarse cuando la operación lo necesite, sin autorización, sin radicado
+# y sin soporte. Lo pidió el equipo de caracterización el 11-sep-2026.
+#
+# ─── Por qué es un interruptor y nace encendido ──────────────────────────
+# La regla NO es una decisión técnica: la define el Manual, que es documento
+# misional. Quien la retira debe ser quien la definió, y esa firma tiene fecha y
+# responsable. Dejarlo en el entorno —y no en el código— hace tres cosas:
+#
+#   1. Retirar el control queda como un acto explícito con huella en el servidor,
+#      no como el efecto secundario de que alguien desplegara.
+#   2. Reponerlo, el día que la operación lo reponga —y estas decisiones se
+#      reponen—, cuesta cambiar una variable, no reconstruir lo borrado.
+#   3. Mientras la instrucción escrita no llegue, producción sigue como está.
+#
+# Con el bloqueo retirado NO se pierde el rastro: cada caracterización hecha
+# sobre una ficha que aún estaba vigente queda en `RecaracterizacionVigente`,
+# escrita por el sistema al cerrar la encuesta. Ver
+# `docs/operacion/plan_registro_silencioso_vigencia.md`.
+VIGENCIA = {
+    'BLOQUEO_ACTIVO': config('VIGENCIA_BLOQUEO_ACTIVO', default=True, cast=bool),
+}

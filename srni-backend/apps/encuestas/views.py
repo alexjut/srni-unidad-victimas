@@ -302,6 +302,13 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         # Se marca a TODOS los miembros del hogar, no solo al autorizado: la
         # caracterización cuelga del hogar, que es el mismo criterio con el que el
         # legacy calcula la fecha (MAX de GIC_HOGAR por miembro).
+        # ⚠️ ANTES de `_marcar_caracterizadas`, y el orden no es casual: esa
+        # función reescribe `fecha_ult_caracterizacion` con la fecha de hoy. Si el
+        # registro corriera después, leería la caracterización que acabamos de
+        # hacer en vez de la anterior, y la fila diría «faltaban -0 días» en todos
+        # los casos: el registro existiría y no serviría para nada.
+        recaracterizaciones = self._registrar_recaracterizaciones(sesion, request.user)
+
         marcados = self._marcar_caracterizadas(sesion)
         habilitaciones_usadas = self._consumir_habilitaciones(sesion)
 
@@ -315,7 +322,8 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
             resultado='EXITO',
             detalle={'porcentaje_completado': pct_final, 'hogar_id': str(sesion.hogar_id),
                      'victimas_marcadas': marcados,
-                     'habilitaciones_usadas': habilitaciones_usadas},
+                     'habilitaciones_usadas': habilitaciones_usadas,
+                     'recaracterizaciones_sobre_ficha_vigente': recaracterizaciones},
         )
 
         # Cerrar la encuesta es lo que dispara la escritura hacia el Oracle legacy.
@@ -331,6 +339,69 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         transaction.on_commit(lambda: encolar_hogar(sesion.hogar_id))
 
         return Response(SesionEncuestaDetalleSerializer(sesion).data)
+
+    @staticmethod
+    def _registrar_recaracterizaciones(sesion, usuario) -> int:
+        """
+        Anota las caracterizaciones que se hicieron sobre una ficha aún vigente.
+
+        Devuelve cuántas filas quedaron. Es el libro de registro del §1.3 del
+        correo del 11-sep-2026: existe para poder responder quién recaracterizó a
+        quién y con cuánta anticipación, sin pedirle nada al encuestador.
+
+        Se pregunta por **todos los miembros del hogar**, con el mismo criterio con
+        el que se marcan las fechas: la caracterización cuelga del hogar, no del
+        autorizado. Una persona con ficha vigente puede entrar como integrante de
+        un hogar cuyo titular sí estaba habilitado, y ese caso cuenta igual.
+
+        El veredicto lo arma `describir_elegibilidad`, el MISMO que decidió si la
+        persona podía caracterizarse. Reimplementar acá la condición «tenía ficha
+        vigente» dejaría dos definiciones de lo mismo, y la del registro empezaría a
+        divergir de la que abrió la puerta.
+
+        **No falla la finalización si algo sale mal.** La encuesta ya está guardada y
+        cerrar es lo que el encuestador necesita; un registro que no se pudo escribir
+        se reconstruye después desde la propia sesión. Pero sí queda en el log,
+        porque una recaracterización sin anotar es exactamente lo que este registro
+        existe para que no ocurra.
+        """
+        from apps.hogares.models import MiembroHogar
+        from apps.victimas.models import Victima
+        from apps.victimas.repository.base import describir_elegibilidad
+
+        from .models import RecaracterizacionVigente
+
+        try:
+            ids = set(
+                MiembroHogar.objects
+                .filter(hogar_id=sesion.hogar_id, victima_id__isnull=False)
+                .values_list('victima_id', flat=True)
+            )
+            autorizado_id = getattr(sesion.hogar, 'autorizado_id', None)
+            if autorizado_id:
+                ids.add(autorizado_id)
+            if not ids:
+                return 0
+
+            momento = sesion.fecha_fin
+            escritas = 0
+            for victima in Victima.objects.filter(id__in=ids):
+                veredicto = describir_elegibilidad(
+                    victima, ruta=sesion.ruta_entrevista)
+                if RecaracterizacionVigente.registrar(
+                    sesion=sesion, victima=victima, veredicto=veredicto,
+                    usuario=usuario, momento=momento,
+                ) is not None:
+                    escritas += 1
+            return escritas
+        except Exception:                                      # noqa: BLE001
+            logger.exception(
+                'No se pudo registrar la recaracterización sobre ficha vigente '
+                'de la sesión %s. La encuesta quedó cerrada; el registro se '
+                'puede reconstruir desde la sesión y el hogar.',
+                sesion.id,
+            )
+            return 0
 
     @staticmethod
     def _marcar_caracterizadas(sesion) -> int:

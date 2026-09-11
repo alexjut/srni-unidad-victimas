@@ -23,6 +23,7 @@ Nota (demo funcional): 9990100001–10 quedan TODAS habilitadas para caracteriza
 """
 from __future__ import annotations
 
+import dataclasses
 from datetime import date, datetime
 
 from .base import (
@@ -32,6 +33,7 @@ from .base import (
     VictimaRepository,
     VictimaResumen,
     describir_elegibilidad,
+    elegible_por_retiro_del_control,
 )
 
 
@@ -381,6 +383,16 @@ class MockVictimaRepository(VictimaRepository):
         # que las pruebas contra mock validaban textos que producción nunca
         # emitía.
         veredicto = describir_elegibilidad(victima, ruta=ruta)
+
+        # El DTO responde «¿puede caracterizarse ahora?», igual que en producción
+        # (`_a_resumen`), así que el veredicto manda sobre el valor fijo del mock.
+        # Se hace con `replace` y no asignando: `_VICTIMAS` es un diccionario de
+        # módulo compartido entre llamadas, y mutar la ficha dejaría el resultado
+        # de una búsqueda pegado en la siguiente.
+        if victima is not None and victima.habilitado_para_caracterizacion != veredicto.elegible:
+            victima = dataclasses.replace(
+                victima, habilitado_para_caracterizacion=veredicto.elegible)
+
         return ResultadoBusqueda(
             encontrado=victima is not None,
             victima=victima,
@@ -394,8 +406,28 @@ class MockVictimaRepository(VictimaRepository):
         # Padrón completo del mock: las víctimas indexadas por documento.
         # No incluye a los miembros de grupo familiar que no tienen entrada
         # propia en _VICTIMAS (esos se obtienen vía obtener_grupo_familiar).
-        todas = list(_VICTIMAS.values())
+        todas = [self._con_elegibilidad_actual(v) for v in _VICTIMAS.values()]
         return todas[:limite] if limite is not None else todas
+
+    @staticmethod
+    def _con_elegibilidad_actual(victima: VictimaResumen) -> VictimaResumen:
+        """
+        Aplica el retiro del control de vigencia a una ficha fija del mock.
+
+        Sin esto, un entorno con el interruptor abierto seguiría entregando fichas
+        bloqueadas en la precarga y en los listados, y quien probara contra el mock
+        —desarrollo, las jornadas de capacitación— concluiría que el cambio no
+        funciona. El árbol de decisión es el mismo que en producción: vive en
+        `elegible_por_retiro_del_control` y no se reescribe acá.
+
+        Se devuelve una copia: `_VICTIMAS` es un diccionario de módulo compartido
+        entre peticiones, y mutar la ficha dejaría el resultado pegado.
+        """
+        if victima.habilitado_para_caracterizacion:
+            return victima
+        if not elegible_por_retiro_del_control(victima):
+            return victima
+        return dataclasses.replace(victima, habilitado_para_caracterizacion=True)
 
     def iterar_padron(self, batch_size: int = 1000):
         """

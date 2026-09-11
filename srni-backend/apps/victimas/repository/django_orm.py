@@ -35,9 +35,11 @@ from .base import (
     ResultadoBusqueda,
     VictimaRepository,
     VictimaResumen,
+    _bloqueo_vigencia_activo,
     _buscar_habilitacion,
     describir_elegibilidad,
     doc_hash,
+    elegible_por_retiro_del_control,
     num_hash,
 )
 
@@ -74,7 +76,7 @@ class DjangoVictimaRepository(VictimaRepository):
     # ── construcción del DTO ──────────────────────────────────────────────────
     def _a_resumen(self, victima, *, con_hechos: bool = True,
                    clase_colision: str | None = None,
-                   habilitacion=None) -> VictimaResumen:
+                   habilitacion=None, elegible: bool | None = None) -> VictimaResumen:
         return VictimaResumen(
             clase_colision=clase_colision,
             cons_persona=victima.cons_persona,
@@ -87,14 +89,25 @@ class DjangoVictimaRepository(VictimaRepository):
             fecha_nacimiento=_a_fecha(victima.fecha_nacimiento),
             genero=victima.genero or "",
             estado_ruv=victima.estado_ruv or "",
-            # Una excepción vigente HABILITA a caracterizar ahora, aunque el flag
-            # crudo de la BD siga en False (ficha vigente por tiempo). El DTO es
-            # «¿puede caracterizarse ahora?», no el valor de la columna, así que
-            # se refleja acá. Sin esto, la APK —que decide por este campo— dejaba
-            # a la persona autorizada bloqueada en línea: se autorizaba en el
-            # panel y el celular seguía diciendo «No habilitado».
+            # Este campo es «¿puede caracterizarse ahora?», NO el valor de la
+            # columna. La APK decide por él qué tarjeta pinta, así que cualquier
+            # cosa que habilite sin cambiar la columna tiene que reflejarse acá.
+            #
+            # Con `elegible` explícito manda el veredicto, que es el único lugar
+            # donde se decide. Sin él se conserva el cálculo anterior —columna o
+            # habilitación vigente— para los caminos que no arman veredicto
+            # (listados, colisiones de documento).
+            #
+            # Ya costó dos defectos del mismo molde: primero la persona autorizada
+            # en el panel seguía apareciendo «No habilitado» en el celular; y con
+            # el control de vigencia retirado volvería a pasar, porque la columna
+            # sigue en False y ya no hay habilitación que consultar. El
+            # encuestador vería un bloqueo sin salida ni explicación.
             habilitado_para_caracterizacion=(
-                victima.habilitado_para_caracterizacion or habilitacion is not None),
+                elegible if elegible is not None
+                else (victima.habilitado_para_caracterizacion
+                      or habilitacion is not None
+                      or elegible_por_retiro_del_control(victima))),
             fecha_ult_caracterizacion=victima.fecha_ult_caracterizacion,
             pertenencia_etnica=victima.pertenencia_etnica or "",
             pueblo_indigena=victima.pueblo_indigena or "",
@@ -378,15 +391,21 @@ class DjangoVictimaRepository(VictimaRepository):
         # APK, que decide por ese campo, dejaba bloqueada en línea a la persona
         # recién autorizada.
         habilitacion = _buscar_habilitacion(victima)
-        resumen = self._a_resumen(victima, habilitacion=habilitacion)
+
+        # El veredicto lo arma `describir_elegibilidad` — el MISMO que usa
+        # `estado_habilitacion` más abajo, para que no puedan volver a divergir.
+        #
+        # Va ANTES del resumen porque el resumen lo necesita: es el veredicto el
+        # que sabe si esta persona puede caracterizarse ahora, y el celular decide
+        # por el campo del resumen. Armar el resumen primero y el veredicto
+        # después es cómo se colaba el «No habilitado» sin salida.
+        veredicto = describir_elegibilidad(victima, ruta=ruta, habilitacion=habilitacion)
 
         # Se devuelve `encontrado=True` aunque no sea elegible: el encuestador
         # necesita ver a quién tiene enfrente y POR QUÉ no puede caracterizarla.
         # Decirle "no existe" cuando en realidad está excluida sería mentirle.
-        #
-        # El veredicto lo arma `describir_elegibilidad` — el MISMO que usa
-        # `estado_habilitacion` más abajo, para que no puedan volver a divergir.
-        veredicto = describir_elegibilidad(victima, ruta=ruta, habilitacion=habilitacion)
+        resumen = self._a_resumen(victima, habilitacion=habilitacion,
+                                  elegible=veredicto.elegible)
 
         # El aviso va PRIMERO: que haya que verificar la identidad importa más que el
         # estado en el RUV — si es otra persona, lo del RUV ni aplica.
@@ -433,14 +452,16 @@ class DjangoVictimaRepository(VictimaRepository):
 
         return ResultadoBusqueda(
             encontrado=True,
-            victima=self._resumen_de_universo(persona, fecha),
+            victima=self._resumen_de_universo(persona, fecha,
+                                              elegible=veredicto.elegible),
             fuente="UNIVERSO_RUV",
             mensaje=(aviso + (veredicto.mensaje or "")).strip(),
             motivo=veredicto.motivo,
             disponible_desde=veredicto.disponible_desde,
         )
 
-    def _resumen_de_universo(self, persona, fecha_ult) -> VictimaResumen:
+    def _resumen_de_universo(self, persona, fecha_ult,
+                             *, elegible: bool | None = None) -> VictimaResumen:
         """
         Ficha de una persona del universo, con lo que la fuente sí trae.
 
@@ -468,7 +489,14 @@ class DjangoVictimaRepository(VictimaRepository):
             fecha_nacimiento=persona.fecha_nacimiento,
             genero=H.homologar_genero(persona.genero),
             estado_ruv="NO_VERIFICADO",
-            habilitado_para_caracterizacion=(fecha_ult is None),
+            # Mismo criterio que `_a_resumen`: manda el veredicto cuando lo hay.
+            # «Sin fecha de caracterización» era el único motivo de bloqueo por acá,
+            # y con el control de vigencia retirado deja de serlo. Quien viene del
+            # universo nunca está EXCLUIDO —el corte no trae estado— así que basta
+            # con que el interruptor esté abierto.
+            habilitado_para_caracterizacion=(
+                elegible if elegible is not None
+                else (fecha_ult is None or not _bloqueo_vigencia_activo())),
             fecha_ult_caracterizacion=fecha_ult,
             # Homologada, NO cruda: el universo guarda el texto de la fuente en
             # un campo de 60 —'Negro(a) o Afrocolombiano(a)' son 28 caracteres—

@@ -583,6 +583,185 @@ class ExcepcionVigencia(models.Model):
                 .first())
 
 
+class RecaracterizacionVigente(models.Model):
+    """
+    Una caracterización hecha sobre una persona que **todavía tenía ficha
+    vigente**, con el control de vigencia retirado.
+
+    ─── Por qué existe ───────────────────────────────────────────────────────
+    El 11-sep-2026 la operación pidió que el sistema deje de detener al
+    encuestador cuando la persona fue caracterizada hace menos de dos años. La
+    petición se atiende completa: no hay autorización, ni radicado, ni soporte,
+    ni espera.
+
+    Lo que no hay razón para perder es el **dato**. Esta tabla es el libro donde
+    queda. Se escribe sola al cerrar la encuesta: sin pantalla, sin permiso y sin
+    pedirle nada a nadie en campo. Con ella se puede responder —el día que
+    pregunten, y van a preguntar— **cuántas recaracterizaciones se hicieron sobre
+    ficha vigente, quién las hizo, en qué territorial y con cuánta
+    anticipación**. Sin ella esa pregunta no tiene respuesta posible.
+
+    ─── Por qué NO es `ExcepcionVigencia` ────────────────────────────────────
+    `ExcepcionVigencia` es un **permiso otorgado**: tiene quién lo autorizó, el
+    radicado del soporte y un motivo escrito por una persona. Esto no tiene
+    ninguna de las tres cosas, porque ya no hay autorizante ni soporte.
+
+    Meterlas en la misma tabla dejaría una mitad de las filas con el sentido
+    contrario a la otra, y dentro de un año nadie sabría cuáles correspondieron a
+    un fallo judicial verificado y cuáles a una recaracterización de rutina. Las
+    filas de `ExcepcionVigencia` son la evidencia del régimen anterior y hay que
+    poder seguir distinguiéndolas.
+
+    ─── Lo que este registro NO hace ─────────────────────────────────────────
+    **No impide nada.** Es un libro, no una puerta. Si la operación empieza a
+    recaracterizar masivamente, acá va a quedar anotado con precisión y nada más
+    va a pasar. Que alguien lo mire es una decisión de supervisión.
+
+    **No sabe por qué.** Sin autorización no hay motivo escrito. `ruta` es lo más
+    cercano que tenemos y es una lista de opciones, no una explicación. Es una
+    consecuencia aceptada de la decisión, no un defecto del diseño.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # La sesión es la identidad del hecho: una caracterización, una fila. El
+    # `unique` de abajo es lo que hace la escritura idempotente sin condiciones
+    # —cerrar dos veces la misma encuesta no duplica el registro—, y eso importa
+    # porque `finalizar` se reintenta desde la app cuando la red se corta.
+    sesion = models.ForeignKey(
+        SesionEncuesta,
+        on_delete=models.CASCADE,
+        related_name='recaracterizaciones_vigentes',
+        help_text='La caracterización que se hizo sobre la ficha vigente.',
+    )
+    victima = models.ForeignKey(
+        'victimas.Victima',
+        on_delete=models.PROTECT,
+        related_name='recaracterizaciones_vigentes',
+        help_text='La persona que tenía ficha vigente.',
+    )
+    hogar = models.ForeignKey(
+        'hogares.Hogar',
+        on_delete=models.CASCADE,
+        related_name='recaracterizaciones_vigentes',
+        null=True, blank=True,
+        help_text='Permite ir del registro a la entrevista concreta.',
+    )
+
+    # Quién y cuándo. Es la única forma de responder «¿quién la hizo?», y por eso
+    # `SET_NULL` en vez de `CASCADE`: si el usuario se borra, la fila tiene que
+    # sobrevivir —perderla sería perder el registro justo del caso que alguien
+    # quiso mirar—.
+    realizada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True,
+        related_name='recaracterizaciones_vigentes',
+        help_text='El encuestador que hizo la caracterización.',
+    )
+    realizada_at = models.DateTimeField(
+        help_text='Cuándo se cerró la caracterización.',
+    )
+
+    ruta = models.CharField(
+        max_length=30, choices=SesionEncuesta.RUTA_ENTREVISTA, blank=True,
+        help_text='Ruta de entrevista elegida. Sin motivo escrito, es lo más '
+                  'cercano que hay a un porqué.',
+    )
+
+    # Se COPIAN, no se referencian. Al cerrar la encuesta, `finalizar` reescribe
+    # `Victima.fecha_ult_caracterizacion` con la fecha de hoy: si esto fuera una
+    # referencia, en el instante siguiente apuntaría a la caracterización nueva y
+    # se perdería para siempre la razón por la que la fila existe.
+    fecha_ult_caracterizacion = models.DateField(
+        null=True, blank=True,
+        help_text='Fecha de la caracterización ANTERIOR, la que estaba vigente.',
+    )
+    vigente_hasta = models.DateField(
+        null=True, blank=True,
+        help_text='Hasta cuándo estaba vigente esa ficha.',
+    )
+    dias_restantes = models.IntegerField(
+        null=True, blank=True,
+        help_text='Días que le faltaban por vencer. Ya calculado, para poder '
+                  'ordenar por gravedad sin recalcular sobre millones de filas.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Recaracterización sobre ficha vigente'
+        verbose_name_plural = 'Recaracterizaciones sobre ficha vigente'
+        constraints = [
+            # Una caracterización, una fila. Es la idempotencia del registro.
+            models.UniqueConstraint(
+                fields=['sesion', 'victima'],
+                name='recar_vig_sesion_victima_uniq',
+            ),
+        ]
+        indexes = [
+            # El informe que va a pedir control interno: cuántas y cuándo.
+            models.Index(fields=['-realizada_at'], name='recar_vig_fecha_idx'),
+            # «¿Quién recaracterizó, y cuántas veces?»
+            models.Index(fields=['realizada_por', '-realizada_at'],
+                         name='recar_vig_autor_idx'),
+            # «¿A esta persona cuántas veces?» — el caso que se va a consultar
+            # uno por uno cuando llegue un requerimiento por una víctima.
+            models.Index(fields=['victima', '-realizada_at'],
+                         name='recar_vig_victima_idx'),
+            # Ordenar por gravedad: las hechas con la ficha más fresca primero.
+            models.Index(fields=['dias_restantes'], name='recar_vig_dias_idx'),
+        ]
+        ordering = ['-realizada_at']
+
+    def __str__(self):
+        return (f'Recaracterización de {self.victima_id} el '
+                f'{self.realizada_at:%Y-%m-%d} '
+                f'({self.dias_restantes} días antes de vencer)')
+
+    @classmethod
+    def registrar(cls, *, sesion, victima, veredicto, usuario, momento):
+        """
+        Escribe la fila, o no escribe nada. Devuelve la fila o `None`.
+
+        No escribe cuando la persona no tenía ficha vigente, que es el caso
+        corriente: el registro solo tiene sentido para la recaracterización
+        anticipada. Preguntarlo acá y no en quien llama evita que cada camino que
+        cierre una encuesta tenga que acordarse de la condición.
+
+        Es idempotente por la restricción `(sesion, victima)`: cerrar dos veces la
+        misma encuesta —que pasa, la app reintenta cuando la red se corta— no
+        duplica el registro ni falla.
+        """
+        from datetime import date as _date
+
+        if not veredicto or not getattr(veredicto, 'sobre_ficha_vigente', False):
+            return None
+
+        vigente_hasta = getattr(veredicto, 'disponible_desde', None)
+        anterior = getattr(victima, 'fecha_ult_caracterizacion', None)
+        if anterior is not None and hasattr(anterior, 'date'):
+            anterior = anterior.date()
+
+        dias = None
+        if vigente_hasta is not None:
+            referencia = momento.date() if hasattr(momento, 'date') else _date.today()
+            dias = (vigente_hasta - referencia).days
+
+        fila, _creada = cls.objects.get_or_create(
+            sesion=sesion, victima=victima,
+            defaults={
+                'hogar_id': getattr(sesion, 'hogar_id', None),
+                'realizada_por': usuario,
+                'realizada_at': momento,
+                'ruta': getattr(sesion, 'ruta_entrevista', '') or '',
+                'fecha_ult_caracterizacion': anterior,
+                'vigente_hasta': vigente_hasta,
+                'dias_restantes': dias,
+            },
+        )
+        return fila
+
+
 # ─── Helpers de edad ─────────────────────────────────────────────────────────
 
 def _fecha(valor):
