@@ -172,6 +172,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data } = await authApi.me();
       await SecureStore.setItemAsync(KEY_PERFIL, JSON.stringify(data));
       set({ usuario: data, perfilCargado: true });
+
+      // Refrescar el padrón también acá, y no solo al iniciar sesión.
+      //
+      // La precarga corría en dos sitios nada más: `login` y `loginBiometrico`.
+      // Un teléfono que conserva la sesión —lo normal: se abre la aplicación y
+      // entra directo— salía a campo con el padrón del día en que se autenticó, y
+      // ese padrón es el que decide SIN SEÑAL quién puede caracterizarse.
+      //
+      // Con el retiro del control de vigencia eso pasó de inconveniente a
+      // bloqueante: el interruptor se abre en el servidor y el celular sigue
+      // diciendo «No habilitado» durante días, justo donde no hay red para
+      // preguntar de nuevo. El cambio no se notaría donde se pidió.
+      //
+      // Este es el punto correcto porque `authApi.me()` acaba de probar que hay
+      // red. Y es seguro: `ejecutarPrecarga` no se solapa consigo misma y nunca
+      // propaga una excepción, así que no puede impedir que la aplicación arranque.
+      precargarEnSegundoPlano();
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       // Solo un rechazo de credenciales (401/403) invalida la sesión. El

@@ -524,7 +524,32 @@ class RegistrarDesdeFuenteView(APIView):
         victima.fecha_nacimiento = str(nacimiento) if nacimiento else ''
         victima.genero = data['genero']
         victima.estado_ruv = data['estado_ruv']
-        victima.habilitado_para_caracterizacion = data['habilitado_para_caracterizacion']
+
+        # ── La vigencia NO la decide el cliente ───────────────────────────────
+        #
+        # Solo en un alta nueva. Sobre una fila del padrón que YA existe, aceptar
+        # este campo del cliente **anula el libro de auditoría del retiro de la
+        # vigencia, en silencio y sin que nada falle**.
+        #
+        # Cómo ocurre, medido: con el control retirado, la búsqueda entrega
+        # `habilitado_para_caracterizacion=True` a quien tiene ficha vigente —lo
+        # resuelve `elegible_por_retiro_del_control`, y es correcto: significa
+        # «puede caracterizarse ahora»—. La APK reenvía ese resumen COMPLETO al
+        # conformar el hogar. Si se escribiera, `describir_elegibilidad` cortaría
+        # en la columna (`if habilitado_para_caracterizacion: return ELEGIBLE`) y
+        # el veredicto pasaría de ELEGIBLE_SIN_CONTROL_VIGENCIA a ELEGIBLE. Al
+        # cerrar la encuesta, `RecaracterizacionVigente.registrar` exige
+        # `veredicto.sobre_ficha_vigente` y no anotaría nada.
+        #
+        # Resultado: la recaracterización ocurre, el encuestador no ve diferencia
+        # y el registro queda vacío. Sería lo único que conservamos, perdido por
+        # un campo que el cliente no tiene por qué poder escribir.
+        #
+        # En un alta manual sí se acepta: ahí el payload es el único dato que
+        # existe, la persona está enfrente del encuestador y no hay fila previa
+        # cuyo estado pisar.
+        if created:
+            victima.habilitado_para_caracterizacion = data['habilitado_para_caracterizacion']
         victima.pertenencia_etnica = data.get('pertenencia_etnica', 'NINGUNA')
         victima.pueblo_indigena = data.get('pueblo_indigena', '')
         victima.discapacidad = data.get('discapacidad', False)

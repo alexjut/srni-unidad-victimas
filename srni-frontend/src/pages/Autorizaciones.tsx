@@ -318,7 +318,37 @@ export default function AutorizacionesPage() {
             </div>
           );
         }
-        return <Badge variant="gris">{p.motivo}</Badge>;
+        /*
+          El control de vigencia retirado (11-sep-2026). Sin esta rama, la persona
+          con ficha vigente caía en el `return` de abajo y la pantalla mostraba la
+          cadena cruda `ELEGIBLE_SIN_CONTROL_VIGENCIA` en una insignia gris: código
+          interno a la vista de quien coordina, y encima leído como un estado raro
+          cuando lo que dice es que la regla ya no aplica.
+        */
+        if (p.motivo === 'ELEGIBLE_SIN_CONTROL_VIGENCIA') {
+          return (
+            <div>
+              <Badge variant="verde">Puede actualizarse</Badge>
+              <p className="text-xs text-gray-500 mt-1">
+                tenía ficha vigente hasta el {fecha(p.ficha_vigente_hasta)} · el
+                control de vigencia está retirado, no hace falta autorizar
+              </p>
+            </div>
+          );
+        }
+        /*
+          Cualquier otro motivo. Se muestra el MENSAJE del servidor y no el código:
+          el veredicto ya viene explicado en español y es el mismo texto que lee el
+          encuestador en el celular. Pintar el código obliga a quien coordina a
+          traducirlo, y ante un motivo nuevo deja la pantalla diciendo algo que
+          nadie puso ahí a propósito.
+        */
+        return (
+          <div>
+            <Badge variant="gris">Revisar</Badge>
+            {p.mensaje && <p className="text-xs text-gray-500 mt-1">{p.mensaje}</p>}
+          </div>
+        );
       },
     },
   ];

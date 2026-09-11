@@ -28,6 +28,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { hogaresApi } from '../../../src/api/hogares';
+import type { MiembroHogarResumen } from '../../../src/types';
 import * as hogaresOfflineDao from '../../../src/db/hogaresOfflineDao';
 import * as miembrosOfflineDao from '../../../src/db/miembrosOfflineDao';
 import { cargarMiembrosHogar } from '../../../src/services/miembrosHogar';
@@ -278,6 +279,19 @@ export default function ConformarHogarScreen() {
       }
       // Sin red: crea el hogar OFFLINE (id_local) + encola CREAR_HOGAR, igual que
       // hogares/nuevo.tsx. El autorizado es el victimaLocalId (UUID local o servidor).
+      // Lo que el servidor ya conoce del hogar. Con el control de vigencia
+      // retirado, conformar el hogar de alguien que ya lo tenia devuelve el hogar
+      // EXISTENTE con su familia completa (HTTP 200), y hasta el 11-sep-2026 esta
+      // pantalla descartaba esa lista y pintaba un solo integrante.
+      //
+      // El dano no era cosmetico: la encuestadora veia «1 integrante» sobre una
+      // familia de cinco y volvia a teclear al conyuge y a los hijos. `agregar
+      // miembro` no deduplica —no pasa por el servicio que verifica el vinculo— y
+      // el unico constraint es el del autorizado, asi que cada persona quedaba dos
+      // veces en el hogar. Es corrupcion de datos silenciosa, y aparecia justo en
+      // el caso que el retiro del control volvio corriente.
+      let miembrosServidor: MiembroHogarResumen[] = [];
+
       const crearOffline = async () => {
         const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
           jefe_hogar_uuid: victimaLocalId,
@@ -305,6 +319,7 @@ export default function ConformarHogarScreen() {
             setHogarIdLocal(data.id);
             setHogarId(data.id);
             setHogarEsLocal(false);
+            miembrosServidor = data.miembros ?? [];
           } catch (err: any) {
             if (err?.response) throw err; // error real del servidor → propagar
             // Sin respuesta = red caída aunque la bandera dijera online → offline.
@@ -314,23 +329,52 @@ export default function ConformarHogarScreen() {
           await crearOffline();
         }
 
-        // Autorizado como primer integrante (online lo agrega el backend; offline
-        // se mostrará y se incluye en numero_personas). Solo es presentación local.
+        // La lista de integrantes.
+        //
+        // Si el servidor devolvio un hogar que YA tenia familia, se siembra con
+        // ella: es la unica forma de que la encuestadora vea a quien ya esta
+        // registrado y no lo capture de nuevo. Los retirados se muestran tambien,
+        // marcados, para que se entienda por que el hogar tiene los que tiene.
         const v = victimaFuente;
         const nombreAutorizado = v
           ? [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
               .filter(Boolean).join(' ')
           : 'Autorizado';
-        setIntegrantes([{
-          key: 'autorizado',
-          es_autorizado: true,
-          nombre_display: nombreAutorizado,
-          tipo_documento: v?.tipo_documento ?? '',
-          numero_documento: v?.numero_documento ?? '',
-          rol_display: 'Autorizado',
-          fecha_nacimiento: '',
-          constancia_nombre: '',
-        }]);
+
+        if (miembrosServidor.length > 0) {
+          setIntegrantes(miembrosServidor.map((m) => ({
+            key: m.id,
+            es_autorizado: !!m.es_autorizado,
+            // El autorizado se nombra desde la ficha buscada, que es el dato
+            // confirmado con la persona que esta enfrente; los demas, con lo que
+            // manda el servidor.
+            nombre_display: m.es_autorizado
+              ? nombreAutorizado
+              : ((m.nombre_completo || '').trim() || 'Integrante sin nombre'),
+            tipo_documento: m.tipo_documento_codigo ?? '',
+            numero_documento: m.numero_documento ?? '',
+            rol_display: m.es_autorizado
+              ? 'Autorizado'
+              : (m.retirado_en
+                ? `${m.motivo_retiro_display || 'Retirado'} · desde ${m.retirado_en}`
+                : (m.parentesco_display || m.rol_display || 'Integrante')),
+            fecha_nacimiento: m.fecha_nacimiento ?? '',
+            constancia_nombre: '',
+          })));
+        } else {
+          // Hogar nuevo, u offline: el autorizado es el unico que se conoce. Online
+          // lo inserta el backend; sin senial se muestra y cuenta en numero_personas.
+          setIntegrantes([{
+            key: 'autorizado',
+            es_autorizado: true,
+            nombre_display: nombreAutorizado,
+            tipo_documento: v?.tipo_documento ?? '',
+            numero_documento: v?.numero_documento ?? '',
+            rol_display: 'Autorizado',
+            fecha_nacimiento: '',
+            constancia_nombre: '',
+          }]);
+        }
       } catch (err: any) {
         // APK-002. Antes acá iba `JSON.stringify(err.response.data)`, que le
         // ponía al encuestador el JSON crudo del servidor — y con el cuerpo

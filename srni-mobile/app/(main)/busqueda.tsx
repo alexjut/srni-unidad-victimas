@@ -602,12 +602,20 @@ function resultadoDesdePadron(
     fecha_nacimiento: '',
     genero: 'ND',
     estado_ruv: p.en_ruv ? 'INCLUIDO' : 'NO_VERIFICADO',
-    // La excepción autorizada desde la web gana sobre "ya caracterizada": es
-    // exactamente el caso para el que existe —una persona con ficha vigente a
-    // la que hay que actualizarle la caracterización—. Sin este `||`, el dato
-    // llegaría al dispositivo, se guardaría, y la app seguiría bloqueando.
-    habilitado_para_caracterizacion:
-      (p.habilitada && !p.ya_caracterizada) || p.habilitada_por_excepcion,
+    // `habilitada` es la respuesta del servidor a «¿puede caracterizarse ahora?»,
+    // y se obedece tal cual. No se vuelve a decidir acá.
+    //
+    // Hasta el 11-sep-2026 esta línea llevaba `&& !p.ya_caracterizada`, y ese
+    // `&&` era un segundo criterio propio del teléfono. Con el control de vigencia
+    // retirado el servidor manda `habilitada: true` para quien tiene ficha
+    // vigente, pero `ya_caracterizada` sigue en true —porque es cierto: ya la
+    // caracterizaron— y el `&&` volvía a bloquear SIN SEÑAL, que es justo donde no
+    // hay forma de preguntar de nuevo. El retiro no se notaría en territorio.
+    //
+    // `ya_caracterizada` sigue usándose, pero solo para el TEXTO: el encuestador
+    // tiene que ver que a esta persona ya la caracterizaron aunque el sistema lo
+    // deje continuar. Es información, no una puerta.
+    habilitado_para_caracterizacion: p.habilitada || p.habilitada_por_excepcion,
     fecha_ult_caracterizacion: null,
     pertenencia_etnica: 'NINGUNA',
     pueblo_indigena: '',

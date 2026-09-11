@@ -80,6 +80,20 @@ def _ip(request) -> str:
     return ip_de_request(request)
 
 
+def _bloqueo_vigencia_activo() -> bool:
+    """
+    ¿Sigue en pie la regla de los dos años? (`settings.VIGENCIA`).
+
+    Se delega en el repositorio de víctimas —igual que en `hogares/views.py`—
+    para que la condición viva en un solo lugar. Tres lecturas del mismo
+    interruptor en tres archivos terminan divergiendo, y el día que divergen el
+    sistema queda medio abierto sin que nada falle.
+    """
+    from apps.victimas.repository.base import _bloqueo_vigencia_activo as _fuente
+
+    return _fuente()
+
+
 @extend_schema_view(
     list=extend_schema(summary='Listar sesiones del encuestador', tags=['Encuestas']),
     retrieve=extend_schema(summary='Detalle de sesión con respuestas', tags=['Encuestas']),
@@ -149,7 +163,27 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
                 # filtra encuestador=user → 404 en responder/finalizar). En ese
                 # caso respondemos 409 en lugar de exponer un id inaccesible.
                 sesion_activa = base.filter(encuestador=request.user).first()
-                if not sesion_activa and base.exists():
+                # El 409 solo tiene sentido mientras el control de vigencia esté
+                # activo. Retirado, este era el PASO SIGUIENTE al que se acaba de
+                # abrir, y la pared reaparecía acá con el mismo mensaje inútil:
+                # `hogares/views.py` le entrega al encuestador el hogar que ya
+                # existe aunque sea de otro, lo deja abrirlo y agregar
+                # integrantes, y al crear la sesión se encontraba con «solicita su
+                # reasignación al supervisor» — un trámite que no existe.
+                #
+                # El caso no es raro: basta que el compañero haya dejado una
+                # entrevista sin cerrar, o que su cierre siga en la cola sin señal.
+                # Y falla peor de lo que parece, porque en la APK esto revienta
+                # dentro de la sincronización: la creación de la sesión queda en
+                # error y las respuestas y el cierre esperan detrás de un id que
+                # nunca llega. La entrevista completa no se entrega.
+                #
+                # Sin el control, la sesión ajena simplemente no cuenta: sigue
+                # siendo del otro, y esta persona crea la suya sobre el mismo
+                # hogar. Es lo mismo que ya se decidió para el hogar — el hogar es
+                # la familia y la autoría vive en cada sesión.
+                if (not sesion_activa and base.exists()
+                        and _bloqueo_vigencia_activo()):
                     return Response(
                         {'detail': (
                             'Este hogar ya tiene una sesión de encuesta activa '
