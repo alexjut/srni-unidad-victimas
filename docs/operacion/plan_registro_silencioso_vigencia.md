@@ -93,36 +93,56 @@ puede o no caracterizarse. Fuera de ahí, ningún módulo cambia de comportamien
 
 ---
 
-## 5. 🔴 El bloqueo que quedaría, y que hay que resolver en el mismo cambio
+## 5. El hogar: se actualiza el que ya existe — DECIDIDO
 
-**Esto es lo que puede hacer fracasar el cambio, y no tiene que ver con la
-vigencia.**
+**Decisión de Javier, 11-sep-2026: no se crea un hogar nuevo. Se actualiza el
+hogar que esa persona ya tiene.**
 
-Una víctima solo puede tener **un hogar no archivado**, y es una restricción de
-base de datos. Además, **nada en el sistema archiva un hogar jamás**: medido en
-producción, hay **0 hogares archivados de 45**. La válvula existe y nunca se
-abre.
-
-Si se retira la vigencia sin tocar esto, pasa lo siguiente: el encuestador ya no
-ve «ficha vigente», avanza, y al conformar el hogar se topa con *«esta víctima ya
-tiene un hogar activo registrado por otro encuestador»*. Se habría sustituido un
-bloqueo que se entendía y tenía salida por otro que no se entiende y no la tiene.
-
-Hay dos salidas y **es una decisión de negocio**, no técnica:
-
-**(a) Continuar sobre el hogar existente.** La entrevista nueva se agrega como
-una caracterización más del mismo hogar. Es lo más barato —el sistema ya lo
-permite— y conserva la historia del hogar. Falta poder reasignar el hogar al
-encuestador que está en campo.
-
-**(b) Archivar el hogar anterior y estrenar uno.** Cada caracterización arranca
-limpia. Es lo más parecido a «volver a empezar», y es lo que activaría la válvula
-que hoy nunca se usa.
-
-**Recomendación: (a).** El hogar es la familia, no la entrevista. Archivar el
-hogar cada vez que se recaracteriza multiplica los hogares de la misma familia y
-vuelve incontable cuántas familias hay, que es una de las cifras que el sistema
+Es la opción correcta: **el hogar es la familia, no la entrevista.** Crear uno
+cada vez que se recaracteriza multiplicaría los hogares de la misma familia y
+volvería incontable cuántas familias hay, que es una de las cifras que el sistema
 tiene que poder dar.
+
+Cada caracterización es una **sesión** dentro de ese hogar, y cada sesión tiene su
+propio autor y su propia fecha. La historia no se pisa: se acumula.
+
+### Por qué esto no es «no hacer nada»
+
+Hoy el sistema ya reutiliza el hogar existente… **solo si es del mismo
+encuestador.** Si lo creó otro, responde *«esta víctima ya tiene un hogar activo
+registrado por otro encuestador. Solicita su reasignación al supervisor»* y ahí
+se acaba el camino: no hay pantalla de reasignación, y el encuestador que está
+parado frente a la persona no puede seguir.
+
+Retirar la vigencia sin arreglar esto sustituye un bloqueo que se entendía y
+tenía salida por otro que no se entiende y no la tiene. **La queja volvería en
+una semana, con razón.**
+
+### Qué hay que cambiar, en concreto
+
+**El hogar deja de ser propiedad de un encuestador y pasa a ser el registro de la
+familia.** Eso es un cambio de concepto, y de él salen tres consecuencias:
+
+1. **Al conformar, el hogar existente se devuelve siempre**, sea de quien sea. Se
+   acaba el 409.
+2. **No se reasigna la propiedad.** Quitarle el hogar al primer encuestador para
+   dárselo al segundo le borraría de «mis encuestas» un trabajo que sí hizo. El
+   hogar simplemente deja de tener dueño exclusivo.
+3. **La autoría vive en la sesión, no en el hogar.** Cada caracterización queda a
+   nombre de quien la hizo, que es donde siempre debió estar. El hogar conserva
+   quién lo creó, como dato histórico.
+
+La visibilidad se amplía en consecuencia: hoy el encuestador solo ve los hogares
+que él creó. Pasa a ver también aquel sobre el que está caracterizando. **No se
+abre el listado entero**: ver un hogar por estar trabajándolo no es lo mismo que
+poder navegar los hogares de todo el país.
+
+### Lo que hay que vigilar
+
+Dos encuestadores pueden terminar caracterizando el mismo hogar el mismo día sin
+enterarse, y antes el bloqueo lo impedía de rebote. Ya no. El registro del
+numeral 2 lo va a mostrar —dos sesiones del mismo hogar, misma semana, autores
+distintos—, pero mostrarlo es todo lo que va a hacer.
 
 ---
 

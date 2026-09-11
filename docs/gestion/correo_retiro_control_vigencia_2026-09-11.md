@@ -112,29 +112,42 @@ Dicho eso: **la regla es del Manual de Usuario, numeral 5.1.1, y es una
 definición misional, no técnica.** Quien la define es quien puede retirarla, y
 esa no es la ingeniería. Procedemos.
 
-## 5. 🔴 Un punto que sí requiere decisión suya, o el cambio no funciona
+## 5. El hogar de la persona se actualiza, no se duplica
 
-Hay una segunda regla, independiente de la vigencia, que quedaría siendo el nuevo
-obstáculo: **una persona solo puede tener un hogar activo**. Medido en
-producción, ningún hogar se archiva jamás.
+Hay una segunda regla, independiente de la vigencia, que de no atenderse quedaría
+siendo el nuevo obstáculo: **una persona solo puede tener un hogar activo**. Si
+retiráramos la vigencia sin más, el encuestador ya no vería «ficha vigente»,
+avanzaría, y al conformar el hogar se encontraría con *«esta víctima ya tiene un
+hogar activo registrado por otro encuestador»*. Habríamos cambiado un bloqueo que
+se entendía por otro que no.
 
-Si retiramos la vigencia sin resolver esto, el encuestador ya no verá «ficha
-vigente», avanzará, y al conformar el hogar se encontrará con *«esta víctima ya
-tiene un hogar activo registrado por otro encuestador»*. Habríamos sustituido un
-bloqueo que se entendía y tenía salida por otro que no se entiende y no la tiene.
-La queja volvería en una semana, con razón.
+**Queda resuelto así: la caracterización nueva actualiza el hogar que la persona
+ya tiene.** No se crea uno nuevo ni se archiva el anterior.
 
-Dos salidas posibles:
+El criterio es que **el hogar es la familia, no la entrevista**. Cada
+caracterización se guarda como una entrevista más dentro de ese hogar, con su
+propia fecha y a nombre de quien la hizo. Así:
 
-| | Qué implica |
-|---|---|
-| **(a) Continuar sobre el hogar existente** *(recomendada)* | La entrevista nueva se suma al hogar de la familia. Conserva la historia y no multiplica hogares |
-| **(b) Archivar el anterior y crear uno nuevo** | Cada caracterización arranca limpia, pero la misma familia queda contada varias veces |
+- la historia de la familia no se pisa: se acumula, y se puede ver la evolución
+  entre una caracterización y la siguiente;
+- el sistema conserva la capacidad de decir **cuántas familias** hay, que se
+  perdería si cada recaracterización estrenara hogar;
+- el encuestador que está en campo puede continuar aunque el hogar lo haya creado
+  un compañero, sin pedir reasignación a nadie.
 
-Recomendamos **(a)**: el hogar es la familia, no la entrevista, y con (b) el
-sistema pierde la capacidad de decir cuántas familias hay.
+## 6. Lo que vamos a vigilar y conviene que usted sepa
 
-## 6. Fechas propuestas
+Con el bloqueo retirado, **dos encuestadores pueden caracterizar el mismo hogar
+el mismo día sin enterarse.** Antes la regla de vigencia lo impedía de rebote; ya
+no lo hará.
+
+El registro del numeral 3 lo va a mostrar con precisión —dos entrevistas del
+mismo hogar, la misma semana, autores distintos—, pero mostrarlo es todo lo que
+puede hacer. Corregirlo es trabajo de supervisión, y por eso la consulta de
+seguimiento que mencionamos abajo importa más de lo que parece: **un registro que
+nadie revisa equivale a no tenerlo.**
+
+## 7. Fechas propuestas
 
 | Cuándo | Qué |
 |---|---|
@@ -152,11 +165,12 @@ deja a un grupo capacitado en un procedimiento y a los otros dos en el contrario
 Si la operación necesita el cambio antes de esa fecha, lo hacemos; solo
 necesitaríamos saberlo con cuarenta y ocho horas para rehacer el material.
 
-## 7. Lo que necesitamos de usted
+## 8. Lo que necesitamos de usted
 
-1. **La decisión del numeral 5** — continuar sobre el hogar existente, o archivar
-   el anterior. Es lo único que puede hacer fracasar el cambio.
-2. **Confirmación de las fechas del numeral 6**, o la instrucción de adelantarlas.
+1. **Confirmación de las fechas del numeral 7**, o la instrucción de adelantarlas.
+2. **Visto bueno al criterio del numeral 5** — la caracterización nueva actualiza
+   el hogar existente. Si la operación esperaba un hogar nuevo por cada
+   caracterización, es el momento de decirlo: cambia el diseño.
 3. **Constancia escrita de la decisión** —este correo respondido basta— para
    dejarla en el expediente del proyecto junto con el numeral 5.1.1 del manual.
 
