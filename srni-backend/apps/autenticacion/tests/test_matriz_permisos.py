@@ -81,6 +81,35 @@ MATRIZ = [
      {"ADMINISTRADOR": True, "COORDINADOR": True, "SUPERVISOR": True,
       "DOCUMENTADOR": False, "ENCUESTADOR": False}),
 
+    # Recaracterizaciones sobre ficha vigente: ver_reportes o administrar.
+    #
+    # El ENCUESTADOR queda fuera y es lo importante: es un instrumento para mirar
+    # cómo opera el equipo de campo, y en manos del propio campo no supervisa nada
+    # —además le diría exactamente qué queda registrado de su trabajo—.
+    #
+    # El DOCUMENTADOR SÍ entra, y es deliberado: es un perfil de solo lectura que
+    # ya ve los reportes agregados, y este es el informe que la entidad tiene que
+    # poder entregar a control interno. Mismo criterio que la auditoría de accesos.
+    ("get", "/api/recaracterizaciones/",
+     {"ADMINISTRADOR": True, "COORDINADOR": True, "SUPERVISOR": True,
+      "DOCUMENTADOR": True, "ENCUESTADOR": False}),
+    ("get", "/api/recaracterizaciones/resumen/",
+     {"ADMINISTRADOR": True, "COORDINADOR": True, "SUPERVISOR": True,
+      "DOCUMENTADOR": True, "ENCUESTADOR": False}),
+    ("get", "/api/recaracterizaciones/personas/",
+     {"ADMINISTRADOR": True, "COORDINADOR": True, "SUPERVISOR": True,
+      "DOCUMENTADOR": True, "ENCUESTADOR": False}),
+
+    # Retirar un integrante del hogar: escritura operativa, como conformarlo.
+    #
+    # Registra una novedad de la familia —alguien murió, alguien se fue— y la
+    # informa quien está enfrente de ella, así que va con `caracterizar` y no con
+    # supervisión. El SUPERVISOR y el DOCUMENTADOR quedan fuera: no hacen campo.
+    ("post", "/api/hogares/00000000-0000-0000-0000-000000000000/"
+             "miembros/00000000-0000-0000-0000-000000000000/retirar/",
+     {"ADMINISTRADOR": True, "COORDINADOR": True, "SUPERVISOR": False,
+      "DOCUMENTADOR": False, "ENCUESTADOR": True}),
+
     # Búsqueda en el RNI: todos los perfiles la tienen hoy
     ("post", "/api/victimas/buscar/",
      {r: True for r in ROLES}),

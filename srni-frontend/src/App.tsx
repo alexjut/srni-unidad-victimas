@@ -19,6 +19,7 @@ const SupervisionPage     = lazy(() => import('@/pages/Supervision'));
 const InstrumentosPage    = lazy(() => import('@/pages/Instrumentos'));
 const ParametricasPage    = lazy(() => import('@/pages/Parametricas'));
 const AuditoriaPage       = lazy(() => import('@/pages/Auditoria'));
+const RecaracterizacionesPage = lazy(() => import('@/pages/Recaracterizaciones'));
 const AutorizacionesPage  = lazy(() => import('@/pages/Autorizaciones'));
 const UsuariosPage        = lazy(() => import('@/pages/Usuarios'));
 const CambiarPasswordPage = lazy(() => import('@/pages/CambiarPassword'));
@@ -141,6 +142,18 @@ export default function App() {
         } />
         <Route path="instrumentos" element={<SuspensePage><InstrumentosPage /></SuspensePage>} />
         <Route path="parametricas" element={<SuspensePage><ParametricasPage /></SuspensePage>} />
+        {/*
+          Recaracterizaciones sobre ficha vigente. El permiso es el del backend
+          —`ver_reportes` o `administrar`— y no una lista de codigos de perfil: si
+          los dos lados no piden lo mismo, el menu lleva a un 403.
+        */}
+        <Route path="recaracterizaciones" element={
+          <RequirePermission check={(u) =>
+            !!u.perfil?.puede_ver_reportes || !!u.perfil?.puede_administrar
+          }>
+            <SuspensePage><RecaracterizacionesPage /></SuspensePage>
+          </RequirePermission>
+        } />
         <Route path="auditoria"   element={
           <RequirePermission check={(u) =>
             ['COORDINADOR', 'ADMINISTRADOR'].includes(u.perfil?.codigo ?? '')

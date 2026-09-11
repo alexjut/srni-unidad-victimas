@@ -61,6 +61,11 @@ def api_root(request, format=None):
             'auditoria': {
                 'logs': request.build_absolute_uri('/api/auditoria/logs/'),
             },
+            'recaracterizaciones': {
+                'listado':  request.build_absolute_uri('/api/recaracterizaciones/'),
+                'resumen':  request.build_absolute_uri('/api/recaracterizaciones/resumen/'),
+                'personas': request.build_absolute_uri('/api/recaracterizaciones/personas/'),
+            },
             'sincronizacion_oracle': {
                 'registros': request.build_absolute_uri('/api/sincronizacion/registros/'),
                 'estado_por_hogar': request.build_absolute_uri('/api/sincronizacion/registros/estado/'),
@@ -104,6 +109,15 @@ urlpatterns = [
     #
     # La API (`/api/habilitaciones/`) no cambió — es la misma que consume el
     # panel, y está probada.
+
+    # Recaracterizaciones sobre ficha vigente — el punto de control del retiro
+    # del control de vigencia (11-sep-2026). Solo supervisión.
+    #
+    # Con el bloqueo retirado, esto es lo ÚNICO que queda para responder cuántas
+    # recaracterizaciones se hicieron, quién las hizo y con cuánta anticipación.
+    # Un registro que nadie consulta equivale a no tenerlo, y esta es la consulta.
+    path('api/recaracterizaciones/',
+         include('apps.encuestas.urls_recaracterizaciones')),
 
     # Módulo Sprint 5 — IA Gemini
     path('api/ia/', include('apps.ia.urls')),

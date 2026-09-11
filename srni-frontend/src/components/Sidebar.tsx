@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Home, ClipboardList, BarChart3, Search, Eye,
-  FileText, Database, Shield, ChevronRight, UserCog, FileCheck,
+  FileText, Database, Shield, ChevronRight, UserCog, FileCheck, History,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import LogoHorizontalNegativo from '@/assets/LogoHorizontalnegativo.svg';
@@ -19,6 +19,17 @@ export const NAV_ITEMS = [
   // perdía la navegación entera.
   { to: '/autorizaciones', icon: FileCheck, label: 'Autorizaciones',
     autorizadorOnly: true },
+  // Punto de control del retiro de la vigencia (11-sep-2026). Con el bloqueo
+  // retirado, este registro es lo unico que puede responder cuantas
+  // recaracterizaciones se hicieron sobre ficha vigente, quien las hizo y con
+  // cuanta anticipacion — y un registro que nadie mira equivale a no tenerlo.
+  //
+  // `supervisorOnly` y no un codigo de perfil: el permiso que exige el backend es
+  // `ver_reportes` o `administrar`, asi que atarlo al flag deja el menu correcto
+  // el dia que se cree un perfil nuevo con ese permiso. Un menu que aparece de mas
+  // termina en un 403.
+  { to: '/recaracterizaciones', icon: History, label: 'Recaracterizaciones',
+    supervisorOnly: true },
   { to: '/instrumentos', icon: FileText,        label: 'Instrumentos'  },
   { to: '/parametricas', icon: Database,        label: 'Paramétricas'  },
   { to: '/auditoria',    icon: Shield,          label: 'Auditoría',     coordinadorOnly: true },
