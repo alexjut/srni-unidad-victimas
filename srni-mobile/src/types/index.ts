@@ -142,6 +142,25 @@ export interface MiembroHogarResumen {
    * en SQLite. Puede venir vacío si el miembro no se ha completado.
    */
   nombre_completo: string;
+  /**
+   * Las partes del nombre y el documento, por separado (backend del 11-sep-2026).
+   *
+   * Opcionales porque una APK nueva puede estar hablando con un backend que
+   * todavía no los manda, y porque los resúmenes reconstruidos desde la caché
+   * sin conexión pueden no tenerlos. Quien los consuma debe conservar el
+   * respaldo de partir `nombre_completo`.
+   *
+   * Existen porque sin ellos el integrante que NO es el autorizado llegaba a la
+   * encuesta con el primer nombre y nada más: partir la cadena en el cliente no
+   * distingue a «José Luis Vargas Mora» de «José Vargas Mora», y adivinarlo le
+   * escribe a alguien un apellido que no es el suyo.
+   */
+  primer_nombre?: string;
+  segundo_nombre?: string;
+  primer_apellido?: string;
+  segundo_apellido?: string;
+  numero_documento?: string;
+  tipo_documento_codigo?: string;
   parentesco: Parentesco | '';
   parentesco_display: string;
   genero: 'M' | 'F' | 'NB' | 'ND';

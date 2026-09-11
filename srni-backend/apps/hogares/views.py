@@ -58,7 +58,13 @@ class HogarViewSet(viewsets.ModelViewSet):
         qs = Hogar.objects.select_related(
             'autorizado', 'municipio__departamento', 'creado_por'
         ).prefetch_related(
-            'miembros',
+            # `miembros__victima` y no solo `miembros`: el serializer de listado
+            # lee los nombres y el documento de la víctima vinculada cuando el
+            # miembro no los tiene propios. Sin traerla acá, un hogar de seis
+            # integrantes dispara seis consultas extra, y el listado de hogares
+            # las multiplica por cada fila de la página.
+            'miembros__victima__tipo_documento',
+            'miembros__tipo_documento',
             'sesiones__instrumento',
             'sesiones__encuestador',
         )

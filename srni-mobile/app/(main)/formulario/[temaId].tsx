@@ -201,9 +201,69 @@ function construirPrefillMiembroBasico(m: MiembroHogarResumen): Record<string, s
   }
   const sexo = m.genero ? MAP_GENERO_A8[m.genero.toUpperCase()] : undefined;
   if (sexo) out.A8 = sexo;
-  const nombre = (m.nombre_completo ?? '').trim();
-  if (nombre) out.NOMBRE_1 = nombre.split(/\s+/)[0];  // primer nombre (convención ES)
+
+  // Nombre y apellidos. El servidor los manda ya separados desde el 11-sep-2026
+  // —los lee de la víctima del padrón, donde vienen en cuatro campos— y eso es
+  // lo que se usa. Partir `nombre_completo` es el respaldo, no el camino: solo
+  // corre contra un backend anterior o con un resumen reconstruido de la caché
+  // sin conexión.
+  //
+  // Hasta esa fecha acá solo se hacía `nombre.split(/\s+/)[0]`, y por eso todo
+  // integrante que no fuera el autorizado entraba a la encuesta con el primer
+  // nombre y nada más: sin segundo nombre, sin apellidos y sin cédula.
+  const partes = partirNombre(m);
+  if (partes.primer_nombre)    out.NOMBRE_1 = partes.primer_nombre;
+  if (partes.segundo_nombre)   out.NOMBRE_2 = partes.segundo_nombre;
+  if (partes.primer_apellido)  out.APELLIDO_1 = partes.primer_apellido;
+  if (partes.segundo_apellido) out.APELLIDO_2 = partes.segundo_apellido;
+
+  // Documento del integrante. Va después del A3 derivado de la edad para que el
+  // tipo REAL le gane al deducido: la regla por edad es un valor por defecto del
+  // manual, y un dato verdadero siempre vale más que una deducción correcta.
+  const numDoc = (m.numero_documento ?? '').trim();
+  if (numDoc) out.A5 = numDoc;
+  const codigoDoc = (m.tipo_documento_codigo ?? '').trim().toUpperCase();
+  const docA3 = codigoDoc ? MAP_TIPO_DOC_A3[codigoDoc] : undefined;
+  if (docA3) out.A3 = docA3;
+
   return out;
+}
+
+/**
+ * Las cuatro partes del nombre de un integrante.
+ *
+ * Prefiere lo que manda el servidor, que las tiene separadas en origen. Solo si
+ * no vienen reparte `nombre_completo` con la convención española —los dos
+ * últimos tokens son los apellidos—, que acierta en el caso corriente y falla
+ * justo en los nombres compuestos. Por eso es el respaldo y no el camino.
+ */
+function partirNombre(m: MiembroHogarResumen): {
+  primer_nombre: string; segundo_nombre: string;
+  primer_apellido: string; segundo_apellido: string;
+} {
+  if (m.primer_nombre || m.primer_apellido) {
+    return {
+      primer_nombre: (m.primer_nombre ?? '').trim(),
+      segundo_nombre: (m.segundo_nombre ?? '').trim(),
+      primer_apellido: (m.primer_apellido ?? '').trim(),
+      segundo_apellido: (m.segundo_apellido ?? '').trim(),
+    };
+  }
+  const t = (m.nombre_completo ?? '').trim().split(/\s+/).filter(Boolean);
+  if (t.length >= 4) {
+    return { primer_nombre: t[0], segundo_nombre: t.slice(1, -2).join(' '),
+             primer_apellido: t[t.length - 2], segundo_apellido: t[t.length - 1] };
+  }
+  if (t.length === 3) {
+    return { primer_nombre: t[0], segundo_nombre: '',
+             primer_apellido: t[1], segundo_apellido: t[2] };
+  }
+  if (t.length === 2) {
+    return { primer_nombre: t[0], segundo_nombre: '',
+             primer_apellido: t[1], segundo_apellido: '' };
+  }
+  return { primer_nombre: t[0] ?? '', segundo_nombre: '',
+           primer_apellido: '', segundo_apellido: '' };
 }
 
 /**

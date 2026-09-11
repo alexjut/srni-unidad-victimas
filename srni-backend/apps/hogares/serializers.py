@@ -86,6 +86,31 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
     # (típicamente el autorizado). Si ambos vacíos, queda ''.
     nombre_completo = serializers.SerializerMethodField()
 
+    # ── Las partes del nombre, y el documento, por separado ─────────────────
+    #
+    # Hasta el 11-sep-2026 este serializer entregaba el nombre **solo** como una
+    # cadena concatenada y el documento no lo entregaba en absoluto
+    # (`numero_documento` es `write_only` en el serializer hermano). El efecto en
+    # campo: al conformar un hogar, el autorizado salía completo y **los demás
+    # integrantes llegaban con el primer nombre y nada más** —sin segundo
+    # nombre, sin apellidos y sin cédula—, porque la aplicación no tenía de
+    # dónde sacarlos y partía la cadena quedándose con el primer pedazo.
+    #
+    # Partir la cadena en el cliente no es el arreglo: «José Luis Vargas Mora» y
+    # «José Vargas Mora» no se distinguen sin saber cuántos nombres tiene la
+    # persona, y adivinarlo le escribe a alguien un apellido que no es el suyo.
+    # Acá sí se sabe, porque la víctima vinculada trae los cuatro campos
+    # separados desde el padrón.
+    #
+    # No abre PII nueva: el endpoint ya exige `puede_caracterizar` y ya venía
+    # devolviendo el nombre completo en claro por esta misma vía.
+    primer_nombre = serializers.SerializerMethodField()
+    segundo_nombre = serializers.SerializerMethodField()
+    primer_apellido = serializers.SerializerMethodField()
+    segundo_apellido = serializers.SerializerMethodField()
+    numero_documento = serializers.SerializerMethodField()
+    tipo_documento_codigo = serializers.SerializerMethodField()
+
     def get_nombre_completo(self, obj):
         propio = (obj.nombre_completo or '').strip()
         if propio:
@@ -101,6 +126,66 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
         ]
         return ' '.join(p for p in partes if p)
 
+    def _partes(self, obj):
+        """
+        Los cuatro campos del nombre, de la mejor fuente disponible.
+
+        La víctima vinculada manda cuando existe: ahí los cuatro vienen
+        separados desde el padrón y no hay nada que deducir. Solo cuando el
+        miembro no está en el RNI —el alta manual en campo, que es donde el
+        único dato es lo que tecleó el encuestador— se reparte la cadena con la
+        convención española: dos apellidos al final.
+        """
+        v = obj.victima
+        if v is not None and (v.primer_nombre or v.primer_apellido):
+            return ((v.primer_nombre or '').strip(), (v.segundo_nombre or '').strip(),
+                    (v.primer_apellido or '').strip(), (v.segundo_apellido or '').strip())
+
+        tokens = (obj.nombre_completo or '').split()
+        if len(tokens) >= 4:
+            return tokens[0], ' '.join(tokens[1:-2]), tokens[-2], tokens[-1]
+        if len(tokens) == 3:
+            return tokens[0], '', tokens[1], tokens[2]
+        if len(tokens) == 2:
+            return tokens[0], '', tokens[1], ''
+        if len(tokens) == 1:
+            return tokens[0], '', '', ''
+        return '', '', '', ''
+
+    def get_primer_nombre(self, obj) -> str:
+        return self._partes(obj)[0]
+
+    def get_segundo_nombre(self, obj) -> str:
+        return self._partes(obj)[1]
+
+    def get_primer_apellido(self, obj) -> str:
+        return self._partes(obj)[2]
+
+    def get_segundo_apellido(self, obj) -> str:
+        return self._partes(obj)[3]
+
+    def get_numero_documento(self, obj) -> str:
+        """
+        El del miembro si lo tiene; si no, el de la víctima vinculada.
+
+        Ese orden y no el inverso: cuando el encuestador corrige el documento en
+        campo, lo escribe en el miembro, y el del padrón es el que se está
+        corrigiendo.
+        """
+        propio = (obj.numero_documento or '').strip()
+        if propio:
+            return propio
+        v = obj.victima
+        return (v.numero_documento or '').strip() if v is not None else ''
+
+    def get_tipo_documento_codigo(self, obj) -> str:
+        if obj.tipo_documento_id:
+            return obj.tipo_documento.codigo
+        v = obj.victima
+        if v is not None and v.tipo_documento_id:
+            return v.tipo_documento.codigo
+        return ''
+
     class Meta:
         model = MiembroHogar
         fields = [
@@ -110,6 +195,12 @@ class MiembroHogarListSerializer(serializers.ModelSerializer):
             # así que solo el encuestador que está activo en la entrevista
             # ve este campo. NUNCA se persiste en SQLite local del dispositivo.
             'nombre_completo',
+            # Las mismas garantías de acceso que `nombre_completo`, que ya
+            # viajaba en claro por este endpoint. Sin estos seis campos el
+            # integrante que no es el autorizado llega a la encuesta con el
+            # primer nombre y nada más.
+            'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
+            'numero_documento', 'tipo_documento_codigo',
             'parentesco', 'parentesco_display',
             'genero', 'fecha_nacimiento',
             'rol', 'rol_display',
