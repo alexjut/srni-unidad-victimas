@@ -1,14 +1,15 @@
 # Manual de Uso — SICAV Móvil (App de caracterización)
 
-**Versión del manual:** 1.2
-**Fecha:** 2026-09-01
+**Versión del manual:** 1.3
+**Fecha:** 2026-09-11
 **Dirigido a:** Encuestadores de caracterización UARIV
-**Aplicación:** SICAV Móvil — Android **1.2.3**
+**Aplicación:** SICAV Móvil — Android **1.2.5**
 
-> **Qué cambió frente a la versión 1.1.** Se documenta la **regla de vigencia de dos
-> años** y la **excepción** que la levanta (secciones 2 y 4), se explica la **lógica de
-> saltos** del formulario (sección 4, paso 5) y se indica cómo **confirmar la versión
-> instalada**. Si su manual dice 1.1, está desactualizado.
+> **Qué cambió frente a la versión 1.2.** **Se retiró el control de vigencia.** Una
+> persona ya caracterizada se puede volver a caracterizar cuando la operación lo
+> necesite: la aplicación lo avisa pero **no lo detiene**, y desaparece el trámite de
+> autorización con radicado y soporte. Además se explica cómo **retirar del hogar** a
+> quien ya no pertenece a él. Si su manual dice 1.2 o menos, está desactualizado.
 
 ---
 
@@ -19,7 +20,7 @@
   La app no permite auto-registro.
 - Conexión a internet para iniciar sesión y sincronizar. **La entrevista puede
   realizarse sin conexión** (ver sección 9).
-- La **versión instalada** debe ser la **1.2.3** o superior. Se lee en la propia
+- La **versión instalada** debe ser la **1.2.5** o superior. Se lee en la propia
   pantalla de ingreso, bajo el formulario. Si ve una versión anterior, descargue de
   nuevo la aplicación desde el enlace institucional antes de salir a campo.
 
@@ -75,47 +76,43 @@ Ubicación de atención → Responder capítulos → Finalizar sesión
      Si la persona ya tiene hogar registrado, la app le ofrece **Ver hogar
      registrado** para continuar con sus caracterizaciones.
    - **No habilitada (tarjeta naranja):** la persona existe pero no puede ser
-     caracterizada en este momento; la tarjeta indica el motivo y muestra su
-     nombre. El motivo más frecuente es la **ficha vigente** — ver más abajo,
-     «La regla de los dos años».
+     caracterizada; la tarjeta indica el motivo y muestra su nombre. Hoy los
+     motivos son dos: que esté **excluida del RUV** —ninguna ruta la habilita— o
+     que el número de documento sea un valor de relleno que no identifica a
+     nadie. **Tener una caracterización vigente ya no es uno de ellos.**
    - **No encontrada (tarjeta gris):** toque **Registrar y caracterizar**.
      Se abre el formulario **Alta manual**: diligencie nombres, apellidos,
      fecha de nacimiento y género, y toque **Agregar víctima**.
 
 > La búsqueda requiere conexión a internet.
 
-#### La regla de los dos años, y cómo se levanta
+#### Si la persona ya fue caracterizada
 
-Una persona **no puede volver a caracterizarse antes de dos años** desde su última
-caracterización. Es una regla de la entidad, no una limitación técnica: evita duplicar
-el esfuerzo de campo y mantener información redundante.
+Una caracterización se considera **vigente** durante dos años. Es un criterio de la
+entidad para no repetir el esfuerzo de campo.
 
-Cuando la persona tiene una caracterización vigente, la búsqueda la muestra en naranja
-como **«No habilitado — ficha vigente»**.
+**Desde septiembre de 2026 eso no lo detiene.** Si la persona ya fue caracterizada, la
+aplicación se lo dice —con la fecha de la caracterización anterior— y **usted continúa
+normalmente**. No hay autorización que pedir, ni radicado que conseguir, ni soporte que
+adjuntar, ni nadie a quien esperar.
 
-**Qué NO debe hacer el encuestador.** No intente rodear el bloqueo, no use el documento
-de otra persona y no use el **Alta manual** para saltarse el
-control. La caracterización quedaría duplicada y con datos incorrectos.
+**Qué sí debe hacer.** Léale el aviso a la persona y confirme con ella que tiene sentido
+volver a caracterizarla. El sistema no va a preguntárselo, así que ese criterio queda en
+sus manos.
 
-**Qué SÍ debe hacer.** Existen casos legítimos en los que corresponde volver a
-caracterizar aunque la ficha esté vigente: un fallo judicial, una tutela o un auto que
-lo ordene. En esos casos:
+**Qué NO debe hacer.** No use el **Alta manual** para una persona que sí está en el
+padrón, ni el documento de otra persona. El alta manual es solo para quien no aparece:
+usarla de otro modo crea una ficha duplicada que después hay que depurar a mano.
 
-1. **Reporte el caso a su coordinación**, indicando el documento de la persona y el
-   motivo.
-2. **La autorización la otorga coordinación desde el Panel de Control**, con el
-   radicado del soporte y el motivo. El documento de respaldo (el fallo, la tutela, el
-   auto) **no lo maneja el encuestador**: llega por canal institucional al nivel
-   central. Usted no necesita tenerlo ni fotografiarlo.
-3. Una vez autorizada, vuelva a buscar a la persona en la aplicación y toque
-   **«Ya la autorizaron»**. La caracterización continúa con normalidad.
+> **Queda registrado, y no tiene que hacer nada para eso.** Cuando cierra una
+> caracterización hecha sobre una ficha que aún estaba vigente, el sistema anota solo la
+> fecha, quién la hizo y con cuánta anticipación. No hay pantalla que llenar y usted no
+> interviene. Sirve para que la entidad pueda explicar, si alguien lo pregunta, por qué
+> una caracterización se actualizó antes de los dos años.
 
-> **La autorización es de un solo uso** y se consume al finalizar esa encuesta. Si más
-> adelante la misma persona requiere otra excepción, hay que solicitarla de nuevo.
-
-> **Funciona sin señal.** Las autorizaciones otorgadas antes de salir viajan al teléfono
-> en la precarga de la jornada, así que la excepción se puede usar en campo aunque no
-> haya conexión.
+> **Funciona sin señal.** Esto vale igual en campo y sin conexión. Lo único que conviene
+> es **iniciar sesión con señal antes de salir**, porque es ahí cuando el teléfono
+> descarga la información actualizada del padrón.
 
 ### Paso 2 — Conformar el hogar
 
@@ -130,9 +127,38 @@ lo ordene. En esos casos:
    hogar** y repita.
 3. Al terminar, toque **Continuar a caracterizaciones**.
 
-> Regla del sistema: una persona solo puede ser autorizada de **un** hogar
-> activo a la vez. Si intenta crear un segundo hogar para la misma persona, la
-> app le mostrará el hogar ya existente.
+> Regla del sistema: una persona pertenece a **un solo** hogar. Si ya tenía uno
+> registrado, la aplicación le muestra **ese mismo hogar con su familia**, incluso
+> si lo conformó otro encuestador. Es correcto y no hay que pedir nada: el hogar es
+> de la familia, no de quien lo creó, y cada caracterización queda a nombre de
+> quien la hizo.
+
+#### Cuando la familia ya no es la misma
+
+Al actualizar la caracterización de una familia que ya estaba registrada, lo normal
+es que algo haya cambiado: nació un niño, alguien murió, alguien se fue de la casa.
+
+- **Alguien nuevo:** tóquelo con **Agregar al hogar**, como cualquier integrante.
+- **Los que ya estaban:** aparecen solos en la lista. **No los capture de nuevo**;
+  si lo hace, la persona queda dos veces en el hogar y hay que depurarlo a mano
+  después.
+- **Alguien que ya no pertenece al hogar:** entre al hogar y use **Retirar del
+  hogar** en esa persona. Le va a pedir dos cosas:
+
+  1. **El motivo** — falleció, cambió de residencia, ya no convive, u otro.
+  2. **La fecha del hecho**, que **no es la de hoy**. Si la señora falleció en
+     marzo y usted se está enterando en septiembre, la fecha es la de marzo.
+     Pregúntesela a la familia.
+
+> **Retirar no es borrar, y esa diferencia importa.** La persona sigue registrada:
+> lo que queda anotado es que desde esa fecha ya no pertenece al hogar. Así la
+> caracterización anterior —donde la persona sí estaba— **sigue siendo válida**, y
+> la nueva no le pregunta por alguien que ya no está.
+
+> Si se equivoca de fila, **Deshacer retiro** lo devuelve al hogar.
+
+> Al integrante **★ AUTORIZADO** no se le puede retirar: es el titular del hogar.
+> Si es él quien dejó de pertenecer, primero hay que cambiar el autorizado.
 
 ### Paso 3 — Elegir el instrumento
 
@@ -260,8 +286,10 @@ La app está diseñada para campo con señal intermitente:
 | No aparece el botón de huella | Biometría no activada, no configurada en el teléfono, o primer ingreso | Configure la huella/rostro en los ajustes del teléfono e ingrese una vez marcando "Activar ingreso con huella o rostro" |
 | Un capítulo muestra "Faltan N" tras responder | Preguntas obligatorias por **cada miembro** del hogar | Revise la sección de cada integrante |
 | **Falta una pregunta** que usted esperaba ver | Una regla del formulario la oculta porque no aplica según lo ya respondido | Es el comportamiento esperado. Revise las respuestas anteriores del capítulo antes de reportarlo |
-| **"No habilitado — ficha vigente"** | La persona se caracterizó hace menos de dos años | Ver «La regla de los dos años» en la sección 4. Si hay orden judicial, la excepción la autoriza coordinación desde el panel |
-| El botón **"Ya la autorizaron"** no aparece | La autorización aún no se ha registrado en el panel, o no bajó al teléfono | Confirme con coordinación que quedó registrada; con señal, vuelva a consultar |
+| Dice que la persona **ya fue caracterizada** | Se caracterizó hace menos de dos años | No es un error y no la detiene: continúe. Ver «Si la persona ya fue caracterizada» en la sección 4 |
+| Sigue apareciendo **"No habilitado — ficha vigente"** | El teléfono tiene información del padrón de días anteriores | **Cierre sesión y vuelva a ingresar con señal.** Ahí se actualiza el padrón que el teléfono usa sin conexión |
+| No puedo **quitar** a un integrante ya reportado | Borrarlo cambiaría un dato ya entregado | Use **Retirar del hogar**: registra que la persona ya no pertenece, con el motivo y la fecha, y no altera la caracterización anterior |
+| El hogar tiene integrantes que yo no capturé | Es el hogar que la familia ya tenía registrado | Es correcto. **No los capture de nuevo**: si alguno ya no vive ahí, retírelo |
 
 ## 12. Cómo reportar un problema
 

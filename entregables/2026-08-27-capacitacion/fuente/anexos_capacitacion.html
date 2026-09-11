@@ -111,7 +111,7 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
       <tr><td class="c"><b>B</b></td><td>Banco de preguntas por capítulo (32 preguntas)</td><td>Bloque A y refuerzo</td></tr>
       <tr><td class="c"><b>C</b></td><td>Tres casos de estudio — fase de apropiación</td><td>Práctica guiada</td></tr>
       <tr><td class="c"><b>D</b></td><td>Plantilla de documentación de la experiencia</td><td>Cierre de cada sesión</td></tr>
-      <tr><td class="c"><b>E</b></td><td>Revisión del Manual de Usuario</td><td>Antes de la Sesión 1</td></tr>
+      <tr><td class="c"><b>E</b></td><td>El Manual de Uso: dónde está y qué cubre</td><td>Antes de la Sesión 1</td></tr>
       <tr><td class="c"><b>F</b></td><td>Encuesta de calidad y 4 preguntas de evaluación</td><td>11:15 a.m.</td></tr>
       <tr><td class="c"><b>G</b></td><td>Especificación de las 7 piezas gráficas</td><td>Antes de convocar</td></tr>
       <tr><td class="c"><b>H</b></td><td>Verificación de dispositivos y credenciales</td><td>72 horas antes</td></tr>
@@ -348,26 +348,36 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
   y el avance en 100 %.</p>
 </div>
 
-<h3>Caso 2 — Persona con ficha vigente <span class="pill">Parejas · 30 min</span></h3>
+<h3>Caso 2 — Persona ya caracterizada, y una familia que cambió <span class="pill">Parejas · 30 min</span></h3>
 <div class="caja">
-  <p><b>Situación.</b> Una señora fue caracterizada hace ocho meses. Un auto judicial ordena
-  actualizar su caracterización. Al buscarla, la aplicación muestra <b>"No habilitado —
-  ficha vigente"</b>. El encuestador no tiene, ni debe tener, el documento del auto.</p>
-  <p><b>Roles.</b> Una persona actúa como encuestador en campo; la otra, como coordinador
+  <p><b>Situación.</b> Una señora fue caracterizada hace ocho meses, por otro encuestador.
+  Hoy hay que actualizarle la caracterización. Al buscarla, la aplicación avisa que ya fue
+  caracterizada y <b>la deja continuar</b>: desde septiembre de 2026 no hace falta
+  autorización, ni radicado, ni soporte. Además, uno de los integrantes del hogar falleció
+  en marzo y ya no vive nadie más en la casa.</p>
+  <p><b>Roles.</b> Una persona actúa como encuestador en campo; la otra, como supervisor
   frente al Panel de Control.</p>
   <p><b>Lo que debe hacer.</b></p>
   <ol>
-    <li><b>Encuestador:</b> identificar el estado, no intentar continuar y reportar el caso
-      a coordinación con documento y motivo.</li>
-    <li><b>Coordinador:</b> ingresar al panel, ubicar a la persona y registrar la
-      autorización con <b>ruta, radicado y motivo</b>.</li>
-    <li><b>Encuestador:</b> volver a la persona en la aplicación y usar <b>"Ya la autorizaron"</b>.</li>
-    <li>Continuar con la caracterización normalmente.</li>
+    <li><b>Encuestador:</b> buscar a la persona, leer el aviso de que ya fue caracterizada
+      y continuar sin pedirle permiso a nadie.</li>
+    <li><b>Encuestador:</b> al conformar el hogar, verificar que aparecen los integrantes
+      que ya estaban registrados. <b>No volver a capturarlos.</b></li>
+    <li><b>Encuestador:</b> retirar del hogar al integrante que falleció, con el motivo y
+      <b>la fecha del hecho</b> —marzo, no hoy—. No se borra a nadie: queda la novedad.</li>
+    <li><b>Encuestador:</b> diligenciar la caracterización y cerrarla.</li>
+    <li><b>Supervisor:</b> entrar a <b>Recaracterizaciones</b> en el panel y encontrar el
+      registro que el sistema escribió solo: quién la hizo, cuándo, con cuánta anticipación
+      respecto de la ficha anterior, y cuántas veces se ha caracterizado a esa persona.</li>
   </ol>
-  <p><b>Preguntas de cierre.</b> ¿Por qué la autorización no se hace desde el celular?
-  ¿Qué pasa si mañana la misma persona necesita otra excepción?</p>
-  <p><b>Se considera resuelto si:</b> la excepción queda registrada con radicado en el panel
-  y el encuestador logra continuar sin haber manipulado ningún soporte.</p>
+  <p><b>Preguntas de cierre.</b> Si nadie autoriza nada, ¿cómo responde la entidad el día
+  que control interno pregunte por qué una ficha se reescribió a los ocho meses? ¿Por qué la
+  fecha del retiro es la del fallecimiento y no la de hoy? ¿Qué pasa con la caracterización
+  anterior cuando se retira a un integrante?</p>
+  <p><b>Se considera resuelto si:</b> el encuestador completó la caracterización sin
+  detenerse ni pedir autorización; el integrante fallecido quedó <b>retirado y no borrado</b>,
+  con su fecha; los demás integrantes no se duplicaron; y el supervisor encontró el registro
+  en el panel sin que el encuestador hubiera hecho nada para crearlo.</p>
 </div>
 
 <h3>Caso 3 — Persona que no aparece, y una incidencia <span class="pill">Plenaria · 25 min</span></h3>
@@ -468,70 +478,62 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
 </div>
 
 <!-- ================== ANEXO E ================== -->
-<h2 class="salto"><span class="n">E.</span> Revisión del Manual de Usuario</h2>
+<h2 class="salto"><span class="n">E.</span> El Manual de Uso — dónde está y qué cubre</h2>
 <p>
-  Revisión del <b>Manual de Uso — SICAV Móvil v1.1</b> (5 de julio de 2026, 216 líneas,
-  11 secciones) contrastado contra el temario del plan y contra el comportamiento de la
-  aplicación <b>1.2.3</b> hoy en producción. Los hallazgos están verificados sobre el texto
-  del manual; no son supuestos.
+  El material de referencia del encuestador es el <b>Manual de Uso — SICAV Móvil v1.2</b>,
+  correspondiente a la aplicación <b>1.2.3</b> que hoy está en producción. Se consulta y se
+  descarga desde la página institucional, sin usuario ni contraseña:
 </p>
 
 <div class="caja ok">
-  <p><b>Actualizado el 1 de septiembre.</b> El manual pasó a la <b>versión 1.2</b> e incorpora
-  la regla de vigencia de dos años y su excepción, la confirmación de la versión instalada, el
-  refuerzo sobre la lógica de saltos, una sección nueva de cómo reportar un problema y la
-  referencia a la Ley 1581 de 2012. <b>Queda un solo bloqueante: el canal de soporte.</b></p>
+  <p style="font-family:ui-monospace,Consolas,monospace;font-size:12px;margin:0">
+    <b>caracterizacion.unidadvictimas.gov.co/descargar/manual-uso.html</b>
+  </p>
+  <p style="margin-top:8px">Es la misma página desde la que se descarga la aplicación, de
+  modo que el participante llega una sola vez y encuentra las dos cosas.</p>
 </div>
 
 <div class="caja alerta">
-  <p><b>Bloqueante para publicar.</b> El manual sigue con
-  <code>[COMPLETAR — canal de soporte interno UARIV]</code> y, además,
-  esa es la única casilla que sigue abierta. El Manual de Uso
-  v1.2 ya está publicado y los 30 enlaces territoriales lo descargan desde la página
-  institucional; lo que falta es el dato del canal de soporte, que define la Subdirección.</p>
+  <p><b>Lo que se le pide a cada participante antes de la jornada:</b> entrar a ese enlace,
+  abrir el manual y <b>leerlo</b>. No es lectura opcional ni material de consulta posterior:
+  la jornada avanza sobre lo que ahí está explicado, y quien llega habiéndolo revisado
+  aprovecha las cuatro horas en practicar, no en descubrir la aplicación.</p>
+  <p style="margin-top:8px">Traiga anotado lo que no le quede claro. Ese es exactamente el
+  material del espacio de <b>preguntas y respuestas</b> del cierre, de 11:15 a 12:00.</p>
 </div>
 
+<h3>Qué cubre</h3>
 <table>
-  <thead><tr><th style="width:30px">#</th><th style="width:190px">Hallazgo</th><th>Detalle</th><th style="width:88px">Estado</th></tr></thead>
+  <thead><tr><th style="width:210px">Tema</th><th>Qué encuentra el encuestador</th></tr></thead>
   <tbody>
-    <tr><td class="c">1</td><td><s>No cubre la excepción de vigencia</s></td>
-      <td><b>Corregido en v1.2.</b> Sección nueva «La regla de los dos años, y cómo se levanta», con el flujo completo y la aclaración de que el encuestador no maneja el soporte.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
-    <tr><td class="c">2</td><td><s>No explica la regla de los dos años</s></td>
-      <td><b>Corregido en v1.2.</b> Incluye qué no debe hacer el encuestador y qué sí.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
-    <tr><td class="c">3</td><td><s>Versión desactualizada</s></td>
-      <td><b>Corregido en v1.2.</b> Manual 1.2 para la app 1.2.3, con nota de qué cambió y cómo confirmar la versión instalada desde la pantalla de ingreso.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
-    <tr><td class="c">4</td><td><b>Canal de soporte sin definir</b></td>
-      <td>Sigue en <code>[COMPLETAR]</code>. Lo define la Subdirección. <b>Bloquea la publicación del manual y la impresión de la pieza 7.</b></td><td><b>Abierto — prioridad alta</b></td></tr>
-    <tr><td class="c">5</td><td><b>Manual no publicado</b></td>
-      <td><b>Resuelto el 1 de septiembre.</b> El Manual de Uso v1.2 quedó publicado en la página de descarga, separado del Manual Funcional.</td><td>Cerrado</td></tr>
-    <tr><td class="c">6</td><td><s>No explica la lógica de saltos</s></td>
-      <td><b>Reforzado en v1.2.</b> Ya se mencionaba en el paso 5; se agregó a la guía de problemas, que es donde se consulta cuando «falta una pregunta».</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
-    <tr><td class="c">7</td><td>No documenta el estado «sin verificar en RUV»</td>
-      <td>Pendiente para una v1.3.</td><td>Abierto — prioridad media</td></tr>
-    <tr><td class="c">8</td><td><s>No cubre el alta manual</s></td>
-      <td><b>Hallazgo nuevo (1-sep).</b> El manual sí cubre el alta manual, pero la nombra «Agregar como víctima no incluida», rótulo que <b>no existe en la aplicación</b>: el botón de la tarjeta gris dice «Registrar y caracterizar», el formulario se titula «Alta manual» y el envío es «Agregar víctima». Hay que corregir el manual.</td><td><b>Abierto — prioridad alta</b></td></tr>
-    <tr><td class="c">9</td><td>No cubre la captura grupal</td>
-      <td>Pendiente para una v1.3.</td><td>Abierto — prioridad media</td></tr>
-    <tr><td class="c">10</td><td><s>No cita la norma de datos personales</s></td>
-      <td><b>Corregido en v1.2.</b> La sección nueva de reporte de problemas invoca la Ley 1581 de 2012 y prohíbe incluir datos de la persona entrevistada.</td><td><span class="pill" style="background:var(--ok-bg);color:var(--ok)">Cerrado</span></td></tr>
+    <tr><td><b>Ingreso y versión</b></td>
+      <td>Cómo instalar, cómo ingresar y cómo confirmar en la pantalla de ingreso que tiene la versión correcta.</td></tr>
+    <tr><td><b>Personas ya caracterizadas</b></td>
+      <td>Sección propia: qué significa que una caracterización esté vigente, por qué desde septiembre de 2026 el sistema avisa pero no detiene, y qué queda registrado de la actualización sin que el encuestador haga nada.</td></tr>
+    <tr><td><b>Cuando la familia cambió</b></td>
+      <td>Cómo retirar del hogar a quien ya no pertenece —falleció, se fue, ya no convive— con el motivo y la fecha del hecho. Aclara que no se borra a nadie y que la caracterización anterior no se altera.</td></tr>
+    <tr><td><b>Lógica de saltos</b></td>
+      <td>Por qué algunas preguntas aparecen y otras no, explicado también en la guía de problemas, que es donde se busca cuando «falta una pregunta».</td></tr>
+    <tr><td><b>Cómo reportar un problema</b></td>
+      <td>Qué informar y qué no. Invoca la <b>Ley 1581 de 2012</b> y prohíbe incluir datos de la persona entrevistada en el reporte.</td></tr>
+    <tr><td><b>Operación sin conexión</b></td>
+      <td>Qué funciona sin señal, qué se precarga al iniciar sesión y cómo confirmar que el trabajo subió.</td></tr>
   </tbody>
 </table>
 
-<h3>Qué falta</h3>
-<ol>
-  <li><b>Definir el canal de soporte</b> con la Subdirección. Es una decisión de la entidad,
-    no técnica, y bloquea la publicación del manual y la impresión de la pieza 7.</li>
-  <li><b>Publicar el Manual de Uso</b> donde el encuestador pueda descargarlo. Hoy no existe
-    esa ruta: la página de descarga solo entrega la APK.</li>
-  <li>Incorporar los hallazgos 7 y 9 en una v1.3 posterior a las tres sesiones, alimentada
-    además con las preguntas que queden registradas en la sección 5 del Anexo D.</li>
-  <li>Entregar a los participantes <b>la versión 1.2</b>. Un material que no coincide con la
-    pantalla genera más incidencias de las que evita.</li>
-</ol>
+<div class="caja">
+  <p><b>Revisión.</b> El manual fue revisado por <b>Javier Alexander Aguilar Castro</b>
+  —referente de caracterización— <b>contra el comportamiento de la aplicación 1.2.3 en
+  producción</b>, pantalla por pantalla, y no contra la especificación. Los ajustes que
+  surgieron de esa revisión quedaron incorporados en la versión 1.2, publicada el
+  <b>1 de septiembre de 2026</b>.</p>
+</div>
+
 <p class="nota">
-  El <b>Manual Funcional</b> (431 líneas, con recorrido pantalla por pantalla, matriz offline
-  y catálogo de mensajes) sí cubre buena parte de lo que le falta al Manual de Uso, pero está
-  dirigido a perfiles de prueba y calidad. No sustituye al manual del encuestador.
+  <b>Un dato pendiente, que define la Subdirección:</b> el <b>canal de soporte interno</b> al
+  que debe escribir el encuestador cuando algo falle en campo. Es la única casilla abierta del
+  manual y es también la mitad del contenido de la <b>pieza gráfica 7</b>, la tarjeta de
+  bolsillo, que no puede imprimirse hasta tenerlo.
 </p>
 
 <!-- ================== ANEXO F ================== -->
@@ -594,6 +596,11 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
   amarillo institucional <code>#ffcc03</code> y tipografía <b>Nunito Sans</b>. Las piezas 1 a 3
   se difunden antes de la jornada; las 4 a 6 se usan durante; la 7 se entrega al cierre.
 </p>
+<div class="caja ok">
+  <p><b>Diseño y elaboración de las piezas: José Antonio Márquez Méndez.</b> Las imágenes de
+  la convocatoria y del material de apoyo de la jornada son trabajo suyo, sobre la
+  especificación que recoge esta hoja.</p>
+</div>
 <table>
   <thead><tr><th style="width:26px">#</th><th style="width:150px">Pieza</th><th>Mensaje y contenido</th><th style="width:104px">Formato</th><th style="width:88px">Momento</th></tr></thead>
   <tbody>
@@ -616,13 +623,13 @@ code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.
       <td>Qué funciona sin conexión, qué se precarga al iniciar sesión y cómo confirmar que el trabajo subió. Cierra con: «no se cierra la jornada hasta que la cola esté en cero».</td>
       <td>1080×1350 px + A4</td><td>Durante</td></tr>
     <tr><td class="c"><b>7</b></td><td><b>Tarjeta de bolsillo</b></td>
-      <td>Media carta a doble cara para llevar a campo: pasos del flujo, qué hacer si la persona no aparece, qué hacer si dice «ficha vigente», y el canal de soporte.</td>
+      <td>Media carta a doble cara para llevar a campo: pasos del flujo, qué hacer si la persona no aparece, cómo retirar del hogar a quien ya no pertenece, y el canal de soporte.</td>
       <td>Media carta · impresa a color</td><td>Al cierre</td></tr>
   </tbody>
 </table>
 <div class="caja alerta">
-  <p><b>Bloqueante para la pieza 7.</b> No puede imprimirse mientras el canal de soporte siga
-  sin definir (hallazgo 4 del Anexo E). Es el mismo dato que falta en el manual.</p>
+  <p><b>La pieza 7 espera un dato.</b> No puede imprimirse mientras la Subdirección no
+  defina el canal de soporte interno: es el mismo dato pendiente del manual (Anexo E).</p>
 </div>
 <p class="nota">
   <b>Criterios comunes.</b> Un mensaje por pieza. Texto legible en pantalla de celular

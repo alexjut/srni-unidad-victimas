@@ -53,20 +53,23 @@ PREGUNTAS = [
      "@unidadvictimas.gov.co—. El campo está rotulado «Código de usuario», pero lo que "
      "va allí es ese usuario: no es la cédula, ni el correo completo, ni el nombre."),
 
-    ("La regla de vigencia impide volver a caracterizar a una persona hasta que pasen, "
-     "desde su última caracterización:",
+    ("Una caracterización se considera VIGENTE mientras no hayan pasado, desde que "
+     "se hizo:",
      ["Seis meses", "Un año", "Cinco años", "Dos años"], "D",
-     "Son dos años, contados desde la última caracterización. Es una regla de la entidad "
-     "para no repetir el esfuerzo de campo."),
+     "Dos años. Hoy el sistema no bloquea a nadie por eso: la persona se caracteriza "
+     "igual. Pero es el plazo que define qué cuenta como caracterización vigente, y por "
+     "tanto cuáles quedan registradas como actualización anticipada."),
 
-    ("Cuando una persona tiene ficha vigente y aun así debe caracterizarse, la excepción "
-     "la autoriza:",
-     ["El encuestador, adjuntando una foto del soporte en la aplicación",
-      "El coordinador de la jornada, de manera verbal en campo",
-      "Un perfil con permiso de autorización, desde el panel",
-      "El canal de soporte institucional, por correo electrónico"], "C",
-     "La autoriza la coordinación desde el Panel de Control. El encuestador no maneja el "
-     "soporte documental: llega por canal institucional al nivel central."),
+    ("Usted busca a una persona y la aplicación le avisa que ya fue caracterizada hace "
+     "ocho meses. ¿Qué hace?",
+     ["Continuar con la caracterización: el sistema no lo detiene",
+      "Reportarlo a su coordinación y esperar una autorización",
+      "Adjuntar una foto del soporte antes de continuar",
+      "Escribir al canal de soporte institucional"], "A",
+     "Se continúa. Desde septiembre de 2026 no hace falta autorización, ni radicado, ni "
+     "soporte: la persona se caracteriza cuando la operación lo necesite. El sistema "
+     "registra solo, al cerrar la encuesta, que la actualización se hizo sobre una ficha "
+     "que aún estaba vigente; el encuestador no interviene en eso ni debe hacer nada más."),
 
     ("La información que permite trabajar sin señal se descarga al teléfono:",
      ["Cada vez que se abre un capítulo nuevo del instrumento",

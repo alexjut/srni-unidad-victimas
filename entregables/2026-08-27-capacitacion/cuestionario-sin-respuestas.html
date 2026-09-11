@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuestionario de la jornada — SICAV Móvil</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Plan de Capacitación — SICAV Móvil (APK) + Panel de Control
+   Subdirección Red Nacional de Información · Unidad para las Víctimas (UARIV)
+   Marca institucional: amarillo #ffcc03, tinta cálida, formato documento A4.
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ink:#17160f; --ink-2:#403d33; --ink-3:#6f6b5c;
+  --surface:#ffffff; --panel:#f6f4ec; --panel-2:#efece0;
+  --line:#ddd8c8; --line-soft:#ebe7d9;
+  --marca:#ffcc03; --marca-ink:#7a5c00;
+  --azul:#0b3b6f; --azul-bg:#eaf1f8;
+  --ok:#1f6b3a; --ok-bg:#e9f2ea;
+  --display:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+  --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--surface); color:var(--ink);
+  font-family:var(--body); font-size:12.3px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+@page{ size:A4; margin:15mm 14mm 16mm 14mm; }
+
+/* ── Encabezado de portada ── */
+.marca-bar{ height:8px; background:linear-gradient(90deg,var(--marca) 0%,var(--marca) 62%,#ffe07a 100%); border-radius:4px; }
+.cabecera{ margin-top:14px; padding-bottom:14px; border-bottom:2px solid var(--line); }
+.eyebrow{ font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--marca-ink); font-weight:800; }
+h1{ font-family:var(--display); font-size:25px; line-height:1.12; margin:6px 0 4px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-3); font-size:12.5px; font-weight:600; }
+.meta-portada{ margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:6px 22px; font-size:11.6px; }
+.meta-portada div{ padding:2px 0; }
+.meta-portada b{ color:var(--ink-2); }
+
+h2{ font-family:var(--display); font-size:15.5px; margin:20px 0 8px; padding-bottom:4px; border-bottom:1.5px solid var(--marca);
+    letter-spacing:-.01em; }
+h2 .n{ display:inline-block; min-width:22px; color:var(--marca-ink); font-weight:800; }
+h3{ font-family:var(--display); font-size:12.8px; margin:12px 0 5px; color:var(--azul); }
+p{ margin:6px 0; color:var(--ink-2); }
+.lead{ font-size:12.6px; color:var(--ink-2); }
+
+/* ── Tablas ── */
+table{ width:100%; border-collapse:collapse; margin:8px 0; font-size:11px; }
+th,td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+thead th{ background:var(--panel); color:var(--ink); font-weight:800; font-size:10.3px; text-transform:uppercase; letter-spacing:.04em;
+          border-bottom:1.5px solid var(--line); }
+tbody tr:nth-child(even){ background:#fcfbf6; }
+td.mono,.mono{ font-variant-numeric:tabular-nums; }
+.correo{ color:var(--azul); font-size:10.4px; }
+
+/* ── Cronograma (3 sesiones) ── */
+.cronograma{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:10px 0; }
+.ses{ border:1.5px solid var(--line); border-radius:10px; padding:11px 12px; background:var(--panel); }
+.ses .dia{ font-family:var(--display); font-size:14px; font-weight:800; color:var(--marca-ink); }
+.ses .fecha{ font-size:10.6px; color:var(--ink-3); font-weight:700; margin-bottom:5px; }
+.ses .aud{ font-size:11.4px; color:var(--ink); font-weight:700; }
+.ses .det{ font-size:10.6px; color:var(--ink-3); margin-top:3px; }
+.pill{ display:inline-block; font-size:9.6px; font-weight:800; padding:2px 7px; border-radius:20px; background:var(--marca); color:var(--marca-ink); letter-spacing:.03em; }
+
+/* ── Facilitadores ── */
+.facs{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:8px 0; }
+.fac{ border-left:3px solid var(--marca); background:var(--panel); padding:8px 11px; border-radius:0 8px 8px 0; }
+.fac b{ font-size:12px; } .fac span{ display:block; font-size:10.5px; color:var(--ink-3); }
+
+/* ── Agenda horaria ── */
+.agenda td:first-child{ white-space:nowrap; font-weight:700; color:var(--marca-ink); width:98px; }
+
+/* ── Bloques temario ── */
+.bloque{ border:1px solid var(--line); border-radius:10px; padding:2px 12px 8px; margin:8px 0; }
+.bloque.apk{ border-top:4px solid var(--marca); }
+.bloque.panel{ border-top:4px solid var(--azul); }
+.bloque h3{ margin-top:9px; }
+ol.temas{ margin:4px 0 4px 0; padding-left:20px; }
+ol.temas li{ margin:3px 0; color:var(--ink-2); }
+ol.temas li b{ color:var(--ink); }
+.quien{ display:inline-block; font-size:9.4px; font-weight:800; color:var(--azul); background:var(--azul-bg); padding:1px 6px; border-radius:10px; margin-left:4px; }
+
+code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.4px;
+      background:var(--panel-2); padding:1px 4px; border-radius:3px; }
+.nota{ background:var(--panel); border-left:3px solid var(--marca); padding:8px 12px; font-size:11px; color:var(--ink-2); border-radius:0 8px 8px 0; margin:8px 0; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px 22px; }
+ul.chk{ list-style:none; margin:6px 0; padding:0; }
+ul.chk li{ padding:2px 0 2px 18px; position:relative; font-size:11.2px; color:var(--ink-2); }
+ul.chk li:before{ content:"✓"; position:absolute; left:0; color:var(--ok); font-weight:800; }
+
+/* ── Saltos de página ── */
+.page-break{ break-before:page; }
+h2,h3{ break-after:avoid; }
+table,.ses,.bloque,.cronograma,.facs{ break-inside:avoid; }
+tr{ break-inside:avoid; }
+
+.pie{ margin-top:14px; padding-top:8px; border-top:1px solid var(--line); font-size:9.8px; color:var(--ink-3); display:flex; justify-content:space-between; }
+
+.creditos{ margin:14px 0 6px; padding:10px 13px; border-left:3px solid var(--marca);
+           background:var(--panel); border-radius:0 8px 8px 0; font-size:10.8px;
+           color:var(--ink-2); line-height:1.6; }
+.creditos > b:first-child{ display:block; font-family:var(--display); font-size:11.6px;
+           color:var(--ink); margin-bottom:4px; }
+.creditos span{ display:block; margin-top:5px; color:var(--ink-3); font-style:italic; }
+
+.pregunta{display:grid;grid-template-columns:26px 1fr;gap:10px;margin:0 0 14px;
+          break-inside:avoid;page-break-inside:avoid}
+.pregunta .num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--marca-ink);
+                background:var(--panel);border-radius:4px;text-align:center;padding:3px 0;
+                height:22px;line-height:16px}
+.pregunta .enun{margin:2px 0 7px;font-size:12px;font-weight:600;color:var(--ink);line-height:1.45}
+.pregunta .enun{grid-column:2}
+.ops{grid-column:2;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.ops li{font-size:11.4px;color:var(--ink-2);line-height:1.45;display:flex;gap:8px;
+         align-items:baseline;border:1px solid var(--line);border-radius:5px;padding:5px 9px}
+.ops .clave{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--marca-ink);
+             flex:none;width:12px}
+</style>
+</head>
+<body>
+
+<div class="marca-bar"></div>
+<div class="cabecera">
+  <div class="eyebrow">Subdirección Red Nacional de Información · UARIV</div>
+  <h1>Cuestionario de la jornada<br>SICAV Móvil y Panel de Control</h1>
+  <div class="sub">Diez preguntas · cinco minutos · sin respuestas</div>
+  <div class="meta-portada">
+    <div><b>Se aplica:</b> al comienzo (8:15 a.m.) y al cierre (11:00 a.m.)</div>
+    <div><b>Formato:</b> selección múltiple, una sola respuesta</div>
+    <div><b>Dónde se responde:</b> en línea, sin usuario ni contraseña</div>
+    <div><b>Actualizado:</b> 8 de septiembre de 2026</div>
+  </div>
+</div>
+
+<p class="lead">Es <b>el mismo cuestionario en los dos momentos</b>, a propósito: lo que
+interesa no es el puntaje final aislado, sino la diferencia entre el antes y el después de
+cada participante. Se responde en línea y el sistema califica solo; cada persona se
+identifica con su correo institucional, que es lo que empareja las dos aplicaciones.</p>
+
+<div class="nota"><b>Este documento no trae las respuestas.</b> La clave se conserva en el
+servidor y en el repositorio del proyecto. Conviene además no difundirlo entre quienes vayan
+a presentar la prueba: el pre-test solo mide algo si nadie lo ha visto antes de responderlo.</div>
+
+  <div class="pregunta">
+    <div class="num">1</div>
+    <p class="enun">En la pantalla de ingreso de SICAV Móvil, lo que usted escribe en el primer campo es:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Su usuario institucional, el mismo de la entidad</li>
+      <li><span class="clave">B</span>Su número de cédula</li>
+      <li><span class="clave">C</span>Su correo institucional completo, con @unidadvictimas.gov.co</li>
+      <li><span class="clave">D</span>Su nombre completo, como aparece en la cédula</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">2</div>
+    <p class="enun">Una caracterización se considera VIGENTE mientras no hayan pasado, desde que se hizo:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Seis meses</li>
+      <li><span class="clave">B</span>Un año</li>
+      <li><span class="clave">C</span>Cinco años</li>
+      <li><span class="clave">D</span>Dos años</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">3</div>
+    <p class="enun">Usted busca a una persona y la aplicación le avisa que ya fue caracterizada hace ocho meses. ¿Qué hace?</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Continuar con la caracterización: el sistema no lo detiene</li>
+      <li><span class="clave">B</span>Reportarlo a su coordinación y esperar una autorización</li>
+      <li><span class="clave">C</span>Adjuntar una foto del soporte antes de continuar</li>
+      <li><span class="clave">D</span>Escribir al canal de soporte institucional</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">4</div>
+    <p class="enun">La información que permite trabajar sin señal se descarga al teléfono:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Cada vez que se abre un capítulo nuevo del instrumento</li>
+      <li><span class="clave">B</span>Al iniciar sesión, en la precarga de la jornada</li>
+      <li><span class="clave">C</span>Solo cuando el encuestador la solicita desde el menú</li>
+      <li><span class="clave">D</span>Nunca: siempre se requiere conexión</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">5</div>
+    <p class="enun">Si se pierde la señal a mitad de una caracterización:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Se puede continuar; lo capturado queda en la cola</li>
+      <li><span class="clave">B</span>Se pierde lo diligenciado y hay que empezar la caracterización de nuevo</li>
+      <li><span class="clave">C</span>La aplicación se cierra automáticamente</li>
+      <li><span class="clave">D</span>Hay que llamar a soporte antes de continuar</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">6</div>
+    <p class="enun">Una caracterización quedó efectivamente entregada al sistema cuando:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Se respondió el último capítulo del instrumento</li>
+      <li><span class="clave">B</span>Apareció el mensaje de guardado al terminar el último capítulo</li>
+      <li><span class="clave">C</span>El indicador de sincronización muestra «✓ Al día»</li>
+      <li><span class="clave">D</span>Se cerró la aplicación</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">7</div>
+    <p class="enun">Una pregunta de nivel PERSONA:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>Se responde una sola vez para todo el hogar, sin importar cuántos sean</li>
+      <li><span class="clave">B</span>Se responde una vez por cada integrante del hogar</li>
+      <li><span class="clave">C</span>Solo la responde la persona reconocida como jefe de hogar</li>
+      <li><span class="clave">D</span>Se responde una vez por cada hogar visitado</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">8</div>
+    <p class="enun">Está respondiendo un capítulo y una pregunta que esperaba ver no aparece. Lo más probable es que:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>La aplicación tenga un error y convenga reinstalarla</li>
+      <li><span class="clave">B</span>Esa pregunta aparezca al final, en un capítulo aparte</li>
+      <li><span class="clave">C</span>Se haya perdido la conexión y por eso esa pregunta no alcanzó a cargar</li>
+      <li><span class="clave">D</span>No aplique para esta persona, según lo que usted ya respondió</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">9</div>
+    <p class="enun">Si la persona no aparece en la búsqueda, en la tarjeta gris se usa:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>El botón «Registrar y caracterizar»</li>
+      <li><span class="clave">B</span>El documento de un familiar cercano</li>
+      <li><span class="clave">C</span>El campo de documento en blanco</li>
+      <li><span class="clave">D</span>Ninguna: no se la puede caracterizar</li>
+    </ol>
+  </div>
+  <div class="pregunta">
+    <div class="num">10</div>
+    <p class="enun">El tratamiento de los datos personales que se capturan se rige por:</p>
+    <ol class="ops">
+      <li><span class="clave">A</span>El Decreto 1084 de 2015, como único reglamento aplicable</li>
+      <li><span class="clave">B</span>La Ley 1581 de 2012, de protección de datos</li>
+      <li><span class="clave">C</span>La Ley 1448 de 2011, únicamente</li>
+      <li><span class="clave">D</span>Ninguna norma específica</li>
+    </ol>
+  </div>
+
+<div class="pie">
+  <span>Subdirección Red Nacional de Información · Unidad para las Víctimas</span>
+  <span>Cuestionario pre-test y post-test · SICAV Móvil · 8-sep-2026</span>
+</div>
+
+</body>
+</html>
