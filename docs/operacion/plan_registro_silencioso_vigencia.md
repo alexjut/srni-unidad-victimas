@@ -172,7 +172,64 @@ mostrarlo es todo lo que va a hacer.
 | Registro | `encuestas.RecaracterizacionVigente` + migración 0010 | ✅ |
 | Escritura al cerrar | `encuestas/views.py::_registrar_recaracterizaciones` | ✅ Antes de marcar las fechas |
 | Salida del hogar | `hogares/views.py` — se acabó el 409 | ✅ |
-| Pruebas | 12 + 9 + 10 + 5 casos nuevos; 932 en total | ✅ Verde |
+| **Salida de la sesión** | `encuestas/views.py::create` — el segundo 409, un paso más allá | ✅ |
+| **Retiro de integrantes** | `hogares.MiembroHogar` + migración 0008; acciones `retirar` / `reincorporar` | ✅ §4bis |
+| **Punto de control** | `/api/recaracterizaciones/` + pantalla del panel | ✅ §3bis |
+| **La vigencia no la decide el cliente** | `victimas/views.py::registrar-desde-fuente` | ✅ Salvaba el libro |
+| **Precarga en cada arranque** | `authStore.cargarPerfil` | ✅ El celular se enteraba tarde |
+| **La familia no se duplica** | `conformar.tsx` siembra con los miembros del servidor | ✅ |
+| Material de capacitación | cuestionario, Caso 2, manual 1.3 y plan | ✅ §7 punto 4 |
+| Pruebas | 1.184 backend · 156 móvil · 19 panel | ✅ Verde |
+
+### 3bis. La consulta, que es la mitad que hace útil al registro
+
+`/api/recaracterizaciones/` con tres vistas, y una pantalla en el Panel de Control:
+
+| Vista | Responde |
+|---|---|
+| `resumen/` | cuántas, quién hizo cuántas, en qué territorial, con cuánta anticipación |
+| `personas/` | **cuántas veces por persona** — umbral 2 por defecto |
+| el listado | «qué pasó ayer», con la cuenta de esa persona en la misma fila |
+
+Solo supervisión (`ver_reportes` o `administrar`). El encuestador de campo recibe
+403: un instrumento para mirar cómo opera el equipo, en manos del equipo, no
+supervisa nada.
+
+⚠️ **`dias_restantes` cuenta lo que FALTABA por vencer**, así que el número más ALTO
+es la recaracterización más temprana y por tanto la más grave: 723 significa que la
+ficha anterior tenía una semana. Es contraintuitivo y quien agregue u ordene al
+revés deja fuera justo el caso que se busca, sin que nada falle. Por eso `personas/`
+usa `Max` y no `Min`, y la pantalla traduce a «hace 7 días» en vez de mostrar el
+número crudo.
+
+### 4bis. El retiro de integrantes: la familia que cambió
+
+Al recaracterizar, la familia ya no es la misma. El sistema solo sabía **borrar** un
+integrante, y solo antes de la primera caracterización completada —con razón, porque
+borrar a alguien ya reportado altera un dato entregado—. El único camino que quedaba
+era «solicite el ajuste a su coordinación», que no existe como proceso.
+
+Son **tres operaciones distintas**, y fundirlas otra vez es cómo se llegó al
+callejón:
+
+| | Qué significa | Cuándo |
+|---|---|---|
+| `DELETE` | «nunca debió existir» — error de captura | Solo antes de reportar |
+| `PATCH` | «el dato está mal» — corregir | **Siempre**, con auditoría |
+| `retirar` | «ya no pertenece al hogar» — hecho histórico | **Siempre**. No borra |
+
+**La fila se queda, y tiene que quedarse:** las respuestas de la caracterización
+anterior apuntan a ella.
+
+**Dos fechas, deliberadamente distintas.** `retirado_en` es cuándo OCURRIÓ —una
+familia informa en septiembre un fallecimiento de marzo, y ese es el caso
+corriente— y `retirado_at` cuándo se registró. Con una sola, el retiro informado con
+retraso se vuelve invisible.
+
+En el móvil el retirado **se muestra**, no se esconde: ocultarlo haría creer que se
+perdió un dato. Sus filas de preguntas quedan inactivas con el motivo a la vista, y
+por eso mismo dejan de contar para el avance — sin eso la barra nunca llegaría al
+100 % y no habría ninguna pregunta pendiente que contestar para desatascarla.
 
 ### Piezas del régimen anterior — se dejan inertes, no se borran
 

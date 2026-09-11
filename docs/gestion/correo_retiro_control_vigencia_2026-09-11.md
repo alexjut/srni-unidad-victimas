@@ -81,14 +81,17 @@ entes de control sobre el estado de la caracterización deberá tener en cuenta 
 cambio de significado.
 
 **5. Cambios en la composición de la familia entre una caracterización y otra.**
-Queda un caso que conviene advertir porque va a aparecer en campo: si al
-recaracterizar la familia ya no es la misma, el encuestador **podrá agregar
-integrantes, pero no quitar ni corregir a los que ya fueron reportados** en la
-caracterización anterior —el sistema lo impide para no alterar un dato ya
-entregado—. Registrar que una persona dejó de pertenecer al hogar es un hecho
-histórico distinto de corregir un error de captura, y **hoy no existe en el sistema
-una figura para eso**. Definirla es una decisión del proceso; quedamos a
-disposición para construirla cuando se indique cómo debe comportarse.
+Este punto lo detectamos al revisar el cambio y **lo dejamos resuelto**, porque iba
+a aparecer en campo el primer día: al recaracterizar, la familia ya no es la misma
+—alguien murió, alguien se fue, nació un niño— y el sistema solo sabía *borrar* un
+integrante, cosa que impide, con razón, cuando ya fue reportado.
+
+Ahora el encuestador puede **retirar del hogar** a quien ya no pertenece,
+indicando el motivo y **la fecha del hecho** —no la de hoy: una familia informa en
+septiembre un fallecimiento de marzo—. No se borra a nadie y **la caracterización
+anterior no se altera**: queda registrado que esa persona dejó de pertenecer al
+hogar desde esa fecha, de modo que cada entrevista sigue diciendo quiénes eran el
+hogar en su momento.
 
 **Lo que se conserva es el registro automático de cada caracterización realizada
 sobre una ficha que aún estaba vigente.** Lo escribe el sistema al cerrar la
@@ -106,6 +109,13 @@ libro de registro, no una autorización:** nadie aprueba, nada se espera y no
 detiene a nadie. Existe como único medio para atender consultas futuras de control
 interno o externo, que sin él no tendrían respuesta posible.
 
+Y para que sirva de algo, **queda consultable en el Panel de Control**, en una
+pantalla nueva de supervisión. Un registro que nadie revisa equivale a no tenerlo,
+así que allí está la consulta: el total, quién hizo cuántas, en qué territorial, con
+cuánta anticipación, y **cuántas veces se ha caracterizado a cada persona** —que es
+la cifra que hace visible el caso de la misma ficha reescrita varias veces en pocas
+semanas—. La ve supervisión; el encuestador de campo no.
+
 La decisión corresponde al proceso de caracterización y a la Subdirección; este
 equipo la ejecutará en los términos que se instruyan y deja aquí constancia de sus
 efectos.
@@ -122,6 +132,12 @@ reportado —un registro manual hecho sin señal no aparecía al volver a buscar
 mismo documento, lo que obligaba a capturarlo de nuevo y generaba un duplicado—,
 también corregido en la 1.2.5. **Agradecemos que las pruebas del 15 se hagan sobre
 la 1.2.5**, y si allí aparece el mismo comportamiento lo atendemos el mismo día.
+
+Una nota sobre las versiones, porque va a ahorrar confusiones el 15: si el celular
+conserva la sesión de días anteriores, **conviene cerrar sesión y volver a entrar
+con señal antes de empezar**. Es en el ingreso cuando el teléfono actualiza la
+información del padrón que usa sin conexión, y de ahí depende lo que la aplicación
+permita hacer en campo. Queda dicho también en el manual y en el material.
 
 El ejercicio en tiempo real ya hace parte del plan de capacitación remitido a la
 Dirección técnica el 8 de septiembre, que se adjunta: la sesión del 15 está
