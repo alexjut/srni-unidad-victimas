@@ -59,8 +59,15 @@ aplicación móvil y el panel.
 | Abre hogares, encuestas, autorizaciones, reportes y auditoría | B |
 | **No** puede administrar usuarios | B |
 
-**Resultado de la Sesión 1: 253 de 253 comprobaciones, dos vueltas seguidas, los
-siete participantes.**
+**Resultados:**
+
+| Corrida | Participantes | Comprobaciones | Fallas |
+|---|---|---|---|
+| Sesión 1, dos vueltas seguidas | 7 | **253** | 0 |
+| Las tres sesiones, una vuelta | **37** | **740** | **0** |
+
+Las dos corridas se hicieron **contra producción**, con las cuentas reales que se
+van a repartir y sobre los datos de práctica de cada participante.
 
 El banco **deja el escenario como lo encontró**: al terminar cada Caso 2 anula la
 autorización que creó. Sin eso, la segunda corrida encontraría a la persona ya
