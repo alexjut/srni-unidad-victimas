@@ -1,0 +1,193 @@
+<meta charset="utf-8">
+<title>Usuarios y cédulas de práctica — SICAV Móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap">
+<style>
+:root{
+  --ink:#17160f; --ink-2:#403d33; --ink-3:#6f6b5c;
+  --surface:#ffffff; --panel:#f6f4ec; --panel-2:#efece0;
+  --line:#ddd8c8; --line-soft:#ebe7d9;
+  --marca:#ffcc03; --marca-ink:#7a5c00;
+  --azul:#0b3b6f; --azul-bg:#eaf1f8;
+  --ok:#1f6b3a; --ok-bg:#e9f2ea;
+  --alerta:#8a2f12; --alerta-bg:#fbeee8;
+  --display:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+  --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{ margin:0; background:var(--surface); color:var(--ink);
+  font-family:var(--body); font-size:12.3px; line-height:1.5; }
+.hoja{ max-width:790px; margin:0 auto; padding:22px 30px 46px; }
+.marca-bar{ height:8px; background:linear-gradient(90deg,var(--marca) 0%,var(--marca) 62%,#ffe07a 100%); border-radius:4px; }
+.cabecera{ margin-top:14px; padding-bottom:14px; border-bottom:2px solid var(--line); }
+.eyebrow{ font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--marca-ink); font-weight:800; margin:0; }
+h1{ font-family:var(--display); font-size:25px; line-height:1.12; margin:6px 0 4px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-3); font-size:12.5px; font-weight:600; margin:0; }
+.meta-portada{ margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:4px 22px; font-size:11.4px; color:var(--ink-3); }
+.meta-portada b{ color:var(--ink-2); }
+h2{ font-family:var(--display); font-size:15.5px; margin:24px 0 8px; padding-bottom:4px; border-bottom:1.5px solid var(--marca); }
+h2 .n{ display:inline-block; min-width:30px; color:var(--marca-ink); font-weight:800; }
+h3{ font-family:var(--display); font-size:12.8px; margin:14px 0 5px; color:var(--azul); }
+h4{ font-size:11px; margin:12px 0 4px; color:var(--marca-ink); text-transform:uppercase; letter-spacing:.07em; font-weight:800; }
+p{ margin:6px 0; color:var(--ink-2); }
+.lead{ font-size:12.6px; color:var(--ink-2); }
+ul,ol{ margin:6px 0 8px; padding-left:19px; color:var(--ink-2); }
+li{ margin:2.5px 0; }
+table{ width:100%; border-collapse:collapse; margin:8px 0 4px; font-size:11.2px; }
+th,td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+thead th{ background:var(--panel); color:var(--ink); font-weight:800; font-size:10.3px; text-transform:uppercase;
+          letter-spacing:.04em; border-bottom:1.5px solid var(--line); }
+tbody tr:nth-child(even){ background:#fcfbf6; }
+td.c{ text-align:center; } td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.6px;
+      background:var(--panel-2); padding:1px 4px; border-radius:3px; }
+.caja{ border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; background:var(--panel); margin:10px 0; }
+.caja.azul{ background:var(--azul-bg); border-color:#c5d8ea; }
+.caja.ok{ background:var(--ok-bg); border-color:#c3ddc9; }
+.caja.alerta{ background:var(--alerta-bg); border-color:#eccdbf; }
+.caja p:first-child{ margin-top:0 } .caja p:last-child{ margin-bottom:0 }
+.item{ margin:9px 0 11px; padding-left:30px; position:relative; }
+.item .q{ position:absolute; left:0; top:0; font-weight:800; color:var(--marca-ink); font-size:11.4px; }
+.item .enun{ font-weight:700; color:var(--ink); margin:0 0 3px; }
+.item .ops{ margin:0; padding-left:16px; list-style:upper-alpha; color:var(--ink-2); font-size:11.5px; }
+.item .ops li{ margin:1px 0; }
+.pill{ display:inline-block; font-size:9.6px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+       padding:1.5px 6px; border-radius:3px; background:var(--panel-2); color:var(--marca-ink); }
+.pill.hogar{ background:#e7edf5; color:var(--azul); }
+.pill.persona{ background:#f3ecdb; color:var(--marca-ink); }
+.firma{ margin-top:14px; border-top:1px dashed var(--line); padding-top:10px; font-size:11px; color:var(--ink-3); }
+.linea{ display:inline-block; border-bottom:1px solid var(--ink-3); min-width:200px; }
+.nota{ font-size:10.8px; color:var(--ink-3); }
+@media print{
+  .hoja{ max-width:100%; padding:0 0 10px; }
+  h2{ break-after:avoid; } table,.caja,.item{ break-inside:avoid; }
+  .salto{ break-before:page; }
+}
+
+.creditos{ margin:14px 0 6px; padding:10px 13px; border-left:3px solid var(--marca);
+           background:var(--panel); border-radius:0 8px 8px 0; font-size:10.8px;
+           color:var(--ink-2); line-height:1.6; }
+.creditos > b:first-child{ display:block; font-family:var(--display); font-size:11.6px;
+           color:var(--ink); margin-bottom:4px; }
+.creditos span{ display:block; margin-top:5px; color:var(--ink-3); font-style:italic; }
+</style>
+
+<div class="hoja">
+
+<div class="marca-bar"></div>
+<div class="cabecera">
+  <p class="eyebrow">Subdirección Red Nacional de Información — Unidad para las Víctimas (UARIV)</p>
+  <h1>Usuarios y cédulas de práctica</h1>
+  <p class="sub">Quién hace las entrevistas de la práctica, y sobre qué personas</p>
+  <div class="meta-portada">
+  <div><b>Participantes:</b> 37 en tres sesiones</div>
+  <div><b>Cuentas:</b> el usuario institucional de cada quien · perfil COORDINADOR</div>
+  <div><b>Verificado contra producción:</b> 11 de septiembre de 2026 · 222 cédulas</div>
+  <div><b>Documento hermano:</b> Guion de los casos en vivo</div>
+  </div>
+</div>
+
+<div class="caja alerta">
+  <p><b>Este documento no lleva contraseñas, a propósito.</b> La credencial de cada
+  persona viaja en su propio correo. Un documento que se proyecta en una sala y se
+  imprime no es donde van 37 claves.</p>
+</div>
+
+<div class="caja">
+  <p><b>Se entra con el usuario institucional</b>, el mismo de la entidad —no la
+  cédula, no el correo completo, no el nombre—. El campo está rotulado «Código de
+  usuario», pero lo que va allí es ese usuario.</p>
+  <p><b>Todos tienen perfil COORDINADOR</b>, que es el único que cubre la jornada
+  entera: caracteriza en la aplicación y ve supervisión, reportes, auditoría y
+  recaracterizaciones en el panel.</p>
+</div>
+
+<h2 class="salto"><span class="n">1</span> Sesión 1 — martes 15 de septiembre</h2>
+<p class="lead">Equipo SRNI · híbrida · 15 puestos presenciales · <b>7 participantes</b></p>
+<table>
+  <thead><tr><th>Usuario</th><th>Nombre</th><th>Dirección Territorial</th><th>Caso 2<br><span class="nota">se recaracteriza</span></th><th>Caso 2<br><span class="nota">se retira</span></th><th>Caso 1<br><span class="nota">titular · hijo · madre</span></th><th>Caso 3<br><span class="nota">no existe</span></th></tr></thead>
+  <tbody>
+    <tr><td><code>AMLOPEZS</code></td><td>Alexandra María López Sevillano</td><td>Red Nacional de Información</td><td><code>9990100001</code></td><td><code>9990100002</code></td><td class='nota'>9990100003<br>9990100004<br>9990100005</td><td><code>9990100009</code></td></tr>
+    <tr><td><code>JAAGUILARC</code></td><td>Javier Alexander Aguilar Castro</td><td>Red Nacional de Información</td><td><code>9990200001</code></td><td><code>9990200002</code></td><td class='nota'>9990200003<br>9990200004<br>9990200005</td><td><code>9990200009</code></td></tr>
+    <tr><td><code>BENIÑOQ</code></td><td>Brandon Esteven Niño Quiroga</td><td>Red Nacional de Información</td><td><code>9990300001</code></td><td><code>9990300002</code></td><td class='nota'>9990300003<br>9990300004<br>9990300005</td><td><code>9990300009</code></td></tr>
+    <tr><td><code>JCARDONAG</code></td><td>Jorge Cardona Gregory</td><td>Red Nacional de Información</td><td><code>9990400001</code></td><td><code>9990400002</code></td><td class='nota'>9990400003<br>9990400004<br>9990400005</td><td><code>9990400009</code></td></tr>
+    <tr><td><code>KLSERNAG</code></td><td>Karen Liseth Serna González</td><td>Red Nacional de Información</td><td><code>9990500001</code></td><td><code>9990500002</code></td><td class='nota'>9990500003<br>9990500004<br>9990500005</td><td><code>9990500009</code></td></tr>
+    <tr><td><code>NADUARTEA</code></td><td>Nixon Alonso Duarte Acosta</td><td>Red Nacional de Información</td><td><code>9990600001</code></td><td><code>9990600002</code></td><td class='nota'>9990600003<br>9990600004<br>9990600005</td><td><code>9990600009</code></td></tr>
+    <tr><td><code>MESILVAF</code></td><td>María Elena Silva Fandiño</td><td>Red Nacional de Información</td><td><code>9990700001</code></td><td><code>9990700002</code></td><td class='nota'>9990700003<br>9990700004<br>9990700005</td><td><code>9990700009</code></td></tr>
+  </tbody>
+</table>
+
+<h2 class="salto"><span class="n">2</span> Sesión 2 — jueves 24 de septiembre</h2>
+<p class="lead">Enlaces territoriales — Grupo A · virtual · <b>16 participantes</b></p>
+<table>
+  <thead><tr><th>Usuario</th><th>Nombre</th><th>Dirección Territorial</th><th>Caso 2<br><span class="nota">se recaracteriza</span></th><th>Caso 2<br><span class="nota">se retira</span></th><th>Caso 1<br><span class="nota">titular · hijo · madre</span></th><th>Caso 3<br><span class="nota">no existe</span></th></tr></thead>
+  <tbody>
+    <tr><td><code>EMOCAMPOA</code></td><td>Eliana María Ocampo Atehortúa</td><td>Antioquia</td><td><code>9990800001</code></td><td><code>9990800002</code></td><td class='nota'>9990800003<br>9990800004<br>9990800005</td><td><code>9990800009</code></td></tr>
+    <tr><td><code>JCVIZCAINOS</code></td><td>Juan Carlos Vizcaino Sierra</td><td>Urabá</td><td><code>9990900001</code></td><td><code>9990900002</code></td><td class='nota'>9990900003<br>9990900004<br>9990900005</td><td><code>9990900009</code></td></tr>
+    <tr><td><code>LMDEVIAB</code></td><td>Luz Marina Devia Barrios</td><td>Atlántico</td><td><code>9991000001</code></td><td><code>9991000002</code></td><td class='nota'>9991000003<br>9991000004<br>9991000005</td><td><code>9991000009</code></td></tr>
+    <tr><td><code>HZUÑIGAH</code></td><td>Hernando Zúñiga Herazo</td><td>Bolívar</td><td><code>9991100001</code></td><td><code>9991100002</code></td><td class='nota'>9991100003<br>9991100004<br>9991100005</td><td><code>9991100009</code></td></tr>
+    <tr><td><code>JLSUAREZH</code></td><td>Jorge Luis Suarez Hernandez</td><td>Córdoba</td><td><code>9991200001</code></td><td><code>9991200002</code></td><td class='nota'>9991200003<br>9991200004<br>9991200005</td><td><code>9991200009</code></td></tr>
+    <tr><td><code>SAOSORIOH</code></td><td>Sergio Andrés Osorio Herrera</td><td>Sucre</td><td><code>9991300001</code></td><td><code>9991300002</code></td><td class='nota'>9991300003<br>9991300004<br>9991300005</td><td><code>9991300009</code></td></tr>
+    <tr><td><code>YGOMEZS</code></td><td>Yomara Gómez Sánchez</td><td>Magdalena</td><td><code>9991400001</code></td><td><code>9991400002</code></td><td class='nota'>9991400003<br>9991400004<br>9991400005</td><td><code>9991400009</code></td></tr>
+    <tr><td><code>JOSANDOVALM</code></td><td>Jorge Orlando Sandoval Millan</td><td>Cesar - Guajira</td><td><code>9991500001</code></td><td><code>9991500002</code></td><td class='nota'>9991500003<br>9991500004<br>9991500005</td><td><code>9991500009</code></td></tr>
+    <tr><td><code>NPARISTIZABALV</code></td><td>Norlys Patricia Aristizabal Vanegas</td><td>Cesar - Guajira</td><td><code>9991600001</code></td><td><code>9991600002</code></td><td class='nota'>9991600003<br>9991600004<br>9991600005</td><td><code>9991600009</code></td></tr>
+    <tr><td><code>FYCORDOBAM</code></td><td>Flor Yuleydis Cordoba Mena</td><td>Chocó</td><td><code>9991700001</code></td><td><code>9991700002</code></td><td class='nota'>9991700003<br>9991700004<br>9991700005</td><td><code>9991700009</code></td></tr>
+    <tr><td><code>APCHINCHILLAL</code></td><td>Andrea Paola Chinchilla Lopez</td><td>Magdalena Medio</td><td><code>9991800001</code></td><td><code>9991800002</code></td><td class='nota'>9991800003<br>9991800004<br>9991800005</td><td><code>9991800009</code></td></tr>
+    <tr><td><code>GDCORZOP</code></td><td>German Darío Corzo Patiño</td><td>Santander</td><td><code>9991900001</code></td><td><code>9991900002</code></td><td class='nota'>9991900003<br>9991900004<br>9991900005</td><td><code>9991900009</code></td></tr>
+    <tr><td><code>JAPINZONP</code></td><td>Johao Antonio Pinzon Pelayo</td><td>Santander</td><td><code>9992000001</code></td><td><code>9992000002</code></td><td class='nota'>9992000003<br>9992000004<br>9992000005</td><td><code>9992000009</code></td></tr>
+    <tr><td><code>RJSANTOSR</code></td><td>Ricardo José Santos Rodríguez</td><td>N. de Santander - Arauca</td><td><code>9992100001</code></td><td><code>9992100002</code></td><td class='nota'>9992100003<br>9992100004<br>9992100005</td><td><code>9992100009</code></td></tr>
+    <tr><td><code>LFLIZCANOQ</code></td><td>Luis Fernando Lizcano Quintero</td><td>N. de Santander - Arauca</td><td><code>9992200001</code></td><td><code>9992200002</code></td><td class='nota'>9992200003<br>9992200004<br>9992200005</td><td><code>9992200009</code></td></tr>
+    <tr><td><code>ACONTRERASB</code></td><td>Andrea Contreras Buitrago</td><td>N. de Santander - Arauca</td><td><code>9992300001</code></td><td><code>9992300002</code></td><td class='nota'>9992300003<br>9992300004<br>9992300005</td><td><code>9992300009</code></td></tr>
+  </tbody>
+</table>
+
+<h2 class="salto"><span class="n">3</span> Sesión 3 — martes 29 de septiembre</h2>
+<p class="lead">Enlaces territoriales — Grupo B · virtual · <b>14 participantes</b></p>
+<table>
+  <thead><tr><th>Usuario</th><th>Nombre</th><th>Dirección Territorial</th><th>Caso 2<br><span class="nota">se recaracteriza</span></th><th>Caso 2<br><span class="nota">se retira</span></th><th>Caso 1<br><span class="nota">titular · hijo · madre</span></th><th>Caso 3<br><span class="nota">no existe</span></th></tr></thead>
+  <tbody>
+    <tr><td><code>JGUARINH</code></td><td>Jhonathan Guarin</td><td>Central</td><td><code>9992400001</code></td><td><code>9992400002</code></td><td class='nota'>9992400003<br>9992400004<br>9992400005</td><td><code>9992400009</code></td></tr>
+    <tr><td><code>GYSUAREZL</code></td><td>Gloria Yamile Suarez Leal</td><td>Central</td><td><code>9992500001</code></td><td><code>9992500002</code></td><td class='nota'>9992500003<br>9992500004<br>9992500005</td><td><code>9992500009</code></td></tr>
+    <tr><td><code>LAFOREROB</code></td><td>Luis Ariel Forero Bocanegra</td><td>Central</td><td><code>9992600001</code></td><td><code>9992600002</code></td><td class='nota'>9992600003<br>9992600004<br>9992600005</td><td><code>9992600009</code></td></tr>
+    <tr><td><code>NMVARONT</code></td><td>Norma Maritza Varón Trujillo</td><td>Caquetá - Huila</td><td><code>9992700001</code></td><td><code>9992700002</code></td><td class='nota'>9992700003<br>9992700004<br>9992700005</td><td><code>9992700009</code></td></tr>
+    <tr><td><code>MEROJASP</code></td><td>Maria Eugenia Rojas Puentes</td><td>Caquetá - Huila</td><td><code>9992800001</code></td><td><code>9992800002</code></td><td class='nota'>9992800003<br>9992800004<br>9992800005</td><td><code>9992800009</code></td></tr>
+    <tr><td><code>DJARCINIEGASC</code></td><td>Deissy Judith Arciniegas Chamorro</td><td>Cauca</td><td><code>9992900001</code></td><td><code>9992900002</code></td><td class='nota'>9992900003<br>9992900004<br>9992900005</td><td><code>9992900009</code></td></tr>
+    <tr><td><code>AKHERNANDEZC</code></td><td>Audrey Karin Hernández Castellar</td><td>Cauca</td><td><code>9993000001</code></td><td><code>9993000002</code></td><td class='nota'>9993000003<br>9993000004<br>9993000005</td><td><code>9993000009</code></td></tr>
+    <tr><td><code>EJMORANTESN</code></td><td>Esther Julia Morantes Narvaez</td><td>Cauca</td><td><code>9993100001</code></td><td><code>9993100002</code></td><td class='nota'>9993100003<br>9993100004<br>9993100005</td><td><code>9993100009</code></td></tr>
+    <tr><td><code>CBDUQUER</code></td><td>Claudia Bibiana Duque Rojas</td><td>Valle del Cauca</td><td><code>9993200001</code></td><td><code>9993200002</code></td><td class='nota'>9993200003<br>9993200004<br>9993200005</td><td><code>9993200009</code></td></tr>
+    <tr><td><code>SMLASSOP</code></td><td>Sonia Maribel Lasso Paz</td><td>Nariño</td><td><code>9993300001</code></td><td><code>9993300002</code></td><td class='nota'>9993300003<br>9993300004<br>9993300005</td><td><code>9993300009</code></td></tr>
+    <tr><td><code>NSMANRIQUED</code></td><td>Nathalia Stefania Manrique Delgado</td><td>Nariño</td><td><code>9993400001</code></td><td><code>9993400002</code></td><td class='nota'>9993400003<br>9993400004<br>9993400005</td><td><code>9993400009</code></td></tr>
+    <tr><td><code>ZYORDONEZR</code></td><td>Zuleyma Yanina Ordoñez Rojas</td><td>Putumayo</td><td><code>9993500001</code></td><td><code>9993500002</code></td><td class='nota'>9993500003<br>9993500004<br>9993500005</td><td><code>9993500009</code></td></tr>
+    <tr><td><code>SSCARDONAC</code></td><td>Sonia Stella Cardona Castaño</td><td>Eje Cafetero</td><td><code>9993600001</code></td><td><code>9993600002</code></td><td class='nota'>9993600003<br>9993600004<br>9993600005</td><td><code>9993600009</code></td></tr>
+    <tr><td><code>JAPARRAV</code></td><td>Javier Antonio Parra Valencia</td><td>Llanos</td><td><code>9993700001</code></td><td><code>9993700002</code></td><td class='nota'>9993700003<br>9993700004<br>9993700005</td><td><code>9993700009</code></td></tr>
+  </tbody>
+</table>
+
+<h2 class="salto"><span class="n">4</span> Si hay que volver a preparar el escenario</h2>
+<div class="caja">
+  <p>Entre una jornada y la siguiente alguien va a pedir «vuélvanlo a dejar como
+  estaba». Se hace con un comando, y es idempotente:</p>
+  <p><code>python manage.py preparar_capacitacion --confirmar --sesion N --conservar-claves</code></p>
+  <p>Devuelve la fecha de caracterización a ocho meses atrás y deja el hogar como el
+  Caso 2 lo necesita. <b>Con <code>--conservar-claves</code> nadie pierde su
+  contraseña.</b></p>
+  <p class="nota">Si se omite esa bandera, se emiten claves nuevas y hay que volver a
+  repartirlas. Las claves no se pueden re-exportar: quedan cifradas en la base.</p>
+</div>
+
+<div class="caja alerta">
+  <p><b>Lo que hay que revisar antes de cada jornada:</b> que nadie haya quedado
+  <b>retirado</b> del hogar de una práctica anterior. Si el integrante
+  <code>999NN00002</code> ya está retirado, ese participante no tendrá a quién
+  retirar y su Caso 2 queda a medias. Se deshace desde la aplicación con
+  <b>«Deshacer retiro»</b>.</p>
+</div>
+
+<div class="firma">
+  Generado por <code>fuente/generar_guion_en_vivo.py</code> desde
+  <code>credenciales_capacitacion.csv</code>. Si se vuelve a preparar una jornada
+  con <code>preparar_capacitacion</code>, hay que regenerar estos dos documentos.
+</div>
+
+</div>

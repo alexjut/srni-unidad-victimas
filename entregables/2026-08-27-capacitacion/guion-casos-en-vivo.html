@@ -1,0 +1,262 @@
+<meta charset="utf-8">
+<title>Guion de los casos en vivo — SICAV Móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap">
+<style>
+:root{
+  --ink:#17160f; --ink-2:#403d33; --ink-3:#6f6b5c;
+  --surface:#ffffff; --panel:#f6f4ec; --panel-2:#efece0;
+  --line:#ddd8c8; --line-soft:#ebe7d9;
+  --marca:#ffcc03; --marca-ink:#7a5c00;
+  --azul:#0b3b6f; --azul-bg:#eaf1f8;
+  --ok:#1f6b3a; --ok-bg:#e9f2ea;
+  --alerta:#8a2f12; --alerta-bg:#fbeee8;
+  --display:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+  --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{ margin:0; background:var(--surface); color:var(--ink);
+  font-family:var(--body); font-size:12.3px; line-height:1.5; }
+.hoja{ max-width:790px; margin:0 auto; padding:22px 30px 46px; }
+.marca-bar{ height:8px; background:linear-gradient(90deg,var(--marca) 0%,var(--marca) 62%,#ffe07a 100%); border-radius:4px; }
+.cabecera{ margin-top:14px; padding-bottom:14px; border-bottom:2px solid var(--line); }
+.eyebrow{ font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--marca-ink); font-weight:800; margin:0; }
+h1{ font-family:var(--display); font-size:25px; line-height:1.12; margin:6px 0 4px; letter-spacing:-.01em; }
+.sub{ color:var(--ink-3); font-size:12.5px; font-weight:600; margin:0; }
+.meta-portada{ margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:4px 22px; font-size:11.4px; color:var(--ink-3); }
+.meta-portada b{ color:var(--ink-2); }
+h2{ font-family:var(--display); font-size:15.5px; margin:24px 0 8px; padding-bottom:4px; border-bottom:1.5px solid var(--marca); }
+h2 .n{ display:inline-block; min-width:30px; color:var(--marca-ink); font-weight:800; }
+h3{ font-family:var(--display); font-size:12.8px; margin:14px 0 5px; color:var(--azul); }
+h4{ font-size:11px; margin:12px 0 4px; color:var(--marca-ink); text-transform:uppercase; letter-spacing:.07em; font-weight:800; }
+p{ margin:6px 0; color:var(--ink-2); }
+.lead{ font-size:12.6px; color:var(--ink-2); }
+ul,ol{ margin:6px 0 8px; padding-left:19px; color:var(--ink-2); }
+li{ margin:2.5px 0; }
+table{ width:100%; border-collapse:collapse; margin:8px 0 4px; font-size:11.2px; }
+th,td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+thead th{ background:var(--panel); color:var(--ink); font-weight:800; font-size:10.3px; text-transform:uppercase;
+          letter-spacing:.04em; border-bottom:1.5px solid var(--line); }
+tbody tr:nth-child(even){ background:#fcfbf6; }
+td.c{ text-align:center; } td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+code{ font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:10.6px;
+      background:var(--panel-2); padding:1px 4px; border-radius:3px; }
+.caja{ border:1.5px solid var(--line); border-radius:10px; padding:11px 13px; background:var(--panel); margin:10px 0; }
+.caja.azul{ background:var(--azul-bg); border-color:#c5d8ea; }
+.caja.ok{ background:var(--ok-bg); border-color:#c3ddc9; }
+.caja.alerta{ background:var(--alerta-bg); border-color:#eccdbf; }
+.caja p:first-child{ margin-top:0 } .caja p:last-child{ margin-bottom:0 }
+.item{ margin:9px 0 11px; padding-left:30px; position:relative; }
+.item .q{ position:absolute; left:0; top:0; font-weight:800; color:var(--marca-ink); font-size:11.4px; }
+.item .enun{ font-weight:700; color:var(--ink); margin:0 0 3px; }
+.item .ops{ margin:0; padding-left:16px; list-style:upper-alpha; color:var(--ink-2); font-size:11.5px; }
+.item .ops li{ margin:1px 0; }
+.pill{ display:inline-block; font-size:9.6px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+       padding:1.5px 6px; border-radius:3px; background:var(--panel-2); color:var(--marca-ink); }
+.pill.hogar{ background:#e7edf5; color:var(--azul); }
+.pill.persona{ background:#f3ecdb; color:var(--marca-ink); }
+.firma{ margin-top:14px; border-top:1px dashed var(--line); padding-top:10px; font-size:11px; color:var(--ink-3); }
+.linea{ display:inline-block; border-bottom:1px solid var(--ink-3); min-width:200px; }
+.nota{ font-size:10.8px; color:var(--ink-3); }
+@media print{
+  .hoja{ max-width:100%; padding:0 0 10px; }
+  h2{ break-after:avoid; } table,.caja,.item{ break-inside:avoid; }
+  .salto{ break-before:page; }
+}
+
+.creditos{ margin:14px 0 6px; padding:10px 13px; border-left:3px solid var(--marca);
+           background:var(--panel); border-radius:0 8px 8px 0; font-size:10.8px;
+           color:var(--ink-2); line-height:1.6; }
+.creditos > b:first-child{ display:block; font-family:var(--display); font-size:11.6px;
+           color:var(--ink); margin-bottom:4px; }
+.creditos span{ display:block; margin-top:5px; color:var(--ink-3); font-style:italic; }
+</style>
+
+<div class="hoja">
+
+<div class="marca-bar"></div>
+<div class="cabecera">
+  <p class="eyebrow">Subdirección Red Nacional de Información — Unidad para las Víctimas (UARIV)</p>
+  <h1>Guion de los casos en vivo</h1>
+  <p class="sub">Qué hace cada participante, con qué cédula, y qué tiene que pasar en pantalla</p>
+  <div class="meta-portada">
+  <div><b>Jornadas:</b> 15, 24 y 29 de septiembre de 2026 · 8:00 a.m. – 12:00 m.</div>
+  <div><b>Bloque:</b> A — Aplicación móvil (SICAV Móvil)</div>
+  <div><b>Participantes:</b> 37 en tres sesiones</div>
+  <div><b>Versión de la APK:</b> 1.2.5 (versionCode 59)</div>
+  <div><b>Conduce:</b> Javier Alexander Aguilar Castro</div>
+  <div><b>Calidad e incidencias:</b> Jorge Cardona Gregory</div>
+  </div>
+</div>
+
+<div class="caja alerta">
+  <p><b>Antes de empezar, y no es opcional: cerrar sesión y volver a entrar, con
+  señal.</b></p>
+  <p>Es al ingresar cuando el teléfono descarga la información del padrón que
+  después usa <b>sin conexión</b>, y de ella depende lo que la aplicación permita
+  hacer en campo. Un celular que conserva la sesión de días anteriores va a decir
+  «No habilitado» sobre una persona que <b>sí</b> se puede caracterizar, y eso se
+  va a reportar como falla cuando no lo es.</p>
+  <p class="nota">Lo mismo aplica a quien venía con la 1.2.4 y actualice hoy: la
+  actualización no rehace la precarga; el ingreso sí.</p>
+</div>
+
+<h2><span class="n">1</span> Cómo leer las cédulas de este guion</h2>
+
+<p class="lead">Cada participante practica sobre <b>sus propias</b> cinco personas,
+para que dos personas no se pisen el mismo hogar. En este guion se escriben como
+<code>999NN0000X</code>, donde <code>NN</code> es el número del participante.</p>
+
+<p>Su <code>NN</code> está en el documento <b>Usuarios y cédulas de práctica</b>,
+o en el correo con su credencial. Por ejemplo, si le corresponde el
+<code>99903</code>, su caso 2 es la cédula <code>9990300001</code>.</p>
+
+<table>
+  <thead><tr><th>Cédula</th><th>Quién es</th><th>Para qué caso</th><th>Cómo llega</th></tr></thead>
+  <tbody>
+    <tr><td><code>999NN00001</code></td><td>ANA PRÁCTICA</td><td><b>Caso 2</b> — la que se recaracteriza</td>
+        <td>Ya caracterizada hace 8 meses, con hogar y familia</td></tr>
+    <tr><td><code>999NN00002</code></td><td>MARÍA PRÁCTICA</td><td><b>Caso 2</b> — la que se retira del hogar</td>
+        <td>Integrante del mismo hogar</td></tr>
+    <tr><td><code>999NN00003</code></td><td>ROSA PRÁCTICA, 38</td><td><b>Caso 1</b> — la señora que recibe</td>
+        <td>Sin caracterización previa</td></tr>
+    <tr><td><code>999NN00004</code></td><td>JUAN PRÁCTICA, 14</td><td><b>Caso 1</b> — el hijo</td>
+        <td>Sin caracterización previa</td></tr>
+    <tr><td><code>999NN00005</code></td><td>CARMEN PRÁCTICA, 71</td><td><b>Caso 1</b> — la madre</td>
+        <td>Sin caracterización previa</td></tr>
+    <tr><td><code>999NN00009</code></td><td>—</td><td><b>Caso 3</b> — la que no aparece</td>
+        <td><b>No existe a propósito.</b> Es el alta manual</td></tr>
+  </tbody>
+</table>
+
+<div class="caja ok">
+  <p><b>Las 222 cédulas están verificadas contra producción</b> el 11 de septiembre
+  de 2026, una por una, por el mismo endpoint que usa la aplicación: cada una
+  responde lo que su caso necesita. Si alguna no se comporta así el día de la
+  jornada, no es del escenario: repórtelo.</p>
+</div>
+
+<h2 class="salto"><span class="n">2</span> Caso 1 — Hogar completo, y sin conexión</h2>
+<div class="caja">
+  <p><b>La situación que se cuenta en voz alta.</b> Llega una señora de 38 años con
+  su hijo de 14 y su madre de 71. Ninguno ha sido caracterizado. A mitad de la
+  entrevista se cae la señal.</p>
+  <p><b>Lo que hace el participante</b></p>
+  <ol>
+    <li>Busca la <code>999NN00003</code>. Sale en verde: <b>habilitada</b>.</li>
+    <li>Conforma el hogar y agrega al hijo <code>999NN00004</code> y a la madre
+      <code>999NN00005</code>.</li>
+    <li>Elige el instrumento y empieza a diligenciar.</li>
+    <li><b>Activa el modo avión</b> y sigue respondiendo. La aplicación no se detiene.</li>
+    <li>Vuelve a encender los datos y espera a que la cola quede en cero.</li>
+  </ol>
+  <p><b>Se considera resuelto si:</b> la caracterización aparece sincronizada, con
+  los tres integrantes y el avance al 100&nbsp;%, y el indicador dice
+  <b>«✓ Al día»</b>.</p>
+  <p class="nota">Lo que se está enseñando: que el trabajo no se pierde sin señal, y
+  que la jornada no se cierra hasta que la cola esté en cero.</p>
+</div>
+
+<h2><span class="n">3</span> Caso 2 — Persona ya caracterizada, y una familia que cambió</h2>
+
+<div class="caja azul">
+  <p><b>Esto es lo nuevo del 11 de septiembre de 2026, y es el caso que hay que
+  entender bien.</b> Antes, una persona caracterizada hace menos de dos años quedaba
+  bloqueada y había que pedir una autorización a coordinación. <b>Eso desapareció.</b>
+  La aplicación avisa y deja continuar; no hay nada que pedirle a nadie.</p>
+</div>
+
+<div class="caja">
+  <p><b>La situación.</b> Una señora fue caracterizada hace ocho meses y ya tiene un
+  hogar registrado con su familia. Hoy hay que actualizarle la caracterización.
+  Además, un integrante del hogar <b>falleció en marzo</b>.</p>
+  <p><b>Lo que hace el participante</b></p>
+  <ol>
+    <li>Busca la <code>999NN00001</code>. La aplicación <b>avisa que ya fue
+      caracterizada</b> y la deja continuar. <b>No se pide autorización.</b></li>
+    <li>Conforma el hogar: aparece <b>el hogar que ya existía, con su familia</b>.
+      <b>No vuelve a capturar a nadie.</b> Si lo hace, cada persona queda dos veces.</li>
+    <li>Entra al hogar y usa <b>«Retirar del hogar»</b> en la
+      <code>999NN00002</code>. Indica el motivo <b>Falleció</b> y la fecha
+      <b>del hecho</b>: marzo, no hoy.</li>
+    <li>Diligencia la caracterización y la cierra.</li>
+    <li>Con el Panel de Control abierto, entra a <b>Recaracterizaciones</b> y
+      encuentra el registro que <b>el sistema escribió solo</b>.</li>
+  </ol>
+  <p><b>Se considera resuelto si:</b> completó la caracterización sin detenerse ni
+  pedir permiso; el integrante quedó <b>retirado y no borrado</b>, con su fecha; los
+  demás no se duplicaron; y en el panel está la fila con quién, cuándo y con cuánta
+  anticipación, sin que el participante hiciera nada para crearla.</p>
+  <p><b>Las tres preguntas de cierre.</b> Si nadie autoriza nada, ¿cómo responde la
+  entidad el día que control interno pregunte por qué una ficha se reescribió a los
+  ocho meses? ¿Por qué la fecha del retiro es la del fallecimiento y no la de hoy?
+  ¿Qué pasa con la caracterización anterior cuando se retira a un integrante?</p>
+</div>
+
+<div class="caja">
+  <p><b>Variante, una sola vez y en plenaria.</b> El facilitador muestra con dos
+  cuentas el caso del hogar conformado por <b>otro</b> encuestador: también se puede
+  continuar, sin pedirle reasignación a nadie. No se le pone a cada participante a
+  propósito — si esa ruta fallara, 37 personas quedarían trabadas a la vez en lugar
+  de una demostración.</p>
+</div>
+
+<h2><span class="n">4</span> Caso 3 — La persona que no aparece, y una incidencia</h2>
+<div class="caja">
+  <p><b>La situación.</b> Llega un señor que dice estar en el RUV. Al buscarlo, no
+  aparece en el padrón.</p>
+  <p><b>Lo que hace el participante</b></p>
+  <ol>
+    <li>Busca la <code>999NN00009</code>. Sale la tarjeta gris: <b>no está en el
+      padrón</b>. No es un error y no significa que no sea víctima.</li>
+    <li>Usa <b>«Registrar y caracterizar»</b> y diligencia el alta manual.</li>
+    <li>Continúa con la conformación del hogar y la caracterización.</li>
+    <li>Redacta un reporte de incidencia <b>sin datos de la persona</b>
+      (Ley 1581 de 2012) y lo comparte con el grupo.</li>
+  </ol>
+  <p><b>Se considera resuelto si:</b> pudo caracterizar a quien no estaba en el
+  padrón, y el reporte permite reproducir lo que vio sin exponer a nadie.</p>
+  <p class="nota">Si cierra sesión a mitad del alta y vuelve a buscar el mismo
+  documento <b>sin señal</b>, la aplicación debe encontrar a quien ya registró en ese
+  teléfono y no pedirle capturarla de nuevo. Se corrigió en la 1.2.5.</p>
+</div>
+
+<h2 class="salto"><span class="n">5</span> Lo que se va a reportar como falla y no lo es</h2>
+<table>
+  <thead><tr><th>Lo que verá</th><th>Qué es</th><th>Qué hacer</th></tr></thead>
+  <tbody>
+    <tr><td>Dice «No habilitado — ficha vigente»</td>
+        <td>El teléfono trae información del padrón de días anteriores</td>
+        <td><b>Cerrar sesión y volver a entrar con señal</b></td></tr>
+    <tr><td>El hogar ya tiene integrantes que el participante no capturó</td>
+        <td>Es el hogar que la familia ya tenía registrado</td>
+        <td>Es correcto. <b>No capturarlos de nuevo</b></td></tr>
+    <tr><td>No deja borrar a un integrante ya reportado</td>
+        <td>Borrarlo cambiaría un dato ya entregado</td>
+        <td>Usar <b>«Retirar del hogar»</b></td></tr>
+    <tr><td>Una pregunta que esperaba no aparece</td>
+        <td>Una regla del formulario la oculta porque no aplica</td>
+        <td>Revisar las respuestas anteriores del capítulo</td></tr>
+    <tr><td>El capítulo dice «Faltan N» después de responder</td>
+        <td>Hay obligatorias por <b>cada</b> integrante</td>
+        <td>Revisar la sección de cada persona</td></tr>
+    <tr><td>En el panel, «Autorizaciones» no deja autorizar</td>
+        <td>El control de vigencia está retirado: no hay nada que autorizar</td>
+        <td>Es correcto. Quedó como consulta del histórico</td></tr>
+  </tbody>
+</table>
+
+<div class="caja alerta">
+  <p><b>Lo único que sí es una falla</b> y hay que reportar de inmediato: que la
+  aplicación <b>detenga</b> a alguien por tener una caracterización vigente después
+  de haber cerrado sesión y vuelto a entrar con señal.</p>
+</div>
+
+<div class="firma">
+  Generado por <code>fuente/generar_guion_en_vivo.py</code> desde
+  <code>credenciales_capacitacion.csv</code>. Si se vuelve a preparar una jornada
+  con <code>preparar_capacitacion</code>, hay que regenerar estos dos documentos.
+</div>
+
+</div>

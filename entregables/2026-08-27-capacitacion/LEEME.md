@@ -11,8 +11,11 @@ y el **Panel de Control** web.
 |---|---|
 | `pdf/plan_capacitacion.pdf` | **El plan, listo para enviar/imprimir.** A4, 5 páginas. |
 | `pdf/anexos_capacitacion.pdf` | **Los anexos del plan.** A4, 18 páginas. |
+| `pdf/guion-casos-en-vivo.pdf` | **El paso a paso de los tres casos, para conducir la práctica.** Qué hace cada participante, con qué cédula, y qué tiene que pasar en pantalla. |
+| `pdf/usuarios-y-cedulas.pdf` | **Los 37 participantes con SUS cédulas de práctica.** Sin contraseñas. |
 | `fuente/plan_capacitacion.html` | La fuente del plan (se versiona esta, no el PDF; se regenera). |
 | `fuente/anexos_capacitacion.html` | La fuente de los anexos. |
+| `fuente/generar_guion_en_vivo.py` | Genera los dos documentos de arriba **desde `credenciales_capacitacion.csv`**. Se regeneran cada vez que se prepara una jornada. |
 
 ## Anexos (8 instrumentos)
 
@@ -21,9 +24,9 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 
 | | Anexo | Cuándo se usa |
 |---|---|---|
-| A | Pre-test y post-test — **10 preguntas, 5 minutos**, mismo cuestionario en los dos momentos, con la escala sobre 10. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`). **El anexo ya no reproduce las preguntas**: circula antes de la jornada y publicarlas anulaba la medición | 8:15 a.m. y 11:00 a.m. |
+| A | Pre-test y post-test — **13 preguntas, 5 minutos**, mismo cuestionario en los dos momentos, con la escala sobre 10. **Se responde en línea** (`/descargar/prueba.html?t=pre` y `?t=post`). **El anexo ya no reproduce las preguntas**: circula antes de la jornada y publicarlas anulaba la medición | 8:15 a.m. y 11:00 a.m. |
 | B | Banco de 32 preguntas por capítulo + tabla de referencia Hogar/Persona | Bloque A y refuerzo |
-| C | Tres casos de estudio: hogar offline · ficha vigente (APK + panel) · alta manual e incidencia | Práctica guiada |
+| C | Tres casos de estudio: hogar offline · **persona ya caracterizada y familia que cambió** · alta manual e incidencia | Práctica guiada |
 | D | Plantilla de documentación de la experiencia (6 secciones) | Cierre de cada sesión |
 | E | El Manual de Uso: dónde se descarga, qué cubre y quién lo revisó | Antes de la Sesión 1 |
 | F | Encuesta de calidad (10 ítems Likert) + 4 preguntas abiertas | 11:15 a.m. |
@@ -133,6 +136,29 @@ Cambios del 8 de septiembre:
   mismo lenguaje técnico de la respuesta. Se cambió por la situación concreta de campo:
   una pregunta que se esperaba ver y no aparece.
 
+## Qué cambió el 11 de septiembre de 2026
+
+**Se retiró el control de vigencia** (Manual de Usuario §5.1.1). Una persona ya
+caracterizada se puede caracterizar otra vez cuando la operación lo necesite: la
+aplicación avisa pero **no detiene**, y desaparece el trámite de autorización con
+radicado y soporte. Lo pidió el equipo de caracterización y está en producción desde
+esa noche.
+
+El material tuvo que cambiar con él, porque enseñaba a pedir un permiso que ya nadie
+otorga:
+
+| | Qué cambió |
+|---|---|
+| **Cuestionario** | De 10 a **13 preguntas**. Se reescribieron dos —la del plazo y la del trámite— y se agregaron tres del régimen nuevo: la familia que ya está registrada no se vuelve a capturar, a quien ya no pertenece se lo **retira** y no se lo borra, y la fecha del retiro es la **del hecho**. |
+| **Caso 2 del Anexo C** | Reescrito completo. Era «bloquea, coordinación autoriza, se desbloquea»; ahora es «no detiene, la familia aparece, y al que ya no pertenece se lo retira». |
+| **Temario del plan** | «Excepción de vigencia en la APK» pasó a «Personas con caracterización vigente». En el Bloque B, autorizar pasó a consultar el punto de control. |
+| **Manual de Uso** | Versión **1.3**, con la sección nueva «Cuando la familia ya no es la misma». |
+| **APK** | **1.2.5** (versionCode 59). Antes de practicar hay que **cerrar sesión y volver a entrar con señal**. |
+
+**Todo probado contra producción** el 11 de septiembre, con los datos de práctica de
+los 37 participantes: las **222 cédulas** verificadas una por una, y los tres casos
+corridos de punta a punta por la misma API que usa la aplicación.
+
 ## Regenerar el PDF
 
 Desde la carpeta del entregable, con Google Chrome instalado:
@@ -150,5 +176,19 @@ BASE="file:///D:/desarrollo/unidad-victima/entregables/2026-08-27-capacitacion/f
   "$BASE/anexos_capacitacion.html"
 ```
 
+```bash
+# Los dos documentos de la práctica en vivo (se generan del CSV, luego el PDF)
+python fuente/generar_guion_en_vivo.py
+
+for n in guion-casos-en-vivo usuarios-y-cedulas; do
+  "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer \
+    --virtual-time-budget=30000 --print-to-pdf="pdf/$n.pdf" "$BASE/../$n.html"
+done
+```
+
 > `--virtual-time-budget` es necesario: sin él Chrome imprime antes de que carguen las
 > tipografías (Nunito Sans) y el PDF sale con fuentes de respaldo.
+
+> ⚠️ **Chrome necesita la ruta de salida ABSOLUTA.** Con una relativa falla con
+> «Failed to write file … El sistema no puede encontrar la ruta especificada» y no
+> genera nada, pero devuelve código 0: parece que funcionó.
