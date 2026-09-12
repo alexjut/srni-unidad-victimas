@@ -284,9 +284,11 @@ def caso_2(bit, token, fila):
         return
 
     # 3 — y conformar tiene que devolver ESE hogar, no crear otro ni responder 409.
+    # `autorizado` viaja como IDENTIFICADOR, no como objeto: el serializer del
+    # detalle lo expone con `PrimaryKeyRelatedField`. Tratarlo como diccionario
+    # reventaba con AttributeError sobre una cadena.
     r = pedir('POST', '/api/hogares/', token=token,
-              cuerpo={'autorizado': (hogar.get('autorizado') or {}).get('id')
-                      or fila.get('victima_caso2'),
+              cuerpo={'autorizado': hogar.get('autorizado'),
                       'municipio': municipio})
     devuelto = (r.datos or {}).get('id')
     bit.anotar(codigo, 'caso 2', 'conformar devuelve el hogar existente (no 409)',

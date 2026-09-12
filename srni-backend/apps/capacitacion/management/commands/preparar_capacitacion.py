@@ -546,7 +546,8 @@ class Command(BaseCommand):
             sin_sesion = [f['codigo'] for f in filas if not f.get('sesion_encuesta')]
             w('')
             w('  Cada participante practica sobre SUS documentos 999NNxxxxx:')
-            w('    …00001  CASO 2 — bloqueada por ficha vigente, hay que autorizarla')
+            w('    …00001  CASO 2 — ya caracterizada hace 8 meses: se continúa sin permiso')
+            w('    …00002  CASO 2 — el integrante que se RETIRA del hogar')
             w('    …00003  CASO 1 — la señora que recibe (sin ficha previa)')
             w('    …00004  CASO 1 — hijo, 14 años')
             w('    …00005  CASO 1 — madre, 71 años')
