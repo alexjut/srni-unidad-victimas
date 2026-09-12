@@ -152,3 +152,40 @@ def test_el_tablero_es_solo_de_supervision(escenario):
     cliente.force_authenticate(user=encuestador)
 
     assert cliente.get(URL).status_code == 403
+
+
+def test_un_intento_de_preguntas_borradas_no_ensucia_el_corte_por_pregunta(escenario):
+    """
+    El corte por pregunta es, según el propio tablero, «el que más sirve para la
+    siguiente jornada: una pregunta que falla la mayoría del grupo señala un tema
+    mal explicado». Por eso importa que no mienta.
+
+    Cuando se reemplazan las preguntas con intentos ya registrados —lo que hizo
+    `cargar_prueba_capacitacion --reemplazar` el 11-sep-2026— las respuestas de esos
+    intentos quedan apuntando a identificadores borrados. Antes eso hacía que **las
+    13 preguntas salieran con cero aciertos**, como si el grupo entero las hubiera
+    fallado: medido en producción con un solo intento viejo.
+    """
+    from apps.capacitacion.models import IntentoPrueba, PreguntaPrueba
+
+    prueba = escenario['prueba']
+    PreguntaPrueba.objects.create(
+        prueba=prueba, orden=1, enunciado='¿Con qué usuario se ingresa?',
+        opciones=['El institucional', 'La cédula', 'El correo', 'El nombre'],
+        correcta='A')
+
+    # Alguien que SÍ respondió esta pregunta, y bien.
+    p = prueba.preguntas.first()
+    IntentoPrueba.objects.create(prueba=prueba, correo='respondio@srni.dev',
+                                 puntaje=1, total=1, respuestas={str(p.id): 'A'})
+    # Y un intento de la versión anterior: sus claves no existen ya.
+    IntentoPrueba.objects.create(
+        prueba=prueba, correo='vieja.version@srni.dev', puntaje=9, total=10,
+        respuestas={'00000000-0000-0000-0000-000000000001': 'B'})
+
+    r = escenario['cliente'].get(URL, {'prueba': prueba.codigo})
+    fila = next(f for f in r.data['por_pregunta'] if f['orden'] == 1)
+
+    # Uno respondió y acertó. El de la versión vieja no cuenta en ninguno de los dos.
+    assert fila['respondieron'] == 1
+    assert fila['aciertos'] == 1

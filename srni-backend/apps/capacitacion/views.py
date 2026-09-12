@@ -239,7 +239,22 @@ class ResultadosView(APIView):
                     'prueba': intento.prueba.codigo, 'orden': p.orden,
                     'enunciado': p.enunciado, 'aciertos': 0, 'respondieron': 0,
                 })
-                marcada = (intento.respuestas.get(str(p.id)) or '').strip().upper()
+                # ⚠️ Solo cuenta si este intento respondió ESTA pregunta.
+                #
+                # Antes sumaba `respondieron` para toda pregunta de la prueba, sin
+                # mirar si el intento tenía respuesta para ella. El efecto aparece
+                # cuando se reemplazan las preguntas —`cargar_prueba_capacitacion
+                # --reemplazar`— con intentos ya registrados: sus respuestas quedan
+                # apuntando a identificadores borrados, y **las 13 preguntas salen
+                # con cero aciertos**, como si el grupo entero las hubiera fallado.
+                #
+                # Medido en producción el 12-sep-2026: un solo intento viejo hacía
+                # que las 13 aparecieran falladas. Y este corte es justamente el que
+                # se usa para decidir qué tema se explicó mal.
+                clave_resp = str(p.id)
+                if clave_resp not in intento.respuestas:
+                    continue
+                marcada = (intento.respuestas.get(clave_resp) or '').strip().upper()
                 fila['respondieron'] += 1
                 if marcada == p.correcta.strip().upper():
                     fila['aciertos'] += 1
