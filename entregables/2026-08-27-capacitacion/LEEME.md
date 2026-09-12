@@ -25,7 +25,7 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
 | B | Banco de 32 preguntas por capítulo + tabla de referencia Hogar/Persona | Bloque A y refuerzo |
 | C | Tres casos de estudio: hogar offline · ficha vigente (APK + panel) · alta manual e incidencia | Práctica guiada |
 | D | Plantilla de documentación de la experiencia (6 secciones) | Cierre de cada sesión |
-| E | Revisión del Manual de Usuario — 9 hallazgos verificados | Antes de la Sesión 1 |
+| E | El Manual de Uso: dónde se descarga, qué cubre y quién lo revisó | Antes de la Sesión 1 |
 | F | Encuesta de calidad (10 ítems Likert) + 4 preguntas abiertas | 11:15 a.m. |
 | G | Especificación de las 7 piezas gráficas | Antes de convocar |
 | H | Verificación de dispositivos y credenciales — formato con los 30 participantes | 72 horas antes |
@@ -80,6 +80,15 @@ Todo el contenido está anclado al sistema real: instrumento territorial **V8**
   **Nixon Alonso Duarte Acosta** aparece con nombre completo.
 - **El Anexo A ya no imprime el cuestionario ni la clave.** Conserva la escala de
   calificación y cómo se lee el resultado.
+- **El Anexo E dejó de ser la bitácora de la revisión del manual.** Tenía una tabla de diez
+  hallazgos —cuatro abiertos— y una lista de «qué falta», en un documento que circula entre
+  los treinta enlaces antes de la jornada: le anunciaba al participante todo lo que su
+  material no cubre, y encima pedía publicar un manual que ya estaba publicado. Ahora dice
+  dónde se descarga el manual, qué cubre y que lo revisó Javier Alexander Aguilar Castro
+  contra la aplicación en producción. El seguimiento de hallazgos vive en el repositorio,
+  que es donde se trabaja.
+- **El Anexo G acredita las piezas gráficas a José Antonio Márquez Méndez**, que fue quien
+  las hizo.
 - **Dos preguntas corregidas** en el pre/post-test (ver abajo).
 
 ## El cuestionario en línea

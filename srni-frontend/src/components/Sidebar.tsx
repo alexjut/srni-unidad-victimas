@@ -17,7 +17,13 @@ export const NAV_ITEMS = [
   // cualquier otra: la primera versión se servía desde Django y se veía como
   // otra aplicación —sin header, sin menú, sin footer—, así que quien la abría
   // perdía la navegación entera.
-  { to: '/autorizaciones', icon: FileCheck, label: 'Autorizaciones',
+  // «Excepciones de vigencia» y no «Autorizaciones»: desde el 11-sep-2026 el
+  // control está retirado y nadie autoriza nada, así que un menú que invita a
+  // autorizar manda a hacer algo que el servidor rechaza. El nombre nuevo es
+  // cierto en los dos regímenes —se autoriza, o se consulta lo autorizado— y la
+  // pantalla explica en cuál está. El histórico tiene que seguir alcanzable:
+  // es la evidencia de lo que se otorgó bajo la regla anterior.
+  { to: '/autorizaciones', icon: FileCheck, label: 'Excepciones de vigencia',
     autorizadorOnly: true },
   // Punto de control del retiro de la vigencia (11-sep-2026). Con el bloqueo
   // retirado, este registro es lo unico que puede responder cuantas

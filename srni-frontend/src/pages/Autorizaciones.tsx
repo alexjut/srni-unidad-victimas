@@ -123,6 +123,18 @@ export default function AutorizacionesPage() {
     return p.origen === 'UNIVERSO' ? `u:${p.universo_id}` : `p:${p.id}`;
   }
 
+  /**
+   * ¿La regla de los dos años dejó de existir?
+   *
+   * Lo dice el servidor en la respuesta de la búsqueda. Se lee con `=== false`
+   * para que la ausencia del campo —un backend anterior— signifique «el control
+   * sigue activo», que es el comportamiento histórico y el que no sorprende.
+   *
+   * Mientras nadie haya buscado todavía no se sabe, y no pasa nada: el bloque de
+   * autorizar solo aparece cuando hay resultados.
+   */
+  const controlRetirado = resultado?.control_vigencia_activo === false;
+
   /** Solo tiene sentido marcar a quien tiene ficha vigente y no está habilitada. */
   const autorizables = (resultado?.resultados ?? [])
     .filter((p) => p.requiere_excepcion && !p.habilitacion_vigente);
@@ -389,9 +401,28 @@ export default function AutorizacionesPage() {
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       <PageHeader
-        titulo="Autorizar excepciones de vigencia"
-        subtitulo="Habilita la actualización de una caracterización vigente cuando hay un fallo, tutela o auto que lo ordena."
+        titulo={controlRetirado ? 'Excepciones de vigencia — histórico'
+          : 'Autorizar excepciones de vigencia'}
+        subtitulo={controlRetirado
+          ? 'El control de vigencia está retirado. Esta pantalla queda como consulta de las autorizaciones que se otorgaron antes.'
+          : 'Habilita la actualización de una caracterización vigente cuando hay un fallo, tutela o auto que lo ordena.'}
       />
+
+      {/*
+        Se dice de frente y arriba. Callarlo dejaría a quien coordina buscando por
+        qué «no le funciona» autorizar, cuando lo que pasa es que la regla que
+        autorizaba dejó de existir.
+      */}
+      {controlRetirado && (
+        <Alert variant="info" className="mb-5">
+          <b>El control de vigencia está retirado desde el 11 de septiembre de 2026.</b>{' '}
+          Cualquier persona del padrón se puede caracterizar sin autorización, sin
+          radicado y sin soporte, así que otorgar una excepción no habilitaría nada
+          —el servidor la rechaza—. Lo que se hace en su lugar queda registrado solo:
+          se consulta en <b>Recaracterizaciones</b>. Las autorizaciones de abajo son el
+          histórico del régimen anterior y se conservan como evidencia.
+        </Alert>
+      )}
 
       {/* 1. Buscar */}
       <div className="card shadow-soft mb-5 animate-fade-in-up">
@@ -462,8 +493,8 @@ export default function AutorizacionesPage() {
         </div>
       )}
 
-      {/* 2. Autorizar */}
-      {autorizables.length > 0 && (
+      {/* 2. Autorizar — solo mientras la regla exista */}
+      {!controlRetirado && autorizables.length > 0 && (
         <div className="card shadow-soft mb-5 animate-fade-in-up">
           <h3 className="font-semibold text-gray-800 mb-1">2. Autorizar la excepción</h3>
           <p className="text-sm text-gray-500 mb-4">

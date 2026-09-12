@@ -49,9 +49,17 @@ async function pintar() {
   return container;
 }
 
+/**
+ * Se busca por el ENLACE y no por la etiqueta.
+ *
+ * El 11-sep-2026 la etiqueta pasó de «Autorizaciones» a «Excepciones de vigencia»
+ * —con el control retirado, un menú que invita a autorizar manda a hacer algo que
+ * el servidor rechaza— y estos tres asertos se cayeron sin que nada estuviera mal.
+ * Lo que se quiere verificar es QUIÉN ve la entrada, no cómo se llama hoy.
+ */
 function itemAutorizaciones(container: HTMLElement) {
   return Array.from(container.querySelectorAll('a')).find((a) =>
-    a.textContent?.includes('Autorizaciones'));
+    a.getAttribute('href') === '/autorizaciones');
 }
 
 describe('Sidebar — Autorizaciones', () => {

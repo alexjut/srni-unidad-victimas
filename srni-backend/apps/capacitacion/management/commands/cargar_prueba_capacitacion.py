@@ -40,6 +40,17 @@ PAREJA = 'capacitacion-2026-09'
 #    Se conservaron las que cambian lo que el encuestador HACE en campo y se
 #    dejaron fuera las de dato memorístico o de procedimiento del panel. Las cinco
 #    retiradas siguen en el banco del Anexo B para refuerzo.
+#
+# 3. 11-sep-2026 — de 10 a TRECE, por el retiro del control de vigencia. Dos se
+#    reescribieron (la del plazo y la del trámite de autorización, cuya respuesta
+#    correcta describía un permiso que ya nadie otorga) y se agregaron tres del
+#    régimen nuevo, por el mismo criterio: la familia que ya está registrada, el
+#    retiro de un integrante, y la fecha del hecho.
+#
+#    Trece a media hora de reloj siguen siendo cinco minutos largos, y el bloque
+#    del pre-test tiene quince en la agenda. Preferimos ampliar a recortar
+#    cobertura: las tres nuevas son las únicas que miden lo que el encuestador va
+#    a hacer distinto a partir de la jornada.
 PREGUNTAS = [
     # El proyecto no reparte códigos propios: cada persona entra con el usuario que
     # ya tiene en la entidad. La versión anterior de esta pregunta daba por correcta
@@ -70,6 +81,46 @@ PREGUNTAS = [
      "soporte: la persona se caracteriza cuando la operación lo necesite. El sistema "
      "registra solo, al cerrar la encuesta, que la actualización se hizo sobre una ficha "
      "que aún estaba vigente; el encuestador no interviene en eso ni debe hacer nada más."),
+
+    # Las tres siguientes son del régimen que entró el 11-sep-2026, y entran por
+    # el mismo criterio con el que se eligieron las demás: cambian lo que el
+    # encuestador HACE en campo. Equivocarse en cualquiera de ellas tiene
+    # consecuencia sobre el dato, no sobre el examen:
+    #   · recapturar a la familia duplica a cada persona del hogar;
+    #   · borrar en vez de retirar altera una caracterización ya entregada;
+    #   · poner la fecha de hoy hace decir al sistema que la persona pertenecía
+    #     al hogar cuando ya no era cierto.
+    ("Al actualizar la caracterización de una familia que ya estaba registrada, el "
+     "hogar aparece con los integrantes que otro encuestador capturó antes. ¿Qué hace "
+     "con ellos?",
+     ["Los captura otra vez, para asegurarse de que los datos estén frescos",
+      "Crea un hogar nuevo para no mezclar la información",
+      "Los deja como están y solo agrega o retira lo que cambió",
+      "Los borra y vuelve a armar el hogar desde cero"], "C",
+     "Se dejan. Volver a capturarlos deja a cada persona DOS veces en el hogar —el "
+     "sistema no lo impide— y después hay que depurarlo a mano. El hogar es de la "
+     "familia, no de quien lo creó."),
+
+    ("Una señora del hogar falleció y usted está actualizando la caracterización. ¿Qué "
+     "hace en la aplicación?",
+     ["La borra del hogar",
+      "La deja como está y lo anota en observaciones",
+      "Reporta el caso a soporte para que la quiten",
+      "La retira del hogar, indicando el motivo y la fecha"], "D",
+     "Se usa «Retirar del hogar». Retirar NO es borrar: la persona sigue registrada y "
+     "queda anotado que desde esa fecha ya no pertenece al hogar, así que la "
+     "caracterización anterior —donde sí estaba— sigue siendo válida. Borrar a alguien "
+     "ya reportado cambiaría un dato que la entidad ya entregó, y el sistema lo impide."),
+
+    ("Al retirar del hogar a una persona que falleció en marzo, y usted se está "
+     "enterando hoy, la fecha que registra es:",
+     ["La de hoy, que es cuando usted lo registra",
+      "La de marzo, cuando ocurrió el hecho",
+      "La de la caracterización anterior",
+      "No se pide fecha"], "B",
+     "La del hecho: marzo. Es la fecha que permite saber que en la caracterización "
+     "anterior la persona sí pertenecía al hogar. Con la de hoy, el sistema diría que "
+     "pertenecía hasta ahora, y eso es falso. Pregúntesela a la familia."),
 
     ("La información que permite trabajar sin señal se descarga al teléfono:",
      ["Cada vez que se abre un capítulo nuevo del instrumento",

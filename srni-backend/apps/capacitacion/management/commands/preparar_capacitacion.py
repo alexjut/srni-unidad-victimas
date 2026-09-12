@@ -22,10 +22,14 @@ convención: **todo documento de práctica empieza por 999**. Lo que empieza por
 QUÉ CREA
 ──────────────────────────────────────────────────────────────────────────────
 **Cuentas.** Una por participante, con perfil `COORDINADOR`. Es el único perfil
-que cubre la jornada entera: caracteriza en la aplicación (Bloque A, casos 1 y
-3), autoriza excepciones (caso 2) y ve supervisión, reportes y auditoría
-(Bloque B). Con `ENCUESTADOR` el Bloque B se les ve a medias y el caso 2 no lo
-pueden practicar.
+que cubre la jornada entera: caracteriza en la aplicación (Bloque A, los tres
+casos) y ve supervisión, reportes, auditoría y **recaracterizaciones** (Bloque B).
+Con `ENCUESTADOR` el Bloque B se les ve a medias.
+
+Desde el 11-sep-2026 la razón cambió pero la conclusión no: antes hacía falta
+`autorizar_excepciones` para el Caso 2 y ahora hace falta `ver_reportes` para
+llegar al punto de control, que es donde el Caso 2 termina. `COORDINADOR` tiene
+los dos.
 
 El `codigo_usuario` sigue la convención del sistema —iniciales de los nombres +
 primer apellido + inicial del segundo—, la misma con la que se generaron las
@@ -36,8 +40,8 @@ código con el que va a entrar en campo.
 **Personas de práctica.** Cinco por participante, numeradas con su índice, de
 modo que dos participantes nunca se pisen el hogar:
 
-    999NN00001  ficha vigente  → CASO 2, la que hay que autorizar
-    999NN00002  ficha vigente  → miembro del mismo hogar
+    999NN00001  ficha vigente  → CASO 2, la que se recaracteriza sin permiso
+    999NN00002  ficha vigente  → CASO 2, el integrante que se RETIRA del hogar
     999NN00003  sin ficha      → CASO 1, la señora que recibe
     999NN00004  sin ficha      → CASO 1, hijo de 14 años
     999NN00005  sin ficha      → CASO 1, madre de 71 años
@@ -46,17 +50,30 @@ modo que dos participantes nunca se pisen el hogar:
 El `999NN00009` **no existe a propósito**: el caso 3 es justamente la persona
 que no aparece en la búsqueda y hay que dar de alta. Crearlo arruinaría el caso.
 
-**El hogar bloqueado.** Para que el caso 2 sea real, la persona `…0001` tiene
-que estar de verdad bloqueada por vigencia, no tener un letrero que lo diga. Se
-le crea hogar, miembros y una sesión COMPLETADA, y se le fecha la última
-caracterización **ocho meses atrás**, que es exactamente el enunciado del caso.
+**El hogar ya caracterizado.** Para que el caso 2 sea real, la persona `…0001`
+tiene que tener de verdad una caracterización vigente y una familia ya
+registrada, no un letrero que lo diga. Se le crea hogar, dos miembros y una
+sesión COMPLETADA, y se le fecha la última caracterización **ocho meses atrás**,
+que es el enunciado literal del caso.
+
+Ese escenario sirve igual antes y después del 11-sep-2026, y por eso no se tocó:
+lo que cambió es qué se hace con él. Antes se autorizaba una excepción; ahora se
+continúa sin pedir permiso, se comprueba que la familia aparezca sin recapturarla,
+y se retira al integrante `…0002` con la fecha del hecho.
 
 ──────────────────────────────────────────────────────────────────────────────
 LO QUE NO HACE
 ──────────────────────────────────────────────────────────────────────────────
-**No crea la excepción de vigencia.** Eso es lo que se va a practicar a mano
-desde el panel. Si quedó una VIGENTE de una corrida anterior, lo avisa: esa
-persona aparecería habilitada de entrada y el caso 2 no se vería.
+**No crea excepciones de vigencia, y con el control retirado ya no se pueden
+crear**: el servidor rechaza el POST porque otorgar un permiso que no habilita
+nada es peor que no tener la pantalla. Si quedó alguna VIGENTE de una corrida
+anterior lo sigue avisando, pero ya no estorba al caso: hoy la persona aparece
+habilitada de todos modos.
+
+**No deja a nadie retirado del hogar.** El retiro se practica a mano, y el banco
+de pruebas (`scripts/qa/probar_casos_uso_capacitacion.py`) reincorpora al
+terminar. Si al preparar una jornada `…0002` aparece retirado de la anterior,
+hay que reincorporarlo o el participante no tendrá a quién retirar.
 
 **No toca ninguna víctima real.** Todo lo que escribe empieza por 999.
 
@@ -447,10 +464,15 @@ class Command(BaseCommand):
         persona(4, 'JUAN', 'PRACTICA', 'M', hace_anios(14), con_ficha=False)
         persona(5, 'CARMEN', 'PRACTICA', 'F', hace_anios(71), con_ficha=False)
 
-        # El hogar ya caracterizado que bloquea a ANA. `creado_por=usuario` a
+        # El hogar que ANA ya tiene, con su familia. `creado_por=usuario` a
         # propósito: la búsqueda solo adjunta como `hogar_activo` un hogar del
-        # propio usuario, así que si lo creara otro, el participante no vería su
-        # caso 2 completo.
+        # propio usuario, así que si lo creara otro, el participante no vería el
+        # atajo «Ver hogar registrado» y su caso 2 empezaría por el camino largo.
+        #
+        # El caso del hogar conformado por OTRO encuestador —que desde el
+        # 11-sep-2026 también funciona— se demuestra una vez en plenaria con dos
+        # cuentas, no se le pone a cada participante: si esa ruta fallara, 37
+        # personas quedarían trabadas a la vez en lugar de una demostración.
         hogar = Hogar.objects.filter(autorizado=vigente_1, creado_por=usuario).first()
         if hogar is None:
             hogar = Hogar.objects.create(

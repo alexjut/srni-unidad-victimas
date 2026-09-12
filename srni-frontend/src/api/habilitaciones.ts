@@ -80,6 +80,20 @@ export interface ResultadoBusqueda {
   resultados: PersonaBuscada[];
   /** Documentos que no están en el padrón — hay que mostrarlos, no callarlos. */
   sin_coincidencia: string[];
+  /**
+   * ¿Sigue en pie la regla de los dos años?
+   *
+   * `false` desde el 11-sep-2026: el control se retiró, cualquier persona del
+   * padrón se caracteriza sin autorización, y **otorgarla no habilita nada**. El
+   * servidor rechaza el POST con 409; esta bandera existe para no ofrecer el botón
+   * en primer lugar, porque un botón que responde 409 le hace perder el tiempo a
+   * quien coordina y parece una falla.
+   *
+   * Opcional: un panel nuevo puede estar hablando con un backend anterior que no
+   * la manda. Sin ella se asume que el control sigue activo, que es el
+   * comportamiento histórico.
+   */
+  control_vigencia_activo?: boolean;
 }
 
 export interface ResultadoLote {

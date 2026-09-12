@@ -58,6 +58,29 @@ _GENERO_UNIVERSO = {
 
 logger = logging.getLogger(__name__)
 
+#: Lo que se responde a quien intenta autorizar con el control ya retirado. Se
+#: redacta completo porque lo va a leer quien coordina, en pantalla, y tiene que
+#: entender en una frase que no le falta un permiso: le falta enterarse de que la
+#: regla no existe.
+MSG_CONTROL_RETIRADO = (
+    'El control de vigencia está retirado: cualquier persona del padrón se puede '
+    'caracterizar sin autorización, así que otorgarla no habilitaría nada. Este '
+    'módulo queda como consulta del histórico. Si la regla se repone, volverá a '
+    'aceptar autorizaciones.'
+)
+
+
+def _control_vigencia_activo() -> bool:
+    """
+    ¿Sigue en pie la regla de los dos años? (`settings.VIGENCIA`).
+
+    Se delega en el repositorio de víctimas para que la condición viva en un solo
+    lugar, igual que en `hogares/views.py` y `encuestas/views.py`.
+    """
+    from apps.victimas.repository.base import _bloqueo_vigencia_activo
+
+    return _bloqueo_vigencia_activo()
+
 
 # ---------------------------------------------------------------------------
 # Serializers
@@ -236,6 +259,17 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def create(self, request, *args, **kwargs):
         from apps.victimas.models import Victima
+
+        # Otorgar un permiso que no habilita nada es peor que no tener la pantalla:
+        # quien coordina dedicaría su tiempo a autorizar casos creyendo que
+        # desbloquea a alguien, y el encuestador no vería ninguna diferencia porque
+        # ya podía caracterizar. Nadie se enteraría del malentendido.
+        #
+        # Se responde 409 y no 403: no es que a esta persona le falte un permiso,
+        # es que la operación entera dejó de tener sentido.
+        if not _control_vigencia_activo():
+            return Response({'detail': MSG_CONTROL_RETIRADO},
+                            status=status.HTTP_409_CONFLICT)
 
         serializer = CrearHabilitacionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -434,6 +468,13 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
         Lo que no se pudo hacer vuelve en `omitidas`, con el motivo de cada una.
         """
         from apps.victimas.models import Victima
+
+        # El panel autoriza SIEMPRE por acá, incluso una sola persona. Sin esta
+        # guarda, el bloqueo de `create` no serviría de nada: quedaría cerrada la
+        # puerta que nadie usa y abierta la que sí.
+        if not _control_vigencia_activo():
+            return Response({'detail': MSG_CONTROL_RETIRADO},
+                            status=status.HTTP_409_CONFLICT)
 
         serializer = CrearHabilitacionLoteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -711,6 +752,11 @@ class HabilitacionViewSet(viewsets.ReadOnlyModelViewSet):
             'total': len(todos),
             'resultados': todos,
             'sin_coincidencia': [d for d in documentos if d not in encontrados],
+            # El estado de la regla viaja con la respuesta, y no en un endpoint
+            # aparte, porque es justo acá donde el panel decide si ofrece el botón
+            # de autorizar. Un botón que existe y responde 409 le hace perder el
+            # tiempo a quien coordina y parece una falla del sistema.
+            'control_vigencia_activo': _control_vigencia_activo(),
         })
 
     @staticmethod

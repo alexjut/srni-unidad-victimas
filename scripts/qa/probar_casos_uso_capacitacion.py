@@ -14,11 +14,28 @@ cada corrida deja el escenario como lo encontró.
 ──────────────────────────────────────────────────────────────────────────────
 POR QUÉ LIMPIA LO QUE CREA
 ──────────────────────────────────────────────────────────────────────────────
-El Caso 2 autoriza una excepción de vigencia. Si la deja puesta, la persona
-queda habilitada y **la siguiente corrida ya no ve el bloqueo**: la prueba
-pasaría sin haber probado nada, que es la peor clase de prueba verde. Al
-terminar cada caso 2 la anula, igual que haría coordinación si se hubiera
-autorizado por error.
+El Caso 2 retira del hogar a un integrante. Si lo deja retirado, la siguiente
+corrida ya no tiene a quién retirar y el paso pasaría sin haber probado nada
+—la peor clase de prueba verde—. Al terminar lo reincorpora, igual que haría un
+encuestador que se equivocó de fila.
+
+**Lo que NO hace: cerrar una caracterización.** Sería el único modo de ver
+nacer una fila del libro de recaracterizaciones, pero cerrar es irreversible:
+escribe la fecha de caracterización en el padrón y no se puede devolver. Este
+banco tiene que poder correrse tres veces seguidas. Que la fila se escriba lo
+cubren las pruebas del backend; que la consulta responda en producción se
+verifica acá, que es lo que sí se puede comprobar sin dejar rastro.
+
+──────────────────────────────────────────────────────────────────────────────
+11-SEP-2026 — EL CASO 2 CAMBIÓ DE RAÍZ
+──────────────────────────────────────────────────────────────────────────────
+Se retiró el control de vigencia. El Caso 2 era «bloquea, coordinación autoriza,
+se desbloquea»; ahora es «no bloquea, la familia que ya estaba aparece, y al que
+ya no pertenece al hogar se lo retira».
+
+La versión anterior de este banco afirmaba `motivo == FICHA_VIGENTE` en su primer
+paso. Contra producción eso ahora es falso, así que fallaba de entrada y los pasos
+siguientes ni se ejecutaban.
 
 ──────────────────────────────────────────────────────────────────────────────
 DOS LÍMITES DEL SERVIDOR QUE HAY QUE RESPETAR
@@ -54,10 +71,17 @@ ESPERA_INGRESO = 13
 #: `QA-` para que una autorización de prueba se distinga de una real en la
 #: auditoría: la tabla no se limpia, y dentro de un mes nadie va a recordar
 #: cuáles salieron de acá.
-RUTA_EXCEPCION = 'ACCIONES_CONSTITUCIONALES'
-RADICADO_QA = 'QA-CAPACITACION-{codigo}'
-MOTIVO_QA = ('Prueba automatizada del Caso 2 del Anexo C. Se anula al terminar. '
-             'No corresponde a un soporte real.')
+#: La fecha del HECHO del retiro, y no la de hoy: es exactamente la distinción
+#: que el caso tiene que enseñar. Fija —no calculada— para que dos corridas del
+#: mismo día produzcan el mismo escenario y el aserto sea exacto.
+#:
+#: `RUTA_EXCEPCION` y `RADICADO_QA` vivían acá hasta el 11-sep-2026: eran del
+#: flujo de autorización, que dejó de existir. Se quitaron en vez de dejarlas
+#: sin uso, porque una constante huérfana hace buscar dónde se usa.
+FECHA_RETIRO_QA = '2026-03-15'
+MOTIVO_QA = ('Prueba automatizada del Caso 2 del Anexo C: se reincorpora al '
+             'terminar. Si esta observación quedó en el sistema, la corrida se '
+             'interrumpió y hay que reincorporar al integrante a mano.')
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -216,89 +240,108 @@ def caso_1(bit, token, fila):
 
 
 def caso_2(bit, token, fila):
-    """Ficha vigente: bloquea, coordinación autoriza, se desbloquea, se anula."""
+    """
+    Persona ya caracterizada, y una familia que cambió.
+
+    Lo que se verifica, en el orden en que lo vive el encuestador:
+
+      1. que la ficha vigente **no lo detenga**, y que quede marcada para el libro;
+      2. que el hogar que ya existía vuelva **con su familia**, no vacío;
+      3. que se pueda **retirar** a quien ya no pertenece, con la fecha del hecho;
+      4. que retirar **no borre** la fila;
+      5. que la consulta de supervisión responda;
+      6. y que el escenario quede como estaba.
+    """
     codigo, doc = fila['codigo'], fila['doc_caso2']
 
-    # 1 — debe estar bloqueada, y el motivo tiene que ser el correcto: es lo que
-    #     la aplicación usa para ofrecer «solicitar excepción» en vez de pintar
-    #     un error sin salida.
+    # 1 — ya no bloquea, y el motivo importa: `ELEGIBLE_SIN_CONTROL_VIGENCIA` es
+    #     lo que hace que al cerrar la encuesta se escriba la fila del libro. Con
+    #     `ELEGIBLE` a secas la persona se caracterizaría igual y **no quedaría
+    #     registrada**, que es el modo de falla silencioso que más importa acá.
     r = consultar(token, doc)
     d = r.datos or {}
     v = d.get('victima') or {}
-    bloqueada = (r.codigo == 200 and d.get('encontrado')
-                 and not v.get('habilitado_para_caracterizacion')
-                 and d.get('motivo') == 'FICHA_VIGENTE')
-    bit.anotar(codigo, 'caso 2', f'{doc} bloqueada por ficha vigente', bloqueada,
+    ok = (r.codigo == 200 and d.get('encontrado')
+          and v.get('habilitado_para_caracterizacion')
+          and d.get('motivo') == 'ELEGIBLE_SIN_CONTROL_VIGENCIA')
+    bit.anotar(codigo, 'caso 2', f'{doc} ya no la detiene, y queda marcada', ok,
                f'HTTP {r.codigo} motivo={d.get("motivo")!r} '
-               f'disponible_desde={d.get("disponible_desde")}')
+               f'habilitado={v.get("habilitado_para_caracterizacion")} '
+               f'vigente_hasta={d.get("disponible_desde")}')
 
-    # 2 — el identificador para autorizar. Es la única llamada al endpoint del
-    #     panel, que sí está limitado a 30 por hora.
-    r = pedir('POST', '/api/victimas/buscar/', token=token,
-              cuerpo={'tipo_documento_codigo': 'CC', 'numero_documento': doc})
-    victima_id = (r.datos or {}).get('id')
-    if not bit.anotar(codigo, 'caso 2', 'panel encuentra a la persona',
-                      bool(victima_id), f'HTTP {r.codigo} id={victima_id}'):
-        return
-
-    # 3 — coordinación autoriza
-    r = pedir('POST', '/api/habilitaciones/', token=token, cuerpo={
-        'victima_id': victima_id, 'ruta': RUTA_EXCEPCION,
-        'radicado': RADICADO_QA.format(codigo=codigo), 'observacion': MOTIVO_QA})
-    hab_id = (r.datos or {}).get('id')
-    if not bit.anotar(codigo, 'caso 2', 'coordinación registra la autorización',
-                      r.codigo == 201 and bool(hab_id),
-                      f'HTTP {r.codigo} {_detalle(r)}'):
-        return
-
-    # 4 — y el celular tiene que verlo. Este es el paso que importa: hubo un
-    #     defecto en que se autorizaba en el panel y la aplicación seguía
-    #     diciendo «No habilitado».
-    r = consultar(token, doc, ruta=RUTA_EXCEPCION)
-    d = r.datos or {}
-    v = d.get('victima') or {}
-    ok = (r.codigo == 200 and v.get('habilitado_para_caracterizacion')
-          and d.get('motivo') == 'ELEGIBLE_POR_EXCEPCION')
-    bit.anotar(codigo, 'caso 2', 'la aplicación ya la deja caracterizar', ok,
-               f'HTTP {r.codigo} motivo={d.get("motivo")!r} '
-               f'habilitado={v.get("habilitado_para_caracterizacion")}')
-
-    # 5 — y tiene que poder CONTINUAR. Autorizar y que después el hogar no deje
-    #     avanzar es el modo de falla que se reportó en campo el 11-sep: la
-    #     excepción levanta la vigencia y no dice nada sobre el hogar, que tiene
-    #     su propia regla («una víctima, un hogar no archivado»). Si el hogar es
-    #     del propio encuestador el servidor lo reutiliza y responde 200; si es
-    #     de otro, responde 409 y el encuestador queda sin salida.
+    # 2 — el hogar que la persona ya tenía, CON su familia. Si volviera con un
+    #     solo integrante, el encuestador recapturaría al resto y cada persona
+    #     quedaría dos veces en el hogar.
     r = pedir('GET', f'/api/hogares/{fila["hogar"]}/', token=token)
-    municipio = (r.datos or {}).get('municipio')
+    hogar = r.datos or {}
+    miembros = hogar.get('miembros') or []
+    municipio = hogar.get('municipio')
     if isinstance(municipio, dict):
         municipio = municipio.get('id')
-    if not bit.anotar(codigo, 'caso 2', 'abre el hogar que ya tenía la persona',
-                      r.codigo == 200, f'HTTP {r.codigo}'):
+    if not bit.anotar(codigo, 'caso 2', 'abre el hogar que ya tenía, con su familia',
+                      r.codigo == 200 and len(miembros) >= 2,
+                      f'HTTP {r.codigo} integrantes={len(miembros)}'):
         return
 
+    # 3 — y conformar tiene que devolver ESE hogar, no crear otro ni responder 409.
     r = pedir('POST', '/api/hogares/', token=token,
-              cuerpo={'autorizado': victima_id, 'municipio': municipio})
-    hogar_id = (r.datos or {}).get('id')
-    bit.anotar(codigo, 'caso 2', 'puede continuar sobre el hogar (no 409)',
-               r.codigo in (200, 201) and hogar_id == fila['hogar'],
-               f'HTTP {r.codigo} id={hogar_id} '
-               f'{"— 409: autorizada pero bloqueada por el hogar" if r.codigo == 409 else ""}'
+              cuerpo={'autorizado': (hogar.get('autorizado') or {}).get('id')
+                      or fila.get('victima_caso2'),
+                      'municipio': municipio})
+    devuelto = (r.datos or {}).get('id')
+    bit.anotar(codigo, 'caso 2', 'conformar devuelve el hogar existente (no 409)',
+               r.codigo in (200, 201) and devuelto == fila['hogar'],
+               f'HTTP {r.codigo} id={devuelto}'
+               f'{" — 409: el hogar sigue bloqueando" if r.codigo == 409 else ""}'
                f'{_detalle(r) if r.codigo >= 400 else ""}')
 
-    # 6 — devolver el escenario a como estaba
-    r = pedir('POST', f'/api/habilitaciones/{hab_id}/anular/', token=token,
-              cuerpo={'motivo': 'Fin de la prueba automatizada: se restablece el bloqueo.'})
-    bit.anotar(codigo, 'caso 2', 'se anula y vuelve a quedar bloqueada',
-               r.codigo == 200, f'HTTP {r.codigo} {_detalle(r)}')
+    # 4 — retirar a quien ya no pertenece. Se elige un integrante que NO sea el
+    #     autorizado: al titular no se le puede retirar, y probar sobre él mediría
+    #     la guarda equivocada.
+    otro = next((m for m in miembros if not m.get('es_autorizado')), None)
+    if not bit.anotar(codigo, 'caso 2', 'hay un integrante no titular para retirar',
+                      otro is not None, f'integrantes={len(miembros)}'):
+        return
 
-    r = consultar(token, doc)
+    mid = otro['id']
+    r = pedir('POST', f'/api/hogares/{fila["hogar"]}/miembros/{mid}/retirar/',
+              token=token, cuerpo={'motivo': 'FALLECIMIENTO',
+                                   'fecha': FECHA_RETIRO_QA,
+                                   'observacion': MOTIVO_QA})
+    retirado = (r.datos or {}).get('retirado_en')
+    if not bit.anotar(codigo, 'caso 2', 'retira del hogar con la fecha del hecho',
+                      r.codigo == 200 and retirado == FECHA_RETIRO_QA,
+                      f'HTTP {r.codigo} retirado_en={retirado!r} {_detalle(r)}'):
+        return
+
+    # 5 — retirar NO es borrar. La fila tiene que seguir ahí: las respuestas de la
+    #     caracterización anterior apuntan a ella.
+    r = pedir('GET', f'/api/hogares/{fila["hogar"]}/miembros/', token=token)
+    lista = r.datos if isinstance(r.datos, list) else []
+    sigue = next((m for m in lista if m.get('id') == mid), None)
+    bit.anotar(codigo, 'caso 2', 'sigue en el hogar, marcado como retirado',
+               sigue is not None and sigue.get('retirado_en') == FECHA_RETIRO_QA,
+               f'HTTP {r.codigo} integrantes={len(lista)} '
+               f'motivo={(sigue or {}).get("motivo_retiro_display")!r}')
+
+    # 6 — el punto de control tiene que responder. No se comprueba que haya filas:
+    #     este banco no cierra encuestas, así que puede estar legítimamente vacío.
+    #     Lo que se verifica es que la consulta EXISTA y el perfil la alcance —si
+    #     devolviera 403 o 404, el libro no se podría mirar el día que haga falta.
+    r = pedir('GET', '/api/recaracterizaciones/resumen/', token=token)
     d = r.datos or {}
-    v = d.get('victima') or {}
+    bit.anotar(codigo, 'caso 2', 'la consulta de supervisión responde',
+               r.codigo == 200 and 'total' in d,
+               f'HTTP {r.codigo} total={d.get("total")} '
+               f'personas={d.get("personas_distintas")}')
+
+    # 7 — devolver el escenario a como estaba, o la próxima corrida no tiene a
+    #     quién retirar y este caso pasaría sin probar nada.
+    r = pedir('POST', f'/api/hogares/{fila["hogar"]}/miembros/{mid}/reincorporar/',
+              token=token, cuerpo={})
     bit.anotar(codigo, 'caso 2', 'escenario listo para la próxima corrida',
-               not v.get('habilitado_para_caracterizacion')
-               and d.get('motivo') == 'FICHA_VIGENTE',
-               f'motivo={d.get("motivo")!r}')
+               r.codigo == 200 and (r.datos or {}).get('retirado_en') is None,
+               f'HTTP {r.codigo} {_detalle(r)}')
 
 
 def caso_3(bit, token, fila):
@@ -320,7 +363,14 @@ def bloque_b(bit, token, fila):
     codigo = fila['codigo']
     for etiqueta, ruta in (('hogares', '/api/hogares/'),
                            ('encuestas', '/api/encuestas/'),
-                           ('autorizaciones', '/api/habilitaciones/'),
+                           # Queda como consulta del histórico: con el control de
+                           # vigencia retirado ya nadie autoriza, pero lo otorgado
+                           # antes es evidencia y hay que poder verlo.
+                           ('histórico de autorizaciones', '/api/habilitaciones/'),
+                           # El punto de control que lo reemplaza, y que es lo
+                           # ÚNICO que puede responder cuántas recaracterizaciones
+                           # se hicieron. Si no abre, el libro no se puede mirar.
+                           ('recaracterizaciones', '/api/recaracterizaciones/'),
                            ('reportes de producción', '/api/reportes/produccion/'),
                            ('auditoría', '/api/auditoria/logs/')):
         r = pedir('GET', ruta, token=token)
