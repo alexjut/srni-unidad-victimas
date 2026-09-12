@@ -79,6 +79,19 @@ x-backend-env: &backend_env
   # está apagado: sería llenar la cola de no-ops cada cuarto de hora.
   ORACLE_SYNC_AUTOMATICA: ${ORACLE_SYNC_AUTOMATICA:-False}
   ORACLE_SYNC_DESTINO: ${ORACLE_SYNC_DESTINO:-}
+  # ── Control de vigencia de la caracterización (Manual de Usuario 5.1.1) ──────
+  # True = la regla de los dos años está en pie. False = retirada: cualquier
+  # persona del padrón se caracteriza sin autorización, radicado ni soporte.
+  #
+  # Va declarada acá por la MISMA razón que MOVIL_VERSION y las ORACLE_PROD_*, y
+  # ya costó una vuelta el 11-sep-2026: `--env-file` solo sirve para interpolar
+  # dentro de este archivo, NO inyecta nada en el contenedor. Con la variable en
+  # el `.env` pero ausente de esta lista, el `.env` decía False y Django seguía
+  # viendo True — el control quedaba en pie creyendo que se había retirado.
+  #
+  # El default es True para que desplegar no retire por su cuenta un control del
+  # Manual: retirarlo es una decisión del proceso, con fecha y responsable.
+  VIGENCIA_BLOQUEO_ACTIVO: ${VIGENCIA_BLOQUEO_ACTIVO:-True}
   # Dónde aterriza el padrón SQLite descargable. Va sobre el volumen cz_media, que
   # comparten el generador (cz_celery_padron) y el que lo sirve (cz_backend).
   MEDIA_ROOT: /app/media

@@ -68,6 +68,19 @@ if ! ssh -i "$KEY" -o ConnectTimeout=12 -o BatchMode=yes "$HOST" 'echo ok' >/dev
   exit 1
 fi
 
+# El valor que ve el PROCESO, como texto ('True' / 'False' / vacío si no se pudo).
+#
+# Se pregunta al proceso y no al archivo porque son dos cosas distintas y la
+# diferencia es justo la que engaña: el `.env` puede decir False y el contenedor
+# seguir viendo True —si la variable no está declarada en el compose, o si nadie
+# recreó los contenedores— y el control quedaría en pie creyendo que se retiró.
+valor_en_django() {
+  ssh -i "$KEY" "$HOST" "docker exec cz_backend python manage.py shell -c \"
+from django.conf import settings
+print('VALOR=' + str(settings.VIGENCIA['BLOQUEO_ACTIVO']))
+\"" 2>/dev/null | grep -oE 'VALOR=(True|False)' | head -1 | cut -d= -f2
+}
+
 mostrar_estado() {
   echo ">> Valor en el .env del servidor:"
   ssh -i "$KEY" "$HOST" "grep -E '^${VAR}=' $RAIZ/.env || echo '  (no está en el .env → vale True, el default del código)'"
@@ -124,6 +137,38 @@ if [ "$CODIGO" != "200" ]; then
   echo "   ⚠️  Se esperaba 200. Revisar: ssh -i $KEY $HOST 'docker logs --tail 50 cz_backend'" >&2
   echo "   Si es 502, confirmar que el .env sigue completo:" >&2
   echo "     ssh -i $KEY $HOST 'grep -c . $RAIZ/.env; diff $RAIZ/.env $RAIZ/.env.antes-de-${ACCION}-vigencia'" >&2
+  exit 1
+fi
+
+# ── La comprobación que faltaba ───────────────────────────────────────────────
+#
+# Escribir el `.env` y recrear los contenedores NO garantiza que el valor llegue:
+# el compose tiene una lista EXPLÍCITA de variables, y una que no esté ahí nunca
+# entra al contenedor. Pasó el 11-sep-2026: el `.env` decía False, Django seguía
+# viendo True, y este script imprimió «RETIRADO ✅».
+#
+# Un script que declara éxito sin comprobarlo es peor que uno que falla: se iba a
+# dictar una capacitación entera creyendo que el control estaba retirado.
+VISTO="$(valor_en_django)"
+ESPERADO="$VALOR"
+if [ -z "$VISTO" ]; then
+  echo "" >&2
+  echo "⚠️  NO SE PUDO COMPROBAR el valor que ve Django." >&2
+  echo "    El .env quedó escrito, pero no se confirmó que surtiera efecto." >&2
+  echo "    Comprobar a mano:  $0 estado" >&2
+  exit 1
+fi
+if [ "$VISTO" != "$ESPERADO" ]; then
+  echo "" >&2
+  echo "❌ EL CAMBIO NO SURTIÓ EFECTO." >&2
+  echo "   .env dice ${VAR}=${ESPERADO}, pero Django sigue viendo ${VISTO}." >&2
+  echo "" >&2
+  echo "   Causa más probable: la variable NO está declarada en el anchor" >&2
+  echo "   'x-backend-env' de infra/deploy/docker-compose.caracterizacion.yml." >&2
+  echo "   \`--env-file\` solo interpola dentro de ese archivo; no inyecta nada" >&2
+  echo "   en el contenedor. Sin la línea \`${VAR}: \\${${VAR}}\`, el .env no sirve." >&2
+  echo "" >&2
+  echo "   Agregarla, subir el compose al servidor y volver a correr este script." >&2
   exit 1
 fi
 
