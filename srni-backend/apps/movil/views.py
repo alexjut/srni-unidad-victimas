@@ -9,7 +9,10 @@ Ambos endpoints son públicos (el encuestador descarga antes de autenticarse).
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import throttle_classes
 from rest_framework.permissions import AllowAny
+
+from apps.autenticacion.throttles import MovilPublicoThrottle
 from rest_framework.response import Response
 
 from apps.auditoria.models import LogAcceso
@@ -56,6 +59,7 @@ def url_descarga(request) -> str:
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([MovilPublicoThrottle])
 def version(request):
     """Última versión publicada de la APK."""
     return Response({
@@ -68,6 +72,7 @@ def version(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([MovilPublicoThrottle])
 def descargar(request):
     """Registra la descarga en auditoría y redirige al archivo servido por Nginx."""
     LogAcceso.registrar(

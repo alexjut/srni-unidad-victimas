@@ -284,10 +284,34 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
+    # ── Topes de peticiones ───────────────────────────────────────────────────
+    #
+    # ⚠️ Los que van por IP se cuentan **por salida a internet, no por persona**.
+    # La entidad entera sale por una sola IP —y detrás del FortiWeb, todas las
+    # territoriales por unas pocas—, así que un tope pensado para un individuo
+    # bloquea a una oficina. Ver `apps/autenticacion/throttles.py`: hasta el
+    # 12-sep-2026 ninguno de los de IP contaba nada, porque el WAF antepone
+    # `IP:puerto` y el puerto cambia en cada petición.
+    #
+    # Al corregir la identidad estos topes empezaron a aplicarse de verdad, así que
+    # se subieron a cifras de ENTIDAD. La defensa contra fuerza bruta no vive acá:
+    # vive en el bloqueo por cuenta de `LoginView` —cinco intentos, quince
+    # minutos—, que se cuenta por código de usuario y no lo afecta la IP compartida.
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/hour',
+        # Catch-all de lo público sin scope propio. 20/hora era por-persona: una
+        # oficina lo agotaba antes del café.
+        'anon': '240/hour',
         'user': '1000/hour',
-        'login':        '5/minute',    # 5 intentos de login por minuto por IP
+        # Techo contra avalancha, no contra adivinar una clave. Una sala de veinte
+        # personas entrando a la vez, con dedos equivocados de por medio, cabe.
+        'login':        '40/minute',
+        # El cuestionario de la capacitación: 37 personas × ~4 peticiones, y el
+        # pre-test y el post-test caen en la misma hora.
+        'prueba_publica': '600/hour',
+        # La consulta de versión que hace cada teléfono al abrir la aplicación.
+        'movil_publico':  '300/hour',
+        # Estos dos van por USUARIO: nunca estuvieron roscos y siguen estrechos,
+        # porque son antienumeración del padrón.
         'busqueda_rni': '30/hour',     # 30 búsquedas RNI por hora por usuario
         'ia_consulta':  '20/hour',     # 20 consultas IA por hora
     },

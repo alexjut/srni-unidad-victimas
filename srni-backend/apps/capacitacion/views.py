@@ -17,6 +17,8 @@ from django.db.models import (Avg, Count, ExpressionWrapper, F,
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from apps.autenticacion.throttles import PruebaPublicaThrottle
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -46,6 +48,7 @@ class PruebaPublicaView(APIView):
     """Entrega el cuestionario, sin las respuestas correctas."""
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [PruebaPublicaThrottle]
 
     def get(self, request, codigo):
         prueba = get_object_or_404(
@@ -62,6 +65,7 @@ class EstadoParticipanteView(APIView):
     """
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [PruebaPublicaThrottle]
 
     def get(self, request, codigo):
         correo = normalizar_correo(request.query_params.get('correo', ''))
@@ -88,6 +92,7 @@ class ResponderPruebaView(APIView):
     """Recibe las respuestas, califica y devuelve el resultado con la retroalimentación."""
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [PruebaPublicaThrottle]
 
     def post(self, request, codigo):
         prueba = get_object_or_404(
