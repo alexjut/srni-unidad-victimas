@@ -5,7 +5,14 @@ Subdirectora encargada: **se retira el bloqueo por ficha vigente**. Cualquier
 persona del padrón puede caracterizarse cuando el encuestador lo necesite, sin
 pedirle permiso a nadie.
 
-**Estado al 11-sep-2026: construido, probado y apagado.** Falta encenderlo.
+**Estado: EN PRODUCCIÓN desde la noche del 11-sep-2026**, verificado contra el
+padrón real. Ver `docs/gestion/estado-2026-09-11-retiro-vigencia.md`.
+
+⚠️ **La variable tiene que estar declarada en el compose, no solo en el `.env`.**
+`--env-file` solo interpola dentro del archivo de compose: no inyecta nada en el
+contenedor. Sin la línea `VIGENCIA_BLOQUEO_ACTIVO: ${VIGENCIA_BLOQUEO_ACTIVO:-True}`
+en el anchor `x-backend-env`, el `.env` dice `False` y Django sigue viendo `True`.
+Ya está declarada; queda anotado porque costó una vuelta.
 
 > **El interruptor nace apagado a propósito.** La regla de los dos años la define
 > el Manual de Usuario §5.1.1, que es documento misional. Retirarla es una
