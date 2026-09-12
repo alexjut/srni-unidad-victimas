@@ -12,7 +12,8 @@ La calificación ocurre siempre en el servidor. El cuestionario que se entrega a
 navegador no lleva la respuesta correcta.
 """
 from django.db import IntegrityError, transaction
-from django.db.models import Avg, Count, Q
+from django.db.models import (Avg, Count, ExpressionWrapper, F,
+                              FloatField, Func, Q)
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -175,11 +176,39 @@ class ResultadosView(APIView):
         if codigo:
             intentos = intentos.filter(prueba__codigo=codigo)
 
+        # ── La nota va SOBRE 10, aunque el cuestionario tenga otro número ─────
+        #
+        # La escala que aprobó la Dirección técnica es sobre 10 —9-10 apropiado,
+        # 7-8 suficiente, 5-6 básico, 0-4 insuficiente— y el criterio de rediseño
+        # del bloque es «ganancia promedio inferior a 2 puntos». Las dos cosas
+        # viven en esa escala.
+        #
+        # El 11-sep-2026 el cuestionario pasó de 10 preguntas a 13, y esto contaba
+        # el puntaje ABSOLUTO contra un umbral fijo de 7. El efecto era doble y
+        # silencioso: 7 de 13 (54 %) pasaba por «habilitado» cuando la escala pide
+        # 70 %, y el promedio mezclaba intentos de 10 con intentos de 13 como si
+        # fueran la misma medida.
+        #
+        # Se normaliza contra `total`, que cada intento guarda. Así la escala
+        # aprobada sigue valiendo si mañana el cuestionario cambia otra vez, y
+        # nadie tiene que acordarse de mover un número en dos sitios.
+        NOTA10 = ExpressionWrapper(
+            F('puntaje') * 10.0 / Func(F('total'), function='NULLIF',
+                                       template='NULLIF(%(expressions)s, 0)'),
+            output_field=FloatField(),
+        )
         resumen = intentos.aggregate(
             presentaron=Count('id'),
-            promedio=Avg('puntaje'),
-            insuficientes=Count('id', filter=Q(puntaje__lt=7)),
+            promedio=Avg(NOTA10),
+            # «No alcanzó Suficiente», que es la barra de «Habilitado para
+            # operar» de la escala. El nombre se conserva por compatibilidad.
+            insuficientes=Count('id', filter=Q(total__gt=0) & Q(
+                puntaje__lt=F('total') * 0.7)),
         )
+        # Se dice en la respuesta sobre qué escala está el promedio: un número sin
+        # unidad es exactamente cómo se llegó a comparar 7 sobre 13 con 7 sobre 10.
+        resumen['escala'] = 10
+        resumen['umbral_habilitado'] = 7
 
         # Ganancia pre → post, emparejando por correo dentro de la misma pareja.
         ganancia = []
@@ -224,6 +253,11 @@ class ResultadosView(APIView):
                 'presentaron': resumen['presentaron'] or 0,
                 'promedio': round(resumen['promedio'] or 0, 2),
                 'insuficientes': resumen['insuficientes'] or 0,
+                # La unidad viaja con el número. Un promedio de «7,7» sin decir
+                # sobre qué está es cómo se llegó a comparar 7 sobre 13 con 7
+                # sobre 10, y el cuestionario ya cambió de tamaño dos veces.
+                'escala': resumen['escala'],
+                'umbral_habilitado': resumen['umbral_habilitado'],
             },
             'intentos': IntentoResumenSerializer(intentos, many=True).data,
             'ganancia': ganancia,

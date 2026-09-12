@@ -1,7 +1,7 @@
 """
 Carga el pre-test y el post-test de la capacitación de septiembre de 2026.
 
-Diez preguntas de selección múltiple, verificadas contra el sistema real: la regla
+Trece preguntas de selección múltiple, verificadas contra el sistema real: la regla
 de vigencia de dos años, quién autoriza la excepción, la precarga de la jornada,
 la cola de sincronización y los niveles hogar y persona.
 
@@ -26,7 +26,7 @@ PAREJA = 'capacitacion-2026-09'
 #
 # 1. La clave va repartida entre las cuatro letras (3 A · 3 B · 2 C · 2 D). En la
 #    primera versión once de quince eran B y ninguna era D: marcar «todo B» daba
-#    11/15 y el instrumento no medía nada. Con diez preguntas, la letra que más se
+#    11/15 y el instrumento no medía nada. Con trece preguntas, la letra que más se
 #    repite da 3/10 — responder a ciegas no aprueba.
 # 2. La opción correcta no puede ser sistemáticamente la más larga ni la única que
 #    «suena a procedimiento». Es la misma fuga por otra vía: en el primer borrador
@@ -36,7 +36,7 @@ PAREJA = 'capacitacion-2026-09'
 # 3. Los rótulos son los que el encuestador ve en pantalla, verificados contra el
 #    código de la aplicación —«Registrar y caracterizar», «✓ Al día»— y no los
 #    nombres internos con que hablamos entre nosotros.
-# 4. Diez preguntas, no quince: la jornada pide un instrumento de cinco minutos.
+# 4. Trece preguntas: quince medían mal, diez dejaron fuera el régimen nuevo.
 #    Se conservaron las que cambian lo que el encuestador HACE en campo y se
 #    dejaron fuera las de dato memorístico o de procedimiento del panel. Las cinco
 #    retiradas siguen en el banco del Anexo B para refuerzo.
@@ -201,7 +201,7 @@ class Command(BaseCommand):
                 defaults={
                     'titulo': f'{etiqueta} — Capacitación SICAV Móvil y Panel de Control',
                     'descripcion': (
-                        'Diez preguntas de selección múltiple, unos cinco minutos. Se responde '
+                        'Trece preguntas de selección múltiple, unos cinco minutos. Se responde '
                         'una sola vez. Al terminar verá su resultado y en qué falló.'),
                     'momento': momento,
                     'pareja': PAREJA,
@@ -212,7 +212,7 @@ class Command(BaseCommand):
                 # La descripción también cambió al pasar de quince preguntas a diez;
                 # sin esto, una prueba ya creada seguiría anunciando el texto viejo.
                 prueba.descripcion = (
-                    'Diez preguntas de selección múltiple, unos cinco minutos. Se responde '
+                    'Trece preguntas de selección múltiple, unos cinco minutos. Se responde '
                     'una sola vez. Al terminar verá su resultado y en qué falló.')
                 prueba.save(update_fields=['descripcion'])
 
