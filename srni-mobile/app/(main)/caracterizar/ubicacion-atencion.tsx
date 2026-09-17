@@ -22,6 +22,7 @@ import { View, StyleSheet, Pressable, Modal, ScrollView, Alert, FlatList } from 
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { encuestasApi } from '../../../src/api/encuestas';
 import {
@@ -130,7 +131,7 @@ function Selector<T extends { id: number; nombre: string }>({
 
 // ── Pantalla ────────────────────────────────────────────────────────────────
 
-export default function UbicacionAtencionScreen() {
+function UbicacionAtencionScreen() {
   const { sesionId, hogarId, instrumentoId, instrumentoCodigo } = useLocalSearchParams<{
     sesionId: string; hogarId: string; instrumentoId?: string; instrumentoCodigo?: string;
   }>();
@@ -485,3 +486,7 @@ const styles = StyleSheet.create({
   },
   btnSecundarioTxt: { ...FONT.caption, color: GOV.azul, fontWeight: '600' },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(UbicacionAtencionScreen, ['sesionId', 'hogarId', 'instrumentoId']);

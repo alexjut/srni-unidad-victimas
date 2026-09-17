@@ -17,6 +17,7 @@ import { View, ScrollView, StyleSheet, Alert, Pressable } from 'react-native';
 import { Text, ActivityIndicator, Modal, Portal, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { remontarPorParams } from '../../../../src/navegacion/remontarPorParams';
 import { hogaresApi, MOTIVOS_RETIRO } from '../../../../src/api/hogares';
 import type { MotivoRetiro } from '../../../../src/api/hogares';
 import { victimasApi } from '../../../../src/api/victimas';
@@ -393,7 +394,7 @@ const seccionStyles = StyleSheet.create({
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
-export default function HogarDetalleScreen() {
+function HogarDetalleScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId: string }>();
   const [hogar, setHogar] = useState<HogarDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -847,3 +848,7 @@ const grupoStyles = StyleSheet.create({
   btnTxt: { ...FONT.label, color: GOV.azul },
   btnTxtAgregado: { color: GOV.verde },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(HogarDetalleScreen, ['hogarId']);

@@ -8,6 +8,7 @@ import {
 import { AnimatedProgressBar } from '../../../src/components/AnimatedProgressBar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import { encuestasApi } from '../../../src/api/encuestas';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import { activarPerfil, codigoPorInstrumentoId, listaInstrumentosBundle } from '../../../src/services/instrumentos';
@@ -44,7 +45,7 @@ interface BorradorOffline {
   instrumentoNombre: string;
 }
 
-export default function SesionDetalleScreen() {
+function SesionDetalleScreen() {
   const { sesionId } = useLocalSearchParams<{ sesionId: string }>();
   const [sesion, setSesion] = useState<SesionDetalle | null>(null);
   const [borradorOffline, setBorradorOffline] = useState<BorradorOffline | null>(null);
@@ -509,3 +510,7 @@ const styles = StyleSheet.create({
     color: GOV.textoS,
   },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(SesionDetalleScreen, ['sesionId']);

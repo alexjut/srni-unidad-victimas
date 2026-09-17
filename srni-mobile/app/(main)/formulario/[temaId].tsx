@@ -7,6 +7,7 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
+import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import * as colaDao from '../../../src/db/colaDao';
@@ -340,7 +341,7 @@ interface ItemLista {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CapituloScreen() {
+function CapituloScreen() {
   const {
     temaId,
     borradorId: borradorIdParam,
@@ -2132,3 +2133,7 @@ const styles = StyleSheet.create({
     borderTopColor: GOV.borde,
   },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(CapituloScreen, ['temaId', 'sesionServerId', 'borradorId', 'hogarId', 'instrumentoId']);

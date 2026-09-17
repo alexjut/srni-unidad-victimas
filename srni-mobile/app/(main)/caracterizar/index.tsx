@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Alert } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import { GovHeader } from '../../../src/components/GovHeader';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../../src/theme/govTheme';
@@ -14,6 +15,9 @@ import { useCaracterizacionStore } from '../../../src/stores/caracterizacionStor
 import { reportarError } from '../../../src/services/errorReporter';
 import { useSyncStore } from '../../../src/stores/syncStore';
 import { activarPerfil, listaInstrumentosBundle } from '../../../src/services/instrumentos';
+import * as borradoresDao from '../../../src/db/borradoresDao';
+import { intentarSincronizar } from '../../../src/services/sincronizacion';
+import { decidirSesionDevuelta } from '../../../src/services/sesionAbierta';
 import type { HogarResumen } from '../../../src/types';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -106,7 +110,7 @@ function TarjetaHogar({ hogar, onPress }: { hogar: HogarResumen; onPress: () => 
 
 // ── Pantalla ──────────────────────────────────────────────────────────────
 
-export default function CaracterizarScreen() {
+function CaracterizarScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId?: string }>();
   const rutaEntrevista = useCaracterizacionStore((s) => s.rutaEntrevista);
   const estaOnline = useSyncStore((s) => s.estaOnline);
@@ -122,6 +126,17 @@ export default function CaracterizarScreen() {
   const [cargandoHogares, setCargandoHogares] = useState(false);
   const [seleccionado, setSeleccionado] = useState<InstrumentoResumen | null>(null);
   const [creando, setCreando] = useState(false);
+
+  // Volver a caracterizar el MISMO hogar no remonta la pantalla (misma clave): el
+  // camino exitoso navega sin apagar `creando`, y la siguiente visita encontraba
+  // el botón trabado en «creando…». Cada entrada arranca en el paso 1.
+  useFocusEffect(
+    useCallback(() => {
+      setCreando(false);
+      setSeleccionado(null);
+      setPaso('instrumento');
+    }, []),
+  );
 
   // Refresco opcional online: si el server responde, reemplaza la lista del
   // bundle con la del backend (mismo shape). Si falla, se queda con el bundle.
@@ -181,11 +196,83 @@ export default function CaracterizarScreen() {
     }
 
     try {
-      const { data: sesion } = await encuestasApi.crear({
+      const pedir = () => encuestasApi.crear({
         hogar: hId,
         instrumento: seleccionado.id,
         ruta_entrevista: rutaEntrevista,
       });
+      let { data: sesion } = await pedir();
+
+      // El servidor no crea una segunda caracterización abierta en el hogar:
+      // devuelve la que ya existe. Antes se la trataba siempre como nueva y eso
+      // dejaba a la encuestadora atascada dentro de la anterior (ver
+      // services/sesionAbierta.ts).
+      const estadoLocal = async (id: string) =>
+        (await borradoresDao.findBySesionId(id))?.estado ?? null;
+      let decision = decidirSesionDevuelta(sesion, seleccionado, await estadoLocal(sesion.id));
+
+      if (decision.tipo === 'CERRADA_SIN_ENVIAR') {
+        // Hay red: subir ya el cierre que quedó en cola y volver a pedir. Si
+        // entra, el servidor la da por completada y crea la nueva.
+        await intentarSincronizar();
+        ({ data: sesion } = await pedir());
+        decision = decidirSesionDevuelta(sesion, seleccionado, await estadoLocal(sesion.id));
+      }
+
+      if (decision.tipo === 'CERRADA_SIN_ENVIAR') {
+        Alert.alert(
+          'Falta enviar la anterior',
+          'La caracterización anterior de este hogar ya está cerrada en este teléfono, '
+          + 'pero todavía no llega al servidor. Revisa "Sincronización" y vuelve a intentar '
+          + 'cuando se haya enviado.',
+        );
+        setCreando(false);
+        return;
+      }
+
+      if (decision.tipo === 'OTRO_INSTRUMENTO') {
+        const abierta = sesion;
+        const nombre = abierta.instrumento_nombre || abierta.instrumento_codigo || 'otro instrumento';
+        Alert.alert(
+          'Hay una caracterización abierta',
+          `Este hogar tiene una caracterización de ${nombre} sin terminar `
+          + `(${Math.round(abierta.porcentaje_completado ?? 0)} %). `
+          + `Termínala o anúlala antes de iniciar ${seleccionado.nombre}.`,
+          [
+            { text: 'Cancelar', style: 'cancel', onPress: () => setCreando(false) },
+            {
+              text: 'Abrir la abierta',
+              onPress: () => {
+                try { if (abierta.instrumento_codigo) activarPerfil(abierta.instrumento_codigo); }
+                catch { /* el formulario reporta si el perfil no está en el bundle */ }
+                router.replace({
+                  pathname: '/(main)/formulario',
+                  params: {
+                    sesionServerId: abierta.id,
+                    hogarId: hId,
+                    instrumentoId: abierta.instrumento,
+                  },
+                });
+              },
+            },
+          ],
+          { cancelable: true, onDismiss: () => setCreando(false) },
+        );
+        return;
+      }
+
+      if (decision.tipo === 'RETOMAR') {
+        // La misma entrevista ya empezada: no volver a pedir (y pisar) la ubicación.
+        router.replace({
+          pathname: '/(main)/formulario',
+          params: {
+            sesionServerId: sesion.id,
+            hogarId: hId,
+            instrumentoId: sesion.instrumento,
+          },
+        });
+        return;
+      }
 
       // Acá se subía la foto del soporte cuando se caracterizaba por una ruta
       // de excepción. Se retiró el 14-ago-2026: el caracterizador no debe tener
@@ -482,3 +569,7 @@ const styles = StyleSheet.create({
   },
   overlayTxt: { ...FONT.body, color: '#FFF', fontWeight: '600' },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(CaracterizarScreen, ['hogarId']);

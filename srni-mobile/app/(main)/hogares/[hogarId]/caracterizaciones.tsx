@@ -16,6 +16,7 @@ import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-n
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { remontarPorParams } from '../../../../src/navegacion/remontarPorParams';
 import { hogaresApi } from '../../../../src/api/hogares';
 import { GovHeader } from '../../../../src/components/GovHeader';
 import { GovButton } from '../../../../src/components/GovButton';
@@ -171,7 +172,7 @@ const resumenStyles = StyleSheet.create({
 
 // ── Pantalla principal ────────────────────────────────────────────────────────
 
-export default function CaracterizacionesHogarScreen() {
+function CaracterizacionesHogarScreen() {
   const { hogarId } = useLocalSearchParams<{ hogarId: string }>();
   const [hogar, setHogar] = useState<HogarDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -497,3 +498,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(CaracterizacionesHogarScreen, ['hogarId']);

@@ -4,6 +4,7 @@ import { View, FlatList, StyleSheet, Pressable, Alert, Modal, KeyboardAvoidingVi
 import { Text, ProgressBar, ActivityIndicator, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
 import { calcularProgresoOffline, type MiembroRef } from '../../../src/services/progreso';
@@ -197,7 +198,7 @@ function CapituloCard({
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
-export default function FormularioIndexScreen() {
+function FormularioIndexScreen() {
   const { sesionServerId, instrumentoId, hogarId, borradorId: borradorIdParam } = useLocalSearchParams<{
     sesionServerId?: string;
     instrumentoId?: string;
@@ -1039,3 +1040,7 @@ const styles = StyleSheet.create({
   modalTextArea:  { backgroundColor: GOV.fondoApp, minHeight: 80, textAlignVertical: 'top', fontSize: 14 },
   modalBotones:   { flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: SPACING.sm },
 });
+
+// Pestaña oculta: sin esto conserva el estado de la entrevista anterior
+// (ver src/navegacion/remontarPorParams.tsx).
+export default remontarPorParams(FormularioIndexScreen, ['sesionServerId', 'borradorId', 'hogarId', 'instrumentoId']);
