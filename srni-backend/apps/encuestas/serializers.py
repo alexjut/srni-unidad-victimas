@@ -106,7 +106,9 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'id', 'porcentaje_completado', 'fecha_inicio',
+            # `estado` se cambia solo por las acciones (pausar/reanudar/finalizar):
+            # por PATCH cualquiera podía poner COMPLETADA sin cerrar la encuesta.
+            'id', 'estado', 'porcentaje_completado', 'fecha_inicio',
             'estado_display', 'instrumento_codigo', 'instrumento_nombre', 'instrumento_numero',
             'direccion_territorial_nombre', 'departamento_atencion_nombre',
             'municipio_atencion_nombre', 'punto_atencion_nombre',

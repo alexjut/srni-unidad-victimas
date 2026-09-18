@@ -26,6 +26,8 @@ class LogAcceso(models.Model):
         ('SUBIR_CONSTANCIA', 'Constancia de tutor/cuidador subida'),
         ('RESPONDER_PREGUNTA', 'Respuesta a pregunta'),
         ('FINALIZAR_ENCUESTA', 'Encuesta finalizada'),
+        ('PAUSAR_ENCUESTA', 'Encuesta pausada'),
+        ('REANUDAR_ENCUESTA', 'Encuesta reanudada'),
         ('EXPORTAR', 'Exportación de datos'),
         ('CAMBIO_PASSWORD', 'Cambio de contraseña'),
         ('CAMBIO_USUARIO', 'Modificación de usuario'),

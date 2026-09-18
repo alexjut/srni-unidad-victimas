@@ -47,6 +47,17 @@ export const encuestasApi = {
     apiClient.post<SesionDetalle>('/api/encuestas/', payload),
 
   /**
+   * Pausar / reanudar (QA 16-sep-2026). La entrevista a medias se conserva igual
+   * que siempre; esto es lo que permite DECIR que quedó pausada, para que se vea
+   * así en el teléfono y en el panel.
+   */
+  pausar: (id: string) =>
+    apiClient.post<SesionDetalle>(`/api/encuestas/${id}/pausar/`),
+
+  reanudar: (id: string) =>
+    apiClient.post<SesionDetalle>(`/api/encuestas/${id}/reanudar/`),
+
+  /**
    * Sprint 19 — actualiza campos de una sesión (PATCH).
    * Usado para guardar ubicación de atención (DT/Depto/Mun/Punto) después de
    * que el encuestador la elija en la pantalla ubicacion-atencion.

@@ -22,7 +22,7 @@ const ESTADO_COLOR: Record<string, string> = {
   INICIADA:    GOV.azul,
   EN_PROGRESO: GOV.naranja,
   COMPLETADA:  GOV.verde,
-  SUSPENDIDA:  '#616161',
+  SUSPENDIDA:  GOV.naranja,   // pausada: está esperando, no fallida
 };
 
 // ─── Fila de info ─────────────────────────────────────────────────────────────
@@ -232,7 +232,10 @@ function SesionDetalleScreen() {
 
   const colorEstado = ESTADO_COLOR[sesion.estado] ?? '#616161';
   const bgEstado    = colorEstado + '22';
-  const estaActiva  = sesion.estado !== 'COMPLETADA' && sesion.estado !== 'SUSPENDIDA';
+  // Una PAUSADA es justamente la que hay que poder continuar: antes quedaba fuera
+  // y la única salida era volver a empezar (QA 16-sep-2026).
+  const estaPausada = sesion.estado === 'SUSPENDIDA';
+  const estaActiva  = sesion.estado !== 'COMPLETADA';
   const hogarCorto  = sesion.hogar.slice(0, 8);
 
   return (
@@ -294,12 +297,17 @@ function SesionDetalleScreen() {
         {/* Acciones — solo si la sesión está activa */}
         {estaActiva && (
           <View style={styles.card}>
-            <Text style={styles.seccionTitulo}>Continuar</Text>
+            <Text style={styles.seccionTitulo}>{estaPausada ? 'Reanudar' : 'Continuar'}</Text>
 
             <GovButton
-              label={`Continuar formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`}
-              icon="clipboard-text"
+              label={`${estaPausada ? 'Reanudar' : 'Continuar'} formulario${sesion.instrumento_nombre ? ` — ${sesion.instrumento_nombre}` : ''}`}
+              icon={estaPausada ? 'play-circle-outline' : 'clipboard-text'}
               onPress={() => {
+                // Reanudar es best-effort: si falla, la primera respuesta la
+                // devuelve a EN_PROGRESO igual. No se bloquea la captura por esto.
+                if (estaPausada) {
+                  encuestasApi.reanudar(sesion.id).catch(() => { /* sigue pausada hasta responder */ });
+                }
                 // Sprint 18 F1B: activar perfil en memoria (instantáneo, sin BD)
                 const codigo = (sesion as any).instrumento_codigo as string | undefined;
                 if (codigo) {

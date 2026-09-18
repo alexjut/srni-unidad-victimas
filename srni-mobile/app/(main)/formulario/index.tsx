@@ -237,6 +237,7 @@ function FormularioIndexScreen() {
   const [modalFinalizar, setModalFinalizar] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const [finalizando, setFinalizando] = useState(false);
+  const [pausando, setPausando] = useState(false);
 
   const [descargando, setDescargando] = useState(false);
   const [errorDescarga, setErrorDescarga] = useState('');
@@ -478,6 +479,39 @@ function FormularioIndexScreen() {
       respondidas: Math.min(pc.obligRespondidas, pc.obligVisibles),
       obligatorias: pc.obligVisibles,
     };
+  }
+
+  /**
+   * Pausar y salir (QA, 16-sep-2026): «a veces tenemos que pausarla y luego,
+   * días o meses después, continuarla».
+   *
+   * Las respuestas ya estaban a salvo —cada una se guarda al capturarla— pero la
+   * única forma de salir era la flecha de atrás, que no dice nada: ni la
+   * encuestadora sabía si su trabajo quedaba guardado, ni el panel distinguía la
+   * entrevista que quedó esperando de la que nadie atendió.
+   *
+   * Sin señal no hay a quién avisarle: el borrador queda igual y la entrevista
+   * sigue en «Caracterizaciones» para retomarla.
+   */
+  async function handlePausar() {
+    setPausando(true);
+    try {
+      if (sesionServerId && estaOnline) {
+        try {
+          await encuestasApi.pausar(sesionServerId);
+        } catch {
+          /* sin red o servidor caído: el borrador local ya tiene todo */
+        }
+      }
+      Alert.alert(
+        'Caracterización pausada',
+        'Lo respondido queda guardado. Puede continuarla cuando quiera desde '
+        + '«Caracterizaciones».',
+        [{ text: 'Aceptar', onPress: () => router.replace('/(main)/encuestas') }],
+      );
+    } finally {
+      setPausando(false);
+    }
   }
 
   async function handleFinalizar() {
@@ -808,12 +842,23 @@ function FormularioIndexScreen() {
                   </Text>
                 </View>
               ) : (
-                <GovButton
-                  label="Finalizar caracterización"
-                  variant="secondary"
-                  icon="check-circle-outline"
-                  onPress={() => setModalFinalizar(true)}
-                />
+                <>
+                  <GovButton
+                    label="Pausar y salir"
+                    variant="secondary"
+                    icon="pause-circle-outline"
+                    onPress={handlePausar}
+                    loading={pausando}
+                    disabled={pausando}
+                  />
+                  <View style={{ height: 8 }} />
+                  <GovButton
+                    label="Finalizar caracterización"
+                    variant="secondary"
+                    icon="check-circle-outline"
+                    onPress={() => setModalFinalizar(true)}
+                  />
+                </>
               )}
               {/* Anular requiere servidor (PATCH/finalizar online) → solo online. */}
               {sesionServerId ? (

@@ -42,7 +42,7 @@ const ESTADO_COLOR: Record<string, string> = {
   INICIADA: '#1565C0',
   EN_PROGRESO: '#E65100',
   COMPLETADA: '#2E7D32',
-  SUSPENDIDA: '#616161',
+  SUSPENDIDA: GOV.naranja,   // pausada: está esperando, no fallida
 };
 
 type ItemLista =

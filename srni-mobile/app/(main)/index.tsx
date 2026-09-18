@@ -1,10 +1,12 @@
 /**
  * Dashboard del encuestador — estilo GOV.CO institucional.
  */
+import { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { Text, Chip, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import * as borradoresDao from '../../src/db/borradoresDao';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useSyncStore, getEstadoSync } from '../../src/stores/syncStore';
 import { GovHeader } from '../../src/components/GovHeader';
@@ -80,6 +82,20 @@ export default function DashboardScreen() {
   const nombre = usuario?.nombre_completo ?? '—';
   const primerNombre = nombre.split(' ')[0];
 
+  // Entrevistas a medias del propio teléfono: pausadas o simplemente sin cerrar.
+  // Se cuenta lo local porque es lo que hay con o sin señal; la lista completa
+  // (con lo del servidor) vive en «Caracterizaciones».
+  const [pendientes, setPendientes] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      let vivo = true;
+      borradoresDao.listarBorradores()
+        .then((bs) => { if (vivo) setPendientes(bs.filter((b) => b.estado !== 'CERRADO_LOCAL').length); })
+        .catch(() => { /* sin SQLite: no se muestra contador */ });
+      return () => { vivo = false; };
+    }, []),
+  );
+
   return (
     <View style={styles.root}>
       <GovHeader
@@ -129,7 +145,11 @@ export default function DashboardScreen() {
               <AccionRow
                 icon="clipboard-list"
                 label="Caracterizaciones"
-                subtitle="Sesiones de caracterización en curso"
+                subtitle={
+                  pendientes > 0
+                    ? `${pendientes} sin terminar — continúe donde iba`
+                    : 'Sesiones de caracterización en curso'
+                }
                 onPress={() => router.push('/(main)/encuestas')}
               />
               {/* Sprint 21: se eliminó el botón 'Formulario PAARI' (instrumento

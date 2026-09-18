@@ -295,6 +295,109 @@ class SesionEncuestaViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
+        summary='Pausar una caracterización para retomarla después',
+        description=(
+            'Marca la sesión como SUSPENDIDA (pausada). Las respuestas ya '
+            'capturadas se conservan y la sesión sigue siendo la activa del '
+            'hogar: al reanudarla se continúa donde iba.'
+        ),
+        tags=['Encuestas'],
+        request=None,
+        responses={200: SesionEncuestaDetalleSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='pausar')
+    def pausar(self, request, pk=None):
+        """
+        Pausa pedida por campo (QA, 16-sep-2026): «a veces estamos en una
+        caracterización y por motivos tenemos que pausarla, y luego, días o meses
+        después, continuarla».
+
+        Se podía hacer —las respuestas se guardan una a una y la sesión queda
+        abierta— pero no había forma de DECIRLO: la entrevista a medias se veía
+        igual que una recién empezada, en el teléfono y en el panel. Sin un
+        estado explícito, quien supervisa no distingue la que quedó esperando a
+        la familia de la que nadie atendió.
+
+        No se inventa un estado nuevo: SUSPENDIDA ya existía para esto y tanto
+        los reportes como el panel filtran por él.
+        """
+        sesion = self.get_object()
+
+        if sesion.estado == 'COMPLETADA':
+            return Response(
+                {'detail': 'La sesión ya está completada; no se puede pausar.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pct = sesion.recalcular_porcentaje()
+        sesion.estado = 'SUSPENDIDA'
+        sesion.porcentaje_completado = pct
+        sesion.save(update_fields=['estado', 'porcentaje_completado'])
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='PAUSAR_ENCUESTA',
+            recurso='SesionEncuesta',
+            recurso_id=str(sesion.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'porcentaje_completado': pct, 'hogar_id': str(sesion.hogar_id)},
+        )
+
+        return Response(
+            SesionEncuestaDetalleSerializer(sesion, context={'request': request}).data
+        )
+
+    @extend_schema(
+        summary='Reanudar una caracterización pausada',
+        tags=['Encuestas'],
+        request=None,
+        responses={200: SesionEncuestaDetalleSerializer},
+    )
+    @action(detail=True, methods=['post'], url_path='reanudar')
+    def reanudar(self, request, pk=None):
+        """
+        Devuelve la sesión a EN_PROGRESO.
+
+        `responder` ya la deja en EN_PROGRESO al guardar la primera respuesta, así
+        que esto es para el caso en que se reanuda y todavía no se responde nada:
+        sin él, la entrevista abierta seguiría figurando como pausada.
+        """
+        sesion = self.get_object()
+
+        if sesion.estado == 'COMPLETADA':
+            return Response(
+                {'detail': 'La sesión ya está completada; no se puede reanudar.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if sesion.estado != 'SUSPENDIDA':
+            # Reanudar algo que nunca se pausó no es un error para quien llama:
+            # el teléfono puede mandarlo por duplicado al volver la señal.
+            return Response(
+                SesionEncuestaDetalleSerializer(sesion, context={'request': request}).data
+            )
+
+        sesion.estado = 'EN_PROGRESO'
+        sesion.save(update_fields=['estado'])
+
+        LogAcceso.registrar(
+            usuario=request.user,
+            accion='REANUDAR_ENCUESTA',
+            recurso='SesionEncuesta',
+            recurso_id=str(sesion.id),
+            ip=_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resultado='EXITO',
+            detalle={'hogar_id': str(sesion.hogar_id)},
+        )
+
+        return Response(
+            SesionEncuestaDetalleSerializer(sesion, context={'request': request}).data
+        )
+
+    @extend_schema(
         summary='Finalizar sesión de encuesta',
         description='Marca la sesión como COMPLETADA. Solo se puede hacer una vez.',
         tags=['Encuestas'],

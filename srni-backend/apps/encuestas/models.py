@@ -28,7 +28,9 @@ class SesionEncuesta(models.Model):
         ('INICIADA',    'Iniciada'),
         ('EN_PROGRESO', 'En progreso'),
         ('COMPLETADA',  'Completada'),
-        ('SUSPENDIDA',  'Suspendida — sin finalizar'),
+        # Pausada por la encuestadora para retomarla después (mismo código de
+        # siempre: los reportes y el panel ya filtran por él).
+        ('SUSPENDIDA',  'Pausada — sin finalizar'),
     ]
 
     # Rutas de entrevista — eje independiente del instrumento (Manual UARIV §4)
