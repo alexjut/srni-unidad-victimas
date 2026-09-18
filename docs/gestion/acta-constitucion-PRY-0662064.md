@@ -104,7 +104,7 @@ integrada con el RNI.
 | Dependencia de la OTI para accesos (internet/dominio, Oracle) | Gestión temprana por comité de cambios; uso de entornos internos mientras tanto |
 | Conectividad en territorio | Arquitectura **offline-first** (pre-carga + sincronización) |
 | Seguridad de datos PII | Cifrado, hash de documentos, auditoría, minimización de datos |
-| Integración con RUV/Oracle real pendiente | Diseño desacoplado por repositorio (mock → Oracle sin reescritura) |
+| Integración con RUV/Oracle real (resuelta en ago-2026: padrón real cargado) | Diseño desacoplado por repositorio; el padrón se carga a PostgreSQL y se consulta desde ahí, por la operación sin conexión |
 
 ## 10. Presupuesto / recursos
 

@@ -114,7 +114,8 @@ Construir y probar todo lo que **no** necesita los 10M reales:
 
 ## 7. Dependencias
 
-- **Oracle / RUV (OTI):** la Fase 1 necesita el acceso a los datos reales del RUV
-  para generar el padrón. Hoy el backend usa el repositorio **mock** (11 registros).
+- **Oracle / RUV (OTI):** ✅ resuelto en agosto de 2026 — el padrón real está cargado
+  (5.926.004 personas) y producción usa el repositorio `DJANGO`. Lo que sigue describe
+  la situación previa, cuando el backend usaba el repositorio **mock** (11 registros).
   Ver pendientes con la OTI (acceso a datos + URL permanente). La Fase 0 se puede
   hacer ya, en paralelo, sin esperar a Oracle.

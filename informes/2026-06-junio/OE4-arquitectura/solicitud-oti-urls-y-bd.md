@@ -68,6 +68,14 @@ requiere esa regla.)
 
 ## 2. Conectividad a Base de Datos externa (Oracle RNI) — preparación
 
+> ⚠️ **Actualizado el 18-sep-2026.** Lo que sigue describe el estado de **junio** y
+> quedó superado: desde agosto producción trabaja con el **padrón real** (5.926.004
+> personas y 12.009.492 del universo del RUV), cargado desde las fuentes oficiales.
+> El camino tampoco fue el que este documento proponía —no se consulta Oracle en
+> vivo, sino que el padrón **se carga** a la base de SICAV y se consulta desde ahí,
+> que es lo único compatible con la operación sin conexión—. Este párrafo es el
+> origen del malentendido del concepto técnico de la OTI del 17-sep-2026.
+
 La aplicación hoy opera con su **propia base PostgreSQL local** y, para la búsqueda de
 víctimas, usa un **repositorio de datos de prueba (mock)**. Está **diseñada para
 conectarse a la BD Oracle institucional** del RNI cuando la Subdirección lo autorice

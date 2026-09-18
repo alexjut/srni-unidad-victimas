@@ -134,7 +134,7 @@ reportes (`apps/reportes/models.py` está vacío a propósito: se calcula al vue
 |---|---|---|---|
 | 1 | Terminar la carga del padrón | sin esto la APK no encuentra a nadie | **en ejecución** |
 | 2 | `cargar_fechas_caracterizacion` | sin esto no se sabe a quién recaracterizar | listo, ~1 min |
-| 3 | **Poner `VICTIMA_REPOSITORY=DJANGO`** | **producción responde con el MOCK** | **corregido, falta desplegar** |
+| 3 | **Poner `VICTIMA_REPOSITORY=DJANGO`** | producción respondía con el MOCK | ✅ desplegado (el compose lo fija; verificado 1-sep y 11-sep-2026) |
 | 4 | Generar el padrón SQLite descargable | la APK baja el archivo, no consulta en línea | pendiente |
 | 5 | Disparador automático (Celery) | hoy la escritura a Oracle se dispara a mano | credenciales ya en el contenedor |
 | 6 | Etiqueta del alta manual | ver abajo | **decidido y aplicado (1-ago)** |
