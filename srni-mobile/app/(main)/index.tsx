@@ -180,6 +180,13 @@ export default function DashboardScreen() {
                 : 'Todo al día'}
             onPress={() => router.push('/(main)/sync-status')}
           />
+          <View style={styles.separador} />
+          <AccionRow
+            icon="lock-reset"
+            label="Cambiar contraseña"
+            subtitle="Si recibió una clave provisional, cámbiela"
+            onPress={() => router.push('/(main)/cambiar-password')}
+          />
         </View>
 
         {/* Cerrar sesión */}

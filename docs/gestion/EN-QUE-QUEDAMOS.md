@@ -100,3 +100,7 @@ API cerrada (`/api/docs|schema|redoc` → 401). Commits `daa6522`, `79c63ae`, `5
 **Pendientes inmediatos:** actualizar los 4 documentos que todavía dicen «mock» (de ahí salió
 el malentendido de la OTI), quitar `@google/generative-ai` del package.json del móvil, y
 empezar el modelo de Equipo.
+
+**Usuarios VIVANTO — cierre (18-sep):** NO se crea `LLOZANOF` ni se toca `LJLOZANOE`:
+Javier confirma que ese usuario está en VIVANTO pero **aún no tiene aprobación**. Las 10
+cuentas restantes ya quedaron activas con clave provisional.

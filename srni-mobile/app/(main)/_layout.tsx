@@ -116,6 +116,7 @@ export default function MainLayout() {
       <Tabs.Screen name="formulario/grabacion-entrevista" options={{ href: null }} />
       <Tabs.Screen name="formulario/revision-ia"         options={{ href: null }} />
       <Tabs.Screen name="sync-status"                    options={{ href: null }} />
+      <Tabs.Screen name="cambiar-password"               options={{ href: null }} />
       <Tabs.Screen name="reportes"                       options={{ href: null }} />
     </Tabs>
   );

@@ -41,6 +41,8 @@ export const authApi = {
   cambiarPassword: (payload: {
     password_actual: string;
     password_nuevo: string;
+    // El serializer del servidor la exige: sin ella responde 400 por campo.
+    password_nuevo_confirmacion: string;
     refresh?: string;
   }) => apiClient.post('/api/auth/cambiar-password/', payload),
 };
