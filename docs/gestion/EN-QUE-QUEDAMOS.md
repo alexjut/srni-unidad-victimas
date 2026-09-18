@@ -143,3 +143,11 @@ los demás perfiles · 3 huérfanas de Telefónico.
 `docs/gestion/correo_respuesta_oti_sso_alineacion_2026-09-18.md` con lo resuelto el
 18-sep (documentación de la API cerrada, documentos «mock» corregidos, dependencia de
 Gemini retirada) ANTES de enviar. Pedido de Javier.
+
+**Tono del informe a la OTI (pedido de Javier, 18-sep):** su concepto es una opinión
+técnica, no una instrucción. Al actualizarlo hay que **argumentar la arquitectura**,
+no solo responder observaciones: offline-first como requisito y no como extra; padrón
+cargado a PostgreSQL en vez de consulta en vivo a Oracle; escritura al legado solo por
+sus procedures con verificación por SELECT; cifrado por campo con búsqueda por hash;
+filtro de Bloom para el universo; distribución de la APK auditada desde el propio
+servidor; JWT corto con rotación y revocación.
