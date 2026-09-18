@@ -35,6 +35,20 @@ def ruta_constancia(instance, filename):
     return f'constancias/{instance.hogar_id}/{instance.id}{ext}'
 
 
+def generar_codigo_hogar(codigo_usuario: str) -> str:
+    """
+    `CODIGOUSUARIO-XXXXX` — el prefijo dice quién lo capturó y el sufijo lo hace único.
+
+    El alfabeto excluye 0/O/1/I: estos códigos se dictan por teléfono y se copian a
+    mano en actas, y ahí esas cuatro se confunden entre sí.
+    """
+    import secrets
+
+    alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    prefijo = (codigo_usuario or 'SICAV').strip().upper()[:20] or 'SICAV'
+    return f"{prefijo}-{''.join(secrets.choice(alfabeto) for _ in range(5))}"
+
+
 class Hogar(models.Model):
     """Unidad familiar objeto de caracterización."""
 
@@ -64,10 +78,17 @@ class Hogar(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # TODO: implementar generación automática del código de hogar (prefijo municipio + año + consecutivo)
+    # Se genera solo al crear el hogar: `CODIGOUSUARIO-XXXXX`, que es el formato
+    # con el que ya venían los hogares del piloto y el que espera el panel.
+    #
+    # Estuvo como pendiente desde junio y el efecto se vio el 18-sep-2026: los 54
+    # hogares de producción tenían el código VACÍO. No es cosmético — es la
+    # referencia con la que se sigue un hogar entre SICAV, el panel y el libro de
+    # escrituras al sistema legado, donde viaja como `hog_codigo_sicav`. Sin él,
+    # la única forma de nombrar un hogar era el pedazo inicial de su UUID.
     codigo_hogar = models.CharField(
-        max_length=30, blank=True, default='',
-        help_text='Código único de identificación del hogar (generado al confirmar).',
+        max_length=30, blank=True, default='', db_index=True,
+        help_text='Código del hogar: código del encuestador + consecutivo (se genera al crear).',
     )
 
     # Autorizado — víctima titular que autoriza la entrevista de caracterización.
@@ -135,6 +156,20 @@ class Hogar(models.Model):
                 name='uniq_hogar_no_archivado_por_autorizado',
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        """Asigna el código del hogar la primera vez, si no vino uno."""
+        if not self.codigo_hogar:
+            # Colisionar exige acertar 1 entre 33 millones DEL MISMO encuestador;
+            # aun así se reintenta, porque el precio de no hacerlo es un choque en
+            # un campo que identifica hogares.
+            for _ in range(5):
+                candidato = generar_codigo_hogar(
+                    getattr(self.creado_por, 'codigo_usuario', '') or '')
+                if not Hogar.objects.filter(codigo_hogar=candidato).exists():
+                    self.codigo_hogar = candidato
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Hogar {self.id} — {self.get_estado_display()}'
