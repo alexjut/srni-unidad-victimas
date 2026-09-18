@@ -1,6 +1,6 @@
 // Pantalla de estado de sincronización — Sprint 9.
 import { useEffect, useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
 import {
   Text, ActivityIndicator, Chip, Divider,
 } from 'react-native-paper';
@@ -9,6 +9,8 @@ import { router } from 'expo-router';
 import * as colaDao from '../../src/db/colaDao';
 import type { ColaItem, EstadoCola } from '../../src/db/colaDao';
 import { useSyncStore, getEstadoSync } from '../../src/stores/syncStore';
+import * as padronArchivo from '../../src/services/padronArchivo';
+import { descargarPadronCompleto, versionPadronCompleto } from '../../src/services/precarga';
 import { GovHeader } from '../../src/components/GovHeader';
 import { GovButton } from '../../src/components/GovButton';
 import { GOV, SPACING, RADIUS, SHADOW, FONT } from '../../src/theme/govTheme';
@@ -106,12 +108,16 @@ export default function SyncStatusScreen() {
   const globalCfg = SYNC_GLOBAL[estado] ?? SYNC_GLOBAL.sincronizado;
 
   const [items, setItems] = useState<ColaItem[]>([]);
+  // Padrón completo (Fase B2): sin él, sin señal la APK conoce 5.000 personas.
+  const [versionPadron, setVersionPadron] = useState('');
+  const [descargandoPadron, setDescargandoPadron] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
 
   const cargar = useCallback(async () => {
     const todos = await colaDao.obtenerTodos();
     setItems(todos);
+    setVersionPadron(await versionPadronCompleto());
     await refrescarContadores();
     setCargando(false);
     setRefrescando(false);
@@ -127,6 +133,24 @@ export default function SyncStatusScreen() {
   async function onReintentar() {
     await reintentarErrores();
     await cargar();
+  }
+
+  async function onDescargarPadron() {
+    setDescargandoPadron(true);
+    try {
+      const r = await descargarPadronCompleto();
+      if (r.ok) {
+        setVersionPadron(r.version);
+        Alert.alert(
+          'Padrón descargado',
+          'Ya puede buscar a cualquier persona del padrón sin conexión.',
+        );
+      } else {
+        Alert.alert('No se pudo descargar', r.motivo);
+      }
+    } finally {
+      setDescargandoPadron(false);
+    }
   }
 
   async function onLimpiar() {
@@ -198,6 +222,39 @@ export default function SyncStatusScreen() {
               />
             </View>
           )}
+        </View>
+
+        {/* ── Padrón completo sin conexión (Fase B2) ──────────────────────────
+            Sin esto, en campo y sin señal la APK solo reconoce a las 5.000
+            personas que caben en la precarga. La descarga es a pedido: son
+            cientos de MB y no se le gastan los datos a nadie sin avisar. */}
+        <View style={styles.padronCard}>
+          <View style={styles.padronRow}>
+            <MaterialCommunityIcons
+              name={versionPadron ? 'database-check' : 'database-arrow-down'}
+              size={26}
+              color={versionPadron ? GOV.verde : GOV.azul}
+            />
+            <View style={styles.padronTextos}>
+              <Text style={styles.padronTitulo}>Padrón completo sin conexión</Text>
+              <Text style={styles.padronMeta}>
+                {versionPadron
+                  ? `Descargado · versión ${versionPadron} · ${Math.round(padronArchivo.tamanoArchivo() / 1e6)} MB`
+                  : 'Sin descargar — sin señal solo se reconoce a las personas de la precarga'}
+              </Text>
+            </View>
+          </View>
+          <GovButton
+            label={versionPadron ? 'Actualizar padrón (≈320 MB)' : 'Descargar padrón (≈320 MB)'}
+            icon="download"
+            variant="secondary"
+            loading={descargandoPadron}
+            disabled={descargandoPadron || estado === 'sin_conexion'}
+            onPress={onDescargarPadron}
+          />
+          <Text style={styles.padronAviso}>
+            Descárguelo con wifi antes de salir a campo. Puede tardar varios minutos.
+          </Text>
         </View>
 
         {/* Lista de items en cola */}
@@ -283,6 +340,19 @@ const styles = StyleSheet.create({
   btnWrap: {
     flex: 1,
   },
+  padronCard: {
+    backgroundColor: GOV.superficie,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
+    ...SHADOW.card,
+  },
+  padronRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  padronTextos: { flex: 1 },
+  padronTitulo: { ...FONT.body, fontWeight: '700', color: GOV.textoP },
+  padronMeta: { ...FONT.caption, color: GOV.textoS },
+  padronAviso: { ...FONT.caption, color: GOV.textoT },
   listaCard: {
     backgroundColor: GOV.superficie,
     borderRadius: RADIUS.md,

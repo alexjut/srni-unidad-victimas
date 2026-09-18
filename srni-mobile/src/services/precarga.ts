@@ -14,6 +14,7 @@ import apiClient from '../api/client';
 import * as precargaDao from '../db/precargaDao';
 import type { PrecargaPayload } from '../db/precargaDao';
 import * as filtroUniverso from './filtroUniverso';
+import * as padronArchivo from './padronArchivo';
 
 export type EstadoPrecarga = 'inactiva' | 'cargando' | 'lista' | 'error';
 
@@ -92,6 +93,59 @@ async function descargarFiltroUniverso(data: PrecargaPayload): Promise<void> {
     await precargaDao.guardarParametrosBloom(ok ? { ...bloom, version } : null);
   } catch (err) {
     console.warn('[precarga] no se pudo descargar el filtro del universo:', err);
+  }
+}
+
+/**
+ * Descarga el PADRÓN COMPLETO (Fase B2), a pedido de la encuestadora.
+ *
+ * No va dentro de `ejecutarPrecarga` a propósito: son cientos de MB y bajarlos
+ * solos en el plan de datos de quien está en territorio sería abusivo. La
+ * pantalla de sincronización ofrece el botón, dice el peso y llama acá.
+ *
+ * Sin esto, sin señal la APK conoce las 5.000 personas del trozo que viaja en la
+ * precarga; con esto, los 5,9 millones del padrón.
+ */
+export async function descargarPadronCompleto(): Promise<
+  { ok: true; version: string } | { ok: false; motivo: string }
+> {
+  let info: padronArchivo.InfoPadronArchivo | null = null;
+  try {
+    const { data } = await apiClient.get<PrecargaPayload>('/api/victimas/precarga/', {
+      timeout: 30000,
+    });
+    info = (data as any)?.padron_archivo ?? null;
+  } catch {
+    return { ok: false, motivo: 'No hay conexión con el servidor.' };
+  }
+
+  if (!info?.url) {
+    return { ok: false, motivo: 'El servidor todavía no tiene el padrón generado.' };
+  }
+  if (!padronArchivo.esquemaSoportado(info)) {
+    return {
+      ok: false,
+      motivo: 'El padrón del servidor usa un formato que esta versión de la app no sabe leer. Actualice la aplicación.',
+    };
+  }
+
+  const token = await obtenerToken();
+  if (!token) return { ok: false, motivo: 'La sesión expiró. Vuelva a ingresar.' };
+
+  const ok = await padronArchivo.descargarPadron(info, token);
+  if (!ok) return { ok: false, motivo: 'La descarga no se completó. Intente de nuevo con mejor señal.' };
+
+  await precargaDao.guardarValorMeta(padronArchivo.CLAVE_VERSION, info.version ?? '');
+  return { ok: true, version: info.version ?? '' };
+}
+
+/** ¿Qué versión del padrón completo hay en este teléfono? '' si no hay. */
+export async function versionPadronCompleto(): Promise<string> {
+  if (!padronArchivo.hayArchivo()) return '';
+  try {
+    return await precargaDao.leerValorMeta(padronArchivo.CLAVE_VERSION);
+  } catch {
+    return '';
   }
 }
 

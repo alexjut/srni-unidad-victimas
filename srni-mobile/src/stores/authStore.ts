@@ -11,6 +11,7 @@ import { precargarEnSegundoPlano } from '../services/precarga';
 import * as precargaDao from '../db/precargaDao';
 import * as colaDao from '../db/colaDao';
 import * as filtroUniverso from '../services/filtroUniverso';
+import * as padronArchivo from '../services/padronArchivo';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
 // Perfil del usuario cacheado en el keychain. Permite rehidratar la sesión al
@@ -157,6 +158,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         // viven en `meta_offline`, que sí se vacía, y dejarlo huérfano solo
         // ocuparía 22,7 MB que nadie puede consultar.
         filtroUniverso.borrarFiltro();
+        // Lo mismo con el padrón completo, que además son cientos de MB: dejarlo
+        // sería guardar datos de 5,9 M de personas para quien use el equipo después.
+        padronArchivo.borrarArchivo();
       } catch { /* best-effort */ }
       set({ usuario: null, error: null });
     }

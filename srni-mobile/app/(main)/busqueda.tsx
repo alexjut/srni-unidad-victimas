@@ -38,6 +38,7 @@ import * as colaDao from '../../src/db/colaDao';
 import { reportarError } from '../../src/services/errorReporter';
 import { interpretarError } from '../../src/utils/errores';
 import * as filtroUniverso from '../../src/services/filtroUniverso';
+import * as padronArchivo from '../../src/services/padronArchivo';
 import type { ResultadoBusquedaFuente, VictimaResumenFuente } from '../../src/types';
 
 // ── Tipos de documento ───────────────────────────────────────────────────────
@@ -575,6 +576,36 @@ function TarjetaNoEncontrado({
 // persona viene en la jornada del día usamos el VictimaResumenFuente COMPLETO;
 // si solo está en el padrón liviano, construimos un resumen mínimo suficiente
 // para mostrar estado (nombre, ubicación, hechos, RUV/habilitada/caracterizada).
+/**
+ * Una fila del archivo del padrón con la forma que ya usa la pantalla.
+ *
+ * El archivo no trae la excepción de vigencia —se autoriza desde la web y viaja
+ * en la precarga—, así que llega en false: quien tenga una autorizada aparece
+ * con ella por el camino de siempre.
+ */
+function filaArchivoAPadron(
+  p: padronArchivo.FilaPadron,
+  documento: string,
+  tipoDocumento: string,
+): PadronRow {
+  return {
+    documento_hash: '',
+    tipo_documento: tipoDocumento,
+    documento_display: documento.slice(-4),
+    nombre: p.nombre,
+    ubicacion: p.ubicacion ?? '',
+    cantidad_hechos: p.cantidad_hechos,
+    en_ruv: p.en_ruv,
+    habilitada: p.habilitada,
+    ya_caracterizada: p.ya_caracterizada,
+    cons_persona: p.cons_persona,
+    clase_colision: p.clase_colision,
+    habilitada_por_excepcion: false,
+    excepcion_ruta: null,
+    excepcion_radicado: null,
+  };
+}
+
 function resultadoDesdePadron(
   p: PadronRow,
   jornada: VictimaResumenFuente | null,
@@ -783,6 +814,39 @@ export default function BusquedaScreen() {
             'regístrela por alta manual.',
         );
         return true;
+      }
+
+      // El trozo que viaja en la precarga son 5.000 personas; el padrón real son
+      // 5,9 millones. Si la encuestadora bajó el archivo completo, se consulta acá
+      // antes de dar a nadie por ausente. (Fase B2 — el archivo lo genera el
+      // servidor desde hace meses; lo que faltaba era leerlo.)
+      if (r.candidatos.length === 0 && padronArchivo.hayArchivo()) {
+        const enArchivo = await padronArchivo.buscarEnArchivo(tipoDoc, doc);
+
+        if (enArchivo.some((p) => p.clase_colision === 'NO_IDENTIFICANTE')) {
+          setCandidatos([]);
+          setCandidatosOnline([]);
+          setErrorBusqueda(
+            'Este número no identifica a una persona: en el padrón figura como valor ' +
+              'de relleno, compartido por muchos registros. Verifique el documento o ' +
+              'regístrela por alta manual.',
+          );
+          return true;
+        }
+
+        if (enArchivo.length > 0) {
+          const filas = enArchivo.map((p) => filaArchivoAPadron(p, doc, tipoDoc));
+          // Igual que con el padrón precargado: si el documento lo comparten
+          // varias personas, elige quien la tiene enfrente.
+          if (filas.length > 1) {
+            setCandidatos(filas);
+            return true;
+          }
+          const jornadaArchivo = await precargaDao.buscarEnJornada(
+            doc, filas[0].cons_persona ?? undefined);
+          setResultado(resultadoDesdePadron(filas[0], jornadaArchivo));
+          return true;
+        }
       }
 
       // El padrón local no la tiene. Antes esto era el final del camino: se

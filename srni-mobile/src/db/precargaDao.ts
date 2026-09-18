@@ -347,6 +347,25 @@ export async function getParametrosBloom(): Promise<string> {
 }
 
 /** Versión del padrón persistida (vacío si nunca se precargó). */
+/** Guarda un valor suelto en `meta_offline` (versiones de archivos, banderas). */
+export async function guardarValorMeta(clave: string, valor: string): Promise<void> {
+  const db = await openDb();
+  await db.runAsync(
+    'INSERT OR REPLACE INTO meta_offline (clave, valor) VALUES (?, ?)',
+    [clave, valor],
+  );
+}
+
+/** Lee un valor de `meta_offline`. Devuelve '' si no está. */
+export async function leerValorMeta(clave: string): Promise<string> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<{ valor: string }>(
+    'SELECT valor FROM meta_offline WHERE clave = ?',
+    [clave],
+  );
+  return row?.valor ?? '';
+}
+
 export async function getPadronVersion(): Promise<string> {
   const db = await openDb();
   const row = await db.getFirstAsync<{ valor: string }>(
