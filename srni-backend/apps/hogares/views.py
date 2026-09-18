@@ -251,6 +251,10 @@ class HogarViewSet(viewsets.ModelViewSet):
         # Los integrantes adicionales nunca son el autorizado (es_autorizado=False por defecto)
         miembro = serializer.save(hogar=hogar, creado_por=request.user, es_autorizado=False)
 
+        # El hogar declaraba «1 persona» con cinco integrantes registrados (QA · C3):
+        # `numero_personas` se fijaba al crear y nadie lo volvía a mirar.
+        hogar.sincronizar_numero_personas()
+
         LogAcceso.registrar(
             usuario=request.user,
             accion='AGREGAR_MIEMBRO',

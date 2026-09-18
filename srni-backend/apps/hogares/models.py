@@ -157,6 +157,24 @@ class Hogar(models.Model):
             ),
         ]
 
+    def sincronizar_numero_personas(self) -> int:
+        """
+        `numero_personas` nunca puede ser MENOR que los integrantes registrados (QA · C3).
+
+        Es el dato de cuántas personas habitan la vivienda y lo declara la familia, así
+        que puede ser mayor —hay quien no estuvo en la entrevista—. Pero quedaba en 1
+        para siempre: se fija al crear el hogar y nadie lo volvía a tocar, así que un
+        hogar con cinco integrantes seguía diciendo «1 persona» en el panel y en el
+        reporte. Menor que los integrantes que uno mismo registró es, sin más, falso.
+
+        Solo cuentan los activos: un retirado ya no habita la vivienda.
+        """
+        activos = self.miembros.filter(retirado_en__isnull=True).count()
+        if activos > (self.numero_personas or 0):
+            self.numero_personas = activos
+            Hogar.objects.filter(pk=self.pk).update(numero_personas=activos)
+        return self.numero_personas
+
     def save(self, *args, **kwargs):
         """Asigna el código del hogar la primera vez, si no vino uno."""
         if not self.codigo_hogar:

@@ -116,6 +116,29 @@ class SesionEncuestaDetalleSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
 
+    def validate_instrumento(self, instrumento):
+        """
+        No se abre una caracterización con un instrumento retirado (QA · C2).
+
+        El panel dejaba elegirlo y el servidor lo aceptaba: quedaba una entrevista
+        capturada contra una versión que la entidad ya no usa, y esas respuestas no
+        tienen a dónde ir cuando se migran. Solo aplica al crear: una sesión que ya
+        venía de un instrumento que después se retiró se sigue pudiendo terminar,
+        que es lo contrario de perder el trabajo hecho.
+        """
+        if self.instance is not None:
+            return instrumento
+        if not instrumento.activo:
+            raise serializers.ValidationError(
+                f'El instrumento {instrumento.codigo} {instrumento.version} está inactivo.'
+            )
+        if not instrumento.vigente:
+            raise serializers.ValidationError(
+                f'El instrumento {instrumento.codigo} {instrumento.version} no está vigente '
+                'en esta fecha.'
+            )
+        return instrumento
+
     def validate(self, attrs):
         """
         Sprint 19 — valida coherencia de cascada DT → Depto/Punto → Municipio.
