@@ -14,22 +14,32 @@ Nos pidieron poder **organizar la operación por equipos** en el panel:
 Hoy eso no se puede porque «supervisor» es apenas un nombre de perfil: no existe ninguna
 relación que diga a quién supervisa. Eso lo pongo yo en el servidor.
 
-## Lo que yo entrego primero
+## Ya está en producción (lo puedes usar hoy)
 
-Voy a crear el concepto de **Equipo** (un supervisor, un área y sus encuestadores, con
-fecha de entrada y salida para que quede historia) y estos servicios:
+El servidor ya tiene el concepto de **Equipo**: un supervisor, un área y sus
+encuestadores, con fecha de entrada y de salida para que quede historia.
 
-| Servicio | Para qué |
+| Servicio | Qué hace |
 |---|---|
-| `GET /api/equipos/` | Lista de equipos. El coordinador ve los de su área; el supervisor, el suyo |
-| `GET /api/equipos/mio/` | El equipo del supervisor que está conectado |
-| `POST /api/equipos/` | Crear equipo (nombre, supervisor, área) |
-| `POST /api/equipos/{id}/miembros/` | Agregar **varios** encuestadores de una vez |
-| `DELETE /api/equipos/{id}/miembros/{usuario}` | Sacar a uno del equipo |
-| `GET /api/usuarios/?equipo=&sin_equipo=1` | Buscar encuestadores para asignar |
+| `GET /api/equipos/` | Lista recortada por quien pregunta: el coordinador ve todos, el supervisor solo el suyo. Acepta `?direccion_territorial=` |
+| `GET /api/equipos/{id}/` | El equipo con su lista de `encuestadores` |
+| `GET /api/equipos/mio/` | El equipo del supervisor conectado (404 si no tiene) |
+| `POST /api/equipos/` | Crear: `{nombre, supervisor, direccion_territorial?}` |
+| `POST /api/equipos/{id}/miembros/` | Asignar **varios**: `{"usuarios": ["uuid", "uuid"]}`. Devuelve el equipo con su gente |
+| `DELETE /api/equipos/{id}/miembros/{usuario_id}/` | Sacar a uno |
+| `GET /api/equipos/sin-equipo/` | Encuestadores a los que falta asignar. Acepta `?busqueda=` |
 
-Te aviso apenas estén y te paso el contrato exacto con ejemplos de respuesta. Calculo
-2 a 3 días.
+Cada equipo trae `total_encuestadores`, `supervisor_codigo`, `supervisor_nombre` y
+`direccion_territorial_nombre`, para que la tabla no tenga que resolver nada aparte.
+
+Tres reglas que el servidor ya sostiene, para que no las repitas en el panel:
+
+1. **Un encuestador pertenece a un solo equipo.** Si lo asignas a otro, el servidor
+   cierra la pertenencia anterior solo; no hace falta quitarlo primero.
+2. **Nadie se supervisa a sí mismo** y el equipo lo encabeza un supervisor, un
+   coordinador o un administrador. Si mandas un encuestador como supervisor, responde
+   400 con el mensaje en el campo `supervisor`.
+3. **Borrar un equipo lo desactiva**, no lo elimina: la historia se conserva.
 
 ## Lo que te pediría en el panel
 
