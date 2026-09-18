@@ -273,36 +273,53 @@ class SesionEncuesta(models.Model):
             ctx['ruv_incluido'] = bool(d.get('incluido_ruv'))
             return ctx
 
-        def cuenta(p):
-            """¿Esta pregunta entra en el denominador?"""
-            return p.obligatoria and not p.es_precargada
-
-        # ── HOGAR: una sola evaluación, con el contexto del autorizado ────────
+        # ── Visibilidad, una sola vez ─────────────────────────────────────────
         mapa_hogar = mapa_para(autorizado)
         vis_hogar, _, _ = calcular_visibles(
             preguntas, reglas, mapa_hogar, contexto_para(autorizado, mapa_hogar),
         )
-        total = 0
-        respondidas = 0
-        for p in preguntas:
-            if p.nivel != 'HOGAR' or not cuenta(p) or p.codigo_externo not in vis_hogar:
-                continue
-            total += 1
-            if (valores.get((p.pk, None), '') or '').strip():
-                respondidas += 1
-
-        # ── PERSONA: una evaluación por miembro ───────────────────────────────
+        vis_por_miembro = {}
         for miembro_id in miembros:
             mapa = mapa_para(miembro_id)
             vis, _, _ = calcular_visibles(
                 preguntas, reglas, mapa, contexto_para(miembro_id, mapa),
             )
+            vis_por_miembro[miembro_id] = vis
+
+        def contar(entra):
+            """(denominador, respondidas) para el criterio `entra`."""
+            total = 0
+            respondidas = 0
             for p in preguntas:
-                if p.nivel != 'PERSONA' or not cuenta(p) or p.codigo_externo not in vis:
+                if p.nivel != 'HOGAR' or not entra(p) or p.codigo_externo not in vis_hogar:
                     continue
                 total += 1
-                if (valores.get((p.pk, miembro_id), '') or '').strip():
+                if (valores.get((p.pk, None), '') or '').strip():
                     respondidas += 1
+
+            for miembro_id in miembros:
+                vis = vis_por_miembro[miembro_id]
+                for p in preguntas:
+                    if p.nivel != 'PERSONA' or not entra(p) or p.codigo_externo not in vis:
+                        continue
+                    total += 1
+                    if (valores.get((p.pk, miembro_id), '') or '').strip():
+                        respondidas += 1
+
+            return total, respondidas
+
+        # Criterio normal: obligatorias visibles, sin las precargadas —vienen del
+        # padrón y no las responde nadie en la entrevista.
+        total, respondidas = contar(lambda p: p.obligatoria and not p.es_precargada)
+
+        # Respaldo para un instrumento SIN obligatorias. No es hipotético: al
+        # 18-sep-2026 son cuatro —Asistencia, Buenaventura, San Andrés y
+        # Urbano-Étnico— porque su curaduría contra el manual está pendiente.
+        # Con denominador cero, una entrevista entera respondida daba 0 %, y en el
+        # panel se leía como trabajo no hecho. Se mide entonces sobre todo lo que
+        # hay para responder: dice menos de lo que debería, pero dice la verdad.
+        if total == 0:
+            total, respondidas = contar(lambda p: not p.es_precargada)
 
         if total == 0:
             return 0

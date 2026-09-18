@@ -139,6 +139,22 @@ export function calcularProgresoOffline(
   let completados = 0;
   let conOblig = 0;
 
+  // Un instrumento SIN obligatorias daba 0 % con la entrevista entera respondida:
+  // el denominador es la cantidad de obligatorias visibles, y si no hay ninguna,
+  // no hay nada que dividir. No es hipotético — al 18-sep-2026 son cuatro de los
+  // instrumentos en producción (Asistencia, Buenaventura, San Andrés y
+  // Urbano-Étnico), porque su curaduría contra el manual está pendiente.
+  //
+  // Cuando eso pasa se mide sobre todo lo que hay para responder. Dice menos de lo
+  // que debería —no separa lo exigible de lo opcional— pero no miente. El backend
+  // aplica exactamente el mismo respaldo en `recalcular_porcentaje`; si los dos no
+  // contaran igual, el teléfono y el panel mostrarían números distintos de la
+  // misma entrevista.
+  const hayObligatorias = capitulos.some((cap) =>
+    getPreguntas(cap.id).some((p) => p.obligatoria === 1 && !p.es_precargada));
+  const cuenta = (p: PreguntaRow) =>
+    !p.es_precargada && (hayObligatorias ? p.obligatoria === 1 : true);
+
   for (const cap of capitulos) {
     const preguntas = getPreguntas(cap.id);
 
@@ -150,7 +166,7 @@ export function calcularProgresoOffline(
     const mapaHogar = mapaParaMiembro(preguntas, respuestasCompuesto, refHogar.id);
     const visH = calcularVisibles(preguntas, reglas, mapaHogar, contextoDe(refHogar, mapaHogar));
     const obligHogar = preguntas.filter(
-      (p) => p.nivel === 'HOGAR' && p.obligatoria === 1 && !p.es_precargada && visH.visibles.has(p.codigo_externo),
+      (p) => p.nivel === 'HOGAR' && cuenta(p) && visH.visibles.has(p.codigo_externo),
     );
 
     let obligVisibles = obligHogar.length;
@@ -164,7 +180,7 @@ export function calcularProgresoOffline(
       const mapaM = mapaParaMiembro(preguntas, respuestasCompuesto, miembro.id);
       const visP = calcularVisibles(preguntas, reglas, mapaM, contextoDe(miembro, mapaM));
       const obligPersona = preguntas.filter(
-        (p) => p.nivel === 'PERSONA' && p.obligatoria === 1 && !p.es_precargada && visP.visibles.has(p.codigo_externo),
+        (p) => p.nivel === 'PERSONA' && cuenta(p) && visP.visibles.has(p.codigo_externo),
       );
       obligVisibles += obligPersona.length;
       for (const p of obligPersona) {

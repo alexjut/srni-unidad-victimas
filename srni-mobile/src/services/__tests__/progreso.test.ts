@@ -268,3 +268,43 @@ describe('calcularProgresoOffline — reglas por expresión', () => {
     expect(invertido.obligRespondidas).toBe(1);
   });
 });
+
+// ── APK-005: instrumento sin obligatorias ────────────────────────────────────
+//
+// Cuatro instrumentos de producción no tienen ni una obligatoria (su curaduría
+// contra el manual está pendiente). Con el denominador en cero, una entrevista
+// entera respondida daba 0 %, y en el panel eso se lee como trabajo no hecho.
+// El backend aplica el mismo respaldo: los dos tienen que contar igual.
+describe('calcularProgresoOffline — instrumento sin obligatorias', () => {
+  const capitulos = [cap('C1')];
+  const p1 = preg('P1', { obligatoria: 0 });
+  const p2 = preg('P2', { obligatoria: 0 });
+  const getPreguntas = () => [p1, p2];
+
+  it('mide sobre lo respondible en vez de devolver 0', () => {
+    const r = calcularProgresoOffline(
+      capitulos, getPreguntas, [], [], { [`${p1.id}|`]: 'algo' },
+    );
+
+    expect(r.progreso).toBe(0.5);
+  });
+
+  it('todo respondido llega a 100 %', () => {
+    const r = calcularProgresoOffline(
+      capitulos, getPreguntas, [], [], { [`${p1.id}|`]: 'a', [`${p2.id}|`]: 'b' },
+    );
+
+    expect(r.progreso).toBe(1);
+  });
+
+  it('con obligatorias manda el criterio normal: las opcionales no inflan', () => {
+    const oblig = preg('O1', { obligatoria: 1 });
+    const opcional = preg('X1', { obligatoria: 0 });
+    const r = calcularProgresoOffline(
+      capitulos, () => [oblig, opcional], [], [],
+      { [`${opcional.id}|`]: 'respondida' },
+    );
+
+    expect(r.progreso).toBe(0);
+  });
+});
