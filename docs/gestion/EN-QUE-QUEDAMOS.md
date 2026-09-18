@@ -138,3 +138,8 @@ Javier (`limpiar_test_encuestas`), no se tocó nada.
 **Nuestro, pendiente:** cifrado del SQLite del móvil · modelo de Equipo (jerarquía) ·
 QA C1 (geografía hogar≠sesión) y M5 (catálogos étnicos/rurales) · réplica de flujos a
 los demás perfiles · 3 huérfanas de Telefónico.
+
+**Al cerrar el plan:** actualizar `entregables/2026-09-18-oti-arquitectura/` (PDF) y
+`docs/gestion/correo_respuesta_oti_sso_alineacion_2026-09-18.md` con lo resuelto el
+18-sep (documentación de la API cerrada, documentos «mock» corregidos, dependencia de
+Gemini retirada) ANTES de enviar. Pedido de Javier.
