@@ -196,6 +196,20 @@ export default function ConformarHogarScreen() {
       let miembrosServidor: MiembroHogarResumen[] = [];
 
       const crearOffline = async () => {
+        // APK-003 — sin señal, esta función creaba un hogar NUEVO cada vez. Volver
+        // a buscar la misma cédula dejaba dos hogares del mismo autorizado y dos
+        // altas en la cola. Con señal no pasa: el backend devuelve el que ya existe.
+        const existente = await hogaresOfflineDao.buscarPorAutorizado(victimaLocalId);
+        if (existente) {
+          // Si ya sincronizó, se sigue con el id del servidor: es el mismo hogar y
+          // desde ahí los integrantes van por POST directo, no por la cola.
+          const yaEnServidor = !!existente.id_servidor;
+          setHogarIdLocal(yaEnServidor ? existente.id_servidor! : existente.id_local);
+          setHogarId(yaEnServidor ? existente.id_servidor! : existente.id_local);
+          setHogarEsLocal(!yaEnServidor);
+          return;
+        }
+
         const hogarLocal = await hogaresOfflineDao.crearHogarOffline({
           jefe_hogar_uuid: victimaLocalId,
           numero_personas: 1,

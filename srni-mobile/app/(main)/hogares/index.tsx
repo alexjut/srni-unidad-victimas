@@ -162,8 +162,13 @@ export default function HogaresIndexScreen() {
       for (const h of res.data.results) {
         servidorItems.push({ tipo: 'servidor', data: h });
       }
-    } catch {
-      if (estaOnline) setError('No se pudo cargar hogares del servidor.');
+    } catch (err: any) {
+      // Solo es un fallo del servidor si el servidor respondió. Sin respuesta es
+      // falta de señal, y ahí la pantalla ya hace lo correcto: mostrar lo local.
+      // `estaOnline` no sirve para decidirlo: se refresca cada ~60 s, así que en
+      // modo avión reciente seguía en true y QA veía «No se pudo cargar» encima
+      // de una lista que sí tenía sus hogares (APK-003).
+      if (err?.response) setError('No se pudo cargar hogares del servidor.');
       // Sin red: silenciosamente solo mostramos los offline.
     }
 

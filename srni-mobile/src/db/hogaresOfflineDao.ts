@@ -78,6 +78,31 @@ export async function crearHogarOffline(
   return row;
 }
 
+/**
+ * El hogar que esta persona YA tiene en este teléfono, si existe.
+ *
+ * Sin señal, conformar el hogar creaba uno nuevo cada vez. Bastaba salir de la
+ * pantalla y volver a buscar la misma cédula —cosa corriente en campo, y más si
+ * la app se cerró— para terminar con dos hogares del mismo autorizado y dos
+ * `CREAR_HOGAR` en la cola. Al sincronizar, el servidor crea el primero y devuelve
+ * ese mismo para el segundo, así que la caracterización que se capturó contra el
+ * hogar duplicado apunta a un hogar que allá no existe. Con señal esto no pasa
+ * porque el backend devuelve el hogar existente; offline no había quien lo hiciera.
+ *
+ * Devuelve el más reciente: si hubiera varios de antes de este arreglo, el último
+ * es contra el que se estuvo trabajando.
+ */
+export async function buscarPorAutorizado(
+  jefeHogarUuid: string,
+): Promise<HogarOfflineRow | null> {
+  const db = await openDb();
+  const row = await db.getFirstAsync<HogarOfflineRow>(
+    'SELECT * FROM hogares_offline WHERE jefe_hogar_uuid = ? ORDER BY created_at DESC LIMIT 1',
+    [jefeHogarUuid],
+  );
+  return row ?? null;
+}
+
 export async function obtenerPorIdLocal(idLocal: string): Promise<HogarOfflineRow | null> {
   const db = await openDb();
   const row = await db.getFirstAsync<HogarOfflineRow>(

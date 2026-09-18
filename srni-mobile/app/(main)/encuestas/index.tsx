@@ -172,8 +172,10 @@ export default function EncuestasIndexScreen() {
         sesionesServidor.add(s.id);
         servidorItems.push({ tipo: 'servidor', data: s });
       }
-    } catch {
-      if (estaOnline) setError('No se pudo cargar las sesiones.');
+    } catch (err: any) {
+      // Ver la nota de hogares/index: sin respuesta del servidor es falta de señal,
+      // y las entrevistas locales se listan igual (APK-003).
+      if (err?.response) setError('No se pudo cargar las sesiones.');
     }
 
     // Los borradores locales se leen SIEMPRE, haya red o no.
