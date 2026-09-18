@@ -11,8 +11,9 @@ Nos pidieron poder **organizar la operación por equipos** en el panel:
 - El **supervisor** ve y arma su grupo de **encuestadores**.
 - El **coordinador** ve a los **supervisores de su área** y puede entrar a cada equipo.
 
-Hoy eso no se puede porque «supervisor» es apenas un nombre de perfil: no existe ninguna
-relación que diga a quién supervisa. Eso lo pongo yo en el servidor.
+Hasta ayer eso no se podía: «supervisor» era apenas un nombre de perfil y ninguna
+relación decía a quién supervisa. **Ya lo dejé en el servidor y está en producción**,
+así que puedes empezar cuando quieras.
 
 ## Ya está en producción (lo puedes usar hoy)
 
