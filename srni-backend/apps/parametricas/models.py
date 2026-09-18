@@ -57,8 +57,11 @@ class Vereda(models.Model):
 class ComunidadNegra(models.Model):
     codigo = models.CharField(max_length=20, unique=True, db_index=True)
     nombre = models.CharField(max_length=200)
+    # El catálogo oficial que usa la entidad es NACIONAL: un consejo comunitario
+    # figura por su nombre, sin municipio. Exigirlo obligaría a inventarlo.
     municipio = models.ForeignKey(
-        Municipio, on_delete=models.PROTECT, related_name='comunidades_negras'
+        Municipio, on_delete=models.PROTECT, related_name='comunidades_negras',
+        null=True, blank=True,
     )
     activo = models.BooleanField(default=True)
 
@@ -74,8 +77,10 @@ class ComunidadNegra(models.Model):
 class ResguardoIndigena(models.Model):
     codigo = models.CharField(max_length=20, unique=True, db_index=True)
     nombre = models.CharField(max_length=200)
+    # Igual que los consejos comunitarios: el catálogo de la entidad es nacional.
     municipio = models.ForeignKey(
-        Municipio, on_delete=models.PROTECT, related_name='resguardos'
+        Municipio, on_delete=models.PROTECT, related_name='resguardos',
+        null=True, blank=True,
     )
     pueblo = models.CharField(max_length=100, blank=True)
     activo = models.BooleanField(default=True)
