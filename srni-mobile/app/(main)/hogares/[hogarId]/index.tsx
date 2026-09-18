@@ -62,10 +62,12 @@ const filaStyles = StyleSheet.create({
 
 // ─── Ítem de miembro ──────────────────────────────────────────────────────────
 
-function MiembroItem({ miembro, onRetirar, onReincorporar }: {
+function MiembroItem({ miembro, onRetirar, onReincorporar, onEditar }: {
   miembro: MiembroHogarResumen;
   onRetirar?: (m: MiembroHogarResumen) => void;
   onReincorporar?: (m: MiembroHogarResumen) => void;
+  /** APK-004 — corregir lo que se capturó mal, sin tener que retirar y volver a agregar. */
+  onEditar?: (m: MiembroHogarResumen) => void;
 }) {
   const esAutorizado = miembro.es_autorizado;
   const incluido = miembro.estado_inclusion === 'INCLUIDO';
@@ -142,6 +144,23 @@ function MiembroItem({ miembro, onRetirar, onReincorporar }: {
           Al autorizado no se le ofrece: es el titular del hogar. Si es el quien
           dejo de pertenecer, primero hay que cambiar el autorizado.
         */}
+        <View style={miembroStyles.acciones}>
+        {/*
+          Corregir es distinto de retirar: un nombre mal escrito o una fecha
+          equivocada no significan que la persona dejó de pertenecer al hogar.
+          Sin esto, la única salida era retirarla y agregarla de nuevo, que deja
+          en la historia un retiro que nunca ocurrió.
+        */}
+        {!retirado && onEditar && (
+          <Pressable
+            onPress={() => onEditar(miembro)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Corregir los datos de ${miembro.nombre_completo || 'este integrante'}`}
+          >
+            <Text style={miembroStyles.accion}>Corregir datos</Text>
+          </Pressable>
+        )}
         {!esAutorizado && (retirado ? onReincorporar : onRetirar) && (
           <Pressable
             onPress={() => (retirado ? onReincorporar!(miembro) : onRetirar!(miembro))}
@@ -156,6 +175,7 @@ function MiembroItem({ miembro, onRetirar, onReincorporar }: {
             </Text>
           </Pressable>
         )}
+        </View>
       </View>
     </View>
   );
@@ -267,6 +287,112 @@ function ModalRetiro({ miembro, visible, guardando, onCancelar, onConfirmar }: {
   );
 }
 
+/**
+ * Corregir los datos de un integrante (APK-004).
+ *
+ * El servidor acepta el PATCH desde el 14-ago; lo que faltaba era la pantalla. Se
+ * corrigen el nombre, el documento y la fecha de nacimiento, que son los tres
+ * datos que se capturan a mano y donde aparecen los errores de tipeo.
+ *
+ * El rol NO se cambia acá: pasar a Tutor o Cuidador exige la constancia del §2, y
+ * un selector suelto en este modal se la saltaría.
+ */
+function ModalEditarMiembro({ miembro, visible, guardando, onCancelar, onConfirmar }: {
+  miembro: MiembroHogarResumen | null;
+  visible: boolean;
+  guardando: boolean;
+  onCancelar: () => void;
+  onConfirmar: (cambios: { nombre_completo: string; numero_documento: string; fecha_nacimiento: string }) => void;
+}) {
+  const [nombre, setNombre] = useState('');
+  const [documento, setDocumento] = useState('');
+  const [fechaNac, setFechaNac] = useState('');
+
+  useEffect(() => {
+    if (visible && miembro) {
+      setNombre((miembro.nombre_completo ?? '').trim());
+      setDocumento(miembro.numero_documento ?? '');
+      setFechaNac(miembro.fecha_nacimiento ?? '');
+    }
+  }, [visible, miembro]);
+
+  const fechaValida = !fechaNac || /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(fechaNac);
+  const puede = !!nombre.trim() && fechaValida && !guardando;
+
+  return (
+    <Portal>
+      <Modal visible={visible} onDismiss={onCancelar} contentContainerStyle={modalStyles.caja}>
+        <Text style={modalStyles.titulo}>Corregir datos</Text>
+        <Text style={modalStyles.nombre}>
+          {(miembro?.nombre_completo || '').trim() || 'Integrante sin nombre'}
+        </Text>
+        <Text style={modalStyles.ayuda}>
+          Para arreglar lo que se capturó mal. Si la persona dejó de pertenecer al
+          hogar, use «Retirar del hogar» en vez de esto.
+        </Text>
+
+        <TextInput
+          mode="outlined"
+          label="Nombre completo *"
+          value={nombre}
+          onChangeText={setNombre}
+          autoCapitalize="characters"
+          style={modalStyles.input}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
+        />
+
+        <TextInput
+          mode="outlined"
+          label="Número de documento"
+          value={documento}
+          onChangeText={setDocumento}
+          keyboardType="numeric"
+          style={modalStyles.input}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
+        />
+
+        <TextInput
+          mode="outlined"
+          label="Fecha de nacimiento (AAAA-MM-DD)"
+          placeholder="1990-05-20"
+          value={fechaNac}
+          onChangeText={setFechaNac}
+          style={modalStyles.input}
+          outlineColor={GOV.borde}
+          activeOutlineColor={GOV.azul}
+        />
+        {!fechaValida && (
+          <Text style={modalStyles.pista}>Use el formato AAAA-MM-DD.</Text>
+        )}
+
+        <View style={modalStyles.botones}>
+          <View style={modalStyles.boton}>
+            <GovButton label="Cancelar" variant="secondary" onPress={onCancelar} />
+          </View>
+          <View style={modalStyles.boton}>
+            <GovButton
+              label="Guardar"
+              loading={guardando}
+              disabled={!puede}
+              onPress={() => {
+                if (puede) {
+                  onConfirmar({
+                    nombre_completo: nombre.trim(),
+                    numero_documento: documento.trim(),
+                    fecha_nacimiento: fechaNac,
+                  });
+                }
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+    </Portal>
+  );
+}
+
 const modalStyles = StyleSheet.create({
   caja: {
     backgroundColor: GOV.superficie,
@@ -299,6 +425,7 @@ const miembroStyles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4,
   },
   retiroTxt: { ...FONT.caption, color: GOV.naranja, fontWeight: '600', flexShrink: 1 },
+  acciones: { flexDirection: 'row', gap: SPACING.md, alignItems: 'center' },
   accion: {
     ...FONT.caption, color: GOV.naranja, fontWeight: '700',
     marginTop: 6, textDecorationLine: 'underline',
@@ -416,6 +543,9 @@ function HogarDetalleScreen() {
   // siguiente. No borra: registra la novedad con su fecha, y por eso funciona
   // aunque el hogar ya tenga una caracterizacion completada.
   const [miembroARetirar, setMiembroARetirar] = useState<MiembroHogarResumen | null>(null);
+  // APK-004 — corregir lo que se capturó mal, sin retirar y volver a agregar.
+  const [miembroAEditar, setMiembroAEditar] = useState<MiembroHogarResumen | null>(null);
+  const [editando, setEditando] = useState(false);
   const [retirando, setRetirando] = useState(false);
 
   /**
@@ -429,6 +559,39 @@ function HogarDetalleScreen() {
     setHogar((prev) => (prev
       ? { ...prev, miembros: prev.miembros.map((x) => (x.id === actualizado.id ? actualizado : x)) }
       : prev));
+  }
+
+  /**
+   * Corrige los datos de un integrante (APK-004).
+   *
+   * Requiere señal: es un PATCH y no se encola. Sin red se avisa en vez de
+   * simular que se guardó — una corrección que no viaja es peor que no ofrecerla,
+   * porque la encuestadora la da por hecha.
+   */
+  async function guardarEdicion(cambios: {
+    nombre_completo: string; numero_documento: string; fecha_nacimiento: string;
+  }) {
+    if (!hogarId || !miembroAEditar) return;
+    setEditando(true);
+    try {
+      const { data } = await hogaresApi.editarMiembro(hogarId, miembroAEditar.id, {
+        nombre_completo: cambios.nombre_completo,
+        ...(cambios.numero_documento ? { numero_documento: cambios.numero_documento } : {}),
+        ...(cambios.fecha_nacimiento ? { fecha_nacimiento: cambios.fecha_nacimiento } : {}),
+      });
+      reemplazarMiembro(data);
+      setMiembroAEditar(null);
+    } catch (err: any) {
+      const detalle = err?.response?.data?.detail
+        || err?.response?.data?.nombre_completo?.[0]
+        || err?.response?.data?.fecha_nacimiento?.[0];
+      Alert.alert(
+        'No se pudo corregir',
+        detalle || 'Revise la conexion e intente de nuevo. Los datos quedaron como estaban.',
+      );
+    } finally {
+      setEditando(false);
+    }
   }
 
   async function confirmarRetiro(motivo: MotivoRetiro, fecha: string, observacion: string) {
@@ -642,6 +805,7 @@ function HogarDetalleScreen() {
                 miembro={m}
                 onRetirar={setMiembroARetirar}
                 onReincorporar={reincorporar}
+                onEditar={setMiembroAEditar}
               />
             ))
           )}
@@ -736,6 +900,14 @@ function HogarDetalleScreen() {
         )}
 
       </ScrollView>
+
+      <ModalEditarMiembro
+        miembro={miembroAEditar}
+        visible={miembroAEditar !== null}
+        guardando={editando}
+        onCancelar={() => setMiembroAEditar(null)}
+        onConfirmar={guardarEdicion}
+      />
 
       <ModalRetiro
         miembro={miembroARetirar}
