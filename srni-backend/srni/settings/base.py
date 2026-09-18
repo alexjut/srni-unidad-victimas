@@ -328,6 +328,13 @@ SPECTACULAR_SETTINGS = {
     ),
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # La documentación pide sesión. El valor por omisión de drf-spectacular es
+    # AllowAny, así que `/api/docs/`, `/api/schema/` y `/api/redoc/` quedaban
+    # abiertos en el dominio público: no exponen datos, pero sí el mapa completo
+    # de la API —rutas, parámetros y formas de cada respuesta—, que es el primer
+    # insumo de quien busca por dónde entrar. Lo detectó la revisión del concepto
+    # técnico de la OTI (18-sep-2026).
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/',
     # Seguridad en el schema

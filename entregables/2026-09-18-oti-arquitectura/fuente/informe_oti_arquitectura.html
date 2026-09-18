@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Arquitectura SICAV para OTI</title>
+<link rel="stylesheet" href="estilo.css">
+<style>
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 8.5pt; color: var(--ink-3); margin-top: 4px; }
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 8.5pt; color: var(--ink-3); margin: 4px 0 10px; }
+  .leyenda span { display: inline-flex; align-items: center; gap: 4px; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+</style>
+</head><body>
+
+<div class="portada">
+<p class="org">Unidad para las Víctimas · Subdirección Red Nacional de Información · PRY-0662064</p>
+<h1>SICAV — Arquitectura, datos e integración</h1>
+<p class="sub">Cómo está construida la caracterización, dónde queda cada dato y por dónde se integra</p>
+<p class="sub2">Documento técnico para la Oficina de Tecnologías de la Información — 18 de septiembre de 2026</p>
+<table class="ficha">
+<tr><td>Solución</td><td>SICAV — Modernización de la Entrevista de Caracterización (backend, panel web y app móvil)</td></tr>
+<tr><td>Motivo</td><td>Respuesta al concepto técnico de la OTI sobre alineación con Auth SSO y con Unidad en Línea</td></tr>
+<tr><td>Estado</td><td>En producción desde julio de 2026, con padrón real y jornadas de capacitación en curso</td></tr>
+<tr><td>Alcance</td><td>Arquitectura, persistencia, ruta de escritura al sistema legado, extracción de datos, interfaces publicadas y seguridad</td></tr>
+<tr><td>Clasificación</td><td>Uso interno — sin credenciales, sin direcciones internas, sin datos personales</td></tr>
+</table>
+</div>
+
+<div class="contenido"><h3>Contenido</h3>
+<ol>
+<li>En una página</li>
+<li>Arquitectura de la solución</li>
+<li>Dónde queda cada dato</li>
+<li>Cómo se actualiza una caracterización</li>
+<li>Escritura hacia el sistema legado</li>
+<li>De dónde se extraen los datos</li>
+<li>Interfaces publicadas para interoperar</li>
+<li>Seguridad y protección de datos</li>
+<li>Qué implica integrarse con Auth SSO</li>
+<li>Pendientes reconocidos</li>
+</ol></div>
+
+<h2>1. En una página</h2>
+<p>SICAV reemplaza la entrevista de caracterización que hoy corre sobre un aplicativo
+heredado. Tres piezas: una <strong>aplicación móvil que funciona sin conexión</strong> —porque la
+caracterización ocurre donde no hay señal—, un <strong>backend propio</strong> que recibe, valida y
+custodia la información, y un <strong>panel web</strong> de supervisión. La información se guarda en
+la base de SICAV y, cuando se habilite, se replica al sistema legado <em>usando sus
+procedimientos oficiales</em>, nunca escribiendo directo en sus tablas.</p>
+<table>
+<tr><th>Decisión</th><th>Por qué</th></tr>
+<tr><td>Captura sin conexión como requisito, no como extra</td><td>Una jornada en campo dura horas sin señal. Si el sistema exige estar en línea, se pierde la jornada.</td></tr>
+<tr><td>Base propia en PostgreSQL, no escribir en el legado en caliente</td><td>El legado no tiene control transaccional utilizable: sus procedimientos confirman por dentro y se tragan los errores. Escribir en caliente sería irreversible.</td></tr>
+<tr><td>Escritura al legado por sus procedimientos oficiales</td><td>Replica exactamente la lógica del aplicativo anterior (consecutivos, validadores, cierre de capítulos) sin reinventarla.</td></tr>
+<tr><td>Verificar cada paso con una consulta posterior</td><td>Los procedimientos no informan el fallo. La única prueba de que algo quedó escrito es volver a leerlo.</td></tr>
+<tr><td>Datos personales cifrados por campo y búsqueda por resumen</td><td>Un volcado no autorizado de la base no revela identidades; la búsqueda por documento sigue funcionando.</td></tr>
+</table>
+
+<h2>2. Arquitectura de la solución</h2>
+<div class="leyenda">
+  <span><i class="sw" style="background:#0b3b6f"></i> Construido por SRNI</span>
+  <span><i class="sw" style="background:#7a5c00"></i> Infraestructura institucional</span>
+  <span><i class="sw" style="background:#6f6b5c"></i> Sistemas de terceros / heredados</span>
+</div>
+<figure>
+<svg viewBox="0 0 980 540" role="img" aria-label="Diagrama de componentes de SICAV" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="f" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#6f6b5c"/>
+    </marker>
+    <marker id="fa" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#0b3b6f"/>
+    </marker>
+  </defs>
+  <style>
+    .b{fill:#f6f4ec;stroke:#0b3b6f;stroke-width:1.6;rx:7}
+    .bi{fill:#fff8e1;stroke:#7a5c00;stroke-width:1.6;rx:7}
+    .bx{fill:#f2f0e8;stroke:#6f6b5c;stroke-width:1.6;rx:7}
+    .t{font:600 12px 'Nunito Sans',Arial;fill:#17160f}
+    .s{font:10px 'Nunito Sans',Arial;fill:#6f6b5c}
+    .lbl{font:9.5px 'Nunito Sans',Arial;fill:#403d33}
+    .grp{fill:none;stroke:#ddd8c8;stroke-width:1.2;stroke-dasharray:4 3;rx:9}
+    .gt{font:700 9.5px 'Nunito Sans',Arial;fill:#6f6b5c;letter-spacing:.08em}
+    .ln{stroke:#6f6b5c;stroke-width:1.4;fill:none}
+    .lna{stroke:#0b3b6f;stroke-width:1.8;fill:none}
+  </style>
+
+  <!-- Campo -->
+  <rect class="grp" x="14" y="34" width="210" height="205"/>
+  <text class="gt" x="24" y="52">CAMPO (SIN SEÑAL)</text>
+  <rect class="b" x="30" y="66" width="178" height="74"/>
+  <text class="t" x="44" y="90">App móvil (Android)</text>
+  <text class="s" x="44" y="107">Expo · React Native</text>
+  <text class="s" x="44" y="122">Instrumentos empaquetados</text>
+  <rect class="b" x="30" y="152" width="178" height="72"/>
+  <text class="t" x="44" y="176">Base local + cola</text>
+  <text class="s" x="44" y="193">SQLite · respuestas</text>
+  <text class="s" x="44" y="208">Filtro del universo (21,7 MiB)</text>
+
+  <!-- Borde -->
+  <rect class="grp" x="250" y="34" width="150" height="205"/>
+  <text class="gt" x="260" y="52">BORDE</text>
+  <rect class="bi" x="264" y="80" width="122" height="60"/>
+  <text class="t" x="278" y="104">WAF</text>
+  <text class="s" x="278" y="121">TLS · dominio</text>
+  <rect class="bi" x="264" y="158" width="122" height="60"/>
+  <text class="t" x="278" y="182">Nginx</text>
+  <text class="s" x="278" y="199">SPA + API</text>
+
+  <!-- Plataforma SICAV -->
+  <rect class="grp" x="424" y="34" width="330" height="290"/>
+  <text class="gt" x="434" y="52">PLATAFORMA SICAV (SERVIDOR UARIV)</text>
+  <rect class="b" x="440" y="66" width="140" height="66"/>
+  <text class="t" x="452" y="90">Panel web</text>
+  <text class="s" x="452" y="107">React · supervisión</text>
+  <rect class="b" x="598" y="66" width="140" height="66"/>
+  <text class="t" x="610" y="90">API REST</text>
+  <text class="s" x="610" y="107">Django · JWT propio</text>
+  <rect class="b" x="440" y="150" width="140" height="66"/>
+  <text class="t" x="452" y="174">PostgreSQL 16</text>
+  <text class="s" x="452" y="191">Datos de SICAV</text>
+  <rect class="b" x="598" y="150" width="140" height="66"/>
+  <text class="t" x="610" y="174">Redis + Celery</text>
+  <text class="s" x="610" y="191">Colas y tareas</text>
+  <rect class="b" x="440" y="234" width="298" height="62"/>
+  <text class="t" x="452" y="257">Auditoría · cifrado de campos · límites de tasa</text>
+  <text class="s" x="452" y="275">Registro inmutable de accesos · claves con Argon2id</text>
+
+  <!-- Terceros -->
+  <rect class="grp" x="778" y="34" width="188" height="290"/>
+  <text class="gt" x="788" y="52">SISTEMAS DE LA ENTIDAD</text>
+  <rect class="bx" x="792" y="66" width="160" height="74"/>
+  <text class="t" x="804" y="88">Oracle legado</text>
+  <text class="s" x="804" y="105">RNIENTREVISTA</text>
+  <text class="s" x="804" y="122">por procedimientos oficiales</text>
+  <rect class="bx" x="792" y="150" width="160" height="66"/>
+  <text class="t" x="804" y="174">RUV / Vivanto</text>
+  <text class="s" x="804" y="191">Padrón y hechos</text>
+  <rect class="bx" x="792" y="234" width="160" height="62"/>
+  <text class="t" x="804" y="257">Auth SSO</text>
+  <text class="s" x="804" y="275">(por integrar)</text>
+
+  <!-- Flechas -->
+  <path class="lna" d="M208 103 H262" marker-end="url(#fa)"/>
+  <text class="lbl" x="212" y="96">sincroniza</text>
+  <path class="ln" d="M386 110 H422 V96 H596" marker-end="url(#f)"/>
+  <path class="ln" d="M386 188 H412 V99 H438" marker-end="url(#f)"/>
+  <path class="ln" d="M668 132 V148" marker-end="url(#f)"/>
+  <path class="ln" d="M580 99 H596" marker-end="url(#f)"/>
+  <path class="ln" d="M580 183 H596" marker-end="url(#f)"/>
+  <path class="ln" d="M738 99 H790" marker-end="url(#f)"/>
+  <text class="lbl" x="744" y="92">escribe</text>
+  <path class="ln" d="M738 183 H790" marker-end="url(#f)"/>
+  <text class="lbl" x="742" y="176">lectura</text>
+  <path class="ln" d="M738 265 H790" stroke-dasharray="5 4" marker-end="url(#f)"/>
+
+  <!-- Nota inferior -->
+  <rect class="grp" x="14" y="360" width="952" height="150"/>
+  <text class="gt" x="24" y="378">RUTA DE UNA CARACTERIZACIÓN</text>
+  <g>
+    <rect class="b" x="30" y="396" width="150" height="52"/><text class="t" x="42" y="418">1. Captura</text><text class="s" x="42" y="435">en el dispositivo</text>
+    <rect class="b" x="212" y="396" width="150" height="52"/><text class="t" x="224" y="418">2. Cola local</text><text class="s" x="224" y="435">orden y reintentos</text>
+    <rect class="b" x="394" y="396" width="150" height="52"/><text class="t" x="406" y="418">3. API</text><text class="s" x="406" y="435">valida y audita</text>
+    <rect class="b" x="576" y="396" width="150" height="52"/><text class="t" x="588" y="418">4. PostgreSQL</text><text class="s" x="588" y="435">fuente de verdad</text>
+    <rect class="bx" x="758" y="396" width="180" height="52"/><text class="t" x="770" y="418">5. Oracle legado</text><text class="s" x="770" y="435">verificado paso a paso</text>
+    <path class="lna" d="M180 422 H210" marker-end="url(#fa)"/>
+    <path class="lna" d="M362 422 H392" marker-end="url(#fa)"/>
+    <path class="lna" d="M544 422 H574" marker-end="url(#fa)"/>
+    <path class="ln" d="M726 422 H756" stroke-dasharray="5 4" marker-end="url(#f)"/>
+    <text class="lbl" x="700" y="472">El paso 5 está apagado por configuración hasta contar con respaldo y aval de la operación.</text>
+    <text class="lbl" x="30" y="472">Los pasos 1 y 2 funcionan sin conexión; la sincronización ocurre cuando vuelve la señal.</text>
+  </g>
+</svg>
+<figcaption>Componentes de SICAV y ruta que sigue una caracterización desde el dispositivo hasta el sistema legado.</figcaption>
+</figure>
+
+<h2>3. Dónde queda cada dato</h2>
+<p>La fuente de verdad es la base de SICAV en PostgreSQL 16, en el servidor institucional.
+Nada de lo capturado depende del dispositivo una vez sincroniza.</p>
+<table>
+<tr><th>Información</th><th>Dónde vive</th><th class="n">Volumen</th></tr>
+<tr><td>Padrón operativo de víctimas</td><td>Tabla de víctimas (datos personales cifrados por campo)</td><td class="n">5.926.004</td></tr>
+<tr><td>Universo del RUV (instantánea)</td><td>Tabla de personas del universo</td><td class="n">12.009.492</td></tr>
+<tr><td>Caracterizaciones hechas en el legado</td><td>Tabla espejo de solo lectura</td><td class="n">222.094</td></tr>
+<tr><td>Hogares, integrantes, sesiones y respuestas</td><td>Tablas propias de SICAV</td><td class="n">operación en curso</td></tr>
+<tr><td>Instrumentos (los 8 perfiles)</td><td>Catálogo versionado</td><td class="n">1.959 preguntas · 1.043 reglas</td></tr>
+<tr><td>Registro de accesos</td><td>Tabla de auditoría de solo inserción</td><td class="n">—</td></tr>
+<tr><td>Envíos al legado</td><td>Libro de escritura, paso a paso y por hogar</td><td class="n">—</td></tr>
+</table>
+<p>En el teléfono no queda copia del padrón: la consulta sin conexión se resuelve con un
+filtro probabilístico de 21,7 MiB que responde si una persona existe, sin contener
+nombres ni documentos legibles. Al cerrar sesión se borran del dispositivo los datos
+personales, aun si quedan envíos pendientes.</p>
+
+<h2>4. Cómo se actualiza una caracterización</h2>
+<ol>
+<li><strong>Captura.</strong> Cada respuesta se escribe en la base local del dispositivo en el momento, no al cerrar. Si el equipo se apaga, lo respondido está.</li>
+<li><strong>Cola con orden.</strong> Lo capturado se encola respetando dependencias: primero la víctima, luego el hogar, los integrantes, la sesión, las respuestas y el cierre. Cada elemento reintenta con espera creciente; los identificadores locales se reemplazan por los del servidor cuando estos existen.</li>
+<li><strong>Sincronización.</strong> Se dispara al recuperar conectividad, al volver la app al frente y por revisión periódica. Un candado impide envíos duplicados.</li>
+<li><strong>Servidor.</strong> La API valida que la pregunta pertenezca al instrumento de la sesión, resuelve a qué integrante corresponde, recalcula el avance y deja registro de auditoría de cada operación.</li>
+<li><strong>Cierre.</strong> Al finalizar se marca la caracterización, se actualiza la fecha de caracterización de todos los integrantes del hogar y, si aplica, se registra en el libro de recaracterizaciones.</li>
+</ol>
+<div class="nota"><strong>Pausa.</strong> Desde el 18 de septiembre una caracterización puede pausarse y retomarse días después, conservando lo respondido. Lo pidió el equipo de campo: hay entrevistas que se interrumpen y se continúan en otra visita.</div>
+
+<h2>5. Escritura hacia el sistema legado</h2>
+<p>SICAV <strong>no inserta directamente</strong> en las tablas del aplicativo anterior. Toda escritura
+pasa por los procedimientos oficiales de esa base, en el mismo orden en que los invoca
+el aplicativo heredado, y <strong>cada paso se verifica con una consulta posterior</strong> antes de
+avanzar al siguiente.</p>
+<table>
+<tr><th class="n">#</th><th>Paso</th><th>Qué escribe</th></tr>
+<tr><td class="n">1</td><td>Hogar</td><td>Crea el hogar y obtiene su consecutivo</td></tr>
+<tr><td class="n">2</td><td>Personas</td><td>Registra a cada integrante</td></tr>
+<tr><td class="n">3</td><td>Miembros</td><td>Vincula las personas al hogar</td></tr>
+<tr><td class="n">4</td><td>Validadores</td><td>Reglas de hogar y parentesco</td></tr>
+<tr><td class="n">5</td><td>Hechos</td><td>Validador de hechos victimizantes</td></tr>
+<tr><td class="n">6</td><td>Encuestado</td><td>Marca a quién se entrevistó</td></tr>
+<tr><td class="n">7</td><td>Territorio</td><td>Cascada de dirección territorial, punto y municipio de atención</td></tr>
+<tr><td class="n">8</td><td>Respuestas</td><td>Envía las respuestas de la encuesta</td></tr>
+<tr><td class="n">9</td><td>Capítulos</td><td>Finaliza cada capítulo</td></tr>
+<tr><td class="n">10</td><td>Cierre</td><td>Deja la encuesta en estado finalizado</td></tr>
+</table>
+<p><strong>Estado:</strong> la ruta está construida y probada de extremo a extremo, con un piloto
+controlado verificado en producción en julio sobre un hogar de prueba. La escritura
+automática permanece <strong>apagada por configuración</strong>: se enciende cuando la entidad
+confirme el respaldo del legado y dé el aval formal. Mientras tanto, cada caracterización
+finalizada queda anotada como pendiente de envío, sin perderse.</p>
+<div class="nota"><strong>Por qué se verifica cada paso.</strong> Los procedimientos del legado confirman por
+dentro y capturan sus propios errores sin reportarlos: una llamada puede “responder
+bien” sin haber escrito nada. Por eso el libro de envíos solo da un paso por bueno
+cuando una consulta posterior encuentra la fila.</div>
+
+<h2>6. De dónde se extraen los datos</h2>
+<table>
+<tr><th>Dato</th><th>Origen</th><th>Cómo</th></tr>
+<tr><td>Padrón de víctimas incluidas</td><td>Base institucional del RNI</td><td>Carga controlada por proceso propio, del lado del servidor</td></tr>
+<tr><td>Universo del RUV</td><td>Fuentes oficiales vía enlace autorizado</td><td>Carga en dos fases: cargue y resolución de identidades repetidas</td></tr>
+<tr><td>Fechas de caracterización previa</td><td>Sistema legado</td><td>Lectura de sus tablas de hogar</td></tr>
+<tr><td>Hechos victimizantes</td><td>RUV</td><td>Lectura por enlace autorizado</td></tr>
+<tr><td>Caracterizaciones históricas</td><td>Sistema legado</td><td>Copia espejo de solo lectura</td></tr>
+</table>
+<p>Todas las lecturas son con las credenciales autorizadas por la entidad y quedan en el
+registro de accesos. No se replican datos personales fuera de la infraestructura
+institucional.</p>
+<div class="nota alerta"><strong>Hallazgo que compete a la OTI.</strong> La cadena de carga nocturna del aplicativo
+heredado —el proceso que recoge las encuestas tomadas sin conexión desde una carpeta
+compartida— <strong>falla todas las noches desde el 16 de agosto</strong> porque esa carpeta dejó de
+estar disponible tras un reinicio del servidor. Lo detectamos y documentamos en el caso
+14512. No es un componente de SICAV, pero mientras siga así se sigue perdiendo captura
+diaria del sistema anterior, y la ventana de recuperación de los archivos es limitada.</div>
+
+<h2>7. Interfaces publicadas para interoperar</h2>
+<p>El backend publica su contrato <strong>OpenAPI</strong> con documentación interactiva. Para el caso
+de uso que plantea la OTI —que Unidad en Línea muestre a la víctima información derivada
+de su caracterización— los servicios ya existen:</p>
+<table>
+<tr><th>Necesidad</th><th>Servicio disponible</th></tr>
+<tr><td>Estado de una persona frente a la caracterización</td><td>Consulta por documento: condición en el RUV, si está habilitada y fecha de su última caracterización</td></tr>
+<tr><td>Grupo familiar</td><td>Consulta del grupo asociado a la persona</td></tr>
+<tr><td>Situación del envío al sistema legado</td><td>Estado por hogar, con pasos verificados y fallidos</td></tr>
+<tr><td>Recaracterizaciones</td><td>Listado y resumen</td></tr>
+<tr><td>Producción de la operación</td><td>Reportes por encuestador y series de tiempo</td></tr>
+</table>
+<p>Lo que falta para consumirlos desde otra plataforma no es técnico de nuestro lado, sino
+de acuerdo: control de acceso entre sistemas (lo natural es el emisor común de identidad)
+y definición de qué campos es pertinente mostrarle al ciudadano, que debe revisar
+protección de datos.</p>
+
+<h2>8. Seguridad y protección de datos</h2>
+<table>
+<tr><th>Control</th><th>Implementación</th></tr>
+<tr><td>Canal</td><td>TLS obligatorio; publicación únicamente por el dominio institucional detrás del firewall de aplicaciones</td></tr>
+<tr><td>Identidad</td><td>Token de acceso de vida corta y token de refresco rotativo con lista de revocación; contraseñas con Argon2id</td></tr>
+<tr><td>Datos personales</td><td>Cifrado por campo sobre los identificadores, con búsqueda por resumen SHA-256 indexado</td></tr>
+<tr><td>Dispositivo</td><td>Tokens en el almacén seguro del sistema operativo, biometría opcional, borrado de datos personales al cerrar sesión</td></tr>
+<tr><td>Trazabilidad</td><td>Registro de accesos de solo inserción: ingreso, búsqueda, consulta, captura, cierre, uso de IA</td></tr>
+<tr><td>Abuso y extracción</td><td>Límites de tasa por usuario y por origen, ajustados a la escala de la entidad</td></tr>
+<tr><td>Permisos</td><td>Matriz por perfil verificada automáticamente en cada cambio (61 comprobaciones sobre 5 perfiles)</td></tr>
+</table>
+
+<h2>9. Qué implica integrarse con Auth SSO</h2>
+<p>Compartimos el enfoque de federación de tokens. Del lado de SICAV el trabajo está
+acotado a la capa de autenticación:</p>
+<ol>
+<li>Aceptar tokens firmados por el emisor del Auth API (firma asimétrica con llaves publicadas), validando emisor y audiencia.</li>
+<li>Mapear la identidad del token al usuario ya existente en SICAV. Las cuentas reales están creadas y corresponden a las mismas personas, así que no se duplican usuarios.</li>
+<li>Conservar en SICAV la autorización: qué puede hacer cada perfil sigue siendo del negocio.</li>
+</ol>
+<div class="nota alerta"><strong>La condición que no es negociable: la operación sin conexión.</strong> Una jornada
+de caracterización dura horas sin señal. El esquema de sesión debe permitir una
+credencial de refresco de varios días y revalidación al sincronizar. Si la sesión expira
+en campo, no se pierde una pantalla: se pierde la jornada de caracterización de familias
+que ya fueron visitadas.</div>
+<p>Necesitamos de la OTI tres definiciones: si el Auth API soporta el flujo de código de
+autorización con PKCE (el estándar para aplicaciones móviles), cuál es el punto de
+publicación de llaves con su emisor y audiencia, y qué vigencias admite para el caso de
+campo.</p>
+
+<h2>10. Pendientes reconocidos</h2>
+<table>
+<tr><th>Pendiente</th><th>Estado</th><th>Plan</th></tr>
+<tr><td>Cifrado del almacenamiento local del dispositivo</td><td><span class="e pend">Pendiente</span></td><td>Planificado. Mitigación vigente: documento hasheado y borrado al cerrar sesión</td></tr>
+<tr><td>Consentimiento informado de la persona entrevistada para el uso de IA</td><td><span class="e pend">Por definir</span></td><td>Se solicita concepto del área de protección de datos</td></tr>
+<tr><td>Documentación interactiva de la API accesible sin autenticación</td><td><span class="e pend">En corrección</span></td><td>Se restringe el acceso; no expone datos, sí el mapa de servicios</td></tr>
+<tr><td>Documentos de sprints que aún mencionan la fuente de prueba</td><td><span class="e pend">En corrección</span></td><td>Se actualizan; producción usa el padrón real desde agosto</td></tr>
+<tr><td>Escritura automática al legado</td><td><span class="e ok">Construida, apagada</span></td><td>Se enciende con respaldo confirmado y aval de la operación</td></tr>
+<tr><td>Cadena de carga nocturna del aplicativo heredado</td><td><span class="e crit">Falla desde el 16-ago</span></td><td>Corresponde a la OTI restablecer la carpeta compartida (caso 14512)</td></tr>
+</table>
+
+<p class="pie-doc">Documento preparado por Desarrollo SRNI. Las cifras provienen de la base de producción y de los entregables de bases de datos del 7 de septiembre de 2026.</p>
+</body></html>
