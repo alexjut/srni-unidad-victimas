@@ -58,10 +58,49 @@ describe('cargarMiembrosHogar — OFFLINE', () => {
     mockApi.detalle.mockRejectedValue(new Error('network'));
     mockOffline.construirMiembrosOffline.mockResolvedValue([miembro('loc1', true)] as any);
 
+    mockCache.obtenerMiembros.mockResolvedValue(null);
+
     const r = await cargarMiembrosHogar('Hlocal');
 
     expect(r.map((m) => m.id)).toEqual(['loc1']);
-    expect(mockCache.obtenerMiembros).not.toHaveBeenCalled();
+    // Sin caché, lo local es todo lo que hay: no se excluye nada.
+    expect(mockOffline.construirMiembrosOffline).toHaveBeenCalledWith('Hlocal', { excluirEnviados: false });
+  });
+
+  // QA 16-sep-2026: integrante agregado sin señal a un hogar que ya estaba en el
+  // servidor. La lista offline traía solo a ese integrante y ganaba sobre la caché:
+  // el autorizado y el resto desaparecían de las preguntas por persona.
+  it('hogar del servidor + integrante agregado sin señal: caché y nuevo juntos', async () => {
+    mockApi.detalle.mockRejectedValue(new Error('network'));
+    mockCache.obtenerMiembros.mockResolvedValue([miembro('srv1', true), miembro('srv2')] as any);
+    mockOffline.construirMiembrosOffline.mockResolvedValue([miembro('loc-nuevo')] as any);
+
+    const r = await cargarMiembrosHogar('H1');
+
+    expect(r.map((m) => m.id)).toEqual(['srv1', 'srv2', 'loc-nuevo']);
+    // Con caché, los ya subidos vienen en ella: se excluyen de lo local.
+    expect(mockOffline.construirMiembrosOffline).toHaveBeenCalledWith('H1', { excluirEnviados: true });
+  });
+
+  it('no repite al autorizado reconstruido offline si la caché ya lo trae', async () => {
+    mockApi.detalle.mockRejectedValue(new Error('network'));
+    mockCache.obtenerMiembros.mockResolvedValue([miembro('srv1', true)] as any);
+    mockOffline.construirMiembrosOffline.mockResolvedValue(
+      [miembro('vic-local', true), miembro('loc-nuevo')] as any);
+
+    const r = await cargarMiembrosHogar('H1');
+
+    expect(r.map((m) => m.id)).toEqual(['srv1', 'loc-nuevo']);
+  });
+
+  it('no repite un integrante que está en la caché y en lo local con el mismo id', async () => {
+    mockApi.detalle.mockRejectedValue(new Error('network'));
+    mockCache.obtenerMiembros.mockResolvedValue([miembro('srv1', true), miembro('m2')] as any);
+    mockOffline.construirMiembrosOffline.mockResolvedValue([miembro('m2')] as any);
+
+    const r = await cargarMiembrosHogar('H1');
+
+    expect(r.map((m) => m.id)).toEqual(['srv1', 'm2']);
   });
 
   it('hogar creado ONLINE y red caída: cae a la caché del servidor (el bug #4/#38)', async () => {

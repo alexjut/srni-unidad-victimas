@@ -138,6 +138,13 @@ function resumen(parcial: Partial<MiembroHogarResumen> & { id: string }): Miembr
  */
 export async function construirMiembrosOffline(
   hogarIdLocal: string,
+  opciones: {
+    /**
+     * Omite los integrantes cuya alta ya llegó al servidor: esos vienen en la
+     * caché con su id de servidor, y sumarlos otra vez con el id local los duplica.
+     */
+    excluirEnviados?: boolean;
+  } = {},
 ): Promise<MiembroHogarResumen[]> {
   const out: MiembroHogarResumen[] = [];
 
@@ -162,6 +169,7 @@ export async function construirMiembrosOffline(
 
   const adicionales = await listarPorHogar(hogarIdLocal);
   for (const m of adicionales) {
+    if (opciones.excluirEnviados && m.estado_sync === 'enviado') continue;
     let p: Record<string, string> = {};
     try { p = JSON.parse(m.payload_json); } catch { /* payload corrupto */ }
     out.push(resumen({

@@ -38,15 +38,42 @@ export async function cargarMiembrosHogar(
     }
     return ms;
   } catch {
-    // Sin red (o id de hogar local). Primero los creados offline, luego la caché.
+    // Sin red (o id de hogar local). Se juntan las dos fuentes locales:
+    //  - construirMiembrosOffline: el hogar completo si se creó sin red, o SOLO
+    //    los integrantes agregados sin red si el hogar ya estaba en el servidor.
+    //  - la caché del servidor (poblada en el camino online).
+    //
+    // Antes se devolvía la primera que no viniera vacía. Con un hogar del
+    // servidor y un integrante agregado sin señal, la lista offline traía solo a
+    // ese integrante y ganaba: el autorizado y el resto del hogar desaparecían de
+    // las preguntas por persona hasta que volviera la red.
+    let locales: MiembroHogarResumen[] = [];
+    let cache: MiembroHogarResumen[] = [];
     try {
-      const locales = await miembrosOfflineDao.construirMiembrosOffline(hogarId);
-      if (locales.length > 0) return ordenarMiembros(locales);
-    } catch { /* sigue a la caché */ }
-    try {
-      const cache = await hogaresCacheDao.obtenerMiembros(hogarId);
-      if (cache && cache.length > 0) return ordenarMiembros(cache);
+      cache = (await hogaresCacheDao.obtenerMiembros(hogarId)) ?? [];
     } catch { /* sin caché */ }
-    return [];
+    try {
+      // Con caché, los integrantes que ya subieron vienen en ella con su id de
+      // servidor: sumarlos otra vez con el id local los duplicaría. Sin caché,
+      // lo local es lo único que hay y se usa completo.
+      locales = await miembrosOfflineDao.construirMiembrosOffline(
+        hogarId, { excluirEnviados: cache.length > 0 });
+    } catch { /* solo la caché */ }
+    return ordenarMiembros(combinarMiembros(cache, locales));
   }
+}
+
+/**
+ * Caché del servidor + integrantes locales, sin repetir a nadie. Si la caché ya
+ * trae un autorizado, el «autorizado» reconstruido offline sobra (es el mismo).
+ */
+export function combinarMiembros(
+  cache: MiembroHogarResumen[],
+  locales: MiembroHogarResumen[],
+): MiembroHogarResumen[] {
+  if (cache.length === 0) return locales;
+  const ids = new Set(cache.map((m) => m.id));
+  const hayAutorizado = cache.some((m) => m.es_autorizado);
+  const extra = locales.filter((m) => !ids.has(m.id) && !(hayAutorizado && m.es_autorizado));
+  return [...cache, ...extra];
 }

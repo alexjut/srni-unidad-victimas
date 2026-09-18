@@ -365,25 +365,29 @@ function FormularioIndexScreen() {
   // IDS (no solo el conteo) porque el progreso PERSONA lee la respuesta de cada
   // miembro por su clave `pregunta_id|miembro_id`. Si no hay miembros, queda
   // vacío y el servicio de progreso usa un miembro fantasma (≡ Math.max(N, 1)).
-  useEffect(() => {
-    if (!hogarId) return;
-    let activo = true;
-    cargarMiembrosHogar(hogarId)
-      // Van los datos demográficos, no solo el id: el progreso evalúa reglas por
-      // edad/sexo/RUV y con solo el id las daba todas por no cumplidas.
-      .then((ms) => {
-        if (!activo) return;
-        setMiembrosRef(ms.map((m) => ({
-          id: m.id,
-          genero: m.genero,
-          fecha_nacimiento: m.fecha_nacimiento,
-          incluido_ruv: m.incluido_ruv,
-          es_autorizado: m.es_autorizado,
-        })));
-      })
-      .catch(() => { /* sin datos: queda vacío (miembro fantasma en el cálculo) */ });
-    return () => { activo = false; };
-  }, [hogarId]);
+  // Con foco: al volver de «Agregar integrante» la pantalla se conserva (misma
+  // clave) y el progreso debe contar ya a la persona nueva.
+  useFocusEffect(
+    useCallback(() => {
+      if (!hogarId) return;
+      let activo = true;
+      cargarMiembrosHogar(hogarId)
+        // Van los datos demográficos, no solo el id: el progreso evalúa reglas por
+        // edad/sexo/RUV y con solo el id las daba todas por no cumplidas.
+        .then((ms) => {
+          if (!activo) return;
+          setMiembrosRef(ms.map((m) => ({
+            id: m.id,
+            genero: m.genero,
+            fecha_nacimiento: m.fecha_nacimiento,
+            incluido_ruv: m.incluido_ruv,
+            es_autorizado: m.es_autorizado,
+          })));
+        })
+        .catch(() => { /* sin datos: queda vacío (miembro fantasma en el cálculo) */ });
+      return () => { activo = false; };
+    }, [hogarId]),
+  );
 
   // Sprint 21 fix — recalcular progreso al volver al pantalla (no solo
   // al cambiar sesionServerId). El bug anterior: el useEffect con
@@ -746,6 +750,31 @@ function FormularioIndexScreen() {
         />
       </View>
 
+      {/* QA 16-sep-2026: llega una persona del hogar a mitad de la entrevista (o
+          faltó registrarla) y no había por dónde agregarla. Cerrada, ya no aplica. */}
+      {hogarId && !cerradaSinEnviar ? (
+        <Pressable
+          onPress={() => router.push({
+            pathname: '/(main)/hogares/[hogarId]/agregar-integrante',
+            params: {
+              hogarId,
+              ...(sesionServerId ? { sesionServerId } : {}),
+              ...(instrumentoId ? { instrumentoId } : {}),
+              ...(borradorId ? { borradorId } : {}),
+            },
+          })}
+          style={({ pressed }) => [styles.agregarIntegrante, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Agregar integrante al hogar"
+        >
+          <MaterialCommunityIcons name="account-plus-outline" size={18} color={GOV.azul} />
+          <Text style={styles.agregarIntegranteTxt}>
+            Agregar integrante al hogar ({miembrosRef.length})
+          </Text>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={GOV.azul} />
+        </Pressable>
+      ) : null}
+
       <FlatList
         data={capitulos}
         keyExtractor={(item) => item.id}
@@ -926,6 +955,20 @@ const styles = StyleSheet.create({
 
   lista: { padding: SPACING.md, paddingBottom: SPACING.sm },
   footerFinalizar: { paddingVertical: SPACING.md, paddingBottom: SPACING.xl },
+  agregarIntegrante: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 10,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: GOV.azul,
+    backgroundColor: GOV.superficie,
+  },
+  agregarIntegranteTxt: { ...FONT.label, color: GOV.azul, fontWeight: '700', flex: 1 },
   avisoCerrada: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -6,7 +6,7 @@ import {
   ActivityIndicator, Chip, IconButton, ProgressBar,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { remontarPorParams } from '../../../src/navegacion/remontarPorParams';
 import * as instrumentos from '../../../src/services/instrumentos';
 import * as borradoresDao from '../../../src/db/borradoresDao';
@@ -512,14 +512,20 @@ function CapituloScreen() {
   // Tolerante a red (fix #4/#38): online → caché; offline-local →
   // construirMiembrosOffline; online caído → caché del servidor. Sin esto las
   // preguntas PERSONA NO se renderizaban sin red y se perdía media caracterización.
-  useEffect(() => {
-    if (!hogarId) return;
-    let activo = true;
-    cargarMiembrosHogar(hogarId)
-      .then((ms) => { if (activo) setMiembros(ms); })
-      .catch(() => { /* queda en [] (degradación a solo HOGAR) */ });
-    return () => { activo = false; };
-  }, [hogarId]);
+  //
+  // Con foco, no solo al montar: si se agrega un integrante a mitad de la
+  // entrevista y se vuelve a un capítulo ya abierto, la pantalla se conserva
+  // (misma clave) y sin esto la persona nueva no aparecía en las preguntas.
+  useFocusEffect(
+    useCallback(() => {
+      if (!hogarId) return;
+      let activo = true;
+      cargarMiembrosHogar(hogarId)
+        .then((ms) => { if (activo) setMiembros(ms); })
+        .catch(() => { /* queda en [] (degradación a solo HOGAR) */ });
+      return () => { activo = false; };
+    }, [hogarId]),
+  );
 
   // ── Prellenado de "Datos básicos" por CADA miembro ──────────────────────────
   // Siembra UNA sola vez por (borrador, capítulo) lo que ya conocemos de CADA
