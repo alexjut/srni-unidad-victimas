@@ -104,3 +104,37 @@ empezar el modelo de Equipo.
 **Usuarios VIVANTO — cierre (18-sep):** NO se crea `LLOZANOF` ni se toca `LJLOZANOE`:
 Javier confirma que ese usuario está en VIVANTO pero **aún no tiene aprobación**. Las 10
 cuentas restantes ya quedaron activas con clave provisional.
+
+---
+
+## Jornada del 18-sep-2026 — plan de pendientes
+
+**Cerrado y en producción (backend):**
+| Commit | Qué |
+|---|---|
+| `096053e` | Padrón completo en el teléfono (Fase B2): de 5.000 personas a 5,9 M |
+| `8d8efd2` | APK-003: hogar duplicado sin señal + falso «no se pudo cargar» |
+| `af4277b` | Cambiar contraseña desde la APK |
+| `ced2411` | APK-004: corregir datos de un integrante |
+| `aae68b1` | APK-005: porcentaje 0 % en instrumentos sin obligatorias (criterio A) |
+| `4a958b6` | Código de hogar automático (los 54 de prod estaban SIN código) |
+| `6aee0ae` | Documentos que decían «mock» + se quitó `@google/generative-ai` |
+| `6b14e5e` | QA C2 (instrumento retirado) y C3 (nº personas) |
+| `98d2b98` | APK 1.2.8 |
+
+**Aplicado en producción:** `backfill_porcentaje` (39/51 sesiones) · `asignar_codigos_hogar`
+(54/54, 0 duplicados) · documentación de la API cerrada (401).
+
+**Hallazgo de paso:** 37 sesiones de ASISTENCIA en prod son datos de prueba (COMPLETADA
+al 100 % con **cero** respuestas). El recálculo las dejó en 0 %. Borrarlas es decisión de
+Javier (`limpiar_test_encuestas`), no se tocó nada.
+
+**Sigue abierto y NO es nuestro:**
+- Curar obligatorias de Asistencia, Buenaventura, San Andrés y Urbano-Étnico contra el
+  manual (área funcional). Mientras tanto el porcentaje usa el criterio A.
+- ~15 reglas AND, 646 opciones sin código VIVANTO, campesinado.
+- `F:\Encuestas` (caso 14512), respaldos de PostgreSQL, GAVE.
+
+**Nuestro, pendiente:** cifrado del SQLite del móvil · modelo de Equipo (jerarquía) ·
+QA C1 (geografía hogar≠sesión) y M5 (catálogos étnicos/rurales) · réplica de flujos a
+los demás perfiles · 3 huérfanas de Telefónico.
