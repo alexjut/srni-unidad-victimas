@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Propuesta UX — Instrumento (Catálogo de preguntas)</title>
+<style>
+  :root{
+    --navy:#0b2d63; --navy-dark:#082047; --gold:#e8b43a;
+    --orange:#c1652f; --green:#1e7b34; --green-bg:#e6f4ea;
+    --amber:#b7860b; --amber-bg:#fdf3d9;
+    --gray-bg:#f4f6f9; --border:#e3e7ee; --text:#2b2f38; --text-mut:#6b7280;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--gray-bg);color:var(--text);}
+  .topbar{background:var(--navy);color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;}
+  .topbar .brand .crest{width:26px;height:26px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--navy-dark);font-weight:800;}
+  .badge-proposal{background:var(--gold);color:var(--navy-dark);font-weight:700;font-size:11px;padding:4px 10px;border-radius:20px;letter-spacing:.03em;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px;}
+  .crumb{font-size:12.5px;color:var(--text-mut);margin:20px 0 8px;}
+  .crumb b{color:var(--orange);}
+
+  .instrument-head{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:8px;position:relative;}
+  .instrument-head h1{font-size:21px;margin:0 0 4px;display:inline-block;}
+  .vigente{float:right;background:var(--green-bg);color:var(--green);font-weight:700;font-size:12px;padding:4px 12px;border-radius:20px;}
+  .sub{color:var(--text-mut);font-size:12.5px;margin-bottom:12px;}
+  .stat-row{display:flex;gap:10px;margin-bottom:10px;}
+  .stat{background:var(--gray-bg);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--navy);display:flex;gap:6px;align-items:center;}
+  .fuente{font-size:12px;color:var(--text-mut);font-style:italic;border-top:1px solid var(--border);padding-top:10px;margin-top:6px;}
+
+  .note{background:#fff8e6;border:1px solid #f0dca0;color:#7a5b00;font-size:12.5px;padding:10px 14px;border-radius:8px;margin:14px 0 20px;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;position:sticky;top:0;background:var(--gray-bg);padding:10px 0;z-index:5;}
+  .toolbar input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;background:#fff;}
+  .toolbar .counter{font-size:12px;color:var(--text-mut);align-self:center;white-space:nowrap;}
+
+  .layout{display:grid;grid-template-columns:290px 1fr;gap:20px;align-items:start;}
+  .sidebar{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;position:sticky;top:66px;max-height:calc(100vh - 90px);overflow:auto;}
+  .sidebar .stitle{font-size:11px;text-transform:uppercase;color:var(--text-mut);font-weight:700;margin:4px 8px 8px;}
+  .snav{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer;margin-bottom:2px;}
+  .snav:hover{background:var(--gray-bg);}
+  .snav.active{background:#fbe9e1;}
+  .snav .sbadge{width:28px;height:28px;border-radius:6px;background:var(--orange);color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .snav .sname{font-size:12.5px;font-weight:700;line-height:1.25;}
+  .snav .scount{font-size:10.5px;color:var(--text-mut);}
+  .snav .sdone{margin-left:auto;width:8px;height:8px;border-radius:50%;background:#d8dce3;}
+  .snav.seen .sdone{background:var(--green);}
+
+  .content{min-width:0;}
+  .chapter{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;scroll-margin-top:80px;}
+  .chapter-head{display:flex;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;}
+  .chapter-head .cbadge{background:var(--orange);color:#fff;font-weight:800;font-size:12.5px;border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .chapter-head .ctitle{font-weight:700;font-size:14.5px;}
+  .chapter-head .cdesc{font-size:12px;color:var(--text-mut);margin-top:2px;}
+  .chapter-head .ccount{font-size:11.5px;color:var(--text-mut);background:var(--gray-bg);padding:4px 10px;border-radius:20px;white-space:nowrap;}
+  .chapter-head .chev{transition:transform .15s;color:var(--text-mut);margin-left:6px;}
+  .chapter.open .chev{transform:rotate(180deg);}
+  .chapter-body{display:none;padding:4px 18px 16px;}
+  .chapter.open .chapter-body{display:block;}
+
+  .qcard{border-top:1px solid #f0f1f4;padding:14px 0;}
+  .qcard .qhead{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+  .qcode{font-size:11px;font-weight:800;color:var(--orange);background:#fbe9e1;padding:2px 8px;border-radius:5px;}
+  .tag{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:#eef1f6;color:#425066;}
+  .tag.unidad{background:#e8eefc;color:#2a4ba0;}
+  .qtext{font-size:13px;margin:4px 0 6px;}
+  .opts{display:flex;flex-wrap:wrap;gap:6px;}
+  .opt{font-size:11px;background:var(--gray-bg);border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--text-mut);}
+
+  .footer-note{margin-top:30px;padding:16px 18px;background:#fff;border:1px dashed #c9cfda;border-radius:10px;font-size:12px;color:var(--text-mut);}
+  mark{background:#ffe9a8;padding:0 2px;border-radius:3px;}
+  .empty-hint{font-size:12.5px;color:var(--text-mut);padding:30px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="crest">UV</div> Unidad para las Víctimas · SRNI</div>
+  <div class="badge-proposal">PROPUESTA DE MEJORA UX — Jorge Cardona  </div>
+</div>
+
+<div class="wrap">
+  <div class="crumb">← Todos los instrumentos</div>
+
+  <div class="instrument-head">
+    <span class="vigente">Vigente</span>
+    <h1>Perfil Rural Étnico UARIV V1</h1>
+    <div class="sub">RURAL_ETNICO · vV1 · Vigente desde diciembre de 2020</div>
+    <div class="stat-row">
+      <div class="stat"> 14 capítulos</div>
+      <div class="stat"> 106 preguntas</div>
+    </div>
+    <div class="fuente">Fuente: Diccionario UARIV Instrumento V1 — Perfil para comunidades étnicas (indígenas, afrocolombianas, ROM, raizales, palenqueras) en zonas rurales; énfasis en territorio colectivo, gobernanza étnica, economía propia, prácticas ancestrales, afectación territorial por el conflicto y retorno a territorio.</div>
+  </div>
+
+  <div class="note"> Propuesta de reorganización de esta misma pantalla. Se conservan los 14 capítulos y las 106 preguntas exactamente como están (código, tipo, unidad, opciones de lista) — solo se agrega navegación lateral, buscador y colapso por capítulo para no tener que bajar por un solo listado interminable.</div>
+
+  <div class="toolbar">
+    <input type="text" id="qsearch" placeholder="Buscar por código o texto de pregunta (ej. A6, vivienda, territorio)...">
+    <div class="counter" id="counter">106 preguntas · 14 capítulos</div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="stitle">Capítulos</div>
+      <div id="sidebarNav"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <div class="footer-note">
+    Propuesta preparada a partir de la revisión QA de la pantalla real <code>/instrumentos/{id}</code>. El capítulo "A. Identificación y Contacto" se muestra con el detalle completo de sus 10 preguntas (igual que en la app real); los demás 13 capítulos se muestran con su nombre y cantidad de preguntas para ilustrar cómo se vería la navegación completa — siguen el mismo patrón de tarjeta expandible.
+  </div>
+</div>
+
+<script>
+const chapters = [
+  {code:'AA', name:'A. Identificación y Contacto', count:10, desc:'Registrar lugar de realización de la entrevista, lugar de residencia rural del hogar y datos de contacto.',
+    qs:[
+      {code:'A1', tipo:'Dinámico', unidad:'Hogar', text:'Dirección Territorial'},
+      {code:'A2', tipo:'Dinámico', unidad:'Hogar', text:'Lugar de la Encuesta (municipio)'},
+      {code:'A3', tipo:'Lista', unidad:'Hogar', text:'Método de recolección', opts:['Cara a cara','Telefónica','Autodiligenciada']},
+      {code:'A4', tipo:'Lista', unidad:'Hogar', text:'De acuerdo con su cultura, pueblo o rasgos físicos, ¿cómo se autoreconoce?', opts:['Indígena','Gitano(a), Rrom','Raizal del Archipiélago de San Andrés, Providencia y Santa Catalina','Palenquero(a)','Negro(a), afrocolombiano(a)','Ninguna']},
+      {code:'A5', tipo:'Dinámico', unidad:'Hogar', text:'Lugar de residencia (municipio)'},
+      {code:'A6', tipo:'Lista', unidad:'Hogar', text:'Zona de residencia', opts:['Cabecera municipal (donde está la alcaldía)','Centro poblado, corregimiento, inspección de policía, caserío','Rural disperso (vereda)']},
+      {code:'A7', tipo:'Texto', unidad:'Hogar', text:'Nombre de la vereda, resguardo o comunidad'},
+      {code:'A8', tipo:'Texto', unidad:'Hogar', text:'Nombre del predio o lugar de vivienda'},
+      {code:'A9', tipo:'Numérico', unidad:'Hogar', text:'Teléfono celular (si hay señal)'},
+      {code:'A10', tipo:'Texto', unidad:'Hogar', text:'Encuestador(a) responsable'},
+    ]},
+  {code:'TE', name:'TE. Territorio Colectivo', count:9, desc:'Relación del hogar con el territorio colectivo étnico (resguardo, consejo comunitario, kumpania).'},
+  {code:'CC', name:'CC. Vivienda Rural', count:10, desc:'Características, materiales y servicios de la vivienda en contexto rural.'},
+  {code:'EP', name:'EP. Economía Propia', count:8, desc:'Actividades económicas tradicionales y de subsistencia del hogar.'},
+  {code:'PA', name:'PA. Prácticas Ancestrales', count:7, desc:'Prácticas culturales, medicina tradicional y transmisión de saberes.'},
+  {code:'AT', name:'AT. Afectación Territorial por Conflicto', count:8, desc:'Hechos que afectaron el territorio colectivo por causa del conflicto armado.'},
+  {code:'RT', name:'RT. Retorno a Territorio Colectivo', count:7, desc:'Procesos de retorno o reubicación en el territorio de origen.'},
+  {code:'PR', name:'PR. Programas Sociales', count:5, desc:'Acceso a programas sociales y de asistencia del Estado.'},
+  {code:'B', name:'B. Datos Básicos', count:14, desc:'Composición del hogar y variables sociodemográficas.'},
+  {code:'F', name:'F. Educación', count:6, desc:'Asistencia escolar, deserción y nivel educativo alcanzado.'},
+  {code:'G', name:'G. Salud', count:6, desc:'Acceso y afiliación a servicios de salud.'},
+  {code:'JF', name:'J. Fuerza de Trabajo', count:7, desc:'Ocupación, ingresos y vinculación laboral.'},
+  {code:'GE', name:'GE. Gobernanza Étnica', count:6, desc:'Estructuras de autoridad y gobierno propio de la comunidad étnica.'},
+  {code:'T', name:'T. Control', count:3, desc:'Preguntas de control y cierre de la entrevista.'},
+];
+
+function renderSidebar(){
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = chapters.map((c,i)=>`
+    <div class="snav ${i===0?'active seen':''}" data-jump="${c.code}">
+      <div class="sbadge">${c.code}</div>
+      <div>
+        <div class="sname">${c.name}</div>
+        <div class="scount">${c.count} preguntas</div>
+      </div>
+      <div class="sdone"></div>
+    </div>`).join('');
+  nav.querySelectorAll('.snav').forEach(n=>{
+    n.addEventListener('click', ()=>{
+      nav.querySelectorAll('.snav').forEach(x=>x.classList.remove('active'));
+      n.classList.add('active'); n.classList.add('seen');
+      const target = document.getElementById('chap-'+n.dataset.jump);
+      target.classList.add('open');
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+}
+
+function renderContent(){
+  const el = document.getElementById('content');
+  el.innerHTML = chapters.map((c,i)=>{
+    const body = c.qs ? c.qs.map(q=>`
+      <div class="qcard" data-search="${q.code} ${q.text}">
+        <div class="qhead">
+          <span class="qcode">${q.code}</span>
+          <span class="tag">${q.tipo}</span>
+          <span class="tag unidad">${q.unidad}</span>
+        </div>
+        <div class="qtext">${q.text}</div>
+        ${q.opts ? `<div class="opts">${q.opts.map(o=>`<span class="opt">${o}</span>`).join('')}</div>` : ''}
+      </div>`).join('')
+      : `<div class="empty-hint">Este capítulo sigue el mismo patrón: ${c.count} preguntas con código, tipo (Dinámico / Lista / Texto / Numérico) y unidad de captura (Hogar / Persona), igual que en el capítulo A mostrado arriba. Se omite el detalle línea por línea en esta demo para no repetir contenido ya validado.</div>`;
+    return `<div class="chapter ${i===0?'open':''}" id="chap-${c.code}">
+      <div class="chapter-head" data-toggle="${c.code}">
+        <div class="cbadge">${c.code}</div>
+        <div style="flex:1">
+          <div class="ctitle">${c.name}</div>
+          <div class="cdesc">${c.desc}</div>
+        </div>
+        <div class="ccount">${c.count} preguntas</div>
+        <div class="chev">▾</div>
+      </div>
+      <div class="chapter-body">${body}</div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.chapter-head').forEach(h=>{
+    h.addEventListener('click', ()=>{ h.parentElement.classList.toggle('open'); });
+  });
+}
+
+document.getElementById('qsearch').addEventListener('input', e=>{
+  const v = e.target.value.toLowerCase().trim();
+  let visibleCount = 0;
+  document.querySelectorAll('.qcard').forEach(card=>{
+    const match = !v || card.dataset.search.toLowerCase().includes(v);
+    card.style.display = match ? 'block' : 'none';
+    if(match) visibleCount++;
+    if(match && v){ card.closest('.chapter').classList.add('open'); }
+  });
+  document.getElementById('counter').textContent = v ? `${visibleCount} coincidencia(s) para "${v}"` : '106 preguntas · 14 capítulos';
+});
+
+renderSidebar();
+renderContent();
+</script>
+</body>
+</html>

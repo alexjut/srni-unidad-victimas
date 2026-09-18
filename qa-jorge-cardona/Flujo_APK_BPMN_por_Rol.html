@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo de uso de la APK SICAV Móvil por rol (BPMN interactivo)</title>
+<style>
+  :root{
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --ink-soft: #5b6472;
+    --line: #d8dde3;
+    --accent: #2f6feb;
+    --accent-soft: #eaf1ff;
+    --verified: #2f6feb;
+    --inferred: #9aa3af;
+    --low: #1f9d55;
+    --med: #b98900;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    padding:32px 16px 64px 16px;
+    background:var(--bg);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color:var(--ink);
+  }
+  .page-header{
+    max-width:980px;
+    margin:0 auto 20px auto;
+  }
+  .page-header h1{
+    font-size:20px;
+    margin:0 0 6px 0;
+  }
+  .page-header p{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0;
+    line-height:1.5;
+  }
+  .bpmn-wrap{
+    --card: #ffffff;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .bpmn-wrap .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+  .tabbar{
+    display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .tabbar button{
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink-soft);
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .tabbar button:hover{ border-color:var(--accent); color:var(--accent); }
+  .tabbar button.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .roletag{
+    font-size:11px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:999px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+  .roletag.verified{ background:var(--accent-soft); color:var(--accent); }
+  .roletag.inferred{ background:#eef0f3; color:var(--inferred); }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr 300px;
+    gap:20px;
+    align-items:start;
+  }
+  @media (max-width: 720px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .legend{
+    display:flex; gap:16px; flex-wrap:wrap;
+    font-size:11.5px; color:var(--ink-soft);
+    margin: 2px 0 18px 0;
+    padding: 8px 12px;
+    background: #f7f8fa;
+    border-radius: 10px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .lg-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .lg-line{ width:18px; height:0; border-top:2px solid var(--verified); display:inline-block; }
+  .lg-line.dash{ border-top:2px dashed var(--inferred); }
+
+  .flow{
+    display:flex; flex-direction:column; align-items:center;
+    position:relative;
+  }
+  .connector{
+    width:2px; height:22px;
+    background:var(--verified);
+  }
+  .connector.inferred{
+    background:none;
+    border-left:2px dashed var(--inferred);
+  }
+  .connector::after{
+    content:"";
+    display:block;
+    width:0; height:0;
+    margin-left:-4px; margin-top:20px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:6px solid var(--verified);
+  }
+  .connector.inferred::after{ border-top-color: var(--inferred); }
+
+  .node{
+    width:100%;
+    max-width:460px;
+    box-sizing:border-box;
+    background:var(--card);
+    border:1.5px solid var(--verified);
+    border-radius:10px;
+    padding:10px 14px;
+    cursor:pointer;
+    text-align:center;
+    transition:.15s;
+    box-shadow: 0 1px 2px rgba(20,20,30,.04);
+  }
+  .node:hover{ box-shadow:0 3px 10px rgba(20,20,30,.10); transform:translateY(-1px); }
+  .node.inferred{ border-style:dashed; border-color:var(--inferred); }
+  .node.event{
+    width:120px; max-width:120px;
+    border-radius:999px;
+    font-weight:700;
+    background:#f5f6f8;
+  }
+  .node.selected{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .node .title{ font-size:13.5px; font-weight:700; line-height:1.3; }
+  .node .sub{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .node .dot{
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    margin-right:6px; vertical-align:middle;
+  }
+  .dot.low{ background:var(--low); }
+  .dot.med{ background:var(--med); }
+
+  .gate{
+    width:56px; height:56px;
+    background:#fff;
+    border:1.5px solid var(--verified);
+    transform:rotate(45deg);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    margin: 4px 0;
+  }
+  .gate.inferred{ border-style:dashed; border-color:var(--inferred); }
+  .gate span{ transform:rotate(-45deg); font-size:16px; font-weight:800; color:var(--ink-soft); }
+
+  .branches{
+    display:flex; gap:28px; align-items:flex-start; margin-top:6px;
+    width:100%; justify-content:center; flex-wrap:wrap;
+  }
+  .branch{ display:flex; flex-direction:column; align-items:center; width:220px; }
+  .branch-label{
+    font-size:11px; font-weight:700; color:var(--ink-soft);
+    background:#f0f2f5; padding:2px 8px; border-radius:999px; margin-bottom:6px;
+  }
+
+  .detail{
+    position:sticky; top:8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    font-size:13px;
+    line-height:1.5;
+    min-height:180px;
+  }
+  .detail h4{ margin:0 0 6px 0; font-size:14px; }
+  .detail .meta{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+  .detail .finding{
+    display:inline-block; margin-top:10px; font-size:11.5px; font-weight:700;
+    padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent);
+  }
+  .detail .placeholder{ color:var(--ink-soft); font-style:italic; }
+
+  .page-footer{
+    max-width:980px;
+    margin:24px auto 0 auto;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Flujo de uso de la APK SICAV Móvil — por rol</h1>
+  <p>Diagrama BPMN interactivo. Soporte del informe de QA funcional y UX (Módulo 3: Aplicación Móvil APK Android) — Unidad para las Víctimas. Haz clic en cualquier paso para ver su descripción y el hallazgo de QA relacionado, si aplica.</p>
+</div>
+
+<div class="bpmn-wrap">
+  <h2 class="sr-only">Diagrama BPMN interactivo del flujo de uso de la APK SICAV Móvil, con una pestaña por rol: Encuestador, Supervisor y Administrador. Cada paso es clicable y muestra el detalle a la derecha.</h2>
+
+  <div class="tabbar" role="tablist">
+    <button class="tab-btn active" data-role="encuestador">Encuestador</button>
+    <button class="tab-btn" data-role="supervisor">Supervisor</button>
+    <button class="tab-btn" data-role="admin">Administrador</button>
+  </div>
+
+  <div class="legend">
+    <span><span class="lg-line"></span> Verificado en QA</span>
+    <span><span class="lg-line dash"></span> Inferido / no probado</span>
+    <span><span class="lg-dot" style="background:#1f9d55"></span> Hallazgo bajo</span>
+    <span><span class="lg-dot" style="background:#b98900"></span> Hallazgo medio</span>
+  </div>
+
+  <div class="layout">
+    <div class="diagrams">
+
+      <!-- ENCUESTADOR -->
+      <div class="panel active" id="panel-encuestador">
+        <div class="flow">
+          <div class="node event" data-id="enc-start">Abrir app<span class="roletag inferred">rol asumido</span></div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-login">
+            <div class="title">Iniciar sesión</div>
+            <div class="sub">Código de usuario + contraseña</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-inicio">
+            <div class="title">Ver pantalla Inicio</div>
+            <div class="sub">Estado de sync + "siguiente paso"</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-rni">
+            <div class="title"><span class="dot med"></span>Búsqueda RNI</div>
+            <div class="sub">Tipo y número de documento</div>
+          </div>
+          <div class="connector"></div>
+          <div class="gate" data-id="enc-gate1"><span>?</span></div>
+          <div class="branches">
+            <div class="branch">
+              <div class="branch-label">Víctima hallada</div>
+              <div class="node" data-id="enc-hogar">
+                <div class="title">Conformar / abrir hogar</div>
+                <div class="sub">Vivienda + integrantes</div>
+              </div>
+            </div>
+            <div class="branch">
+              <div class="branch-label">No hallada</div>
+              <div class="node inferred" data-id="enc-alt">
+                <div class="title">Ruta alterna</div>
+                <div class="sub">No probado en esta APK</div>
+              </div>
+            </div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-ubicacion">
+            <div class="title">Ubicar caracterización</div>
+            <div class="sub">Dirección territorial en cascada</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-formulario">
+            <div class="title"><span class="dot med"></span>Diligenciar formulario</div>
+            <div class="sub">Preguntas por integrante</div>
+          </div>
+          <div class="connector"></div>
+          <div class="gate" data-id="enc-gate2"><span>?</span></div>
+          <div class="branches">
+            <div class="branch">
+              <div class="branch-label">Incompleto</div>
+              <div class="node" data-id="enc-continuar">
+                <div class="title">Guardar y continuar luego</div>
+                <div class="sub">Queda "En curso"</div>
+              </div>
+            </div>
+            <div class="branch">
+              <div class="branch-label">Completo</div>
+              <div class="node" data-id="enc-finalizar">
+                <div class="title">Finalizar sesión</div>
+                <div class="sub">Marca caracterización cerrada</div>
+              </div>
+            </div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-sync">
+            <div class="title">Sincronizar datos</div>
+            <div class="sub">Ver Estado de sincronización</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="enc-logout">
+            <div class="title"><span class="dot med"></span>Cerrar sesión</div>
+            <div class="sub">Sin confirmación previa</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node event" data-id="enc-end">Fin de turno</div>
+        </div>
+      </div>
+
+      <!-- SUPERVISOR -->
+      <div class="panel" id="panel-supervisor">
+        <div class="flow">
+          <div class="node event inferred" data-id="sup-start">Abrir app<span class="roletag inferred">rol no probado</span></div>
+          <div class="connector inferred"></div>
+          <div class="node inferred" data-id="sup-login">
+            <div class="title">Iniciar sesión</div>
+            <div class="sub">Mismo login institucional</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node inferred" data-id="sup-inicio">
+            <div class="title">Ver panel de equipo</div>
+            <div class="sub">Hipótesis: sin pantalla propia vista</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node" data-id="sup-reportes">
+            <div class="title"><span class="dot med"></span>Mis reportes</div>
+            <div class="sub">Completadas, en progreso, respuestas</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node inferred" data-id="sup-encuestas">
+            <div class="title">Revisar Encuestas del equipo</div>
+            <div class="sub">Pestañas Iniciadas/En curso/Completadas</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="gate inferred" data-id="sup-gate1"><span>?</span></div>
+          <div class="branches">
+            <div class="branch">
+              <div class="branch-label">Con inconsistencias</div>
+              <div class="node inferred" data-id="sup-marcar">
+                <div class="title">Marcar para corrección</div>
+                <div class="sub">Flujo no visible en esta APK</div>
+              </div>
+            </div>
+            <div class="branch">
+              <div class="branch-label">Sin novedad</div>
+              <div class="node inferred" data-id="sup-aprobar">
+                <div class="title">Dar por validado</div>
+                <div class="sub">Flujo no visible en esta APK</div>
+              </div>
+            </div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node" data-id="sup-sync">
+            <div class="title">Estado de sincronización</div>
+            <div class="sub">Verificar datos al día</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node inferred" data-id="sup-logout">
+            <div class="title">Cerrar sesión</div>
+            <div class="sub">Sin confirmación (hipótesis)</div>
+          </div>
+          <div class="connector inferred"></div>
+          <div class="node event inferred" data-id="sup-end">Fin</div>
+        </div>
+      </div>
+
+      <!-- ADMINISTRADOR -->
+      <div class="panel" id="panel-admin">
+        <div class="flow">
+          <div class="node event" data-id="adm-start">Abrir app</div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-login">
+            <div class="title"><span class="dot low"></span>Iniciar sesión</div>
+            <div class="sub">Probado con credenciales inválidas</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-inicio">
+            <div class="title"><span class="dot low"></span>Dashboard Inicio</div>
+            <div class="sub">Saludo, rol, estado, siguiente paso</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-rni">
+            <div class="title"><span class="dot med"></span>Búsqueda RNI</div>
+            <div class="sub">Error al consultar (a validar en físico)</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-hogares">
+            <div class="title"><span class="dot low"></span>Hogares</div>
+            <div class="sub">Listado, detalle e integrantes</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-caracterizacion">
+            <div class="title"><span class="dot med"></span>Sesión de caracterización</div>
+            <div class="sub">Respuestas guardadas, sin agrupar</div>
+          </div>
+          <div class="connector"></div>
+          <div class="gate" data-id="adm-gate1"><span>?</span></div>
+          <div class="branches">
+            <div class="branch">
+              <div class="branch-label">Nueva caracterización</div>
+              <div class="node" data-id="adm-ubicacion">
+                <div class="title"><span class="dot low"></span>Ubicación de atención</div>
+                <div class="sub">Confirmación al omitir dato</div>
+              </div>
+            </div>
+            <div class="branch">
+              <div class="branch-label">Solo consultar</div>
+              <div class="node" data-id="adm-reportes">
+                <div class="title"><span class="dot med"></span>Mis reportes</div>
+                <div class="sub">Contador "Hogares" inconsistente</div>
+              </div>
+            </div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-encuestas">
+            <div class="title"><span class="dot med"></span>Encuestas (pestañas)</div>
+            <div class="sub">Error de carga con datos visibles</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-sync">
+            <div class="title"><span class="dot low"></span>Estado de sincronización</div>
+            <div class="sub">"Todo sincronizado"</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node" data-id="adm-logout">
+            <div class="title"><span class="dot med"></span>Cerrar sesión</div>
+            <div class="sub">Sin diálogo de confirmación</div>
+          </div>
+          <div class="connector"></div>
+          <div class="node event" data-id="adm-end">Sesión cerrada</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="detail" id="detail-panel">
+      <h4 id="detail-title">Selecciona un paso</h4>
+      <div class="meta" id="detail-meta">Haz clic en cualquier nodo del flujo para ver su descripción y, si aplica, el hallazgo de QA relacionado.</div>
+      <div id="detail-body" class="placeholder">Este diagrama resume el recorrido dentro de la APK móvil SICAV. Los pasos con línea sólida azul fueron verificados durante el QA funcional; los de línea punteada gris son inferencias razonables para roles que no se probaron directamente.</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  Generado como soporte del informe de QA — Unidad para las Víctimas · Plataforma de Caracterización · Módulo 3 (APK Android)
+</div>
+
+<script>
+(function(){
+  var data = {
+    "enc-start": {t:"Abrir app", m:"Evento de inicio · rol asumido", b:"El encuestador abre SICAV Móvil en su dispositivo de campo. El rol específico \"Encuestador\" no se probó en este QA; se asume que comparte la misma interfaz vista con el usuario Administrador."},
+    "enc-login": {t:"Iniciar sesión", m:"Verificado en QA", b:"Pantalla \"Bienvenido/a\" con Código de usuario y Contraseña. Con credenciales inválidas la app responde con un mensaje genérico y seguro, sin indicar qué campo falló.", f:"Hallazgo APK-001 · 🟢 Bajo"},
+    "enc-inicio": {t:"Ver pantalla Inicio", m:"Verificado en QA", b:"Muestra saludo, rol, estado de sincronización y un bloque \"Siguiente paso\" que orienta la acción esperada (ej. crear hogar y entrevista).", f:"Hallazgo APK-002 · 🟢 Bajo"},
+    "enc-rni": {t:"Búsqueda RNI", m:"Verificado en QA", b:"Se ingresa tipo y número de documento para consultar si la persona está registrada en el RNI. En la prueba, esta consulta arrojó un error de forma consistente pese al estado \"Conectado\".", f:"Hallazgo APK-003 · 🟡 Medio"},
+    "enc-gate1": {t:"¿Víctima hallada en el RNI?", m:"Punto de decisión", b:"Si el RNI devuelve resultado, se continúa a conformar el hogar. La ruta cuando no hay coincidencia no se pudo observar en esta sesión de pruebas."},
+    "enc-hogar": {t:"Conformar / abrir hogar", m:"Verificado en QA", b:"Se registran datos de vivienda (tipo, ocupación, estrato) y los integrantes del hogar, cada uno con su estado de inclusión.", f:"Hallazgos APK-004 y APK-005"},
+    "enc-alt": {t:"Ruta alterna (víctima no hallada)", m:"No probado", b:"No fue posible reproducir este camino durante el QA; se recomienda documentarlo en una siguiente ronda de pruebas."},
+    "enc-ubicacion": {t:"Ubicar la caracterización", m:"Verificado en QA", b:"Antes de iniciar el formulario se pide Dirección Territorial, Departamento, Municipio y Punto de atención en cascada. Se puede omitir con confirmación explícita.", f:"Hallazgo APK-007 · 🟢 Bajo"},
+    "enc-formulario": {t:"Diligenciar formulario", m:"Verificado en QA", b:"Preguntas de caracterización por integrante. Las respuestas guardadas se listan en formato plano código/pregunta/respuesta, sin agrupar visualmente por persona.", f:"Hallazgo APK-006 · 🟡 Medio"},
+    "enc-gate2": {t:"¿Formulario completo?", m:"Punto de decisión", b:"Si falta información la sesión queda \"En curso\" y se puede retomar después; si está completa se finaliza."},
+    "enc-continuar": {t:"Guardar y continuar luego", m:"Verificado en QA", b:"La sesión aparece en la pestaña \"En curso\" de Encuestas, con su porcentaje de avance visible."},
+    "enc-finalizar": {t:"Finalizar sesión", m:"Verificado en QA", b:"Cierra formalmente la caracterización de ese hogar."},
+    "enc-sync": {t:"Sincronizar datos", m:"Verificado en QA", b:"Pantalla que confirma \"Todo sincronizado\", con contador de pendientes y errores.", f:"Hallazgo APK-009 · 🟢 Bajo"},
+    "enc-logout": {t:"Cerrar sesión", m:"Verificado en QA", b:"El botón cierra la sesión de inmediato, sin pedir confirmación, a diferencia de otras acciones de menor impacto en la misma app.", f:"Hallazgo APK-011 · 🟡 Medio"},
+    "enc-end": {t:"Fin de turno", m:"Evento de fin", b:"El encuestador deberá volver a autenticarse para continuar trabajando."},
+
+    "sup-start": {t:"Abrir app", m:"Rol no probado", b:"El rol Supervisor no fue provisto durante este QA; todo este carril es una hipótesis razonable basada en cómo suelen operar estos sistemas y en las pantallas de reporte que sí se vieron."},
+    "sup-login": {t:"Iniciar sesión", m:"Inferido", b:"Se asume el mismo formulario de login institucional visto para el rol Administrador."},
+    "sup-inicio": {t:"Ver panel de equipo", m:"Inferido", b:"Hipótesis: el Supervisor vería una variante del dashboard enfocada en el equipo a cargo en vez de \"siguiente paso\" individual. No se pudo confirmar."},
+    "sup-reportes": {t:"Mis reportes", m:"Verificado en QA (pantalla compartida)", b:"Esta pantalla sí se probó con el usuario Administrador y ya incluye métricas agregadas (completadas, en progreso, respuestas). Es razonable que un Supervisor use la misma vista.", f:"Hallazgo APK-008 · 🟡 Medio"},
+    "sup-encuestas": {t:"Revisar Encuestas del equipo", m:"Inferido", b:"Se asume acceso a las mismas pestañas Iniciadas/En curso/Completadas, pero para sesiones de varios encuestadores en vez de una sola cuenta."},
+    "sup-gate1": {t:"¿La caracterización tiene inconsistencias?", m:"Punto de decisión (hipotético)", b:"No existe evidencia en la APK de una función explícita de aprobación o rechazo de caracterizaciones; se infiere como paso típico de un rol de supervisión."},
+    "sup-marcar": {t:"Marcar para corrección", m:"No visible en la APK", b:"No se encontró ninguna acción de este tipo durante el recorrido. Se sugiere confirmar con el equipo de producto si existe."},
+    "sup-aprobar": {t:"Dar por validado", m:"No visible en la APK", b:"Al igual que el paso anterior, no hay evidencia de esta función en la interfaz revisada."},
+    "sup-sync": {t:"Estado de sincronización", m:"Verificado en QA (pantalla compartida)", b:"Misma pantalla vista con el Administrador: confirma \"Todo sincronizado\" con 0 pendientes y 0 errores.", f:"Hallazgo APK-009 · 🟢 Bajo"},
+    "sup-logout": {t:"Cerrar sesión", m:"Inferido", b:"Se asume el mismo comportamiento verificado con el Administrador: cierre inmediato sin confirmación.", f:"Hallazgo APK-011 · 🟡 Medio"},
+    "sup-end": {t:"Fin", m:"Evento de fin (hipotético)", b:"Cierre de la sesión de supervisión."},
+
+    "adm-start": {t:"Abrir app", m:"Verificado en QA", b:"Punto de partida del recorrido completo realizado con la cuenta administrador real."},
+    "adm-login": {t:"Iniciar sesión", m:"Verificado en QA", b:"Se probó primero con credenciales inventadas (rechazadas de forma segura) y luego con la cuenta real.", f:"Hallazgo APK-001 · 🟢 Bajo"},
+    "adm-inicio": {t:"Dashboard Inicio", m:"Verificado en QA", b:"Saludo \"Hola, Javier – Administrador\", estado \"Conectado\", bloque \"Siguiente paso\" y accesos directos a Acciones y Sistema.", f:"Hallazgo APK-002 · 🟢 Bajo"},
+    "adm-rni": {t:"Búsqueda RNI", m:"Verificado en QA", b:"La consulta de un documento de prueba arrojó \"Error al consultar el RNI\" de forma reproducible, pese a que el dashboard mostraba \"Conectado\".", f:"Hallazgo APK-003 · 🟡 Medio"},
+    "adm-hogares": {t:"Hogares", m:"Verificado en QA", b:"Listado con pestañas Todos/Borrador/Activo y detalle con datos de vivienda e integrantes. Se detectaron dos nombres en mayúsculas que rompen el patrón del resto de registros.", f:"Hallazgos APK-004 y APK-005"},
+    "adm-caracterizacion": {t:"Sesión de caracterización", m:"Verificado en QA", b:"La vista \"Respuestas guardadas\" lista pares código/pregunta/respuesta en formato plano, sin agrupar por integrante del hogar — el mismo problema ya detectado en la versión web.", f:"Hallazgo APK-006 · 🟡 Medio"},
+    "adm-gate1": {t:"¿Qué se hace desde Caracterizaciones?", m:"Punto de decisión", b:"Desde el menú inferior se puede iniciar una nueva caracterización o consultar el resumen de reportes."},
+    "adm-ubicacion": {t:"Ubicación de atención", m:"Verificado en QA", b:"Formulario en cascada (Dirección Territorial → Departamento → Municipio → Punto de atención). Omitir la ubicación pide confirmación explícita antes de continuar.", f:"Hallazgo APK-007 · 🟢 Bajo"},
+    "adm-reportes": {t:"Mis reportes", m:"Verificado en QA", b:"El contador \"Hogares: 0\" no coincide con el hogar real existente en el sistema (1 hogar, 59 respuestas), lo que puede subestimar la carga de trabajo ante un supervisor.", f:"Hallazgo APK-008 · 🟡 Medio"},
+    "adm-encuestas": {t:"Encuestas (pestañas)", m:"Verificado en QA", b:"La pestaña \"Iniciadas\" muestra el mensaje \"No se pudo cargar las sesiones\" mientras sigue mostrando, debajo, la tarjeta de la sesión correctamente cargada.", f:"Hallazgo APK-010 · 🟡 Medio"},
+    "adm-sync": {t:"Estado de sincronización", m:"Verificado en QA", b:"Pantalla clara: \"Todo sincronizado\", 0 pendientes y 0 errores, con botón \"Sincronizar ahora\".", f:"Hallazgo APK-009 · 🟢 Bajo"},
+    "adm-logout": {t:"Cerrar sesión", m:"Verificado en QA", b:"A diferencia de \"Omitir ubicación\", este botón cierra la sesión de inmediato sin ningún diálogo de confirmación, cerrando de hecho la sesión real durante la prueba.", f:"Hallazgo APK-011 · 🟡 Medio"},
+    "adm-end": {t:"Sesión cerrada", m:"Verificado en QA", b:"Punto en el que terminó la fase interactiva de este QA: sin credenciales para volver a ingresar."}
+  };
+
+  var wrap = document.querySelector('.bpmn-wrap');
+  var tabs = wrap.querySelectorAll('.tab-btn');
+  var panels = wrap.querySelectorAll('.panel');
+  var titleEl = wrap.querySelector('#detail-title');
+  var metaEl = wrap.querySelector('#detail-meta');
+  var bodyEl = wrap.querySelector('#detail-body');
+
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      panels.forEach(function(p){ p.classList.remove('active'); });
+      wrap.querySelector('#panel-' + btn.dataset.role).classList.add('active');
+      titleEl.textContent = 'Selecciona un paso';
+      metaEl.textContent = 'Haz clic en cualquier nodo del flujo para ver su descripción y, si aplica, el hallazgo de QA relacionado.';
+      bodyEl.className = 'placeholder';
+      bodyEl.textContent = 'Este carril corresponde al rol ' + btn.textContent + '.';
+    });
+  });
+
+  wrap.querySelectorAll('.node, .gate').forEach(function(node){
+    node.addEventListener('click', function(){
+      wrap.querySelectorAll('.node.selected').forEach(function(n){ n.classList.remove('selected'); });
+      node.classList.add('selected');
+      var id = node.dataset.id;
+      var d = data[id];
+      if(!d) return;
+      titleEl.textContent = d.t;
+      metaEl.textContent = d.m;
+      var html = '<div>' + d.b + '</div>';
+      if(d.f){ html += '<span class="finding">' + d.f + '</span>'; }
+      bodyEl.className = '';
+      bodyEl.innerHTML = html;
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

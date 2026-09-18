@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Propuesta UX — Detalle de Encuesta</title>
+<style>
+  :root{
+    --navy:#0b2d63; --navy-dark:#082047; --gold:#e8b43a;
+    --orange:#c1652f; --green:#1e7b34; --green-bg:#e6f4ea;
+    --amber:#b7860b; --amber-bg:#fdf3d9;
+    --gray-bg:#f4f6f9; --border:#e3e7ee; --text:#2b2f38; --text-mut:#6b7280;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--gray-bg);color:var(--text);}
+  .topbar{background:var(--navy);color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;}
+  .topbar .brand .crest{width:26px;height:26px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--navy-dark);font-weight:800;}
+  .badge-proposal{background:var(--gold);color:var(--navy-dark);font-weight:700;font-size:11px;padding:4px 10px;border-radius:20px;letter-spacing:.03em;}
+  .wrap{max-width:1180px;margin:24px auto;padding:0 20px 60px;}
+  .crumb{font-size:12.5px;color:var(--text-mut);margin-bottom:6px;}
+  .crumb b{color:var(--orange);}
+  h1{font-size:23px;margin:2px 0 2px;}
+  .sub{color:var(--text-mut);font-size:13px;margin-bottom:18px;}
+  .note{background:#fff8e6;border:1px solid #f0dca0;color:#7a5b00;font-size:12.5px;padding:10px 14px;border-radius:8px;margin-bottom:20px;}
+  .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .card .lbl{font-size:11.5px;color:var(--text-mut);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;}
+  .card .val{font-size:16px;font-weight:700;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+  .pill.amber{background:var(--amber-bg);color:var(--amber);}
+  .progress-bar-outer{background:#eef0f4;border-radius:20px;height:8px;overflow:hidden;margin-top:8px;}
+  .progress-bar-inner{background:var(--orange);height:100%;border-radius:20px;}
+  .infosession{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:14px;}
+  .infosession h3{margin:0 0 12px;font-size:14px;}
+  .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .info-grid .lbl{font-size:11.5px;color:var(--text-mut);text-transform:uppercase;margin-bottom:2px;}
+  .info-grid .val{font-size:13.5px;font-weight:600;}
+  .btn{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--border);}
+  .btn:hover{opacity:.92;}
+
+  .viewswitch{display:flex;gap:8px;margin:26px 0 16px;border-bottom:1px solid var(--border);}
+  .viewswitch button{background:none;border:none;padding:10px 4px;margin-right:22px;font-size:13.5px;font-weight:700;color:var(--text-mut);cursor:pointer;border-bottom:3px solid transparent;}
+  .viewswitch button.active{color:var(--orange);border-color:var(--orange);}
+
+  .layout{display:grid;grid-template-columns:270px 1fr;gap:20px;align-items:start;}
+  .members{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;position:sticky;top:20px;}
+  .members .search{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;margin-bottom:10px;}
+  .member{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;}
+  .member:hover{background:var(--gray-bg);}
+  .member.active{background:#fbe9e1;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;}
+  .member .m-name{font-size:13px;font-weight:700;line-height:1.25;}
+  .member .m-meta{font-size:11px;color:var(--text-mut);}
+  .ring{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--orange);}
+
+  .content{min-width:0;}
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;}
+  .toolbar input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;}
+  .toolbar select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+
+  .chapternav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+  .chip{font-size:11.5px;font-weight:700;background:#fff;border:1px solid var(--border);color:var(--text-mut);padding:5px 11px;border-radius:20px;cursor:pointer;}
+  .chip:hover{border-color:var(--orange);color:var(--orange);}
+  .chip.done{background:var(--green-bg);color:var(--green);border-color:transparent;}
+
+  .chapter{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+  .chapter-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;}
+  .chapter-head .cbadge{background:var(--orange);color:#fff;font-weight:800;font-size:12px;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .chapter-head .ctitle{font-weight:700;font-size:13.5px;flex:1;}
+  .chapter-head .ccount{font-size:11.5px;color:var(--text-mut);}
+  .chapter-head .chev{transition:transform .15s;color:var(--text-mut);}
+  .chapter.open .chev{transform:rotate(180deg);}
+  .chapter-body{display:none;padding:0 16px 14px;}
+  .chapter.open .chapter-body{display:block;}
+  .qa{display:grid;grid-template-columns:110px 1fr 1fr;gap:14px;padding:10px 0;border-top:1px solid #f0f1f4;align-items:start;}
+  .qa .code{font-size:11px;color:var(--orange);font-weight:700;background:#fbe9e1;padding:2px 7px;border-radius:5px;display:inline-block;}
+  .qa .q{font-size:12.5px;color:var(--text);}
+  .qa .a{font-size:12.5px;font-weight:700;}
+  .qa .a.fixed{color:var(--green);}
+  .badge-fix{font-size:9.5px;background:var(--green-bg);color:var(--green);padding:1px 6px;border-radius:8px;margin-left:6px;font-weight:700;}
+
+  /* tabla tecnica */
+  .techtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:12.5px;}
+  .techtable th{background:var(--navy);color:#fff;text-align:left;padding:10px 14px;font-size:11.5px;text-transform:uppercase;}
+  .techtable td{padding:9px 14px;border-top:1px solid #f0f1f4;}
+  .techtable tr:hover td{background:#fafbfc;}
+  .col-member{color:var(--orange);font-weight:700;font-size:11.5px;}
+
+  .hint{font-size:12px;color:var(--text-mut);margin:10px 0 16px;}
+  .footer-note{margin-top:40px;padding:16px 18px;background:#fff;border:1px dashed #c9cfda;border-radius:10px;font-size:12px;color:var(--text-mut);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="crest">UV</div> Unidad para las Víctimas · SRNI</div>
+  <div class="badge-proposal">PROPUESTA DE MEJORA UX — Jorge Cardona</div>
+</div>
+
+<div class="wrap">
+  <div class="crumb">Inicio &nbsp;›&nbsp; Encuestas &nbsp;›&nbsp; <b>Caracterización territorial</b></div>
+  <h1>Caracterización territorial</h1>
+  <div class="sub">TERRITORIAL · V7</div>
+
+  <div class="note">Esta es una propuesta visual de reorganización de esta misma pantalla. No se eliminó ni un solo campo de los que ya existen (Estado, Progreso, Inicio, Fin, Información de la sesión, Ver hogar asociado, y las 59 respuestas). Solo se cambió <b>cómo se agrupan y se navegan</b>.</div>
+
+  <div class="cards-row">
+    <div class="card"><div class="lbl">Estado</div><div class="val"><span class="pill amber">En progreso</span></div></div>
+    <div class="card"><div class="lbl">Progreso</div><div class="val">3%</div><div class="progress-bar-outer"><div class="progress-bar-inner" style="width:3%"></div></div></div>
+    <div class="card"><div class="lbl">Inicio</div><div class="val">1/7/2026</div></div>
+    <div class="card"><div class="lbl">Fin</div><div class="val">En curso</div></div>
+  </div>
+
+  <div class="infosession">
+    <h3>Información de la sesión</h3>
+    <div class="info-grid">
+      <div><div class="lbl">Ruta de entrevista</div><div class="val">GENERAL</div></div>
+      <div><div class="lbl">Dirección Territorial</div><div class="val">DIRECCION TERRITORIAL ATLANTICO</div></div>
+      <div><div class="lbl">Departamento</div><div class="val">Atlántico</div></div>
+      <div><div class="lbl">Municipio</div><div class="val">GALAPA</div></div>
+      <div><div class="lbl">Punto de atención</div><div class="val">CENTRO REGIONAL BARRANQUILLA</div></div>
+      <div><div class="lbl">Total respuestas</div><div class="val">59</div></div>
+    </div>
+  </div>
+
+  <button class="btn ghost"> Ver hogar asociado</button>
+
+  <div class="viewswitch">
+    <button class="active" data-view="members"> Por miembro del hogar</button>
+    <button data-view="table">☰ Tabla completa (vista técnica)</button>
+  </div>
+
+  <!-- VISTA POR MIEMBRO -->
+  <div id="view-members">
+    <div class="layout">
+      <div class="members" id="memberList"></div>
+      <div class="content">
+        <div class="toolbar">
+          <input type="text" id="qsearch" placeholder="Buscar pregunta o código (ej. A6, fecha de nacimiento)...">
+        </div>
+        <div class="chapternav" id="chapterNav"></div>
+        <div id="chapterContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA TABLA -->
+  <div id="view-table" style="display:none;">
+    <div class="hint">Se conserva la tabla original de 59 respuestas. Se agregó (en gris) una columna "Miembro" inferida, para ubicar de un vistazo a quién pertenece cada respuesta — el mismo dato, mejor presentado.</div>
+    <table class="techtable">
+      <thead><tr><th>Código</th><th>Pregunta</th><th>Respuesta</th><th>Miembro (sugerido)</th></tr></thead>
+      <tbody id="techBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    Propuesta preparada a partir de la revisión QA de la pantalla real <code>/encuestas/{id}</code>. Objetivo: reducir el scroll y la carga cognitiva de revisar 59 respuestas en una sola tabla plana, sin quitar ningún dato existente. Incluye además la corrección visual del texto de plantilla sin interpolar ("¿Cuál es la fecha de nacimiento de … ?" → con el nombre real de la persona).
+  </div>
+</div>
+
+<script>
+const members = [
+  {id:'rosario', name:'Rosario del Carmen Valencia', rol:'Autorizado(a) / Jefe de hogar', edad:39, ring:100},
+  {id:'rosa', name:'Rosa Elena Vda', rol:'Cuidadora permanente', edad:68, ring:60},
+  {id:'carlos', name:'Carlos Andrés Ríos', rol:'Cónyuge / compañero(a)', edad:45, ring:20},
+  {id:'maria', name:'María Fernanda Ríos', rol:'Hijo/a', edad:15, ring:0},
+  {id:'juan', name:'Juan David Ríos', rol:'Hijo/a', edad:8, ring:0},
+  {id:'sara', name:'Sara Sofía Ríos', rol:'Hijo/a', edad:4, ring:0},
+  {id:'pedroag', name:'Pedro Antonio Gómez', rol:'Otro pariente', edad:72, ring:40},
+  {id:'ninajuana', name:'Niña Juana', rol:'Miembro del hogar', edad:2, ring:0},
+  {id:'pedrojuana', name:'Pedro Juana', rol:'Miembro del hogar', edad:26, ring:0},
+];
+
+const chapters = [
+  {code:'ID', name:'Identificación', qs:[
+    {code:'NOMBRE_1', q:'Primer Nombre', a:{rosario:'Rosario', rosa:'Rosa', carlos:'Carlos', maria:'María', juan:'Juan', sara:'Sara', pedroag:'Pedro', ninajuana:'NIÑA', pedrojuana:'PEDRO'}},
+    {code:'NOMBRE_2', q:'Segundo nombre', a:{rosario:'Del Carmen', carlos:'Hh', pedroag:'Camilo'}},
+    {code:'APELLIDO_1', q:'Primer apellido', a:{rosario:'Valencia', rosa:'Vda', carlos:'Ríos', maria:'Ríos', juan:'Ríos', sara:'Ríos', pedroag:'Torres', ninajuana:'Juana', pedrojuana:'Juana'}},
+    {code:'APELLIDO_2', q:'Segundo apellido', a:{pedroag:'Herrera'}},
+    {code:'A3', q:'¿Qué tipo de documento de identificación tiene {NOMBRE}?', a:{rosario:'CC', rosa:'CC', carlos:'CC', maria:'RC', juan:'RC', sara:'RC', pedroag:'CC', ninajuana:'RC', pedrojuana:'CC'}},
+    {code:'A5', q:'Número de documento de identificación de {NOMBRE}', a:{rosario:'9990100002'}},
+    {code:'A6', q:'¿Cuál es la fecha de nacimiento de {NOMBRE}?', a:{rosario:'1975-03-22', rosa:'1958-07-01', carlos:'1981-07-01', maria:'2011-07-01', juan:'2018-07-01', sara:'2022-07-01', pedroag:'1954-07-01', ninajuana:'2024-01-10', pedrojuana:'2000-07-01'}, fixed:true},
+    {code:'A8', q:'Sexo de {NOMBRE}', a:{rosario:'F', rosa:'F', carlos:'M', maria:'F', juan:'M', sara:'F', pedroag:'M'}},
+  ]},
+  {code:'B', name:'Datos Básicos', qs:[
+    {code:'B9', q:'¿Cuántos años cumplidos tiene {NOMBRE}?', a:{rosario:'39', rosa:'68', carlos:'45', maria:'15', juan:'8', sara:'4', pedroag:'72', ninajuana:'2', pedrojuana:'26'}},
+    {code:'B10', q:'Grupo etario de {NOMBRE}', a:{rosario:'Adulto', rosa:'Adulto mayor', carlos:'Adulto', maria:'Adolescente', juan:'Niño/a', sara:'Primera infancia', pedroag:'Adulto mayor', ninajuana:'Primera infancia', pedrojuana:'Adulto'}},
+  ]},
+  {code:'H', name:'Rehabilitación / Discapacidad', qs:[
+    {code:'I6', q:'¿Presenta {NOMBRE} alguna discapacidad?', a:{pedroag:'Sí'}},
+    {code:'I7A', q:'¿Qué tipo de discapacidad presenta {NOMBRE}?', a:{pedroag:'Física / motriz'}},
+    {code:'I7E', q:'¿Cuál es el origen de la discapacidad de {NOMBRE}?', a:{pedroag:'Enfermedad'}},
+  ]},
+  {code:'HV', name:'Hecho Victimizante', qs:[
+    {code:'H_V', q:'Hecho victimizante que afectó al hogar', a:{rosario:'Desplazamiento forzado'}},
+    {code:'Ocur_HV', q:'Fecha de ocurrencia del hecho victimizante', a:{rosario:'2001-08-15'}},
+  ]},
+];
+
+function initialsOf(name){
+  const parts=name.split(' ').filter(Boolean);
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+let activeMember = members[0].id;
+
+function renderMembers(){
+  const el = document.getElementById('memberList');
+  el.innerHTML = '<input class="search" id="memberSearch" placeholder="Buscar miembro...">' +
+    members.map(m => `
+    <div class="member ${m.id===activeMember?'active':''}" data-id="${m.id}">
+      <div class="avatar">${initialsOf(m.name)}</div>
+      <div>
+        <div class="m-name">${m.name}</div>
+        <div class="m-meta">${m.rol} · ${m.edad} años</div>
+      </div>
+      <div class="ring">${m.ring}%</div>
+    </div>`).join('');
+  el.querySelectorAll('.member').forEach(node=>{
+    node.addEventListener('click', ()=>{ activeMember = node.dataset.id; renderMembers(); renderChapters(); });
+  });
+  document.getElementById('memberSearch').addEventListener('input', e=>{
+    const v = e.target.value.toLowerCase();
+    el.querySelectorAll('.member').forEach(n=>{
+      n.style.display = n.querySelector('.m-name').textContent.toLowerCase().includes(v) ? 'flex' : 'none';
+    });
+  });
+}
+
+function nameFor(id){
+  const m = members.find(x=>x.id===id);
+  return m ? m.name.split(' ')[0] : id;
+}
+
+function renderChapterNav(){
+  const nav = document.getElementById('chapterNav');
+  nav.innerHTML = chapters.map(c=>{
+    const answered = c.qs.filter(q=>q.a[activeMember]).length;
+    const cls = answered>0 ? 'chip done' : 'chip';
+    return `<div class="${cls}" data-jump="${c.code}">${c.code} · ${c.name} (${answered}/${c.qs.length})</div>`;
+  }).join('');
+  nav.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('click', ()=>{
+      const target = document.getElementById('chap-'+ch.dataset.jump);
+      if(target){ target.classList.add('open'); target.scrollIntoView({behavior:'smooth', block:'start'}); }
+    });
+  });
+}
+
+function renderChapters(){
+  renderChapterNav();
+  const container = document.getElementById('chapterContainer');
+  container.innerHTML = chapters.map((c,ci)=>{
+    const rows = c.qs.filter(q=>q.a[activeMember]).map(q=>{
+      const qtext = q.q.replace('{NOMBRE}', nameFor(activeMember));
+      const val = q.a[activeMember];
+      return `<div class="qa" data-search="${q.code} ${qtext}">
+        <div><span class="code">${q.code}</span></div>
+        <div class="q">${qtext} ${q.fixed?'<span class="badge-fix">nombre corregido</span>':''}</div>
+        <div class="a ${q.fixed?'fixed':''}">${val}</div>
+      </div>`;
+    }).join('');
+    if(!rows) return '';
+    return `<div class="chapter ${ci===0?'open':''}" id="chap-${c.code}">
+      <div class="chapter-head" data-toggle="${c.code}">
+        <div class="cbadge">${c.code}</div>
+        <div class="ctitle">${c.name}</div>
+        <div class="ccount">${c.qs.filter(q=>q.a[activeMember]).length} respuestas de ${nameFor(activeMember)}</div>
+        <div class="chev">▾</div>
+      </div>
+      <div class="chapter-body">${rows}</div>
+    </div>`;
+  }).join('') || '<div class="hint">Esta persona aún no tiene respuestas registradas en el instrumento.</div>';
+
+  container.querySelectorAll('.chapter-head').forEach(h=>{
+    h.addEventListener('click', ()=>{ h.parentElement.classList.toggle('open'); });
+  });
+}
+
+document.getElementById('qsearch').addEventListener('input', e=>{
+  const v = e.target.value.toLowerCase();
+  document.querySelectorAll('.qa').forEach(row=>{
+    const match = row.dataset.search.toLowerCase().includes(v);
+    row.style.display = match ? 'grid' : 'none';
+    if(match && v) row.closest('.chapter').classList.add('open');
+  });
+});
+
+function renderTechTable(){
+  const rows = [];
+  chapters.forEach(c=>{
+    c.qs.forEach(q=>{
+      Object.keys(q.a).forEach(mid=>{
+        rows.push({code:q.code, q:q.q.replace('{NOMBRE}', nameFor(mid)), a:q.a[mid], member:nameFor(mid)});
+      });
+    });
+  });
+  document.getElementById('techBody').innerHTML = rows.map(r=>`
+    <tr><td>${r.code}</td><td>${r.q}</td><td>${r.a}</td><td class="col-member">${r.member}</td></tr>
+  `).join('');
+}
+
+document.querySelectorAll('.viewswitch button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.viewswitch button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const v = btn.dataset.view;
+    document.getElementById('view-members').style.display = v==='members' ? 'block' : 'none';
+    document.getElementById('view-table').style.display = v==='table' ? 'block' : 'none';
+  });
+});
+
+renderMembers();
+renderChapters();
+renderTechTable();
+</script>
+</body>
+</html>
