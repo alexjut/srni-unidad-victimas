@@ -142,6 +142,9 @@ urlpatterns = [
     # Administración de usuarios (panel web — solo administradores)
     path('api/usuarios/', include('apps.autenticacion.urls_admin')),
 
+    # Equipos: quién supervisa a quién (coordinador → supervisor → encuestadores)
+    path('api/equipos/', include('apps.autenticacion.urls_equipos')),
+
     # Documentación OpenAPI / Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
