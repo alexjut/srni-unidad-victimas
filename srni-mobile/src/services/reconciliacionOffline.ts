@@ -15,6 +15,7 @@
  * reconcilian aquí — el guardado por capítulo las re-encola en cada visita.
  */
 import { openDb } from '../db/schema';
+import { descifrarPayload } from '../db/payloadSeguro';
 import * as colaDao from '../db/colaDao';
 
 /** ¿Ya hay un item de cola NO enviado para este (tipo, recurso)? */
@@ -83,7 +84,7 @@ export async function reconciliarColaOffline(): Promise<number> {
   for (const m of miembros) {
     if (await tieneEnCola('AGREGAR_MIEMBRO', m.id_local)) continue;
     let miembro: unknown;
-    try { miembro = JSON.parse(m.payload_json); } catch { continue; }
+    try { miembro = JSON.parse(await descifrarPayload(m.payload_json)); } catch { continue; }
     await colaDao.encolar('AGREGAR_MIEMBRO', m.id_local, {
       id_local: m.id_local,
       hogar: m.hogar_id_local,

@@ -11,6 +11,7 @@
  * pendiente (ver docs/offline-cifrado-reposo.md).
  */
 import { openDb } from './schema';
+import { cifrarPayload, descifrarPayload } from './payloadSeguro';
 import { uuidv4 } from '../utils/uuid';
 import type { AgregarMiembroPayload } from '../api/hogares';
 import type { MiembroHogarResumen } from '../types';
@@ -43,7 +44,8 @@ export async function crearMiembroOffline(
     id_local: idLocal,
     id_servidor: null,
     hogar_id_local: hogarIdLocal,
-    payload_json: JSON.stringify(payload),
+    // Cifrado: nombre y documento del integrante (ver `crypto/cofreLocal`).
+    payload_json: await cifrarPayload(JSON.stringify(payload)),
     estado_sync: 'pendiente',
     created_at: now,
     updated_at: now,
@@ -154,7 +156,7 @@ export async function construirMiembrosOffline(
     try {
       const vic = await victimasOfflineDao.obtenerPorIdLocal(hogar.jefe_hogar_uuid);
       if (vic) {
-        const v = JSON.parse(vic.payload_json) as Record<string, string>;
+        const v = JSON.parse(await descifrarPayload(vic.payload_json)) as Record<string, string>;
         nombre = [v.primer_nombre, v.segundo_nombre, v.primer_apellido, v.segundo_apellido]
           .filter(Boolean).join(' ');
       }
@@ -171,7 +173,7 @@ export async function construirMiembrosOffline(
   for (const m of adicionales) {
     if (opciones.excluirEnviados && m.estado_sync === 'enviado') continue;
     let p: Record<string, string> = {};
-    try { p = JSON.parse(m.payload_json); } catch { /* payload corrupto */ }
+    try { p = JSON.parse(await descifrarPayload(m.payload_json)); } catch { /* payload corrupto o ilegible */ }
     out.push(resumen({
       id: m.id_local,
       nombre_completo: p.nombre_completo ?? '',

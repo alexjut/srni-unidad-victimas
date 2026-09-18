@@ -11,6 +11,7 @@
  * en el flujo online). Cifrado en reposo: pendiente (ver docs/offline-cifrado-reposo.md).
  */
 import { openDb } from './schema';
+import { cifrarPayload, descifrarPayload } from './payloadSeguro';
 import { uuidv4 } from '../utils/uuid';
 import type { VictimaResumenFuente } from '../types';
 
@@ -37,7 +38,9 @@ export async function crearVictimaOffline(
   const row: VictimaOfflineRow = {
     id_local: idLocal,
     id_servidor: null,
-    payload_json: JSON.stringify(victima),
+    // Va cifrado: es el nombre y el documento de una persona real, y queda en el
+    // teléfono hasta que sincronice. Ver `crypto/cofreLocal`.
+    payload_json: await cifrarPayload(JSON.stringify(victima)),
     estado_sync: 'pendiente',
     created_at: now,
     updated_at: now,
@@ -122,7 +125,7 @@ export async function buscarPorDocumento(
 
   for (const row of filas) {
     try {
-      const victima = JSON.parse(row.payload_json) as VictimaResumenFuente;
+      const victima = JSON.parse(await descifrarPayload(row.payload_json)) as VictimaResumenFuente;
       if (
         (victima.numero_documento ?? '').trim() === numero &&
         (victima.tipo_documento ?? '').trim().toUpperCase() === tipo

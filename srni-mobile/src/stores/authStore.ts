@@ -11,6 +11,7 @@ import { precargarEnSegundoPlano } from '../services/precarga';
 import * as precargaDao from '../db/precargaDao';
 import * as colaDao from '../db/colaDao';
 import * as filtroUniverso from '../services/filtroUniverso';
+import { olvidarLlave } from '../crypto/cofreLocal';
 import * as padronArchivo from '../services/padronArchivo';
 
 const KEY_BIOMETRICO = 'biometrico_habilitado';
@@ -150,6 +151,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         const pendientes = await colaDao.contarPendientes();
         if (pendientes === 0) {
           await precargaDao.limpiarTodoOffline();
+          // Sin datos que descifrar, la llave sobra. Si quedara, el próximo usuario
+          // del equipo heredaría la del anterior. Con pendientes NO se borra: la
+          // cola todavía tiene payloads cifrados que hay que poder leer para subirlos.
+          await olvidarLlave();
         } else {
           await precargaDao.limpiarPrecarga();
         }
