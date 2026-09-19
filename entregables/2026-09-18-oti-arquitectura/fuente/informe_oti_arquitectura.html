@@ -19,7 +19,7 @@
 <table class="ficha">
 <tr><td>Solución</td><td>SICAV — Modernización de la Entrevista de Caracterización (backend, panel web y app móvil)</td></tr>
 <tr><td>Motivo</td><td>Respuesta al concepto técnico de la OTI sobre alineación con Auth SSO y con Unidad en Línea</td></tr>
-<tr><td>Versión</td><td>2 — incorpora el sustento de las decisiones de arquitectura y los cambios aplicados el 18-sep-2026</td></tr>
+<tr><td>Versión</td><td>2 — incorpora el sustento de las decisiones de arquitectura y las últimas actualizaciones de la solución</td></tr>
 <tr><td>Estado</td><td>En producción desde julio de 2026, con padrón real y jornadas de capacitación en curso</td></tr>
 <tr><td>Alcance</td><td>Arquitectura, persistencia, ruta de escritura al sistema legado, extracción de datos, interfaces publicadas y seguridad</td></tr>
 <tr><td>Clasificación</td><td>Uso interno — sin credenciales, sin direcciones internas, sin datos personales</td></tr>
@@ -39,7 +39,7 @@
 <li>Seguridad y protección de datos</li>
 <li>Qué implica integrarse con Auth SSO</li>
 <li>Pendientes reconocidos</li>
-<li>Lo corregido el 18 de septiembre</li>
+<li>Últimas actualizaciones</li>
 </ol></div>
 
 <h2>1. En una página</h2>
@@ -260,7 +260,7 @@ personales, aun si quedan envíos pendientes.</p>
 <li><strong>Servidor.</strong> La API valida que la pregunta pertenezca al instrumento de la sesión, resuelve a qué integrante corresponde, recalcula el avance y deja registro de auditoría de cada operación.</li>
 <li><strong>Cierre.</strong> Al finalizar se marca la caracterización, se actualiza la fecha de caracterización de todos los integrantes del hogar y, si aplica, se registra en el libro de recaracterizaciones.</li>
 </ol>
-<div class="nota"><strong>Pausa.</strong> Desde el 18 de septiembre una caracterización puede pausarse y retomarse días después, conservando lo respondido. Lo pidió el equipo de campo: hay entrevistas que se interrumpen y se continúan en otra visita.</div>
+<div class="nota"><strong>Pausa.</strong> Una caracterización puede pausarse y retomarse días después, conservando lo respondido. Lo pidió el equipo de campo: hay entrevistas que se interrumpen y se continúan en otra visita.</div>
 
 <h2>6. Escritura hacia el sistema legado</h2>
 <p>SICAV <strong>no inserta directamente</strong> en las tablas del aplicativo anterior. Toda escritura
@@ -332,7 +332,7 @@ protección de datos.</p>
 <tr><td>Canal</td><td>TLS obligatorio; publicación únicamente por el dominio institucional detrás del firewall de aplicaciones</td></tr>
 <tr><td>Identidad</td><td>Token de acceso de vida corta y token de refresco rotativo con lista de revocación; contraseñas con Argon2id</td></tr>
 <tr><td>Datos personales</td><td>Cifrado por campo sobre los identificadores, con búsqueda por resumen SHA-256 indexado</td></tr>
-<tr><td>Dispositivo</td><td>Tokens en el almacén seguro del sistema operativo, biometría opcional, borrado de datos personales al cerrar sesión y, desde el 18-sep-2026, <strong>cifrado en reposo</strong> de los datos personales pendientes de sincronizar</td></tr>
+<tr><td>Dispositivo</td><td>Tokens en el almacén seguro del sistema operativo, biometría opcional, borrado de datos personales al cerrar sesión y <strong>cifrado en reposo</strong> de los datos personales pendientes de sincronizar</td></tr>
 <tr><td>Trazabilidad</td><td>Registro de accesos de solo inserción: ingreso, búsqueda, consulta, captura, cierre, uso de IA</td></tr>
 <tr><td>Abuso y extracción</td><td>Límites de tasa por usuario y por origen, ajustados a la escala de la entidad</td></tr>
 <tr><td>Permisos</td><td>Matriz por perfil verificada automáticamente en cada cambio (61 comprobaciones sobre 5 perfiles)</td></tr>
@@ -368,15 +368,14 @@ campo.</p>
 <tr><td>Cadena de carga nocturna del aplicativo heredado</td><td><span class="e crit">Falla desde el 16-ago</span></td><td>Corresponde a la OTI restablecer la carpeta compartida (caso 14512)</td></tr>
 </table>
 
-<h2>12. Lo corregido el 18 de septiembre</h2>
+<h2>12. Últimas actualizaciones</h2>
 <p>La revisión que motivó este documento sirvió para cerrar varios frentes. Se informan
-para que el concepto de la OTI pueda actualizarse sobre hechos y no sobre la foto de la
-semana pasada.</p>
+para que el concepto de la OTI pueda actualizarse sobre el estado vigente.</p>
 <table>
 <tr><th>Observación o hallazgo</th><th>Qué se hizo</th></tr>
 <tr><td>Documentación interactiva de la API accesible sin autenticación</td><td>Hallazgo propio de esta revisión. Ya exige sesión</td></tr>
-<tr><td>Datos personales sin cifrar en el dispositivo <em>(observación i de la OTI)</em></td><td>Cifrados en reposo con llave en el almacén seguro del sistema</td></tr>
-<tr><td>Documentación que describía una fuente de datos de prueba <em>(observación ii)</em></td><td>Actualizada al estado vigente: producción usa el padrón real desde agosto. Se retiraron además artefactos de configuración de esa etapa que seguían en el repositorio</td></tr>
+<tr><td>Datos personales sin cifrar en el dispositivo <em>(observación i de la OTI)</em></td><td>Cifrados en reposo, con la llave en el almacén seguro del sistema</td></tr>
+<tr><td>Documentación que describía una fuente de datos de prueba <em>(observación ii)</em></td><td>Actualizada al estado vigente: producción trabaja con el padrón real. Se retiraron además artefactos de configuración de una etapa anterior que seguían en el repositorio</td></tr>
 <tr><td>Dependencia del proveedor de IA declarada en la aplicación móvil</td><td>Retirada: la ruta real es el intermediario del servidor, y ahora el inventario de dependencias lo refleja</td></tr>
 <tr><td>Estado de una caracterización modificable por actualización parcial</td><td>Solo lo cambian las acciones del proceso (pausar, reanudar, finalizar)</td></tr>
 <tr><td>Catálogos rurales y étnicos vacíos</td><td>Cargados desde la propia entidad: 32.302 veredas, 126 resguardos y 192 consejos comunitarios</td></tr>
