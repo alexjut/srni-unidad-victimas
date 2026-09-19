@@ -34,23 +34,27 @@ el modelo de usuarios es propio.
 
 ## 2. Tres precisiones sobre el estado actual
 
-**a) La fuente de datos de víctimas ya no es de prueba.** Es el punto más importante a
-corregir, y la imprecisión es nuestra: esa frase sale de un informe que les enviamos en
-**junio**, cuando efectivamente la búsqueda usaba un repositorio de prueba. Desde agosto
-producción trabaja contra el **padrón real**: 5.926.004 personas incluidas y un universo
-del RUV de 12.009.492 registros, cargados desde las fuentes oficiales por los enlaces
-autorizados.
+**a) La fuente de datos de víctimas ya no es de prueba.** Es la precisión más
+importante. **Desde agosto producción trabaja contra el padrón real**: 5.926.004
+personas incluidas y un universo del RUV de 12.009.492 registros, cargados desde las
+fuentes oficiales por los enlaces autorizados.
 
-Vale la pena precisar cómo se resolvió, porque tampoco fue como lo planteaba aquel
-documento. Allí se proponía consultar Oracle en vivo. Lo implementado es distinto: el
-padrón oficial **se carga** a la base de SICAV y la aplicación lo consulta desde ahí,
-precisamente porque la operación es sin conexión —una consulta en vivo contra Oracle no
-funciona en campo—. La integración con la fuente oficial ocurrió; por otro camino.
-Estamos actualizando los documentos que quedaron con la versión anterior.
+La descripción que ustedes encontraron corresponde a una etapa anterior del proyecto y
+**el cambio no alcanzó a reflejarse en la documentación publicada**, que quedó con la
+versión de junio. A eso se suma que en el repositorio permanecían artefactos de
+configuración de esa etapa que no se retiraron a tiempo y que refuerzan esa lectura. Ya
+están corregidos.
 
-**b) No usamos MinIO.** Se evaluó y se descartó. Los archivos se guardan en el volumen
-del servidor y los estáticos los sirve la propia aplicación. Quedaron variables de
-configuración sin uso que retiraremos para no inducir a error.
+Vale la pena precisar además **cómo** se resolvió, porque tampoco fue como lo
+anticipaba aquella documentación: allí se contemplaba consultar Oracle en línea, y lo
+implementado es distinto —el padrón oficial **se carga** a la base de SICAV y la
+aplicación lo consulta desde ahí—, porque una consulta en vivo no funciona en una
+jornada sin señal. La integración con la fuente oficial ocurrió; por otro camino.
+
+**b) No usamos MinIO.** Se evaluó y se descartó en su momento. Los archivos se guardan
+en el volumen del servidor y los estáticos los sirve la propia aplicación. Lo que
+quedó fueron variables de configuración de esa evaluación que no se retiraron y que
+inducen a esa conclusión; las estamos limpiando.
 
 **c) El cifrado de datos personales es a nivel de campo, con Fernet** (AES + HMAC) sobre
 los campos identificadores, y búsqueda por resumen SHA-256 indexado para no tener que
@@ -65,7 +69,7 @@ La revisión que motivó su concepto nos sirvió para cerrar frentes. Al 19 de s
 | Observación | Estado |
 |---|---|
 | (i) Cifrado del almacenamiento local del móvil | **Hecho** para los datos personales pendientes de sincronizar: van cifrados, con la llave en el almacén seguro del sistema. Cifrar el archivo completo exige cambiar el motor de base de datos del dispositivo y queda planificado |
-| (ii) Documentación que describía una fuente de prueba | **Corregida**: los cuatro documentos quedaron marcados como superados |
+| (ii) Documentación que describía una fuente de prueba | **Actualizada**: los cuatro documentos quedaron marcados como superados, con el estado vigente |
 | Dependencia del proveedor de IA en la aplicación | **Retirada** del inventario: no se usaba —la ruta real es el intermediario del servidor— pero inducía a error |
 | Documentación interactiva de la API sin autenticación | **Corregida**. Hallazgo propio de esta revisión; ya exige sesión |
 
@@ -80,9 +84,10 @@ pierde la jornada, el desplazamiento y la convocatoria. Por eso la captura escri
 dispositivo en el momento, los instrumentos viajan dentro de la aplicación y la
 sincronización ocurre después.
 
-**El padrón se carga, no se consulta en vivo.** El documento de junio que ustedes citan
-proponía consultar Oracle en línea; eso no funciona en campo. Hoy el padrón oficial vive
-en la base de SICAV y el dispositivo lleva una copia consultable por documento hasheado.
+**El padrón se carga, no se consulta en vivo.** La consulta en línea contra Oracle,
+que era lo contemplado al inicio, no funciona en una jornada sin señal. Hoy el padrón
+oficial vive en la base de SICAV y el dispositivo lleva una copia consultable por
+documento hasheado.
 
 **Al sistema anterior se le escribe con sus propias reglas y se verifica cada paso.**
 No insertamos en sus tablas: invocamos sus procedimientos oficiales y después

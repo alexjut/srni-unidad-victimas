@@ -73,12 +73,11 @@ los instrumentos viajan dentro de la aplicación, y la sincronización ocurre de
 orden y reintentos. Todo lo demás está subordinado a esto.</p>
 
 <h3>El padrón se carga; no se consulta en vivo</h3>
-<p>La propuesta inicial, de junio, era consultar Oracle en línea. No sirve para campo:
-sin red no hay consulta. Hoy el padrón oficial —5.926.004 personas— se carga a la base
-de SICAV y se consulta desde ahí, y el dispositivo lleva una copia consultable por
+<p>Lo contemplado al inicio del proyecto era consultar Oracle en línea. No sirve para
+campo: sin red no hay consulta. Hoy el padrón oficial —5.926.004 personas— se carga a la
+base de SICAV y se consulta desde ahí, y el dispositivo lleva una copia consultable por
 documento <em>hasheado</em>. La integración con la fuente oficial ocurrió; por un camino
-distinto del que aquel documento anticipaba, y es el camino que permite trabajar donde
-hay que trabajar.</p>
+distinto del previsto entonces, que es el que permite trabajar donde hay que trabajar.</p>
 
 <h3>Al sistema anterior se le escribe con sus propias reglas</h3>
 <p>SICAV no inserta en las tablas del legado: invoca sus procedimientos oficiales, en el
@@ -377,7 +376,7 @@ semana pasada.</p>
 <tr><th>Observación o hallazgo</th><th>Qué se hizo</th></tr>
 <tr><td>Documentación interactiva de la API accesible sin autenticación</td><td>Hallazgo propio de esta revisión. Ya exige sesión</td></tr>
 <tr><td>Datos personales sin cifrar en el dispositivo <em>(observación i de la OTI)</em></td><td>Cifrados en reposo con llave en el almacén seguro del sistema</td></tr>
-<tr><td>Documentos que describían una fuente de datos de prueba <em>(observación ii)</em></td><td>Marcados como superados; producción usa el padrón real desde agosto</td></tr>
+<tr><td>Documentación que describía una fuente de datos de prueba <em>(observación ii)</em></td><td>Actualizada al estado vigente: producción usa el padrón real desde agosto. Se retiraron además artefactos de configuración de esa etapa que seguían en el repositorio</td></tr>
 <tr><td>Dependencia del proveedor de IA declarada en la aplicación móvil</td><td>Retirada: la ruta real es el intermediario del servidor, y ahora el inventario de dependencias lo refleja</td></tr>
 <tr><td>Estado de una caracterización modificable por actualización parcial</td><td>Solo lo cambian las acciones del proceso (pausar, reanudar, finalizar)</td></tr>
 <tr><td>Catálogos rurales y étnicos vacíos</td><td>Cargados desde la propia entidad: 32.302 veredas, 126 resguardos y 192 consejos comunitarios</td></tr>
