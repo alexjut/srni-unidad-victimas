@@ -151,3 +151,61 @@ cargado a PostgreSQL en vez de consulta en vivo a Oracle; escritura al legado so
 sus procedures con verificación por SELECT; cifrado por campo con búsqueda por hash;
 filtro de Bloom para el universo; distribución de la APK auditada desde el propio
 servidor; JWT corto con rotación y revocación.
+
+---
+
+# Cierre del 19-sep-2026
+
+## En producción, verificado
+
+| Qué | Cómo se verificó |
+|---|---|
+| **APK 1.2.8** (vc62) | La API anuncia 1.2.8/10208. Trae padrón offline completo, APK-003/004/005 y cambio de contraseña |
+| **Paridad de instrumentos 8/8** | `alinear_ids_desde_bundle`: 50 de 50 preguntas de control coinciden servidor↔APK |
+| **Catálogos rurales** | 32.302 veredas · 126 resguardos · 192 consejos comunitarios |
+| **Códigos de hogar** | 54 de 54, sin duplicados |
+| **Porcentajes recalculados** | 39 de 51 sesiones (`backfill_porcentaje`) |
+| **Documentación de la API** | `/api/docs`, `/api/schema`, `/api/redoc` → 401 |
+| **Equipos** | `/api/equipos/` responde; migración aplicada |
+| **Pausar / reanudar** | Endpoints activos, estado «Pausada», auditoría registrando |
+
+Suites: **1.276 backend · 220 móvil**, ambas en verde.
+
+## Lo que se aprendió (y conviene no olvidar)
+
+- **Las «3 huérfanas del Telefónico» no sobraban: tenían otro identificador.** El
+  comando que las borraba, corrido en seco, señalaba `T1_re/T2_re/T3_re` de
+  Rural-Étnico, que **sí están en la APK**. Aplicarlo habría dejado al teléfono
+  mandando respuestas de preguntas inexistentes. El problema real: las respuestas
+  viajan con el id de la pregunta, y esas tres se rechazaban con 400 sin que la
+  encuestadora se enterara. `cargar_capitulo_control` genera ids nuevos en cada
+  instalación y por eso `sincronizar_ids_fixture_desde_bundle` no lo cubre.
+- **37 sesiones de ASISTENCIA en prod son datos de prueba** (COMPLETADA al 100 % con
+  cero respuestas). El recálculo las dejó en 0 %. Borrarlas es decisión de Javier.
+- **Cuatro instrumentos no tienen ni una pregunta obligatoria** (Asistencia,
+  Buenaventura, San Andrés, Urbano-Étnico). Mientras siga así, el porcentaje usa el
+  criterio A: proporción de lo respondible.
+
+## Pendiente, y de quién
+
+**Nuestro, sin bloqueo:** cifrado del archivo completo del móvil (hoy va por campo) ·
+encender el alcance «lo de mi equipo» en sesiones, hogares y reportes · panel de equipos
+(Brando, mensaje listo en `mensaje_brando_jerarquia_equipos.md`).
+
+**Falta insumo para poder hacerlo:** QA C1 (geografía hogar≠sesión) — se necesita el
+texto del hallazgo; hogar y sesión guardan cosas legítimamente distintas y sin eso se
+arreglaría lo que no está roto.
+
+**Área funcional:** obligatorias de los 4 instrumentos · ~15 reglas AND · 646 opciones
+sin código VIVANTO · campesinado · réplica de flujos a los demás perfiles.
+
+**Terceros:** `F:\Encuestas` (caso 14512, desde el 16-ago) · constancia de respaldos
+(desde junio) · GAVE.
+
+## Sin enviar, listo para enviar
+
+- Correo a la OTI (media página) + informe v2 en PDF, con el sustento de la
+  arquitectura: `docs/gestion/correo_respuesta_oti_sso_alineacion_2026-09-18.md` y
+  `entregables/2026-09-18-oti-arquitectura/pdf/`.
+- Mensaje a Brando con el contrato real de `/api/equipos/`.
+- Los 10 correos de claves provisionales de VIVANTO (`C:\Users\millo\Documents\SICAV-claves-vivanto\`).
