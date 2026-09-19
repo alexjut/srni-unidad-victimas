@@ -15,10 +15,11 @@
 <p class="org">Unidad para las Víctimas · Subdirección Red Nacional de Información · PRY-0662064</p>
 <h1>SICAV — Arquitectura, datos e integración</h1>
 <p class="sub">Cómo está construida la caracterización, dónde queda cada dato y por dónde se integra</p>
-<p class="sub2">Documento técnico para la Oficina de Tecnologías de la Información — 18 de septiembre de 2026</p>
+<p class="sub2">Documento técnico para la Oficina de Tecnologías de la Información — 19 de septiembre de 2026</p>
 <table class="ficha">
 <tr><td>Solución</td><td>SICAV — Modernización de la Entrevista de Caracterización (backend, panel web y app móvil)</td></tr>
 <tr><td>Motivo</td><td>Respuesta al concepto técnico de la OTI sobre alineación con Auth SSO y con Unidad en Línea</td></tr>
+<tr><td>Versión</td><td>2 — incorpora el sustento de las decisiones de arquitectura y los cambios aplicados el 18-sep-2026</td></tr>
 <tr><td>Estado</td><td>En producción desde julio de 2026, con padrón real y jornadas de capacitación en curso</td></tr>
 <tr><td>Alcance</td><td>Arquitectura, persistencia, ruta de escritura al sistema legado, extracción de datos, interfaces publicadas y seguridad</td></tr>
 <tr><td>Clasificación</td><td>Uso interno — sin credenciales, sin direcciones internas, sin datos personales</td></tr>
@@ -28,6 +29,7 @@
 <div class="contenido"><h3>Contenido</h3>
 <ol>
 <li>En una página</li>
+<li>Por qué está construido así</li>
 <li>Arquitectura de la solución</li>
 <li>Dónde queda cada dato</li>
 <li>Cómo se actualiza una caracterización</li>
@@ -37,6 +39,7 @@
 <li>Seguridad y protección de datos</li>
 <li>Qué implica integrarse con Auth SSO</li>
 <li>Pendientes reconocidos</li>
+<li>Lo corregido el 18 de septiembre</li>
 </ol></div>
 
 <h2>1. En una página</h2>
@@ -55,7 +58,66 @@ procedimientos oficiales</em>, nunca escribiendo directo en sus tablas.</p>
 <tr><td>Datos personales cifrados por campo y búsqueda por resumen</td><td>Un volcado no autorizado de la base no revela identidades; la búsqueda por documento sigue funcionando.</td></tr>
 </table>
 
-<h2>2. Arquitectura de la solución</h2>
+<h2 class="salto">2. Por qué está construido así</h2>
+<p>Las decisiones que siguen no son preferencias técnicas: cada una se tomó contra un
+problema concreto de esta operación, y varias se pagaron caro antes de tomarlas. Se
+exponen con su razón para que cualquier alineación posterior —empezando por la del
+inicio de sesión— se haga sabiendo qué se sostiene sobre qué.</p>
+
+<h3>La aplicación funciona sin conexión porque la caracterización ocurre sin conexión</h3>
+<p>No es una comodidad. Una jornada dura horas en zonas sin señal, y la encuestadora
+tiene enfrente a una familia que fue convocada. Un sistema que exija estar en línea no
+captura menos: <strong>pierde la jornada completa</strong>, y con ella el desplazamiento y la
+convocatoria. Por eso la captura escribe en el dispositivo en el momento —no al cerrar—,
+los instrumentos viajan dentro de la aplicación, y la sincronización ocurre después, con
+orden y reintentos. Todo lo demás está subordinado a esto.</p>
+
+<h3>El padrón se carga; no se consulta en vivo</h3>
+<p>La propuesta inicial, de junio, era consultar Oracle en línea. No sirve para campo:
+sin red no hay consulta. Hoy el padrón oficial —5.926.004 personas— se carga a la base
+de SICAV y se consulta desde ahí, y el dispositivo lleva una copia consultable por
+documento <em>hasheado</em>. La integración con la fuente oficial ocurrió; por un camino
+distinto del que aquel documento anticipaba, y es el camino que permite trabajar donde
+hay que trabajar.</p>
+
+<h3>Al sistema anterior se le escribe con sus propias reglas</h3>
+<p>SICAV no inserta en las tablas del legado: invoca sus procedimientos oficiales, en el
+orden en que lo hace el aplicativo actual. Reimplementar por fuera esa lógica
+—consecutivos, validadores, cierre de capítulos— habría significado mantener dos
+versiones de la misma regla y garantizar que se separen con el tiempo.</p>
+<p>Y <strong>cada paso se verifica con una consulta posterior</strong>, porque esos procedimientos
+confirman por dentro y capturan sus propios errores: una llamada puede responder sin
+haber escrito nada. La única prueba de que algo quedó escrito es volver a leerlo. Por la
+misma razón la escritura automática permanece apagada hasta que haya respaldo
+confirmado: en esa base, un error no se deshace.</p>
+
+<h3>Los datos personales se cifran por campo, no «la base»</h3>
+<p>Cifrar el disco protege contra el robo del servidor; no contra una consulta indebida
+ni contra un volcado. Cifrar los campos identificadores —y buscar por un resumen
+criptográfico indexado— hace que un volcado no revele identidades <em>y</em> que la búsqueda
+por documento siga funcionando. Es la decisión que cubre el riesgo real de esta
+operación.</p>
+
+<h3>El universo del RUV viaja al teléfono sin datos personales</h3>
+<p>Ocho millones de víctimas reconocidas nunca fueron entrevistadas. Antes, buscarlas sin
+señal respondía «no está», con la persona enfrente. Llevar sus nombres al dispositivo
+habría costado cientos de megabytes y, sobre todo, habría puesto datos personales en cada
+equipo. En su lugar viaja una estructura de 21,7 MiB que solo responde «existe / no
+existe»: habilita el registro sin exponer a nadie.</p>
+
+<h3>La aplicación se distribuye desde la entidad</h3>
+<p>No está en tiendas públicas: se sirve desde el propio servidor institucional, por el
+dominio de la entidad, y <strong>cada descarga queda registrada</strong>. Es una herramienta interna
+para operadores identificados, no un producto para el ciudadano.</p>
+
+<h3>Lo que esto implica para la alineación</h3>
+<p>Compartimos el objetivo de un emisor único de identidad. Pedimos que la integración se
+diseñe sobre estas condiciones y no contra ellas: vigencias compatibles con jornadas sin
+señal, flujo estándar para aplicación móvil y autorización que siga viviendo en el
+negocio. Lo contrario no sería una mejora de seguridad: sería trasladar el costo a la
+persona que está en el territorio.</p>
+
+<h2>3. Arquitectura de la solución</h2>
 <div class="leyenda">
   <span><i class="sw" style="background:#0b3b6f"></i> Construido por SRNI</span>
   <span><i class="sw" style="background:#7a5c00"></i> Infraestructura institucional</span>
@@ -173,7 +235,7 @@ procedimientos oficiales</em>, nunca escribiendo directo en sus tablas.</p>
 <figcaption>Componentes de SICAV y ruta que sigue una caracterización desde el dispositivo hasta el sistema legado.</figcaption>
 </figure>
 
-<h2>3. Dónde queda cada dato</h2>
+<h2>4. Dónde queda cada dato</h2>
 <p>La fuente de verdad es la base de SICAV en PostgreSQL 16, en el servidor institucional.
 Nada de lo capturado depende del dispositivo una vez sincroniza.</p>
 <table>
@@ -191,7 +253,7 @@ filtro probabilístico de 21,7 MiB que responde si una persona existe, sin conte
 nombres ni documentos legibles. Al cerrar sesión se borran del dispositivo los datos
 personales, aun si quedan envíos pendientes.</p>
 
-<h2>4. Cómo se actualiza una caracterización</h2>
+<h2>5. Cómo se actualiza una caracterización</h2>
 <ol>
 <li><strong>Captura.</strong> Cada respuesta se escribe en la base local del dispositivo en el momento, no al cerrar. Si el equipo se apaga, lo respondido está.</li>
 <li><strong>Cola con orden.</strong> Lo capturado se encola respetando dependencias: primero la víctima, luego el hogar, los integrantes, la sesión, las respuestas y el cierre. Cada elemento reintenta con espera creciente; los identificadores locales se reemplazan por los del servidor cuando estos existen.</li>
@@ -201,7 +263,7 @@ personales, aun si quedan envíos pendientes.</p>
 </ol>
 <div class="nota"><strong>Pausa.</strong> Desde el 18 de septiembre una caracterización puede pausarse y retomarse días después, conservando lo respondido. Lo pidió el equipo de campo: hay entrevistas que se interrumpen y se continúan en otra visita.</div>
 
-<h2>5. Escritura hacia el sistema legado</h2>
+<h2>6. Escritura hacia el sistema legado</h2>
 <p>SICAV <strong>no inserta directamente</strong> en las tablas del aplicativo anterior. Toda escritura
 pasa por los procedimientos oficiales de esa base, en el mismo orden en que los invoca
 el aplicativo heredado, y <strong>cada paso se verifica con una consulta posterior</strong> antes de
@@ -229,7 +291,7 @@ dentro y capturan sus propios errores sin reportarlos: una llamada puede “resp
 bien” sin haber escrito nada. Por eso el libro de envíos solo da un paso por bueno
 cuando una consulta posterior encuentra la fila.</div>
 
-<h2>6. De dónde se extraen los datos</h2>
+<h2>7. De dónde se extraen los datos</h2>
 <table>
 <tr><th>Dato</th><th>Origen</th><th>Cómo</th></tr>
 <tr><td>Padrón de víctimas incluidas</td><td>Base institucional del RNI</td><td>Carga controlada por proceso propio, del lado del servidor</td></tr>
@@ -248,7 +310,7 @@ estar disponible tras un reinicio del servidor. Lo detectamos y documentamos en 
 14512. No es un componente de SICAV, pero mientras siga así se sigue perdiendo captura
 diaria del sistema anterior, y la ventana de recuperación de los archivos es limitada.</div>
 
-<h2>7. Interfaces publicadas para interoperar</h2>
+<h2>8. Interfaces publicadas para interoperar</h2>
 <p>El backend publica su contrato <strong>OpenAPI</strong> con documentación interactiva. Para el caso
 de uso que plantea la OTI —que Unidad en Línea muestre a la víctima información derivada
 de su caracterización— los servicios ya existen:</p>
@@ -265,19 +327,19 @@ de acuerdo: control de acceso entre sistemas (lo natural es el emisor común de 
 y definición de qué campos es pertinente mostrarle al ciudadano, que debe revisar
 protección de datos.</p>
 
-<h2>8. Seguridad y protección de datos</h2>
+<h2>9. Seguridad y protección de datos</h2>
 <table>
 <tr><th>Control</th><th>Implementación</th></tr>
 <tr><td>Canal</td><td>TLS obligatorio; publicación únicamente por el dominio institucional detrás del firewall de aplicaciones</td></tr>
 <tr><td>Identidad</td><td>Token de acceso de vida corta y token de refresco rotativo con lista de revocación; contraseñas con Argon2id</td></tr>
 <tr><td>Datos personales</td><td>Cifrado por campo sobre los identificadores, con búsqueda por resumen SHA-256 indexado</td></tr>
-<tr><td>Dispositivo</td><td>Tokens en el almacén seguro del sistema operativo, biometría opcional, borrado de datos personales al cerrar sesión</td></tr>
+<tr><td>Dispositivo</td><td>Tokens en el almacén seguro del sistema operativo, biometría opcional, borrado de datos personales al cerrar sesión y, desde el 18-sep-2026, <strong>cifrado en reposo</strong> de los datos personales pendientes de sincronizar</td></tr>
 <tr><td>Trazabilidad</td><td>Registro de accesos de solo inserción: ingreso, búsqueda, consulta, captura, cierre, uso de IA</td></tr>
 <tr><td>Abuso y extracción</td><td>Límites de tasa por usuario y por origen, ajustados a la escala de la entidad</td></tr>
 <tr><td>Permisos</td><td>Matriz por perfil verificada automáticamente en cada cambio (61 comprobaciones sobre 5 perfiles)</td></tr>
 </table>
 
-<h2>9. Qué implica integrarse con Auth SSO</h2>
+<h2>10. Qué implica integrarse con Auth SSO</h2>
 <p>Compartimos el enfoque de federación de tokens. Del lado de SICAV el trabajo está
 acotado a la capa de autenticación:</p>
 <ol>
@@ -295,15 +357,31 @@ autorización con PKCE (el estándar para aplicaciones móviles), cuál es el pu
 publicación de llaves con su emisor y audiencia, y qué vigencias admite para el caso de
 campo.</p>
 
-<h2>10. Pendientes reconocidos</h2>
+<h2>11. Pendientes reconocidos</h2>
 <table>
 <tr><th>Pendiente</th><th>Estado</th><th>Plan</th></tr>
-<tr><td>Cifrado del almacenamiento local del dispositivo</td><td><span class="e pend">Pendiente</span></td><td>Planificado. Mitigación vigente: documento hasheado y borrado al cerrar sesión</td></tr>
+<tr><td>Cifrado del archivo completo de la base local del dispositivo</td><td><span class="e pend">Parcial</span></td><td>Los datos personales ya van cifrados por campo. Cifrar el archivo entero exige cambiar el motor de base de datos del dispositivo; queda planificado</td></tr>
 <tr><td>Consentimiento informado de la persona entrevistada para el uso de IA</td><td><span class="e pend">Por definir</span></td><td>Se solicita concepto del área de protección de datos</td></tr>
-<tr><td>Documentación interactiva de la API accesible sin autenticación</td><td><span class="e pend">En corrección</span></td><td>Se restringe el acceso; no expone datos, sí el mapa de servicios</td></tr>
-<tr><td>Documentos de sprints que aún mencionan la fuente de prueba</td><td><span class="e pend">En corrección</span></td><td>Se actualizan; producción usa el padrón real desde agosto</td></tr>
-<tr><td>Escritura automática al legado</td><td><span class="e ok">Construida, apagada</span></td><td>Se enciende con respaldo confirmado y aval de la operación</td></tr>
+<tr><td>Custodia y rotación de la llave de cifrado del servidor</td><td><span class="e pend">Por formalizar</span></td><td>Es el único control cuya falla no tiene remedio técnico posterior</td></tr>
+<tr><td>Segundo factor para perfiles administrativos</td><td><span class="e pend">Por evaluar</span></td><td>A definir junto con la integración de identidad</td></tr>
+<tr><td>Escritura automática al sistema anterior</td><td><span class="e ok">Construida, apagada</span></td><td>Se enciende con respaldo confirmado y aval de la operación</td></tr>
+<tr><td>Respaldos de la base de datos</td><td><span class="e crit">Sin constancia</span></td><td>Solicitados desde junio. Es el mayor riesgo del proyecto y depende de Infraestructura</td></tr>
 <tr><td>Cadena de carga nocturna del aplicativo heredado</td><td><span class="e crit">Falla desde el 16-ago</span></td><td>Corresponde a la OTI restablecer la carpeta compartida (caso 14512)</td></tr>
+</table>
+
+<h2>12. Lo corregido el 18 de septiembre</h2>
+<p>La revisión que motivó este documento sirvió para cerrar varios frentes. Se informan
+para que el concepto de la OTI pueda actualizarse sobre hechos y no sobre la foto de la
+semana pasada.</p>
+<table>
+<tr><th>Observación o hallazgo</th><th>Qué se hizo</th></tr>
+<tr><td>Documentación interactiva de la API accesible sin autenticación</td><td>Hallazgo propio de esta revisión. Ya exige sesión</td></tr>
+<tr><td>Datos personales sin cifrar en el dispositivo <em>(observación i de la OTI)</em></td><td>Cifrados en reposo con llave en el almacén seguro del sistema</td></tr>
+<tr><td>Documentos que describían una fuente de datos de prueba <em>(observación ii)</em></td><td>Marcados como superados; producción usa el padrón real desde agosto</td></tr>
+<tr><td>Dependencia del proveedor de IA declarada en la aplicación móvil</td><td>Retirada: la ruta real es el intermediario del servidor, y ahora el inventario de dependencias lo refleja</td></tr>
+<tr><td>Estado de una caracterización modificable por actualización parcial</td><td>Solo lo cambian las acciones del proceso (pausar, reanudar, finalizar)</td></tr>
+<tr><td>Catálogos rurales y étnicos vacíos</td><td>Cargados desde la propia entidad: 32.302 veredas, 126 resguardos y 192 consejos comunitarios</td></tr>
+<tr><td>Hogares sin código de identificación</td><td>Se genera al crear y se asignó a los existentes</td></tr>
 </table>
 
 <p class="pie-doc">Documento preparado por Desarrollo SRNI. Las cifras provienen de la base de producción y de los entregables de bases de datos del 7 de septiembre de 2026.</p>

@@ -2,21 +2,26 @@
 
 **Para:** OTI (autores del concepto) · **Copia:** Alexandra, Oscar Andrés Manosalva (SRNI), Rommey Ruiz (PMO)
 **De:** Javier Alexander Aguilar Castro — Desarrollo SRNI
-**Fecha:** 18 de septiembre de 2026
+**Fecha:** 19 de septiembre de 2026
 **Asunto:** Respuesta al concepto técnico sobre alineación de la app de caracterización con Auth SSO y Unidad en Línea
 
 ---
 
 Buen día.
 
-Gracias por el análisis. Es preciso en casi todo y coincidimos con la recomendación de
-fondo: **abordar primero la integración con Auth SSO** y dejar la interoperabilidad de
-servicios como consecuencia, no al revés. Abajo confirmamos lo que está correcto,
-corregimos tres puntos que quedaron desactualizados y proponemos cómo seguir.
+Gracias por el análisis. Es un trabajo serio y preciso en casi todo, y coincidimos con
+la recomendación de fondo: **abordar primero la integración con Auth SSO** y dejar la
+interoperabilidad de servicios como consecuencia, no al revés.
 
-Adjuntamos el informe técnico **«SICAV — Arquitectura, datos e integración»**, que
-incluye el diagrama de la solución, dónde queda cada dato y las interfaces ya
-publicadas.
+Abajo confirmamos lo correcto, corregimos tres puntos que quedaron desactualizados,
+informamos lo que ya se resolvió esta semana y exponemos **por qué la solución está
+construida como está**. Esto último no es defensa de oficio: varias de esas decisiones
+son las que permiten caracterizar en territorio sin señal, y conviene que la alineación
+se diseñe sabiendo qué se sostiene sobre qué.
+
+Adjuntamos la versión 2 del informe técnico **«SICAV — Arquitectura, datos e
+integración»**, que incluye el diagrama de la solución, el sustento de cada decisión,
+dónde queda cada dato y las interfaces ya publicadas.
 
 ## 1. Lo que confirmamos del concepto
 
@@ -53,7 +58,39 @@ descifrar. No es cifrado de toda la base ni pgcrypto. La vigencia real del token
 refresco en producción es de 7 días, no de 8 horas: se amplió justamente por las
 jornadas de campo sin señal.
 
-## 3. Sobre la integración con Auth SSO
+## 3. Lo que ya se resolvió esta semana
+
+La revisión que motivó su concepto nos sirvió para cerrar frentes. Al 19 de septiembre:
+
+| Observación | Estado |
+|---|---|
+| (i) Cifrado del almacenamiento local del móvil | **Hecho** para los datos personales pendientes de sincronizar: van cifrados, con la llave en el almacén seguro del sistema. Cifrar el archivo completo exige cambiar el motor de base de datos del dispositivo y queda planificado |
+| (ii) Documentación que describía una fuente de prueba | **Corregida**: los cuatro documentos quedaron marcados como superados |
+| Dependencia del proveedor de IA en la aplicación | **Retirada** del inventario: no se usaba —la ruta real es el intermediario del servidor— pero inducía a error |
+| Documentación interactiva de la API sin autenticación | **Corregida**. Hallazgo propio de esta revisión; ya exige sesión |
+
+## 4. Por qué la solución está construida así
+
+Tres decisiones que conviene tener presentes antes de definir la integración, porque
+cualquiera de las tres puede romperse sin querer:
+
+**La operación es sin conexión, y eso manda.** Una jornada dura horas en zonas sin
+señal, con familias ya convocadas. Un sistema que exija estar en línea no captura menos:
+pierde la jornada, el desplazamiento y la convocatoria. Por eso la captura escribe en el
+dispositivo en el momento, los instrumentos viajan dentro de la aplicación y la
+sincronización ocurre después.
+
+**El padrón se carga, no se consulta en vivo.** El documento de junio que ustedes citan
+proponía consultar Oracle en línea; eso no funciona en campo. Hoy el padrón oficial vive
+en la base de SICAV y el dispositivo lleva una copia consultable por documento hasheado.
+
+**Al sistema anterior se le escribe con sus propias reglas y se verifica cada paso.**
+No insertamos en sus tablas: invocamos sus procedimientos oficiales y después
+comprobamos con una consulta que la fila quedó, porque esos procedimientos confirman por
+dentro y capturan sus propios errores. Por eso la escritura automática sigue apagada
+hasta que haya respaldo confirmado: allí un error no se deshace.
+
+## 5. Sobre la integración con Auth SSO
 
 Estamos de acuerdo con el enfoque de **federación de tokens**: que el Auth API sea el
 emisor de la identidad y que nuestro backend valide firma, emisor y audiencia,
@@ -81,7 +118,7 @@ Para avanzar necesitamos de su parte tres definiciones:
 Proponemos una mesa técnica de una hora con su equipo para cerrar estos tres puntos y
 estimar el trabajo con fechas.
 
-## 4. Sobre la alineación con Unidad en Línea
+## 6. Sobre la alineación con Unidad en Línea
 
 Coincidimos: **no conviene unificar las aplicaciones**. Son públicos y propósitos
 distintos —ciudadano frente a operación interna en campo— y la nuestra maneja datos
@@ -98,12 +135,14 @@ ciudadano (esto último debería revisarlo protección de datos, no solo nosotro
 En sentido contrario, nos interesa la creación y trazabilidad de casos en integración
 con SGV. Quedamos atentos a la documentación de esos servicios.
 
-## 5. Sobre las observaciones adicionales
+## 7. Sobre las observaciones adicionales
 
-**(i) Cifrado del almacenamiento local del móvil:** cierto, sigue pendiente y está
-documentado como tal. Mitigación actual: en el teléfono el padrón se consulta por
-documento **hasheado**, no en claro, y al cerrar sesión se borran los datos personales
-del dispositivo. La implementación con base cifrada está planificada.
+**(i) Cifrado del almacenamiento local del móvil:** la observación era correcta y **ya
+se atendió**: los datos personales que quedan en el teléfono mientras la cola está
+pendiente van cifrados, con la llave en el almacén seguro del sistema operativo y un
+sello que detecta alteraciones. El padrón local ya se consultaba por documento hasheado
+y se borra al cerrar sesión. Queda pendiente cifrar el archivo completo de la base, que
+obliga a cambiar el motor del dispositivo.
 
 **(ii) Uso de IA:** el asistente está mediado por el backend —la app nunca habla con el
 proveedor— y cada sesión exige un consentimiento registrado con su huella y auditado. No
@@ -113,11 +152,11 @@ hoy el consentimiento lo registra la encuestadora en nombre de la entrevista; fa
 definir formalmente cómo se documenta el consentimiento de la persona entrevistada.
 Sobre eso pedimos concepto expreso del área competente.
 
-**(iii) Documentación de la API:** la revisión nos dejó un hallazgo propio que ya estamos
-corrigiendo: la documentación interactiva quedó accesible sin autenticación en el
-despliegue. No expone datos, pero sí el mapa de la API, así que la restringimos.
+**(iii) Documentación de la API:** la revisión nos dejó un hallazgo propio, **ya
+corregido**: la documentación interactiva estaba accesible sin autenticación en el
+despliegue. No exponía datos, pero sí el mapa de la API. Hoy exige sesión.
 
-## 6. Lo que proponemos
+## 8. Lo que proponemos
 
 | # | Acción | Responsable | Cuándo |
 |---|---|---|---|
@@ -125,7 +164,7 @@ despliegue. No expone datos, pero sí el mapa de la API, así que la restringimo
 | 2 | Prueba de concepto de validación de tokens del Auth API en un ambiente de pruebas | SRNI | 1 semana después de la mesa |
 | 3 | Contrato de los servicios a consumir entre Unidad en Línea y caracterización | OTI + SRNI | Tras el punto 1 |
 | 4 | Concepto de protección de datos sobre el uso de IA y sobre qué se le muestra a la víctima | Oficial de protección de datos | Paralelo |
-| 5 | Corrección de la documentación desactualizada y de la exposición de Swagger | SRNI | En curso |
+| 5 | Corrección de la documentación desactualizada y de la exposición de Swagger | SRNI | ✅ Hecho (18-sep) |
 
 Cordialmente,
 
